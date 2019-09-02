@@ -1,0 +1,20 @@
+#
+# https://github.com/sc-forks/solidity-coverage/blob/master/docs/faq.md
+#
+
+sudo: required
+dist: trusty
+language: node_js
+node_js:
+  - '10'
+install:
+  - cd nearbridge
+  - npm install
+script:
+  - npm run lint
+  - npm run test
+after_script:
+  - npm run coverage && cat coverage/lcov.info | coveralls
+branches:
+  only:
+  - master
