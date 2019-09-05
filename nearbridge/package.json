@@ -4,13 +4,14 @@
   "description": "",
   "repository": {
     "type": "git",
-    "url": "git@github.com:k06a/NearBridge.git"
+    "url": "git@github.com:nearprotocol/bridge.git"
   },
   "license": "MIT",
   "dependencies": {
     "@openzeppelin/contracts": "^2.3.0"
   },
   "devDependencies": {
+    "chai": "^4.2.0",
     "coveralls": "^3.0.3",
     "eslint": "^6.3.0",
     "eslint-config-standard": "^14.1.0",
