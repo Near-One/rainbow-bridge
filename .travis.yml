@@ -4,6 +4,7 @@
 
 sudo: required
 dist: trusty
+language: node_js
 node_js:
   - '10'
 script:
@@ -13,6 +14,8 @@ script:
   - yarn run coverage && cat coverage/lcov.info | coveralls
   - echo "EthBridge:"
   - cd ../ethbridge
+  - sh <(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs) -y
+  - rustup target add wasm32-unknown-unknown --toolchain nightly
   - cargo test --package eth-bridge --features env_test -- --nocapture
 branches:
   only:
