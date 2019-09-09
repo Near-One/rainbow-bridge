@@ -11,6 +11,7 @@
         "@openzeppelin/contracts": "^2.3.0"
     },
     "devDependencies": {
+        "@codechecks/client": "^0.1.9",
         "chai": "^4.2.0",
         "coveralls": "^3.0.3",
         "eslint": "^6.3.0",

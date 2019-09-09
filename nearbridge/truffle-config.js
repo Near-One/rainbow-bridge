@@ -31,6 +31,7 @@ module.exports = {
     mocha: { // https://github.com/cgewecke/eth-gas-reporter
         reporter: 'eth-gas-reporter',
         reporterOptions : {
+            codechecks: true,
             currency: 'USD',
             gasPrice: 10,
             onlyCalledMethods: true,
