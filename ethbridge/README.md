@@ -1,6 +1,9 @@
-# Greeter example in AssemblyScript
+# Status Message
 
-## Description
+Records the status messages of the accounts that call this contract.
 
-The contract implements a single function to return a greeting.
-For instructions on how  to run this  project, please follow our online tutorial  https://docs.nearprotocol.com/quick-start/local-development
+## Testing
+To test run:
+```bash
+cargo test --package status-message --features env_test -- --nocapture
+```

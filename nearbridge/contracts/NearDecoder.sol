@@ -49,6 +49,17 @@ library NearDecoder {
         Signature signature;    /// Signature of the block producer.
     }
 
+    // struct SignedTransaction {
+    //     Transaction transaction;
+    //     Signature signature;
+    //     byte[32] hash;
+    // }
+
+    // struct Block {
+    //     BlockHeader header;
+    //     SignedTransaction[] transactions;
+    // }
+
     enum TransactionStatus {
         Unknown,
         Completed,
