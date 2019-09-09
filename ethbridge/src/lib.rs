@@ -27,9 +27,11 @@ impl EthBridge {
         for i in start..(start + block_headers.len() as u64) {
             match rlp::decode::<BlockHeader>(block_headers[i as usize].as_slice()) {
                 Ok(block_header) => {
-                    assert!(block_header.number == self.last_block_number + 1);
                     match self.block_hash(self.last_block_number) {
-                        Some(hash) => assert_eq!(block_header.parent_hash, hash.into()),
+                        Some(hash) => {
+                            assert_eq!(block_header.number, self.last_block_number + 1);
+                            assert_eq!(block_header.parent_hash, hash.into());
+                        },
                         None => {},
                     }
                     self.block_hashes.insert(i, block_header.hash.into());
