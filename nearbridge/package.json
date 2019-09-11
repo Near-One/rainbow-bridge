@@ -4,7 +4,7 @@
     "description": "",
     "repository": {
         "type": "git",
-        "url": "git@github.com:nearprotocol/bridge.git"
+        "url": "git@github.com:nearprotocol/near-bridge.git"
     },
     "license": "MIT",
     "dependencies": {

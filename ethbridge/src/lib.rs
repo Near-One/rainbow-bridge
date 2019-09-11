@@ -17,35 +17,59 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 #[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct EthBridge {
     block_hashes: HashMap<u64, [u8; 32]>,
-    last_block_number: u64
+    last_block_number: u64,
 }
 
 #[near_bindgen]
 impl EthBridge {
+
+    const NUMBER_OF_FUTURE_BLOCKS: u64 = 10;
+
     pub fn add_block_headers(&mut self, start: u64, block_headers: Vec<Vec<u8>>) {
-        let mut best_block_number = 0u64;
-        for i in start..(start + block_headers.len() as u64) {
+
+        for i in 0..block_headers.len() as u64 {
+            
             match rlp::decode::<BlockHeader>(block_headers[i as usize].as_slice()) {
-                Ok(block_header) => {
-                    match self.block_hash(self.last_block_number) {
+                Ok(header) => {
+
+                    // Check prev block compatibility
+                    match self.block_hash(i - 1) {
                         Some(hash) => {
-                            assert_eq!(block_header.number, self.last_block_number + 1);
-                            assert_eq!(block_header.parent_hash, hash.into());
+                            if self.last_block_number > 0 {
+                                assert_eq!(header.number - 1, start - 1 + i);
+                            }
+                            assert_eq!(header.parent_hash, hash.into());
                         },
-                        None => {},
+                        None => if i > 0 { panic!() },
                     }
-                    self.block_hashes.insert(i, block_header.hash.into());
-                    best_block_number = block_header.number;
+
+                    // Do not add latest 10 blocks, only check em
+                    if i + EthBridge::NUMBER_OF_FUTURE_BLOCKS < block_headers.len() as u64 {
+
+                        self.block_hashes.insert(start + i, header.hash.into());
+
+                        // Update self.last_block_number only once
+                        if i + EthBridge::NUMBER_OF_FUTURE_BLOCKS == block_headers.len() as u64 - 1 {
+
+                            // Check longest chain rule
+                            if header.number < self.last_block_number {
+                                panic!(); // revert all state changes
+                            }
+                            self.last_block_number = header.number;
+                        }
+                    }
                 },
                 Err(_e) => {
                     panic!();
                 },
             }
         }
-        self.last_block_number = best_block_number;
     }
 
     pub fn block_hash(&self, index: u64) -> Option<[u8; 32]> {
+        if index + EthBridge::NUMBER_OF_FUTURE_BLOCKS > self.last_block_number {
+            return Option::None;
+        }
         self.block_hashes.get(&index).cloned()
     }
 }
