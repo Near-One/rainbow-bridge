@@ -4,7 +4,7 @@ use super::*;
 use near_bindgen::MockedBlockchain;
 use near_bindgen::{VMContext, Config, testing_env};
 use web3::futures::Future;
-use web3::types::{BlockId, BlockNumber, Block};
+use web3::types::{H256, BlockId, BlockNumber, Block};
 use rlp::{RlpStream};
 
 fn rlp_append<TX>(header: &Block<TX>, stream: &mut RlpStream) {
@@ -53,7 +53,7 @@ fn get_web3() -> web3::Web3<web3::transports::Http> {
 #[cfg(feature = "env_test")]
 #[cfg(test)]
 #[test]
-fn add_block_headers() {
+fn add_400000_block_only() {
     let context = get_context(vec![]);
     let config = Config::default();
     testing_env!(context, config);
@@ -67,11 +67,39 @@ fn add_block_headers() {
     rlp_append(&block, &mut stream);
     let out = stream.out();
 
-    // println!("{:x?}", out.as_slice());
-
     let mut contract = EthBridge::default();
     contract.add_block_headers(400000, vec![out]);
-    assert_eq!(block.hash.unwrap(), contract.block_hash(400000).unwrap().into());
+    assert_eq!(block.hash.unwrap(), contract.block_hash_unsafe(400000).unwrap().into());
+}
+
+#[cfg(feature = "env_test")]
+#[cfg(test)]
+#[test]
+fn add_20_blocks_from_8000000() {
+    let context = get_context(vec![]);
+    let config = Config::default();
+    testing_env!(context, config);
+
+    let start: usize = 8000000;
+    let stop: usize = 8000020;
+    let web3rust = get_web3();
+
+    let mut hashes: Vec<H256> = vec![];
+    let mut blocks: Vec<Vec<u8>> = vec![];
+    for i in start..stop {
+        let block = web3rust.eth().block(BlockId::Number(BlockNumber::Number(i.into()))).wait().unwrap().unwrap();    
+        let mut stream = RlpStream::new();
+        rlp_append(&block, &mut stream);
+        hashes.push(block.hash.unwrap());
+        blocks.push(stream.out());
+    }
+    
+    let mut contract = EthBridge::default();
+    contract.add_block_headers(start as u64, blocks);
+
+    for i in start..stop {
+        assert_eq!(hashes[i - start], contract.block_hash_unsafe(i as u64).unwrap().into());
+    }
 }
 
 // #[cfg(feature = "env_test")]

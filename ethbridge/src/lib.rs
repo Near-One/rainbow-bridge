@@ -30,7 +30,7 @@ impl EthBridge {
         for i in 0..block_headers.len() {
             let block_number = start + i as u64;
             let header = rlp::decode::<BlockHeader>(block_headers[i].as_slice()).unwrap();
-
+            
             // Check prev block compatibility
             assert_eq!(header.number(), block_number);
             match prev_hash {
@@ -43,7 +43,7 @@ impl EthBridge {
             }
 
             self.block_hashes.insert(block_number, header.hash().unwrap());
-            prev_hash = Some(header.hash().unwrap());
+            prev_hash = header.hash();
 
             // Update self.last_block_number only on latest iteration
             if i == block_headers.len() - 1 {
@@ -54,8 +54,13 @@ impl EthBridge {
         }
     }
 
+    pub fn block_hash_unsafe(&self, index: u64) -> Option<[u8; 32]> {
+        self.block_hashes.get(&index).cloned()
+    }
+
     pub fn block_hash(&self, index: u64) -> Option<[u8; 32]> {
         if index + EthBridge::NUMBER_OF_FUTURE_BLOCKS > self.last_block_number {
+            println!("index = {:?}", index);
             return Option::None;
         }
         self.block_hashes.get(&index).cloned()
