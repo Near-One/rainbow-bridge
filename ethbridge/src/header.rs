@@ -24,7 +24,7 @@ pub struct BlockHeader {
 
     pub difficulty: U256,
 
-    pub hash: H256,
+    pub hash: [u8; 32],
 }
 
 fn keccak256(data: &[u8]) -> [u8; 32] {
