@@ -6,8 +6,7 @@ use near_bindgen::{VMContext, Config, testing_env};
 use web3::futures::Future;
 use web3::types::{H256, BlockId, BlockNumber, Block};
 use rlp::{RlpStream};
-use futures::prelude::*;
-use futures::future::{join_all, ok, err};
+use futures::future::{join_all};
 
 fn rlp_append<TX>(header: &Block<TX>, stream: &mut RlpStream) {
     stream.begin_list(15);
