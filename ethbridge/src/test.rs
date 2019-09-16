@@ -50,6 +50,19 @@ fn get_web3() -> web3::Web3<web3::transports::Http> {
     web3::Web3::new(transport)
 }
 
+fn get_blocks(web3rust: &web3::Web3<web3::transports::Http>, start: usize, stop: usize) -> (Vec<H256>, Vec<Vec<u8>>) {
+    let mut hashes: Vec<H256> = vec![];
+    let mut blocks: Vec<Vec<u8>> = vec![];
+    for i in start..stop {
+        let block = web3rust.eth().block(BlockId::Number(BlockNumber::Number(i.into()))).wait().unwrap().unwrap();    
+        let mut stream = RlpStream::new();
+        rlp_append(&block, &mut stream);
+        hashes.push(block.hash.unwrap());
+        blocks.push(stream.out());
+    }
+    (hashes, blocks)
+}
+
 #[cfg(feature = "env_test")]
 #[cfg(test)]
 #[test]
@@ -61,15 +74,11 @@ fn add_400000_block_only() {
     let web3rust = get_web3();
 
     // Check on 400000 block from this answer: https://ethereum.stackexchange.com/a/67333/3032
-    let block = web3rust.eth().block(BlockId::Number(BlockNumber::Number(400000.into()))).wait().unwrap().unwrap();
-
-    let mut stream = RlpStream::new();
-    rlp_append(&block, &mut stream);
-    let out = stream.out();
+    let (hashes, blocks) = get_blocks(&web3rust, 400000, 400001);
 
     let mut contract = EthBridge::default();
-    contract.add_block_headers(400000, vec![out]);
-    assert_eq!(block.hash.unwrap(), contract.block_hash_unsafe(400000).unwrap().into());
+    contract.add_block_headers(400000, blocks);
+    assert_eq!(hashes[0], contract.block_hash_unsafe(400000).unwrap().into());
 }
 
 #[cfg(feature = "env_test")]
@@ -84,15 +93,7 @@ fn add_20_blocks_from_8000000() {
     let stop: usize = 8000020;
     let web3rust = get_web3();
 
-    let mut hashes: Vec<H256> = vec![];
-    let mut blocks: Vec<Vec<u8>> = vec![];
-    for i in start..stop {
-        let block = web3rust.eth().block(BlockId::Number(BlockNumber::Number(i.into()))).wait().unwrap().unwrap();    
-        let mut stream = RlpStream::new();
-        rlp_append(&block, &mut stream);
-        hashes.push(block.hash.unwrap());
-        blocks.push(stream.out());
-    }
+    let (hashes, blocks) = get_blocks(&web3rust, start, stop);
     
     let mut contract = EthBridge::default();
     contract.add_block_headers(start as u64, blocks);
@@ -102,14 +103,32 @@ fn add_20_blocks_from_8000000() {
     }
 }
 
-// #[cfg(feature = "env_test")]
-// #[cfg(test)]
-// #[test]
-// fn get_nonexistent_message() {
-//     let context = get_context(vec![]);
-//     let config = Config::default();
-//     testing_env!(context, config);
+#[cfg(feature = "env_test")]
+#[cfg(test)]
+#[test]
+fn add_3_sequential_ranges_of_blocks() {
+    let context = get_context(vec![]);
+    let config = Config::default();
+    testing_env!(context, config);
 
-//     // let contract = EthBridge::default();
-//     // assert_eq!(None, contract.get_status("francis.near".to_string()));
-// }
+    let web3rust = get_web3();
+
+    let (hashes1, blocks1) = get_blocks(&web3rust, 8000000, 8000010);
+    let (hashes2, blocks2) = get_blocks(&web3rust, 8000010, 8000020);
+    let (hashes3, blocks3) = get_blocks(&web3rust, 8000020, 8000030);
+    
+    let mut contract = EthBridge::default();
+    contract.add_block_headers(8000000 as u64, blocks1);
+    contract.add_block_headers(8000010 as u64, blocks2);
+    contract.add_block_headers(8000020 as u64, blocks3);
+
+    for i in 8000000..8000010 {
+        assert_eq!(hashes1[i - 8000000], contract.block_hash_unsafe(i as u64).unwrap().into());
+    }
+    for i in 8000010..8000020 {
+        assert_eq!(hashes2[i - 8000010], contract.block_hash_unsafe(i as u64).unwrap().into());
+    }
+    for i in 8000020..8000030 {
+        assert_eq!(hashes3[i - 8000020], contract.block_hash_unsafe(i as u64).unwrap().into());
+    }
+}
