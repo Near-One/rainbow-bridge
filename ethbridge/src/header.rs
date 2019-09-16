@@ -7,24 +7,21 @@ use self::crypto::sha3::Sha3;
 
 #[derive(Debug, Clone)]
 pub struct BlockHeader {
-    pub parent_hash: H256,
-    pub timestamp: u64,
-    pub number: u64,
-    pub author: Address,
+    parent_hash: H256,
+    uncles_hash: H256,
+    author: Address,
+    state_root: H256,
+    transactions_root: H256,
+    receipts_root: H256,
+    log_bloom: Bloom,
+    difficulty: U256,
+    number: u64,
+    gas_limit: U256,
+    gas_used: U256,
+    timestamp: u64,
+    extra_data: Vec<u8>,
 
-    pub transactions_root: H256,
-    pub uncles_hash: H256,
-    pub extra_data: Vec<u8>,
-
-    pub state_root: H256,
-    pub receipts_root: H256,
-    pub log_bloom: Bloom,
-    pub gas_used: U256,
-    pub gas_limit: U256,
-
-    pub difficulty: U256,
-
-    pub hash: [u8; 32],
+    hash: Option<H256>,
 }
 
 fn keccak256(data: &[u8]) -> [u8; 32] {
@@ -36,9 +33,23 @@ fn keccak256(data: &[u8]) -> [u8; 32] {
     buffer
 }
 
+impl BlockHeader {
+    pub fn parent_hash(&self) -> [u8; 32] {
+        self.parent_hash.into()
+    }
+
+    pub fn number(&self) -> u64 {
+        self.number.into()
+    }
+
+    pub fn hash(&self) -> Option<[u8; 32]> {
+        self.hash.map(|h| h.into())
+    }
+}
+
 impl Decodable for BlockHeader {
     fn decode(rlp: &Rlp) -> Result<Self, DecoderError> {
-        let blockheader = BlockHeader {
+        Ok(BlockHeader {
             parent_hash: rlp.val_at(0)?,
             uncles_hash: rlp.val_at(1)?,
             author: rlp.val_at(2)?,
@@ -52,9 +63,7 @@ impl Decodable for BlockHeader {
             gas_used: rlp.val_at(10)?,
             timestamp: rlp.val_at(11)?,
             extra_data: rlp.val_at(12)?,
-            hash: keccak256(rlp.as_raw()).into(),
-        };
-
-        Ok(blockheader)
+            hash: Some(keccak256(rlp.as_raw()).into()),
+        })
     }
 }

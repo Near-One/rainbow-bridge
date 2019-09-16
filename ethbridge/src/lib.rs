@@ -27,41 +27,34 @@ impl EthBridge {
 
     pub fn add_block_headers(&mut self, start: u64, block_headers: Vec<Vec<u8>>) {
 
-        for i in 0..block_headers.len() as u64 {
-            
-            match rlp::decode::<BlockHeader>(block_headers[i as usize].as_slice()) {
-                Ok(header) => {
+        let mut prev_hash: Option<[u8; 32]> = self.block_hashes.get(&(start - 1)).cloned();
 
-                    // Check prev block compatibility
-                    match self.block_hash(i - 1) {
-                        Some(hash) => {
-                            if self.last_block_number > 0 {
-                                assert_eq!(header.number - 1, start - 1 + i);
-                            }
-                            assert_eq!(header.parent_hash, hash.into());
-                        },
-                        None => if i > 0 { panic!() },
-                    }
+        for i in 0..block_headers.len() {
 
-                    // Do not add latest 10 blocks, only check em
-                    if i + EthBridge::NUMBER_OF_FUTURE_BLOCKS < block_headers.len() as u64 {
+            let block_number = start + i as u64;
 
-                        self.block_hashes.insert(start + i, header.hash.into());
+            let header = rlp::decode::<BlockHeader>(block_headers[i].as_slice()).unwrap();
 
-                        // Update self.last_block_number only once
-                        if i + EthBridge::NUMBER_OF_FUTURE_BLOCKS == block_headers.len() as u64 - 1 {
-
-                            // Check longest chain rule
-                            if header.number < self.last_block_number {
-                                panic!(); // revert all state changes
-                            }
-                            self.last_block_number = header.number;
-                        }
-                    }
+            // Check prev block compatibility
+            assert_eq!(header.number(), block_number);
+            match prev_hash {
+                Some(hash) => {
+                    assert_eq!(header.parent_hash(), hash);
                 },
-                Err(_e) => {
-                    panic!();
+                None => {
+                    // Only can happen on first iteration
                 },
+            }
+
+            self.block_hashes.insert(block_number, header.hash().unwrap());
+            prev_hash = Some(header.hash().unwrap());
+
+            // Update self.last_block_number only on latest iteration
+            if i == block_headers.len() - 1 {
+
+                // Check longest chain rule
+                assert!(header.number() > self.last_block_number);
+                self.last_block_number = header.number();
             }
         }
     }
