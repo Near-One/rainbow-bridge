@@ -74,11 +74,11 @@ fn add_400000_block_only() {
     let web3rust = get_web3();
 
     // Check on 400000 block from this answer: https://ethereum.stackexchange.com/a/67333/3032
-    let (hashes, blocks) = get_blocks(&web3rust, 400000, 400001);
+    let (hashes, blocks) = get_blocks(&web3rust, 400_000, 400001);
 
     let mut contract = EthBridge::default();
-    contract.add_block_headers(400000, blocks);
-    assert_eq!(hashes[0], contract.block_hash_unsafe(400000).unwrap().into());
+    contract.add_block_headers(400_000, blocks);
+    assert_eq!(hashes[0], contract.block_hash_unsafe(400_000).unwrap().into());
 }
 
 #[cfg(feature = "env_test")]
@@ -89,8 +89,8 @@ fn add_20_blocks_from_8000000() {
     let config = Config::default();
     testing_env!(context, config);
 
-    let start: usize = 8000000;
-    let stop: usize = 8000020;
+    let start: usize = 8_000_000;
+    let stop: usize = 8_000_020;
     let web3rust = get_web3();
 
     let (hashes, blocks) = get_blocks(&web3rust, start, stop);
@@ -113,22 +113,22 @@ fn add_3_sequential_ranges_of_blocks() {
 
     let web3rust = get_web3();
 
-    let (hashes1, blocks1) = get_blocks(&web3rust, 8000000, 8000010);
-    let (hashes2, blocks2) = get_blocks(&web3rust, 8000010, 8000020);
-    let (hashes3, blocks3) = get_blocks(&web3rust, 8000020, 8000030);
+    let (hashes1, blocks1) = get_blocks(&web3rust, 8_000_000, 8_000_010);
+    let (hashes2, blocks2) = get_blocks(&web3rust, 8_000_010, 8_000_020);
+    let (hashes3, blocks3) = get_blocks(&web3rust, 8_000_020, 8_000_030);
     
     let mut contract = EthBridge::default();
-    contract.add_block_headers(8000000 as u64, blocks1);
-    contract.add_block_headers(8000010 as u64, blocks2);
-    contract.add_block_headers(8000020 as u64, blocks3);
+    contract.add_block_headers(8_000_000 as u64, blocks1);
+    contract.add_block_headers(8_000_010 as u64, blocks2);
+    contract.add_block_headers(8_000_020 as u64, blocks3);
 
-    for i in 8000000..8000010 {
-        assert_eq!(hashes1[i - 8000000], contract.block_hash_unsafe(i as u64).unwrap().into());
+    for i in 8_000_000..8_000_010 {
+        assert_eq!(hashes1[i - 8_000_000], contract.block_hash_unsafe(i as u64).unwrap().into());
     }
-    for i in 8000010..8000020 {
-        assert_eq!(hashes2[i - 8000010], contract.block_hash_unsafe(i as u64).unwrap().into());
+    for i in 8_000_010..8_000_020 {
+        assert_eq!(hashes2[i - 8_000_010], contract.block_hash_unsafe(i as u64).unwrap().into());
     }
-    for i in 8000020..8000030 {
-        assert_eq!(hashes3[i - 8000020], contract.block_hash_unsafe(i as u64).unwrap().into());
+    for i in 8_000_020..8_000_030 {
+        assert_eq!(hashes3[i - 8_000_020], contract.block_hash_unsafe(i as u64).unwrap().into());
     }
 }
