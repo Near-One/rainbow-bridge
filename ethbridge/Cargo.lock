@@ -243,6 +243,7 @@ version = "0.1.0"
 dependencies = [
  "borsh 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "near-bindgen 0.2.3 (git+https://github.com/nearprotocol/near-bindgen)",
  "rlp 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rust-crypto-wasm 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",

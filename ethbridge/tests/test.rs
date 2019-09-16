@@ -6,6 +6,8 @@ use near_bindgen::{VMContext, Config, testing_env};
 use web3::futures::Future;
 use web3::types::{H256, BlockId, BlockNumber, Block};
 use rlp::{RlpStream};
+use futures::prelude::*;
+use futures::future::{join_all, ok, err};
 
 fn rlp_append<TX>(header: &Block<TX>, stream: &mut RlpStream) {
     stream.begin_list(15);
@@ -51,15 +53,20 @@ fn get_web3() -> web3::Web3<web3::transports::Http> {
 }
 
 fn get_blocks(web3rust: &web3::Web3<web3::transports::Http>, start: usize, stop: usize) -> (Vec<H256>, Vec<Vec<u8>>) {
+
+    let futures = (start..stop).map(|i| web3rust.eth().block(BlockId::Number(BlockNumber::Number(i.into())))).collect::<Vec<_>>();
+
+    let block_headers = join_all(futures).wait().unwrap();
+
     let mut hashes: Vec<H256> = vec![];
     let mut blocks: Vec<Vec<u8>> = vec![];
-    for i in start..stop {
-        let block = web3rust.eth().block(BlockId::Number(BlockNumber::Number(i.into()))).wait().unwrap().unwrap();    
+    for block_header in block_headers {
         let mut stream = RlpStream::new();
-        rlp_append(&block, &mut stream);
-        hashes.push(block.hash.unwrap());
+        rlp_append(&block_header.clone().unwrap(), &mut stream);
+        hashes.push(block_header.clone().unwrap().hash.unwrap());
         blocks.push(stream.out());
     }
+
     (hashes, blocks)
 }
 
