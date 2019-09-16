@@ -10,6 +10,7 @@ use near_bindgen::{near_bindgen};
 mod header;
 use header::{BlockHeader};
 
+#[cfg(not(feature = "env_test"))]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
@@ -66,7 +67,3 @@ impl EthBridge {
         self.block_hashes.get(&index).cloned()
     }
 }
-
-#[cfg(feature = "env_test")]
-#[cfg(test)]
-mod test;
