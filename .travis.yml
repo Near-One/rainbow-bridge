@@ -16,7 +16,7 @@ script:
   - cd ../ethbridge
   - sh <(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs) -y && export PATH=$PATH:~/.cargo/bin
   - rustup target add wasm32-unknown-unknown --toolchain nightly
-  - cargo test --package eth-bridge --features env_test -- --nocapture
+  - ./test.sh
 branches:
   only:
   - master
