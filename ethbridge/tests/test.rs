@@ -121,12 +121,12 @@ fn add_3_sequential_ranges_of_blocks() {
 
     let (hashes1, blocks1) = get_blocks(&web3rust, 8_000_000, 8_000_010);
     let (hashes2, blocks2) = get_blocks(&web3rust, 8_000_010, 8_000_020);
-    //let (hashes3, blocks3) = get_blocks(&web3rust, 8_000_020, 8_000_030);
+    let (hashes3, blocks3) = get_blocks(&web3rust, 8_000_020, 8_000_030);
     
     let mut contract = EthBridge::default();
     contract.add_block_headers(8_000_000 as u64, blocks1);
     contract.add_block_headers(8_000_010 as u64, blocks2);
-    //contract.add_block_headers(8_000_020 as u64, blocks3);
+    contract.add_block_headers(8_000_020 as u64, blocks3);
 
     for i in 8_000_000..8_000_010 {
         assert_eq!(hashes1[i - 8_000_000], contract.block_hash_unsafe(i as u64).unwrap().into());
@@ -134,7 +134,37 @@ fn add_3_sequential_ranges_of_blocks() {
     for i in 8_000_010..8_000_020 {
         assert_eq!(hashes2[i - 8_000_010], contract.block_hash_unsafe(i as u64).unwrap().into());
     }
-    // for i in 8_000_020..8_000_030 {
-    //     assert_eq!(hashes3[i - 8_000_020], contract.block_hash_unsafe(i as u64).unwrap().into());
-    // }
+    for i in 8_000_020..8_000_030 {
+        assert_eq!(hashes3[i - 8_000_020], contract.block_hash_unsafe(i as u64).unwrap().into());
+    }
+}
+
+#[cfg(feature = "env_test")]
+#[cfg(test)]
+#[test]
+fn add_3_intersecting_ranges_of_blocks() {
+    let context = get_context(vec![]);
+    let config = Config::default();
+    testing_env!(context, config);
+
+    let web3rust = get_web3();
+
+    let (hashes1, blocks1) = get_blocks(&web3rust, 8_000_000, 8_000_010);
+    let (hashes2, blocks2) = get_blocks(&web3rust, 8_000_005, 8_000_020);
+    let (hashes3, blocks3) = get_blocks(&web3rust, 8_000_015, 8_000_030);
+    
+    let mut contract = EthBridge::default();
+    contract.add_block_headers(8_000_000 as u64, blocks1);
+    contract.add_block_headers(8_000_005 as u64, blocks2);
+    contract.add_block_headers(8_000_015 as u64, blocks3);
+
+    for i in 8_000_000..8_000_010 {
+        assert_eq!(hashes1[i - 8_000_000], contract.block_hash_unsafe(i as u64).unwrap().into());
+    }
+    for i in 8_000_005..8_000_020 {
+        assert_eq!(hashes2[i - 8_000_005], contract.block_hash_unsafe(i as u64).unwrap().into());
+    }
+    for i in 8_000_015..8_000_030 {
+        assert_eq!(hashes3[i - 8_000_015], contract.block_hash_unsafe(i as u64).unwrap().into());
+    }
 }
