@@ -1,0 +1,6 @@
+[submodule "ethrelay/ethashproof"]
+	path = ethrelay/ethashproof
+	url = https://github.com/talbaneth/ethashproof.git
+[submodule "ethrelay/eth-proof"]
+	path = ethrelay/eth-proof
+	url = https://github.com/talbaneth/eth-proof.git
