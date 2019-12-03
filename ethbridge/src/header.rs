@@ -50,20 +50,20 @@ impl BlockHeader {
 impl Decodable for BlockHeader {
     fn decode(rlp: &Rlp) -> Result<Self, DecoderError> {
         Ok(BlockHeader {
-            parent_hash: rlp.val_at(0)?,
-            uncles_hash: rlp.val_at(1)?,
-            author: rlp.val_at(2)?,
-            state_root: rlp.val_at(3)?,
-            transactions_root: rlp.val_at(4)?,
-            receipts_root: rlp.val_at(5)?,
-            log_bloom: rlp.val_at(6)?,
-            difficulty: rlp.val_at(7)?,
-            number: rlp.val_at(8)?,
-            gas_limit: rlp.val_at(9)?,
-            gas_used: rlp.val_at(10)?,
-            timestamp: rlp.val_at(11)?,
-            extra_data: rlp.val_at(12)?,
-            hash: Some(keccak256(rlp.as_raw()).into()),
+            parent_hash:        rlp.val_at(0)?,
+            uncles_hash:        rlp.val_at(1)?,
+            author:             rlp.val_at(2)?,
+            state_root:         rlp.val_at(3)?,
+            transactions_root:  rlp.val_at(4)?,
+            receipts_root:      rlp.val_at(5)?,
+            log_bloom:          rlp.val_at(6)?,
+            difficulty:         rlp.val_at(7)?,
+            number:             rlp.val_at(8)?,
+            gas_limit:          rlp.val_at(9)?,
+            gas_used:           rlp.val_at(10)?,
+            timestamp:          rlp.val_at(11)?,
+            extra_data:         rlp.val_at(12)?,
+            hash:               Some(keccak256(rlp.as_raw()).into()),
         })
     }
 }

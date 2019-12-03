@@ -61,7 +61,6 @@ impl EthBridge {
 
     pub fn block_hash(&self, index: u64) -> Option<[u8; 32]> {
         if index + EthBridge::NUMBER_OF_FUTURE_BLOCKS > self.last_block_number {
-            println!("index = {:?}", index);
             return Option::None;
         }
         self.block_hashes.get(&index).cloned()
