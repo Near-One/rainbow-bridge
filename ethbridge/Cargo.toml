@@ -10,16 +10,16 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-near-bindgen = { git = "https://github.com/nearprotocol/near-bindgen" }
-borsh = "0.2.1"
+near-bindgen = "0.3.7"
+borsh = "0.2.10"
 wee_alloc = "0.4.5"
 rust-crypto-wasm = "0.3.1"
 rlp = "0.4.2"
-ethereum-types = "0.7.0"
+ethereum-types = "0.8.0"
 futures = "0.1.26"
 
 [dev-dependencies]
-web3 = { git = "https://github.com/tomusdrw/rust-web3" }
+web3 = "0.8.0"
 
 [profile.release]
 codegen-units = 1
@@ -31,7 +31,6 @@ panic = "abort"
 
 [features]
 default = []
-env_test = ["near-bindgen/testing"]
 
 [workspace]
 members = []

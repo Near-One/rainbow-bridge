@@ -2,7 +2,7 @@ extern crate web3;
 
 use eth_bridge::{EthBridge};
 use near_bindgen::MockedBlockchain;
-use near_bindgen::{VMContext, Config, testing_env};
+use near_bindgen::{VMContext, testing_env};
 use web3::futures::Future;
 use web3::types::{H256, BlockId, BlockNumber, Block};
 use rlp::{RlpStream};
@@ -27,7 +27,7 @@ fn rlp_append<TX>(header: &Block<TX>, stream: &mut RlpStream) {
     stream.append(&header.nonce.unwrap());
 }
 
-fn get_context(input: Vec<u8>) -> VMContext {
+fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
     VMContext {
         current_account_id: "alice.near".to_string(),
         signer_account_id: "bob.near".to_string(),
@@ -35,12 +35,14 @@ fn get_context(input: Vec<u8>) -> VMContext {
         predecessor_account_id: "carol.near".to_string(),
         input,
         block_index: 0,
+        block_timestamp: 0,
         account_balance: 0,
+        account_locked_balance: 0,
         storage_usage: 0,
         attached_deposit: 0,
         prepaid_gas: 10u64.pow(9),
         random_seed: vec![0, 1, 2],
-        free_of_charge: false,
+        is_view,
         output_data_receivers: vec![],
     }
 }
@@ -53,7 +55,9 @@ fn get_web3() -> web3::Web3<web3::transports::Http> {
 
 fn get_blocks(web3rust: &web3::Web3<web3::transports::Http>, start: usize, stop: usize) -> (Vec<H256>, Vec<Vec<u8>>) {
 
-    let futures = (start..stop).map(|i| web3rust.eth().block(BlockId::Number(BlockNumber::Number(i.into())))).collect::<Vec<_>>();
+    let futures = (start..stop).map(
+        |i| web3rust.eth().block(BlockId::Number(BlockNumber::Number(i as u64)))
+    ).collect::<Vec<_>>();
 
     let block_headers = join_all(futures).wait().unwrap();
 
@@ -69,13 +73,9 @@ fn get_blocks(web3rust: &web3::Web3<web3::transports::Http>, start: usize, stop:
     (hashes, blocks)
 }
 
-#[cfg(feature = "env_test")]
-#[cfg(test)]
 #[test]
 fn add_400000_block_only() {
-    let context = get_context(vec![]);
-    let config = Config::default();
-    testing_env!(context, config);
+    testing_env!(get_context(vec![], false));
 
     let web3rust = get_web3();
 
@@ -87,13 +87,9 @@ fn add_400000_block_only() {
     assert_eq!(hashes[0], contract.block_hash_unsafe(400_000).unwrap().into());
 }
 
-#[cfg(feature = "env_test")]
-#[cfg(test)]
 #[test]
 fn add_20_blocks_from_8000000() {
-    let context = get_context(vec![]);
-    let config = Config::default();
-    testing_env!(context, config);
+    testing_env!(get_context(vec![], false));
 
     let start: usize = 8_000_000;
     let stop: usize = 8_000_020;
@@ -109,13 +105,9 @@ fn add_20_blocks_from_8000000() {
     }
 }
 
-#[cfg(feature = "env_test")]
-#[cfg(test)]
 #[test]
 fn add_3_sequential_ranges_of_blocks() {
-    let context = get_context(vec![]);
-    let config = Config::default();
-    testing_env!(context, config);
+    testing_env!(get_context(vec![], false));
 
     let web3rust = get_web3();
 
@@ -139,13 +131,9 @@ fn add_3_sequential_ranges_of_blocks() {
     }
 }
 
-#[cfg(feature = "env_test")]
-#[cfg(test)]
 #[test]
 fn add_3_intersecting_ranges_of_blocks() {
-    let context = get_context(vec![]);
-    let config = Config::default();
-    testing_env!(context, config);
+    testing_env!(get_context(vec![], false));
 
     let web3rust = get_web3();
 

@@ -10,9 +10,9 @@ use near_bindgen::{near_bindgen};
 mod header;
 use header::{BlockHeader};
 
-#[cfg(not(feature = "env_test"))]
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+// #[cfg(target_arch = "wasm32")]
+// #[global_allocator]
+// static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[near_bindgen]
 #[derive(Default, BorshDeserialize, BorshSerialize)]
