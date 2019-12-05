@@ -1,5 +1,3 @@
-#![feature(const_vec_new)]
-
 extern crate crypto;
 extern crate rlp;
 
@@ -10,9 +8,9 @@ use near_bindgen::{near_bindgen};
 mod header;
 use header::{BlockHeader};
 
-// #[cfg(target_arch = "wasm32")]
-// #[global_allocator]
-// static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+#[cfg(target_arch = "wasm32")]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[near_bindgen]
 #[derive(Default, BorshDeserialize, BorshSerialize)]
@@ -31,15 +29,15 @@ impl EthBridge {
         for i in 0..block_headers.len() {
             let block_number = start + i as u64;
             let header = rlp::decode::<BlockHeader>(block_headers[i].as_slice()).unwrap();
-            
-            // Check prev block compatibility
             assert_eq!(header.number(), block_number);
+
+            // Check prev block compatibility
             match prev_hash {
                 Some(hash) => {
                     assert_eq!(header.parent_hash(), hash);
                 },
                 None => {
-                    // Only can happen on first iteration
+                    // Only can happen on very first blocks
                 },
             }
 
