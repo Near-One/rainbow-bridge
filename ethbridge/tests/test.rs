@@ -5,12 +5,18 @@ use web3::futures::Future;
 use web3::types::{H256, Block};
 use rlp::{RlpStream};
 use futures::future::{join_all};
-use std::panic::*;
+use std::panic;
 
-fn catch_unwind_silent<F: FnOnce() -> R + UnwindSafe, R>(f: F) -> std::thread::Result<R> {
-    set_hook(Box::new(|_| {}));
-    let result = catch_unwind(f);
-    let _ = take_hook();
+#[macro_use]
+extern crate lazy_static;
+#[macro_use]
+extern crate hex_literal;
+
+fn catch_unwind_silent<F: FnOnce() -> R + panic::UnwindSafe, R>(f: F) -> std::thread::Result<R> {
+    let prev_hook = panic::take_hook();
+    panic::set_hook(Box::new(|_| {}));
+    let result = panic::catch_unwind(f);
+    panic::set_hook(prev_hook);
     result
 }
 
@@ -33,11 +39,6 @@ fn rlp_append<TX>(header: &Block<TX>, stream: &mut RlpStream) {
     stream.append(&header.mix_hash.unwrap());
     stream.append(&header.nonce.unwrap());
 }
-
-#[macro_use]
-extern crate lazy_static;
-#[macro_use]
-extern crate hex_literal;
 
 #[cfg(not(target_arch = "wasm32"))]
 #[cfg(test)]
@@ -631,7 +632,7 @@ mod tests {
         let (hashes, blocks) = get_blocks(&WEB3RS, 400_000, 400_001);
 
         let mut contract = EthBridge::default();
-        let result = catch_unwind_silent(AssertUnwindSafe(|| contract.add_block_headers(400_001, blocks.clone())));
+        let result = catch_unwind_silent(panic::AssertUnwindSafe(|| contract.add_block_headers(400_001, blocks.clone())));
         assert!(result.is_err());
         contract.add_block_headers(400_000, blocks);
         assert_eq!(hashes[0], contract.block_hash_unsafe(400_000).unwrap().into());
