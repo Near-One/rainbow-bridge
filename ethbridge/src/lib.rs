@@ -15,6 +15,8 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 #[near_bindgen]
 #[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct EthBridge {
+    dags_start_epoch: u64,
+    dags_merke_roots: Vec<[u8; 16]>,
     block_hashes: HashMap<u64, [u8; 32]>,
     last_block_number: u64,
 }
@@ -23,6 +25,12 @@ pub struct EthBridge {
 impl EthBridge {
 
     const NUMBER_OF_FUTURE_BLOCKS: u64 = 10;
+
+    pub fn init(&mut self, dags_start_epoch: u64, dags_merke_roots: Vec<[u8; 16]>) {
+        assert!(self.dags_merke_roots.len() == 0 && dags_merke_roots.len() > 0);
+        self.dags_start_epoch = dags_start_epoch;
+        self.dags_merke_roots = dags_merke_roots;
+    }
 
     pub fn add_block_headers(&mut self, start: u64, block_headers: Vec<Vec<u8>>) {
         let mut prev_hash: Option<[u8; 32]> = self.block_hashes.get(&(start - 1)).cloned();
@@ -51,6 +59,10 @@ impl EthBridge {
                 self.last_block_number = header.number();
             }
         }
+    }
+
+    pub fn dag_merkle_root(&self, epoch: u64) -> [u8; 16] {
+        self.dags_merke_roots[(&epoch - self.dags_start_epoch) as usize]
     }
 
     pub fn block_hash_unsafe(&self, index: u64) -> Option<[u8; 32]> {
