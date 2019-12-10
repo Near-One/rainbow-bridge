@@ -1,6 +1,6 @@
 extern crate crypto;
 
-use rlp::{Rlp, DecoderError, Decodable};
+use rlp::{Rlp, RlpStream, DecoderError, Decodable, Encodable};
 use ethereum_types::{H256, U256, Address, Bloom};
 use self::crypto::digest::Digest;
 use self::crypto::sha3::Sha3;
@@ -45,6 +45,34 @@ impl BlockHeader {
     pub fn hash(&self) -> Option<[u8; 32]> {
         self.hash.map(|h| h.into())
     }
+
+    fn stream_rlp(&self, stream: &mut RlpStream, with_hash: bool) {
+		stream.begin_list(13 + if with_hash { 1 } else { 0 });
+
+		stream.append(&self.parent_hash);
+		stream.append(&self.uncles_hash);
+		stream.append(&self.author);
+		stream.append(&self.state_root);
+		stream.append(&self.transactions_root);
+		stream.append(&self.receipts_root);
+		stream.append(&self.log_bloom);
+		stream.append(&self.difficulty);
+		stream.append(&self.number);
+		stream.append(&self.gas_limit);
+		stream.append(&self.gas_used);
+		stream.append(&self.timestamp);
+		stream.append(&self.extra_data);
+
+		if with_hash {
+			stream.append(&self.hash);
+		}
+	}
+}
+
+impl Encodable for BlockHeader {
+	fn rlp_append(&self, s: &mut RlpStream) {
+		self.stream_rlp(s, false);
+	}
 }
 
 impl Decodable for BlockHeader {
