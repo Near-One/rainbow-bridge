@@ -23,6 +23,15 @@ pub struct EthBridge {
     last_block_number: u64,
 }
 
+fn keccak256(data: &[u8]) -> [u8; 32] {
+    let mut hasher = Sha3::keccak256();
+    hasher.input(data);
+
+    let mut buffer = [0u8; 32];
+    hasher.result(&mut buffer);
+    buffer
+}
+
 fn keccak512(data: &[u8]) -> [u8; 64] {
     let mut hasher = Sha3::keccak512();
     hasher.input(data);
@@ -106,10 +115,10 @@ impl EthBridge {
     pub const MIX_NODES: u32 = Self::MIX_WORDS / Self::NODE_WORDS;
     pub const FNV_PRIME: u32 = 0x01000193;
     
-    fn slice_to_array_4<T: Copy>(a: &[T]) -> [T; 4] {
-        return [
+    fn u32_from_le_bytes(a: &[u8]) -> u32 {
+        return u32::from_le_bytes([
             a[0], a[1], a[2], a[3]
-        ];
+        ]);
     }
 
     fn epoch(block_number: u64) -> u64 {
@@ -137,8 +146,8 @@ impl EthBridge {
         return true;
     }
 
-    fn check_pow(header: BlockHeader, nonce: u64, dag_nodes: Vec<[u8; 64]>, merkleProofs: Vec<Vec<[u8; 16]>>) {
-        
+    pub fn check_pow(header: BlockHeader, nonce: u64, dag_nodes: Vec<[u8; 64]>, merkleProofs: Vec<Vec<[u8; 16]>>) {
+
         // Pack header hash and nonce together into 40 bytes
         let mut hash_and_nonce = [0u8; 40];
         hash_and_nonce[..32].clone_from_slice(&header.hash().unwrap());
@@ -155,13 +164,13 @@ impl EthBridge {
         let full_size = Self::get_data_size(header.number());
         let page_size = 4 * Self::MIX_WORDS;
 	    let num_full_pages = (full_size / page_size) as u32;
-        let first_val = u32::from_le_bytes(Self::slice_to_array_4(&hash[..4]));
+        let first_val = Self::u32_from_le_bytes(&hash[..4]);
 
         // https://github.com/paritytech/parity-ethereum/blob/master/ethash/src/compute.rs#L232
         for access_index in 0..Self::ETHASH_ACCESSES as u32 {
             let index = {
                 let mix_index = (access_index % Self::MIX_WORDS) as usize;
-                let mix_bytes = u32::from_le_bytes(Self::slice_to_array_4(&mix[mix_index..mix_index+4]));
+                let mix_bytes = Self::u32_from_le_bytes(&mix[mix_index..mix_index+4]);
                 Self::fnv_hash(first_val ^ access_index, mix_bytes) % num_full_pages
             };
 
@@ -176,16 +185,25 @@ impl EthBridge {
                 ));
 
                 for j in 0..32 {
-                    mix[j*4..j*4+4].clone_from_slice(
-                        &Self::fnv_hash(
-                            u32::from_le_bytes(Self::slice_to_array_4(&mix[j*4..j*4+4])),
-                            u32::from_le_bytes(Self::slice_to_array_4(&node[j*4..j*4+4]))
-                        ).to_le_bytes()
-                    );
+                    let data = &Self::fnv_hash(
+                        Self::u32_from_le_bytes(&mix[j*4..j*4+4]),
+                        Self::u32_from_le_bytes(&node[j*4..j*4+4])
+                    ).to_le_bytes();
+
+                    mix[j*4..j*4+4].clone_from_slice(data);
                 }
             }
         }
 
-        println!("{:?}", mix[1]);
+        for w in (0..(Self::MIX_WORDS as usize)).step_by(4) {
+            let mut reduction = Self::u32_from_le_bytes(&mix[w*4..w*4+4]);
+            reduction = Self::fnv_hash(reduction, Self::u32_from_le_bytes(&mix[w*4+4..w*4+8]));
+            reduction = Self::fnv_hash(reduction, Self::u32_from_le_bytes(&mix[w*4+8..w*4+12]));
+            reduction = Self::fnv_hash(reduction, Self::u32_from_le_bytes(&mix[w*4+12..w*4+16]));
+            mix[w/4..w/4+4].clone_from_slice(&reduction.to_le_bytes());
+        }
+
+        let ethash = keccak256(&mix[..96]);
+        
     }
 }
