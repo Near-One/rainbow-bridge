@@ -1,9 +1,53 @@
-extern crate crypto;
-
 use rlp::{Rlp, RlpStream, DecoderError, Decodable, Encodable};
-use ethereum_types::{H256, U256, Address, Bloom};
-use self::crypto::digest::Digest;
-use self::crypto::sha3::Sha3;
+use crypto::digest::Digest;
+use crypto::sha3::Sha3;
+use ethereum_types;
+use borsh::{BorshDeserialize, BorshSerialize};
+use near_bindgen::{near_bindgen};
+
+use crate::types::*;
+
+#[near_bindgen]
+#[derive(Default, BorshDeserialize, BorshSerialize)]
+pub struct MerkleProof {
+    pub leafs: Vec<H128>,
+    pub index: u64,
+}
+
+#[near_bindgen]
+#[derive(Default, BorshDeserialize, BorshSerialize)]
+pub struct NodeWithMerkleProof {
+    pub dag_node: H512,
+    pub proof: MerkleProof,
+}
+
+impl NodeWithMerkleProof {
+    fn truncate_to_h128(arr: H256) -> H128 {
+        let mut data: [u8; 16] = Default::default();
+        H128(ethereum_types::H128(
+            {data.copy_from_slice(&(arr.0).0[(arr.0).0.len()-16..]); data}
+        ))
+    }
+
+    fn merge_h128(l: H128, r: H128) -> [u8; 32] {
+        let mut data: [u8; 32] = Default::default();
+        data[..16].copy_from_slice(&(l.0).0);
+        data[16..].copy_from_slice(&(r.0).0);
+        data
+    }
+
+    pub fn verify(&self, root: H128) -> bool {
+        let mut leaf = Self::truncate_to_h128(keccak256(&(self.dag_node.0).0));
+        for i in 0..self.proof.leafs.len() {
+            if (self.proof.index & (1 << i)) == 0 {
+                leaf = Self::truncate_to_h128(keccak256(&Self::merge_h128(leaf, self.proof.leafs[i])));
+            } else {
+                leaf = Self::truncate_to_h128(keccak256(&Self::merge_h128(self.proof.leafs[i], leaf)));
+            }
+        }
+        (root.0).0 == (leaf.0).0
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct BlockHeader {
@@ -24,17 +68,8 @@ pub struct BlockHeader {
     hash: Option<H256>,
 }
 
-fn keccak256(data: &[u8]) -> [u8; 32] {
-    let mut hasher = Sha3::keccak256();
-    hasher.input(data);
-
-    let mut buffer = [0u8; 32];
-    hasher.result(&mut buffer);
-    buffer
-}
-
 impl BlockHeader {
-    pub fn parent_hash(&self) -> [u8; 32] {
+    pub fn parent_hash(&self) -> H256 {
         self.parent_hash.into()
     }
 
@@ -42,7 +77,7 @@ impl BlockHeader {
         self.number.into()
     }
 
-    pub fn hash(&self) -> Option<[u8; 32]> {
+    pub fn hash(&self) -> Option<H256> {
         self.hash.map(|h| h.into())
     }
 

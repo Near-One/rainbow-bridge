@@ -1,6 +1,6 @@
 extern crate web3;
 
-use eth_bridge::{EthBridge, H128};
+use eth_bridge::{EthBridge,types::H128};
 use web3::futures::Future;
 use web3::types::{H256, Block};
 use rlp::{RlpStream};
@@ -636,7 +636,7 @@ mod tests {
         let result = catch_unwind_silent(panic::AssertUnwindSafe(|| contract.add_block_headers(400_001, blocks.clone())));
         assert!(result.is_err());
         contract.add_block_headers(400_000, blocks);
-        assert_eq!(hashes[0], contract.block_hash_unsafe(400_000).unwrap().into());
+        assert_eq!(hashes[0], (contract.block_hash_unsafe(400_000).unwrap().0).0.into());
     }
 
     #[test]
@@ -652,7 +652,7 @@ mod tests {
         contract.add_block_headers(start as u64, blocks);
 
         for i in start..stop {
-            assert_eq!(hashes[i - start], contract.block_hash_unsafe(i as u64).unwrap().into());
+            assert_eq!(hashes[i - start], (contract.block_hash_unsafe(i as u64).unwrap().0).0.into());
         }
     }
 
@@ -670,13 +670,13 @@ mod tests {
         contract.add_block_headers(8_000_020 as u64, blocks3);
 
         for i in 8_000_000..8_000_010 {
-            assert_eq!(hashes1[i - 8_000_000], contract.block_hash_unsafe(i as u64).unwrap().into());
+            assert_eq!(hashes1[i - 8_000_000], (contract.block_hash_unsafe(i as u64).unwrap().0).0.into());
         }
         for i in 8_000_010..8_000_020 {
-            assert_eq!(hashes2[i - 8_000_010], contract.block_hash_unsafe(i as u64).unwrap().into());
+            assert_eq!(hashes2[i - 8_000_010], (contract.block_hash_unsafe(i as u64).unwrap().0).0.into());
         }
         for i in 8_000_020..8_000_030 {
-            assert_eq!(hashes3[i - 8_000_020], contract.block_hash_unsafe(i as u64).unwrap().into());
+            assert_eq!(hashes3[i - 8_000_020], (contract.block_hash_unsafe(i as u64).unwrap().0).0.into());
         }
     }
 
@@ -694,13 +694,13 @@ mod tests {
         contract.add_block_headers(8_000_015 as u64, blocks3);
 
         for i in 8_000_000..8_000_010 {
-            assert_eq!(hashes1[i - 8_000_000], contract.block_hash_unsafe(i as u64).unwrap().into());
+            assert_eq!(hashes1[i - 8_000_000], (contract.block_hash_unsafe(i as u64).unwrap().0).0.into());
         }
         for i in 8_000_005..8_000_020 {
-            assert_eq!(hashes2[i - 8_000_005], contract.block_hash_unsafe(i as u64).unwrap().into());
+            assert_eq!(hashes2[i - 8_000_005], (contract.block_hash_unsafe(i as u64).unwrap().0).0.into());
         }
         for i in 8_000_015..8_000_030 {
-            assert_eq!(hashes3[i - 8_000_015], contract.block_hash_unsafe(i as u64).unwrap().into());
+            assert_eq!(hashes3[i - 8_000_015], (contract.block_hash_unsafe(i as u64).unwrap().0).0.into());
         }
     }
 }
