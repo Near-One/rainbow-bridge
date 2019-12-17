@@ -6,6 +6,8 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use near_bindgen::{near_bindgen};
 use self::crypto::digest::Digest;
 use self::crypto::sha3::Sha3;
+use std::io::{Error, Read, Write};
+use ethash;
 
 mod header;
 use header::{BlockHeader};
@@ -15,12 +17,127 @@ use header::{BlockHeader};
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[near_bindgen]
+#[derive(Default, Clone, Copy, PartialEq, Debug)]
+pub struct H64(pub ethereum_types::H64);
+
+#[near_bindgen]
+#[derive(Default, Clone, Copy, PartialEq, Debug)]
+pub struct H128(pub ethereum_types::H128);
+
+#[near_bindgen]
+#[derive(Default, Clone, Copy, PartialEq, Debug)]
+pub struct H256(pub ethereum_types::H256);
+
+#[near_bindgen]
+#[derive(Default, Clone, Copy, PartialEq, Debug)]
+pub struct H512(pub ethereum_types::H512);
+
+impl BorshDeserialize for H64 {
+    #[inline]
+    fn deserialize<R: Read>(reader: &mut R) -> Result<Self, Error> {
+        Ok(H64(ethereum_types::H64(<[u8; 8]>::deserialize(reader)?)))
+    }
+}
+
+impl BorshSerialize for H64 {
+    #[inline]
+    fn serialize<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
+        (self.0).0.serialize(writer)
+    }
+}
+
+impl BorshDeserialize for H128 {
+    #[inline]
+    fn deserialize<R: Read>(reader: &mut R) -> Result<Self, Error> {
+        Ok(H128(ethereum_types::H128(<[u8; 16]>::deserialize(reader)?)))
+    }
+}
+
+impl BorshSerialize for H128 {
+    #[inline]
+    fn serialize<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
+        (self.0).0.serialize(writer)
+    }
+}
+
+impl BorshDeserialize for H256 {
+    #[inline]
+    fn deserialize<R: Read>(reader: &mut R) -> Result<Self, Error> {
+        Ok(H256(ethereum_types::H256(<[u8; 32]>::deserialize(reader)?)))
+    }
+}
+
+impl BorshSerialize for H256 {
+    #[inline]
+    fn serialize<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
+        (self.0).0.serialize(writer)
+    }
+}
+
+impl BorshDeserialize for H512 {
+    #[inline]
+    fn deserialize<R: Read>(reader: &mut R) -> Result<Self, Error> {
+        Ok(H512(ethereum_types::H512(<[u8; 64]>::deserialize(reader)?)))
+    }
+}
+
+impl BorshSerialize for H512 {
+    #[inline]
+    fn serialize<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
+        (self.0).0.serialize(writer)
+    }
+}
+
+#[near_bindgen]
 #[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct EthBridge {
     dags_start_epoch: u64,
-    dags_merke_roots: Vec<[u8; 16]>,
+    dags_merke_roots: Vec<H128>,
     block_hashes: HashMap<u64, [u8; 32]>,
     last_block_number: u64,
+}
+
+#[near_bindgen]
+#[derive(Default, BorshDeserialize, BorshSerialize)]
+pub struct MerkleProof {
+    leafs: Vec<H128>,
+    index: u64,
+}
+
+#[near_bindgen]
+#[derive(Default, BorshDeserialize, BorshSerialize)]
+pub struct NodeWithMerkleProof {
+    dag_node: H512,
+    proof: MerkleProof,
+}
+
+impl NodeWithMerkleProof {
+
+    fn truncate_to_h128(arr: &[u8]) -> H128 {
+        let mut data: [u8; 16] = Default::default();
+        H128(ethereum_types::H128(
+            {data.copy_from_slice(&arr[arr.len()-16..]); data}
+        ))
+    }
+
+    fn merge_h128(l: H128, r: H128) -> [u8; 32] {
+        let mut data: [u8; 32] = Default::default();
+        data[..16].copy_from_slice(&(l.0).0);
+        data[16..].copy_from_slice(&(r.0).0);
+        data
+    }
+
+    pub fn verify(&self, root: H128) -> bool {
+        let mut leaf = Self::truncate_to_h128(&keccak256(&(self.dag_node.0).0)[16..]);
+        for i in 0..self.proof.leafs.len() {
+            if (self.proof.index & (1 << i)) == 0 {
+                leaf = Self::truncate_to_h128(&keccak256(&Self::merge_h128(leaf, self.proof.leafs[i])));
+            } else {
+                leaf = Self::truncate_to_h128(&keccak256(&Self::merge_h128(self.proof.leafs[i], leaf)));
+            }
+        }
+        (root.0).0 == (leaf.0).0
+    }
 }
 
 fn keccak256(data: &[u8]) -> [u8; 32] {
@@ -32,21 +149,12 @@ fn keccak256(data: &[u8]) -> [u8; 32] {
     buffer
 }
 
-fn keccak512(data: &[u8]) -> [u8; 64] {
-    let mut hasher = Sha3::keccak512();
-    hasher.input(data);
-
-    let mut buffer = [0u8; 64];
-    hasher.result(&mut buffer);
-    buffer
-}
-
 #[near_bindgen]
 impl EthBridge {
 
     const NUMBER_OF_FUTURE_BLOCKS: u64 = 10;
 
-    pub fn init(&mut self, dags_start_epoch: u64, dags_merke_roots: Vec<[u8; 16]>) {
+    pub fn init(&mut self, dags_start_epoch: u64, dags_merke_roots: Vec<H128>) {
         assert!(self.dags_merke_roots.len() == 0 && dags_merke_roots.len() > 0);
         self.dags_start_epoch = dags_start_epoch;
         self.dags_merke_roots = dags_merke_roots;
@@ -81,7 +189,7 @@ impl EthBridge {
         }
     }
 
-    pub fn dag_merkle_root(&self, epoch: u64) -> [u8; 16] {
+    pub fn dag_merkle_root(&self, epoch: u64) -> H128 {
         self.dags_merke_roots[(&epoch - self.dags_start_epoch) as usize]
     }
 
@@ -96,114 +204,19 @@ impl EthBridge {
         self.block_hashes.get(&index).cloned()
     }
 
-    //
-
-    pub const DATASET_BYTES_INIT: u64 = 1 << 30;
-    pub const DATASET_BYTES_GROWTH: u64 = 1 << 23;
-    pub const CACHE_BYTES_INIT: u64 = 1 << 24;
-    pub const CACHE_BYTES_GROWTH: u64 = 1 << 17;
-
-    pub const ETHASH_EPOCH_LENGTH: u64 = 30000;
-    pub const ETHASH_CACHE_ROUNDS: u32 = 3;
-    pub const ETHASH_MIX_BYTES: u32 = 128;
-    pub const ETHASH_ACCESSES: u32 = 64;
-    pub const ETHASH_DATASET_PARENTS: u32 = 256;
-    pub const NODE_BYTES: u32 = 64;
-    pub const NODE_WORDS: u32 = Self::NODE_BYTES / 4;
-    pub const NODE_DWORDS: u32 = Self::NODE_WORDS / 2;
-    pub const MIX_WORDS: u32 = Self::ETHASH_MIX_BYTES / 4;
-    pub const MIX_NODES: u32 = Self::MIX_WORDS / Self::NODE_WORDS;
-    pub const FNV_PRIME: u32 = 0x01000193;
-    
-    fn u32_from_le_bytes(a: &[u8]) -> u32 {
-        return u32::from_le_bytes([
-            a[0], a[1], a[2], a[3]
-        ]);
-    }
-
-    fn epoch(block_number: u64) -> u64 {
-        block_number / Self::ETHASH_EPOCH_LENGTH
-    }
-
-    fn fnv_hash(x: u32, y: u32) -> u32 {
-        return x.wrapping_mul(Self::FNV_PRIME) ^ y;
-    }
-
-    fn get_data_size(block_number: u64) -> u32 {
-        let mut sz: u64 = Self::DATASET_BYTES_INIT + Self::DATASET_BYTES_GROWTH * (block_number / Self::ETHASH_EPOCH_LENGTH);
-        sz = sz - Self::ETHASH_MIX_BYTES as u64;
-        while !primal::is_prime(sz / Self::ETHASH_MIX_BYTES as u64) {
-            sz = sz - 2 * Self::ETHASH_MIX_BYTES as u64;
-        }
-        sz as u32
-    }
-
-    fn verify_dag_item(
-        _node_index: u32,
-        _node_data: [u8; 64],
-        _merkleProof: &Vec<[u8; 16]>,
-    ) -> bool {
-        return true;
-    }
-
-    pub fn check_pow(header: BlockHeader, nonce: u64, dag_nodes: Vec<[u8; 64]>, merkleProofs: Vec<Vec<[u8; 16]>>) {
-
-        // Pack header hash and nonce together into 40 bytes
-        let mut hash_and_nonce = [0u8; 40];
-        hash_and_nonce[..32].clone_from_slice(&header.hash().unwrap());
-        hash_and_nonce[32..].clone_from_slice(&nonce.to_le_bytes());
-
-        // Compute sha3-512 hash of (header hash + nonce)
-        let hash = keccak512(&hash_and_nonce);
-
-        // Replicate hash across mix
-        let mut mix = [0u8; 128];
-        mix[..64].clone_from_slice(&hash);
-        mix[64..].clone_from_slice(&hash);
-
-        let full_size = Self::get_data_size(header.number());
-        let page_size = 4 * Self::MIX_WORDS;
-	    let num_full_pages = (full_size / page_size) as u32;
-        let first_val = Self::u32_from_le_bytes(&hash[..4]);
-
-        // https://github.com/paritytech/parity-ethereum/blob/master/ethash/src/compute.rs#L232
-        for access_index in 0..Self::ETHASH_ACCESSES as u32 {
-            let index = {
-                let mix_index = (access_index % Self::MIX_WORDS) as usize;
-                let mix_bytes = Self::u32_from_le_bytes(&mix[mix_index..mix_index+4]);
-                Self::fnv_hash(first_val ^ access_index, mix_bytes) % num_full_pages
-            };
-
-            for i in 0..Self::MIX_NODES {
-
-                let node = dag_nodes[(access_index * Self::MIX_NODES + i) as usize];
-
-                assert!(Self::verify_dag_item(
-                    (index * Self::MIX_NODES + i) as u32,
-                    node,
-                    &merkleProofs[(access_index * Self::MIX_NODES + i) as usize]
-                ));
-
-                for j in 0..32 {
-                    let data = &Self::fnv_hash(
-                        Self::u32_from_le_bytes(&mix[j*4..j*4+4]),
-                        Self::u32_from_le_bytes(&node[j*4..j*4+4])
-                    ).to_le_bytes();
-
-                    mix[j*4..j*4+4].clone_from_slice(data);
-                }
-            }
-        }
-
-        for w in (0..(Self::MIX_WORDS as usize)).step_by(4) {
-            let mut reduction = Self::u32_from_le_bytes(&mix[w*4..w*4+4]);
-            reduction = Self::fnv_hash(reduction, Self::u32_from_le_bytes(&mix[w*4+4..w*4+8]));
-            reduction = Self::fnv_hash(reduction, Self::u32_from_le_bytes(&mix[w*4+8..w*4+12]));
-            reduction = Self::fnv_hash(reduction, Self::u32_from_le_bytes(&mix[w*4+12..w*4+16]));
-            mix[w/4..w/4+4].clone_from_slice(&reduction.to_le_bytes());
-        }
-
-        let ethash = keccak256(&mix[..96]);
-        
+    pub fn hashimoto_merkle(
+        &self,
+        header_hash: H256,
+        nonce: H64,
+        full_size: usize,
+        block_number: u64,
+        nodes: Vec<NodeWithMerkleProof>,
+    ) -> (H256, H256) {
+        let ab = ethash::hashimoto(header_hash.0, nonce.0, full_size, |i| {
+            let node = nodes.iter().find(|&p| p.proof.index == i as u64).unwrap();
+            assert!(node.verify(self.dags_merke_roots[block_number as usize / 30000]));
+            node.dag_node.0
+        });
+        (H256(ab.0), H256(ab.1))
     }
 }
