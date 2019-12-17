@@ -34,7 +34,6 @@ macro_rules! impl_serde {
             }
         }
 
-        // TODO: fix
         impl Decodable for $name {
             fn decode(rlp: &Rlp) -> Result<Self, DecoderError> {
                 Ok($name(<ethereum_types::$name>::decode(rlp)?))
@@ -66,13 +65,12 @@ impl_serde!(H64, 8);
 impl_serde!(H128, 16);
 impl_serde!(H160, 20);
 impl_serde!(H256, 32);
-//impl_serde!(U256, 32);
 impl_serde!(H512, 64);
 impl_serde!(H520, 65);
 impl_serde!(Bloom, 256);
 
 pub type Address = H160;
-pub type U256 = H256;
+//pub type U256 = H256; // Not works!
 pub type Secret = H256;
 pub type Public = H512;
 pub type Signature = H520;

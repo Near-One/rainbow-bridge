@@ -1,6 +1,4 @@
 use rlp::{Rlp, RlpStream, DecoderError, Decodable, Encodable};
-use crypto::digest::Digest;
-use crypto::sha3::Sha3;
 use ethereum_types;
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_bindgen::{near_bindgen};
@@ -58,10 +56,10 @@ pub struct BlockHeader {
     transactions_root: H256,
     receipts_root: H256,
     log_bloom: Bloom,
-    difficulty: U256,
+    difficulty: ethereum_types::U256,
     number: u64,
-    gas_limit: U256,
-    gas_used: U256,
+    gas_limit: ethereum_types::U256,
+    gas_used: ethereum_types::U256,
     timestamp: u64,
     extra_data: Vec<u8>,
 
