@@ -82,32 +82,32 @@ impl BlockHeader {
     }
 
     fn stream_rlp(&self, stream: &mut RlpStream, with_hash: bool) {
-		stream.begin_list(13 + if with_hash { 1 } else { 0 });
+        stream.begin_list(13 + if with_hash { 1 } else { 0 });
 
-		stream.append(&self.parent_hash);
-		stream.append(&self.uncles_hash);
-		stream.append(&self.author);
-		stream.append(&self.state_root);
-		stream.append(&self.transactions_root);
-		stream.append(&self.receipts_root);
-		stream.append(&self.log_bloom);
-		stream.append(&self.difficulty);
-		stream.append(&self.number);
-		stream.append(&self.gas_limit);
-		stream.append(&self.gas_used);
-		stream.append(&self.timestamp);
-		stream.append(&self.extra_data);
+        stream.append(&self.parent_hash);
+        stream.append(&self.uncles_hash);
+        stream.append(&self.author);
+        stream.append(&self.state_root);
+        stream.append(&self.transactions_root);
+        stream.append(&self.receipts_root);
+        stream.append(&self.log_bloom);
+        stream.append(&self.difficulty);
+        stream.append(&self.number);
+        stream.append(&self.gas_limit);
+        stream.append(&self.gas_used);
+        stream.append(&self.timestamp);
+        stream.append(&self.extra_data);
 
-		if with_hash {
-			stream.append(&self.hash);
-		}
-	}
+        if with_hash {
+            stream.append(&self.hash);
+        }
+    }
 }
 
 impl Encodable for BlockHeader {
-	fn rlp_append(&self, s: &mut RlpStream) {
-		self.stream_rlp(s, false);
-	}
+    fn rlp_append(&self, s: &mut RlpStream) {
+        self.stream_rlp(s, false);
+    }
 }
 
 impl Decodable for BlockHeader {

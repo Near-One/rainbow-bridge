@@ -7,7 +7,7 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use near_bindgen::{near_bindgen};
 
 macro_rules! impl_serde {
-	($name: ident, $len: expr) => {
+    ($name: ident, $len: expr) => {
         #[near_bindgen]
         #[derive(Default, Clone, Copy, PartialEq, Debug)]
         pub struct $name(pub ethereum_types::$name);
@@ -22,44 +22,44 @@ macro_rules! impl_serde {
         impl BorshDeserialize for $name {
             #[inline]
             fn deserialize<R: Read>(reader: &mut R) -> Result<Self, Error> {
-				let mut data = [0u8; $len];
+                let mut data = [0u8; $len];
                 reader.read_exact(&mut data)?;
                 Ok($name(ethereum_types::$name(data)))
             }
         }
         
         impl Encodable for $name {
-        	fn rlp_append(&self, s: &mut RlpStream) {
-				<ethereum_types::$name>::rlp_append(&self.0, s);
+            fn rlp_append(&self, s: &mut RlpStream) {
+                <ethereum_types::$name>::rlp_append(&self.0, s);
             }
         }
 
-		// TODO: fix
+        // TODO: fix
         impl Decodable for $name {
-        	fn decode(rlp: &Rlp) -> Result<Self, DecoderError> {
-				Ok($name(<ethereum_types::$name>::decode(rlp)?))
-        	}
+            fn decode(rlp: &Rlp) -> Result<Self, DecoderError> {
+                Ok($name(<ethereum_types::$name>::decode(rlp)?))
+            }
         }
 
-		// #[cfg(feature = "serialize")]
-		// impl Serialize for $name {
-		// 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
-		// 		let mut slice = [0u8; 2 + 2 * $len * 8];
-		// 		let mut bytes = [0u8; $len * 8];
-		// 		self.to_big_endian(&mut bytes);
-		// 		ethereum_types_serialize::serialize_uint(&mut slice, &bytes, serializer)
-		// 	}
-		// }
+        // #[cfg(feature = "serialize")]
+        // impl Serialize for $name {
+        //     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        //         let mut slice = [0u8; 2 + 2 * $len * 8];
+        //         let mut bytes = [0u8; $len * 8];
+        //         self.to_big_endian(&mut bytes);
+        //         ethereum_types_serialize::serialize_uint(&mut slice, &bytes, serializer)
+        //     }
+        // }
 
-		// #[cfg(feature = "serialize")]
-		// impl<'de> Deserialize<'de> for $name {
-		// 	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
-		// 		let mut bytes = [0u8; $len * 8];
-		// 		let wrote = ethereum_types_serialize::deserialize_check_len(deserializer, ethereum_types_serialize::ExpectedLen::Between(0, &mut bytes))?;
-		// 		Ok(bytes[0..wrote].into())
-		// 	}
-		// }
-	}
+        // #[cfg(feature = "serialize")]
+        // impl<'de> Deserialize<'de> for $name {
+        //     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+        //         let mut bytes = [0u8; $len * 8];
+        //         let wrote = ethereum_types_serialize::deserialize_check_len(deserializer, ethereum_types_serialize::ExpectedLen::Between(0, &mut bytes))?;
+        //         Ok(bytes[0..wrote].into())
+        //     }
+        // }
+    }
 }
 
 impl_serde!(H64, 8);
