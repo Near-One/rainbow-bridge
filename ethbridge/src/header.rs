@@ -1,4 +1,4 @@
-use rlp::{Rlp, RlpStream, DecoderError, Decodable, Encodable};
+use rlp::{Rlp, RlpStream, DecoderError as RlpDecoderError, Decodable as RlpDecodable, Encodable as RlpEncodable};
 use ethereum_types;
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_bindgen::{near_bindgen};
@@ -15,35 +15,42 @@ pub struct MerkleProof {
 #[near_bindgen]
 #[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct NodeWithMerkleProof {
-    pub dag_node: H512,
+    pub dag_nodes: Vec<H512>, // [H512; 2]
     pub proof: MerkleProof,
 }
 
 impl NodeWithMerkleProof {
     fn truncate_to_h128(arr: H256) -> H128 {
-        let mut data: [u8; 16] = Default::default();
-        H128(ethereum_types::H128(
-            {data.copy_from_slice(&(arr.0).0[(arr.0).0.len()-16..]); data}
-        ))
+        let mut data = [0u8; 16];
+        data.copy_from_slice(&(arr.0).0[16..]);
+        H128(ethereum_types::H128(data))
     }
 
-    fn merge_h128(l: H128, r: H128) -> [u8; 32] {
-        let mut data: [u8; 32] = Default::default();
-        data[..16].copy_from_slice(&(l.0).0);
-        data[16..].copy_from_slice(&(r.0).0);
-        data
+    fn hash_h128(l: H128, r: H128) -> H128 {
+        let mut data = [0u8; 64];
+        data[16..32].copy_from_slice(&(l.0).0);
+        data[48..64].copy_from_slice(&(r.0).0);
+        Self::truncate_to_h128(keccak256(&data))
     }
 
-    pub fn verify(&self, root: H128) -> bool {
-        let mut leaf = Self::truncate_to_h128(keccak256(&(self.dag_node.0).0));
+    pub fn apply_merkle_proof(&self) -> H128 {
+        let mut data = [0u8; 128];
+        data[..64].copy_from_slice(&(self.dag_nodes[0].0).0);
+        data[64..].copy_from_slice(&(self.dag_nodes[1].0).0);
+        for i in (0..128).step_by(32) {
+            data[i..i+32].reverse();
+        }
+
+        let mut leaf = Self::truncate_to_h128(keccak256(&data));
+
         for i in 0..self.proof.leafs.len() {
             if (self.proof.index & (1 << i)) == 0 {
-                leaf = Self::truncate_to_h128(keccak256(&Self::merge_h128(leaf, self.proof.leafs[i])));
+                leaf = Self::hash_h128(leaf, self.proof.leafs[i]);
             } else {
-                leaf = Self::truncate_to_h128(keccak256(&Self::merge_h128(self.proof.leafs[i], leaf)));
+                leaf = Self::hash_h128(self.proof.leafs[i], leaf);
             }
         }
-        (root.0).0 == (leaf.0).0
+        leaf
     }
 }
 
@@ -75,6 +82,10 @@ impl BlockHeader {
         self.number.into()
     }
 
+    pub fn difficulty(&self) -> U256 {
+        U256(self.difficulty)
+    }
+
     pub fn hash(&self) -> Option<H256> {
         self.hash.map(|h| h.into())
     }
@@ -102,14 +113,14 @@ impl BlockHeader {
     }
 }
 
-impl Encodable for BlockHeader {
+impl RlpEncodable for BlockHeader {
     fn rlp_append(&self, s: &mut RlpStream) {
         self.stream_rlp(s, false);
     }
 }
 
-impl Decodable for BlockHeader {
-    fn decode(rlp: &Rlp) -> Result<Self, DecoderError> {
+impl RlpDecodable for BlockHeader {
+    fn decode(rlp: &Rlp) -> Result<Self, RlpDecoderError> {
         Ok(BlockHeader {
             parent_hash:        rlp.val_at(0)?,
             uncles_hash:        rlp.val_at(1)?,
