@@ -5,6 +5,8 @@ use crypto::sha3::Sha3;
 use ethereum_types;
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_bindgen::{near_bindgen};
+use serde::{Deserialize,Deserializer};
+use hex::{FromHex};
 
 macro_rules! arr_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
@@ -39,6 +41,25 @@ macro_rules! arr_declare_wrapper_and_serde {
                 Ok($name(<ethereum_types::$name>::decode(rlp)?))
             }
         }
+
+        impl<'de> Deserialize<'de> for $name {
+            fn deserialize<D>(deserializer: D) -> Result<Self, <D as Deserializer<'de>>::Error>
+                where
+                    D: Deserializer<'de>,
+            {
+                let mut s: String = serde::de::Deserialize::deserialize(deserializer)?;
+                if s.starts_with("0x") {
+                    s = s[2..].to_string();
+                }
+                if s.len() % 2 == 1 {
+                    s.insert_str(0, "0");
+                }
+                let v = Vec::from_hex(&s).map_err(|err| serde::de::Error::custom(err.to_string()))?;
+                let mut arr = [0u8; $len];
+                arr.copy_from_slice(v.as_slice());
+                Ok($name(ethereum_types::$name(arr)))
+            }
+        }
     }
 }
 
@@ -63,7 +84,7 @@ macro_rules! uint_declare_wrapper_and_serde {
             fn deserialize<R: Read>(reader: &mut R) -> Result<Self, Error> {
                 let mut data = [0u64; $len];
                 for i in 0..$len {
-                    data[i] = u64::deserialize(reader)?;
+                    data[i] = borsh::de::BorshDeserialize::deserialize(reader)?;
                 }
                 Ok($name(ethereum_types::$name(data)))
             }
