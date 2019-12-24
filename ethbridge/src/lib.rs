@@ -36,35 +36,6 @@ impl EthBridge {
         self.dags_merkle_roots = dags_merkle_roots;
     }
 
-    pub fn add_block_headers(&mut self, start: u64, block_headers: Vec<Vec<u8>>) {
-        let mut prev_hash: Option<H256> = self.block_hashes.get(&(start - 1)).cloned();
-        for access_index in 0..block_headers.len() {
-            let block_number = start + access_index as u64;
-            let header = rlp::decode::<BlockHeader>(block_headers[access_index].as_slice()).unwrap();
-            assert_eq!(header.number(), block_number);
-
-            // Check prev block compatibility
-            match prev_hash {
-                Some(hash) => {
-                    assert_eq!(header.parent_hash(), hash);
-                },
-                None => {
-                    // Only can happen on very first blocks
-                },
-            }
-
-            self.block_hashes.insert(block_number, header.hash().unwrap());
-            prev_hash = header.hash();
-
-            // Update self.last_block_number only on latest iteration
-            if access_index == block_headers.len() - 1 {
-                // Check longest chain rule
-                assert!(header.number() > self.last_block_number);
-                self.last_block_number = header.number();
-            }
-        }
-    }
-
     pub fn dag_merkle_root(&self, epoch: u64) -> H128 {
         self.dags_merkle_roots[(&epoch - self.dags_start_epoch) as usize]
     }
@@ -80,23 +51,62 @@ impl EthBridge {
         self.block_hashes.get(&index).cloned()
     }
 
-    pub fn verify_header(
+    pub fn add_block_headers(
+        &mut self,
+        block_headers: Vec<Vec<u8>>,
+        nonces: Vec<H64>,
+        dag_nodes: Vec<Vec<NodeWithMerkleProof>>,
+    ) {
+        let mut prev = rlp::decode::<BlockHeader>(block_headers[0].as_slice()).unwrap();
+
+        if self.last_block_number == 0 {
+            // Submit very first block, can trust relayer
+            self.block_hashes.insert(prev.number(), prev.hash().unwrap());
+            self.last_block_number = prev.number();
+        } else {
+            // Check first block hash equals submited one
+            assert_eq!(prev.hash().unwrap(), self.block_hashes[&prev.number()]);
+        }
+
+        // Check validity of all the following blocks
+        for i in 1..block_headers.len() {
+            let header = rlp::decode::<BlockHeader>(block_headers[i].as_slice()).unwrap();
+            assert!(Self::verify_header(
+                &self,
+                &header,
+                &prev,
+                nonces[i],
+                &dag_nodes[i]
+            ));
+
+            self.block_hashes.insert(header.number(), header.hash().unwrap());
+            prev = header;
+        }
+
+        assert!(prev.number() > self.last_block_number);
+        self.last_block_number = prev.number();
+    }
+
+    fn verify_header(
         &self,
-        header: BlockHeader,
-        prev: BlockHeader,
+        header: &BlockHeader,
+        prev: &BlockHeader,
         nonce: H64,
-        dag_nodes: Vec<NodeWithMerkleProof>,
+        dag_nodes: &Vec<NodeWithMerkleProof>,
     ) -> bool {
         let (result, _mix_hash) = Self::hashimoto_merkle(
             self,
             header.hash().unwrap(),
             nonce,
             header.number(),
-            dag_nodes,
+            dag_nodes.to_vec(),
         );
 
+        //
         // See YellowPaper formula (50) in section 4.3.4
-        // Simplified difficulty check to conform adjusting difficulty bomb
+        // 1. Simplified difficulty check to conform adjusting difficulty bomb
+        // 2. Added condition: header.parent_hash() == prev.hash()
+        //
         ethereum_types::U256::from((result.0).0) < ethash::cross_boundary(header.difficulty().0)
         && header.difficulty().0 < header.difficulty().0 * ethereum_types::U256::from(101) / ethereum_types::U256::from(100)
         && header.difficulty().0 > header.difficulty().0 * ethereum_types::U256::from(99) / ethereum_types::U256::from(100)
@@ -106,6 +116,7 @@ impl EthBridge {
         && header.gas_limit().0 > ethereum_types::U256::from(5000)
         && header.timestamp() > prev.timestamp()
         && header.number() == prev.number() + 1
+        && header.parent_hash() == prev.hash().unwrap()
     }
 
     pub fn hashimoto_merkle(

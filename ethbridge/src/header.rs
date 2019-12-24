@@ -6,14 +6,14 @@ use near_bindgen::{near_bindgen};
 use crate::types::*;
 
 #[near_bindgen]
-#[derive(Default, BorshDeserialize, BorshSerialize)]
+#[derive(Default, Clone, BorshDeserialize, BorshSerialize)]
 pub struct MerkleProof {
     pub leafs: Vec<H128>,
     pub index: u64,
 }
 
 #[near_bindgen]
-#[derive(Default, BorshDeserialize, BorshSerialize)]
+#[derive(Default, Clone, BorshDeserialize, BorshSerialize)]
 pub struct NodeWithMerkleProof {
     pub dag_nodes: Vec<H512>, // [H512; 2]
     pub proof: MerkleProof,
