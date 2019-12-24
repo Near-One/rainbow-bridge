@@ -86,8 +86,26 @@ impl BlockHeader {
         U256(self.difficulty)
     }
 
+    pub fn gas_used(&self) -> U256 {
+        U256(self.gas_used)
+    }
+
+    pub fn gas_limit(&self) -> U256 {
+        U256(self.gas_limit)
+    }
+
+    pub fn timestamp(&self) -> u64 {
+        self.timestamp
+    }
+
     pub fn hash(&self) -> Option<H256> {
         self.hash.map(|h| h.into())
+    }
+
+    pub fn extra_data(&self) -> H256 {
+        let mut data = [0u8; 32];
+        data.copy_from_slice(self.extra_data.as_slice());
+        H256(ethereum_types::H256(data))
     }
 
     fn stream_rlp(&self, stream: &mut RlpStream, with_hash: bool) {

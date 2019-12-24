@@ -2,7 +2,6 @@ extern crate crypto;
 extern crate rlp;
 
 use std::collections::HashMap;
-use ethereum_types::BigEndianHash;
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_bindgen::{near_bindgen};
 use ethash;
@@ -81,31 +80,32 @@ impl EthBridge {
         self.block_hashes.get(&index).cloned()
     }
 
-    pub fn difficulty(target: ethereum_types::U256) -> ethereum_types::U256 {
-        if target <= ethereum_types::U256::one() {
-            ethereum_types::U256::max_value()
-        } else {
-            ((ethereum_types::U256::from(1) << 255) / target) << 1
-        }
-    }
-
-    pub fn verifyHeader(
+    pub fn verify_header(
         &self,
-        block_header: Vec<u8>,
+        header: BlockHeader,
+        prev: BlockHeader,
         nonce: H64,
-        nodes: Vec<NodeWithMerkleProof>,
+        dag_nodes: Vec<NodeWithMerkleProof>,
     ) -> bool {
-        let header = rlp::decode::<BlockHeader>(block_header.as_slice()).unwrap();
-        let (n,m) = Self::hashimoto_merkle(
+        let (result, _mix_hash) = Self::hashimoto_merkle(
             self,
             header.hash().unwrap(),
             nonce,
             header.number(),
-            nodes,
+            dag_nodes,
         );
 
-        ethereum_types::U256::from((n.0).0) < ethash::cross_boundary(header.difficulty().0)
-        // TODO: To be continued... see YellowPaper formula (50) in section 4.3.4
+        // See YellowPaper formula (50) in section 4.3.4
+        // Simplified difficulty check to conform adjusting difficulty bomb
+        ethereum_types::U256::from((result.0).0) < ethash::cross_boundary(header.difficulty().0)
+        && header.difficulty().0 < header.difficulty().0 * ethereum_types::U256::from(101) / ethereum_types::U256::from(100)
+        && header.difficulty().0 > header.difficulty().0 * ethereum_types::U256::from(99) / ethereum_types::U256::from(100)
+        && header.gas_used().0 <= header.gas_limit().0
+        && header.gas_limit().0 < prev.gas_limit().0 * ethereum_types::U256::from(1025) / ethereum_types::U256::from(1024)
+        && header.gas_limit().0 > prev.gas_limit().0 * ethereum_types::U256::from(1023) / ethereum_types::U256::from(1024)
+        && header.gas_limit().0 > ethereum_types::U256::from(5000)
+        && header.timestamp() > prev.timestamp()
+        && header.number() == prev.number() + 1
     }
 
     pub fn hashimoto_merkle(

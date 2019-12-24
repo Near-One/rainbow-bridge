@@ -52,7 +52,7 @@ macro_rules! uint_declare_wrapper_and_serde {
             #[inline]
             fn serialize<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
                 for i in 0..$len {
-                    writer.write(&(self.0).0[i].to_be_bytes());
+                    u64::serialize(&(self.0).0[i], writer)?;
                 }
                 Ok(())
             }
@@ -62,10 +62,8 @@ macro_rules! uint_declare_wrapper_and_serde {
             #[inline]
             fn deserialize<R: Read>(reader: &mut R) -> Result<Self, Error> {
                 let mut data = [0u64; $len];
-                let mut raw = [0u8; 8];
                 for i in 0..$len {
-                    reader.read(&mut raw)?;
-                    data[i] = u64::from_be_bytes(raw);
+                    data[i] = u64::deserialize(reader)?;
                 }
                 Ok($name(ethereum_types::$name(data)))
             }
