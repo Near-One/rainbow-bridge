@@ -28,40 +28,32 @@ fn catch_unwind_silent<F: FnOnce() -> R + panic::UnwindSafe, R>(f: F) -> std::th
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct DagMerkleRoot {
-    #[serde(deserialize_with = "from_hex_list")]
-    dag_merkle_roots: Vec<Vec<u8>>,
+    dag_merkle_roots: Vec<Hex>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct BlockWithProofs {
     proof_length: u64,
-
-    #[serde(deserialize_with = "from_hex")]
-    header_rlp: Vec<u8>,
-    #[serde(deserialize_with = "from_hex")]
-    merkle_root: Vec<u8>,
-    #[serde(deserialize_with = "from_hex_list")]
-    elements: Vec<Vec<u8>>,
-    #[serde(deserialize_with = "from_hex_list")]
-    merkle_proofs: Vec<Vec<u8>>,   
+    header_rlp: Hex,
+    merkle_root: Hex,
+    elements: Vec<Hex>,
+    merkle_proofs: Vec<Hex>,
 }
 
-pub fn from_hex<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
-    where D: Deserializer<'de>
-{
-    use serde::de::Error;
-    String::deserialize(deserializer)
-        .and_then(|string| Vec::from_hex(&string).map_err(|err| Error::custom(err.to_string())))
+#[derive(Debug)]
+struct Hex(Vec<u8>);
+
+impl<'de> Deserialize<'de> for Hex {
+    fn deserialize<D>(deserializer: D) -> Result<Self, <D as Deserializer<'de>>::Error>
+        where
+            D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Ok(Hex(Vec::from_hex(&s).map_err(|err| serde::de::Error::custom(err.to_string()))?))
+    }
 }
 
-pub fn from_hex_list<'de, D>(deserializer: D) -> Result<Vec<Vec<u8>>, D::Error>
-    where D: Deserializer<'de>
-{
-    use serde::de::Error;
-    Vec::deserialize(deserializer)
-        .and_then(|vec| vec.map(|v| Vec::from_hex(&v).map_err(|err| Error::custom(err.to_string()))))
-}
 
 // Wish to avoid this code and use web3+rlp libraries directly
 fn rlp_append<TX>(header: &Block<TX>, stream: &mut RlpStream) {
