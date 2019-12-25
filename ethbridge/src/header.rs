@@ -6,20 +6,13 @@ use near_bindgen::{near_bindgen};
 use crate::types::*;
 
 #[near_bindgen]
-#[derive(Default, BorshDeserialize, BorshSerialize)]
-pub struct MerkleProof {
-    pub leafs: Vec<H128>,
-    pub index: u64,
-}
-
-#[near_bindgen]
-#[derive(Default, BorshDeserialize, BorshSerialize)]
-pub struct NodeWithMerkleProof {
+#[derive(Default, Clone, BorshDeserialize, BorshSerialize)]
+pub struct DoubleNodeWithMerkleProof {
     pub dag_nodes: Vec<H512>, // [H512; 2]
-    pub proof: MerkleProof,
+    pub proof: Vec<H128>,
 }
 
-impl NodeWithMerkleProof {
+impl DoubleNodeWithMerkleProof {
     fn truncate_to_h128(arr: H256) -> H128 {
         let mut data = [0u8; 16];
         data.copy_from_slice(&(arr.0).0[16..]);
@@ -33,7 +26,7 @@ impl NodeWithMerkleProof {
         Self::truncate_to_h128(keccak256(&data))
     }
 
-    pub fn apply_merkle_proof(&self) -> H128 {
+    pub fn apply_merkle_proof(&self, index: u64) -> H128 {
         let mut data = [0u8; 128];
         data[..64].copy_from_slice(&(self.dag_nodes[0].0).0);
         data[64..].copy_from_slice(&(self.dag_nodes[1].0).0);
@@ -43,11 +36,11 @@ impl NodeWithMerkleProof {
 
         let mut leaf = Self::truncate_to_h128(keccak256(&data));
 
-        for i in 0..self.proof.leafs.len() {
-            if (self.proof.index & (1 << i)) == 0 {
-                leaf = Self::hash_h128(leaf, self.proof.leafs[i]);
+        for i in 0..self.proof.len() {
+            if (index & (1 << i)) == 0 {
+                leaf = Self::hash_h128(leaf, self.proof[i]);
             } else {
-                leaf = Self::hash_h128(self.proof.leafs[i], leaf);
+                leaf = Self::hash_h128(self.proof[i], leaf);
             }
         }
         leaf
