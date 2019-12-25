@@ -1,14 +1,14 @@
 extern crate web3;
 
-use eth_bridge::{EthBridge,types::H128,header::NodeWithMerkleProof};
+use eth_bridge::{EthBridge,types::{H64,H128,H256,H512},header::{DoubleNodeWithMerkleProof}};
 use web3::futures::Future;
-use web3::types::{H256, Block};
+use web3::types::{Block};
 use rlp::{RlpStream};
 use futures::future::{join_all};
 use std::panic;
 use ethereum_types;
 use serde::{Deserialize,Deserializer};
-use hex::{FromHex, ToHex};
+use hex::{FromHex};
 
 #[macro_use]
 extern crate serde_derive;
@@ -116,7 +116,7 @@ mod tests {
     }
 
     fn get_blocks(web3rust: &web3::Web3<web3::transports::Http>, start: usize, stop: usize)
-        -> (Vec<H256>, Vec<Vec<u8>>, Vec<H64>)
+        -> (Vec<Vec<u8>>, Vec<H256>, Vec<H64>)
     {
 
         let futures = (start..stop).map(
@@ -125,18 +125,18 @@ mod tests {
 
         let block_headers = join_all(futures).wait().unwrap();
 
-        let mut hashes: Vec<H256> = vec![];
         let mut blocks: Vec<Vec<u8>> = vec![];
+        let mut hashes: Vec<H256> = vec![];
         let mut nonces: Vec<H64> = vec![];
         for block_header in block_headers {
             let mut stream = RlpStream::new();
-            rlp_append(&block_header.clone().unwrap(), &mut stream);
-            hashes.push(block_header.clone().unwrap().hash.unwrap());
+            rlp_append(&block_header.unwrap(), &mut stream);
             blocks.push(stream.out());
-            nonces.push(block_headerclone().unwrap().nonce.unwrap())
+            hashes.push(H256(ethereum_types::H256(block_header.unwrap().hash.unwrap().0)));
+            nonces.push(H64(ethereum_types::H64(block_header.unwrap().nonce.unwrap().0)))
         }
 
-        (hashes, blocks, nonces)
+        (blocks, hashes, nonces)
     }
 
     #[test]
@@ -157,12 +157,21 @@ mod tests {
         assert!(result.is_err());
     }
 
+    fn combine_dag_H256_to_H512(elements: Vec<H256>) -> Vec<H512> {
+        elements.iter().zip(elements.iter().skip(1)).map(|(a,b)| {
+            let mut buffer = [0u8; 64];
+            buffer[..32].copy_from_slice(&(a.0).0);
+            buffer[32..].copy_from_slice(&(b.0).0);
+            H512(ethereum_types::H512(buffer))
+        }).collect()
+    }
+
     #[test]
     fn add_400000_block_only() {
         testing_env!(get_context(vec![], false));
 
         // Check on 400000 block from this answer: https://ethereum.stackexchange.com/a/67333/3032
-        let (hashes, blocks) = get_blocks(&WEB3RS, 400_000, 400_001);
+        let (blocks, hashes, nonces) = get_blocks(&WEB3RS, 400_000, 400_001);
 
         // $ ../ethrelay/ethashproof/cmd/relayer/relayer 400000
         // digest: 0x3fbea7af642a4e20cd93a945a1f5e23bd72fc5261153e09102cf718980aeff38
@@ -178,17 +187,35 @@ mod tests {
         contract.init(400_000 / 30000, vec![block.merkle_root]);
         let result = catch_unwind_silent(panic::AssertUnwindSafe(
             || contract.add_block_headers(
-                blocks.clone(),
-                blocks.iter().map(|b| b.nonce()).collect(),
-                vec![NodeWithMerkleProof(
-                    
-                    block.merkle_proofs
-                )]
+                blocks,
+                nonces.iter().map(|n| H64(n.0)).collect::<Vec<H64>>(),
+                vec![{
+                    let h512s = combine_dag_H256_to_H512(block.elements);
+                    h512s.iter().zip(h512s.iter().skip(1)).map(|(a,b)| {
+                        DoubleNodeWithMerkleProof {
+                            dag_nodes: vec![*a, *b],
+                            proof: block.merkle_proofs,
+                        }
+                    }).collect()
+                }]
             )
         ));
         assert!(result.is_err());
-        contract.add_block_headers(400_000, blocks);
-        assert_eq!(hashes[0], (contract.block_hash_unsafe(400_000).unwrap().0).0.into());
+
+        contract.add_block_headers(
+            blocks,
+            nonces.iter().map(|n| H64(n.0)).collect::<Vec<H64>>(),
+            vec![{
+                let h512s = combine_dag_H256_to_H512(block.elements);
+                h512s.iter().zip(h512s.iter().skip(1)).map(|(a,b)| {
+                    DoubleNodeWithMerkleProof {
+                        dag_nodes: vec![*a, *b],
+                        proof: block.merkle_proofs,
+                    }
+                }).collect()
+            }]
+        );
+        assert_eq!((hashes[0].0).0, (contract.block_hash_unsafe(400_000).unwrap().0).0);
     }
 
     // #[test]
