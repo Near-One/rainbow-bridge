@@ -2,6 +2,7 @@ use std::io::{Error, Read, Write};
 use rlp::{Rlp, RlpStream, DecoderError as RlpDecoderError, Decodable as RlpDecodable, Encodable as RlpEncodable};
 use crypto::digest::Digest;
 use crypto::sha3::Sha3;
+use crypto::sha2;
 use ethereum_types;
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_bindgen::{near_bindgen};
@@ -51,7 +52,7 @@ macro_rules! arr_declare_wrapper_and_serde {
                 if s.starts_with("0x") {
                     s = s[2..].to_string();
                 }
-                if s.len() % 2 == 1 {
+                while s.len() < $len * 2 {
                     s.insert_str(0, "0");
                 }
                 let v = Vec::from_hex(&s).map_err(|err| serde::de::Error::custom(err.to_string()))?;
@@ -120,6 +121,15 @@ pub type Address = H160;
 pub type Secret = H256;
 pub type Public = H512;
 pub type Signature = H520;
+
+pub fn sha256(data: &[u8]) -> H256 {
+    let mut hasher = sha2::Sha256::new();
+    hasher.input(data);
+
+    let mut buffer = [0u8; 32];
+    hasher.result(&mut buffer);
+    H256(ethereum_types::H256(buffer))
+}
 
 pub fn keccak256(data: &[u8]) -> H256 {
     let mut hasher = Sha3::keccak256();

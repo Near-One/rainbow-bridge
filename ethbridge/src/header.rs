@@ -23,21 +23,21 @@ impl DoubleNodeWithMerkleProof {
         let mut data = [0u8; 64];
         data[16..32].copy_from_slice(&(l.0).0);
         data[48..64].copy_from_slice(&(r.0).0);
-        Self::truncate_to_h128(keccak256(&data))
+        Self::truncate_to_h128(sha256(&data))
     }
 
     pub fn apply_merkle_proof(&self, index: u64) -> H128 {
         let mut data = [0u8; 128];
         data[..64].copy_from_slice(&(self.dag_nodes[0].0).0);
         data[64..].copy_from_slice(&(self.dag_nodes[1].0).0);
-        for i in (0..128).step_by(32) {
-            data[i..i+32].reverse();
-        }
+        // for i in (0..128).step_by(32) {
+        //     data[i..i+32].reverse();
+        // }
 
-        let mut leaf = Self::truncate_to_h128(keccak256(&data));
+        let mut leaf = Self::truncate_to_h128(sha256(&data));
 
         for i in 0..self.proof.len() {
-            if (index & (1 << i)) == 0 {
+            if (index & (1 << i)) != 0 {
                 leaf = Self::hash_h128(leaf, self.proof[i]);
             } else {
                 leaf = Self::hash_h128(self.proof[i], leaf);

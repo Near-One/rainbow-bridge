@@ -11,11 +11,7 @@ use serde::{Deserialize,Deserializer};
 use hex::{FromHex};
 
 #[macro_use]
-extern crate serde_derive;
-#[macro_use]
 extern crate lazy_static;
-#[macro_use]
-extern crate hex_literal;
 
 fn catch_unwind_silent<F: FnOnce() -> R + panic::UnwindSafe, R>(f: F) -> std::thread::Result<R> {
     let prev_hook = panic::take_hook();
@@ -30,7 +26,7 @@ struct Hex(Vec<u8>);
 
 #[derive(Debug, Deserialize)]
 //#[serde(rename_all = "PascalCase")]
-struct DagMerkleRoot {
+struct RootsCollection {
     pub dag_merkle_roots: Vec<H128>,
 }
 
@@ -42,6 +38,31 @@ struct BlockWithProofs {
     pub merkle_root: H128,
     pub elements: Vec<H256>,
     pub merkle_proofs: Vec<H128>,
+}
+
+impl BlockWithProofs {
+    fn combine_dag_h256_to_h512(elements: Vec<H256>) -> Vec<H512> {
+        elements.iter().zip(elements.iter().skip(1)).enumerate().filter(|(i,_)| {
+            i % 2 == 1
+        }).map(|(_,(a,b))| {
+            let mut buffer = [0u8; 64];
+            buffer[..32].copy_from_slice(&(a.0).0);
+            buffer[32..].copy_from_slice(&(b.0).0);
+            H512(ethereum_types::H512(buffer))
+        }).collect()
+    }
+
+    pub fn to_double_node_with_merkle_proof_vec(&self) -> Vec<DoubleNodeWithMerkleProof> {
+        let h512s = Self::combine_dag_h256_to_h512(self.elements.clone());
+        h512s.iter().zip(h512s.iter().skip(1)).enumerate().filter(|(i,_)| {
+            i % 2 == 1
+        }).map(|(i,(a,b))| {
+            DoubleNodeWithMerkleProof {
+                dag_nodes: vec![*a, *b],
+                proof: self.merkle_proofs[i..i + self.proof_length as usize].to_vec(),
+            }
+        }).collect()
+    }
 }
 
 impl<'de> Deserialize<'de> for Hex {
@@ -130,25 +151,35 @@ mod tests {
         let mut nonces: Vec<H64> = vec![];
         for block_header in block_headers {
             let mut stream = RlpStream::new();
-            rlp_append(&block_header.unwrap(), &mut stream);
+            rlp_append(&block_header.clone().unwrap(), &mut stream);
             blocks.push(stream.out());
-            hashes.push(H256(ethereum_types::H256(block_header.unwrap().hash.unwrap().0)));
-            nonces.push(H64(ethereum_types::H64(block_header.unwrap().nonce.unwrap().0)))
+            hashes.push(H256(ethereum_types::H256(block_header.clone().unwrap().hash.unwrap().0)));
+            nonces.push(H64(ethereum_types::H64(block_header.clone().unwrap().nonce.unwrap().0)))
         }
 
         (blocks, hashes, nonces)
+    }
+
+    fn read_roots_collection() -> RootsCollection {
+        serde_json::from_reader(
+            std::fs::File::open(std::path::Path::new("./tests/dag_merkle_roots.json")).unwrap()
+        ).unwrap()
+    }
+
+    fn read_block(filename: String) -> BlockWithProofs {
+        serde_json::from_reader(
+            std::fs::File::open(std::path::Path::new(&filename)).unwrap()
+        ).unwrap()
     }
 
     #[test]
     fn add_dags_merkle_roots() {
         testing_env!(get_context(vec![], false));
 
-        let dmr: DagMerkleRoot = serde_json::from_reader(
-            std::fs::File::open(std::path::Path::new("./tests/dag_merkle_roots.json")).unwrap()
-        ).unwrap();
-
+        let dmr = read_roots_collection();
         let mut contract = EthBridge::default();
-        contract.init(0, dmr.dag_merkle_roots.clone());
+        contract.init(0, read_roots_collection().dag_merkle_roots);
+
         assert_eq!(dmr.dag_merkle_roots[0], contract.dag_merkle_root(0));
         assert_eq!(dmr.dag_merkle_roots[10], contract.dag_merkle_root(10));
         assert_eq!(dmr.dag_merkle_roots[511], contract.dag_merkle_root(511));
@@ -157,13 +188,28 @@ mod tests {
         assert!(result.is_err());
     }
 
-    fn combine_dag_H256_to_H512(elements: Vec<H256>) -> Vec<H512> {
-        elements.iter().zip(elements.iter().skip(1)).map(|(a,b)| {
-            let mut buffer = [0u8; 64];
-            buffer[..32].copy_from_slice(&(a.0).0);
-            buffer[32..].copy_from_slice(&(b.0).0);
-            H512(ethereum_types::H512(buffer))
-        }).collect()
+    #[test]
+    fn add_blocks_2_and_3() {
+        testing_env!(get_context(vec![], false));
+
+        // Check on 3 block from here: https://github.com/KyberNetwork/bridge_eos_smart_contracts/blob/master/scripts/jungle/jungle_relay_3.js
+        let (blocks, hashes, nonces) = get_blocks(&WEB3RS, 2, 4);
+
+        // $ ../ethrelay/ethashproof/cmd/relayer/relayer 3
+        let blocks_with_proofs: Vec<BlockWithProofs> = [
+            "./tests/2.json",
+            "./tests/3.json"
+        ].iter().map(|filename| read_block((&filename).to_string())).collect();
+
+        let mut contract = EthBridge::default();
+        contract.init(0, read_roots_collection().dag_merkle_roots);
+
+        contract.add_block_headers(
+            blocks,
+            nonces.iter().map(|n| H64(n.0)).collect::<Vec<H64>>(),
+            blocks_with_proofs.iter().map(|b| b.to_double_node_with_merkle_proof_vec()).collect(),
+        );
+        assert_eq!((hashes[1].0).0, (contract.block_hash_unsafe(3).unwrap().0).0);
     }
 
     #[test]
@@ -179,61 +225,67 @@ mod tests {
         // Proof length: 24
         // [400000.json]
 
-        let block: BlockWithProofs = serde_json::from_reader(
-            std::fs::File::open(std::path::Path::new("./tests/400000.json")).unwrap()
-        ).unwrap();
+        let block_with_proof = read_block("./tests/400000.json".to_string());
 
         let mut contract = EthBridge::default();
-        contract.init(400_000 / 30000, vec![block.merkle_root]);
-        let result = catch_unwind_silent(panic::AssertUnwindSafe(
-            || contract.add_block_headers(
-                blocks,
-                nonces.iter().map(|n| H64(n.0)).collect::<Vec<H64>>(),
-                vec![{
-                    let h512s = combine_dag_H256_to_H512(block.elements);
-                    h512s.iter().zip(h512s.iter().skip(1)).map(|(a,b)| {
-                        DoubleNodeWithMerkleProof {
-                            dag_nodes: vec![*a, *b],
-                            proof: block.merkle_proofs,
-                        }
-                    }).collect()
-                }]
-            )
-        ));
-        assert!(result.is_err());
+        contract.init(400_000 / 30000, vec![block_with_proof.merkle_root]);
+
+        // let result = catch_unwind_silent(panic::AssertUnwindSafe(
+        //     || contract.add_block_headers(
+        //         blocks,
+        //         nonces.iter().map(|n| H64(n.0)).collect::<Vec<H64>>(),
+        //         vec![{
+        //             let h512s = combine_dag_h256_to_h512(block.elements);
+        //             h512s.iter().zip(h512s.iter().skip(1)).filter(|(i,_)| {
+        //                 i % 2 == 1
+        //             }).map(|(_,(a,b))| {
+        //                 DoubleNodeWithMerkleProof {
+        //                     dag_nodes: vec![*a, *b],
+        //                     proof: block.merkle_proofs,
+        //                 }
+        //             }).collect()
+        //         }]
+        //     )
+        // ));
+        // assert!(result.is_err());
 
         contract.add_block_headers(
             blocks,
             nonces.iter().map(|n| H64(n.0)).collect::<Vec<H64>>(),
-            vec![{
-                let h512s = combine_dag_H256_to_H512(block.elements);
-                h512s.iter().zip(h512s.iter().skip(1)).map(|(a,b)| {
-                    DoubleNodeWithMerkleProof {
-                        dag_nodes: vec![*a, *b],
-                        proof: block.merkle_proofs,
-                    }
-                }).collect()
-            }]
+            vec![block_with_proof.to_double_node_with_merkle_proof_vec()]
         );
         assert_eq!((hashes[0].0).0, (contract.block_hash_unsafe(400_000).unwrap().0).0);
     }
 
-    // #[test]
-    // fn add_20_blocks_from_8000000() {
-    //     testing_env!(get_context(vec![], false));
+    #[test]
+    fn add_2_blocks_from_400000() {
+        testing_env!(get_context(vec![], false));
 
-    //     let start: usize = 8_000_000;
-    //     let stop: usize = 8_000_020;
+        // Check on 400000 block from this answer: https://ethereum.stackexchange.com/a/67333/3032
+        let (blocks, hashes, nonces) = get_blocks(&WEB3RS, 400_000, 400_002);
 
-    //     let (hashes, blocks) = get_blocks(&WEB3RS, start, stop);
-        
-    //     let mut contract = EthBridge::default();
-    //     contract.add_block_headers(start as u64, blocks);
+        // $ ../ethrelay/ethashproof/cmd/relayer/relayer 400001
+        // digest: 0x3fbea7af642a4e20cd93a945a1f5e23bd72fc5261153e09102cf718980aeff38
+        // ethash result: 0x00000000000ca599ebe9913fa00da78a4d1dd2fa154c4fd2aad10ccbca52a2a1
+        // Proof length: 24
+        // [400001.json]
 
-    //     for i in start..stop {
-    //         assert_eq!(hashes[i - start], (contract.block_hash_unsafe(i as u64).unwrap().0).0.into());
-    //     }
-    // }
+        let blocks_with_proofs: Vec<BlockWithProofs> = [
+            "./tests/400000.json",
+            "./tests/400001.json"
+        ].iter().map(|filename| read_block((&filename).to_string())).collect();
+
+        let mut contract = EthBridge::default();
+        contract.init(400_000 / 30000, vec![blocks_with_proofs.first().unwrap().merkle_root]);
+
+        contract.add_block_headers(
+            blocks,
+            nonces.iter().map(|n| H64(n.0)).collect::<Vec<H64>>(),
+            blocks_with_proofs.iter().map(|b| b.to_double_node_with_merkle_proof_vec()).collect(),
+        );
+        assert_eq!((hashes[0].0).0, (contract.block_hash_unsafe(400_000).unwrap().0).0);
+        assert_eq!((hashes[1].0).0, (contract.block_hash_unsafe(400_001).unwrap().0).0);
+    }
 
     // #[test]
     // fn add_3_sequential_ranges_of_blocks() {

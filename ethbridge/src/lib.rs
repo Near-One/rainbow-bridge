@@ -83,7 +83,8 @@ impl EthBridge {
             prev = header;
         }
 
-        assert!(prev.number() > self.last_block_number);
+        // Ensure submitted sequence is not shorter than previous one
+        assert!(prev.number() >= self.last_block_number);
         self.last_block_number = prev.number();
     }
 
@@ -134,7 +135,7 @@ impl EthBridge {
             |offset| {
                 let node = &nodes[*index.borrow() / 2];
                 *index.borrow_mut() += 1;
-                assert_eq!(node.apply_merkle_proof(offset as u64), self.dags_merkle_roots[block_number as usize / 30000]);
+                assert_eq!(node.apply_merkle_proof(offset as u64), self.dag_merkle_root((block_number as usize / 30000) as u64));
                 node.dag_nodes[*index.borrow() % 2].0
             }
         );
