@@ -37,7 +37,7 @@ impl DoubleNodeWithMerkleProof {
         let mut leaf = Self::truncate_to_h128(sha256(&data));
 
         for i in 0..self.proof.len() {
-            if (index & (1 << i)) != 0 {
+            if (index & (1 << i)) == 0 {
                 leaf = Self::hash_h128(leaf, self.proof[i]);
             } else {
                 leaf = Self::hash_h128(self.proof[i], leaf);

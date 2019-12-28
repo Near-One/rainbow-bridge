@@ -127,12 +127,16 @@ impl EthBridge {
         block_number: u64,
         nodes: Vec<DoubleNodeWithMerkleProof>,
     ) -> (H256, H256) {
+        dbg!(header_hash);
+        dbg!(nonce);
+        dbg!(block_number);
         let index = std::cell::RefCell::new(0);
         let pair = ethash::hashimoto(
             header_hash.0,
             nonce.0,
-            ethash::get_full_size(block_number as usize),
+            ethash::get_full_size(block_number as usize / 30000),
             |offset| {
+                dbg!(offset);
                 let node = &nodes[*index.borrow() / 2];
                 *index.borrow_mut() += 1;
                 assert_eq!(node.apply_merkle_proof(offset as u64), self.dag_merkle_root((block_number as usize / 30000) as u64));
