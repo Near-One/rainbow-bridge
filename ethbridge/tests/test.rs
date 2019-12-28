@@ -1,6 +1,6 @@
 extern crate web3;
 
-use eth_bridge::{EthBridge,types::{H64,H128,H256,H512},header::{DoubleNodeWithMerkleProof}};
+use eth_bridge::{EthBridge,types::{H128,H256,H512},header::{DoubleNodeWithMerkleProof}};
 use web3::futures::Future;
 use web3::types::{Block};
 use rlp::{RlpStream};
@@ -43,7 +43,7 @@ struct BlockWithProofs {
 impl BlockWithProofs {
     fn combine_dag_h256_to_h512(elements: Vec<H256>) -> Vec<H512> {
         elements.iter().zip(elements.iter().skip(1)).enumerate().filter(|(i,_)| {
-            i % 2 == 1
+            i % 2 == 0
         }).map(|(_,(a,b))| {
             let mut buffer = [0u8; 64];
             buffer[..32].copy_from_slice(&(a.0).0);
@@ -55,7 +55,7 @@ impl BlockWithProofs {
     pub fn to_double_node_with_merkle_proof_vec(&self) -> Vec<DoubleNodeWithMerkleProof> {
         let h512s = Self::combine_dag_h256_to_h512(self.elements.clone());
         h512s.iter().zip(h512s.iter().skip(1)).enumerate().filter(|(i,_)| {
-            i % 2 == 1
+            i % 2 == 0
         }).map(|(i,(a,b))| {
             DoubleNodeWithMerkleProof {
                 dag_nodes: vec![*a, *b],
@@ -137,7 +137,7 @@ mod tests {
     }
 
     fn get_blocks(web3rust: &web3::Web3<web3::transports::Http>, start: usize, stop: usize)
-        -> (Vec<Vec<u8>>, Vec<H256>, Vec<H64>)
+        -> (Vec<Vec<u8>>, Vec<H256>)
     {
 
         let futures = (start..stop).map(
@@ -148,16 +148,14 @@ mod tests {
 
         let mut blocks: Vec<Vec<u8>> = vec![];
         let mut hashes: Vec<H256> = vec![];
-        let mut nonces: Vec<H64> = vec![];
         for block_header in block_headers {
             let mut stream = RlpStream::new();
             rlp_append(&block_header.clone().unwrap(), &mut stream);
             blocks.push(stream.out());
             hashes.push(H256(ethereum_types::H256(block_header.clone().unwrap().hash.unwrap().0)));
-            nonces.push(H64(ethereum_types::H64(block_header.clone().unwrap().nonce.unwrap().0)))
         }
 
-        (blocks, hashes, nonces)
+        (blocks, hashes)
     }
 
     fn read_roots_collection() -> RootsCollection {
@@ -193,7 +191,7 @@ mod tests {
         testing_env!(get_context(vec![], false));
 
         // Check on 3 block from here: https://github.com/KyberNetwork/bridge_eos_smart_contracts/blob/master/scripts/jungle/jungle_relay_3.js
-        let (blocks, hashes, nonces) = get_blocks(&WEB3RS, 2, 4);
+        let (blocks, hashes) = get_blocks(&WEB3RS, 2, 4);
 
         // $ ../ethrelay/ethashproof/cmd/relayer/relayer 3
         let blocks_with_proofs: Vec<BlockWithProofs> = [
@@ -206,7 +204,6 @@ mod tests {
 
         contract.add_block_headers(
             blocks,
-            nonces.iter().map(|n| H64(n.0)).collect::<Vec<H64>>(),
             blocks_with_proofs.iter().map(|b| b.to_double_node_with_merkle_proof_vec()).collect(),
         );
         assert_eq!((hashes[1].0).0, (contract.block_hash_unsafe(3).unwrap().0).0);
@@ -217,7 +214,7 @@ mod tests {
         testing_env!(get_context(vec![], false));
 
         // Check on 400000 block from this answer: https://ethereum.stackexchange.com/a/67333/3032
-        let (blocks, hashes, nonces) = get_blocks(&WEB3RS, 400_000, 400_001);
+        let (blocks, hashes) = get_blocks(&WEB3RS, 400_000, 400_001);
 
         // $ ../ethrelay/ethashproof/cmd/relayer/relayer 400000
         // digest: 0x3fbea7af642a4e20cd93a945a1f5e23bd72fc5261153e09102cf718980aeff38
@@ -251,10 +248,35 @@ mod tests {
 
         contract.add_block_headers(
             blocks,
-            nonces.iter().map(|n| H64(n.0)).collect::<Vec<H64>>(),
             vec![block_with_proof.to_double_node_with_merkle_proof_vec()]
         );
+        dbg!(contract.block_hash_unsafe(400_000).unwrap().0);
         assert_eq!((hashes[0].0).0, (contract.block_hash_unsafe(400_000).unwrap().0).0);
+    }
+
+    #[test]
+    fn add_two_blocks_from_8996776() {
+        testing_env!(get_context(vec![], false));
+
+        // Check on 8996777 block from this test: https://github.com/sorpaas/rust-ethash/blob/ac6e42bcb7f40ad2a3b89f7400a61f7baf3f0926/src/lib.rs#L318-L326
+        let (blocks, hashes) = get_blocks(&WEB3RS, 8_996_776, 8_996_778);
+
+        // $ ../ethrelay/ethashproof/cmd/relayer/relayer 8996777
+        let blocks_with_proofs: Vec<BlockWithProofs> = [
+            "./tests/8996776.json",
+            "./tests/8996777.json"
+        ].iter().map(|filename| read_block((&filename).to_string())).collect();
+
+
+        let mut contract = EthBridge::default();
+        contract.init(0, read_roots_collection().dag_merkle_roots);
+
+        contract.add_block_headers(
+            blocks,
+            blocks_with_proofs.iter().map(|b| b.to_double_node_with_merkle_proof_vec()).collect()
+        );
+        dbg!(contract.block_hash_unsafe(8_996_777).unwrap().0);
+        assert_eq!((hashes[0].0).0, (contract.block_hash_unsafe(8_996_777).unwrap().0).0);
     }
 
     #[test]
@@ -262,7 +284,7 @@ mod tests {
         testing_env!(get_context(vec![], false));
 
         // Check on 400000 block from this answer: https://ethereum.stackexchange.com/a/67333/3032
-        let (blocks, hashes, nonces) = get_blocks(&WEB3RS, 400_000, 400_002);
+        let (blocks, hashes) = get_blocks(&WEB3RS, 400_000, 400_002);
 
         // $ ../ethrelay/ethashproof/cmd/relayer/relayer 400001
         // digest: 0x3fbea7af642a4e20cd93a945a1f5e23bd72fc5261153e09102cf718980aeff38
@@ -280,7 +302,6 @@ mod tests {
 
         contract.add_block_headers(
             blocks,
-            nonces.iter().map(|n| H64(n.0)).collect::<Vec<H64>>(),
             blocks_with_proofs.iter().map(|b| b.to_double_node_with_merkle_proof_vec()).collect(),
         );
         assert_eq!((hashes[0].0).0, (contract.block_hash_unsafe(400_000).unwrap().0).0);

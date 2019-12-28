@@ -30,18 +30,16 @@ impl DoubleNodeWithMerkleProof {
         let mut data = [0u8; 128];
         data[..64].copy_from_slice(&(self.dag_nodes[0].0).0);
         data[64..].copy_from_slice(&(self.dag_nodes[1].0).0);
-        // for i in (0..128).step_by(32) {
-        //     data[i..i+32].reverse();
-        // }
 
         let mut leaf = Self::truncate_to_h128(sha256(&data));
 
         for i in 0..self.proof.len() {
-            if (index & (1 << i)) == 0 {
+            if (index >> i as u64) % 2 == 0 {
                 leaf = Self::hash_h128(leaf, self.proof[i]);
             } else {
                 leaf = Self::hash_h128(self.proof[i], leaf);
             }
+            dbg!(leaf);
         }
         leaf
     }
@@ -62,8 +60,11 @@ pub struct BlockHeader {
     gas_used: ethereum_types::U256,
     timestamp: u64,
     extra_data: Vec<u8>,
+    mix_hash: H256,
+    nonce: H64,
 
     hash: Option<H256>,
+    partial_hash: Option<H256>,
 }
 
 impl BlockHeader {
@@ -91,8 +92,16 @@ impl BlockHeader {
         self.timestamp
     }
 
+    pub fn nonce(&self) -> H64 {
+        self.nonce
+    }
+
     pub fn hash(&self) -> Option<H256> {
         self.hash.map(|h| h.into())
+    }
+
+    pub fn partial_hash(&self) -> Option<H256> {
+        self.partial_hash.map(|h| h.into())
     }
 
     pub fn extra_data(&self) -> H256 {
@@ -131,22 +140,29 @@ impl RlpEncodable for BlockHeader {
 }
 
 impl RlpDecodable for BlockHeader {
-    fn decode(rlp: &Rlp) -> Result<Self, RlpDecoderError> {
-        Ok(BlockHeader {
-            parent_hash:        rlp.val_at(0)?,
-            uncles_hash:        rlp.val_at(1)?,
-            author:             rlp.val_at(2)?,
-            state_root:         rlp.val_at(3)?,
-            transactions_root:  rlp.val_at(4)?,
-            receipts_root:      rlp.val_at(5)?,
-            log_bloom:          rlp.val_at(6)?,
-            difficulty:         rlp.val_at(7)?,
-            number:             rlp.val_at(8)?,
-            gas_limit:          rlp.val_at(9)?,
-            gas_used:           rlp.val_at(10)?,
-            timestamp:          rlp.val_at(11)?,
-            extra_data:         rlp.val_at(12)?,
-            hash:               Some(keccak256(rlp.as_raw()).into()),
-        })
+    fn decode(serialized: &Rlp) -> Result<Self, RlpDecoderError> {
+        let mut block_header = BlockHeader {
+            parent_hash: serialized.val_at(0)?,
+            uncles_hash: serialized.val_at(1)?,
+            author: serialized.val_at(2)?,
+            state_root: serialized.val_at(3)?,
+            transactions_root: serialized.val_at(4)?,
+            receipts_root: serialized.val_at(5)?,
+            log_bloom: serialized.val_at(6)?,
+            difficulty: serialized.val_at(7)?,
+            number: serialized.val_at(8)?,
+            gas_limit: serialized.val_at(9)?,
+            gas_used: serialized.val_at(10)?,
+            timestamp: serialized.val_at(11)?,
+            extra_data: serialized.val_at(12)?,
+            mix_hash: serialized.val_at(13)?,
+            nonce: serialized.val_at(14)?,
+            hash: Some(keccak256(serialized.as_raw()).into()),
+            partial_hash: None,
+        };
+
+        block_header.partial_hash = Some(keccak256(rlp::encode(&block_header).as_slice()).into());
+
+        Ok(block_header)
     }
 }

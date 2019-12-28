@@ -54,7 +54,6 @@ impl EthBridge {
     pub fn add_block_headers(
         &mut self,
         block_headers: Vec<Vec<u8>>,
-        nonces: Vec<H64>,
         dag_nodes: Vec<Vec<DoubleNodeWithMerkleProof>>,
     ) {
         let mut prev = rlp::decode::<BlockHeader>(block_headers[0].as_slice()).unwrap();
@@ -64,7 +63,7 @@ impl EthBridge {
             self.block_hashes.insert(prev.number(), prev.hash().unwrap());
             self.last_block_number = prev.number();
         } else {
-            // Check first block hash equals submited one
+            // Check first block hash equals submitted one
             assert_eq!(prev.hash().unwrap(), self.block_hashes[&prev.number()]);
         }
 
@@ -75,7 +74,6 @@ impl EthBridge {
                 &self,
                 &header,
                 &prev,
-                nonces[i],
                 &dag_nodes[i]
             ));
 
@@ -92,13 +90,12 @@ impl EthBridge {
         &self,
         header: &BlockHeader,
         prev: &BlockHeader,
-        nonce: H64,
         dag_nodes: &Vec<DoubleNodeWithMerkleProof>,
     ) -> bool {
         let (_mix_hash, result) = Self::hashimoto_merkle(
             self,
-            header.hash().unwrap(),
-            nonce,
+            header.partial_hash().unwrap(),
+            header.nonce(),
             header.number(),
             dag_nodes.to_vec(),
         );
@@ -137,10 +134,16 @@ impl EthBridge {
             ethash::get_full_size(block_number as usize / 30000),
             |offset| {
                 dbg!(offset);
-                let node = &nodes[*index.borrow() / 2];
+                let idx = *index.borrow_mut();
                 *index.borrow_mut() += 1;
-                assert_eq!(node.apply_merkle_proof(offset as u64), self.dag_merkle_root((block_number as usize / 30000) as u64));
-                node.dag_nodes[*index.borrow() % 2].0
+
+                let node = &nodes[idx / 2];
+                dbg!(node.dag_nodes[0]);
+                dbg!(node.dag_nodes[1]);
+                if idx % 2 == 0 {
+                    assert_eq!(node.apply_merkle_proof(offset as u64), self.dag_merkle_root((block_number as usize / 30000) as u64));
+                }
+                node.dag_nodes[idx % 2].0
             }
         );
         (H256(pair.0), H256(pair.1))
