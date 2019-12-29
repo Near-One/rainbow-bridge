@@ -60,11 +60,11 @@ impl EthBridge {
 
         if self.last_block_number == 0 {
             // Submit very first block, can trust relayer
-            self.block_hashes.insert(prev.number(), prev.hash().unwrap());
-            self.last_block_number = prev.number();
+            self.block_hashes.insert(prev.number, prev.hash.unwrap());
+            self.last_block_number = prev.number;
         } else {
             // Check first block hash equals submitted one
-            assert_eq!(prev.hash().unwrap(), self.block_hashes[&prev.number()]);
+            assert_eq!(prev.hash.unwrap(), self.block_hashes[&prev.number]);
         }
 
         // Check validity of all the following blocks
@@ -77,16 +77,16 @@ impl EthBridge {
                 &dag_nodes[i]
             ));
 
-            self.block_hashes.insert(header.number(), header.hash().unwrap());
+            self.block_hashes.insert(header.number, header.hash.unwrap());
             prev = header;
         }
 
         // Ensure submitted sequence is not shorter than previous one
-        assert!(prev.number() >= self.last_block_number);
-        self.last_block_number = prev.number();
+        assert!(prev.number >= self.last_block_number);
+        self.last_block_number = prev.number;
     }
 
-    fn verify_header(
+    pub fn verify_header(
         &self,
         header: &BlockHeader,
         prev: &BlockHeader,
@@ -94,9 +94,9 @@ impl EthBridge {
     ) -> bool {
         let (_mix_hash, result) = Self::hashimoto_merkle(
             self,
-            header.partial_hash().unwrap(),
-            header.nonce(),
-            header.number(),
+            header.partial_hash.unwrap(),
+            header.nonce,
+            header.number,
             dag_nodes.to_vec(),
         );
 
@@ -105,16 +105,16 @@ impl EthBridge {
         // 1. Simplified difficulty check to conform adjusting difficulty bomb
         // 2. Added condition: header.parent_hash() == prev.hash()
         //
-        ethereum_types::U256::from((result.0).0) < ethash::cross_boundary(header.difficulty().0)
-        && header.difficulty().0 < header.difficulty().0 * ethereum_types::U256::from(101) / ethereum_types::U256::from(100)
-        && header.difficulty().0 > header.difficulty().0 * ethereum_types::U256::from(99) / ethereum_types::U256::from(100)
-        && header.gas_used().0 <= header.gas_limit().0
-        && header.gas_limit().0 < prev.gas_limit().0 * ethereum_types::U256::from(1025) / ethereum_types::U256::from(1024)
-        && header.gas_limit().0 > prev.gas_limit().0 * ethereum_types::U256::from(1023) / ethereum_types::U256::from(1024)
-        && header.gas_limit().0 >= ethereum_types::U256::from(5000)
-        && header.timestamp() > prev.timestamp()
-        && header.number() == prev.number() + 1
-        && header.parent_hash() == prev.hash().unwrap()
+        ethereum_types::U256::from((result.0).0) < ethash::cross_boundary(header.difficulty.0)
+        && header.difficulty.0 < header.difficulty.0 * ethereum_types::U256::from(101) / ethereum_types::U256::from(100)
+        && header.difficulty.0 > header.difficulty.0 * ethereum_types::U256::from(99) / ethereum_types::U256::from(100)
+        && header.gas_used.0 <= header.gas_limit.0
+        && header.gas_limit.0 < prev.gas_limit.0 * ethereum_types::U256::from(1025) / ethereum_types::U256::from(1024)
+        && header.gas_limit.0 > prev.gas_limit.0 * ethereum_types::U256::from(1023) / ethereum_types::U256::from(1024)
+        && header.gas_limit.0 >= ethereum_types::U256::from(5000)
+        && header.timestamp > prev.timestamp
+        && header.number == prev.number + 1
+        && header.parent_hash == prev.hash.unwrap()
     }
 
     pub fn hashimoto_merkle(
@@ -124,6 +124,7 @@ impl EthBridge {
         block_number: u64,
         nodes: Vec<DoubleNodeWithMerkleProof>,
     ) -> (H256, H256) {
+        // Boxed index since ethash::hashimoto gets Fn, but not FnMut
         let index = std::cell::RefCell::new(0);
         let merkle_root = self.dag_merkle_root((block_number as usize / 30000) as u64);
         let pair = ethash::hashimoto(
@@ -134,17 +135,21 @@ impl EthBridge {
                 let idx = *index.borrow_mut();
                 *index.borrow_mut() += 1;
 
+                // Each two nodes are packed into single 128 bytes with Merkle proof
                 let node = &nodes[idx / 2];
                 if idx % 2 == 0 {
-                    assert_eq!(node.apply_merkle_proof((offset / 2) as u64), merkle_root);
+                    // Divide by 2 to adjust offset for 64-byte words instead of 128-byte
+                    assert_eq!(merkle_root, node.apply_merkle_proof((offset / 2) as u64));
                 };
 
+                // Reverse each 32 bytes for ETHASH compatibility
                 let mut data = (node.dag_nodes[idx % 2].0).0;
                 data[..32].reverse();
                 data[32..].reverse();
                 ethereum_types::H512(data)
             }
         );
+
         (H256(pair.0), H256(pair.1))
     }
 }

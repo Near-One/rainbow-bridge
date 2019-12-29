@@ -46,71 +46,35 @@ impl DoubleNodeWithMerkleProof {
 
 #[derive(Debug, Clone)]
 pub struct BlockHeader {
-    parent_hash: H256,
-    uncles_hash: H256,
-    author: Address,
-    state_root: H256,
-    transactions_root: H256,
-    receipts_root: H256,
-    log_bloom: Bloom,
-    difficulty: ethereum_types::U256,
-    number: u64,
-    gas_limit: ethereum_types::U256,
-    gas_used: ethereum_types::U256,
-    timestamp: u64,
-    extra_data: Vec<u8>,
-    mix_hash: H256,
-    nonce: H64,
+    pub parent_hash: H256,
+    pub uncles_hash: H256,
+    pub author: Address,
+    pub state_root: H256,
+    pub transactions_root: H256,
+    pub receipts_root: H256,
+    pub log_bloom: Bloom,
+    pub difficulty: U256,
+    pub number: u64,
+    pub gas_limit: U256,
+    pub gas_used: U256,
+    pub timestamp: u64,
+    pub extra_data: Vec<u8>,
+    pub mix_hash: H256,
+    pub nonce: H64,
 
-    hash: Option<H256>,
-    partial_hash: Option<H256>,
+    pub hash: Option<H256>,
+    pub partial_hash: Option<H256>,
 }
 
 impl BlockHeader {
-    pub fn parent_hash(&self) -> H256 {
-        self.parent_hash.into()
-    }
-
-    pub fn number(&self) -> u64 {
-        self.number.into()
-    }
-
-    pub fn difficulty(&self) -> U256 {
-        U256(self.difficulty)
-    }
-
-    pub fn gas_used(&self) -> U256 {
-        U256(self.gas_used)
-    }
-
-    pub fn gas_limit(&self) -> U256 {
-        U256(self.gas_limit)
-    }
-
-    pub fn timestamp(&self) -> u64 {
-        self.timestamp
-    }
-
-    pub fn nonce(&self) -> H64 {
-        self.nonce
-    }
-
-    pub fn hash(&self) -> Option<H256> {
-        self.hash.map(|h| h.into())
-    }
-
-    pub fn partial_hash(&self) -> Option<H256> {
-        self.partial_hash.map(|h| h.into())
-    }
-
     pub fn extra_data(&self) -> H256 {
         let mut data = [0u8; 32];
         data.copy_from_slice(self.extra_data.as_slice());
         H256(ethereum_types::H256(data))
     }
 
-    fn stream_rlp(&self, stream: &mut RlpStream, with_hash: bool) {
-        stream.begin_list(13 + if with_hash { 1 } else { 0 });
+    fn stream_rlp(&self, stream: &mut RlpStream, partial: bool) {
+        stream.begin_list(13 + if !partial { 2 } else { 0 });
 
         stream.append(&self.parent_hash);
         stream.append(&self.uncles_hash);
@@ -126,15 +90,16 @@ impl BlockHeader {
         stream.append(&self.timestamp);
         stream.append(&self.extra_data);
 
-        if with_hash {
-            stream.append(&self.hash);
+        if !partial {
+            stream.append(&self.mix_hash);
+            stream.append(&self.nonce);
         }
     }
 }
 
 impl RlpEncodable for BlockHeader {
-    fn rlp_append(&self, s: &mut RlpStream) {
-        self.stream_rlp(s, false);
+    fn rlp_append(&self, stream: &mut RlpStream) {
+        self.stream_rlp(stream, false);
     }
 }
 
@@ -160,7 +125,11 @@ impl RlpDecodable for BlockHeader {
             partial_hash: None,
         };
 
-        block_header.partial_hash = Some(keccak256(rlp::encode(&block_header).as_slice()).into());
+        block_header.partial_hash = Some(keccak256({
+            let mut stream = RlpStream::new();
+            block_header.stream_rlp(&mut stream, true);
+            stream.drain().as_slice()
+        }).into());
 
         Ok(block_header)
     }

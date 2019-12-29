@@ -266,7 +266,6 @@ mod tests {
             "./tests/8996777.json"
         ].iter().map(|filename| read_block((&filename).to_string())).collect();
 
-
         let mut contract = EthBridge::default();
         contract.init(0, read_roots_collection().dag_merkle_roots);
 
@@ -310,16 +309,23 @@ mod tests {
     // #[test]
     // fn add_3_sequential_ranges_of_blocks() {
     //     testing_env!(get_context(vec![], false));
-
-    //     let (hashes1, blocks1) = get_blocks(&WEB3RS, 8_000_000, 8_000_010);
-    //     let (hashes2, blocks2) = get_blocks(&WEB3RS, 8_000_010, 8_000_020);
-    //     let (hashes3, blocks3) = get_blocks(&WEB3RS, 8_000_020, 8_000_030);
-        
+    //
+    //     let (hashes1, blocks1) = get_blocks(&WEB3RS, 8_000_000, 8_000_011);
+    //     let (hashes2, blocks2) = get_blocks(&WEB3RS, 8_000_010, 8_000_021);
+    //     let (hashes3, blocks3) = get_blocks(&WEB3RS, 8_000_020, 8_000_031);
+    //
+    //     let blocks_with_proofs: Vec<BlockWithProofs> = [
+    //         "./tests/8000000.json",
+    //         "./tests/8000001.json"
+    //     ].iter().map(|filename| read_block((&filename).to_string())).collect();
+    //
     //     let mut contract = EthBridge::default();
-    //     contract.add_block_headers(8_000_000 as u64, blocks1);
-    //     contract.add_block_headers(8_000_010 as u64, blocks2);
-    //     contract.add_block_headers(8_000_020 as u64, blocks3);
-
+    //     contract.init(0, read_roots_collection().dag_merkle_roots);
+    //
+    //     contract.add_block_headers(blocks1);
+    //     contract.add_block_headers(blocks2);
+    //     contract.add_block_headers(blocks3);
+    //
     //     for i in 8_000_000..8_000_010 {
     //         assert_eq!(hashes1[i - 8_000_000], (contract.block_hash_unsafe(i as u64).unwrap().0).0.into());
     //     }
