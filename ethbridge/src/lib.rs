@@ -111,7 +111,7 @@ impl EthBridge {
         && header.gas_used().0 <= header.gas_limit().0
         && header.gas_limit().0 < prev.gas_limit().0 * ethereum_types::U256::from(1025) / ethereum_types::U256::from(1024)
         && header.gas_limit().0 > prev.gas_limit().0 * ethereum_types::U256::from(1023) / ethereum_types::U256::from(1024)
-        && header.gas_limit().0 > ethereum_types::U256::from(5000)
+        && header.gas_limit().0 >= ethereum_types::U256::from(5000)
         && header.timestamp() > prev.timestamp()
         && header.number() == prev.number() + 1
         && header.parent_hash() == prev.hash().unwrap()
@@ -124,9 +124,6 @@ impl EthBridge {
         block_number: u64,
         nodes: Vec<DoubleNodeWithMerkleProof>,
     ) -> (H256, H256) {
-        dbg!(header_hash);
-        dbg!(nonce);
-        dbg!(block_number);
         let index = std::cell::RefCell::new(0);
         let merkle_root = self.dag_merkle_root((block_number as usize / 30000) as u64);
         let pair = ethash::hashimoto(
@@ -134,16 +131,18 @@ impl EthBridge {
             nonce.0,
             ethash::get_full_size(block_number as usize / 30000),
             |offset| {
-                dbg!(offset);
                 let idx = *index.borrow_mut();
                 *index.borrow_mut() += 1;
 
                 let node = &nodes[idx / 2];
                 if idx % 2 == 0 {
                     assert_eq!(node.apply_merkle_proof((offset / 2) as u64), merkle_root);
-                    dbg!("OK");
-                }
-                node.dag_nodes[idx % 2].0
+                };
+
+                let mut data = (node.dag_nodes[idx % 2].0).0;
+                data[..32].reverse();
+                data[32..].reverse();
+                ethereum_types::H512(data)
             }
         );
         (H256(pair.0), H256(pair.1))

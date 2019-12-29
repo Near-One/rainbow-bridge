@@ -250,7 +250,6 @@ mod tests {
             blocks,
             vec![block_with_proof.to_double_node_with_merkle_proof_vec()]
         );
-        dbg!(contract.block_hash_unsafe(400_000).unwrap().0);
         assert_eq!((hashes[0].0).0, (contract.block_hash_unsafe(400_000).unwrap().0).0);
     }
 
@@ -275,8 +274,8 @@ mod tests {
             blocks,
             blocks_with_proofs.iter().map(|b| b.to_double_node_with_merkle_proof_vec()).collect()
         );
-        dbg!(contract.block_hash_unsafe(8_996_777).unwrap().0);
-        assert_eq!((hashes[0].0).0, (contract.block_hash_unsafe(8_996_777).unwrap().0).0);
+        assert_eq!((hashes[0].0).0, (contract.block_hash_unsafe(8_996_776).unwrap().0).0);
+        assert_eq!((hashes[1].0).0, (contract.block_hash_unsafe(8_996_777).unwrap().0).0);
     }
 
     #[test]

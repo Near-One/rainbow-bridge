@@ -6,7 +6,7 @@ use near_bindgen::{near_bindgen};
 use crate::types::*;
 
 #[near_bindgen]
-#[derive(Default, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Default, Debug, Clone, BorshDeserialize, BorshSerialize)]
 pub struct DoubleNodeWithMerkleProof {
     pub dag_nodes: Vec<H512>, // [H512; 2]
     pub proof: Vec<H128>,
