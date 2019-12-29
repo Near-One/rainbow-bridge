@@ -39,7 +39,6 @@ impl DoubleNodeWithMerkleProof {
             } else {
                 leaf = Self::hash_h128(self.proof[i], leaf);
             }
-            dbg!(leaf);
         }
         leaf
     }

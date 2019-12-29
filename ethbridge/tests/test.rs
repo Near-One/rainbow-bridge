@@ -59,7 +59,7 @@ impl BlockWithProofs {
         }).map(|(i,(a,b))| {
             DoubleNodeWithMerkleProof {
                 dag_nodes: vec![*a, *b],
-                proof: self.merkle_proofs[i..i + self.proof_length as usize].to_vec(),
+                proof: self.merkle_proofs[i/2 * self.proof_length as usize .. (i/2 + 1) * self.proof_length as usize].to_vec(),
             }
         }).collect()
     }

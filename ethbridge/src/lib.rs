@@ -128,6 +128,7 @@ impl EthBridge {
         dbg!(nonce);
         dbg!(block_number);
         let index = std::cell::RefCell::new(0);
+        let merkle_root = self.dag_merkle_root((block_number as usize / 30000) as u64);
         let pair = ethash::hashimoto(
             header_hash.0,
             nonce.0,
@@ -138,10 +139,9 @@ impl EthBridge {
                 *index.borrow_mut() += 1;
 
                 let node = &nodes[idx / 2];
-                dbg!(node.dag_nodes[0]);
-                dbg!(node.dag_nodes[1]);
                 if idx % 2 == 0 {
-                    assert_eq!(node.apply_merkle_proof(offset as u64), self.dag_merkle_root((block_number as usize / 30000) as u64));
+                    assert_eq!(node.apply_merkle_proof((offset / 2) as u64), merkle_root);
+                    dbg!("OK");
                 }
                 node.dag_nodes[idx % 2].0
             }
