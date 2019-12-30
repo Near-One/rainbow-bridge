@@ -342,7 +342,7 @@ mod tests {
     //     let (hashes1, blocks1) = get_blocks(&WEB3RS, 8_000_000, 8_000_010);
     //     let (hashes2, blocks2) = get_blocks(&WEB3RS, 8_000_005, 8_000_020);
     //     let (hashes3, blocks3) = get_blocks(&WEB3RS, 8_000_015, 8_000_030);
-        
+
     //     let mut contract = EthBridge::default();
     //     contract.add_block_headers(8_000_000 as u64, blocks1);
     //     contract.add_block_headers(8_000_005 as u64, blocks2);

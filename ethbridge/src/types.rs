@@ -31,7 +31,7 @@ macro_rules! arr_declare_wrapper_and_serde {
                 Ok($name(data.into()))
             }
         }
-        
+
         impl RlpEncodable for $name {
             fn rlp_append(&self, s: &mut RlpStream) {
                 <ethereum_types::$name>::rlp_append(&self.0, s);
