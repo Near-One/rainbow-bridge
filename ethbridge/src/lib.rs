@@ -22,12 +22,12 @@ pub struct EthBridge {
     dags_start_epoch: u64,
     dags_merkle_roots: Vec<H128>,
     block_hashes: HashMap<u64, H256>,
+    block_difficulties: HashMap<u64, U256>,
     last_block_number: u64,
 }
 
 #[near_bindgen]
 impl EthBridge {
-
     const NUMBER_OF_FUTURE_BLOCKS: u64 = 10;
 
     pub fn init(&mut self, dags_start_epoch: u64, dags_merkle_roots: Vec<H128>) {
@@ -51,6 +51,15 @@ impl EthBridge {
         self.block_hashes.get(&index).cloned()
     }
 
+    //
+    // Usually each next sequence should start from the last added block:
+    // [1]-[2]-[3]-[4]
+    //             [4]-[5]-[6]-[7]
+    //
+    // In case of reorg next sequence can start from the last same block:
+    // [1]-[2]-[3]-[4a]
+    //         [3]-[4b]-[5]-[6]
+    //
     pub fn add_block_headers(
         &mut self,
         block_headers: Vec<Vec<u8>>,
@@ -58,14 +67,18 @@ impl EthBridge {
     ) {
         let mut prev = rlp::decode::<BlockHeader>(block_headers[0].as_slice()).unwrap();
 
-        if self.last_block_number == 0 {
+        let very_first_blocks = self.last_block_number == 0;
+        if very_first_blocks {
             // Submit very first block, can trust relayer
             self.block_hashes.insert(prev.number, prev.hash.unwrap());
             self.last_block_number = prev.number;
         } else {
-            // Check first block hash equals submitted one
+            // Check first block hash equals to submitted one
             assert_eq!(prev.hash.unwrap(), self.block_hashes[&prev.number]);
         }
+
+        let mut origin_total_difficulty = U256(ethereum_types::U256::from(0));
+        let mut branch_total_difficulty = U256(ethereum_types::U256::from(0));
 
         // Check validity of all the following blocks
         for i in 1..block_headers.len() {
@@ -77,12 +90,33 @@ impl EthBridge {
                 &dag_nodes[i]
             ));
 
+            // Compute new chain total difficulty
+            branch_total_difficulty = U256(
+                branch_total_difficulty.0 + header.difficulty.0
+            );
+            if header.number <= self.last_block_number {
+                // Compute old chain total difficulty if reorg
+                origin_total_difficulty = U256(
+                    origin_total_difficulty.0 + self.block_difficulties[&header.number].0
+                );
+            }
+
             self.block_hashes.insert(header.number, header.hash.unwrap());
+            self.block_difficulties.insert(header.number, header.difficulty);
             prev = header;
         }
 
-        // Ensure submitted sequence is not shorter than previous one
-        assert!(prev.number >= self.last_block_number);
+        if !very_first_blocks {
+            // Ensure the longest chain rule: https://ethereum.stackexchange.com/a/13750/3032
+            // https://github.com/ethereum/go-ethereum/blob/525116dbff916825463931361f75e75e955c12e2/core/blockchain.go#L863
+            assert!(
+                branch_total_difficulty.0 > origin_total_difficulty.0 ||
+                (
+                    branch_total_difficulty.0 == origin_total_difficulty.0 &&
+                    (prev.hash.unwrap().0).0[0]%2 == 0 // hash is good enough random for us
+                )
+            );
+        }
         self.last_block_number = prev.number;
     }
 
