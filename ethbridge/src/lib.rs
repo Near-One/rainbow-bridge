@@ -153,7 +153,10 @@ impl EthBridge {
     ) -> (H256, H256) {
         // Boxed index since ethash::hashimoto gets Fn, but not FnMut
         let index = std::cell::RefCell::new(0);
+
+        // Reuse single Merkle root across all the proofs
         let merkle_root = self.dag_merkle_root((block_number as usize / 30000) as u64);
+
         let pair = ethash::hashimoto(
             header_hash.0,
             nonce.0,
