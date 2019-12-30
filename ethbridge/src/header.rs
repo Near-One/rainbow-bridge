@@ -1,5 +1,4 @@
 use rlp::{Rlp, RlpStream, DecoderError as RlpDecoderError, Decodable as RlpDecodable, Encodable as RlpEncodable};
-use ethereum_types;
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_bindgen::{near_bindgen};
 
@@ -16,7 +15,7 @@ impl DoubleNodeWithMerkleProof {
     fn truncate_to_h128(arr: H256) -> H128 {
         let mut data = [0u8; 16];
         data.copy_from_slice(&(arr.0).0[16..]);
-        H128(ethereum_types::H128(data))
+        H128(data.into())
     }
 
     fn hash_h128(l: H128, r: H128) -> H128 {
@@ -70,7 +69,7 @@ impl BlockHeader {
     pub fn extra_data(&self) -> H256 {
         let mut data = [0u8; 32];
         data.copy_from_slice(self.extra_data.as_slice());
-        H256(ethereum_types::H256(data))
+        H256(data.into())
     }
 
     fn stream_rlp(&self, stream: &mut RlpStream, partial: bool) {

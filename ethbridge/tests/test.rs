@@ -1,14 +1,12 @@
-extern crate web3;
-
-use eth_bridge::{EthBridge,types::{H128,H256,H512},header::{DoubleNodeWithMerkleProof}};
-use web3::futures::Future;
-use web3::types::{Block};
-use rlp::{RlpStream};
-use futures::future::{join_all};
 use std::panic;
-use ethereum_types;
+use futures::future::{join_all};
+
 use serde::{Deserialize,Deserializer};
 use hex::{FromHex};
+use rlp::{RlpStream};
+use web3::futures::Future;
+use web3::types::{Block};
+use eth_bridge::{EthBridge,types::{H128,H256,H512},header::{DoubleNodeWithMerkleProof}};
 
 #[macro_use]
 extern crate lazy_static;
@@ -48,7 +46,7 @@ impl BlockWithProofs {
             let mut buffer = [0u8; 64];
             buffer[..32].copy_from_slice(&(a.0).0);
             buffer[32..].copy_from_slice(&(b.0).0);
-            H512(ethereum_types::H512(buffer))
+            H512(buffer.into())
         }).collect()
     }
 
@@ -152,7 +150,7 @@ mod tests {
             let mut stream = RlpStream::new();
             rlp_append(&block_header.clone().unwrap(), &mut stream);
             blocks.push(stream.out());
-            hashes.push(H256(ethereum_types::H256(block_header.clone().unwrap().hash.unwrap().0)));
+            hashes.push(H256(block_header.clone().unwrap().hash.unwrap().0.into()));
         }
 
         (blocks, hashes)

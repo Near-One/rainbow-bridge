@@ -8,11 +8,12 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use near_bindgen::{near_bindgen};
 use serde::{Deserialize,Deserializer};
 use hex::{FromHex};
+use derive_more::{Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into};
 
 macro_rules! arr_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
         #[near_bindgen]
-        #[derive(Default, Clone, Copy, PartialEq, Debug)]
+        #[derive(Default, Clone, Copy, PartialEq, Debug, Display, From, Into)]
         pub struct $name(pub ethereum_types::$name);
 
         impl BorshSerialize for $name {
@@ -27,7 +28,7 @@ macro_rules! arr_declare_wrapper_and_serde {
             fn deserialize<R: Read>(reader: &mut R) -> Result<Self, Error> {
                 let mut data = [0u8; $len];
                 reader.read_exact(&mut data)?;
-                Ok($name(ethereum_types::$name(data)))
+                Ok($name(data.into()))
             }
         }
         
@@ -58,7 +59,7 @@ macro_rules! arr_declare_wrapper_and_serde {
                 let v = Vec::from_hex(&s).map_err(|err| serde::de::Error::custom(err.to_string()))?;
                 let mut arr = [0u8; $len];
                 arr.copy_from_slice(v.as_slice());
-                Ok($name(ethereum_types::$name(arr)))
+                Ok($name(arr.into()))
             }
         }
     }
@@ -67,7 +68,7 @@ macro_rules! arr_declare_wrapper_and_serde {
 macro_rules! uint_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
         #[near_bindgen]
-        #[derive(Default, Clone, Copy, PartialEq, Debug)]
+        #[derive(Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into)]
         pub struct $name(pub ethereum_types::$name);
 
         impl BorshSerialize for $name {
@@ -128,7 +129,7 @@ pub fn sha256(data: &[u8]) -> H256 {
 
     let mut buffer = [0u8; 32];
     hasher.result(&mut buffer);
-    H256(ethereum_types::H256(buffer))
+    H256(buffer.into())
 }
 
 pub fn keccak256(data: &[u8]) -> H256 {
@@ -137,5 +138,5 @@ pub fn keccak256(data: &[u8]) -> H256 {
 
     let mut buffer = [0u8; 32];
     hasher.result(&mut buffer);
-    H256(ethereum_types::H256(buffer))
+    H256(buffer.into())
 }

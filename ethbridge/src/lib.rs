@@ -1,6 +1,3 @@
-extern crate crypto;
-extern crate rlp;
-
 use std::collections::HashMap;
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_bindgen::{near_bindgen};
@@ -77,8 +74,8 @@ impl EthBridge {
             assert_eq!(prev.hash.unwrap(), self.block_hashes[&prev.number]);
         }
 
-        let mut origin_total_difficulty = U256(ethereum_types::U256::from(0));
-        let mut branch_total_difficulty = U256(ethereum_types::U256::from(0));
+        let mut origin_total_difficulty = U256(0.into());
+        let mut branch_total_difficulty = U256(0.into());
 
         // Check validity of all the following blocks
         for i in 1..block_headers.len() {
@@ -91,14 +88,10 @@ impl EthBridge {
             ));
 
             // Compute new chain total difficulty
-            branch_total_difficulty = U256(
-                branch_total_difficulty.0 + header.difficulty.0
-            );
+            branch_total_difficulty += header.difficulty;
             if header.number <= self.last_block_number {
                 // Compute old chain total difficulty if reorg
-                origin_total_difficulty = U256(
-                    origin_total_difficulty.0 + self.block_difficulties[&header.number].0
-                );
+                origin_total_difficulty += self.block_difficulties[&header.number];
             }
 
             self.block_hashes.insert(header.number, header.hash.unwrap());
@@ -110,10 +103,10 @@ impl EthBridge {
             // Ensure the longest chain rule: https://ethereum.stackexchange.com/a/13750/3032
             // https://github.com/ethereum/go-ethereum/blob/525116dbff916825463931361f75e75e955c12e2/core/blockchain.go#L863
             assert!(
-                branch_total_difficulty.0 > origin_total_difficulty.0 ||
+                branch_total_difficulty > origin_total_difficulty ||
                 (
-                    branch_total_difficulty.0 == origin_total_difficulty.0 &&
-                    (prev.hash.unwrap().0).0[0]%2 == 0 // hash is good enough random for us
+                    branch_total_difficulty == origin_total_difficulty &&
+                    prev.difficulty % 2 == U256(0.into()) // hash is good enough random for us
                 )
             );
         }
@@ -140,12 +133,12 @@ impl EthBridge {
         // 2. Added condition: header.parent_hash() == prev.hash()
         //
         ethereum_types::U256::from((result.0).0) < ethash::cross_boundary(header.difficulty.0)
-        && header.difficulty.0 < header.difficulty.0 * ethereum_types::U256::from(101) / ethereum_types::U256::from(100)
-        && header.difficulty.0 > header.difficulty.0 * ethereum_types::U256::from(99) / ethereum_types::U256::from(100)
-        && header.gas_used.0 <= header.gas_limit.0
-        && header.gas_limit.0 < prev.gas_limit.0 * ethereum_types::U256::from(1025) / ethereum_types::U256::from(1024)
-        && header.gas_limit.0 > prev.gas_limit.0 * ethereum_types::U256::from(1023) / ethereum_types::U256::from(1024)
-        && header.gas_limit.0 >= ethereum_types::U256::from(5000)
+        && header.difficulty < header.difficulty * 101 / 100
+        && header.difficulty > header.difficulty * 99 / 100
+        && header.gas_used <= header.gas_limit
+        && header.gas_limit < prev.gas_limit * 1025 / 1024
+        && header.gas_limit > prev.gas_limit * 1023 / 1024
+        && header.gas_limit >= U256(5000.into())
         && header.timestamp > prev.timestamp
         && header.number == prev.number + 1
         && header.parent_hash == prev.hash.unwrap()
