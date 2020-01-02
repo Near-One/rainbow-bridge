@@ -38,13 +38,26 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
 
     const web3 = new Web3("wss://mainnet.infura.io/ws");
     const near = await nearlib.connect({
-        nodeUrl: 'https://rpc.nearprotocol.com',
+        nodeUrl: 'https://localhost:3030', //'https://rpc.nearprotocol.com',
         deps: {
             keyStore: new nearlib.keyStores.UnencryptedFileSystemKeyStore()
         }
     });
 
+    console.log(near);
+
+    const account = new nearlib.Account(near, 'ethrelay');
+
+    const ethBridgeContract = new nearlib.Contract(account, 'ethbridge', {
+        // View methods are read only. They don't modify the state, but usually return some value. 
+        viewMethods: ["last_block_number"],
+        // Change methods can modify the state. But you don't receive the returned value when called.
+        changeMethods: [],
+    });
+
     // TODO: Get las sumbitted block from EthBridge
+    console.log('ethBridgeContract', ethBridgeContract);
+    console.log('last_block_number', await ethBridgeContract.last_block_number());
     let last_block_number = 9186015;
 
     subscribeOnBlocksRangesFrom(web3, last_block_number, async (start, stop) => {

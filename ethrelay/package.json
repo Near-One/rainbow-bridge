@@ -9,7 +9,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "nearlib": "^0.17.2",
+    "nearlib": "^0.19.1",
     "web3": "^1.2.4"
   }
 }

@@ -1465,10 +1465,10 @@ nano-json-stream-parser@^0.1.2:
   resolved "https://registry.yarnpkg.com/nano-json-stream-parser/-/nano-json-stream-parser-0.1.2.tgz#0cc8f6d0e2b622b479c40d499c46d64b755c6f5f"
   integrity sha1-DMj20OK2IrR5xA1JnEbWS3Vcb18=
 
-nearlib@^0.17.2:
-  version "0.17.2"
-  resolved "https://registry.yarnpkg.com/nearlib/-/nearlib-0.17.2.tgz#49257f06088ad9f093f384199d44b7eb57f24656"
-  integrity sha512-CRhuxrqHAF6vwm61vNaRLXJpFMRoCIVXifQmoZ6vcMeLJ4T4k0QS9+ft6D1zIR2JpwIEukoeCW/RQ3g6G9YsJQ==
+nearlib@^0.19.1:
+  version "0.19.1"
+  resolved "https://registry.yarnpkg.com/nearlib/-/nearlib-0.19.1.tgz#88096067f08bcc24266f3c52046bf7c75f85a3cb"
+  integrity sha512-S/DIznzEwJK6VqMBfVMT661+Rc8w1UWKQuR6uCl6L57owgiOSLJDux7wkHXSKRvrlx2P+xCdyO9tIR2xBG32EQ==
   dependencies:
     "@types/bn.js" "^4.11.5"
     bn.js "^5.0.0"
@@ -1479,7 +1479,6 @@ nearlib@^0.17.2:
     node-fetch "^2.3.0"
     text-encoding-utf-8 "^1.0.2"
     tweetnacl "^1.0.1"
-    typescript "^3.5.1"
 
 negotiator@0.6.2:
   version "0.6.2"
@@ -2114,11 +2113,6 @@ typedarray-to-buffer@^3.1.5:
   integrity sha512-zdu8XMNEDepKKR+XYOXAVPtWui0ly0NtohUscw+UmaHiAWT8hrV1rr//H6V+0DvJ3OQ19S979M0laLfX8rm82Q==
   dependencies:
     is-typedarray "^1.0.0"
-
-typescript@^3.5.1:
-  version "3.7.2"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.7.2.tgz#27e489b95fa5909445e9fef5ee48d81697ad18fb"
-  integrity sha512-ml7V7JfiN2Xwvcer+XAf2csGO1bPBdRbFCkYBczNZggrBZ9c7G3riSUeJmqEU5uOtXNPMhE3n+R4FA/3YOAWOQ==
 
 u3@^0.1.0:
   version "0.1.0"

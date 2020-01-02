@@ -33,6 +33,10 @@ impl EthBridge {
         self.dags_merkle_roots = dags_merkle_roots;
     }
 
+    pub fn last_block_number(&self) -> u64 {
+        self.last_block_number
+    }
+
     pub fn dag_merkle_root(&self, epoch: u64) -> H128 {
         self.dags_merkle_roots[(&epoch - self.dags_start_epoch) as usize]
     }

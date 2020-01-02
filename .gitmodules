@@ -1,3 +1,7 @@
 [submodule "ethrelay/ethashproof"]
 	path = ethrelay/ethashproof
 	url = https://github.com/talbaneth/ethashproof.git
+[submodule "ethrelay/nearcore"]
+	path = ethrelay/nearcore
+	url = https://github.com/nearprotocol/nearcore.git
+	branch = staging
