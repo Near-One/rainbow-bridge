@@ -44,7 +44,6 @@ impl DoubleNodeWithMerkleProof {
     }
 }
 
-#[near_bindgen]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlockHeader {
     pub parent_hash: H256,

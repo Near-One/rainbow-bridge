@@ -5,14 +5,12 @@ use crypto::sha3::Sha3;
 use crypto::sha2;
 use ethereum_types;
 use borsh::{BorshDeserialize, BorshSerialize};
-use near_bindgen::{near_bindgen};
 use serde::{Serialize,Deserialize,Deserializer};
 use hex::{FromHex};
 use derive_more::{Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into};
 
 macro_rules! arr_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
-        #[near_bindgen]
         #[derive(Default, Clone, Copy, PartialEq, Debug, Display, From, Into, Serialize)]
         pub struct $name(pub ethereum_types::$name);
 
@@ -68,7 +66,6 @@ macro_rules! arr_declare_wrapper_and_serde {
 
 macro_rules! uint_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
-        #[near_bindgen]
         #[derive(Default, Clone, Copy, Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Debug, Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into)]
         pub struct $name(pub ethereum_types::$name);
 
