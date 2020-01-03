@@ -1,11 +1,12 @@
 use rlp::{Rlp, RlpStream, DecoderError as RlpDecoderError, Decodable as RlpDecodable, Encodable as RlpEncodable};
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_bindgen::{near_bindgen};
+use serde::{Serialize, Deserialize};
 
 use crate::types::*;
 
 #[near_bindgen]
-#[derive(Default, Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Default, Debug, Clone, BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
 pub struct DoubleNodeWithMerkleProof {
     pub dag_nodes: Vec<H512>, // [H512; 2]
     pub proof: Vec<H128>,
@@ -43,7 +44,8 @@ impl DoubleNodeWithMerkleProof {
     }
 }
 
-#[derive(Debug, Clone)]
+#[near_bindgen]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlockHeader {
     pub parent_hash: H256,
     pub uncles_hash: H256,

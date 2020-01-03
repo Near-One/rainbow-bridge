@@ -6,14 +6,14 @@ use crypto::sha2;
 use ethereum_types;
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_bindgen::{near_bindgen};
-use serde::{Deserialize,Deserializer};
+use serde::{Serialize,Deserialize,Deserializer};
 use hex::{FromHex};
 use derive_more::{Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into};
 
 macro_rules! arr_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
         #[near_bindgen]
-        #[derive(Default, Clone, Copy, PartialEq, Debug, Display, From, Into)]
+        #[derive(Default, Clone, Copy, PartialEq, Debug, Display, From, Into, Serialize)]
         pub struct $name(pub ethereum_types::$name);
 
         impl BorshSerialize for $name {
@@ -44,6 +44,7 @@ macro_rules! arr_declare_wrapper_and_serde {
             }
         }
 
+        // Implemented instead of deriving to allow short hex be decoded successfully
         impl<'de> Deserialize<'de> for $name {
             fn deserialize<D>(deserializer: D) -> Result<Self, <D as Deserializer<'de>>::Error>
                 where
@@ -68,14 +69,14 @@ macro_rules! arr_declare_wrapper_and_serde {
 macro_rules! uint_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
         #[near_bindgen]
-        #[derive(Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into)]
+        #[derive(Default, Clone, Copy, Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Debug, Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into)]
         pub struct $name(pub ethereum_types::$name);
 
         impl BorshSerialize for $name {
             #[inline]
             fn serialize<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
                 for i in 0..$len {
-                    u64::serialize(&(self.0).0[i], writer)?;
+                    BorshSerialize::serialize(&(self.0).0[i], writer)?;
                 }
                 Ok(())
             }
