@@ -81,23 +81,13 @@ library Borsh {
     }
 
     function decodeBytes(Data memory data) internal pure returns(bytes memory value) {
-        uint256 length = decodeU32(data);
-        value = new bytes(length);
-
-        for (uint i = 0; i + 32 < length; i += 32) {
-            byte[32] memory tempValue;
-            assembly {
-                tempValue := add(add(value, 32), i)
-            }
-            decodeBytes32To(data, tempValue);
-        }
-
-        for (uint i = 0; i < length; i++) {
+        value = new bytes(decodeU32(data));
+        for (uint i = 0; i < value.length; i++) {
             value[i] = byte(decodeU8(data));
         }
     }
 
-    function decodeBytes32To(Data memory data, byte[32] memory value) internal pure shift(data, 32) {
+    function decodeBytes32(Data memory data) internal pure shift(data, 32) returns(byte[32] memory value) {
         bytes memory raw = data.raw;
         uint256 offset = data.offset;
         assembly {
@@ -105,7 +95,7 @@ library Borsh {
         }
     }
 
-    function decodeBytes64To(Data memory data, byte[64] memory value) internal pure shift(data, 64) {
+    function decodeBytes64(Data memory data) internal pure shift(data, 64) returns(byte[64] memory value) {
         bytes memory raw = data.raw;
         uint256 offset = data.offset;
         assembly {
@@ -114,7 +104,7 @@ library Borsh {
         }
     }
 
-    function decodeBytes65To(Data memory data, byte[65] memory value) internal pure shift(data, 65) {
+    function decodeBytes65(Data memory data) internal pure shift(data, 65) returns(byte[65] memory value) {
         bytes memory raw = data.raw;
         uint256 offset = data.offset;
         assembly {
