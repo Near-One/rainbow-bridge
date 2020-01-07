@@ -1,0 +1,80 @@
+{
+  "genesis_file": "genesis.json",
+  "validator_key_file": "validator_key.json",
+  "node_key_file": "node_key.json",
+  "rpc": {
+    "addr": "0.0.0.0:3030",
+    "cors_allowed_origins": [
+      "*"
+    ],
+    "polling_config": {
+      "polling_interval": {
+        "secs": 0,
+        "nanos": 500000000
+      },
+      "polling_timeout": {
+        "secs": 10,
+        "nanos": 0
+      }
+    }
+  },
+  "telemetry": {
+    "endpoints": []
+  },
+  "network": {
+    "addr": "0.0.0.0:24567",
+    "external_address": "",
+    "boot_nodes": "",
+    "max_peers": 40,
+    "handshake_timeout": {
+      "secs": 20,
+      "nanos": 0
+    },
+    "reconnect_delay": {
+      "secs": 60,
+      "nanos": 0
+    },
+    "skip_sync_wait": true,
+    "ban_window": {
+      "secs": 10800,
+      "nanos": 0
+    }
+  },
+  "consensus": {
+    "min_num_peers": 3,
+    "block_production_tracking_delay": {
+      "secs": 0,
+      "nanos": 100000000
+    },
+    "min_block_production_delay": {
+      "secs": 1,
+      "nanos": 0
+    },
+    "max_block_production_delay": {
+      "secs": 2,
+      "nanos": 0
+    },
+    "max_block_wait_delay": {
+      "secs": 6,
+      "nanos": 0
+    },
+    "reduce_wait_for_missing_block": {
+      "secs": 0,
+      "nanos": 100000000
+    },
+    "produce_empty_blocks": true,
+    "block_fetch_horizon": 50,
+    "state_fetch_horizon": 5,
+    "block_header_fetch_horizon": 50,
+    "catchup_step_period": {
+      "secs": 0,
+      "nanos": 100000000
+    },
+    "chunk_request_retry_period": {
+      "secs": 0,
+      "nanos": 200000000
+    }
+  },
+  "tracked_accounts": [],
+  "tracked_shards": []
+}
