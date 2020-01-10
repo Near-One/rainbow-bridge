@@ -22,7 +22,7 @@ nearnode_running() {
 }
 
 start_nearnode() {
-    echo "ethrelay" | "$DIR/start_localnet.py" --home "$DIR/.near"
+    echo "ethrelay" | "$DIR/start_localnet.py" --home "$DIR/.near" --image "nearprotocol/nearcore:0.4.12"
     nearnode_pid=$!
     sleep 5
 }
