@@ -22,16 +22,16 @@ nearnode_running() {
 }
 
 start_nearnode() {
-    ./nearcore/scripts/start_localnet.py --home "$DIR/.near"
+    echo "ethrelay" | "$DIR/start_localnet.py" --home "$DIR/.near"
     nearnode_pid=$!
-    sleep 1
+    sleep 5
 }
 
 if nearnode_running; then
     echo "Using existing nearnode instance"
 else
     echo "Starting our own nearnode instance"
-    rm -rf "$DIR/.near/data"
+    rm -rf "$DIR/.near"
     start_nearnode
     node_started=1
 fi

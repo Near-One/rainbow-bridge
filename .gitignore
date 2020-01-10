@@ -1,4 +1,5 @@
 node_modules
 .idea
 **/.idea
-**/.near/data
+**/.near
+*.pyc
