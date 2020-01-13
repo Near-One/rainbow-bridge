@@ -47,14 +47,15 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
     const account = new nearlib.Account(near.connection, 'ethrelay');
 
     const ethBridgeContract = new nearlib.Contract(account, 'ethbridge', {
-        viewMethods: ["last_block_number"],
+        viewMethods: ["last_block_number", "add_block_headers"],
         changeMethods: [],
     });
 
-    // TODO: Get last sumbitted block from EthBridge
-    console.log('ethBridgeContract', ethBridgeContract);
-    console.log('last_block_number', await ethBridgeContract.last_block_number());
-    let last_block_number = 9186015;
+    let last_block_number = await ethBridgeContract.last_block_number();
+    if (last_block_number === 0) {
+        // Let's start bridge from current block since it is not initialized
+        last_block_number = await web3.eth.getBlockNumber();
+    }
 
     subscribeOnBlocksRangesFrom(web3, last_block_number, async (start, stop) => {
         console.log(start, stop);
@@ -66,8 +67,56 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
             blocks.push(JSON.parse(res));
         }
 
-        // TODO: Submit blocks with proofs
-        console.log(`Submited ${blocks.length} blocks from ${start} to ${stop} to EthBridge`);
+        console.log(`Submiting ${blocks.length} blocks from ${start} to ${stop} to EthBridge`);
+        await ethBridgeContract.add_block_headers({
+            block_headers: blocks.map(block => web3.utils.hexToBytes(block.header_rlp)),
+            dag_nodes: blocks.map(block => {
+                const h512s = block.elements
+                    .filter((_, index) => index % 2 === 0)
+                    .map((element, index) => {
+                        return web3.utils.padLeft(element, 64) + web3.utils.padLeft(block.elements[index*2 + 1], 64).substr(2)
+                    });
+                return h512s
+                    .filter((_, index) => index % 2 === 0)
+                    .map((element, index) => {
+                        return {
+                            dag_nodes: [web3.utils.hexToBytes(element), web3.utils.hexToBytes(h512s[index*2 + 1])],
+                            proof: block.merkle_proofs.slice(
+                                Math.trunc(index) * block.proof_length,
+                                Math.trunc(index + 1) * block.proof_length,
+                            ).map(leaf => web3.utils.padLeft(leaf, 64))
+                        };
+                    });
+            })
+
+            // pub fn to_double_node_with_merkle_proof_vec(&self) -> Vec<DoubleNodeWithMerkleProof> {
+            //     let h512s = Self::combine_dag_h256_to_h512(self.elements.clone());
+            //     h512s.iter().zip(h512s.iter().skip(1)).enumerate().filter(|(i,_)| {
+            //         i % 2 == 0
+            //     }).map(|(i,(a,b))| {
+            //         DoubleNodeWithMerkleProof {
+            //             dag_nodes: vec![*a, *b],
+            //             proof: self.merkle_proofs[i/2 * self.proof_length as usize .. (i/2 + 1) * self.proof_length as usize].to_vec(),
+            //         }
+            //     }).collect()
+            // }
+
+            // pub struct DoubleNodeWithMerkleProof {
+            //     pub dag_nodes: Vec<H512>, // [H512; 2]
+            //     pub proof: Vec<H128>,
+            // }
+
+            // fn combine_dag_h256_to_h512(elements: Vec<H256>) -> Vec<H512> {
+            //     elements.iter().zip(elements.iter().skip(1)).enumerate().filter(|(i,_)| {
+            //         i % 2 == 0
+            //     }).map(|(_,(a,b))| {
+            //         let mut buffer = [0u8; 64];
+            //         buffer[..32].copy_from_slice(&(a.0).0);
+            //         buffer[32..].copy_from_slice(&(b.0).0);
+            //         H512(buffer.into())
+            //     }).collect()
+            // }
+        });
     });
 
     //console.log(await web3.eth.getBlockNumber());
