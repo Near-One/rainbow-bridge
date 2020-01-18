@@ -47,8 +47,8 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
     const account = new nearlib.Account(near.connection, 'ethrelay');
 
     const ethBridgeContract = new nearlib.Contract(account, 'ethbridge', {
-        viewMethods: ["last_block_number", "add_block_headers"],
-        changeMethods: [],
+        viewMethods: ["last_block_number"],
+        changeMethods: ["add_block_headers"],
     });
 
     let last_block_number = await ethBridgeContract.last_block_number();
