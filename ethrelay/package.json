@@ -9,7 +9,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "nearlib": "^0.19.1",
+    "near-shell": "^0.20.1",
+    "nearlib": "^0.20.0",
     "web3": "^1.2.4"
   }
 }

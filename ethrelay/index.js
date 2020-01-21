@@ -1,5 +1,6 @@
 const Web3 = require('web3');
 const nearlib = require('nearlib');
+const BN = require('bn.js');
 const exec = require('child_process').exec;
 
 function execute(command, callback){
@@ -36,15 +37,16 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
 
 (async function () {
 
-    const web3 = new Web3("wss://mainnet.infura.io/ws");
+    const web3 = new Web3("wss://mainnet.infura.io/ws/v3/b5f870422ee5454fb11937e947154cd2");
     const near = await nearlib.connect({
         nodeUrl: 'http://localhost:3030', //'https://rpc.nearprotocol.com',
+        networkId: 'local', // TODO: detect automatically
         deps: {
-            keyStore: new nearlib.keyStores.UnencryptedFileSystemKeyStore()
+            keyStore: new nearlib.keyStores.UnencryptedFileSystemKeyStore(__dirname + '/neardev')
         }
     });
 
-    const account = new nearlib.Account(near.connection, 'ethrelay');
+    const account = new nearlib.Account(near.connection, 'ethbridge');
 
     const ethBridgeContract = new nearlib.Contract(account, 'ethbridge', {
         viewMethods: ["last_block_number"],
@@ -99,7 +101,7 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
                         };
                     });
             })
-        });
+        }, new BN('1000000000000000000'));
     });
 
     //console.log(await web3.eth.getBlockNumber());

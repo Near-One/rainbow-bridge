@@ -11,7 +11,7 @@ trap cleanup EXIT
 cleanup() {
     # Kill the nearnode instance that we started (if we started one and if it's still running).
     if [ -n "$node_started" ]; then
-        docker kill nearcore watchtower
+        docker kill nearcore watchtower > /dev/null &
     fi
 }
 
@@ -36,8 +36,8 @@ else
 fi
 
 echo "Creating account for smart contract:"
-NODE_ENV=local near --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" create_account ethbridge --masterAccount=ethrelay --initialBalance 1000
+NODE_ENV=local yarn run near --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" create_account ethbridge --masterAccount=ethrelay --initialBalance 100000000
 echo "Deploying smart contract:"
-NODE_ENV=local near --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" deploy --masterAccount=ethrelay --contractName ethbridge --wasmFile "$DIR/../../ethbridge/res/eth_bridge.wasm"
+NODE_ENV=local yarn run near --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" deploy --masterAccount=ethrelay --contractName ethbridge --wasmFile "$DIR/../../ethbridge/res/eth_bridge.wasm"
 
 node "$DIR/../index.js"
