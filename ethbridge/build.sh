@@ -5,6 +5,6 @@ set -e
 
 RUSTFLAGS='-C link-arg=-s' cargo +nightly build --target wasm32-unknown-unknown --release
 cp target/wasm32-unknown-unknown/release/eth_bridge.wasm ./res/
-wasm-snip res/eth_bridge.wasm -o res/eth_bridge.wasm
-wasm-opt -Oz --output ./res/eth_bridge.wasm ./res/eth_bridge.wasm
+#wasm-snip res/eth_bridge.wasm -o res/eth_bridge.wasm
+#wasm-opt -Oz --output ./res/eth_bridge.wasm ./res/eth_bridge.wasm
 #rm -rf target

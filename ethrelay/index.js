@@ -3,6 +3,8 @@ const nearlib = require('nearlib');
 const BN = require('bn.js');
 const exec = require('child_process').exec;
 
+const roots = require('./dag_merkle_roots.json');
+
 function execute(command, callback){
     return new Promise(resolve => exec(command, (error, stdout, stderr) => {
         if (error) {
@@ -49,9 +51,31 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
     const account = new nearlib.Account(near.connection, 'ethbridge');
 
     const ethBridgeContract = new nearlib.Contract(account, 'ethbridge', {
-        viewMethods: ["last_block_number"],
-        changeMethods: ["add_block_headers"],
+        viewMethods: ["initialized", "dag_merkle_root", "last_block_number"],
+        changeMethods: ["init", "add_block_headers"],
     });
+
+    let initialized = await ethBridgeContract.initialized();
+    if (!initialized) {
+        console.log('EthBridge is not initialized, initializing...');
+        await ethBridgeContract.init({
+            dags_start_epoch: 0,
+            dags_merkle_roots: roots.dag_merkle_roots
+        }, new BN('1000000000000000000'));
+        console.log('EthBridge initialization finished');
+    }
+
+    console.log('EthBridge check initialization...');
+    const first_root = await ethBridgeContract.dag_merkle_root({ epoch: 0 });
+    const last_root = await ethBridgeContract.dag_merkle_root({ epoch: 511 });
+    if (first_root === '0x55b891e842e58f58956a847cbbf67821' &&
+        last_root === '0x4aa6ca6ebef942d8766065b2e590fd32')
+    {
+        console.log('EthBridge initialized properly');
+    } else {
+        console.log('EthBridge initialization ERROR!');
+        return;
+    }
 
     let last_block_number = await ethBridgeContract.last_block_number();
     if (last_block_number === 0) {
@@ -95,8 +119,8 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
                         return {
                             dag_nodes: [web3.utils.hexToBytes(element), web3.utils.hexToBytes(h512s[index*2 + 1])],
                             proof: block.merkle_proofs.slice(
-                                Math.trunc(index) * block.proof_length,
-                                Math.trunc(index + 1) * block.proof_length,
+                                index * block.proof_length,
+                                (index + 1) * block.proof_length,
                             ).map(leaf => web3.utils.padLeft(leaf, 64))
                         };
                     });

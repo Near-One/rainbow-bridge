@@ -33,6 +33,10 @@ impl EthBridge {
         self.dags_merkle_roots = dags_merkle_roots;
     }
 
+    pub fn initialized(&self) -> bool {
+        self.dags_merkle_roots.len() > 0
+    }
+
     pub fn last_block_number(&self) -> u64 {
         self.last_block_number
     }
