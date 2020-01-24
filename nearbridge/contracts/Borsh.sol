@@ -18,6 +18,10 @@ library Borsh {
         data.offset += size;
     }
 
+    function finished(Data memory data) internal pure returns(bool) {
+        return data.offset == data.raw.length;
+    }
+
     function decodeU8(Data memory data) internal pure shift(data, 1) returns(uint8 value) {
         value = uint8(data.raw[data.offset]);
     }
