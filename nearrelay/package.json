@@ -1,0 +1,16 @@
+{
+  "name": "ethrelay",
+  "version": "1.0.0",
+  "description": "Ethereum >> Near relay",
+  "main": "index.js",
+  "scripts": {
+    "start": "scripts/start.sh"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "near-shell": "^0.20.1",
+    "nearlib": "^0.20.0",
+    "web3": "^1.2.4"
+  }
+}

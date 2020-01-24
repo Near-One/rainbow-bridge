@@ -18,17 +18,17 @@ contract NearBridge is Ownable {
     );
 
     // TODO: implement light client
-    function addBlockHash(bytes memory block) public onlyOwner {
+    function addBlockHash(bytes memory blockHeader) public onlyOwner {
         Borsh.Data memory data = Borsh.Data({
             offset: 0,
-            raw: block
+            raw: blockHeader
         });
 
         NearDecoder.BlockHeaderInnerLite memory header = data.decodeBlockHeaderInnerLite();
         require(data.finished(), "NearBridge: only block header should be passed");
         require(header.height > lastBlockNumber, "NearBridge: can't rewrite existing records");
 
-        bytes32 hash = keccak256(block);
+        bytes32 hash = keccak256(blockHeader);
         blockHashes[header.height] = hash;
         emit BlockHashAdded(header.height, hash);
         lastBlockNumber = header.height;
