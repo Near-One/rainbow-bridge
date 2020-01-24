@@ -5,13 +5,16 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 # Exit script as soon as a command fails.
 set -o errexit
 
+# Executes cleanup function at script exit.
+trap cleanup EXIT
+
 cleanup() {
     # Kill the nearnode instance that we started (if we started one and if it's still running).
     if [ -n "$nearcode_started" ]; then
         docker kill nearcore watchtower > /dev/null &
     fi
     if [ -n "$ganache_started" ]; then
-        kill $ganache_pid
+        kill $ganache_pid > /dev/null &
     fi
 }
 
@@ -25,7 +28,7 @@ start_nearnode() {
     echo "ethrelay" | "$DIR/start_localnet.py" --home "$DIR/.near" --image "nearprotocol/nearcore:nofloatsfixedgas"
     trap "docker kill nearcore watchtower > /dev/null &" EXIT INT TERM
     nearcode_started=1
-    sleep 10
+    sleep 1
 }
 
 if nearnode_running; then

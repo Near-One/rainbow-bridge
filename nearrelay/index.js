@@ -40,28 +40,40 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
     });
 
     // Import private key from ENV
-    const account = web3.eth.accounts.privateKeyToAccount(process.env.NEAR_BRIDGE_OWNER_PRIVATE_KEY);
-    web3.eth.accounts.wallet.add(account);
-    web3.eth.defaultAccount = account.address;
-    let nonce = await web3.eth.getTransactionCount(account.address);
+    if ((await web3.eth.getAccounts()).length == 0 &&
+        process.env.NEAR_BRIDGE_OWNER_PRIVATE_KEY)
+    {
+        const acc = web3.eth.accounts.privateKeyToAccount(process.env.NEAR_BRIDGE_OWNER_PRIVATE_KEY);
+        web3.eth.accounts.wallet.add(acc);
+        web3.eth.defaultAccount = acc.address;
+    }
+    const account = (await web3.eth.getAccounts())[0];
+    let nonce = await web3.eth.getTransactionCount(account);
     
-    let nearBridgeContract;
+    console.log('yyy');
+
+    let nearBridgeContract = new web3.eth.Contract(
+        JSON.parse(fs.readFileSync(path.join(__dirname, '../nearbridge/NearBridge.full.abi'))),
+        process.env.NEAR_BRIDGE_SMART_CONTRACT_ADDRESS,
+        {
+            from: account,
+        }
+    );
+
     if (!process.env.NEAR_BRIDGE_SMART_CONTRACT_ADDRESS) {
-        await web3.eth.sendTransaction({
-            from: account.address,
-            to: '0x0000000000000000000000000000000000000000',
-            data: '0x' + fs.readFileSync(path.join(__dirname, '../nearbridge/NearBridge.full.bin')),
-            gas: 1000000,
-            nonce: nonce
+        console.log('Deploying NearBridge smart contract');
+        nearBridgeContract = await nearBridgeContract.deploy({
+            data: '0x' + fs.readFileSync(path.join(__dirname, '../nearbridge/NearBridge.full.bin'))
+        }).send({
+            from: account,
+            gas: 1000000
         });
-    } else {
-        nearBridgeContract = new web3.eth.Contract(
-            require('../nearbridge/NearBridge.full.abi'),
-            process.env.NEAR_BRIDGE_SMART_CONTRACT_ADDRESS
-        );
     }
 
-    console.log('near.status', await near.connection.provider.status());
+    const status = await near.connection.provider.status();
+    console.log('near.status', status);
+    let lastBlockNumber = status.sync_info.latest_block_height;
+
     return;
 
     console.log('EthBridge check initialization...');
