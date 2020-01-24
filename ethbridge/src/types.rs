@@ -17,7 +17,8 @@ macro_rules! arr_declare_wrapper_and_serde {
         impl BorshSerialize for $name {
             #[inline]
             fn serialize<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
-                writer.write_all(&(self.0).0)
+                writer.write_all(&(self.0).0);
+                Ok(())
             }
         }
 
@@ -64,6 +65,14 @@ macro_rules! arr_declare_wrapper_and_serde {
     }
 }
 
+arr_declare_wrapper_and_serde!(H64, 8);
+arr_declare_wrapper_and_serde!(H128, 16);
+arr_declare_wrapper_and_serde!(H160, 20);
+arr_declare_wrapper_and_serde!(H256, 32);
+arr_declare_wrapper_and_serde!(H512, 64);
+arr_declare_wrapper_and_serde!(H520, 65);
+arr_declare_wrapper_and_serde!(Bloom, 256);
+
 macro_rules! uint_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
         #[derive(Default, Clone, Copy, Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Debug, Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into)]
@@ -103,14 +112,6 @@ macro_rules! uint_declare_wrapper_and_serde {
         }
     }
 }
-
-arr_declare_wrapper_and_serde!(H64, 8);
-arr_declare_wrapper_and_serde!(H128, 16);
-arr_declare_wrapper_and_serde!(H160, 20);
-arr_declare_wrapper_and_serde!(H256, 32);
-arr_declare_wrapper_and_serde!(H512, 64);
-arr_declare_wrapper_and_serde!(H520, 65);
-arr_declare_wrapper_and_serde!(Bloom, 256);
 
 uint_declare_wrapper_and_serde!(U64, 1);
 uint_declare_wrapper_and_serde!(U128, 2);
