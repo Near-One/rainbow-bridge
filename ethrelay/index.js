@@ -37,6 +37,15 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
     });
 }
 
+function arrayPrefixU32Length(array) {
+    return [
+        Math.trunc(array.length) % 256,
+        Math.trunc(array.length / 256) % 256,
+        Math.trunc(array.length / 256 / 256) % 256,
+        Math.trunc(array.length / 256 / 256 / 256) % 256,
+    ].concat(...array);
+}
+
 (async function () {
 
     const web3 = new Web3("wss://mainnet.infura.io/ws/v3/b5f870422ee5454fb11937e947154cd2");
@@ -104,9 +113,9 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
             start = last_block_number_onchain;
         }
 
-        console.log(`Submiting ${blocks.length} blocks from ${start} to ${stop} to EthBridge`);
+        console.log(`Submitting ${blocks.length} blocks from ${start} to ${stop} to EthBridge`);
         await ethBridgeContract.add_block_headers({
-            block_headers: blocks.map(block => web3.utils.hexToBytes(block.header_rlp)),
+            block_headers: blocks.map(block => arrayPrefixU32Length(web3.utils.hexToBytes(block.header_rlp))),
             dag_nodes: blocks.map(block => {
                 const h512s = block.elements
                     .filter((_, index) => index % 2 === 0)
@@ -117,15 +126,16 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
                     .filter((_, index) => index % 2 === 0)
                     .map((element, index) => {
                         return {
-                            dag_nodes: [web3.utils.hexToBytes(element), web3.utils.hexToBytes(h512s[index*2 + 1])],
+                            dag_nodes: [element, h512s[index*2 + 1]],
                             proof: block.merkle_proofs.slice(
                                 index * block.proof_length,
                                 (index + 1) * block.proof_length,
-                            ).map(leaf => web3.utils.padLeft(leaf, 64))
+                            ).map(leaf => web3.utils.padLeft(leaf, 32))
                         };
                     });
             })
         }, new BN('1000000000000000000'));
+        console.log(`Successfully submitted ${blocks.length} blocks from ${start} to ${stop} to EthBridge`);
     });
 
     //console.log(await web3.eth.getBlockNumber());
