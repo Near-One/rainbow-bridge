@@ -114,81 +114,26 @@ function arrayPrefixU32Length(array) {
         }
 
         console.log(`Submitting ${blocks.length} blocks from ${start} to ${stop} to EthBridge`);
-        console.log('block_headers', JSON.stringify(
-            blocks.map(block => arrayPrefixU32Length(web3.utils.hexToBytes(block.header_rlp)))
-        ));
-        console.log('dag_nodes:', JSON.stringify(
-            arrayPrefixU32Length(blocks.map(block => {
+        await ethBridgeContract.add_block_headers({
+            block_headers: blocks.map(block => arrayPrefixU32Length(web3.utils.hexToBytes(block.header_rlp))),
+            dag_nodes: blocks.map(block => {
                 const h512s = block.elements
                     .filter((_, index) => index % 2 === 0)
                     .map((element, index) => {
                         return web3.utils.padLeft(element, 64) + web3.utils.padLeft(block.elements[index*2 + 1], 64).substr(2)
                     });
-                return arrayPrefixU32Length(
-                    h512s
+                return h512s
                     .filter((_, index) => index % 2 === 0)
                     .map((element, index) => {
                         return {
-                            dag_nodes: arrayPrefixU32Length([web3.utils.hexToBytes(element), web3.utils.hexToBytes(h512s[index*2 + 1])]),
-                            proof: arrayPrefixU32Length(block.merkle_proofs.slice(
+                            dag_nodes: [element, h512s[index*2 + 1]],
+                            proof: block.merkle_proofs.slice(
                                 index * block.proof_length,
                                 (index + 1) * block.proof_length,
-                            ).map(leaf => web3.utils.padLeft(leaf, 32)))
+                            ).map(leaf => web3.utils.padLeft(leaf, 32))
                         };
-                    })
-                );
-            }))
-        ));
-        
-        const h512s = blocks[0].elements
-                    .filter((_, index) => index % 2 === 0)
-                    .map((element, index) => {
-                        return web3.utils.padLeft(element, 64) + web3.utils.padLeft(blocks[0].elements[index*2 + 1], 64).substr(2)
                     });
-
-        console.log('xxx', JSON.stringify({
-            dag_nodes: arrayPrefixU32Length([web3.utils.hexToBytes(h512s[0]), web3.utils.hexToBytes(h512s[1])]),
-            proof: arrayPrefixU32Length(blocks[0].merkle_proofs.slice(
-                0 * blocks[0].proof_length,
-                (0 + 1) * blocks[0].proof_length,
-            ).map(leaf => web3.utils.padLeft(leaf, 32)))
-        }));
-
-        console.log('!!!!', web3.utils.hexToBytes(web3.utils.padLeft(blocks[0].merkle_proofs[0], 32)));
-
-        await ethBridgeContract.add_block_headers({
-            //block_headers: blocks.map(block => arrayPrefixU32Length(web3.utils.hexToBytes(block.header_rlp))),
-
-            // dag_nodes: arrayPrefixU32Length(blocks.map(block => {
-            //     const h512s = block.elements
-            //         .filter((_, index) => index % 2 === 0)
-            //         .map((element, index) => {
-            //             return web3.utils.padLeft(element, 64) + web3.utils.padLeft(block.elements[index*2 + 1], 64).substr(2)
-            //         });
-            //     return arrayPrefixU32Length(
-            //         h512s
-            //         .filter((_, index) => index % 2 === 0)
-            //         .map((element, index) => {
-            //             return {
-            //                 dag_nodes: arrayPrefixU32Length([web3.utils.hexToBytes(element), web3.utils.hexToBytes(h512s[index*2 + 1])]),
-            //                 proof: arrayPrefixU32Length(block.merkle_proofs.slice(
-            //                     index * block.proof_length,
-            //                     (index + 1) * block.proof_length,
-            //                 ).map(leaf => web3.utils.padLeft(leaf, 32)))
-            //             };
-            //         })
-            //     );
-            // }))
-
-            // dag_nodes: {
-            //     dag_nodes: arrayPrefixU32Length([web3.utils.hexToBytes(h512s[0]), web3.utils.hexToBytes(h512s[1])]),
-            //     proof: arrayPrefixU32Length(blocks[0].merkle_proofs.slice(
-            //         0 * blocks[0].proof_length,
-            //         (0 + 1) * blocks[0].proof_length,
-            //     ).map(leaf => web3.utils.padLeft(leaf, 32)))
-            // }
-
-            dag_nodes: web3.utils.hexToBytes(web3.utils.padLeft(blocks[0].merkle_proofs[0], 32))
+            })
         }, new BN('1000000000000000000'));
         console.log(`Successfully submitted ${blocks.length} blocks from ${start} to ${stop} to EthBridge`);
     });

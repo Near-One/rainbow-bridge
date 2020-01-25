@@ -23,26 +23,6 @@ pub struct EthBridge {
     last_block_number: u64,
 }
 
-#[derive(Default, Clone, Copy, PartialEq, Debug, serde::Serialize, serde::Deserialize)]
-pub struct HH128(pub ethereum_types::H128);
-
-impl BorshSerialize for HH128 {
-    #[inline]
-    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> Result<(), std::io::Error> {
-        writer.write_all(&(self.0).0);
-        Ok(())
-    }
-}
-
-impl BorshDeserialize for HH128 {
-    #[inline]
-    fn deserialize<R: std::io::Read>(reader: &mut R) -> Result<Self, std::io::Error> {
-        let mut data = [0u8; std::mem::size_of::<Self>()];
-        reader.read_exact(&mut data)?;
-        Ok(HH128(data.into()))
-    }
-}
-
 #[near_bindgen]
 impl EthBridge {
     const NUMBER_OF_FUTURE_BLOCKS: u64 = 10;
@@ -87,61 +67,58 @@ impl EthBridge {
     //
     pub fn add_block_headers(
         &mut self,
-        //block_headers: Vec<Vec<u8>>,
-        dag_nodes: HH128,
-        //dag_nodes: DoubleNodeWithMerkleProof,
-        //dag_nodes: Vec<Vec<DoubleNodeWithMerkleProof>>,
+        block_headers: Vec<Vec<u8>>,
+        dag_nodes: Vec<Vec<DoubleNodeWithMerkleProof>>,
     ) {
-        return;
-        // let mut prev = rlp::decode::<BlockHeader>(block_headers[0].as_slice()).unwrap();
+        let mut prev = rlp::decode::<BlockHeader>(block_headers[0].as_slice()).unwrap();
 
-        // let very_first_blocks = self.last_block_number == 0;
-        // if very_first_blocks {
-        //     // Submit very first block, can trust relayer
-        //     self.block_hashes.insert(prev.number, prev.hash.unwrap());
-        //     self.last_block_number = prev.number;
-        // } else {
-        //     // Check first block hash equals to submitted one
-        //     assert_eq!(prev.hash.unwrap(), self.block_hashes[&prev.number]);
-        // }
+        let very_first_blocks = self.last_block_number == 0;
+        if very_first_blocks {
+            // Submit very first block, can trust relayer
+            self.block_hashes.insert(prev.number, prev.hash.unwrap());
+            self.last_block_number = prev.number;
+        } else {
+            // Check first block hash equals to submitted one
+            assert_eq!(prev.hash.unwrap(), self.block_hashes[&prev.number]);
+        }
 
-        // let mut origin_total_difficulty = U256(0.into());
-        // let mut branch_total_difficulty = U256(0.into());
+        let mut origin_total_difficulty = U256(0.into());
+        let mut branch_total_difficulty = U256(0.into());
 
-        // // Check validity of all the following blocks
-        // for i in 1..block_headers.len() {
-        //     let header = rlp::decode::<BlockHeader>(block_headers[i].as_slice()).unwrap();
-        //     assert!(Self::verify_header(
-        //         &self,
-        //         &header,
-        //         &prev,
-        //         &dag_nodes[i]
-        //     ));
+        // Check validity of all the following blocks
+        for i in 1..block_headers.len() {
+            let header = rlp::decode::<BlockHeader>(block_headers[i].as_slice()).unwrap();
+            assert!(Self::verify_header(
+                &self,
+                &header,
+                &prev,
+                &dag_nodes[i]
+            ));
 
-        //     // Compute new chain total difficulty
-        //     branch_total_difficulty += header.difficulty;
-        //     if header.number <= self.last_block_number {
-        //         // Compute old chain total difficulty if reorg
-        //         origin_total_difficulty += self.block_difficulties[&header.number];
-        //     }
+            // Compute new chain total difficulty
+            branch_total_difficulty += header.difficulty;
+            if header.number <= self.last_block_number {
+                // Compute old chain total difficulty if reorg
+                origin_total_difficulty += self.block_difficulties[&header.number];
+            }
 
-        //     self.block_hashes.insert(header.number, header.hash.unwrap());
-        //     self.block_difficulties.insert(header.number, header.difficulty);
-        //     prev = header;
-        // }
+            self.block_hashes.insert(header.number, header.hash.unwrap());
+            self.block_difficulties.insert(header.number, header.difficulty);
+            prev = header;
+        }
 
-        // if !very_first_blocks {
-        //     // Ensure the longest chain rule: https://ethereum.stackexchange.com/a/13750/3032
-        //     // https://github.com/ethereum/go-ethereum/blob/525116dbff916825463931361f75e75e955c12e2/core/blockchain.go#L863
-        //     assert!(
-        //         branch_total_difficulty > origin_total_difficulty ||
-        //         (
-        //             branch_total_difficulty == origin_total_difficulty &&
-        //             prev.difficulty % 2 == U256(0.into()) // hash is good enough random for us
-        //         )
-        //     );
-        // }
-        // self.last_block_number = prev.number;
+        if !very_first_blocks {
+            // Ensure the longest chain rule: https://ethereum.stackexchange.com/a/13750/3032
+            // https://github.com/ethereum/go-ethereum/blob/525116dbff916825463931361f75e75e955c12e2/core/blockchain.go#L863
+            assert!(
+                branch_total_difficulty > origin_total_difficulty ||
+                (
+                    branch_total_difficulty == origin_total_difficulty &&
+                    prev.difficulty % 2 == U256(0.into()) // hash is good enough random for us
+                )
+            );
+        }
+        self.last_block_number = prev.number;
     }
 
     pub fn verify_header(
