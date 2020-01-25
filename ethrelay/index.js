@@ -30,7 +30,7 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
             let start = last_block_number;
             let stop = event.number;
             last_block_number = event.number;
-            await handler(start, start + 1);
+            await handler(start, stop);
 
             inBlocksCallbacks = false;
         }
@@ -86,7 +86,7 @@ function arrayPrefixU32Length(array) {
         return;
     }
 
-    let last_block_number = 2;//await ethBridgeContract.last_block_number();
+    let last_block_number = await ethBridgeContract.last_block_number();
     if (last_block_number === 0) {
         // Let's start bridge from current block since it is not initialized
         last_block_number = await web3.eth.getBlockNumber();
