@@ -30,7 +30,7 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
             let start = last_block_number;
             let stop = event.number;
             last_block_number = event.number;
-            await handler(start, stop);
+            await handler(start, start+1); //stop); //TODO
 
             inBlocksCallbacks = false;
         }
@@ -70,7 +70,7 @@ function arrayPrefixU32Length(array) {
         await ethBridgeContract.init({
             dags_start_epoch: 0,
             dags_merkle_roots: roots.dag_merkle_roots
-        }, new BN('1000000000000000000'));
+        }, new BN('10000000000000000'));
         console.log('EthBridge initialization finished');
     }
 
@@ -113,9 +113,11 @@ function arrayPrefixU32Length(array) {
             start = last_block_number_onchain;
         }
 
+        console.log(blocks.map(block => block.header_rlp));
+
         console.log(`Submitting ${blocks.length} blocks from ${start} to ${stop} to EthBridge`);
-        await ethBridgeContract.add_block_headers({
-            block_headers: blocks.map(block => arrayPrefixU32Length(web3.utils.hexToBytes(block.header_rlp))),
+        const tx_result = await ethBridgeContract.add_block_headers({
+            block_headers: blocks.map(block => web3.utils.hexToBytes(block.header_rlp)),
             dag_nodes: blocks.map(block => {
                 const h512s = block.elements
                     .filter((_, index) => index % 2 === 0)
@@ -135,6 +137,7 @@ function arrayPrefixU32Length(array) {
                     });
             })
         }, new BN('1000000000000000000'));
+        console.log('tx_result: ', tx_result);
         console.log(`Successfully submitted ${blocks.length} blocks from ${start} to ${stop} to EthBridge`);
     });
 

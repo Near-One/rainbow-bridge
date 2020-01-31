@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use borsh::{BorshDeserialize, BorshSerialize};
-use near_bindgen::{near_bindgen};
+use near_bindgen::{env, near_bindgen};
 use ethash;
 
 pub mod header;
@@ -8,6 +8,10 @@ use header::*;
 
 pub mod types;
 use types::*;
+
+#[cfg(not(target_arch = "wasm32"))]
+#[cfg(test)]
+pub mod tests;
 
 #[cfg(target_arch = "wasm32")]
 #[global_allocator]
@@ -56,12 +60,22 @@ impl EthBridge {
         self.block_hashes.get(&index).cloned()
     }
 
+    #[cfg(not(test))]
+    fn log(arg: &[u8]) {
+        env::log(arg);
+    }
+
+    #[cfg(test)]
+    fn log(arg: &[u8]) {
+        println!("{}", String::from_utf8_lossy(arg));
+    }
+
     //
-    // Usually each next sequence should start from the last added block:
+    // Usually each next sequence should start from the lastest added block:
     // [1]-[2]-[3]-[4]
     //             [4]-[5]-[6]-[7]
     //
-    // In case of reorg next sequence can start from the last same block:
+    // In case of reorg next sequence can start from the lastest common block:
     // [1]-[2]-[3]-[4a]
     //         [3]-[4b]-[5]-[6]
     //
@@ -70,7 +84,11 @@ impl EthBridge {
         block_headers: Vec<Vec<u8>>,
         dag_nodes: Vec<Vec<DoubleNodeWithMerkleProof>>,
     ) {
+        Self::log(b"Deserializing first header");
+        Self::log(env::used_gas().to_string().as_bytes());
         let mut prev = rlp::decode::<BlockHeader>(block_headers[0].as_slice()).unwrap();
+        Self::log(b"First header deserialized");
+        Self::log(env::used_gas().to_string().as_bytes());
 
         let very_first_blocks = self.last_block_number == 0;
         if very_first_blocks {
@@ -84,16 +102,25 @@ impl EthBridge {
 
         let mut origin_total_difficulty = U256(0.into());
         let mut branch_total_difficulty = U256(0.into());
-
+        
         // Check validity of all the following blocks
         for i in 1..block_headers.len() {
+            Self::log(b"Deserializing next header");
+            Self::log(env::used_gas().to_string().as_bytes());
             let header = rlp::decode::<BlockHeader>(block_headers[i].as_slice()).unwrap();
+            Self::log(b"Deserialized header");
+            Self::log(env::used_gas().to_string().as_bytes());
+            
+            Self::log(b"Validating header");
+            Self::log(env::used_gas().to_string().as_bytes());
             assert!(Self::verify_header(
                 &self,
                 &header,
                 &prev,
                 &dag_nodes[i]
             ));
+            Self::log(b"Header is valid");
+            Self::log(env::used_gas().to_string().as_bytes());
 
             // Compute new chain total difficulty
             branch_total_difficulty += header.difficulty;
@@ -165,7 +192,7 @@ impl EthBridge {
         // Reuse single Merkle root across all the proofs
         let merkle_root = self.dag_merkle_root((block_number as usize / 30000) as u64);
 
-        let pair = ethash::hashimoto(
+        let pair = ethash::hashimoto_with_hasher(
             header_hash.0,
             nonce.0,
             ethash::get_full_size(block_number as usize / 30000),
@@ -177,15 +204,17 @@ impl EthBridge {
                 let node = &nodes[idx / 2];
                 if idx % 2 == 0 {
                     // Divide by 2 to adjust offset for 64-byte words instead of 128-byte
-                    assert_eq!(merkle_root, node.apply_merkle_proof((offset / 2) as u64));
+                    // assert_eq!(merkle_root, node.apply_merkle_proof((offset / 2) as u64));
                 };
 
                 // Reverse each 32 bytes for ETHASH compatibility
                 let mut data = (node.dag_nodes[idx % 2].0).0;
                 data[..32].reverse();
                 data[32..].reverse();
-                ethereum_types::H512(data)
-            }
+                data.into()
+            },
+            keccak256,
+            keccak512,
         );
 
         (H256(pair.0), H256(pair.1))

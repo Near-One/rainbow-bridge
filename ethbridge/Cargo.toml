@@ -10,7 +10,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { "git" = "https://github.com/nearprotocol/json", rev = "1f5779f3b0bd3d2a4b0b975abc46f3d3fe873331", features = ["no_floats"] }
-near-bindgen = "0.3.7"
+near-bindgen = { path = "../../near-bindgen/near-bindgen" }
 borsh = "0.2.10"
 wee_alloc = "0.4.5"
 rust-crypto-wasm = "0.3.1"
@@ -19,10 +19,12 @@ ethereum-types = "0.8.0"
 futures = "0.1.26"
 primal = "0.2.3"
 arrutil = "0.1.2"
-ethash = "0.4.0"
+ethash = { git = "https://github.com/nearprotocol/rust-ethash" }
+#ethash = { path = "../../rust-ethash" }
 serde_derive = "1.0.104"
 hex = "0.4.0"
 derive_more = "^0.99.2"
+rustc-hex = "2.1.0"
 
 [dev-dependencies]
 web3 = "0.8.0"

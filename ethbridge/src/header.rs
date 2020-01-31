@@ -23,7 +23,7 @@ impl DoubleNodeWithMerkleProof {
         let mut data = [0u8; 64];
         data[16..32].copy_from_slice(&(l.0).0);
         data[48..64].copy_from_slice(&(r.0).0);
-        Self::truncate_to_h128(sha256(&data))
+        Self::truncate_to_h128(sha256(&data).into())
     }
 
     pub fn apply_merkle_proof(&self, index: u64) -> H128 {
@@ -31,7 +31,7 @@ impl DoubleNodeWithMerkleProof {
         data[..64].copy_from_slice(&(self.dag_nodes[0].0).0);
         data[64..].copy_from_slice(&(self.dag_nodes[1].0).0);
 
-        let mut leaf = Self::truncate_to_h128(sha256(&data));
+        let mut leaf = Self::truncate_to_h128(sha256(&data).into());
 
         for i in 0..self.proof.len() {
             if (index >> i as u64) % 2 == 0 {

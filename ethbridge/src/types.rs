@@ -1,23 +1,44 @@
+extern crate crypto;
+
 use std::io::{Error, Read, Write};
 use rlp::{Rlp, RlpStream, DecoderError as RlpDecoderError, Decodable as RlpDecodable, Encodable as RlpEncodable};
-use crypto::digest::Digest;
-use crypto::sha3::Sha3;
-use crypto::sha2;
 use ethereum_types;
 use borsh::{BorshDeserialize, BorshSerialize};
-use serde::{Serialize,Deserialize,Deserializer};
-use hex::{FromHex};
+use serde::{Serialize,Deserialize};
 use derive_more::{Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into};
+
+#[cfg(test)]
+use crypto::digest::Digest;
+#[cfg(test)]
+use crypto::sha3::Sha3;
+#[cfg(test)]
+use crypto::sha2;
 
 macro_rules! arr_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
-        #[derive(Default, Clone, Copy, PartialEq, Debug, Display, From, Into, Serialize)]
+        #[derive(Default, Clone, Copy, PartialEq, Debug, Display, From, Into, Serialize, Deserialize)]
         pub struct $name(pub ethereum_types::$name);
+
+        impl From<[u8; $len]> for $name {
+            fn from(item: [u8; $len]) -> Self {
+                $name(item.into())
+            }
+        }
+
+        impl From<&Vec<u8>> for $name {
+            fn from(item: &Vec<u8>) -> Self {
+                let mut data = [0u8; $len];
+                for i in 0..item.len() {
+                    data[$len - 1 - i] = item[item.len() - 1 - i];
+                }
+                $name(data.into())
+            }
+        }
 
         impl BorshSerialize for $name {
             #[inline]
             fn serialize<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
-                writer.write_all(&(self.0).0);
+                writer.write_all(&(self.0).0)?;
                 Ok(())
             }
         }
@@ -40,26 +61,6 @@ macro_rules! arr_declare_wrapper_and_serde {
         impl RlpDecodable for $name {
             fn decode(rlp: &Rlp) -> Result<Self, RlpDecoderError> {
                 Ok($name(<ethereum_types::$name>::decode(rlp)?))
-            }
-        }
-
-        // Implemented instead of deriving to allow short hex be decoded successfully
-        impl<'de> Deserialize<'de> for $name {
-            fn deserialize<D>(deserializer: D) -> Result<Self, <D as Deserializer<'de>>::Error>
-                where
-                    D: Deserializer<'de>,
-            {
-                let mut s: String = serde::de::Deserialize::deserialize(deserializer)?;
-                if s.starts_with("0x") {
-                    s = s[2..].to_string();
-                }
-                while s.len() < $len * 2 {
-                    s.insert_str(0, "0");
-                }
-                let v = Vec::from_hex(&s).map_err(|err| serde::de::Error::custom(err.to_string()))?;
-                let mut arr = [0u8; $len];
-                arr.copy_from_slice(v.as_slice());
-                Ok($name(arr.into()))
             }
         }
     }
@@ -122,20 +123,55 @@ pub type Secret = H256;
 pub type Public = H512;
 pub type Signature = H520;
 
-pub fn sha256(data: &[u8]) -> H256 {
+#[cfg(not(test))]
+pub fn sha256(data: &[u8]) -> [u8; 32] {
+    let mut buffer = [0u8; 32];
+    buffer.copy_from_slice(&near_bindgen::env::sha256(data).as_slice());
+    buffer
+}
+
+#[cfg(not(test))]
+pub fn keccak256(data: &[u8]) -> [u8; 32] {
+    let mut buffer = [0u8; 32];
+    buffer.copy_from_slice(&near_bindgen::env::keccak256(data).as_slice());
+    buffer
+}
+
+#[cfg(not(test))]
+pub fn keccak512(data: &[u8]) -> [u8; 64] {
+    let mut buffer = [0u8; 64];
+    buffer.copy_from_slice(&near_bindgen::env::keccak512(data).as_slice());
+    buffer
+}
+
+//
+
+#[cfg(test)]
+pub fn sha256(data: &[u8]) -> [u8; 32] {
     let mut hasher = sha2::Sha256::new();
     hasher.input(data);
 
     let mut buffer = [0u8; 32];
     hasher.result(&mut buffer);
-    H256(buffer.into())
+    buffer
 }
 
-pub fn keccak256(data: &[u8]) -> H256 {
+#[cfg(test)]
+pub fn keccak256(data: &[u8]) -> [u8; 32] {
     let mut hasher = Sha3::keccak256();
     hasher.input(data);
 
     let mut buffer = [0u8; 32];
     hasher.result(&mut buffer);
-    H256(buffer.into())
+    buffer
+}
+
+#[cfg(test)]
+pub fn keccak512(data: &[u8]) -> [u8; 64] {
+    let mut hasher = Sha3::keccak512();
+    hasher.input(data);
+
+    let mut buffer = [0u8; 64];
+    hasher.result(&mut buffer);
+    buffer
 }
