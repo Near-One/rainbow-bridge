@@ -159,7 +159,7 @@ fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
         account_locked_balance: 0,
         storage_usage: 0,
         attached_deposit: 0,
-        prepaid_gas: 10u64.pow(9),
+        prepaid_gas: 10u64.pow(18),
         random_seed: vec![0, 1, 2],
         is_view,
         output_data_receivers: vec![],
@@ -211,8 +211,6 @@ fn read_block_raw(filename: String) -> BlockWithProofsRaw {
 #[test]
 fn add_dags_merkle_roots() {
 
-    println!("XXX {}", std::mem::size_of::<usize>());
-
     testing_env!(get_context(vec![], false));
 
     let dmr = read_roots_collection();
@@ -242,8 +240,6 @@ fn add_blocks_2_and_3() {
 
     let mut contract = EthBridge::default();
     contract.init(0, read_roots_collection().dag_merkle_roots);
-
-    //println!("XXX! {:02x?}", blocks[0]);
 
     contract.add_block_headers(
         blocks,

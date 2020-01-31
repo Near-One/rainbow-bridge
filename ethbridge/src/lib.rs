@@ -60,16 +60,6 @@ impl EthBridge {
         self.block_hashes.get(&index).cloned()
     }
 
-    #[cfg(not(test))]
-    fn log(arg: &[u8]) {
-        env::log(arg);
-    }
-
-    #[cfg(test)]
-    fn log(arg: &[u8]) {
-        println!("{}", String::from_utf8_lossy(arg));
-    }
-
     //
     // Usually each next sequence should start from the lastest added block:
     // [1]-[2]-[3]-[4]
@@ -84,11 +74,11 @@ impl EthBridge {
         block_headers: Vec<Vec<u8>>,
         dag_nodes: Vec<Vec<DoubleNodeWithMerkleProof>>,
     ) {
-        Self::log(b"Deserializing first header");
-        Self::log(env::used_gas().to_string().as_bytes());
+        env::log(b"Deserializing first header");
+        env::log(env::used_gas().to_string().as_bytes());
         let mut prev = rlp::decode::<BlockHeader>(block_headers[0].as_slice()).unwrap();
-        Self::log(b"First header deserialized");
-        Self::log(env::used_gas().to_string().as_bytes());
+        env::log(b"First header deserialized");
+        env::log(env::used_gas().to_string().as_bytes());
 
         let very_first_blocks = self.last_block_number == 0;
         if very_first_blocks {
@@ -105,22 +95,22 @@ impl EthBridge {
         
         // Check validity of all the following blocks
         for i in 1..block_headers.len() {
-            Self::log(b"Deserializing next header");
-            Self::log(env::used_gas().to_string().as_bytes());
+            env::log(b"Deserializing next header");
+            env::log(env::used_gas().to_string().as_bytes());
             let header = rlp::decode::<BlockHeader>(block_headers[i].as_slice()).unwrap();
-            Self::log(b"Deserialized header");
-            Self::log(env::used_gas().to_string().as_bytes());
+            env::log(b"Deserialized header");
+            env::log(env::used_gas().to_string().as_bytes());
             
-            Self::log(b"Validating header");
-            Self::log(env::used_gas().to_string().as_bytes());
+            env::log(b"Validating header");
+            env::log(env::used_gas().to_string().as_bytes());
             assert!(Self::verify_header(
                 &self,
                 &header,
                 &prev,
                 &dag_nodes[i]
             ));
-            Self::log(b"Header is valid");
-            Self::log(env::used_gas().to_string().as_bytes());
+            env::log(b"Header is valid");
+            env::log(env::used_gas().to_string().as_bytes());
 
             // Compute new chain total difficulty
             branch_total_difficulty += header.difficulty;
@@ -204,7 +194,7 @@ impl EthBridge {
                 let node = &nodes[idx / 2];
                 if idx % 2 == 0 {
                     // Divide by 2 to adjust offset for 64-byte words instead of 128-byte
-                    // assert_eq!(merkle_root, node.apply_merkle_proof((offset / 2) as u64));
+                    assert_eq!(merkle_root, node.apply_merkle_proof((offset / 2) as u64));
                 };
 
                 // Reverse each 32 bytes for ETHASH compatibility

@@ -1,18 +1,9 @@
-extern crate crypto;
-
 use std::io::{Error, Read, Write};
 use rlp::{Rlp, RlpStream, DecoderError as RlpDecoderError, Decodable as RlpDecodable, Encodable as RlpEncodable};
 use ethereum_types;
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Serialize,Deserialize};
 use derive_more::{Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into};
-
-#[cfg(test)]
-use crypto::digest::Digest;
-#[cfg(test)]
-use crypto::sha3::Sha3;
-#[cfg(test)]
-use crypto::sha2;
 
 macro_rules! arr_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
@@ -123,55 +114,20 @@ pub type Secret = H256;
 pub type Public = H512;
 pub type Signature = H520;
 
-#[cfg(not(test))]
 pub fn sha256(data: &[u8]) -> [u8; 32] {
     let mut buffer = [0u8; 32];
     buffer.copy_from_slice(&near_bindgen::env::sha256(data).as_slice());
     buffer
 }
 
-#[cfg(not(test))]
 pub fn keccak256(data: &[u8]) -> [u8; 32] {
     let mut buffer = [0u8; 32];
     buffer.copy_from_slice(&near_bindgen::env::keccak256(data).as_slice());
     buffer
 }
 
-#[cfg(not(test))]
 pub fn keccak512(data: &[u8]) -> [u8; 64] {
     let mut buffer = [0u8; 64];
     buffer.copy_from_slice(&near_bindgen::env::keccak512(data).as_slice());
-    buffer
-}
-
-//
-
-#[cfg(test)]
-pub fn sha256(data: &[u8]) -> [u8; 32] {
-    let mut hasher = sha2::Sha256::new();
-    hasher.input(data);
-
-    let mut buffer = [0u8; 32];
-    hasher.result(&mut buffer);
-    buffer
-}
-
-#[cfg(test)]
-pub fn keccak256(data: &[u8]) -> [u8; 32] {
-    let mut hasher = Sha3::keccak256();
-    hasher.input(data);
-
-    let mut buffer = [0u8; 32];
-    hasher.result(&mut buffer);
-    buffer
-}
-
-#[cfg(test)]
-pub fn keccak512(data: &[u8]) -> [u8; 64] {
-    let mut hasher = Sha3::keccak512();
-    hasher.input(data);
-
-    let mut buffer = [0u8; 64];
-    hasher.result(&mut buffer);
     buffer
 }

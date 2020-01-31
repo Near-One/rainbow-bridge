@@ -148,16 +148,6 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
                         return web3.utils.padLeft(element, 64) + web3.utils.padLeft(blocks[0].elements[index*2 + 1], 64).substr(2)
                     });
 
-        console.log('xxx', JSON.stringify({
-            dag_nodes: arrayPrefixU32Length([web3.utils.hexToBytes(h512s[0]), web3.utils.hexToBytes(h512s[1])]),
-            proof: arrayPrefixU32Length(blocks[0].merkle_proofs.slice(
-                0 * blocks[0].proof_length,
-                (0 + 1) * blocks[0].proof_length,
-            ).map(leaf => web3.utils.padLeft(leaf, 32)))
-        }));
-
-        console.log('!!!!', web3.utils.hexToBytes(web3.utils.padLeft(blocks[0].merkle_proofs[0], 32)));
-
         await ethBridgeContract.add_block_headers({
             //block_headers: blocks.map(block => arrayPrefixU32Length(web3.utils.hexToBytes(block.header_rlp))),
 

@@ -13,7 +13,8 @@ serde_json = { "git" = "https://github.com/nearprotocol/json", rev = "1f5779f3b0
 near-bindgen = { path = "../../near-bindgen/near-bindgen" }
 borsh = "0.2.10"
 wee_alloc = "0.4.5"
-rust-crypto-wasm = "0.3.1"
+sha2 = "0.8"
+sha3 = "0.8"
 rlp = "0.4.2"
 ethereum-types = "0.8.0"
 futures = "0.1.26"
