@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use borsh::{BorshDeserialize, BorshSerialize};
-use near_bindgen::{env, near_bindgen};
+use near_bindgen::{near_bindgen};
 use ethash;
 
 pub mod header;
@@ -74,11 +74,7 @@ impl EthBridge {
         block_headers: Vec<Vec<u8>>,
         dag_nodes: Vec<Vec<DoubleNodeWithMerkleProof>>,
     ) {
-        env::log(b"Deserializing first header");
-        env::log(env::used_gas().to_string().as_bytes());
         let mut prev = rlp::decode::<BlockHeader>(block_headers[0].as_slice()).unwrap();
-        env::log(b"First header deserialized");
-        env::log(env::used_gas().to_string().as_bytes());
 
         let very_first_blocks = self.last_block_number == 0;
         if very_first_blocks {
@@ -95,22 +91,14 @@ impl EthBridge {
         
         // Check validity of all the following blocks
         for i in 1..block_headers.len() {
-            env::log(b"Deserializing next header");
-            env::log(env::used_gas().to_string().as_bytes());
             let header = rlp::decode::<BlockHeader>(block_headers[i].as_slice()).unwrap();
-            env::log(b"Deserialized header");
-            env::log(env::used_gas().to_string().as_bytes());
             
-            env::log(b"Validating header");
-            env::log(env::used_gas().to_string().as_bytes());
             assert!(Self::verify_header(
                 &self,
                 &header,
                 &prev,
                 &dag_nodes[i]
             ));
-            env::log(b"Header is valid");
-            env::log(env::used_gas().to_string().as_bytes());
 
             // Compute new chain total difficulty
             branch_total_difficulty += header.difficulty;
