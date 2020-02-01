@@ -30,7 +30,7 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
             let start = last_block_number;
             let stop = event.number;
             last_block_number = event.number;
-            await handler(start, stop);
+            await handler(start, stop); //TODO
 
             inBlocksCallbacks = false;
         }
@@ -70,7 +70,7 @@ function arrayPrefixU32Length(array) {
         await ethBridgeContract.init({
             dags_start_epoch: 0,
             dags_merkle_roots: roots.dag_merkle_roots
-        }, new BN('1000000000000000000'));
+        }, new BN('10000000000000000'));
         console.log('EthBridge initialization finished');
     }
 
@@ -94,11 +94,27 @@ function arrayPrefixU32Length(array) {
 
     subscribeOnBlocksRangesFrom(web3, last_block_number, async (start, stop) => {
         let blocks = [];
-        for (let i = start; i <= stop; i++) {
-            console.log(`Computing for block #${i}`)
-            const res = await execute(`./ethashproof/cmd/relayer/relayer ${i} | sed -e '1,/Json output/d'`);
-            blocks.push(JSON.parse(res));
-        }
+        let timeBeforeProofsComputed = Date.now();
+        // if (Math.trunc(start/30000) == Math.trunc(stop/30000)) {
+        //     // Can query proofs of same epoch in parallel
+        //     const promises = [];
+        //     console.log(`Computing for all blocks from #${start} to #${stop}`)
+        //     for (let i = start; i <= stop; i++) {
+        //         promises.push(execute(`./ethashproof/cmd/relayer/relayer ${i} | sed -e '1,/Json output/d'`));
+        //     }
+        //     blocks = (await Promise.all(promises)).map(res => JSON.parse(res));
+        // } else {
+            // Sequential query of proofs
+            for (let i = start; i <= stop; i++) {
+                console.log(`Computing for block #${i}`)
+                const res = await execute(`./ethashproof/cmd/relayer/relayer ${i} | sed -e '1,/Json output/d'`);
+                blocks.push(JSON.parse(res));
+            }
+        //}
+        console.log(
+            "Proofs computation took " + Math.trunc((Date.now() - timeBeforeProofsComputed)/10)/100 + "s " +
+            "(" + Math.trunc((Date.now() - timeBeforeProofsComputed)/blocks.length/10)/100 + "s per header)"
+        );
 
         // Check bridge state, may be changed since computation could be long
         const last_block_number_onchain = await ethBridgeContract.last_block_number();
@@ -113,9 +129,10 @@ function arrayPrefixU32Length(array) {
             start = last_block_number_onchain;
         }
 
+        let timeBeforeSubmission = Date.now();
         console.log(`Submitting ${blocks.length} blocks from ${start} to ${stop} to EthBridge`);
         await ethBridgeContract.add_block_headers({
-            block_headers: blocks.map(block => arrayPrefixU32Length(web3.utils.hexToBytes(block.header_rlp))),
+            block_headers: blocks.map(block => web3.utils.hexToBytes(block.header_rlp)),
             dag_nodes: blocks.map(block => {
                 const h512s = block.elements
                     .filter((_, index) => index % 2 === 0)
@@ -135,6 +152,10 @@ function arrayPrefixU32Length(array) {
                     });
             })
         }, new BN('1000000000000000000'));
+        console.log(
+            "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
+            "(" + Math.trunc((Date.now() - timeBeforeSubmission)/blocks.length/10)/100 + "s per header)"
+        );
         console.log(`Successfully submitted ${blocks.length} blocks from ${start} to ${stop} to EthBridge`);
     });
 

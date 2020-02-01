@@ -1,17 +1,55 @@
 use std::collections::HashMap;
 use borsh::{BorshDeserialize, BorshSerialize};
+use serde::{Serialize, Deserialize};
 use near_bindgen::{near_bindgen};
 use ethash;
-
-pub mod header;
-use header::*;
-
-pub mod types;
-use types::*;
+use eth_types::*;
 
 #[cfg(target_arch = "wasm32")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
+#[cfg(not(target_arch = "wasm32"))]
+#[cfg(test)]
+mod tests;
+
+#[derive(Default, Debug, Clone, BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+pub struct DoubleNodeWithMerkleProof {
+    pub dag_nodes: Vec<H512>, // [H512; 2]
+    pub proof: Vec<H128>,
+}
+
+impl DoubleNodeWithMerkleProof {
+    fn truncate_to_h128(arr: H256) -> H128 {
+        let mut data = [0u8; 16];
+        data.copy_from_slice(&(arr.0).0[16..]);
+        H128(data.into())
+    }
+
+    fn hash_h128(l: H128, r: H128) -> H128 {
+        let mut data = [0u8; 64];
+        data[16..32].copy_from_slice(&(l.0).0);
+        data[48..64].copy_from_slice(&(r.0).0);
+        Self::truncate_to_h128(near_sha256(&data).into())
+    }
+
+    pub fn apply_merkle_proof(&self, index: u64) -> H128 {
+        let mut data = [0u8; 128];
+        data[..64].copy_from_slice(&(self.dag_nodes[0].0).0);
+        data[64..].copy_from_slice(&(self.dag_nodes[1].0).0);
+
+        let mut leaf = Self::truncate_to_h128(near_sha256(&data).into());
+
+        for i in 0..self.proof.len() {
+            if (index >> i as u64) % 2 == 0 {
+                leaf = Self::hash_h128(leaf, self.proof[i]);
+            } else {
+                leaf = Self::hash_h128(self.proof[i], leaf);
+            }
+        }
+        leaf
+    }
+}
 
 #[near_bindgen]
 #[derive(Default, BorshDeserialize, BorshSerialize)]
@@ -57,11 +95,11 @@ impl EthBridge {
     }
 
     //
-    // Usually each next sequence should start from the last added block:
+    // Usually each next sequence should start from the lastest added block:
     // [1]-[2]-[3]-[4]
     //             [4]-[5]-[6]-[7]
     //
-    // In case of reorg next sequence can start from the last same block:
+    // In case of reorg next sequence can start from the lastest common block:
     // [1]-[2]-[3]-[4a]
     //         [3]-[4b]-[5]-[6]
     //
@@ -84,10 +122,11 @@ impl EthBridge {
 
         let mut origin_total_difficulty = U256(0.into());
         let mut branch_total_difficulty = U256(0.into());
-
+        
         // Check validity of all the following blocks
         for i in 1..block_headers.len() {
             let header = rlp::decode::<BlockHeader>(block_headers[i].as_slice()).unwrap();
+            
             assert!(Self::verify_header(
                 &self,
                 &header,
@@ -165,7 +204,7 @@ impl EthBridge {
         // Reuse single Merkle root across all the proofs
         let merkle_root = self.dag_merkle_root((block_number as usize / 30000) as u64);
 
-        let pair = ethash::hashimoto(
+        let pair = ethash::hashimoto_with_hasher(
             header_hash.0,
             nonce.0,
             ethash::get_full_size(block_number as usize / 30000),
@@ -184,8 +223,10 @@ impl EthBridge {
                 let mut data = (node.dag_nodes[idx % 2].0).0;
                 data[..32].reverse();
                 data[32..].reverse();
-                ethereum_types::H512(data)
-            }
+                data.into()
+            },
+            near_keccak256,
+            near_keccak512,
         );
 
         (H256(pair.0), H256(pair.1))
