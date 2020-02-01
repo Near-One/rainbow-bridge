@@ -1,13 +1,13 @@
 use std::panic;
 use futures::future::{join_all};
 
-use serde::{Deserialize,Deserializer};
+use serde::{Deserialize, Deserializer};
 use hex::{FromHex};
 use rlp::{RlpStream};
 use web3::futures::Future;
 use web3::types::{Block};
-
-use crate::{EthBridge,types::{H128,H256,H512},header::{DoubleNodeWithMerkleProof}};
+use crate::{EthBridge, DoubleNodeWithMerkleProof};
+use eth_types::*;
 
 //#[macro_use]
 //extern crate lazy_static;

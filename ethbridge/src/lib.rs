@@ -1,21 +1,55 @@
 use std::collections::HashMap;
 use borsh::{BorshDeserialize, BorshSerialize};
+use serde::{Serialize, Deserialize};
 use near_bindgen::{near_bindgen};
 use ethash;
-
-pub mod header;
-use header::*;
-
-pub mod types;
-use types::*;
-
-#[cfg(not(target_arch = "wasm32"))]
-#[cfg(test)]
-pub mod tests;
+use eth_types::*;
 
 #[cfg(target_arch = "wasm32")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
+#[cfg(not(target_arch = "wasm32"))]
+#[cfg(test)]
+mod tests;
+
+#[derive(Default, Debug, Clone, BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+pub struct DoubleNodeWithMerkleProof {
+    pub dag_nodes: Vec<H512>, // [H512; 2]
+    pub proof: Vec<H128>,
+}
+
+impl DoubleNodeWithMerkleProof {
+    fn truncate_to_h128(arr: H256) -> H128 {
+        let mut data = [0u8; 16];
+        data.copy_from_slice(&(arr.0).0[16..]);
+        H128(data.into())
+    }
+
+    fn hash_h128(l: H128, r: H128) -> H128 {
+        let mut data = [0u8; 64];
+        data[16..32].copy_from_slice(&(l.0).0);
+        data[48..64].copy_from_slice(&(r.0).0);
+        Self::truncate_to_h128(near_sha256(&data).into())
+    }
+
+    pub fn apply_merkle_proof(&self, index: u64) -> H128 {
+        let mut data = [0u8; 128];
+        data[..64].copy_from_slice(&(self.dag_nodes[0].0).0);
+        data[64..].copy_from_slice(&(self.dag_nodes[1].0).0);
+
+        let mut leaf = Self::truncate_to_h128(near_sha256(&data).into());
+
+        for i in 0..self.proof.len() {
+            if (index >> i as u64) % 2 == 0 {
+                leaf = Self::hash_h128(leaf, self.proof[i]);
+            } else {
+                leaf = Self::hash_h128(self.proof[i], leaf);
+            }
+        }
+        leaf
+    }
+}
 
 #[near_bindgen]
 #[derive(Default, BorshDeserialize, BorshSerialize)]
@@ -191,8 +225,8 @@ impl EthBridge {
                 data[32..].reverse();
                 data.into()
             },
-            keccak256,
-            keccak512,
+            near_keccak256,
+            near_keccak512,
         );
 
         (H256(pair.0), H256(pair.1))
