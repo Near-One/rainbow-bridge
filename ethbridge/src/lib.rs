@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Serialize, Deserialize};
 use near_bindgen::{near_bindgen};
-use ethash;
 use eth_types::*;
 
 #[cfg(target_arch = "wasm32")]
@@ -108,7 +107,7 @@ impl EthBridge {
         block_headers: Vec<Vec<u8>>,
         dag_nodes: Vec<Vec<DoubleNodeWithMerkleProof>>,
     ) {
-        let mut prev = rlp::decode::<BlockHeader>(block_headers[0].as_slice()).unwrap();
+        let mut prev: BlockHeader = rlp::decode(block_headers[0].as_slice()).unwrap();
 
         let very_first_blocks = self.last_block_number == 0;
         if very_first_blocks {
@@ -125,7 +124,7 @@ impl EthBridge {
         
         // Check validity of all the following blocks
         for i in 1..block_headers.len() {
-            let header = rlp::decode::<BlockHeader>(block_headers[i].as_slice()).unwrap();
+            let header: BlockHeader = rlp::decode(block_headers[i].as_slice()).unwrap();
             
             assert!(Self::verify_header(
                 &self,

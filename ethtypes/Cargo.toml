@@ -13,5 +13,6 @@ serde_json = { "git" = "https://github.com/nearprotocol/json", rev = "1f5779f3b0
 near-bindgen = { path = "../../near-bindgen/near-bindgen" }
 borsh = "0.2.10"
 rlp = "0.4.2"
+rlp_derive = { git = "https://github.com/paritytech/parity-ethereum/" }
 ethereum-types = "0.8.0"
 derive_more = "^0.99.2"
