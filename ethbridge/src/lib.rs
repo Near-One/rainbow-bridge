@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+#[cfg(target_arch = "wasm32")]
 use std::io::Cursor;
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_bindgen::{near_bindgen};

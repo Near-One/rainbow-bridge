@@ -2,12 +2,15 @@ use std::io::{Error, Read, Write};
 use rlp::{Rlp, RlpStream, DecoderError as RlpDecoderError, Decodable as RlpDecodable, Encodable as RlpEncodable};
 use rlp_derive::{RlpEncodable as RlpEncodableDerive, RlpDecodable as RlpDecodableDerive};
 use ethereum_types;
+#[cfg(not(target_arch = "wasm32"))]
+use serde::{Serialize, Deserialize};
 use borsh::{BorshDeserialize, BorshSerialize};
 use derive_more::{Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into};
 
 macro_rules! arr_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
         #[derive(Default, Clone, Copy, Eq, PartialEq, Debug, Display, From, Into)]
+        #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
         pub struct $name(pub ethereum_types::$name);
 
         impl From<[u8; $len]> for $name {
@@ -68,6 +71,7 @@ arr_declare_wrapper_and_serde!(Bloom, 256);
 macro_rules! uint_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
         #[derive(Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into)]
+        #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
         pub struct $name(pub ethereum_types::$name);
 
         impl BorshSerialize for $name {
@@ -117,6 +121,7 @@ pub type Signature = H520;
 // Block Header
 
 #[derive(Debug, Clone, BorshDeserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct BlockHeader {
     pub parent_hash: H256,
     pub uncles_hash: H256,
