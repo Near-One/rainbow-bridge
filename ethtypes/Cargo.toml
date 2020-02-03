@@ -16,3 +16,4 @@ rlp = "0.4.2"
 rlp_derive = { git = "https://github.com/paritytech/parity-ethereum/" }
 ethereum-types = "0.8.0"
 derive_more = "^0.99.2"
+sha3 = "0.8"

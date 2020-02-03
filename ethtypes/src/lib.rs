@@ -5,6 +5,7 @@ use ethereum_types;
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Serialize, Deserialize};
 use derive_more::{Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into};
+use sha3::{Keccak256, Keccak512};
 
 macro_rules! arr_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
@@ -236,13 +237,29 @@ pub fn near_sha256(data: &[u8]) -> [u8; 32] {
 }
 
 pub fn near_keccak256(data: &[u8]) -> [u8; 32] {
+    // let mut buffer = [0u8; 32];
+    // buffer.copy_from_slice(&near_bindgen::env::keccak256(data).as_slice());
+    // buffer
+
+    use sha3::Digest;
+
+    let mut hasher = Keccak256::default();
+    hasher.input(&data);
     let mut buffer = [0u8; 32];
-    buffer.copy_from_slice(&near_bindgen::env::keccak256(data).as_slice());
+    buffer.copy_from_slice(hasher.result().as_slice());
     buffer
 }
 
 pub fn near_keccak512(data: &[u8]) -> [u8; 64] {
+    // let mut buffer = [0u8; 64];
+    // buffer.copy_from_slice(&near_bindgen::env::keccak512(data).as_slice());
+    // buffer
+
+    use sha3::Digest;
+
+    let mut hasher = Keccak512::default();
+    hasher.input(&data);
     let mut buffer = [0u8; 64];
-    buffer.copy_from_slice(&near_bindgen::env::keccak512(data).as_slice());
+    buffer.copy_from_slice(hasher.result().as_slice());
     buffer
 }
