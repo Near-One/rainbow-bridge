@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::io::Cursor;
 use borsh::{BorshDeserialize, BorshSerialize};
-use serde::{Serialize, Deserialize};
 use near_bindgen::{near_bindgen};
 use eth_types::*;
 
@@ -13,7 +12,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 #[cfg(test)]
 mod tests;
 
-#[derive(Default, Debug, Clone, BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, BorshDeserialize, BorshSerialize)]
 pub struct DoubleNodeWithMerkleProof {
     pub dag_nodes: Vec<H512>, // [H512; 2]
     pub proof: Vec<H128>,

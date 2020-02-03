@@ -3,12 +3,11 @@ use rlp::{Rlp, RlpStream, DecoderError as RlpDecoderError, Decodable as RlpDecod
 use rlp_derive::{RlpEncodable as RlpEncodableDerive, RlpDecodable as RlpDecodableDerive};
 use ethereum_types;
 use borsh::{BorshDeserialize, BorshSerialize};
-use serde::{Serialize, Deserialize};
 use derive_more::{Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into};
 
 macro_rules! arr_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
-        #[derive(Default, Clone, Copy, Eq, PartialEq, Debug, Display, From, Into, Serialize, Deserialize)]
+        #[derive(Default, Clone, Copy, Eq, PartialEq, Debug, Display, From, Into)]
         pub struct $name(pub ethereum_types::$name);
 
         impl From<[u8; $len]> for $name {
@@ -68,7 +67,7 @@ arr_declare_wrapper_and_serde!(Bloom, 256);
 
 macro_rules! uint_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
-        #[derive(Default, Clone, Copy, Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Debug, Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into)]
+        #[derive(Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into)]
         pub struct $name(pub ethereum_types::$name);
 
         impl BorshSerialize for $name {
@@ -117,7 +116,7 @@ pub type Signature = H520;
 
 // Block Header
 
-#[derive(Debug, Clone, Serialize, Deserialize, BorshDeserialize)]
+#[derive(Debug, Clone, BorshDeserialize)]
 pub struct BlockHeader {
     pub parent_hash: H256,
     pub uncles_hash: H256,
@@ -210,7 +209,7 @@ impl RlpDecodable for BlockHeader {
 
 // Log
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, RlpEncodableDerive, RlpDecodableDerive)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, RlpEncodableDerive, RlpDecodableDerive)]
 pub struct LogEntry {
 	pub address: Address,
 	pub topics: Vec<H256>,
@@ -219,7 +218,7 @@ pub struct LogEntry {
 
 // Receipt Header
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, RlpEncodableDerive, RlpDecodableDerive)]
+#[derive(Debug, Clone, PartialEq, Eq, RlpEncodableDerive, RlpDecodableDerive)]
 pub struct Receipt {
     pub state_root: H256,
     pub gas_used: U256,
