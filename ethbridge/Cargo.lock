@@ -340,7 +340,7 @@ dependencies = [
 [[package]]
 name = "ethash"
 version = "0.4.0"
-source = "git+https://github.com/nearprotocol/rust-ethash#7d8b17c618e61b1faa6aa7b79436289d8d25447e"
+source = "git+https://github.com/nearprotocol/rust-ethash#8f3c699e8926ff0ccddcd0282f77d1d8b434862e"
 dependencies = [
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",

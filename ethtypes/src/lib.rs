@@ -117,7 +117,7 @@ pub type Signature = H520;
 
 // Block Header
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, BorshDeserialize)]
 pub struct BlockHeader {
     pub parent_hash: H256,
     pub uncles_hash: H256,

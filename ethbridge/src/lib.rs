@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::io::Cursor;
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Serialize, Deserialize};
 use near_bindgen::{near_bindgen};
@@ -60,7 +61,6 @@ pub struct EthBridge {
     last_block_number: u64,
 }
 
-#[near_bindgen]
 impl EthBridge {
     const NUMBER_OF_FUTURE_BLOCKS: u64 = 10;
 
@@ -230,4 +230,124 @@ impl EthBridge {
 
         (H256(pair.0), H256(pair.1))
     }
+}
+
+#[cfg(target_arch = "wasm32")]
+#[no_mangle]
+pub extern "C" fn init() {
+    near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
+    let input = near_bindgen::env::input().unwrap();
+    let mut c = Cursor::new(&input);
+    let dags_start_epoch: u64 = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
+    let dags_merkle_roots: Vec<H128> =
+        borsh::BorshDeserialize::deserialize(&mut c).unwrap();
+    assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
+    let mut contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
+    contract.init(dags_start_epoch, dags_merkle_roots);
+    near_bindgen::env::state_write(&contract);
+}
+#[cfg(target_arch = "wasm32")]
+#[no_mangle]
+pub extern "C" fn initialized() {
+    near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
+    let contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
+    let result = contract.initialized();
+    let result = result.try_to_vec().unwrap();
+    near_bindgen::env::value_return(&result);
+}
+#[cfg(target_arch = "wasm32")]
+#[no_mangle]
+pub extern "C" fn last_block_number() {
+    near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
+    let contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
+    let result = contract.last_block_number();
+    let result = result.try_to_vec().unwrap();
+    near_bindgen::env::value_return(&result);
+}
+#[cfg(target_arch = "wasm32")]
+#[no_mangle]
+pub extern "C" fn dag_merkle_root() {
+    near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
+    let input = near_bindgen::env::input().unwrap();
+    let mut c = Cursor::new(&input);
+    let epoch: u64 = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
+    assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
+    let contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
+    let result = contract.dag_merkle_root(epoch);
+    let result = result.try_to_vec().unwrap();
+    near_bindgen::env::value_return(&result);
+}
+#[cfg(target_arch = "wasm32")]
+#[no_mangle]
+pub extern "C" fn block_hash_unsafe() {
+    near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
+    let input = near_bindgen::env::input().unwrap();
+    let mut c = Cursor::new(&input);
+    let index: u64 = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
+    assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
+    let contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
+    let result = contract.block_hash_unsafe(index);
+    let result = result.try_to_vec().unwrap();
+    near_bindgen::env::value_return(&result);
+}
+#[cfg(target_arch = "wasm32")]
+#[no_mangle]
+pub extern "C" fn block_hash() {
+    near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
+    let input = near_bindgen::env::input().unwrap();
+    let mut c = Cursor::new(&input);
+    let index: u64 = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
+    assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
+    let contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
+    let result = contract.block_hash(index);
+    let result = result.try_to_vec().unwrap();
+    near_bindgen::env::value_return(&result);
+}
+#[cfg(target_arch = "wasm32")]
+#[no_mangle]
+pub extern "C" fn add_block_headers() {
+    near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
+    let input = near_bindgen::env::input().unwrap();
+    let mut c = Cursor::new(&input);
+    let block_headers: Vec<Vec<u8>> =
+        borsh::BorshDeserialize::deserialize(&mut c).unwrap();
+    let dag_nodes: Vec<Vec<DoubleNodeWithMerkleProof>> =
+        borsh::BorshDeserialize::deserialize(&mut c).unwrap();
+    assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
+    let mut contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
+    contract.add_block_headers(block_headers, dag_nodes);
+    near_bindgen::env::state_write(&contract);
+}
+#[cfg(target_arch = "wasm32")]
+#[no_mangle]
+pub extern "C" fn verify_header() {
+    near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
+    let input = near_bindgen::env::input().unwrap();
+    let mut c = Cursor::new(&input);
+    let header: BlockHeader = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
+    let prev: BlockHeader = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
+    let dag_nodes: Vec<DoubleNodeWithMerkleProof> =
+        borsh::BorshDeserialize::deserialize(&mut c).unwrap();
+    assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
+    let contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
+    let result = contract.verify_header(&header, &prev, &dag_nodes);
+    let result = result.try_to_vec().unwrap();
+    near_bindgen::env::value_return(&result);
+}
+#[cfg(target_arch = "wasm32")]
+#[no_mangle]
+pub extern "C" fn hashimoto_merkle() {
+    near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
+    let input = near_bindgen::env::input().unwrap();
+    let mut c = Cursor::new(&input);
+    let header_hash: H256 = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
+    let nonce: H64 = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
+    let block_number: u64 = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
+    let nodes: Vec<DoubleNodeWithMerkleProof> =
+        borsh::BorshDeserialize::deserialize(&mut c).unwrap();
+    assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
+    let contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
+    let result = contract.hashimoto_merkle(header_hash, nonce, block_number, nodes);
+    let result = result.try_to_vec().unwrap();
+    near_bindgen::env::value_return(&result);
 }
