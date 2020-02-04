@@ -1,6 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use near_bindgen::{near_bindgen};
 use eth_types::*;
+use near_bindgen::near_bindgen;
 
 #[near_bindgen]
 #[derive(Default, BorshDeserialize, BorshSerialize)]
@@ -25,8 +25,6 @@ impl EthProver {
         let log_entry: LogEntry = rlp::decode(log_entry_data.as_slice()).unwrap();
         let receipt: Receipt = rlp::decode(receipt_data.as_slice()).unwrap();
         let header_data: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
-
-        
 
         true
     }
