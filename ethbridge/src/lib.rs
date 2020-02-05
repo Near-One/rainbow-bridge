@@ -116,7 +116,7 @@ impl EthBridge {
             self.last_block_number = prev.number;
         } else {
             // Check first block hash equals to submitted one
-            assert_eq!(prev.hash.unwrap(), self.block_hashes[&prev.number]);
+            assert_eq!(prev.hash.unwrap(), self.block_hashes[&prev.number], "First block hash should be equal to submitted one");
         }
 
         let mut origin_total_difficulty = U256(0.into());
@@ -233,6 +233,7 @@ impl EthBridge {
 #[cfg(target_arch = "wasm32")]
 #[no_mangle]
 pub extern "C" fn init() {
+    near_bindgen::env::setup_panic_hook();
     near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
     let input = near_bindgen::env::input().unwrap();
     let mut c = Cursor::new(&input);
@@ -247,6 +248,7 @@ pub extern "C" fn init() {
 #[cfg(target_arch = "wasm32")]
 #[no_mangle]
 pub extern "C" fn initialized() {
+    near_bindgen::env::setup_panic_hook();
     near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
     let contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
     let result = contract.initialized();
@@ -256,6 +258,7 @@ pub extern "C" fn initialized() {
 #[cfg(target_arch = "wasm32")]
 #[no_mangle]
 pub extern "C" fn last_block_number() {
+    near_bindgen::env::setup_panic_hook();
     near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
     let contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
     let result = contract.last_block_number();
@@ -265,6 +268,7 @@ pub extern "C" fn last_block_number() {
 #[cfg(target_arch = "wasm32")]
 #[no_mangle]
 pub extern "C" fn dag_merkle_root() {
+    near_bindgen::env::setup_panic_hook();
     near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
     let input = near_bindgen::env::input().unwrap();
     let mut c = Cursor::new(&input);
@@ -278,6 +282,7 @@ pub extern "C" fn dag_merkle_root() {
 #[cfg(target_arch = "wasm32")]
 #[no_mangle]
 pub extern "C" fn block_hash_unsafe() {
+    near_bindgen::env::setup_panic_hook();
     near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
     let input = near_bindgen::env::input().unwrap();
     let mut c = Cursor::new(&input);
@@ -291,6 +296,7 @@ pub extern "C" fn block_hash_unsafe() {
 #[cfg(target_arch = "wasm32")]
 #[no_mangle]
 pub extern "C" fn block_hash() {
+    near_bindgen::env::setup_panic_hook();
     near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
     let input = near_bindgen::env::input().unwrap();
     let mut c = Cursor::new(&input);
@@ -304,6 +310,7 @@ pub extern "C" fn block_hash() {
 #[cfg(target_arch = "wasm32")]
 #[no_mangle]
 pub extern "C" fn add_block_headers() {
+    near_bindgen::env::setup_panic_hook();
     near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
     let input = near_bindgen::env::input().unwrap();
     let mut c = Cursor::new(&input);
@@ -319,6 +326,7 @@ pub extern "C" fn add_block_headers() {
 #[cfg(target_arch = "wasm32")]
 #[no_mangle]
 pub extern "C" fn verify_header() {
+    near_bindgen::env::setup_panic_hook();
     near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
     let input = near_bindgen::env::input().unwrap();
     let mut c = Cursor::new(&input);
@@ -335,6 +343,7 @@ pub extern "C" fn verify_header() {
 #[cfg(target_arch = "wasm32")]
 #[no_mangle]
 pub extern "C" fn hashimoto_merkle() {
+    near_bindgen::env::setup_panic_hook();
     near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
     let input = near_bindgen::env::input().unwrap();
     let mut c = Cursor::new(&input);

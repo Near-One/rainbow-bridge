@@ -226,6 +226,36 @@ function deserialize(schema, fieldType, buffer) {
 
 const DEFAULT_FUNC_CALL_AMOUNT = new BN('10000000000000000');
 
+const signAndSendTransaction = async (account, receiverId, actions) => {
+    await account.ready;
+
+    // TODO: Find matching access key based on transaction
+    const accessKey = await account.findAccessKey();
+    if (!accessKey) {
+        throw new Error(`Can not sign transactions for account ${account.accountId}, no matching key pair found in Signer.`, 'KeyNotFound');
+    }
+
+    const status = await account.connection.provider.status();
+
+    const [txHash, signedTx] = await nearlib.transactions.signTransaction(
+      receiverId, ++accessKey.nonce, actions, nearlib.utils.serialize.base_decode(status.sync_info.latest_block_hash), account.connection.signer, account.accountId, account.connection.networkId
+    );
+    console.log("TxHash", nearlib.utils.serialize.base_encode(txHash));
+
+    let result;
+    try {
+        result = await account.connection.provider.sendTransaction(signedTx);
+    } catch (error) {
+        throw error;
+    }
+
+    if (result.status.Failure) {
+        throw new Error(JSON.stringify(result.status.Failure))
+    }
+
+    return result;
+}
+
 class Contract {
     constructor(account, contractId, options) {
         this.account = account;
@@ -250,15 +280,20 @@ class Contract {
                 enumerable: true,
                 value: async (args, gas, amount) => {
                     args = serialize(borshSchema, d.inputFieldType, args);
-                    const rawResult = await account.signAndSendTransaction(contractId, [nearlib.transactions.functionCall(
-                      d.methodName,
-                      Buffer.from(args),
-                      gas || DEFAULT_FUNC_CALL_AMOUNT,
-                      amount
-                    )]);
+                    try {
+                        const rawResult = await signAndSendTransaction(account, contractId, [nearlib.transactions.functionCall(
+                          d.methodName,
+                          Buffer.from(args),
+                          gas || DEFAULT_FUNC_CALL_AMOUNT,
+                          amount
+                        )]);
 
-                    const result = getBorshTransactionLastResult(rawResult);
-                    return result && deserialize(borshSchema, d.outputFieldType, result);
+                        const result = getBorshTransactionLastResult(rawResult);
+                        return result && deserialize(borshSchema, d.outputFieldType, result);
+                    } catch (e) {
+                        console.log("Failed: ", e);
+                        throw e;
+                    }
                 }
             });
         });
@@ -341,32 +376,7 @@ class EthBridgeContract extends Contract {
         console.log("Web3 block number is " + last_block_number);
     }
 
-
-
-    subscribeOnBlocksRangesFrom(web3, last_block_number, async (start, stop) => {
-        let blocks = [];
-        let timeBeforeProofsComputed = Date.now();
-        // if (Math.trunc(start/30000) == Math.trunc(stop/30000)) {
-        //     // Can query proofs of same epoch in parallel
-        //     const promises = [];
-        //     console.log(`Computing for all blocks from #${start} to #${stop}`)
-        //     for (let i = start; i <= stop; i++) {
-        //         promises.push(execute(`./ethashproof/cmd/relayer/relayer ${i} | sed -e '1,/Json output/d'`));
-        //     }
-        //     blocks = (await Promise.all(promises)).map(res => JSON.parse(res));
-        // } else {
-            // Sequential query of proofs
-            for (let i = start; i <= stop; i++) {
-                console.log(`Computing for block #${i}`)
-                const res = await execute(`./ethashproof/cmd/relayer/relayer ${i} | sed -e '1,/Json output/d'`);
-                blocks.push(JSON.parse(res));
-            }
-        //}
-        console.log(
-            "Proofs computation took " + Math.trunc((Date.now() - timeBeforeProofsComputed)/10)/100 + "s " +
-            "(" + Math.trunc((Date.now() - timeBeforeProofsComputed)/blocks.length/10)/100 + "s per header)"
-        );
-
+    const submitBlocks = async (blocks, start, stop) => {
         // Check bridge state, may be changed since computation could be long
         const last_block_number_onchain = await ethBridgeContract.last_block_number();
         console.log('ethBridgeContract.last_block_number =', last_block_number_onchain);
@@ -405,10 +415,43 @@ class EthBridgeContract extends Contract {
         };
         await ethBridgeContract.add_block_headers(args, new BN('1000000000000000'));
         console.log(
-            "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
-            "(" + Math.trunc((Date.now() - timeBeforeSubmission)/blocks.length/10)/100 + "s per header)"
+          "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
+          "(" + Math.trunc((Date.now() - timeBeforeSubmission)/blocks.length/10)/100 + "s per header)"
         );
         console.log(`Successfully submitted ${blocks.length} blocks from ${start} to ${stop} to EthBridge`);
+    };
+
+
+    subscribeOnBlocksRangesFrom(web3, last_block_number.toNumber(), async (start, stop) => {
+        let blocks = [];
+        let timeBeforeProofsComputed = Date.now();
+        let localStart = start;
+        console.log(`Need to collect ${stop - start + 1} proofs from #${start} to #${stop}`);
+        let shouldStop = false;
+        for (let i = start; !shouldStop && i <= stop; ) {
+            const N = blocks ? 2 : 3;
+            console.log(`Computing for block #${i} to #${i + N}`)
+            let j = 0;
+            const promises = [];
+            for (; j < N; j++) {
+                const ind = i + j;
+                if (Math.trunc(i/30000) == Math.trunc(ind/30000)) {
+                    promises.push(execute(`./ethashproof/cmd/relayer/relayer ${ind} | sed -e '1,/Json output/d'`));
+                } else {
+                    break;
+                }
+            }
+            blocks = blocks.slice(blocks.length - 1).concat((await Promise.all(promises)).map(res => JSON.parse(res)));
+            // submit blocks
+            submitBlocks(blocks, i, i + j - 1).catch(() => {
+                shouldStop = true;
+            })
+            i += j;
+        }
+        console.log(
+            "Proofs computation took " + Math.trunc((Date.now() - timeBeforeProofsComputed)/10)/100 + "s " +
+            "(" + Math.trunc((Date.now() - timeBeforeProofsComputed)/blocks.length/10)/100 + "s per header)"
+        );
     });
 
     //console.log(await web3.eth.getBlockNumber());
