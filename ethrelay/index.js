@@ -317,7 +317,7 @@ class EthBridgeContract extends Contract {
         await ethBridgeContract.init({
             dags_start_epoch: 0,
             dags_merkle_roots: roots.dag_merkle_roots
-        }, new BN('10000000000000000'));
+        }, new BN('1000000000000000'));
         console.log('EthBridge initialization finished');
     }
 
@@ -334,11 +334,14 @@ class EthBridgeContract extends Contract {
     }
 
     let last_block_number = await ethBridgeContract.last_block_number();
-    if (last_block_number === 0) {
+    console.log("Contract block number is " + last_block_number);
+    if (last_block_number == 0) {
         // Let's start bridge from current block since it is not initialized
         last_block_number = await web3.eth.getBlockNumber();
+        console.log("Web3 block number is " + last_block_number);
     }
-    console.log("Last block number is " + last_block_number);
+
+
 
     subscribeOnBlocksRangesFrom(web3, last_block_number, async (start, stop) => {
         let blocks = [];
@@ -368,7 +371,7 @@ class EthBridgeContract extends Contract {
         const last_block_number_onchain = await ethBridgeContract.last_block_number();
         console.log('ethBridgeContract.last_block_number =', last_block_number_onchain);
         if (last_block_number_onchain >= stop) {
-            console.log('Skipping submission due all were already sumbitted by someone');
+            console.log('Skipping submission due all were already submitted by someone');
             return;
         }
         if (last_block_number_onchain > start) {
@@ -379,27 +382,28 @@ class EthBridgeContract extends Contract {
 
         let timeBeforeSubmission = Date.now();
         console.log(`Submitting ${blocks.length} blocks from ${start} to ${stop} to EthBridge`);
-        await ethBridgeContract.add_block_headers({
+        const args = {
             block_headers: blocks.map(block => web3.utils.hexToBytes(block.header_rlp)),
             dag_nodes: blocks.map(block => {
                 const h512s = block.elements
-                    .filter((_, index) => index % 2 === 0)
-                    .map((element, index) => {
-                        return web3.utils.padLeft(element, 64) + web3.utils.padLeft(block.elements[index*2 + 1], 64).substr(2)
-                    });
+                  .filter((_, index) => index % 2 === 0)
+                  .map((element, index) => {
+                      return web3.utils.padLeft(element, 64) + web3.utils.padLeft(block.elements[index*2 + 1], 64).substr(2)
+                  });
                 return h512s
-                    .filter((_, index) => index % 2 === 0)
-                    .map((element, index) => {
-                        return {
-                            dag_nodes: [element, h512s[index*2 + 1]],
-                            proof: block.merkle_proofs.slice(
-                                index * block.proof_length,
-                                (index + 1) * block.proof_length,
-                            ).map(leaf => web3.utils.padLeft(leaf, 32))
-                        };
-                    });
+                  .filter((_, index) => index % 2 === 0)
+                  .map((element, index) => {
+                      return {
+                          dag_nodes: [element, h512s[index*2 + 1]],
+                          proof: block.merkle_proofs.slice(
+                            index * block.proof_length,
+                            (index + 1) * block.proof_length,
+                          ).map(leaf => web3.utils.padLeft(leaf, 32))
+                      };
+                  });
             })
-        }, new BN('1000000000000000000'));
+        };
+        await ethBridgeContract.add_block_headers(args, new BN('1000000000000000'));
         console.log(
             "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
             "(" + Math.trunc((Date.now() - timeBeforeSubmission)/blocks.length/10)/100 + "s per header)"
