@@ -429,23 +429,21 @@ class EthBridgeContract extends Contract {
         for (let i = start; !shouldStop && i <= stop; ) {
             const N = blocks ? 2 : 3;
             console.log(`Computing for blocks #${i} to #${i + N - 1}`)
-            let submitAmount = 0;
+            let ind = i;
             const promises = [];
-            for (; submitAmount < N; submitAmount++) {
-                const ind = i + submitAmount;
+            for (; ind - i < N && ind <= stop; ind++) {
                 if (Math.trunc(i/30000) == Math.trunc(ind/30000)) {
-                    // TODO: remove await and figureout why ethashproof fails even for same epoch
-                    promises.push(await execute(`./ethashproof/cmd/relayer/relayer ${ind} | sed -e '1,/Json output/d'`));
+                    promises.push(execute(`./ethashproof/cmd/relayer/relayer ${ind} | sed -e '1,/Json output/d'`));
                 } else {
                     break;
                 }
             }
             blocks = blocks.slice(blocks.length - 1).concat((await Promise.all(promises)).map(JSON.parse));
             
-            submitBlocks(blocks, i, i + submitAmount - 1).catch(() => {
+            submitBlocks(blocks, i, ind - 1).catch(() => {
                 shouldStop = true;
             })
-            i += submitAmount;
+            i = ind;
         }
         console.log(
             "Proofs computation took " + Math.trunc((Date.now() - timeBeforeProofsComputed)/10)/100 + "s " +
