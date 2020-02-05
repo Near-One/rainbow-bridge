@@ -379,7 +379,7 @@ class EthBridgeContract extends Contract {
     const submitBlocks = async (blocks, start, stop) => {
         // Check bridge state, may be changed since computation could be long
         const last_block_number_onchain = await ethBridgeContract.last_block_number();
-        console.log('ethBridgeContract.last_block_number =', last_block_number_onchain);
+        console.log('ethBridgeContract.last_block_number =', last_block_number_onchain.toNumber());
         if (last_block_number_onchain >= stop) {
             console.log('Skipping submission due all were already submitted by someone');
             return;
@@ -430,7 +430,7 @@ class EthBridgeContract extends Contract {
         let shouldStop = false;
         for (let i = start; !shouldStop && i <= stop; ) {
             const N = blocks ? 2 : 3;
-            console.log(`Computing for block #${i} to #${i + N}`)
+            console.log(`Computing for blocks #${i} to #${i + N - 1}`)
             let j = 0;
             const promises = [];
             for (; j < N; j++) {
