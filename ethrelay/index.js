@@ -368,7 +368,7 @@ class EthBridgeContract extends Contract {
         return;
     }
 
-    let last_block_number = await ethBridgeContract.last_block_number();
+    let last_block_number = (await ethBridgeContract.last_block_number()).toNumber();
     console.log("Contract block number is " + last_block_number);
     if (last_block_number == 0) {
         // Let's start bridge from current block since it is not initialized
@@ -416,44 +416,40 @@ class EthBridgeContract extends Contract {
         await ethBridgeContract.add_block_headers(args, new BN('1000000000000000'));
         console.log(
           "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
-          "(" + Math.trunc((Date.now() - timeBeforeSubmission)/blocks.length/10)/100 + "s per header)"
+          "(" + Math.trunc((Date.now() - timeBeforeSubmission)/(blocks.length - 1)/10)/100 + "s per header)"
         );
         console.log(`Successfully submitted ${blocks.length} blocks from ${start} to ${stop} to EthBridge`);
     };
 
-
-    subscribeOnBlocksRangesFrom(web3, last_block_number.toNumber(), async (start, stop) => {
+    subscribeOnBlocksRangesFrom(web3, last_block_number, async (start, stop) => {
         let blocks = [];
         let timeBeforeProofsComputed = Date.now();
-        let localStart = start;
         console.log(`Need to collect ${stop - start + 1} proofs from #${start} to #${stop}`);
         let shouldStop = false;
         for (let i = start; !shouldStop && i <= stop; ) {
             const N = blocks ? 2 : 3;
             console.log(`Computing for blocks #${i} to #${i + N - 1}`)
-            let j = 0;
+            let submitAmount = 0;
             const promises = [];
-            for (; j < N; j++) {
-                const ind = i + j;
+            for (; submitAmount < N; submitAmount++) {
+                const ind = i + submitAmount;
                 if (Math.trunc(i/30000) == Math.trunc(ind/30000)) {
-                    promises.push(execute(`./ethashproof/cmd/relayer/relayer ${ind} | sed -e '1,/Json output/d'`));
+                    // TODO: remove await and figureout why ethashproof fails even for same epoch
+                    promises.push(await execute(`./ethashproof/cmd/relayer/relayer ${ind} | sed -e '1,/Json output/d'`));
                 } else {
                     break;
                 }
             }
-            blocks = blocks.slice(blocks.length - 1).concat((await Promise.all(promises)).map(res => JSON.parse(res)));
-            // submit blocks
-            submitBlocks(blocks, i, i + j - 1).catch(() => {
+            blocks = blocks.slice(blocks.length - 1).concat((await Promise.all(promises)).map(JSON.parse));
+            
+            submitBlocks(blocks, i, i + submitAmount - 1).catch(() => {
                 shouldStop = true;
             })
-            i += j;
+            i += submitAmount;
         }
         console.log(
             "Proofs computation took " + Math.trunc((Date.now() - timeBeforeProofsComputed)/10)/100 + "s " +
-            "(" + Math.trunc((Date.now() - timeBeforeProofsComputed)/blocks.length/10)/100 + "s per header)"
+            "(" + Math.trunc((Date.now() - timeBeforeProofsComputed)/(stop - start + 1)/10)/100 + "s per header)"
         );
     });
-
-    //console.log(await web3.eth.getBlockNumber());
-    //console.log(nearlib);
 })()
