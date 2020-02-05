@@ -22,7 +22,7 @@ nearnode_running() {
 }
 
 start_nearnode() {
-    echo "ethrelay" | "$DIR/start_localnet.py" --home "$DIR/.near" --image "nearprotocol/nearcore:nofloatsfixedgas"
+    echo "ethrelay" | "$DIR/start_localnet.py" --home "$DIR/.near" --image "nearprotocol/nearcore:ethdenver"
     sleep 10
 }
 
@@ -40,6 +40,6 @@ NODE_URL="http://localhost:3030"
 echo "Creating account for smart contract:"
 NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" create_account ethbridge --masterAccount=ethrelay --initialBalance 100000000 || echo "Skip creating ethbridge accout"
 echo "Deploying smart contract:"
-NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" deploy --contractName ethbridge --wasmFile "$DIR/../../ethbridge/res/eth_bridge.wasm" || echo "Skip deploying ethbridge smart contract"
+NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" deploy --contractName ethbridge --wasmFile "$DIR/../../ethbridge/res/eth_bridge.wasm" || echo "Skip deploying ethbridge smart contract"
 
 node "$DIR/../index.js"
