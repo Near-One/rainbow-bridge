@@ -182,7 +182,7 @@ def setup_and_run(nodocker, is_release, image, home_dir, init_flags, boot_nodes,
             subprocess.check_output(['docker', 'pull', 'v2tec/watchtower'])
         except subprocess.CalledProcessError as exc:
             print("Failed to fetch docker containers: %s" % exc)
-            exit(1)
+            #exit(1)
 
     check_and_setup(nodocker, is_release, image, home_dir, init_flags, no_gas_price)
 
@@ -259,7 +259,7 @@ def initialize_keys(home, is_release, nodocker, image, account_id, generate_sign
             subprocess.check_output(['docker', 'pull', image])
         except subprocess.CalledProcessError as exc:
             print("Failed to fetch docker containers: %s" % exc)
-            exit(1)
+            #exit(1)
     if generate_signer_keys:
         generate_signer_key(home, is_release, nodocker, image, account_id)
     generate_node_key(home, is_release, nodocker, image)
@@ -298,7 +298,7 @@ def start_stakewars(home, is_release, nodocker, image, telemetry_url, verbose, t
             subprocess.check_output(['docker', 'pull', image])
         except subprocess.CalledProcessError as exc:
             print("Failed to fetch docker containers: %s" % exc)
-            exit(1)
+            #exit(1)
     create_genesis(home, is_release, nodocker, image, 'stakewars', tracked_shards)
     if nodocker:
         run_nodocker(home, is_release, boot_nodes='', telemetry_url=telemetry_url, verbose=verbose)
