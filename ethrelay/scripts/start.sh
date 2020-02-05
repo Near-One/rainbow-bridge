@@ -22,7 +22,7 @@ nearnode_running() {
 }
 
 start_nearnode() {
-    echo "ethrelay" | "$DIR/start_localnet.py" --home "$DIR/.near" --image "nearprotocol/nearcore:nofloatsfixedgas"
+    echo "ethrelay" | "$DIR/start_localnet.py" --home "$DIR/.near" --image "nearprotocol/nearcore:ethdenver"
     sleep 10
 }
 
