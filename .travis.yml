@@ -8,10 +8,10 @@ language: node_js
 node_js:
   - '10'
 script:
-  - echo "NearBridge:"
-  - cd ./nearbridge
-  - yarn && yarn run lint && yarn run test && npx codechecks
-  - yarn run coverage && cat coverage/lcov.info | coveralls
+  #- echo "NearBridge:"
+  #- cd ./nearbridge
+  #- yarn && yarn run lint && yarn run test && npx codechecks
+  #- yarn run coverage && cat coverage/lcov.info | coveralls
   - echo "EthBridge:"
   - cd ../ethbridge
   - sh <(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs) -y && export PATH=$PATH:~/.cargo/bin
