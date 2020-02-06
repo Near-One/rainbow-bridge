@@ -24,13 +24,13 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
             return;
         }
 
-        if (!inBlocksCallbacks) {
+        if (!inBlocksCallbacks && event.number - last_block_number > 4) {
             inBlocksCallbacks = true;
 
             let start = last_block_number;
-            let stop = event.number;
-            last_block_number = event.number;
-            await handler(start, stop); //TODO
+            let stop = event.number - 2;
+            last_block_number = stop;
+            await handler(start, stop);
 
             inBlocksCallbacks = false;
         }
