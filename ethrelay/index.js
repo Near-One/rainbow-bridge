@@ -24,13 +24,13 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
             return;
         }
 
-        if (!inBlocksCallbacks) {
+        if (!inBlocksCallbacks && event.number - last_block_number > 4) {
             inBlocksCallbacks = true;
 
             let start = last_block_number;
-            let stop = event.number;
-            last_block_number = event.number;
-            await handler(start, stop); //TODO
+            let stop = event.number - 2;
+            last_block_number = stop;
+            await handler(start, stop);
 
             inBlocksCallbacks = false;
         }
@@ -420,7 +420,7 @@ class EthBridgeContract extends Contract {
         await ethBridgeContract.add_block_headers(args, new BN('1000000000000000'));
         console.log(
           "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
-          "(" + Math.trunc((Date.now() - timeBeforeSubmission)/blocks.length/10)/100 + "s per header)"
+          "(" + Math.trunc((Date.now() - timeBeforeSubmission)/(blocks.length - 1)/10)/100 + "s per header)"
         );
         console.log(`Successfully submitted ${blocks.length} blocks from ${start} to ${stop} to EthBridge`);
     };
@@ -430,16 +430,14 @@ class EthBridgeContract extends Contract {
     let blocks = [];
     subscribeOnBlocksRangesFrom(web3, last_block_number, async (start, stop) => {
         let timeBeforeProofsComputed = Date.now();
-        let localStart = start;
         console.log(`Need to collect ${stop - start + 1} proofs from #${start} to #${stop}`);
         let shouldStop = false;
         for (let i = start; !shouldStop && i <= stop; ) {
             const N = Math.min(blocks ? 2 : 3, stop - i + 1);
             console.log(`Computing for blocks #${i} to #${i + N - 1}`)
-            let j = 0;
+            let ind = i;
             const promises = [];
-            for (; j < N; j++) {
-                const ind = i + j;
+            for (; ind - i < N && ind <= stop; ind++) {
                 if (Math.trunc(i/30000) == Math.trunc(ind/30000)) {
                     promises.push(execute(`./ethashproof/cmd/relayer/relayer ${ind} | sed -e '1,/Json output/d'`));
                 } else {
@@ -456,10 +454,7 @@ class EthBridgeContract extends Contract {
         }
         console.log(
             "Proofs computation took " + Math.trunc((Date.now() - timeBeforeProofsComputed)/10)/100 + "s " +
-            "(" + Math.trunc((Date.now() - timeBeforeProofsComputed)/blocks.length/10)/100 + "s per header)"
+            "(" + Math.trunc((Date.now() - timeBeforeProofsComputed)/(stop - start + 1)/10)/100 + "s per header)"
         );
     });
-
-    //console.log(await web3.eth.getBlockNumber());
-    //console.log(nearlib);
 })()
