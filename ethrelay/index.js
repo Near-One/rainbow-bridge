@@ -69,9 +69,6 @@ const borshSchema = {
     'H512': {kind: 'function', ser: hexToBuffer, deser: readerToHex(64) },
 };
 
-function getBorshTransactionLastResult(txResult) {
-    return txResult && Buffer.from(txResult.status.SuccessValue, 'base64');
-}
 
 function serializeField(schema, value, fieldType, writer) {
     if (fieldType === 'u8') {
@@ -249,11 +246,18 @@ const signAndSendTransaction = async (account, receiverId, actions) => {
         throw error;
     }
 
+    const flatLogs = [result.transaction_outcome, ...result.receipts_outcome].reduce((acc, it) => acc.concat(it.outcome.logs), []);
+    console.log(flatLogs);
+
     if (result.status.Failure) {
         throw new Error(JSON.stringify(result.status.Failure))
     }
 
     return result;
+}
+
+function getBorshTransactionLastResult(txResult) {
+    return txResult && Buffer.from(txResult.status.SuccessValue, 'base64');
 }
 
 class Contract {
@@ -368,7 +372,7 @@ class EthBridgeContract extends Contract {
         return;
     }
 
-    let last_block_number = await ethBridgeContract.last_block_number();
+    let last_block_number = (await ethBridgeContract.last_block_number()).toNumber();
     console.log("Contract block number is " + last_block_number);
     if (last_block_number == 0) {
         // Let's start bridge from current block since it is not initialized
@@ -422,14 +426,15 @@ class EthBridgeContract extends Contract {
     };
 
 
-    subscribeOnBlocksRangesFrom(web3, last_block_number.toNumber(), async (start, stop) => {
-        let blocks = [];
+    let submitPromise = Promise.resolve();
+    let blocks = [];
+    subscribeOnBlocksRangesFrom(web3, last_block_number, async (start, stop) => {
         let timeBeforeProofsComputed = Date.now();
         let localStart = start;
         console.log(`Need to collect ${stop - start + 1} proofs from #${start} to #${stop}`);
         let shouldStop = false;
         for (let i = start; !shouldStop && i <= stop; ) {
-            const N = blocks ? 2 : 3;
+            const N = Math.min(blocks ? 2 : 3, stop - i + 1);
             console.log(`Computing for blocks #${i} to #${i + N - 1}`)
             let j = 0;
             const promises = [];
@@ -441,11 +446,12 @@ class EthBridgeContract extends Contract {
                     break;
                 }
             }
-            blocks = blocks.slice(blocks.length - 1).concat((await Promise.all(promises)).map(res => JSON.parse(res)));
+            const newBlocks = (await Promise.all(promises)).map(res => JSON.parse(res));
+            blocks = blocks.slice(blocks.length - 1).concat(newBlocks);
             // submit blocks
-            submitBlocks(blocks, i, i + j - 1).catch(() => {
+            submitPromise = submitPromise.then(() => submitBlocks(blocks.slice(), i, i + j - 1).catch(() => {
                 shouldStop = true;
-            })
+            }));
             i += j;
         }
         console.log(

@@ -1,9 +1,9 @@
-use std::collections::HashMap;
 #[cfg(target_arch = "wasm32")]
 use std::io::Cursor;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
 use near_bindgen::near_bindgen;
+use near_bindgen::collections::Map;
 
 #[cfg(target_arch = "wasm32")]
 #[global_allocator]
@@ -56,8 +56,8 @@ impl DoubleNodeWithMerkleProof {
 pub struct EthBridge {
     dags_start_epoch: u64,
     dags_merkle_roots: Vec<H128>,
-    block_hashes: HashMap<u64, H256>,
-    block_difficulties: HashMap<u64, U256>,
+    block_hashes: Map<u64, H256>,
+    block_difficulties: Map<u64, U256>,
     last_block_number: u64,
 }
 
@@ -83,14 +83,14 @@ impl EthBridge {
     }
 
     pub fn block_hash_unsafe(&self, index: u64) -> Option<H256> {
-        self.block_hashes.get(&index).cloned()
+        self.block_hashes.get(&index)
     }
 
     pub fn block_hash(&self, index: u64) -> Option<H256> {
         if index + EthBridge::NUMBER_OF_FUTURE_BLOCKS > self.last_block_number {
             return Option::None;
         }
-        self.block_hashes.get(&index).cloned()
+        self.block_hashes.get(&index)
     }
 
     //
@@ -107,16 +107,16 @@ impl EthBridge {
         block_headers: Vec<Vec<u8>>,
         dag_nodes: Vec<Vec<DoubleNodeWithMerkleProof>>,
     ) {
-        let mut prev: BlockHeader = rlp::decode(block_headers[0].as_slice()).unwrap();
+        let mut prev: Box<BlockHeader> = Box::new(rlp::decode(block_headers[0].as_slice()).unwrap());
 
         let very_first_blocks = self.last_block_number == 0;
         if very_first_blocks {
             // Submit very first block, can trust relayer
-            self.block_hashes.insert(prev.number, prev.hash.unwrap());
+            self.block_hashes.insert(&prev.number, &prev.hash.unwrap());
             self.last_block_number = prev.number;
         } else {
             // Check first block hash equals to submitted one
-            assert_eq!(prev.hash.unwrap(), self.block_hashes[&prev.number], "First block hash should be equal to submitted one");
+            assert_eq!(prev.hash.unwrap(), self.block_hashes.get(&prev.number).unwrap(), "First block hash should be equal to submitted one");
         }
 
         let mut origin_total_difficulty = U256(0.into());
@@ -124,7 +124,7 @@ impl EthBridge {
 
         // Check validity of all the following blocks
         for i in 1..block_headers.len() {
-            let header: BlockHeader = rlp::decode(block_headers[i].as_slice()).unwrap();
+            let header: Box<BlockHeader> = Box::new(rlp::decode(block_headers[i].as_slice()).unwrap());
 
             assert!(Self::verify_header(&self, &header, &prev, &dag_nodes[i]));
 
@@ -132,13 +132,13 @@ impl EthBridge {
             branch_total_difficulty += header.difficulty;
             if header.number <= self.last_block_number {
                 // Compute old chain total difficulty if reorg
-                origin_total_difficulty += self.block_difficulties[&header.number];
+                origin_total_difficulty += self.block_difficulties.get(&header.number).unwrap();
             }
 
             self.block_hashes
-                .insert(header.number, header.hash.unwrap());
+                .insert(&header.number, &header.hash.unwrap());
             self.block_difficulties
-                .insert(header.number, header.difficulty);
+                .insert(&header.number, &header.difficulty);
             prev = header;
         }
 
@@ -157,18 +157,22 @@ impl EthBridge {
         self.last_block_number = prev.number;
     }
 
+}
+
+impl EthBridge {
+
     pub fn verify_header(
         &self,
         header: &BlockHeader,
         prev: &BlockHeader,
-        dag_nodes: &Vec<DoubleNodeWithMerkleProof>,
+        dag_nodes: &[DoubleNodeWithMerkleProof],
     ) -> bool {
         let (_mix_hash, result) = Self::hashimoto_merkle(
             self,
-            header.partial_hash.unwrap(),
-            header.nonce,
+            &header.partial_hash.unwrap(),
+            &header.nonce,
             header.number,
-            dag_nodes.to_vec(),
+            dag_nodes,
         );
 
         //
@@ -190,10 +194,10 @@ impl EthBridge {
 
     pub fn hashimoto_merkle(
         &self,
-        header_hash: H256,
-        nonce: H64,
+        header_hash: &H256,
+        nonce: &H64,
         block_number: u64,
-        nodes: Vec<DoubleNodeWithMerkleProof>,
+        nodes: &[DoubleNodeWithMerkleProof],
     ) -> (H256, H256) {
         // Boxed index since ethash::hashimoto gets Fn, but not FnMut
         let index = std::cell::RefCell::new(0);
@@ -323,6 +327,7 @@ pub extern "C" fn add_block_headers() {
     contract.add_block_headers(block_headers, dag_nodes);
     near_bindgen::env::state_write(&contract);
 }
+/*
 #[cfg(target_arch = "wasm32")]
 #[no_mangle]
 pub extern "C" fn verify_header() {
@@ -358,3 +363,4 @@ pub extern "C" fn hashimoto_merkle() {
     let result = result.try_to_vec().unwrap();
     near_bindgen::env::value_return(&result);
 }
+*/
