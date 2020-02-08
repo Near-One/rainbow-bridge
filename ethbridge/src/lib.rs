@@ -51,23 +51,38 @@ impl DoubleNodeWithMerkleProof {
     }
 }
 
-#[near_bindgen]
 #[derive(Default, BorshDeserialize, BorshSerialize)]
+pub struct HeaderInfo {
+    pub total_difficulty: U256,
+    pub parent_hash: H256,
+    pub number: u64,
+}
+
+#[near_bindgen]
+#[derive(BorshDeserialize, BorshSerialize)]
 pub struct EthBridge {
     dags_start_epoch: u64,
     dags_merkle_roots: Vec<H128>,
-    block_hashes: Map<u64, H256>,
-    block_difficulties: Map<u64, U256>,
-    last_block_number: u64,
+
+    best_header_hash: H256,
+    header_hashes: Map<u64, H256>,
+
+    headers: Map<H256, BlockHeader>,
+    infos: Map<H256, HeaderInfo>,
 }
 
 impl EthBridge {
-    const NUMBER_OF_FUTURE_BLOCKS: u64 = 10;
+    pub fn init(dags_start_epoch: u64, dags_merkle_roots: Vec<H128>) -> Self {
+        Self {
+            dags_start_epoch,
+            dags_merkle_roots,
 
-    pub fn init(&mut self, dags_start_epoch: u64, dags_merkle_roots: Vec<H128>) {
-        assert!(self.dags_merkle_roots.len() == 0 && dags_merkle_roots.len() > 0);
-        self.dags_start_epoch = dags_start_epoch;
-        self.dags_merkle_roots = dags_merkle_roots;
+            best_header_hash: Default::default(),
+            header_hashes: Map::new(b"b".to_vec()),
+
+            headers: Map::new(b"h".to_vec()),
+            infos: Map::new(b"i".to_vec()),
+        }
     }
 
     pub fn initialized(&self) -> bool {
@@ -75,93 +90,97 @@ impl EthBridge {
     }
 
     pub fn last_block_number(&self) -> u64 {
-        self.last_block_number
+        self.infos.get(&self.best_header_hash).unwrap().number
     }
 
     pub fn dag_merkle_root(&self, epoch: u64) -> H128 {
         self.dags_merkle_roots[(&epoch - self.dags_start_epoch) as usize]
     }
 
-    pub fn block_hash_unsafe(&self, index: u64) -> Option<H256> {
-        self.block_hashes.get(&index)
-    }
-
     pub fn block_hash(&self, index: u64) -> Option<H256> {
-        if index + EthBridge::NUMBER_OF_FUTURE_BLOCKS > self.last_block_number {
-            return Option::None;
-        }
-        self.block_hashes.get(&index)
+        self.header_hashes.get(&index)
     }
 
-    //
-    // Usually each next sequence should start from the lastest added block:
-    // [1]-[2]-[3]-[4]
-    //             [4]-[5]-[6]-[7]
-    //
-    // In case of reorg next sequence can start from the lastest common block:
-    // [1]-[2]-[3]-[4a]
-    //         [3]-[4b]-[5]-[6]
-    //
-    pub fn add_block_headers(
+    pub fn add_block_header(
         &mut self,
-        block_headers: Vec<Vec<u8>>,
-        dag_nodes: Vec<Vec<DoubleNodeWithMerkleProof>>,
+        block_header: Vec<u8>,
+        dag_nodes: Vec<DoubleNodeWithMerkleProof>,
     ) {
-        let mut prev: Box<BlockHeader> = Box::new(rlp::decode(block_headers[0].as_slice()).unwrap());
+        let header: BlockHeader = rlp::decode(block_header.as_slice()).unwrap();
 
-        let very_first_blocks = self.last_block_number == 0;
-        if very_first_blocks {
+        if self.best_header_hash == Default::default() {
             // Submit very first block, can trust relayer
-            self.block_hashes.insert(&prev.number, &prev.hash.unwrap());
-            self.last_block_number = prev.number;
-        } else {
-            // Check first block hash equals to submitted one
-            assert_eq!(prev.hash.unwrap(), self.block_hashes.get(&prev.number).unwrap(), "First block hash should be equal to submitted one");
+            self.maybe_store_header(header, false);
+            // self.block_hashes.insert(&header.number, &header.hash.unwrap());
+            // self.last_block_number = header.number;
+            return;
         }
 
-        let mut origin_total_difficulty = U256(0.into());
-        let mut branch_total_difficulty = U256(0.into());
-
-        // Check validity of all the following blocks
-        for i in 1..block_headers.len() {
-            let header: Box<BlockHeader> = Box::new(rlp::decode(block_headers[i].as_slice()).unwrap());
-
-            assert!(Self::verify_header(&self, &header, &prev, &dag_nodes[i]));
-
-            // Compute new chain total difficulty
-            branch_total_difficulty += header.difficulty;
-            if header.number <= self.last_block_number {
-                // Compute old chain total difficulty if reorg
-                origin_total_difficulty += self.block_difficulties.get(&header.number).unwrap();
-            }
-
-            self.block_hashes
-                .insert(&header.number, &header.hash.unwrap());
-            self.block_difficulties
-                .insert(&header.number, &header.difficulty);
-            prev = header;
+        let header_hash = header.hash.unwrap();
+        if self.infos.get(&header_hash).is_some() {
+            // We know the header is valid, so we can store it again if needed.
+            self.maybe_store_header(header, true);
+            return;
         }
 
-        if !very_first_blocks {
-            // Ensure the longest chain rule: https://ethereum.stackexchange.com/a/13750/3032
-            // https://github.com/ethereum/go-ethereum/blob/525116dbff916825463931361f75e75e955c12e2/core/blockchain.go#L863
-            assert!(
-                branch_total_difficulty > origin_total_difficulty
-                    || (
-                        branch_total_difficulty == origin_total_difficulty
-                            && prev.difficulty % 2 == U256(0.into())
-                        // hash is good enough random for us
-                    )
-            );
-        }
-        self.last_block_number = prev.number;
+        let prev = self.headers.get(&header.parent_hash).expect("Parent header should be present to add a new header");
+
+        assert!(Self::verify_header(&self, &header, &prev, &dag_nodes), "The new header should be valid");
+
+        self.maybe_store_header(header, false);
     }
-
 }
 
 impl EthBridge {
 
-    pub fn verify_header(
+    /// Maybe stores a valid header in the contract.
+    fn maybe_store_header(&mut self, header: BlockHeader, known_before: bool) {
+        let header_hash = header.hash.unwrap();
+        // TODO: Figure out when not to store headers and how to clean them up.
+        self.headers.insert(&header_hash, &header);
+
+        if !known_before {
+            let parent_info = self.infos.get(&header.parent_hash).unwrap_or_default();
+            // Have to compute new total difficulty
+            let info = HeaderInfo {
+                total_difficulty: parent_info.total_difficulty + header.difficulty,
+                parent_hash: header.parent_hash.clone(),
+                number: header.number,
+            };
+            let best_total_difficulty = self.infos.get(&self.best_header_hash).unwrap_or_default().total_difficulty;
+            self.infos.insert(&header_hash, &info);
+            if info.total_difficulty > best_total_difficulty ||
+                (info.total_difficulty == best_total_difficulty && header.difficulty % 2 == U256::default()) {
+                self.best_header_hash = header_hash;
+                // Need to rewrite history until hashes match
+                // Cleaning forward
+                let mut i = header.number + 1;
+                while self.header_hashes.remove(&i).is_some() {
+                    i += 1;
+                }
+                // Replacing current hash
+                self.header_hashes.insert(&info.number, &header_hash);
+                // Replacing past hashes until we converge into the same parent
+                i = header.number - 1;
+                let mut current_hash = info.parent_hash;
+                loop {
+                    let prev_value = self.header_hashes.insert(&i, &current_hash);
+                    if i == 0 || prev_value == Some(current_hash) {
+                        break;
+                    }
+                    i -= 1;
+                    if let Some(info) = self.infos.get(&current_hash) {
+                        current_hash = info.parent_hash;
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+
+    }
+
+    fn verify_header(
         &self,
         header: &BlockHeader,
         prev: &BlockHeader,
@@ -192,7 +211,7 @@ impl EthBridge {
             && header.parent_hash == prev.hash.unwrap()
     }
 
-    pub fn hashimoto_merkle(
+    fn hashimoto_merkle(
         &self,
         header_hash: &H256,
         nonce: &H64,
@@ -245,8 +264,8 @@ pub extern "C" fn init() {
     let dags_merkle_roots: Vec<H128> =
         borsh::BorshDeserialize::deserialize(&mut c).unwrap();
     assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
-    let mut contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
-    contract.init(dags_start_epoch, dags_merkle_roots);
+    assert!(near_bindgen::env::state_read::<EthBridge>().is_none(), "Already initialized");
+    let contract = EthBridge::init(dags_start_epoch, dags_merkle_roots);
     near_bindgen::env::state_write(&contract);
 }
 #[cfg(target_arch = "wasm32")]
@@ -254,7 +273,7 @@ pub extern "C" fn init() {
 pub extern "C" fn initialized() {
     near_bindgen::env::setup_panic_hook();
     near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
-    let contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
+    let contract: EthBridge = near_bindgen::env::state_read().unwrap();
     let result = contract.initialized();
     let result = result.try_to_vec().unwrap();
     near_bindgen::env::value_return(&result);
@@ -264,7 +283,7 @@ pub extern "C" fn initialized() {
 pub extern "C" fn last_block_number() {
     near_bindgen::env::setup_panic_hook();
     near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
-    let contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
+    let contract: EthBridge = near_bindgen::env::state_read().unwrap();
     let result = contract.last_block_number();
     let result = result.try_to_vec().unwrap();
     near_bindgen::env::value_return(&result);
@@ -278,22 +297,8 @@ pub extern "C" fn dag_merkle_root() {
     let mut c = Cursor::new(&input);
     let epoch: u64 = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
     assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
-    let contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
+    let contract: EthBridge = near_bindgen::env::state_read().unwrap();
     let result = contract.dag_merkle_root(epoch);
-    let result = result.try_to_vec().unwrap();
-    near_bindgen::env::value_return(&result);
-}
-#[cfg(target_arch = "wasm32")]
-#[no_mangle]
-pub extern "C" fn block_hash_unsafe() {
-    near_bindgen::env::setup_panic_hook();
-    near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
-    let input = near_bindgen::env::input().unwrap();
-    let mut c = Cursor::new(&input);
-    let index: u64 = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
-    assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
-    let contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
-    let result = contract.block_hash_unsafe(index);
     let result = result.try_to_vec().unwrap();
     near_bindgen::env::value_return(&result);
 }
@@ -306,61 +311,23 @@ pub extern "C" fn block_hash() {
     let mut c = Cursor::new(&input);
     let index: u64 = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
     assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
-    let contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
+    let contract: EthBridge = near_bindgen::env::state_read().unwrap();
     let result = contract.block_hash(index);
     let result = result.try_to_vec().unwrap();
     near_bindgen::env::value_return(&result);
 }
 #[cfg(target_arch = "wasm32")]
 #[no_mangle]
-pub extern "C" fn add_block_headers() {
+pub extern "C" fn add_block_header() {
     near_bindgen::env::setup_panic_hook();
     near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
     let input = near_bindgen::env::input().unwrap();
     let mut c = Cursor::new(&input);
-    let block_headers: Vec<Vec<u8>> =
-        borsh::BorshDeserialize::deserialize(&mut c).unwrap();
-    let dag_nodes: Vec<Vec<DoubleNodeWithMerkleProof>> =
-        borsh::BorshDeserialize::deserialize(&mut c).unwrap();
-    assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
-    let mut contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
-    contract.add_block_headers(block_headers, dag_nodes);
-    near_bindgen::env::state_write(&contract);
-}
-/*
-#[cfg(target_arch = "wasm32")]
-#[no_mangle]
-pub extern "C" fn verify_header() {
-    near_bindgen::env::setup_panic_hook();
-    near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
-    let input = near_bindgen::env::input().unwrap();
-    let mut c = Cursor::new(&input);
-    let header: BlockHeader = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
-    let prev: BlockHeader = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
+    let block_header: Vec<u8> = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
     let dag_nodes: Vec<DoubleNodeWithMerkleProof> =
         borsh::BorshDeserialize::deserialize(&mut c).unwrap();
     assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
-    let contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
-    let result = contract.verify_header(&header, &prev, &dag_nodes);
-    let result = result.try_to_vec().unwrap();
-    near_bindgen::env::value_return(&result);
+    let mut contract: EthBridge = near_bindgen::env::state_read().unwrap();
+    contract.add_block_header(block_header, dag_nodes);
+    near_bindgen::env::state_write(&contract);
 }
-#[cfg(target_arch = "wasm32")]
-#[no_mangle]
-pub extern "C" fn hashimoto_merkle() {
-    near_bindgen::env::setup_panic_hook();
-    near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
-    let input = near_bindgen::env::input().unwrap();
-    let mut c = Cursor::new(&input);
-    let header_hash: H256 = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
-    let nonce: H64 = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
-    let block_number: u64 = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
-    let nodes: Vec<DoubleNodeWithMerkleProof> =
-        borsh::BorshDeserialize::deserialize(&mut c).unwrap();
-    assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
-    let contract: EthBridge = near_bindgen::env::state_read().unwrap_or_default();
-    let result = contract.hashimoto_merkle(header_hash, nonce, block_number, nodes);
-    let result = result.try_to_vec().unwrap();
-    near_bindgen::env::value_return(&result);
-}
-*/

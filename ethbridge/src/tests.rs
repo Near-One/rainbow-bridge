@@ -234,8 +234,7 @@ fn add_dags_merkle_roots() {
     testing_env!(get_context(vec![], false));
 
     let dmr = read_roots_collection();
-    let mut contract = EthBridge::default();
-    contract.init(0, read_roots_collection().dag_merkle_roots);
+    let contract = EthBridge::init(0, read_roots_collection().dag_merkle_roots);
 
     assert_eq!(dmr.dag_merkle_roots[0], contract.dag_merkle_root(0));
     assert_eq!(dmr.dag_merkle_roots[10], contract.dag_merkle_root(10));
@@ -258,19 +257,15 @@ fn add_blocks_2_and_3() {
         .map(|filename| read_block((&filename).to_string()))
         .collect();
 
-    let mut contract = EthBridge::default();
-    contract.init(0, read_roots_collection().dag_merkle_roots);
+    let mut contract = EthBridge::init(0, read_roots_collection().dag_merkle_roots);
 
-    contract.add_block_headers(
-        blocks,
-        blocks_with_proofs
-            .iter()
-            .map(|b| b.to_double_node_with_merkle_proof_vec())
-            .collect(),
-    );
+    for (block, proof) in blocks.into_iter().zip(blocks_with_proofs.into_iter()) {
+        contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
+    }
+
     assert_eq!(
         (hashes[1].0).0,
-        (contract.block_hash_unsafe(3).unwrap().0).0
+        (contract.block_hash(3).unwrap().0).0
     );
 }
 
@@ -289,8 +284,7 @@ fn add_400000_block_only() {
 
     let block_with_proof = read_block("./src/data/400000.json".to_string());
 
-    let mut contract = EthBridge::default();
-    contract.init(400_000 / 30000, vec![block_with_proof.merkle_root]);
+    let mut contract = EthBridge::init(400_000 / 30000, vec![block_with_proof.merkle_root]);
 
     // let result = catch_unwind_silent(panic::AssertUnwindSafe(
     //     || contract.add_block_headers(
@@ -311,13 +305,13 @@ fn add_400000_block_only() {
     // ));
     // assert!(result.is_err());
 
-    contract.add_block_headers(
-        blocks,
-        vec![block_with_proof.to_double_node_with_merkle_proof_vec()],
+    contract.add_block_header(
+        blocks.into_iter().next().unwrap(),
+        block_with_proof.to_double_node_with_merkle_proof_vec(),
     );
     assert_eq!(
         (hashes[0].0).0,
-        (contract.block_hash_unsafe(400_000).unwrap().0).0
+        (contract.block_hash(400_000).unwrap().0).0
     );
 }
 
@@ -335,23 +329,19 @@ fn add_two_blocks_from_8996776() {
             .map(|filename| read_block((&filename).to_string()))
             .collect();
 
-    let mut contract = EthBridge::default();
-    contract.init(0, read_roots_collection().dag_merkle_roots);
+    let mut contract = EthBridge::init(0, read_roots_collection().dag_merkle_roots);
 
-    contract.add_block_headers(
-        blocks,
-        blocks_with_proofs
-            .iter()
-            .map(|b| b.to_double_node_with_merkle_proof_vec())
-            .collect(),
-    );
+    for (block, proof) in blocks.into_iter().zip(blocks_with_proofs.into_iter()) {
+        contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
+    }
+
     assert_eq!(
         (hashes[0].0).0,
-        (contract.block_hash_unsafe(8_996_776).unwrap().0).0
+        (contract.block_hash(8_996_776).unwrap().0).0
     );
     assert_eq!(
         (hashes[1].0).0,
-        (contract.block_hash_unsafe(8_996_777).unwrap().0).0
+        (contract.block_hash(8_996_777).unwrap().0).0
     );
 }
 
@@ -374,26 +364,21 @@ fn add_2_blocks_from_400000() {
             .map(|filename| read_block((&filename).to_string()))
             .collect();
 
-    let mut contract = EthBridge::default();
-    contract.init(
+    let mut contract = EthBridge::init(
         400_000 / 30000,
         vec![blocks_with_proofs.first().unwrap().merkle_root],
     );
 
-    contract.add_block_headers(
-        blocks,
-        blocks_with_proofs
-            .iter()
-            .map(|b| b.to_double_node_with_merkle_proof_vec())
-            .collect(),
-    );
+    for (block, proof) in blocks.into_iter().zip(blocks_with_proofs.into_iter()) {
+        contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
+    }
     assert_eq!(
         (hashes[0].0).0,
-        (contract.block_hash_unsafe(400_000).unwrap().0).0
+        (contract.block_hash(400_000).unwrap().0).0
     );
     assert_eq!(
         (hashes[1].0).0,
-        (contract.block_hash_unsafe(400_001).unwrap().0).0
+        (contract.block_hash(400_001).unwrap().0).0
     );
 }
 
@@ -418,13 +403,13 @@ fn add_2_blocks_from_400000() {
 //     contract.add_block_headers(blocks3);
 //
 //     for i in 8_000_000..8_000_010 {
-//         assert_eq!(hashes1[i - 8_000_000], (contract.block_hash_unsafe(i as u64).unwrap().0).0.into());
+//         assert_eq!(hashes1[i - 8_000_000], (contract.block_hash(i as u64).unwrap().0).0.into());
 //     }
 //     for i in 8_000_010..8_000_020 {
-//         assert_eq!(hashes2[i - 8_000_010], (contract.block_hash_unsafe(i as u64).unwrap().0).0.into());
+//         assert_eq!(hashes2[i - 8_000_010], (contract.block_hash(i as u64).unwrap().0).0.into());
 //     }
 //     for i in 8_000_020..8_000_030 {
-//         assert_eq!(hashes3[i - 8_000_020], (contract.block_hash_unsafe(i as u64).unwrap().0).0.into());
+//         assert_eq!(hashes3[i - 8_000_020], (contract.block_hash(i as u64).unwrap().0).0.into());
 //     }
 // }
 
@@ -442,12 +427,12 @@ fn add_2_blocks_from_400000() {
 //     contract.add_block_headers(8_000_015 as u64, blocks3);
 
 //     for i in 8_000_000..8_000_010 {
-//         assert_eq!(hashes1[i - 8_000_000], (contract.block_hash_unsafe(i as u64).unwrap().0).0.into());
+//         assert_eq!(hashes1[i - 8_000_000], (contract.block_hash(i as u64).unwrap().0).0.into());
 //     }
 //     for i in 8_000_005..8_000_020 {
-//         assert_eq!(hashes2[i - 8_000_005], (contract.block_hash_unsafe(i as u64).unwrap().0).0.into());
+//         assert_eq!(hashes2[i - 8_000_005], (contract.block_hash(i as u64).unwrap().0).0.into());
 //     }
 //     for i in 8_000_015..8_000_030 {
-//         assert_eq!(hashes3[i - 8_000_015], (contract.block_hash_unsafe(i as u64).unwrap().0).0.into());
+//         assert_eq!(hashes3[i - 8_000_015], (contract.block_hash(i as u64).unwrap().0).0.into());
 //     }
 // }

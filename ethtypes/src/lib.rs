@@ -120,7 +120,7 @@ pub type Signature = H520;
 
 // Block Header
 
-#[derive(Debug, Clone, BorshDeserialize)]
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct BlockHeader {
     pub parent_hash: H256,
