@@ -90,7 +90,7 @@ impl EthBridge {
     }
 
     pub fn last_block_number(&self) -> u64 {
-        self.infos.get(&self.best_header_hash).unwrap().number
+        self.infos.get(&self.best_header_hash).unwrap_or_default().number
     }
 
     pub fn dag_merkle_root(&self, epoch: u64) -> H128 {
