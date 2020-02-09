@@ -336,6 +336,7 @@ dependencies = [
  "serde",
  "serde_json 1.0.40",
  "web3",
+ "wee_alloc",
 ]
 
 [[package]]
@@ -849,6 +850,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "memory_units"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8452105ba047068f40ff7093dd1d9da90898e63dd61736462e9cdda6a90ad3c3"
+
+[[package]]
 name = "mime"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -919,7 +926,9 @@ dependencies = [
 
 [[package]]
 name = "near-bindgen"
-version = "0.3.10"
+version = "0.3.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c608c649f330cfe0bf1634ccaa9108636d9bc7ced0d647b1e78524e0a5c02b3b"
 dependencies = [
  "borsh",
  "near-bindgen-macros",
@@ -930,7 +939,9 @@ dependencies = [
 
 [[package]]
 name = "near-bindgen-core"
-version = "0.3.10"
+version = "0.3.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c121efdec3b554a6c05b551f6c4c2099de98b04e921c561903ae026416bf7815"
 dependencies = [
  "proc-macro2 1.0.8",
  "quote 1.0.2",
@@ -939,7 +950,9 @@ dependencies = [
 
 [[package]]
 name = "near-bindgen-macros"
-version = "0.3.10"
+version = "0.3.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c35b91e370b9b429ce128f0a07f71d0c1e908ebf63c372eb3371978c2fb46035"
 dependencies = [
  "near-bindgen-core",
  "near-bindgen-promise",
@@ -950,7 +963,9 @@ dependencies = [
 
 [[package]]
 name = "near-bindgen-promise"
-version = "0.3.10"
+version = "0.3.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "093393e5a9bdf353133ef6479df05f0bae8a16761c5683e0198699370276215a"
 dependencies = [
  "Inflector",
  "proc-macro2 1.0.8",
@@ -961,6 +976,8 @@ dependencies = [
 [[package]]
 name = "near-rpc-error-core"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ffa8dbf8437a28ac40fcb85859ab0d0b8385013935b000c7a51ae79631dd74d9"
 dependencies = [
  "proc-macro2 1.0.8",
  "quote 1.0.2",
@@ -972,6 +989,8 @@ dependencies = [
 [[package]]
 name = "near-rpc-error-macro"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c6111d713e90c7c551dee937f4a06cb9ea2672243455a4454cc7566387ba2d9"
 dependencies = [
  "near-rpc-error-core",
  "proc-macro2 1.0.8",
@@ -983,14 +1002,18 @@ dependencies = [
 
 [[package]]
 name = "near-runtime-fees"
-version = "0.4.3"
+version = "0.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2703f396f86da4324073de543f970e62ab9e0622839f452fafe0775dfc96a361"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "near-vm-errors"
-version = "0.4.3"
+version = "0.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "810b4cc78c7451c6cbfd546dc3af13d7ea7ea4aaa37e253be12477d28fdb1c55"
 dependencies = [
  "borsh",
  "near-rpc-error-macro",
@@ -999,7 +1022,9 @@ dependencies = [
 
 [[package]]
 name = "near-vm-logic"
-version = "0.4.3"
+version = "0.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "968337bef99ec3d8b079050082b25b16c2b7c0a765324ed9547bbfd3a40cdd0b"
 dependencies = [
  "bs58",
  "byteorder",
@@ -2149,6 +2174,18 @@ dependencies = [
  "tokio-tls",
  "unicase",
  "url",
+]
+
+[[package]]
+name = "wee_alloc"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dbb3b5a6b2bb17cb6ad44a2e68a43e8d2722c997da10e928665c72ec6c0a0b8e"
+dependencies = [
+ "cfg-if",
+ "libc",
+ "memory_units",
+ "winapi 0.3.8",
 ]
 
 [[package]]
