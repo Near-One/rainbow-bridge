@@ -281,6 +281,13 @@ library Borsh {
         bytes raw;
     }
 
+    function from(bytes memory data) internal pure returns(Data memory) {
+        return Data({
+            offset: 0,
+            raw: data
+        });
+    }
+
     modifier shift(Data memory data, uint256 size) {
         require(data.raw.length >= data.offset + size, "Borsh: Out of range");
         _;
@@ -516,6 +523,7 @@ library NearDecoder {
 // File: contracts/NearBridge.sol
 
 pragma solidity ^0.5.0;
+pragma experimental ABIEncoderV2;
 
 
 
@@ -533,20 +541,56 @@ contract NearBridge is Ownable {
         bytes32 blockHash
     );
 
+    function addMissingBlocks(bytes[] memory blockHeaders) public {
+        bytes32 prevHash;
+        for (uint i = 0; i < blockHeaders.length; i++) {
+            NearDecoder.BlockHeaderInnerLite memory header = _readExactHeader(blockHeaders[i]);
+
+            bytes32 hash = keccak256(blockHeaders[i]);
+
+            if (i == 0) {
+                // Store only first header of chain
+                _addBlockHash(header.height, hash);
+            } else {
+                // Check sequence of hashes
+                // TODO:
+                // require(header.prevHash == prevHash, "NearBridge: chain is broken");
+            }
+
+            prevHash = hash;
+
+            if (i == blockHeaders.length - 1) {
+                // Check latest matches
+                require(blockHashes[header.height] == prevHash, "NearBridge: latest hash in chain should match existing");
+            }
+        }
+    }
+
     // TODO: implement light client
-    function addBlockHash(bytes memory blockHeader) public onlyOwner {
-        Borsh.Data memory data = Borsh.Data({
-            offset: 0,
-            raw: blockHeader
-        });
+    function addBlockHashes(bytes[] memory blockHeaders) public onlyOwner {
+        uint256 largestBlockNumber = 0;
+        for (uint i = 0; i < blockHeaders.length; i++) {
+            NearDecoder.BlockHeaderInnerLite memory header = _readExactHeader(blockHeaders[i]);
+            require(header.height > lastBlockNumber, "NearBridge: can't rewrite existing records");
+            _addBlockHash(header.height, keccak256(blockHeaders[i]));
+            if (header.height > largestBlockNumber) {
+                largestBlockNumber = header.height;
+            }
+        }
 
-        NearDecoder.BlockHeaderInnerLite memory header = data.decodeBlockHeaderInnerLite();
+        if (largestBlockNumber > lastBlockNumber) {
+            lastBlockNumber = largestBlockNumber;
+        }
+    }
+
+    function _addBlockHash(uint256 blockNumber, bytes32 hash) internal {
+        blockHashes[blockNumber] = hash;
+        emit BlockHashAdded(blockNumber, hash);
+    }
+
+    function _readExactHeader(bytes memory blockHeader) internal pure returns(NearDecoder.BlockHeaderInnerLite memory header) {
+        Borsh.Data memory data = Borsh.from(blockHeader);
+        header = data.decodeBlockHeaderInnerLite();
         require(data.finished(), "NearBridge: only block header should be passed");
-        require(header.height > lastBlockNumber, "NearBridge: can't rewrite existing records");
-
-        bytes32 hash = keccak256(blockHeader);
-        blockHashes[header.height] = hash;
-        emit BlockHashAdded(header.height, hash);
-        lastBlockNumber = header.height;
     }
 }

@@ -26,7 +26,7 @@ nearnode_running() {
 
 start_nearnode() {
     echo "ethrelay" | "$DIR/start_localnet.py" --home "$DIR/.near" --image "nearprotocol/nearcore:nofloatsfixedgas"
-    trap "docker kill nearcore watchtower > /dev/null &" EXIT INT TERM
+    #trap "docker kill nearcore watchtower > /dev/null &" EXIT INT TERM
     nearcode_started=1
     sleep 1
 }
@@ -59,9 +59,9 @@ start_ganache() {
         --account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501209,1000000000000000000000000"
     )
 
-    ganache-cli --fork "https://mainnet.infura.io/v3/b5f870422ee5454fb11937e947154cd2" --gasLimit 10000000 -p "$ganache_port" "${accounts[@]}" > /dev/null &
+    ganache-cli --blockTime 12 --gasLimit 10000000 -p "$ganache_port" "${accounts[@]}" > /dev/null &
     ganache_pid=$!
-    trap "kill $ganache_pid" EXIT INT TERM
+    #trap "kill $ganache_pid" EXIT INT TERM
     ganache_started=1
     echo "ganache_pid: $ganache_pid"
 }

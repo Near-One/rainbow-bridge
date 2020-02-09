@@ -12,6 +12,13 @@ library Borsh {
         bytes raw;
     }
 
+    function from(bytes memory data) internal pure returns(Data memory) {
+        return Data({
+            offset: 0,
+            raw: data
+        });
+    }
+
     modifier shift(Data memory data, uint256 size) {
         require(data.raw.length >= data.offset + size, "Borsh: Out of range");
         _;
