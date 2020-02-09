@@ -281,10 +281,10 @@ class Contract {
                     args = serialize(borshSchema, d.inputFieldType, args);
                     try {
                         const rawResult = await signAndSendTransaction(this.accessKey, this.account, this.contractId, [nearlib.transactions.functionCall(
-                          d.methodName,
-                          Buffer.from(args),
-                          gas || DEFAULT_FUNC_CALL_AMOUNT,
-                          amount
+                            d.methodName,
+                            Buffer.from(args),
+                            gas || DEFAULT_FUNC_CALL_AMOUNT,
+                            amount
                         )]);
 
                         const result = getBorshTransactionLastResult(rawResult);
@@ -396,37 +396,35 @@ class EthBridgeContract extends Contract {
         let timeBeforeSubmission = Date.now();
         console.log(`Submitting block ${blockNumber} to EthBridge`);
         const h512s = block.elements
-          .filter((_, index) => index % 2 === 0)
-          .map((element, index) => {
-              return web3.utils.padLeft(element, 64) + web3.utils.padLeft(block.elements[index*2 + 1], 64).substr(2)
-          });
+            .filter((_, index) => index % 2 === 0)
+            .map((element, index) => {
+                return web3.utils.padLeft(element, 64) + web3.utils.padLeft(block.elements[index*2 + 1], 64).substr(2)
+            });
         const args = {
             block_header: web3.utils.hexToBytes(block.header_rlp),
             dag_nodes: h512s
-                  .filter((_, index) => index % 2 === 0)
-                  .map((element, index) => {
-                      return {
-                          dag_nodes: [element, h512s[index*2 + 1]],
-                          proof: block.merkle_proofs.slice(
-                            index * block.proof_length,
-                            (index + 1) * block.proof_length,
-                          ).map(leaf => web3.utils.padLeft(leaf, 32))
-                      };
-                  }),
+                .filter((_, index) => index % 2 === 0)
+                .map((element, index) => {
+                    return {
+                        dag_nodes: [element, h512s[index*2 + 1]],
+                        proof: block.merkle_proofs.slice(
+                        index * block.proof_length,
+                        (index + 1) * block.proof_length,
+                        ).map(leaf => web3.utils.padLeft(leaf, 32))
+                    };
+                }),
         };
         await ethBridgeContract.add_block_header(args, new BN('1000000000000000'));
         console.log(
-          "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
-          "(" + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s per header)"
+            "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
+            "(" + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s per header)"
         );
         console.log(`Successfully submitted block ${blockNumber} to EthBridge`);
     };
 
-
     subscribeOnBlocksRangesFrom(web3, last_block_number, async (start, stop) => {
         let timeBeforeProofsComputed = Date.now();
-        console.log(`Need to collect ${stop - start + 1} proofs from #${start} to #${stop}`);
-        let shouldStop = false;
+        console.log(`Processing ${stop - start + 1} blocks from #${start} to #${stop}`);
         for (let i = start; i <= stop; ++i) {
             const block = JSON.parse(await execute(`./ethashproof/cmd/relayer/relayer ${i} | sed -e '1,/Json output/d'`));
             // submit blocks
