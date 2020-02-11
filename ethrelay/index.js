@@ -58,9 +58,9 @@ const borshSchema = {
     'dagMerkleRootInput': { kind: 'struct', fields: [
             ['epoch', 'u64'],
         ]},
-    'addBlockHeadersInput': { kind: 'struct', fields: [
-            ['block_headers', [['u8']]],
-            ['dag_nodes', [['DoubleNodeWithMerkleProof']]],
+    'addBlockHeaderInput': { kind: 'struct', fields: [
+            ['block_header', ['u8']],
+            ['dag_nodes', ['DoubleNodeWithMerkleProof']],
         ]},
     'DoubleNodeWithMerkleProof': { kind: 'struct', fields: [
             ['dag_nodes', ['H512']],
@@ -223,15 +223,8 @@ function deserialize(schema, fieldType, buffer) {
 
 const DEFAULT_FUNC_CALL_AMOUNT = new BN('10000000000000000');
 
-const signAndSendTransaction = async (account, receiverId, actions) => {
-    await account.ready;
-
+const signAndSendTransaction = async (accessKey, account, receiverId, actions) => {
     // TODO: Find matching access key based on transaction
-    const accessKey = await account.findAccessKey();
-    if (!accessKey) {
-        throw new Error(`Can not sign transactions for account ${account.accountId}, no matching key pair found in Signer.`, 'KeyNotFound');
-    }
-
     const status = await account.connection.provider.status();
 
     const [txHash, signedTx] = await nearlib.transactions.signTransaction(
@@ -247,7 +240,9 @@ const signAndSendTransaction = async (account, receiverId, actions) => {
     }
 
     const flatLogs = [result.transaction_outcome, ...result.receipts_outcome].reduce((acc, it) => acc.concat(it.outcome.logs), []);
-    console.log(flatLogs);
+    if (flatLogs) {
+        console.log(flatLogs);
+    }
 
     if (result.status.Failure) {
         throw new Error(JSON.stringify(result.status.Failure))
@@ -285,11 +280,11 @@ class Contract {
                 value: async (args, gas, amount) => {
                     args = serialize(borshSchema, d.inputFieldType, args);
                     try {
-                        const rawResult = await signAndSendTransaction(account, contractId, [nearlib.transactions.functionCall(
-                          d.methodName,
-                          Buffer.from(args),
-                          gas || DEFAULT_FUNC_CALL_AMOUNT,
-                          amount
+                        const rawResult = await signAndSendTransaction(this.accessKey, this.account, this.contractId, [nearlib.transactions.functionCall(
+                            d.methodName,
+                            Buffer.from(args),
+                            gas || DEFAULT_FUNC_CALL_AMOUNT,
+                            amount
                         )]);
 
                         const result = getBorshTransactionLastResult(rawResult);
@@ -301,6 +296,16 @@ class Contract {
                 }
             });
         });
+    }
+
+    async accessKeyInit() {
+        await this.account.ready;
+
+        this.accessKey = await this.account.findAccessKey();
+        if (!this.accessKey) {
+            throw new Error(`Can not sign transactions for account ${this.account.accountId}, no matching key pair found in Signer.`, 'KeyNotFound');
+        }
+
     }
 }
 
@@ -326,8 +331,8 @@ class EthBridgeContract extends Contract {
                 inputFieldType: "initInput",
                 outputFieldType: null,
             }, {
-                methodName: "add_block_headers",
-                inputFieldType: "addBlockHeadersInput",
+                methodName: "add_block_header",
+                inputFieldType: "addBlockHeaderInput",
                 outputFieldType: null,
             }],
         })
@@ -349,8 +354,14 @@ class EthBridgeContract extends Contract {
     const account = new nearlib.Account(near.connection, 'ethbridge');
 
     const ethBridgeContract = new EthBridgeContract(account, 'ethbridge');
+    await ethBridgeContract.accessKeyInit();
 
-    let initialized = await ethBridgeContract.initialized();
+    let initialized = false;
+    try {
+        initialized = await ethBridgeContract.initialized();
+    } catch (e) {
+        // I guess not
+    }
     if (!initialized) {
         console.log('EthBridge is not initialized, initializing...');
         await ethBridgeContract.init({
@@ -380,77 +391,44 @@ class EthBridgeContract extends Contract {
         console.log("Web3 block number is " + last_block_number);
     }
 
-    const submitBlocks = async (blocks, start, stop) => {
+    const submitBlock = async (block, blockNumber) => {
         // Check bridge state, may be changed since computation could be long
-        const last_block_number_onchain = await ethBridgeContract.last_block_number();
-        console.log('ethBridgeContract.last_block_number =', last_block_number_onchain.toNumber());
-        if (last_block_number_onchain >= stop) {
-            console.log('Skipping submission due all were already submitted by someone');
-            return;
-        }
-        if (last_block_number_onchain > start) {
-            console.log('Trim first ${last_block_number_onchain - start} headers were due already submitted by someone');
-            blocks = blocks.slice(last_block_number_onchain - start);
-            start = last_block_number_onchain;
-        }
-
         let timeBeforeSubmission = Date.now();
-        console.log(`Submitting ${blocks.length} blocks from ${start} to ${stop} to EthBridge`);
+        console.log(`Submitting block ${blockNumber} to EthBridge`);
+        const h512s = block.elements
+            .filter((_, index) => index % 2 === 0)
+            .map((element, index) => {
+                return web3.utils.padLeft(element, 64) + web3.utils.padLeft(block.elements[index*2 + 1], 64).substr(2)
+            });
         const args = {
-            block_headers: blocks.map(block => web3.utils.hexToBytes(block.header_rlp)),
-            dag_nodes: blocks.map(block => {
-                const h512s = block.elements
-                  .filter((_, index) => index % 2 === 0)
-                  .map((element, index) => {
-                      return web3.utils.padLeft(element, 64) + web3.utils.padLeft(block.elements[index*2 + 1], 64).substr(2)
-                  });
-                return h512s
-                  .filter((_, index) => index % 2 === 0)
-                  .map((element, index) => {
-                      return {
-                          dag_nodes: [element, h512s[index*2 + 1]],
-                          proof: block.merkle_proofs.slice(
-                            index * block.proof_length,
-                            (index + 1) * block.proof_length,
-                          ).map(leaf => web3.utils.padLeft(leaf, 32))
-                      };
-                  });
-            })
+            block_header: web3.utils.hexToBytes(block.header_rlp),
+            dag_nodes: h512s
+                .filter((_, index) => index % 2 === 0)
+                .map((element, index) => {
+                    return {
+                        dag_nodes: [element, h512s[index*2 + 1]],
+                        proof: block.merkle_proofs.slice(
+                        index * block.proof_length,
+                        (index + 1) * block.proof_length,
+                        ).map(leaf => web3.utils.padLeft(leaf, 32))
+                    };
+                }),
         };
-        await ethBridgeContract.add_block_headers(args, new BN('1000000000000000'));
+        await ethBridgeContract.add_block_header(args, new BN('1000000000000000'));
         console.log(
-          "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
-          "(" + Math.trunc((Date.now() - timeBeforeSubmission)/(blocks.length - 1)/10)/100 + "s per header)"
+            "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
+            "(" + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s per header)"
         );
-        console.log(`Successfully submitted ${blocks.length} blocks from ${start} to ${stop} to EthBridge`);
+        console.log(`Successfully submitted block ${blockNumber} to EthBridge`);
     };
 
-
-    let submitPromise = Promise.resolve();
-    let blocks = [];
     subscribeOnBlocksRangesFrom(web3, last_block_number, async (start, stop) => {
         let timeBeforeProofsComputed = Date.now();
-        console.log(`Need to collect ${stop - start + 1} proofs from #${start} to #${stop}`);
-        let shouldStop = false;
-        for (let i = start; !shouldStop && i <= stop; ) {
-            const N = Math.min(blocks ? 2 : 3, stop - i + 1);
-            console.log(`Computing for blocks #${i} to #${i + N - 1}`)
-            let ind = i;
-            const promises = [];
-            for (; ind - i < N && ind <= stop; ind++) {
-                if (Math.trunc(i/30000) == Math.trunc(ind/30000)) {
-                    promises.push(execute(`./ethashproof/cmd/relayer/relayer ${ind} | sed -e '1,/Json output/d'`));
-                } else {
-                    break;
-                }
-            }
-            const newBlocks = (await Promise.all(promises)).map(res => JSON.parse(res));
-            blocks = blocks.slice(blocks.length - 1).concat(newBlocks);
+        console.log(`Processing ${stop - start + 1} blocks from #${start} to #${stop}`);
+        for (let i = start; i <= stop; ++i) {
+            const block = JSON.parse(await execute(`./ethashproof/cmd/relayer/relayer ${i} | sed -e '1,/Json output/d'`));
             // submit blocks
-            submitPromise = submitPromise.then(() => submitBlocks(blocks.slice(), i, i + j - 1).catch(() => {
-                shouldStop = true;
-            }));
-            i += j;
+            submitBlock(block, i);
         }
         console.log(
             "Proofs computation took " + Math.trunc((Date.now() - timeBeforeProofsComputed)/10)/100 + "s " +
