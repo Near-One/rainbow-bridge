@@ -122,6 +122,7 @@ impl EthBridge {
 
         let header_hash = header.hash.unwrap();
         if self.infos.get(&header_hash).is_some() {
+            near_bindgen::env::log(format!("The header #{} is already known.", header.number).as_bytes());
             // The header is already known
             return;
         }
@@ -140,6 +141,7 @@ impl EthBridge {
     fn maybe_store_header(&mut self, header: BlockHeader) {
         let best_info = self.infos.get(&self.best_header_hash).unwrap_or_default();
         if best_info.number > header.number + NUMBER_OF_BLOCKS_FINALITY {
+            near_bindgen::env::log(format!("The header #{} is too old. The latest is #{}", header.number, best_info.number).as_bytes());
             // It's too late to add this block header.
             return;
         }
@@ -159,6 +161,7 @@ impl EthBridge {
             (info.total_difficulty == best_info.total_difficulty && header.difficulty % 2 == U256::default()) {
             // The new header is the tip of the new canonical chain.
             // We need to update hashes of the canonical chain to match the new header.
+            near_bindgen::env::log(format!("The received header #{} is the tip of the new canonical chain.", info.number).as_bytes());
 
             // If the new header has a lower number than the previous header, we need to cleaning
             // it going forward.
@@ -192,6 +195,8 @@ impl EthBridge {
             }
 
             self.maybe_gc(best_info.number, info.number);
+        } else {
+            near_bindgen::env::log(format!("The received header #{} doesn't have the best total difficulty.", info.number).as_bytes());
         }
     }
 
@@ -200,7 +205,7 @@ impl EthBridge {
         if new_best_number > last_best_number && last_best_number >= NUMBER_OF_BLOCKS_FINALITY {
             for number in last_best_number - NUMBER_OF_BLOCKS_FINALITY..new_best_number - NUMBER_OF_BLOCKS_FINALITY {
                 if let Some(mut hashes) = self.recent_header_hashes.get(&number) {
-                    near_bindgen::env::log(format!("Going to GC {} headers for blocks at #{}", hashes.len(), number).as_bytes());
+                    near_bindgen::env::log(format!("Removing old {} header(s) at #{}", hashes.len(), number).as_bytes());
                     for hash in hashes.iter() {
                         self.infos.remove(&hash);
                         self.headers.remove(&hash);
