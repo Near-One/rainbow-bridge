@@ -9,9 +9,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 eth-types =  { path = "../ethtypes" }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = { "git" = "https://github.com/nearprotocol/json", rev = "1f5779f3b0bd3d2a4b0b975abc46f3d3fe873331", features = ["no_floats"] }
-near-bindgen = { path = "../../near-bindgen/near-bindgen" }
+near-bindgen = "0.3.11"
 borsh = "0.2.10"
 wee_alloc = "0.4.5"
 rlp = "0.4.2"
@@ -20,7 +18,6 @@ futures = "0.1.26"
 primal = "0.2.3"
 arrutil = "0.1.2"
 ethash = { git = "https://github.com/nearprotocol/rust-ethash" }
-#ethash = { path = "../../rust-ethash" }
 serde_derive = "1.0.104"
 hex = "0.4.0"
 rustc-hex = "2.1.0"
@@ -28,6 +25,8 @@ rustc-hex = "2.1.0"
 [dev-dependencies]
 web3 = "0.8.0"
 lazy_static = "1.4.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { "git" = "https://github.com/nearprotocol/json", rev = "1f5779f3b0bd3d2a4b0b975abc46f3d3fe873331", features = ["no_floats"] }
 
 [profile.release]
 codegen-units = 1
