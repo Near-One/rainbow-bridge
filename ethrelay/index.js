@@ -392,6 +392,22 @@ class EthBridgeContract extends Contract {
     }
 
     const submitBlock = async (block, blockNumber) => {
+        for (let i = 0; i < 10; ++i) {
+            try {
+                let last_block_number_onchain = (await ethBridgeContract.last_block_number()).toNumber();
+                if (last_block_number_onchain > 0 && last_block_number_onchain < blockNumber - 1) {
+                    console.log("Sleeping 1 sec. The latest block on chain is", last_block_number_onchain, ", but need to submit block", blockNumber);
+                    await new Promise((resolve, reject) => {
+                        setTimeout(resolve, 1000);
+                    });
+                } else {
+                    break;
+                }
+            } catch (e) {
+                console.log("Block awaiting failed :(", e);
+            }
+        }
+
         // Check bridge state, may be changed since computation could be long
         let timeBeforeSubmission = Date.now();
         console.log(`Submitting block ${blockNumber} to EthBridge`);
@@ -414,7 +430,18 @@ class EthBridgeContract extends Contract {
                     };
                 }),
         };
-        await ethBridgeContract.add_block_header(args, new BN('1000000000000000'));
+        for (let i = 0; i < 5; ++i) {
+            try {
+                await ethBridgeContract.add_block_header(args, new BN('1000000000000000'));
+                break;
+            } catch (e) {
+                // failed
+                console.log(`Sleeping 0.5sec. Failed at iteration #${i}:`, e);
+                await new Promise((resolve, reject) => {
+                    setTimeout(resolve, 500);
+                });
+            }
+        }
         console.log(
             "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
             "(" + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s per header)"
