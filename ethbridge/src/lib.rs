@@ -199,8 +199,8 @@ impl EthBridge {
     fn maybe_gc(&mut self, last_best_number: u64, new_best_number: u64) {
         if new_best_number > last_best_number && last_best_number >= NUMBER_OF_BLOCKS_FINALITY {
             for number in last_best_number - NUMBER_OF_BLOCKS_FINALITY..new_best_number - NUMBER_OF_BLOCKS_FINALITY {
-                near_bindgen::env::log(format!("Going to GC headers for block number #{}", number).as_bytes());
                 if let Some(mut hashes) = self.recent_header_hashes.get(&number) {
+                    near_bindgen::env::log(format!("Going to GC {} headers for blocks at #{}", hashes.len(), number).as_bytes());
                     for hash in hashes.iter() {
                         self.infos.remove(&hash);
                         self.headers.remove(&hash);
@@ -209,6 +209,7 @@ impl EthBridge {
                     self.recent_header_hashes.remove(&number);
                 }
             }
+            near_bindgen::env::log(format!("There are {} headers remaining", self.headers.len()).as_bytes());
         }
     }
 
