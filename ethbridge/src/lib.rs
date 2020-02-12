@@ -74,6 +74,7 @@ pub struct EthBridge {
 }
 
 const NUMBER_OF_BLOCKS_FINALITY: u64 = 30;
+const NUMBER_OF_BLOCKS_SAFE: u64 = 10;
 
 impl EthBridge {
     pub fn init(dags_start_epoch: u64, dags_merkle_roots: Vec<H128>) -> Self {
@@ -105,6 +106,15 @@ impl EthBridge {
 
     pub fn block_hash(&self, index: u64) -> Option<H256> {
         self.canonical_header_hashes.get(&index)
+    }
+
+    pub fn block_hash_safe(&self, index: u64) -> Option<H256> {
+        let best_info = self.infos.get(&self.best_header_hash).unwrap_or_default();
+        if best_info.number < index + NUMBER_OF_BLOCKS_SAFE {
+            None
+        } else {
+            self.block_hash(index)
+        }
     }
 
     pub fn add_block_header(
@@ -161,7 +171,11 @@ impl EthBridge {
             (info.total_difficulty == best_info.total_difficulty && header.difficulty % 2 == U256::default()) {
             // The new header is the tip of the new canonical chain.
             // We need to update hashes of the canonical chain to match the new header.
-            near_bindgen::env::log(format!("The received header #{} is the tip of the new canonical chain.", info.number).as_bytes());
+            near_bindgen::env::log(format!(
+                "The received header #{} is the tip of the new canonical chain. There are total {} header hashes",
+                info.number,
+                self.canonical_header_hashes.len(),
+            ).as_bytes());
 
             // If the new header has a lower number than the previous header, we need to cleaning
             // it going forward.
@@ -222,7 +236,7 @@ impl EthBridge {
         let mut hashes = self.recent_header_hashes.get(&number).unwrap_or_else(|| {
             let mut set_id = Vec::with_capacity(9);
             set_id.extend_from_slice(b"s");
-            set_id.extend(number.to_le_bytes().into_iter());
+            set_id.extend(number.to_le_bytes().iter());
             Set::new(set_id)
         });
         hashes.insert(&hash);
@@ -362,6 +376,20 @@ pub extern "C" fn block_hash() {
     assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
     let contract: EthBridge = near_bindgen::env::state_read().unwrap();
     let result = contract.block_hash(index);
+    let result = result.try_to_vec().unwrap();
+    near_bindgen::env::value_return(&result);
+}
+#[cfg(target_arch = "wasm32")]
+#[no_mangle]
+pub extern "C" fn block_hash_safe() {
+    near_bindgen::env::setup_panic_hook();
+    near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
+    let input = near_bindgen::env::input().unwrap();
+    let mut c = Cursor::new(&input);
+    let index: u64 = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
+    assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
+    let contract: EthBridge = near_bindgen::env::state_read().unwrap();
+    let result = contract.block_hash_safe(index);
     let result = result.try_to_vec().unwrap();
     near_bindgen::env::value_return(&result);
 }
