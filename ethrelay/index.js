@@ -392,14 +392,20 @@ class EthBridgeContract extends Contract {
     }
 
     const submitBlock = async (block, blockNumber) => {
-        for (let i = 0; i < 10; ++i) {
+        let sleepTimer = 1000;
+        const maxSleepTime = 10000;
+        while (true) {
             try {
                 let last_block_number_onchain = (await ethBridgeContract.last_block_number()).toNumber();
                 if (last_block_number_onchain > 0 && last_block_number_onchain < blockNumber - 1) {
                     console.log("Sleeping 1 sec. The latest block on chain is", last_block_number_onchain, ", but need to submit block", blockNumber);
                     await new Promise((resolve, reject) => {
-                        setTimeout(resolve, 1000);
+                        setTimeout(resolve, sleepTimer);
                     });
+                    if (sleepTimer < maxSleepTime) {
+                        sleepTimer += 1000;
+                    }
+
                 } else {
                     break;
                 }
@@ -430,10 +436,15 @@ class EthBridgeContract extends Contract {
                     };
                 }),
         };
-        for (let i = 0; i < 5; ++i) {
+        for (let i = 0; i < 10; ++i) {
             try {
                 await ethBridgeContract.add_block_header(args, new BN('1000000000000000'));
-                break;
+                console.log(
+                  "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
+                  "(" + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s per header)"
+                );
+                console.log(`Successfully submitted block ${blockNumber} to EthBridge`);
+                return;
             } catch (e) {
                 // failed
                 console.log(`Sleeping 0.5sec. Failed at iteration #${i}:`, e);
@@ -442,20 +453,32 @@ class EthBridgeContract extends Contract {
                 });
             }
         }
-        console.log(
-            "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
-            "(" + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s per header)"
-        );
-        console.log(`Successfully submitted block ${blockNumber} to EthBridge`);
+        throw new Error("Failed to submit a block");
     };
 
     subscribeOnBlocksRangesFrom(web3, last_block_number, async (start, stop) => {
         let timeBeforeProofsComputed = Date.now();
         console.log(`Processing ${stop - start + 1} blocks from #${start} to #${stop}`);
         for (let i = start; i <= stop; ++i) {
-            const block = JSON.parse(await execute(`./ethashproof/cmd/relayer/relayer ${i} | sed -e '1,/Json output/d'`));
-            // submit blocks
-            submitBlock(block, i);
+            let ok = false;
+            for (let retryIter = 0; retryIter < 10; ++retryIter) {
+                try {
+                    const block = JSON.parse(await execute(`./ethashproof/cmd/relayer/relayer ${i} | sed -e '1,/Json output/d'`));
+                    submitBlock(block, i).catch((e) => {
+                        throw e;
+                    })
+                    ok = true;
+                    break;
+                } catch (e) {
+                    console.log(`Sleeping 0.5sec. Failed at iteration #${retryIter}:`, e);
+                    await new Promise((resolve, reject) => {
+                        setTimeout(resolve, 500);
+                    });
+                }
+            }
+            if (!ok) {
+                throw new Error(`Failed to create a proof for a block #${i}`)
+            }
         }
         console.log(
             "Proofs computation took " + Math.trunc((Date.now() - timeBeforeProofsComputed)/10)/100 + "s " +
