@@ -341,7 +341,6 @@ dependencies = [
  "rlp",
  "rustc-hex",
  "serde",
- "serde_derive",
  "serde_json 1.0.40",
  "web3",
  "wee_alloc",
