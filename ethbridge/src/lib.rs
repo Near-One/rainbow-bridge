@@ -205,7 +205,7 @@ impl EthBridge {
         if new_best_number > last_best_number && last_best_number >= NUMBER_OF_BLOCKS_FINALITY {
             for number in last_best_number - NUMBER_OF_BLOCKS_FINALITY..new_best_number - NUMBER_OF_BLOCKS_FINALITY {
                 if let Some(mut hashes) = self.recent_header_hashes.get(&number) {
-                    near_bindgen::env::log(format!("Removing old {} header(s) at #{}", hashes.len(), number).as_bytes());
+                    near_bindgen::env::log(format!("Removing {} old header(s) at #{}", hashes.len(), number).as_bytes());
                     for hash in hashes.iter() {
                         self.infos.remove(&hash);
                         self.headers.remove(&hash);
