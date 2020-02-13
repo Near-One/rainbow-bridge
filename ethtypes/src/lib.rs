@@ -13,9 +13,15 @@ macro_rules! arr_declare_wrapper_and_serde {
         #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
         pub struct $name(pub ethereum_types::$name);
 
+        impl From<&[u8; $len]> for $name {
+            fn from(item: &[u8; $len]) -> Self {
+                $name(item.into())
+            }
+        }
+
         impl From<[u8; $len]> for $name {
             fn from(item: [u8; $len]) -> Self {
-                $name(item.into())
+                (&item).into()
             }
         }
 
@@ -26,6 +32,18 @@ macro_rules! arr_declare_wrapper_and_serde {
                     data[$len - 1 - i] = item[item.len() - 1 - i];
                 }
                 $name(data.into())
+            }
+        }
+
+        impl From<Vec<u8>> for $name {
+            fn from(item: Vec<u8>) -> Self {
+                (&item).into()
+            }
+        }
+
+        impl From<&[u8]> for $name {
+            fn from(item: &[u8]) -> Self {
+                item.to_vec().into()
             }
         }
 

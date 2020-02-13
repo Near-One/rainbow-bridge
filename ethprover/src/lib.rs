@@ -29,10 +29,6 @@ pub struct EthTrieNode {
     pub node_type: EthTrieNodeType,
 }
 
-fn bytesToNibbles(bytes: Vec<u8>) -> Vec<u8> {
-    bytes.iter().flat_map(|b| vec![b >> 4, b & 0x0F]).collect()
-}
-
 impl RlpDecodable for EthTrieNode {
     fn decode(rlp: &Rlp) -> Result<Self, RlpDecoderError> {
         match rlp.item_count()? {
@@ -121,126 +117,138 @@ impl EthProver {
         }
     }
 
-    fn matchingNibbleLength(a: Vec<u8>, b: Vec<u8>) -> usize {
-        a.iter().zip(b.iter()).take_while(|(i,j)| i == j).count()
+    fn extract_nibbles(a: Vec<u8>) -> Vec<u8> {
+        a.iter().flat_map(|b| vec![b >> 4, b & 0x0F]).collect()
     }
 
-    /// https://github.com/slockit/in3/blob/master/src/util/merkleProof.ts
-    pub fn verify_log_entry(
-        &self,
-        log_entry_data: Vec<u8>,
-        receipt_data: Vec<u8>,
-        header_data: Vec<u8>,
-        proof: Vec<H256>,
-        receipt_index_hash: H256,
+    // pub fn verify_log_entry(
+    //     &self,
+    //     log_entry_data: Vec<u8>,
+    //     receipt_data: Vec<u8>,
+    //     header_data: Vec<u8>,
+    //     proof: Vec<H256>,
+    //     receipt_index_hash: H256,
+    // ) -> bool {
+    //     let log_entry: LogEntry = rlp::decode(log_entry_data.as_slice()).unwrap();
+    //     let receipt: Receipt = rlp::decode(receipt_data.as_slice()).unwrap();
+    //     let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
+    // }
+
+
+    /// Iterate the proof following the key.
+    /// Return True if the value at the leaf is equal to the expected value.
+    /// @param expected_root is the expected root of the current proof node.
+    /// @param key is the key for which we are proving the value.
+    /// @param proof is the proof the key nibbles as path.
+    /// @param key_index keeps track of the index while stepping through
+    ///     the key nibbles.
+    /// @param proof_index keeps track of the index while stepping through
+    ///     the proof nodes.
+    /// @param expected_value is the key's value expected to be stored in
+    ///     the last node (leaf node) of the proof.
+    ///
+    /// https://gist.github.com/paouvrard/7bb947bf5de0fa0dc69d0d254d82252a
+    ///
+    pub fn verify_trie_proof(
+        expected_root: H256,
+        key: Vec<u8>,
+        proof: Vec<Vec<u8>>,
+        key_index: usize,
+        proof_index: usize,
+        expected_value: Vec<u8>
     ) -> bool {
-        let log_entry: LogEntry = rlp::decode(log_entry_data.as_slice()).unwrap();
-        let receipt: Receipt = rlp::decode(receipt_data.as_slice()).unwrap();
-        let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
+        let node = &proof[proof_index];
+        let dec = Rlp::new(&node.as_slice());
 
-        // create the nibbles to iterate over the path
-        let mut key = bytesToNibbles((receipt_index_hash.0).0.to_vec());
+        if key_index == 0 { // trie root is always a hash
+            assert_eq!(near_keccak256(node), (expected_root.0).0);
+        }
+        else if node.len() < 32 { // if rlp < 32 bytes, then it is not hashed
+            assert_eq!(dec.as_raw(), (expected_root.0).0);
+        }
+        else {
+            assert_eq!(near_keccak256(node), (expected_root.0).0);
+        }
 
-        // start with the root-Hash
-        let mut wantedHash = header.receipts_root;
-        let mut lastNode: Option<EthTrieNode> = Option::None;
-
-        // iterate through the nodes starting at root
-        for i in 0..proof.len() {
-            let p = proof[i];
-            let hash = near_keccak256(&(p.0).0);
-
-            // verify the hash of the node
-            assert_eq!(wantedHash, hash.into());
-
-            // create the node
-            let node: EthTrieNode = rlp::decode(&(p.0).0).unwrap();
-            //node.raw = (p.0).0.to_vec();
-            lastNode = Option::Some(node.clone());
-
-            match node.node_type {
-                EthTrieNodeType::Empty => {
-                    return i == 0 && receipt_data.len() == 0;
+        if dec.size() == 17 {
+            // branch node
+            if key_index >= key.len() {
+                if dec.at(dec.size() - 1).unwrap().as_raw().to_vec() == expected_value {
+                    // value stored in the branch
+                    return true;
                 }
-                EthTrieNodeType::Branch => {
-                    // we reached the end of the path
-                    if key.len() == 0 {
-                        return i == proof.len() - 1 && node.value == receipt_data;
-                    }
+            }
+            else {
+                let new_expected_root = dec.at(key[key_index] as usize).unwrap().as_raw();
+                if new_expected_root.len() != 0 {
+                    return Self::verify_trie_proof(
+                        new_expected_root.into(),
+                        key,
+                        proof,
+                        key_index + 1,
+                        proof_index + 1,
+                        expected_value
+                    );
+                }
+            }
+        }
+        else if dec.size() == 2 {
+            // leaf or extension node
+            // get prefix and optional nibble from the first byte
+            let nibbles = Self::extract_nibbles(dec.at(0).unwrap().as_raw().to_vec());
+            let (prefix, nibble) = (nibbles[0], nibbles[1]);
 
-                    // find the childHash
-                    let childHash = node.raw[key[0] as usize].clone();
-                    // remove the first item
-                    key = key.iter().skip(1).cloned().collect();
-
-                    if childHash.len() == 2 {
-                        let embeddedNode: EthTrieNode = rlp::decode(childHash.as_slice()).unwrap();
-                        if i != proof.len() - 1 {
-                            panic!("Additional nodes at end of proof (embeddedNode)");
-                        }
-
-                        if Self::matchingNibbleLength(embeddedNode.key, key) != embeddedNode.key.len() {
-                            panic!("Key length does not match with the proof one (embeddedNode)");
-                        }
-
-                        key = key.iter().skip(embeddedNode.key.len()).cloned().collect();
-                        if key.len() != 0 {
-                            panic!("Key does not match with the proof one (embeddedNode)");
-                        }
-
-                        // all is fine we return the value
-                        return true;
-                    } else {
-                        wantedHash = childHash;
-                    }
-                },
-                EthTrieNodeType::Leaf | EthTrieNodeType::Extension => {
-                    let val = node.value;
-
-                    // if the relativeKey in the leaf does not math our rest key, we throw!
-                    if Self::matchingNibbleLength(node.key, key) != node.key.len() {
-                        // so we have a wrong leaf here, if we actually expected this node to not exist,
-                        // the last node in this path may be a different leaf or a branch with a empty hash
-                        if key.len() == node.key.len() && i == proof.len() - 1 && header.receipts_root == Option::None {
-                            return val;
-                        }
-
-                        panic!("Key does not match with the proof one (extention|leaf)");
-                    }
-
-                    // remove the items
-                    key = key.iter().skip(node.key.len()).cloned().collect();
-
-                    if key.len() == 0 {
-                        if i != proof.len() - 1 {
-                            panic!("Additional nodes at end of proof (extention|leaf)");
-                        }
-
-                        // if we are expecting a value we need to check
-                        if header.receipts_root && header.receipts_root.compare(val) {
-                            panic!("The proven value was expected to be {:?} but is {:?}", header.receipts_root, val);
-                        }
-
-                        // if we are proven a value which shouldn't exist this must throw an error
-                        if header.receipts_root == Option::None {
-                            panic!("The value shouldn't exist, but is {:?}", val);
-                        }
-
-                        return val;
-                    } else {
-                        // we continue with the hash 
-                        wantedHash = val;
-                    }
-                },
+            if prefix == 2 {
+                // even leaf node
+                let key_end = &nibbles[2..];
+                if key_end == &key[key_index..] && expected_value == dec.at(1).unwrap().as_raw() {
+                    return true;
+                }
+            }
+            else if prefix == 3 {
+                // odd leaf node
+                let key_end = &nibbles[2..];
+                if nibble == key[key_index] && key_end == &key[key_index + 1..] && expected_value == dec.at(1).unwrap().as_raw() {
+                    return true;
+                }
+            }
+            else if prefix == 0 {
+                // even extension node
+                let shared_nibbles = &nibbles[2..];
+                let extension_length = shared_nibbles.len();
+                if shared_nibbles == &key[key_index..key_index + extension_length] {
+                    let new_expected_root = dec.at(1).unwrap().as_raw();
+                    return Self::verify_trie_proof(
+                        new_expected_root.into(),
+                        key,
+                        proof,
+                        key_index + extension_length,
+                        proof_index + 1,
+                        expected_value
+                    );
+                }
+            }
+            else if prefix == 1 {
+                // odd extension node
+                let shared_nibbles = &nibbles[2..];
+                let extension_length = 1 + shared_nibbles.len();
+                if nibble == key[key_index] && shared_nibbles == &key[key_index + 1..key_index + extension_length] {
+                    let new_expected_root = dec.at(1).unwrap().as_raw();
+                    return Self::verify_trie_proof(
+                        new_expected_root.into(),
+                        key,
+                        proof,
+                        key_index + extension_length,
+                        proof_index + 1,
+                        expected_value
+                    );
+                }
+            }
+            else {
+                panic!("This should not be reached if the proof has the correct format");
             }
         }
 
-        // if we expected this to be null and there is not further node since wantedHash is empty or we had a extension as last element, than it is ok not to find leafs
-        if header.receipts_root == Option::None && (lastNode == Option::None || lastNode.node_type == EthTrieNodeType::Extension || wantedHash.len() == 0) {
-            return false
-        }
-
-        // we reached the end of the proof, but not of the path
-        panic!("Unexpected end of proof");
+        expected_value.len() == 0
     }
 }
