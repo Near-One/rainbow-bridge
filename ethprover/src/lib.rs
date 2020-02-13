@@ -133,6 +133,10 @@ impl EthProver {
         let receipt: Receipt = rlp::decode(receipt_data.as_slice()).unwrap();
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
 
+        // Verify block header was in the bridge
+        // TODO: inter-contract call:
+        //self.bridge_smart_contract.block_hashes(header.number) == header.hash;
+
         // Verify log_entry included in receipt
         assert_eq!(receipt.logs[log_index], log_entry);
 
@@ -163,7 +167,7 @@ impl EthProver {
     /// Article:       https://medium.com/@ouvrard.pierre.alain/merkle-proof-verification-for-ethereum-patricia-tree-48f29658eec
     /// Python impl:   https://gist.github.com/paouvrard/7bb947bf5de0fa0dc69d0d254d82252a
     ///
-    pub fn verify_trie_proof(
+    fn verify_trie_proof(
         expected_root: H256,
         key: Vec<u8>,
         proof: Vec<Vec<u8>>,
