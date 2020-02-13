@@ -64,7 +64,8 @@ start_ganache() {
         --account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501209,1000000000000000000000000"
     )
 
-    yarn run ganache-cli --fork "https://mainnet.infura.io/v3/b5f870422ee5454fb11937e947154cd2" --gasLimit 10000000 -p "$ganache_port" "${accounts[@]}" > /dev/null &
+    yarn run ganache-cli --blockTime 12 --gasLimit 10000000 -p "$ganache_port" "${accounts[@]}" > /dev/null &
+    ganache_pid=$!
     waitport $ganache_port
 }
 

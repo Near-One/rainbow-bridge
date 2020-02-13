@@ -1,4 +1,5 @@
 pragma solidity ^0.5.0;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "./NearDecoder.sol";
@@ -18,19 +19,29 @@ contract NearBridge is Ownable {
     );
 
     // TODO: implement light client
-    function addBlockHash(bytes memory blockHeader) public onlyOwner {
-        Borsh.Data memory data = Borsh.Data({
-            offset: 0,
-            raw: blockHeader
-        });
+    function addBlockHeaders(bytes[] memory blockHeaders) public onlyOwner {
+        uint256 largestBlockNumber = lastBlockNumber;
+        for (uint i = 0; i < blockHeaders.length; i++) {
+            NearDecoder.BlockHeaderInnerLite memory header = _readExactHeader(blockHeaders[i]);
+            _addBlockHash(header.height, keccak256(blockHeaders[i]));
+            if (header.height > largestBlockNumber) {
+                largestBlockNumber = header.height;
+            }
+        }
 
-        NearDecoder.BlockHeaderInnerLite memory header = data.decodeBlockHeaderInnerLite();
+        if (largestBlockNumber > lastBlockNumber) {
+            lastBlockNumber = largestBlockNumber;
+        }
+    }
+
+    function _addBlockHash(uint256 blockNumber, bytes32 hash) internal {
+        blockHashes[blockNumber] = hash;
+        emit BlockHashAdded(blockNumber, hash);
+    }
+
+    function _readExactHeader(bytes memory blockHeader) internal pure returns(NearDecoder.BlockHeaderInnerLite memory header) {
+        Borsh.Data memory data = Borsh.from(blockHeader);
+        header = data.decodeBlockHeaderInnerLite();
         require(data.finished(), "NearBridge: only block header should be passed");
-        require(header.height > lastBlockNumber, "NearBridge: can't rewrite existing records");
-
-        bytes32 hash = keccak256(blockHeader);
-        blockHashes[header.height] = hash;
-        emit BlockHashAdded(header.height, hash);
-        lastBlockNumber = header.height;
     }
 }

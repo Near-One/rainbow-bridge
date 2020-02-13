@@ -49,8 +49,6 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
     }
     const account = (await web3.eth.getAccounts())[0];
     let nonce = await web3.eth.getTransactionCount(account);
-    
-    console.log('yyy');
 
     let nearBridgeContract = new web3.eth.Contract(
         JSON.parse(fs.readFileSync(path.join(__dirname, '../nearbridge/NearBridge.full.abi'))),
@@ -68,12 +66,33 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
             from: account,
             gas: 1000000
         });
+        console.log('Deployed to address:', nearBridgeContract.address);
     }
 
-    const status = await near.connection.provider.status();
-    console.log('near.status', status);
-    let lastBlockNumber = status.sync_info.latest_block_height;
+    const checkNearStatus = async function () {
+        let latest_submitted_block = Number(await nearBridgeContract.methods.lastBlockNumber().call());
+        console.log('latest_submitted_block', typeof latest_submitted_block, latest_submitted_block);
 
+        const status = await near.connection.provider.status();
+        let lastNearBlock = status.sync_info.latest_block_height;
+        console.log('lastNearBlock', typeof lastNearBlock, lastNearBlock);
+
+        const blocks = [];
+        for (let i = latest_submitted_block; i < lastNearBlock; i += 1) {
+            const block = await near.connection.provider.block(i);
+            console.log('block', block.header);
+            return;
+            //blocks.push('1');
+        }
+        //await nearBridgeContract.addBlockHashes(blocks);
+
+        setTimeout(checkNearStatus, 10000);
+    };
+
+    checkNearStatus();
+
+
+    
     return;
 
     console.log('EthBridge check initialization...');
