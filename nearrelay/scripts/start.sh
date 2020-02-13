@@ -8,13 +8,19 @@ set -o errexit
 # Executes cleanup function at script exit.
 trap cleanup EXIT
 
+waitport() {
+    while ! nc -z localhost $1 ; do sleep 1 ; done
+}
+
 cleanup() {
     # Kill the nearnode instance that we started (if we started one and if it's still running).
-    if [ -n "$nearcode_started" ]; then
+    if [ -n "$node_started" ]; then
         docker kill nearcore watchtower > /dev/null &
     fi
-    if [ -n "$ganache_started" ]; then
-        kill $ganache_pid > /dev/null &
+    
+    # Kill the ganache instance that we started (if we started one and if it's still running).
+    if [ -n "$ganache_pid" ] && ps -p $ganache_pid > /dev/null; then
+        killall ganache-cli
     fi
 }
 
@@ -25,10 +31,8 @@ nearnode_running() {
 }
 
 start_nearnode() {
-    echo "ethrelay" | "$DIR/start_localnet.py" --home "$DIR/.near" --image "nearprotocol/nearcore:nofloatsfixedgas"
-    trap "docker kill nearcore watchtower > /dev/null &" EXIT INT TERM
-    nearcode_started=1
-    sleep 1
+    echo "nearrelay" | "$DIR/start_localnet.py" --home "$DIR/.near" --image "nearprotocol/nearcore:ethdenver"
+    waitport $nearnode_port
 }
 
 if nearnode_running; then
@@ -37,6 +41,7 @@ else
     echo "Starting our own nearnode instance"
     rm -rf "$DIR/.near"
     start_nearnode
+    node_started=1
 fi
 
 ganache_port=9545
@@ -59,11 +64,8 @@ start_ganache() {
         --account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501209,1000000000000000000000000"
     )
 
-    ganache-cli --fork "https://mainnet.infura.io/v3/b5f870422ee5454fb11937e947154cd2" --gasLimit 10000000 -p "$ganache_port" "${accounts[@]}" > /dev/null &
-    ganache_pid=$!
-    trap "kill $ganache_pid" EXIT INT TERM
-    ganache_started=1
-    echo "ganache_pid: $ganache_pid"
+    yarn run ganache-cli --fork "https://mainnet.infura.io/v3/b5f870422ee5454fb11937e947154cd2" --gasLimit 10000000 -p "$ganache_port" "${accounts[@]}" > /dev/null &
+    waitport $ganache_port
 }
 
 if ganache_running; then
@@ -72,10 +74,5 @@ else
     echo "Starting our own ganache instance"
     start_ganache
 fi
-
-echo "Creating account for smart contract:"
-NODE_ENV=local yarn run near --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" create_account ethbridge --masterAccount=ethrelay --initialBalance 100000000 || echo "Skip creating ethbridge accout"
-#echo "Deploying smart contract:"
-#NODE_ENV=local yarn run near --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" deploy --masterAccount=ethrelay --contractName ethbridge --wasmFile "$DIR/../../ethbridge/res/eth_bridge.wasm" || echo "Skip deploying ethbridge smart contract"
 
 NEAR_BRIDGE_OWNER_PRIVATE_KEY=0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 node "$DIR/../index.js"
