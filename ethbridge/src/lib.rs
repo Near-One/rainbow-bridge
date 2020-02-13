@@ -3,7 +3,7 @@ use std::io::Cursor;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
 use near_bindgen::near_bindgen;
-use near_bindgen::collections::Map;
+use near_bindgen::collections::{Map, Set};
 
 #[cfg(target_arch = "wasm32")]
 #[global_allocator]
@@ -65,11 +65,16 @@ pub struct EthBridge {
     dags_merkle_roots: Vec<H128>,
 
     best_header_hash: H256,
-    header_hashes: Map<u64, H256>,
+    canonical_header_hashes: Map<u64, H256>,
 
     headers: Map<H256, BlockHeader>,
     infos: Map<H256, HeaderInfo>,
+
+    recent_header_hashes: Map<u64, Set<H256>>,
 }
+
+const NUMBER_OF_BLOCKS_FINALITY: u64 = 30;
+const NUMBER_OF_BLOCKS_SAFE: u64 = 10;
 
 impl EthBridge {
     pub fn init(dags_start_epoch: u64, dags_merkle_roots: Vec<H128>) -> Self {
@@ -78,10 +83,12 @@ impl EthBridge {
             dags_merkle_roots,
 
             best_header_hash: Default::default(),
-            header_hashes: Map::new(b"b".to_vec()),
+            canonical_header_hashes: Map::new(b"c".to_vec()),
 
             headers: Map::new(b"h".to_vec()),
             infos: Map::new(b"i".to_vec()),
+
+            recent_header_hashes: Map::new(b"r".to_vec()),
         }
     }
 
@@ -98,7 +105,16 @@ impl EthBridge {
     }
 
     pub fn block_hash(&self, index: u64) -> Option<H256> {
-        self.header_hashes.get(&index)
+        self.canonical_header_hashes.get(&index)
+    }
+
+    pub fn block_hash_safe(&self, index: u64) -> Option<H256> {
+        let best_info = self.infos.get(&self.best_header_hash).unwrap_or_default();
+        if best_info.number < index + NUMBER_OF_BLOCKS_SAFE {
+            None
+        } else {
+            self.block_hash(index)
+        }
     }
 
     pub fn add_block_header(
@@ -110,16 +126,14 @@ impl EthBridge {
 
         if self.best_header_hash == Default::default() {
             // Submit very first block, can trust relayer
-            self.maybe_store_header(header, false);
-            // self.block_hashes.insert(&header.number, &header.hash.unwrap());
-            // self.last_block_number = header.number;
+            self.maybe_store_header(header);
             return;
         }
 
         let header_hash = header.hash.unwrap();
         if self.infos.get(&header_hash).is_some() {
-            // We know the header is valid, so we can store it again if needed.
-            self.maybe_store_header(header, true);
+            near_bindgen::env::log(format!("The header #{} is already known.", header.number).as_bytes());
+            // The header is already known
             return;
         }
 
@@ -127,57 +141,106 @@ impl EthBridge {
 
         assert!(Self::verify_header(&self, &header, &prev, &dag_nodes), "The new header should be valid");
 
-        self.maybe_store_header(header, false);
+        self.maybe_store_header(header);
     }
 }
 
 impl EthBridge {
 
     /// Maybe stores a valid header in the contract.
-    fn maybe_store_header(&mut self, header: BlockHeader, known_before: bool) {
+    fn maybe_store_header(&mut self, header: BlockHeader) {
+        let best_info = self.infos.get(&self.best_header_hash).unwrap_or_default();
+        if best_info.number > header.number + NUMBER_OF_BLOCKS_FINALITY {
+            near_bindgen::env::log(format!("The header #{} is too old. The latest is #{}", header.number, best_info.number).as_bytes());
+            // It's too late to add this block header.
+            return;
+        }
         let header_hash = header.hash.unwrap();
-        // TODO: Figure out when not to store headers and how to clean them up.
         self.headers.insert(&header_hash, &header);
 
-        if !known_before {
-            let parent_info = self.infos.get(&header.parent_hash).unwrap_or_default();
-            // Have to compute new total difficulty
-            let info = HeaderInfo {
-                total_difficulty: parent_info.total_difficulty + header.difficulty,
-                parent_hash: header.parent_hash.clone(),
-                number: header.number,
-            };
-            let best_total_difficulty = self.infos.get(&self.best_header_hash).unwrap_or_default().total_difficulty;
-            self.infos.insert(&header_hash, &info);
-            if info.total_difficulty > best_total_difficulty ||
-                (info.total_difficulty == best_total_difficulty && header.difficulty % 2 == U256::default()) {
-                self.best_header_hash = header_hash;
-                // Need to rewrite history until hashes match
-                // Cleaning forward
-                let mut i = header.number + 1;
-                while self.header_hashes.remove(&i).is_some() {
-                    i += 1;
-                }
-                // Replacing current hash
-                self.header_hashes.insert(&info.number, &header_hash);
-                // Replacing past hashes until we converge into the same parent
-                i = header.number - 1;
-                let mut current_hash = info.parent_hash;
-                loop {
-                    let prev_value = self.header_hashes.insert(&i, &current_hash);
-                    if i == 0 || prev_value == Some(current_hash) {
-                        break;
-                    }
-                    i -= 1;
-                    if let Some(info) = self.infos.get(&current_hash) {
-                        current_hash = info.parent_hash;
-                    } else {
-                        break;
-                    }
+        let parent_info = self.infos.get(&header.parent_hash).unwrap_or_default();
+        // Have to compute new total difficulty
+        let info = HeaderInfo {
+            total_difficulty: parent_info.total_difficulty + header.difficulty,
+            parent_hash: header.parent_hash.clone(),
+            number: header.number,
+        };
+        self.infos.insert(&header_hash, &info);
+        self.add_recent_header_hash(info.number, &header_hash);
+        if info.total_difficulty > best_info.total_difficulty ||
+            (info.total_difficulty == best_info.total_difficulty && header.difficulty % 2 == U256::default()) {
+            // The new header is the tip of the new canonical chain.
+            // We need to update hashes of the canonical chain to match the new header.
+            near_bindgen::env::log(format!(
+                "The received header #{} is the tip of the new canonical chain. There are total {} header hashes",
+                info.number,
+                self.canonical_header_hashes.len(),
+            ).as_bytes());
+
+            // If the new header has a lower number than the previous header, we need to cleaning
+            // it going forward.
+            if best_info.number > info.number {
+                for number in info.number+1..=best_info.number {
+                    self.canonical_header_hashes.remove(&number);
                 }
             }
-        }
+            // Replacing the global best header hash.
+            self.best_header_hash = header_hash;
+            self.canonical_header_hashes.insert(&info.number, &header_hash);
 
+            // Replacing past hashes until we converge into the same parent.
+            // Starting from the parent hash.
+            let mut number = header.number - 1;
+            let mut current_hash = info.parent_hash;
+            loop {
+                let prev_value = self.canonical_header_hashes.insert(&number, &current_hash);
+                // If the current block hash is 0 (unlikely), or the previous hash matches the
+                // current hash, then we chains converged and can stop now.
+                if number == 0 || prev_value == Some(current_hash) {
+                    break;
+                }
+                // Check if there is an info to get the parent hash
+                if let Some(info) = self.infos.get(&current_hash) {
+                    current_hash = info.parent_hash;
+                } else {
+                    break;
+                }
+                number -= 1;
+            }
+
+            self.maybe_gc(best_info.number, info.number);
+        } else {
+            near_bindgen::env::log(format!("The received header #{} doesn't have the best total difficulty.", info.number).as_bytes());
+        }
+    }
+
+    /// Removes old headers beyond the finality.
+    fn maybe_gc(&mut self, last_best_number: u64, new_best_number: u64) {
+        if new_best_number > last_best_number && last_best_number >= NUMBER_OF_BLOCKS_FINALITY {
+            for number in last_best_number - NUMBER_OF_BLOCKS_FINALITY..new_best_number - NUMBER_OF_BLOCKS_FINALITY {
+                if let Some(mut hashes) = self.recent_header_hashes.get(&number) {
+                    near_bindgen::env::log(format!("Removing {} old header(s) at #{}", hashes.len(), number).as_bytes());
+                    for hash in hashes.iter() {
+                        self.infos.remove(&hash);
+                        self.headers.remove(&hash);
+                    }
+                    hashes.clear();
+                    self.recent_header_hashes.remove(&number);
+                }
+            }
+            near_bindgen::env::log(format!("There are {} headers remaining", self.headers.len()).as_bytes());
+        }
+    }
+
+    fn add_recent_header_hash(&mut self, number: u64, hash: &H256) {
+        let mut hashes = self.recent_header_hashes.get(&number).unwrap_or_else(|| {
+            let mut set_id = Vec::with_capacity(9);
+            set_id.extend_from_slice(b"s");
+            set_id.extend(number.to_le_bytes().iter());
+            Set::new(set_id)
+        });
+        hashes.insert(&hash);
+        self.recent_header_hashes.insert(&number, &hashes);
     }
 
     fn verify_header(
@@ -313,6 +376,20 @@ pub extern "C" fn block_hash() {
     assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
     let contract: EthBridge = near_bindgen::env::state_read().unwrap();
     let result = contract.block_hash(index);
+    let result = result.try_to_vec().unwrap();
+    near_bindgen::env::value_return(&result);
+}
+#[cfg(target_arch = "wasm32")]
+#[no_mangle]
+pub extern "C" fn block_hash_safe() {
+    near_bindgen::env::setup_panic_hook();
+    near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
+    let input = near_bindgen::env::input().unwrap();
+    let mut c = Cursor::new(&input);
+    let index: u64 = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
+    assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
+    let contract: EthBridge = near_bindgen::env::state_read().unwrap();
+    let result = contract.block_hash_safe(index);
     let result = result.try_to_vec().unwrap();
     near_bindgen::env::value_return(&result);
 }
