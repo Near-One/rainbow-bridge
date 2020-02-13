@@ -392,18 +392,18 @@ class EthBridgeContract extends Contract {
     }
 
     const submitBlock = async (block, blockNumber) => {
-        let sleepTimer = 1000;
-        const maxSleepTime = 10000;
+        let sleepTimer = 1;
+        const maxSleepTime = 10;
         while (true) {
             try {
                 let last_block_number_onchain = (await ethBridgeContract.last_block_number()).toNumber();
                 if (last_block_number_onchain > 0 && last_block_number_onchain < blockNumber - 1) {
-                    console.log("Sleeping 1 sec. The latest block on chain is", last_block_number_onchain, ", but need to submit block", blockNumber);
+                    console.log(`Sleeping ${sleepTimer} sec. The latest block on chain is ${last_block_number_onchain}, but need to submit block #${blockNumber}`);
                     await new Promise((resolve, reject) => {
-                        setTimeout(resolve, sleepTimer);
+                        setTimeout(resolve, sleepTimer * 1000);
                     });
                     if (sleepTimer < maxSleepTime) {
-                        sleepTimer += 1000;
+                        sleepTimer += 1;
                     }
 
                 } else {
