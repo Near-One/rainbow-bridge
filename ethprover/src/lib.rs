@@ -159,7 +159,9 @@ impl EthProver {
     /// @param expected_value is the key's value expected to be stored in
     ///     the last node (leaf node) of the proof.
     ///
-    /// https://gist.github.com/paouvrard/7bb947bf5de0fa0dc69d0d254d82252a
+    /// Patricia Tree: https://github.com/ethereum/wiki/wiki/patricia-tree
+    /// Article:       https://medium.com/@ouvrard.pierre.alain/merkle-proof-verification-for-ethereum-patricia-tree-48f29658eec
+    /// Python impl:   https://gist.github.com/paouvrard/7bb947bf5de0fa0dc69d0d254d82252a
     ///
     pub fn verify_trie_proof(
         expected_root: H256,
