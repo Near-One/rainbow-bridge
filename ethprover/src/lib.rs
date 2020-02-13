@@ -1,4 +1,4 @@
-use rlp::{Rlp, DecoderError as RlpDecoderError, Decodable as RlpDecodable};
+use rlp::{Rlp};
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
 //use near_bindgen::near_bindgen;
@@ -7,104 +7,8 @@ use eth_types::*;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-#[derive(Debug, Clone, Copy, BorshDeserialize, BorshSerialize)]
-pub enum EthTrieNodeType {
-    Empty,
-    Branch,
-    Leaf,
-    Extension,
-}
-
-impl Default for EthTrieNodeType {
-    fn default() -> EthTrieNodeType {
-        EthTrieNodeType::Empty
-    }
-}
-
-#[derive(Default, Debug, Clone, BorshDeserialize, BorshSerialize)]
-pub struct EthTrieNode {
-    pub raw: Vec<Vec<u8>>,
-    pub key: Vec<u8>,
-    pub value: Vec<u8>,
-    pub node_type: EthTrieNodeType,
-}
-
-impl RlpDecodable for EthTrieNode {
-    fn decode(rlp: &Rlp) -> Result<Self, RlpDecoderError> {
-        match rlp.item_count()? {
-            17 => Ok(EthTrieNode {
-                raw: vec![],
-                value: rlp.val_at(16)?,
-                key: vec![],
-                node_type: EthTrieNodeType::Branch,
-            }),
-            2 => {
-                let list: Vec<u8> = rlp.list_at(0)?;
-                Ok(EthTrieNode {
-                    raw: vec![],
-                    value: rlp.val_at(1)?,
-                    key: if (list[0] >> 4) % 2 == 1 {
-                        vec![list[0] >> 4]
-                    } else {
-                        vec![list[0] >> 4, list[0] & 0x0F]
-                    },
-                    node_type: if (list[0] >> 4) > 1 {
-                        EthTrieNodeType::Leaf
-                    } else {
-                        EthTrieNodeType::Extension
-                    },
-                })
-            }
-            0 => Ok(EthTrieNode {
-                raw: vec![],
-                value: vec![],
-                key: vec![],
-                node_type: EthTrieNodeType::Empty,
-            }),
-            _ => {
-                panic!("Unreachable code")
-            },
-        }
-    }
-}
-
-// impl EthTrieNode {
-//     pub fn init(data: Vec<Vec<u8>>) -> Self {
-//         if data.len() == 17 {
-//             Self {
-//                 raw: data.clone(),
-//                 value: data[16].clone(),
-//                 key: vec![],
-//                 node_type: EthTrieNodeType::Branch,
-//             }
-//         } else
-//         if data.len() == 2 {
-//             Self {
-//                 raw: data.clone(),
-//                 value: data[1].clone(),
-//                 key: if (data[0][0] >> 4) % 2 == 1 {
-//                     vec![data[0][0] >> 4]
-//                 } else {
-//                     vec![data[0][0] >> 4, data[0][0] & 0x0F]
-//                 },
-//                 node_type: if (data[0][0] >> 4) > 1 { EthTrieNodeType::Leaf } else { EthTrieNodeType::Extension },
-//             }
-//         } else
-//         if data.len() == 0 {
-//             Self {
-//                 raw: data.clone(),
-//                 value: vec![],
-//                 key: vec![],
-//                 node_type: EthTrieNodeType::Empty,
-//             }
-//         } else {
-//             panic!("Unreachable code")
-//         }
-//     }
-// }
-
 //#[near_bindgen]
-#[derive(Default, BorshDeserialize, BorshSerialize)]
+#[derive(Default, Debug, Clone, BorshDeserialize, BorshSerialize)]
 pub struct EthProver {
     bridge_smart_contract: String,
 }
