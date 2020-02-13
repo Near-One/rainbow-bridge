@@ -121,19 +121,31 @@ impl EthProver {
         a.iter().flat_map(|b| vec![b >> 4, b & 0x0F]).collect()
     }
 
-    // pub fn verify_log_entry(
-    //     &self,
-    //     log_entry_data: Vec<u8>,
-    //     receipt_data: Vec<u8>,
-    //     header_data: Vec<u8>,
-    //     proof: Vec<H256>,
-    //     receipt_index_hash: H256,
-    // ) -> bool {
-    //     let log_entry: LogEntry = rlp::decode(log_entry_data.as_slice()).unwrap();
-    //     let receipt: Receipt = rlp::decode(receipt_data.as_slice()).unwrap();
-    //     let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
-    // }
+    pub fn verify_log_entry(
+        &self,
+        log_index: usize,
+        log_entry_data: Vec<u8>,
+        receipt_data: Vec<u8>,
+        header_data: Vec<u8>,
+        proof: Vec<Vec<u8>>,
+    ) -> bool {
+        let log_entry: LogEntry = rlp::decode(log_entry_data.as_slice()).unwrap();
+        let receipt: Receipt = rlp::decode(receipt_data.as_slice()).unwrap();
+        let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
 
+        // Verify log_entry included in receipt
+        assert_eq!(receipt.logs[log_index], log_entry);
+
+        // Verify receipt included into header
+        Self::verify_trie_proof(
+            header.receipts_root,
+            rlp::encode(&log_index),
+            proof,
+            0,
+            0,
+            receipt_data
+        )
+    }
 
     /// Iterate the proof following the key.
     /// Return True if the value at the leaf is equal to the expected value.
