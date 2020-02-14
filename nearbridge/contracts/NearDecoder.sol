@@ -115,7 +115,11 @@ library NearDecoder {
         ExecutionOutcomeWithId outcome_with_id;
     }
 
-    function decodeExecutionOutcomeWithIdAndProof(Borsh.Data memory data) internal pure returns(ExecutionOutcomeWithIdAndProof memory outcome) {
+    function decodeExecutionOutcomeWithIdAndProof(Borsh.Data memory data)
+        internal
+        pure
+        returns(ExecutionOutcomeWithIdAndProof memory outcome)
+    {
         outcome.proof = data.decodeMerklePath();
         outcome.block_hash = data.decodeBytes32();
         outcome.outcome_with_id = data.decodeExecutionOutcomeWithId();

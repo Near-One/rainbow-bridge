@@ -101,6 +101,7 @@ library Borsh {
     function decodeBytes32(Data memory data) internal pure shift(data, 32) returns(byte[32] memory value) {
         bytes memory raw = data.raw;
         uint256 offset = data.offset;
+        // solium-disable-next-line security/no-inline-assembly
         assembly {
             mstore(value, mload(add(add(raw, 32), offset)))
         }
@@ -109,6 +110,7 @@ library Borsh {
     function decodeBytes64(Data memory data) internal pure shift(data, 64) returns(byte[64] memory value) {
         bytes memory raw = data.raw;
         uint256 offset = data.offset;
+        // solium-disable-next-line security/no-inline-assembly
         assembly {
             mstore(value, mload(add(add(raw, 32), offset)))
             mstore(add(value, 32), mload(add(add(raw, 64), offset)))
@@ -118,6 +120,7 @@ library Borsh {
     function decodeBytes65(Data memory data) internal pure shift(data, 65) returns(byte[65] memory value) {
         bytes memory raw = data.raw;
         uint256 offset = data.offset;
+        // solium-disable-next-line security/no-inline-assembly
         assembly {
             mstore(value, mload(add(add(raw, 32), offset)))
             mstore(add(value, 32), mload(add(add(raw, 64), offset)))

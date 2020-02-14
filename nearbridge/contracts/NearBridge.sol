@@ -1,5 +1,5 @@
 pragma solidity ^0.5.0;
-pragma experimental ABIEncoderV2;
+pragma experimental ABIEncoderV2; // solium-disable-line no-experimental
 
 import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "./NearDecoder.sol";

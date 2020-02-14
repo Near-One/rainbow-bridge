@@ -36,8 +36,8 @@
         "lint:js:fix": "eslint . --fix",
         "lint:sol": "solium -d .",
         "lint:sol:fix": "solium -d . --fix",
-        "lint": "npm run lint:js && npm run lint:sol",
-        "lint:fix": "npm run lint:js:fix && npm run lint:sol:fix",
+        "lint": "yarn run lint:js && yarn run lint:sol",
+        "lint:fix": "yarn run lint:js:fix && yarn run lint:sol:fix",
         "dist": "truffle-flattener ./contracts/NearBridge.sol > NearBridge.full.sol && solcjs --bin --abi --optimize NearBridge.full.sol && mv NearBridge_full_sol_NearBridge.bin NearBridge.full.bin && mv NearBridge_full_sol_NearBridge.abi NearBridge.full.abi && rm *_sol_*"
     }
 }

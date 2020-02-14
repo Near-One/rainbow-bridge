@@ -2,6 +2,7 @@
     "extends": "solium:all",
     "plugins": ["security"],
     "rules": {
+      "mixedcase": "off",
       "error-reason": "off",
       "indentation": ["error", 4],
       "lbrace": "off",
