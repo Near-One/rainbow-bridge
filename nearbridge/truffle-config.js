@@ -15,6 +15,11 @@ module.exports = {
             network_id: '*',
             gas: 8000000,
             gasPrice: 1000000000, // web3.eth.gasPrice
+        },
+        soliditycoverage: {
+            port: 8555,
+            host: "localhost",
+            network_id: "*",
         }
     },
     compilers: {
