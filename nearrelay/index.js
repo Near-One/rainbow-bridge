@@ -56,6 +56,7 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
         process.env.NEAR_BRIDGE_SMART_CONTRACT_ADDRESS,
         {
             from: account,
+            handleRevert: true,
         }
     );
 
@@ -65,7 +66,8 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
             data: '0x' + fs.readFileSync(path.join(__dirname, '../nearbridge/NearBridge.full.bin'))
         }).send({
             from: account,
-            gas: 1000000
+            gas: 3000000,
+            handleRevert: true,
         });
         console.log('Deployed to address:', nearBridgeContract.address);
     }
@@ -84,20 +86,35 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
             //console.log('block', block.header);
 
             let borshBlock = [
-                '0xb0000000',   // Length u32le(0xb0)
-                web3.utils.padLeft(block.header.height.toString(16), 16),
+                '0x',
+                web3.utils.padLeft(block.header.height.toString(16), 16).match(/../g).reverse().join(''),
                 web3.utils.padLeft(web3.utils.toHex(bs58.decode(block.header.epoch_id)).substr(2), 64),
                 web3.utils.padLeft(web3.utils.toHex(bs58.decode(block.header.next_epoch_id)).substr(2), 64),
                 web3.utils.padLeft(web3.utils.toHex(bs58.decode(block.header.prev_state_root)).substr(2), 64),
                 web3.utils.padLeft(web3.utils.toHex(bs58.decode(block.header.outcome_root)).substr(2), 64),
-                web3.utils.padLeft(block.header.timestamp.toString(16), 16),
+                web3.utils.padLeft(block.header.timestamp.toString(16), 16).match(/../g).reverse().join(''),
                 web3.utils.padLeft(web3.utils.toHex(bs58.decode(block.header.next_bp_hash)).substr(2), 64),
             ].join('');
             //console.log('borshBlock', borshBlock);
             
             blocks.push(borshBlock);
         }
-        await nearBridgeContract.methods.addBlockHashes(blocks).send();
+
+        // TODO: Investigate how to use new feature web3.eth.handleRevert
+        try {
+            const tx = await nearBridgeContract.methods.addBlockHeaders(blocks).send({ gas: 5000000 });
+            console.log('tx', tx);
+        } catch (txRevertMessage) {
+            const err = txRevertMessage.toString();
+            const receipt = JSON.parse(err.substr(err.indexOf('{')));
+            const tx = await web3.eth.getTransaction(receipt.transactionHash);
+            try {
+                await web3.eth.call(tx, tx.blockNumber);
+            } catch (callRevertReason) {
+                const err = callRevertReason.toString();
+                console.log('Revert reason:', err.substr(err.lastIndexOf(':') + 2));
+            }
+        }
 
         setTimeout(checkNearStatus, 10000);
     };
