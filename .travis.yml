@@ -13,28 +13,27 @@ env:
   - NEARBRIDGE_LINT=1
   - NEARBRIDGE_COVERAGE=1
 script:
-  #- echo "NearBridge:"
-  #- cd ./nearbridge
-  #- yarn && yarn run lint && yarn run test && npx codechecks
-  #- yarn run coverage && cat coverage/lcov.info | coveralls
   - if [ $ETHBRIDGE == "1" ]; then
-      cd ./ethbridge
-      sh <(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs) -y && export PATH=$PATH:~/.cargo/bin
-      rustup toolchain install stable
-      rustup default stable
-      rustup target add wasm32-unknown-unknown --toolchain stable
-      ./test.sh
+      cd ./ethbridge;
+      sh <(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs) -y && export PATH=$PATH:~/.cargo/bin;
+      rustup toolchain install stable;
+      rustup default stable;
+      rustup target add wasm32-unknown-unknown --toolchain stable;
+      ./test.sh;
     fi
   - if [ $NEARBRIDGE == "1" ]; then
-      cd ./nearbridge
-      yarn
-      yarn run test
+      cd ./nearbridge;
+      yarn;
+      yarn run test;
+      npx codechecks;
     fi
   - if [ $NEARBRIDGE_LINT == "1" ]; then
-      yarn
-      yarn run lint
+      cd ./nearbridge;
+      yarn;
+      yarn run lint;
     fi
   - if [ $NEARBRIDGE_COVERAGE == "1" ]; then
-      yarn
-      yarn run coverage
+      cd ./nearbridge;
+      yarn;
+      yarn run coverage && cat coverage/lcov.info | coveralls;
     fi
