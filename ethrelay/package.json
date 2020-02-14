@@ -4,13 +4,15 @@
   "description": "Ethereum >> Near relay",
   "main": "index.js",
   "scripts": {
-    "start": "scripts/start.sh"
+    "test": "scripts/run_localnet.sh",
+    "start": "scripts/run_testnet.sh"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
     "near-shell": "^0.20.1",
     "nearlib": "^0.21.0",
+    "ganache-cli": "^6.9.0",
     "web3": "^1.2.4"
   }
 }

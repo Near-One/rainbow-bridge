@@ -31,7 +31,7 @@ nearnode_running() {
 }
 
 start_nearnode() {
-    echo "nearrelay" | "$DIR/start_localnet.py" --home "$DIR/.near" --image "nearprotocol/nearcore:ethdenver"
+    echo "ethrelay" | "$DIR/start_localnet.py" --home "$DIR/.near" --image "nearprotocol/nearcore:ethdenver"
     waitport $nearnode_port
 }
 
@@ -76,4 +76,14 @@ else
     start_ganache
 fi
 
-NEAR_BRIDGE_OWNER_PRIVATE_KEY=0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 node "$DIR/../index.js"
+NODE_URL="http://localhost:3030"
+
+echo "Creating account for smart contract:"
+NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" create_account ethbridge --masterAccount=ethrelay --initialBalance 100000000 || echo "Skip creating ethbridge accout"
+echo "Deploying smart contract:"
+NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" deploy --contractName ethbridge --wasmFile "$DIR/../../ethbridge/res/eth_bridge.wasm" || echo "Skip deploying ethbridge smart contract"
+
+NEAR_NODE_URL="http://localhost:3030" \
+    NEAR_NODE_NETWORK_ID=local \
+    ETHEREUM_NODE_URL="ws://localhost:$ganache_port" \
+    node "$DIR/../index.js"

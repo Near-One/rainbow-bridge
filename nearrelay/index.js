@@ -33,8 +33,8 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
 
     const web3 = new Web3("http://localhost:9545");
     const near = await nearlib.connect({
-        nodeUrl: 'http://localhost:3030', //'https://rpc.nearprotocol.com',
-        networkId: 'local', // TODO: detect automatically
+        nodeUrl: process.env.NEAR_NODE_URL, //'https://rpc.nearprotocol.com',
+        networkId: process.env.NEAR_NODE_NETWORK_ID, // TODO: detect automatically
         deps: {
             keyStore: new nearlib.keyStores.UnencryptedFileSystemKeyStore(__dirname + '/neardev')
         }

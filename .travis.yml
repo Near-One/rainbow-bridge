@@ -9,9 +9,11 @@ node_js:
   - '10'
 env:
   - ETHBRIDGE=1
+  - ETHRELAY=1
   - NEARBRIDGE=1
   - NEARBRIDGE_LINT=1
   - NEARBRIDGE_COVERAGE=1
+  - NEARRELAY=1
 script:
   - if [ $ETHBRIDGE == "1" ]; then
       cd ./ethbridge;
@@ -20,6 +22,18 @@ script:
       rustup default stable;
       rustup target add wasm32-unknown-unknown --toolchain stable;
       ./test.sh;
+    fi
+  - if [ $ETHRELAY == "1" ]; then
+      cd ./ethbridge;
+      sh <(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs) -y && export PATH=$PATH:~/.cargo/bin;
+      rustup toolchain install stable;
+      rustup default stable;
+      rustup target add wasm32-unknown-unknown --toolchain stable;
+      ./build.sh;
+      cd ../ethrelay/ethashproof;
+      ./build.sh;
+      cd ..;
+      yarn && yarn run test;
     fi
   - if [ $NEARBRIDGE == "1" ]; then
       cd ./nearbridge;
@@ -36,4 +50,14 @@ script:
       cd ./nearbridge;
       yarn;
       yarn run coverage && cat coverage/lcov.info | coveralls;
+    fi
+  - if [ $NEARRELAY == "1" ]; then
+      cd ./ethbridge;
+      sh <(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs) -y && export PATH=$PATH:~/.cargo/bin;
+      rustup toolchain install stable;
+      rustup default stable;
+      rustup target add wasm32-unknown-unknown --toolchain stable;
+      ./build.sh;
+      cd ../nearrelay;
+      yarn && yarn run test;
     fi

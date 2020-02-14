@@ -37,15 +37,6 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
     });
 }
 
-function arrayPrefixU32Length(array) {
-    return [
-        Math.trunc(array.length) % 256,
-        Math.trunc(array.length / 256) % 256,
-        Math.trunc(array.length / 256 / 256) % 256,
-        Math.trunc(array.length / 256 / 256 / 256) % 256,
-    ].concat(...array);
-}
-
 const hexToBuffer = (hex) => Buffer.from(Web3.utils.hexToBytes(hex));
 const readerToHex = (len) => (reader) => Web3.utils.bytesToHex(reader.read_fixed_array(len));
 
@@ -341,15 +332,14 @@ class EthBridgeContract extends Contract {
 
 (async function () {
 
-    const web3 = new Web3("wss://mainnet.infura.io/ws/v3/b5f870422ee5454fb11937e947154cd2");
+    const web3 = new Web3(process.env.ETHEREUM_NODE_URL);
     const near = await nearlib.connect({
-        nodeUrl: 'http://localhost:3030', //'https://rpc.nearprotocol.com',
-        networkId: 'local', // TODO: detect automatically
+        nodeUrl: process.env.NEAR_NODE_URL, // 'https://rpc.nearprotocol.com',
+        networkId: process.env.NEAR_NODE_NETWORK_ID, // TODO: detect automatically
         deps: {
             keyStore: new nearlib.keyStores.UnencryptedFileSystemKeyStore(__dirname + '/neardev')
         }
     });
-
 
     const account = new nearlib.Account(near.connection, 'ethbridge');
 
