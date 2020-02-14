@@ -80,12 +80,13 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
         let lastNearBlock = status.sync_info.latest_block_height;
         console.log('lastNearBlock', typeof lastNearBlock, lastNearBlock);
 
-        const blocks = [];
-        for (let i = latest_submitted_block; i < lastNearBlock; i += 1) {
-            const block = await near.connection.provider.block(i);
-            //console.log('block', block.header);
+        const promises = [];
+        for (let i = latest_submitted_block; i < lastNearBlock; i += 10) {
+            promises.push(near.connection.provider.block(i));
+        }
 
-            let borshBlock = [
+        const blocks = (await Promise.all(promises)).map(block => {
+            return [
                 '0x',
                 web3.utils.padLeft(block.header.height.toString(16), 16).match(/../g).reverse().join(''),
                 web3.utils.padLeft(web3.utils.toHex(bs58.decode(block.header.epoch_id)).substr(2), 64),
@@ -95,15 +96,13 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
                 web3.utils.padLeft(block.header.timestamp.toString(16), 16).match(/../g).reverse().join(''),
                 web3.utils.padLeft(web3.utils.toHex(bs58.decode(block.header.next_bp_hash)).substr(2), 64),
             ].join('');
-            //console.log('borshBlock', borshBlock);
-            
-            blocks.push(borshBlock);
-        }
+        });
 
         // TODO: Investigate how to use new feature web3.eth.handleRevert
         try {
+            console.log(`Submitting ${blocks.length} blocks`);
             const tx = await nearBridgeContract.methods.addBlockHeaders(blocks).send({ gas: 5000000 });
-            console.log('tx', tx);
+            console.log('Sumbitted!');
         } catch (txRevertMessage) {
             const err = txRevertMessage.toString();
             const receipt = JSON.parse(err.substr(err.indexOf('{')));
@@ -112,10 +111,11 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
                 await web3.eth.call(tx, tx.blockNumber);
             } catch (callRevertReason) {
                 const err = callRevertReason.toString();
-                console.log('Revert reason:', err.substr(err.lastIndexOf(':') + 2));
+                console.log('Reverted! Reason:', err.substr(err.lastIndexOf(':') + 2));
             }
         }
 
+        console.log('Sleep for 10 seconds');
         setTimeout(checkNearStatus, 10000);
     };
 
