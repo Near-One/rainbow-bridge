@@ -68,6 +68,7 @@ impl EthProver {
     ///     the last node (leaf node) of the proof.
     ///
     /// Patricia Tree: https://github.com/ethereum/wiki/wiki/patricia-tree
+    /// Verification:  https://github.com/slockit/in3/wiki/Ethereum-Verification-and-MerkleProof#receipt-proof
     /// Article:       https://medium.com/@ouvrard.pierre.alain/merkle-proof-verification-for-ethereum-patricia-tree-48f29658eec
     /// Python impl:   https://gist.github.com/paouvrard/7bb947bf5de0fa0dc69d0d254d82252a
     ///
