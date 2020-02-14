@@ -76,6 +76,9 @@ else
     start_ganache
 fi
 
+# Successfully stop after 5m
+{ sleep 5m && kill -l 0 $$ && echo "Successfully worked for 5m, stopped" } &
+
 NEAR_BRIDGE_OWNER_PRIVATE_KEY=0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 \
     NEAR_NODE_URL="http://localhost:3030" \
     NEAR_NODE_NETWORK_ID=local \
