@@ -4,6 +4,7 @@ const BN = require('bn.js');
 const exec = require('child_process').exec;
 const fs = require('fs');
 const path = require('path');
+const bs58 = require('bs58')
 
 function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
     let inBlocksCallbacks = false;
@@ -80,11 +81,23 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
         const blocks = [];
         for (let i = latest_submitted_block; i < lastNearBlock; i += 1) {
             const block = await near.connection.provider.block(i);
-            console.log('block', block.header);
-            return;
-            //blocks.push('1');
+            //console.log('block', block.header);
+
+            let borshBlock = [
+                '0xb0000000',   // Length u32le(0xb0)
+                web3.utils.padLeft(block.header.height.toString(16), 16),
+                web3.utils.padLeft(web3.utils.toHex(bs58.decode(block.header.epoch_id)).substr(2), 64),
+                web3.utils.padLeft(web3.utils.toHex(bs58.decode(block.header.next_epoch_id)).substr(2), 64),
+                web3.utils.padLeft(web3.utils.toHex(bs58.decode(block.header.prev_state_root)).substr(2), 64),
+                web3.utils.padLeft(web3.utils.toHex(bs58.decode(block.header.outcome_root)).substr(2), 64),
+                web3.utils.padLeft(block.header.timestamp.toString(16), 16),
+                web3.utils.padLeft(web3.utils.toHex(bs58.decode(block.header.next_bp_hash)).substr(2), 64),
+            ].join('');
+            //console.log('borshBlock', borshBlock);
+            
+            blocks.push(borshBlock);
         }
-        //await nearBridgeContract.addBlockHashes(blocks);
+        await nearBridgeContract.methods.addBlockHashes(blocks).send();
 
         setTimeout(checkNearStatus, 10000);
     };
