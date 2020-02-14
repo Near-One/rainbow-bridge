@@ -8,25 +8,33 @@ language: node_js
 node_js:
   - '10'
 env:
-- ETHBRIDGE=true
-- NEARBRIDGE=true
-- NEARBRIDGE_COVERAGE=true
+  - ETHBRIDGE=1
+  - NEARBRIDGE=1
+  - NEARBRIDGE_LINT=1
+  - NEARBRIDGE_COVERAGE=1
 script:
   #- echo "NearBridge:"
   #- cd ./nearbridge
   #- yarn && yarn run lint && yarn run test && npx codechecks
   #- yarn run coverage && cat coverage/lcov.info | coveralls
-  - if: env(ETHBRIDGE)
-    - cd ./ethbridge
-    - sh <(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs) -y && export PATH=$PATH:~/.cargo/bin
-    - rustup toolchain install stable
-    - rustup default stable
-    - rustup target add wasm32-unknown-unknown --toolchain stable
-    - ./test.sh
-  - if: env(NEARBRIDGE)
-    - cd ./nearbridge
-    - yarn
-    - yarn run test
-  - if: env(NEARBRIDGE_COVERAGE)
-    - yarn
-    - yarn run coverage
+  - if [ $ETHBRIDGE == "1" ]; then
+      cd ./ethbridge
+      sh <(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs) -y && export PATH=$PATH:~/.cargo/bin
+      rustup toolchain install stable
+      rustup default stable
+      rustup target add wasm32-unknown-unknown --toolchain stable
+      ./test.sh
+    fi
+  - if [ $NEARBRIDGE == "1" ]; then
+      cd ./nearbridge
+      yarn
+      yarn run test
+    fi
+  - if [ $NEARBRIDGE_LINT == "1" ]; then
+      yarn
+      yarn run lint
+    fi
+  - if [ $NEARBRIDGE_COVERAGE == "1" ]; then
+      yarn
+      yarn run coverage
+    fi
