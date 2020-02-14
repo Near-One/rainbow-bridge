@@ -2,14 +2,22 @@
 # https://github.com/sc-forks/solidity-coverage/blob/master/docs/faq.md
 #
 
-sudo: required
 dist: trusty
-language: node_js
 branches:
   only:
-  - master
-node_js:
-  - '10'
+    - master
+os:
+  - linux
+  - osx
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+jobs:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
 env:
   - ETHBRIDGE=1
   - ETHRELAY=1
@@ -44,7 +52,7 @@ script:
       cd ./nearbridge;
       yarn;
       yarn run test;
-      npx codechecks;
+      yarn run codechecks;
     fi
   - if [ "$NEARBRIDGE_LINT" = "1" ]; then
       cd ./nearbridge;
