@@ -2,6 +2,8 @@ const Web3 = require('web3');
 const nearlib = require('nearlib');
 const BN = require('bn.js');
 const exec = require('child_process').exec;
+const blockFromRpc = require('ethereumjs-block/from-rpc')
+const utils = require('ethereumjs-util');
 
 const roots = require('./dag_merkle_roots.json');
 
@@ -412,26 +414,39 @@ class EthBridgeContract extends Contract {
             .map((element, index) => {
                 return web3.utils.padLeft(element, 64) + web3.utils.padLeft(block.elements[index*2 + 1], 64).substr(2)
             });
+
+        // Transform web3 block header to rpc
+        const blockData = await web3.eth.getBlock(blockNumber);
+        blockData.difficulty = parseInt(blockData.difficulty, 10);
+        blockData.totalDifficulty = parseInt(blockData.totalDifficulty, 10);
+        blockData.uncleHash = blockData.sha3Uncles;
+        blockData.coinbase = blockData.miner;
+        blockData.transactionTrie = blockData.transactionsRoot;
+        blockData.receiptTrie = blockData.receiptsRoot;
+        blockData.bloom = blockData.logsBloom;
+        const blockHeader = blockFromRpc(blockData);
+
         const args = {
-            block_header: web3.utils.hexToBytes(block.header_rlp),
+            block_header: utils.rlp.encode(blockHeader.header.raw),
             dag_nodes: h512s
                 .filter((_, index) => index % 2 === 0)
                 .map((element, index) => {
                     return {
                         dag_nodes: [element, h512s[index*2 + 1]],
                         proof: block.merkle_proofs.slice(
-                        index * block.proof_length,
-                        (index + 1) * block.proof_length,
+                            index * block.proof_length,
+                            (index + 1) * block.proof_length,
                         ).map(leaf => web3.utils.padLeft(leaf, 32))
                     };
                 }),
         };
+
         for (let i = 0; i < 10; ++i) {
             try {
                 await ethBridgeContract.add_block_header(args, new BN('1000000000000000'));
                 console.log(
-                  "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
-                  "(" + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s per header)"
+                    "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
+                    "(" + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s per header)"
                 );
                 console.log(`Successfully submitted block ${blockNumber} to EthBridge`);
                 return;
@@ -443,6 +458,7 @@ class EthBridgeContract extends Contract {
                 });
             }
         }
+
         throw new Error("Failed to submit a block");
     };
 
@@ -451,11 +467,9 @@ class EthBridgeContract extends Contract {
         console.log(`Processing ${stop - start + 1} blocks from #${start} to #${stop}`);
         for (let i = start; i <= stop; ++i) {
             let ok = false;
-            for (let retryIter = 0; retryIter < 10; ++retryIter) {
-                let output;
+            for (let retryIter = 0; retryIter < 10; retryIter++) {
                 try {
-                    output = await execute(`./ethashproof/cmd/relayer/relayer ${i} | sed -e '1,/Json output/d'`);
-                    const block = JSON.parse(output);
+                    const block = JSON.parse(await execute(`./ethashproof/cmd/relayer/relayer ${i} | sed -e '1,/Json output/d'`));
                     submitBlock(block, i).catch((e) => {
                         throw e;
                     })
@@ -463,7 +477,6 @@ class EthBridgeContract extends Contract {
                     break;
                 } catch (e) {
                     console.log(`Sleeping 0.5sec. Failed at iteration #${retryIter}:`, e);
-                    console.log(`On ethashproof output:`, output)
                     await new Promise((resolve, reject) => {
                         setTimeout(resolve, 500);
                     });

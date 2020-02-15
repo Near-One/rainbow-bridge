@@ -31,6 +31,9 @@ script:
       rustup target add wasm32-unknown-unknown --toolchain stable;
       ./build.sh;
       cd ../ethrelay/ethashproof;
+      bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
+      gvm install go1.12
+      gvm use go1.12 --default
       ./build.sh;
       cd ..;
       yarn && yarn run test;
