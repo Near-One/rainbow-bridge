@@ -43,7 +43,13 @@ const hexToBuffer = (hex) => Buffer.from(Web3.utils.hexToBytes(hex));
 const readerToHex = (len) => (reader) => Web3.utils.bytesToHex(reader.read_fixed_array(len));
 
 const borshSchema = {
+    'bool': {
+        kind: 'function',
+        ser: (b) => Buffer.from(Web3.utils.hexToBytes(b ? '0x01' : '0x00')),
+        deser: (z) => readerToHex(1)(z) === '0x01'
+    },
     'initInput': {kind: 'struct', fields: [
+            ['validate_ethash', 'bool'],
             ['dags_start_epoch', 'u64'],
             ['dags_merkle_roots', ['H128']]
         ]},
@@ -332,6 +338,18 @@ class EthBridgeContract extends Contract {
     }
 }
 
+function web3BlockToRlp(blockData) {
+    blockData.difficulty = parseInt(blockData.difficulty, 10);
+    blockData.totalDifficulty = parseInt(blockData.totalDifficulty, 10);
+    blockData.uncleHash = blockData.sha3Uncles;
+    blockData.coinbase = blockData.miner;
+    blockData.transactionTrie = blockData.transactionsRoot;
+    blockData.receiptTrie = blockData.receiptsRoot;
+    blockData.bloom = blockData.logsBloom;
+    const blockHeader = blockFromRpc(blockData);
+    return utils.rlp.encode(blockHeader.header.raw);
+}
+
 (async function () {
 
     const web3 = new Web3(process.env.ETHEREUM_NODE_URL);
@@ -357,6 +375,7 @@ class EthBridgeContract extends Contract {
     if (!initialized) {
         console.log('EthBridge is not initialized, initializing...');
         await ethBridgeContract.init({
+            validate_ethash: process.env.BRIDGE_VALIDATE_ETHASH === 'true',
             dags_start_epoch: 0,
             dags_merkle_roots: roots.dag_merkle_roots
         }, new BN('1000000000000000'));
@@ -415,19 +434,8 @@ class EthBridgeContract extends Contract {
                 return web3.utils.padLeft(element, 64) + web3.utils.padLeft(block.elements[index*2 + 1], 64).substr(2)
             });
 
-        // Transform web3 block header to rpc
-        const blockData = await web3.eth.getBlock(blockNumber);
-        blockData.difficulty = parseInt(blockData.difficulty, 10);
-        blockData.totalDifficulty = parseInt(blockData.totalDifficulty, 10);
-        blockData.uncleHash = blockData.sha3Uncles;
-        blockData.coinbase = blockData.miner;
-        blockData.transactionTrie = blockData.transactionsRoot;
-        blockData.receiptTrie = blockData.receiptsRoot;
-        blockData.bloom = blockData.logsBloom;
-        const blockHeader = blockFromRpc(blockData);
-
         const args = {
-            block_header: utils.rlp.encode(blockHeader.header.raw),
+            block_header: web3.utils.hexToBytes(block.header_rlp),
             dag_nodes: h512s
                 .filter((_, index) => index % 2 === 0)
                 .map((element, index) => {
@@ -469,7 +477,8 @@ class EthBridgeContract extends Contract {
             let ok = false;
             for (let retryIter = 0; retryIter < 10; retryIter++) {
                 try {
-                    const block = JSON.parse(await execute(`./ethashproof/cmd/relayer/relayer ${i} | sed -e '1,/Json output/d'`));
+                    const blockRlp = web3.utils.bytesToHex(web3BlockToRlp(await web3.eth.getBlock(i)));
+                    const block = JSON.parse(await execute(`./ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`));
                     submitBlock(block, i).catch((e) => {
                         throw e;
                     })

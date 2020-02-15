@@ -15,7 +15,8 @@ NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPat
 { sleep 5m && kill -l 0 $$ && echo "Successfully worked for 5m, stopped" } &
 
 # Launch EthRelay
-NEAR_NODE_URL="https://rpc.nearprotocol.com" \
+BRIDGE_VALIDATE_ETHASH=true \
+    NEAR_NODE_URL="https://rpc.nearprotocol.com" \
     NEAR_NODE_NETWORK_ID=local \
     ETHEREUM_NODE_URL="wss://ropsten.infura.io/ws/v3/b5f870422ee5454fb11937e947154cd2" \
     node "$DIR/../index.js"

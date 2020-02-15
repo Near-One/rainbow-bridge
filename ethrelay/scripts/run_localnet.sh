@@ -83,7 +83,8 @@ NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPat
 echo "Deploying smart contract:"
 NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" deploy --contractName ethbridge --wasmFile "$DIR/../../ethbridge/res/eth_bridge.wasm" || echo "Skip deploying ethbridge smart contract"
 
-NEAR_NODE_URL="http://localhost:3030" \
+BRIDGE_VALIDATE_ETHASH=false \
+    NEAR_NODE_URL="http://localhost:3030" \
     NEAR_NODE_NETWORK_ID=local \
     ETHEREUM_NODE_URL="ws://localhost:$ganache_port" \
     node "$DIR/../index.js"
