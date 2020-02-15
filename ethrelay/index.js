@@ -54,7 +54,6 @@ const borshSchema = {
             ['dags_start_epoch', 'u64'],
             ['dags_merkle_roots', ['H128']]
         ]},
-    'H128': {kind: 'function', ser: hexToBuffer, deser: readerToHex(16) },
     'dagMerkleRootInput': { kind: 'struct', fields: [
             ['epoch', 'u64'],
         ]},
@@ -66,7 +65,10 @@ const borshSchema = {
             ['dag_nodes', ['H512']],
             ['proof', ['H128']],
         ]},
+    'H128': {kind: 'function', ser: hexToBuffer, deser: readerToHex(16) },
+    'H256': {kind: 'function', ser: hexToBuffer, deser: readerToHex(32) },
     'H512': {kind: 'function', ser: hexToBuffer, deser: readerToHex(64) },
+    '?H256': {kind: 'option', type: 'H256'}
 };
 
 
@@ -89,7 +91,14 @@ function serializeField(schema, value, fieldType, writer) {
         if (!structSchema) {
             throw new Error(`Schema type ${fieldType} is missing in schema`);
         }
-        if (structSchema.kind === 'struct') {
+        if (structSchema.kind === 'option') {
+            if (value === null) {
+                writer.write_u8(0);
+            } else {
+                writer.write_u8(1);
+                serializeField(schema, value, structSchema.type, writer);
+            }
+        } else if (structSchema.kind === 'struct') {
             structSchema.fields.map(([fieldName, fieldType]) => {
                 serializeField(schema, value[fieldName], fieldType, writer);
             });
@@ -120,7 +129,16 @@ function deserializeField(schema, fieldType, reader) {
         if (!structSchema) {
             throw new Error(`Schema type ${fieldType} is missing in schema`);
         }
-        if (structSchema.kind === 'struct') {
+        if (structSchema.kind === 'option') {
+            const optionRes = reader.read_u8();
+            if (optionRes === 0) {
+                return null;
+            } else if (optionRes === 1) {
+                return deserializeField(schema, structSchema.type, reader);
+            } else {
+                throw new Error(`Unexpected option flag: ${optionRes}`);
+            }
+        } else if (structSchema.kind === 'struct') {
             const result = {};
             for (const [fieldName, fieldType] of structSchema.fields) {
                 result[fieldName] = deserializeField(schema, fieldType, reader);
@@ -281,10 +299,10 @@ class Contract {
                     args = serialize(borshSchema, d.inputFieldType, args);
                     try {
                         const rawResult = await signAndSendTransaction(this.accessKey, this.account, this.contractId, [nearlib.transactions.functionCall(
-                            d.methodName,
-                            Buffer.from(args),
-                            gas || DEFAULT_FUNC_CALL_AMOUNT,
-                            amount
+                          d.methodName,
+                          Buffer.from(args),
+                          gas || DEFAULT_FUNC_CALL_AMOUNT,
+                          amount
                         )]);
 
                         const result = getBorshTransactionLastResult(rawResult);
@@ -324,6 +342,14 @@ class EthBridgeContract extends Contract {
                 methodName: "last_block_number",
                 inputFieldType: null,
                 outputFieldType: 'u64',
+            }, {
+                methodName: "block_hash",
+                inputFieldType: "u64",
+                outputFieldType: '?H256',
+            }, {
+                methodName: "block_hash_safe",
+                inputFieldType: "u64",
+                outputFieldType: '?H256',
             }],
 
             changeMethods: [{
