@@ -452,8 +452,10 @@ class EthBridgeContract extends Contract {
         for (let i = start; i <= stop; ++i) {
             let ok = false;
             for (let retryIter = 0; retryIter < 10; ++retryIter) {
+                let output;
                 try {
-                    const block = JSON.parse(await execute(`./ethashproof/cmd/relayer/relayer ${i} | sed -e '1,/Json output/d'`));
+                    output = await execute(`./ethashproof/cmd/relayer/relayer ${i} | sed -e '1,/Json output/d'`);
+                    const block = JSON.parse(output);
                     submitBlock(block, i).catch((e) => {
                         throw e;
                     })
@@ -461,6 +463,7 @@ class EthBridgeContract extends Contract {
                     break;
                 } catch (e) {
                     console.log(`Sleeping 0.5sec. Failed at iteration #${retryIter}:`, e);
+                    console.log(`On ethashproof output:`, output)
                     await new Promise((resolve, reject) => {
                         setTimeout(resolve, 500);
                     });
