@@ -4,8 +4,8 @@
   "description": "Ethereum >> Near relay",
   "main": "index.js",
   "scripts": {
-    "test": "scripts/run_localnet.sh",
-    "start": "scripts/run_testnet.sh"
+    "test": "scripts/run_ganache_to_localnet.sh",
+    "start": "scripts/run_mainnet_to_localnet.sh"
   },
   "author": "",
   "license": "MIT",

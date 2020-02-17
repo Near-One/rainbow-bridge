@@ -33,17 +33,9 @@ script:
       cd ../ethrelay/ethashproof;
       bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer);
       source ~/.gvm/scripts/gvm;
-      source ~/.gvm/environments/go1.12;
       gvm install go1.12;
-      source ~/.gvm/environments/go1.12;
-      echo "Error:";
-      cat ~/.gvm/logs/go-go1.12-compile.log;
       gvm use go1.12 --default;
-      echo "Error:";
-      cat ~/.gvm/logs/go-go1.12-compile.log;
       ./build.sh;
-      echo "Error:";
-      cat ~/.gvm/logs/go-go1.12-compile.log;
       cd ..;
       yarn && yarn run test;
     fi
