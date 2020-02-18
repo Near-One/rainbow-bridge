@@ -34,7 +34,7 @@ script:
       rustup target add wasm32-unknown-unknown --toolchain stable;
       ./build.sh;
       cd ../ethrelay/ethashproof;
-      eval "$(gimme 1.4)";
+      eval "$(gimme 1.12)";
       go version;
       ./build.sh;
       cd ..;
