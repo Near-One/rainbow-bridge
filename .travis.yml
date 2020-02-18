@@ -32,8 +32,11 @@ script:
       ./build.sh;
       cd ../ethrelay/ethashproof;
       bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer);
+      echo "===aaa"
       source ~/.gvm/scripts/gvm;
+      echo "===bbb"
       gvm install go1.12;
+      echo "===ccc"
       gvm use go1.12 --default;
       ./build.sh;
       cd ..;
