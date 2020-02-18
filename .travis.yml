@@ -5,6 +5,9 @@
 sudo: required
 dist: trusty
 language: node_js
+branches:
+  only:
+  - master
 node_js:
   - '10'
 env:
@@ -15,7 +18,7 @@ env:
   - NEARBRIDGE_COVERAGE=1
   - NEARRELAY=1
 script:
-  - if [ $ETHBRIDGE == "1" ]; then
+  - if [ "$ETHBRIDGE" = "1" ]; then
       cd ./ethbridge;
       sh <(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs) -y && export PATH=$PATH:~/.cargo/bin;
       rustup toolchain install stable;
@@ -23,7 +26,7 @@ script:
       rustup target add wasm32-unknown-unknown --toolchain stable;
       ./test.sh;
     fi
-  - if [ $ETHRELAY == "1" ]; then
+  - if [ "$ETHRELAY" = "1" ]; then
       cd ./ethbridge;
       sh <(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs) -y && export PATH=$PATH:~/.cargo/bin;
       rustup toolchain install stable;
@@ -31,29 +34,29 @@ script:
       rustup target add wasm32-unknown-unknown --toolchain stable;
       ./build.sh;
       cd ../ethrelay/ethashproof;
-      gimme 1.12;
+      eval "$(gimme 1.4)";
       go version;
       ./build.sh;
       cd ..;
       yarn && yarn run test;
     fi
-  - if [ $NEARBRIDGE == "1" ]; then
+  - if [ $NEARBRIDGE = "1" ]; then
       cd ./nearbridge;
       yarn;
       yarn run test;
       npx codechecks;
     fi
-  - if [ $NEARBRIDGE_LINT == "1" ]; then
+  - if [ "$NEARBRIDGE_LINT" = "1" ]; then
       cd ./nearbridge;
       yarn;
       yarn run lint;
     fi
-  - if [ $NEARBRIDGE_COVERAGE == "1" ]; then
+  - if [ "$NEARBRIDGE_COVERAGE" = "1" ]; then
       cd ./nearbridge;
       yarn;
       yarn run coverage && cat coverage/lcov.info | coveralls;
     fi
-  - if [ $NEARRELAY == "1" ]; then
+  - if [ "$NEARRELAY" = "1" ]; then
       cd ./ethbridge;
       sh <(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs) -y && export PATH=$PATH:~/.cargo/bin;
       rustup toolchain install stable;
