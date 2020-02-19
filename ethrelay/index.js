@@ -2,6 +2,8 @@ const Web3 = require('web3');
 const nearlib = require('nearlib');
 const BN = require('bn.js');
 const exec = require('child_process').exec;
+const blockFromRpc = require('ethereumjs-block/from-rpc')
+const utils = require('ethereumjs-util');
 
 const roots = require('./dag_merkle_roots.json');
 
@@ -37,20 +39,17 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
     });
 }
 
-function arrayPrefixU32Length(array) {
-    return [
-        Math.trunc(array.length) % 256,
-        Math.trunc(array.length / 256) % 256,
-        Math.trunc(array.length / 256 / 256) % 256,
-        Math.trunc(array.length / 256 / 256 / 256) % 256,
-    ].concat(...array);
-}
-
 const hexToBuffer = (hex) => Buffer.from(Web3.utils.hexToBytes(hex));
 const readerToHex = (len) => (reader) => Web3.utils.bytesToHex(reader.read_fixed_array(len));
 
 const borshSchema = {
+    'bool': {
+        kind: 'function',
+        ser: (b) => Buffer.from(Web3.utils.hexToBytes(b ? '0x01' : '0x00')),
+        deser: (z) => readerToHex(1)(z) === '0x01'
+    },
     'initInput': {kind: 'struct', fields: [
+            ['validate_ethash', 'bool'],
             ['dags_start_epoch', 'u64'],
             ['dags_merkle_roots', ['H128']]
         ]},
@@ -365,17 +364,28 @@ class EthBridgeContract extends Contract {
     }
 }
 
+function web3BlockToRlp(blockData) {
+    blockData.difficulty = parseInt(blockData.difficulty, 10);
+    blockData.totalDifficulty = parseInt(blockData.totalDifficulty, 10);
+    blockData.uncleHash = blockData.sha3Uncles;
+    blockData.coinbase = blockData.miner;
+    blockData.transactionTrie = blockData.transactionsRoot;
+    blockData.receiptTrie = blockData.receiptsRoot;
+    blockData.bloom = blockData.logsBloom;
+    const blockHeader = blockFromRpc(blockData);
+    return utils.rlp.encode(blockHeader.header.raw);
+}
+
 (async function () {
 
-    const web3 = new Web3("wss://mainnet.infura.io/ws/v3/b5f870422ee5454fb11937e947154cd2");
+    const web3 = new Web3(process.env.ETHEREUM_NODE_URL);
     const near = await nearlib.connect({
-        nodeUrl: 'http://localhost:3030', //'https://rpc.nearprotocol.com',
-        networkId: 'local', // TODO: detect automatically
+        nodeUrl: process.env.NEAR_NODE_URL, // 'https://rpc.nearprotocol.com',
+        networkId: process.env.NEAR_NODE_NETWORK_ID, // TODO: detect automatically
         deps: {
             keyStore: new nearlib.keyStores.UnencryptedFileSystemKeyStore(__dirname + '/neardev')
         }
     });
-
 
     const account = new nearlib.Account(near.connection, 'ethbridge');
 
@@ -391,6 +401,7 @@ class EthBridgeContract extends Contract {
     if (!initialized) {
         console.log('EthBridge is not initialized, initializing...');
         await ethBridgeContract.init({
+            validate_ethash: process.env.BRIDGE_VALIDATE_ETHASH === 'true',
             dags_start_epoch: 0,
             dags_merkle_roots: roots.dag_merkle_roots
         }, new BN('1000000000000000'));
@@ -448,6 +459,7 @@ class EthBridgeContract extends Contract {
             .map((element, index) => {
                 return web3.utils.padLeft(element, 64) + web3.utils.padLeft(block.elements[index*2 + 1], 64).substr(2)
             });
+
         const args = {
             block_header: web3.utils.hexToBytes(block.header_rlp),
             dag_nodes: h512s
@@ -456,18 +468,19 @@ class EthBridgeContract extends Contract {
                     return {
                         dag_nodes: [element, h512s[index*2 + 1]],
                         proof: block.merkle_proofs.slice(
-                        index * block.proof_length,
-                        (index + 1) * block.proof_length,
+                            index * block.proof_length,
+                            (index + 1) * block.proof_length,
                         ).map(leaf => web3.utils.padLeft(leaf, 32))
                     };
                 }),
         };
+
         for (let i = 0; i < 10; ++i) {
             try {
                 await ethBridgeContract.add_block_header(args, new BN('1000000000000000'));
                 console.log(
-                  "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
-                  "(" + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s per header)"
+                    "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
+                    "(" + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s per header)"
                 );
                 console.log(`Successfully submitted block ${blockNumber} to EthBridge`);
                 return;
@@ -479,6 +492,7 @@ class EthBridgeContract extends Contract {
                 });
             }
         }
+
         throw new Error("Failed to submit a block");
     };
 
@@ -487,9 +501,10 @@ class EthBridgeContract extends Contract {
         console.log(`Processing ${stop - start + 1} blocks from #${start} to #${stop}`);
         for (let i = start; i <= stop; ++i) {
             let ok = false;
-            for (let retryIter = 0; retryIter < 10; ++retryIter) {
+            for (let retryIter = 0; retryIter < 10; retryIter++) {
                 try {
-                    const block = JSON.parse(await execute(`./ethashproof/cmd/relayer/relayer ${i} | sed -e '1,/Json output/d'`));
+                    const blockRlp = web3.utils.bytesToHex(web3BlockToRlp(await web3.eth.getBlock(i)));
+                    const block = JSON.parse(await execute(`./ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`));
                     submitBlock(block, i).catch((e) => {
                         throw e;
                     })

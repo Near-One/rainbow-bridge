@@ -1,3 +1,4 @@
 [submodule "ethrelay/ethashproof"]
 	path = ethrelay/ethashproof
-	url = https://github.com/talbaneth/ethashproof.git
+	url = https://github.com/nearprotocol/ethashproof.git
+	branch = near/relay/rlpheader-arg

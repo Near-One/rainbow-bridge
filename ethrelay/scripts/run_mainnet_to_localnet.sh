@@ -8,6 +8,10 @@ set -o errexit
 # Executes cleanup function at script exit.
 trap cleanup EXIT
 
+waitport() {
+    while ! nc -z localhost $1 ; do sleep 1 ; done
+}
+
 cleanup() {
     # Kill the nearnode instance that we started (if we started one and if it's still running).
     if [ -n "$node_started" ]; then
@@ -23,7 +27,7 @@ nearnode_running() {
 
 start_nearnode() {
     echo "ethrelay" | "$DIR/start_localnet.py" --home "$DIR/.near" --image "nearprotocol/nearcore:ethdenver"
-    sleep 10
+    waitport $nearnode_port
 }
 
 if nearnode_running; then
@@ -42,4 +46,8 @@ NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPat
 echo "Deploying smart contract:"
 NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" deploy --contractName ethbridge --wasmFile "$DIR/../../ethbridge/res/eth_bridge.wasm" || echo "Skip deploying ethbridge smart contract"
 
-node "$DIR/../index.js"
+BRIDGE_VALIDATE_ETHASH=true \
+    NEAR_NODE_URL="http://localhost:3030" \
+    NEAR_NODE_NETWORK_ID=local \
+    ETHEREUM_NODE_URL="wss://mainnet.infura.io/ws/v3/b5f870422ee5454fb11937e947154cd2" \
+    node "$DIR/../index.js"

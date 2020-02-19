@@ -4,7 +4,8 @@
   "description": "Ethereum >> Near relay",
   "main": "index.js",
   "scripts": {
-    "start": "scripts/start.sh"
+    "test": "scripts/run_localnet.sh",
+    "start": "scripts/run_testnet.sh"
   },
   "author": "",
   "license": "MIT",

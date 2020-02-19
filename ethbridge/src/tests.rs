@@ -234,7 +234,7 @@ fn add_dags_merkle_roots() {
     testing_env!(get_context(vec![], false));
 
     let dmr = read_roots_collection();
-    let contract = EthBridge::init(0, read_roots_collection().dag_merkle_roots);
+    let contract = EthBridge::init(true, 0, read_roots_collection().dag_merkle_roots);
 
     assert_eq!(dmr.dag_merkle_roots[0], contract.dag_merkle_root(0));
     assert_eq!(dmr.dag_merkle_roots[10], contract.dag_merkle_root(10));
@@ -257,7 +257,7 @@ fn add_blocks_2_and_3() {
         .map(|filename| read_block((&filename).to_string()))
         .collect();
 
-    let mut contract = EthBridge::init(0, read_roots_collection().dag_merkle_roots);
+    let mut contract = EthBridge::init(true, 0, read_roots_collection().dag_merkle_roots);
 
     for (block, proof) in blocks.into_iter().zip(blocks_with_proofs.into_iter()) {
         contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
@@ -284,7 +284,7 @@ fn add_400000_block_only() {
 
     let block_with_proof = read_block("./src/data/400000.json".to_string());
 
-    let mut contract = EthBridge::init(400_000 / 30000, vec![block_with_proof.merkle_root]);
+    let mut contract = EthBridge::init(true, 400_000 / 30000, vec![block_with_proof.merkle_root]);
 
     // let result = catch_unwind_silent(panic::AssertUnwindSafe(
     //     || contract.add_block_headers(
@@ -329,7 +329,7 @@ fn add_two_blocks_from_8996776() {
             .map(|filename| read_block((&filename).to_string()))
             .collect();
 
-    let mut contract = EthBridge::init(0, read_roots_collection().dag_merkle_roots);
+    let mut contract = EthBridge::init(true, 0, read_roots_collection().dag_merkle_roots);
 
     for (block, proof) in blocks.into_iter().zip(blocks_with_proofs.into_iter()) {
         contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
@@ -365,6 +365,7 @@ fn add_2_blocks_from_400000() {
             .collect();
 
     let mut contract = EthBridge::init(
+        true,
         400_000 / 30000,
         vec![blocks_with_proofs.first().unwrap().merkle_root],
     );
@@ -396,7 +397,7 @@ fn add_2_blocks_from_400000() {
 //     ].iter().map(|filename| read_block((&filename).to_string())).collect();
 //
 //     let mut contract = EthBridge::default();
-//     contract.init(0, read_roots_collection().dag_merkle_roots);
+//     contract.init(true, 0, read_roots_collection().dag_merkle_roots);
 //
 //     contract.add_block_headers(blocks1);
 //     contract.add_block_headers(blocks2);

@@ -61,6 +61,7 @@ pub struct HeaderInfo {
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct EthBridge {
+    validate_ethash: bool,
     dags_start_epoch: u64,
     dags_merkle_roots: Vec<H128>,
 
@@ -77,8 +78,9 @@ const NUMBER_OF_BLOCKS_FINALITY: u64 = 30;
 const NUMBER_OF_BLOCKS_SAFE: u64 = 10;
 
 impl EthBridge {
-    pub fn init(dags_start_epoch: u64, dags_merkle_roots: Vec<H128>) -> Self {
+    pub fn init(validate_ethash: bool, dags_start_epoch: u64, dags_merkle_roots: Vec<H128>) -> Self {
         Self {
+            validate_ethash,
             dags_start_epoch,
             dags_merkle_roots,
 
@@ -263,8 +265,13 @@ impl EthBridge {
         // 2. Added condition: header.parent_hash() == prev.hash()
         //
         ethereum_types::U256::from((result.0).0) < ethash::cross_boundary(header.difficulty.0)
-            && header.difficulty < header.difficulty * 101 / 100
-            && header.difficulty > header.difficulty * 99 / 100
+            && (
+                !self.validate_ethash
+                || (
+                    header.difficulty < header.difficulty * 101 / 100
+                    && header.difficulty > header.difficulty * 99 / 100
+                )
+            )
             && header.gas_used <= header.gas_limit
             && header.gas_limit < prev.gas_limit * 1025 / 1024
             && header.gas_limit > prev.gas_limit * 1023 / 1024
@@ -297,7 +304,7 @@ impl EthBridge {
 
                 // Each two nodes are packed into single 128 bytes with Merkle proof
                 let node = &nodes[idx / 2];
-                if idx % 2 == 0 {
+                if idx % 2 == 0 && self.validate_ethash {
                     // Divide by 2 to adjust offset for 64-byte words instead of 128-byte
                     assert_eq!(merkle_root, node.apply_merkle_proof((offset / 2) as u64));
                 };
@@ -323,12 +330,13 @@ pub extern "C" fn init() {
     near_bindgen::env::set_blockchain_interface(Box::new(near_blockchain::NearBlockchain {}));
     let input = near_bindgen::env::input().unwrap();
     let mut c = Cursor::new(&input);
+    let validate_ethash: bool = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
     let dags_start_epoch: u64 = borsh::BorshDeserialize::deserialize(&mut c).unwrap();
     let dags_merkle_roots: Vec<H128> =
         borsh::BorshDeserialize::deserialize(&mut c).unwrap();
     assert_eq!(c.position(), input.len() as u64, "Not all bytes read from input");
     assert!(near_bindgen::env::state_read::<EthBridge>().is_none(), "Already initialized");
-    let contract = EthBridge::init(dags_start_epoch, dags_merkle_roots);
+    let contract = EthBridge::init(validate_ethash, dags_start_epoch, dags_merkle_roots);
     near_bindgen::env::state_write(&contract);
 }
 #[cfg(target_arch = "wasm32")]
