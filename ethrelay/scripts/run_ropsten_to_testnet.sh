@@ -11,9 +11,6 @@ NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPat
 echo "Deploying smart contract:"
 NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" deploy --contractName ethbridge --wasmFile "$DIR/../../ethbridge/res/eth_bridge.wasm" || echo "Skip deploying ethbridge smart contract"
 
-# Successfully stop after 5m
-{ sleep 5m && kill -l 0 $$ && echo "Successfully worked for 5m, stopped" } &
-
 # Launch EthRelay
 BRIDGE_VALIDATE_ETHASH=true \
     NEAR_NODE_URL="https://rpc.nearprotocol.com" \
