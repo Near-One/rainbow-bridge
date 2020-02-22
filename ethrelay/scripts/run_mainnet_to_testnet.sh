@@ -24,9 +24,11 @@ NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPat
 while :
 do
   BRIDGE_VALIDATE_ETHASH=true \
-      NEAR_NODE_URL="https://rpc.nearprotocol.com" \
-      NEAR_NODE_NETWORK_ID=default \
-      ETHEREUM_NODE_URL="wss://mainnet.infura.io/ws/v3/b5f870422ee5454fb11937e947154cd2" \
-      node "$DIR/../index.js" || echo "Seems the relayer has failed. Going to try again in a minute."
+    NEAR_NODE_URL=$NODE_URL \
+    NEAR_NODE_NETWORK_ID=default \
+    NEAR_RELAYER_ACCOUNT_ID=$NEAR_RELAYER_ACCOUNT_ID \
+    NEAR_ETHBRIDGE_ACCOUNT_ID=$NEAR_ETHBRIDGE_ACCOUNT_ID \
+    ETHEREUM_NODE_URL="wss://mainnet.infura.io/ws/v3/b5f870422ee5454fb11937e947154cd2" \
+    node "$DIR/../index.js" || echo "!!! Seems the relayer has failed. Going to try again in a minute."
   sleep 60
 done

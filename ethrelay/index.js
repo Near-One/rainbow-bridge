@@ -385,8 +385,6 @@ function web3BlockToRlp(blockData) {
             keyStore: new nearlib.keyStores.UnencryptedFileSystemKeyStore(__dirname + '/neardev')
         }
     });
-    process.exit(3);
-
 
     const account = new nearlib.Account(near.connection, process.env.NEAR_RELAYER_ACCOUNT_ID);
 
