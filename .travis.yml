@@ -27,7 +27,7 @@ env:
   - NEARRELAY=1
 script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install nodejs; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install node@10; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install node@10 yarn; fi
   - echo "Node:"
   - node --version
   - if [ "$ETHBRIDGE" = "1" ]; then
