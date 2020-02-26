@@ -45,7 +45,7 @@ script:
       cd ..;
       yarn && yarn run test;
     fi
-  - if [ $NEARBRIDGE = "1" ]; then
+  - if [ "$NEARBRIDGE" = "1" ]; then
       cd ./nearbridge;
       yarn;
       yarn run test;
