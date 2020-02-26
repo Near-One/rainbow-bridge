@@ -462,32 +462,32 @@ function web3BlockToRlp(blockData) {
         let timeBeforeSubmission = Date.now();
         console.log(`Submitting block ${blockNumber} to EthBridge`);
         const h512s = block.elements
-          .filter((_, index) => index % 2 === 0)
-          .map((element, index) => {
-              return web3.utils.padLeft(element, 64) + web3.utils.padLeft(block.elements[index*2 + 1], 64).substr(2)
-          });
+            .filter((_, index) => index % 2 === 0)
+            .map((element, index) => {
+                return web3.utils.padLeft(element, 64) + web3.utils.padLeft(block.elements[index*2 + 1], 64).substr(2)
+            });
 
         const args = {
             block_header: web3.utils.hexToBytes(block.header_rlp),
             dag_nodes: h512s
-              .filter((_, index) => index % 2 === 0)
-              .map((element, index) => {
-                  return {
-                      dag_nodes: [element, h512s[index*2 + 1]],
-                      proof: block.merkle_proofs.slice(
-                        index * block.proof_length,
-                        (index + 1) * block.proof_length,
-                      ).map(leaf => web3.utils.padLeft(leaf, 32))
-                  };
-              }),
+                .filter((_, index) => index % 2 === 0)
+                .map((element, index) => {
+                    return {
+                        dag_nodes: [element, h512s[index*2 + 1]],
+                        proof: block.merkle_proofs.slice(
+                            index * block.proof_length,
+                            (index + 1) * block.proof_length,
+                        ).map(leaf => web3.utils.padLeft(leaf, 32))
+                    };
+                }),
         };
 
         for (let i = 0; i < 10; ++i) {
             try {
                 await ethBridgeContract.add_block_header(args, new BN('1000000000000000'));
                 console.log(
-                  "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
-                  "(" + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s per header)"
+                    "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
+                    "(" + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s per header)"
                 );
                 console.log(`Successfully submitted block ${blockNumber} to EthBridge`);
                 return;
@@ -531,8 +531,8 @@ function web3BlockToRlp(blockData) {
             }
         }
         console.log(
-          "Proofs computation took " + Math.trunc((Date.now() - timeBeforeProofsComputed)/10)/100 + "s " +
-          "(" + Math.trunc((Date.now() - timeBeforeProofsComputed)/(stop - start + 1)/10)/100 + "s per header)"
+            "Proofs computation took " + Math.trunc((Date.now() - timeBeforeProofsComputed)/10)/100 + "s " +
+            "(" + Math.trunc((Date.now() - timeBeforeProofsComputed)/(stop - start + 1)/10)/100 + "s per header)"
         );
     });
 })()
