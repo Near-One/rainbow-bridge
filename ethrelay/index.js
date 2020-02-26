@@ -411,7 +411,7 @@ function web3BlockToRlp(blockData) {
     const first_root = await ethBridgeContract.dag_merkle_root({ epoch: 0 });
     const last_root = await ethBridgeContract.dag_merkle_root({ epoch: 511 });
     if (first_root === '0x55b891e842e58f58956a847cbbf67821' &&
-      last_root === '0x4aa6ca6ebef942d8766065b2e590fd32')
+        last_root === '0x4aa6ca6ebef942d8766065b2e590fd32')
     {
         console.log('EthBridge initialized properly');
     } else {
