@@ -11,7 +11,7 @@ NEAR_MASTER_ACCOUNT_ID="ethrelay"
 # The account ID to push blocks
 NEAR_RELAYER_ACCOUNT_ID="ethrelay-pusher"
 # The account ID used as ETH bridge
-NEAR_ETHBRIDGE_ACCOUNT_ID="ethbridge-ropsten"
+NEAR_ETHBRIDGE_ACCOUNT_ID="ethbridge"
 
 echo "Creating account to push blocks:"
 NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" create_account $NEAR_RELAYER_ACCOUNT_ID --masterAccount=NEAR_MASTER_ACCOUNT_ID --initialBalance 100000000 || echo "Skip creating ethbridge accout"
@@ -28,8 +28,7 @@ do
     NEAR_NODE_NETWORK_ID=default \
     NEAR_RELAYER_ACCOUNT_ID=$NEAR_RELAYER_ACCOUNT_ID \
     NEAR_ETHBRIDGE_ACCOUNT_ID=$NEAR_ETHBRIDGE_ACCOUNT_ID \
-    ETHEREUM_NODE_URL="wss://ropsten.infura.io/ws/v3/b5f870422ee5454fb11937e947154cd2" \
+    ETHEREUM_NODE_URL="wss://mainnet.infura.io/ws/v3/b5f870422ee5454fb11937e947154cd2" \
     node "$DIR/../index.js" || echo "!!! Seems the relayer has failed. Going to try again in a minute."
   sleep 60
 done
-

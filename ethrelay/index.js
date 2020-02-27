@@ -39,38 +39,6 @@ function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
     });
 }
 
-const hexToBuffer = (hex) => Buffer.from(Web3.utils.hexToBytes(hex));
-const readerToHex = (len) => (reader) => Web3.utils.bytesToHex(reader.read_fixed_array(len));
-
-const borshSchema = {
-    'bool': {
-        kind: 'function',
-        ser: (b) => Buffer.from(Web3.utils.hexToBytes(b ? '0x01' : '0x00')),
-        deser: (z) => readerToHex(1)(z) === '0x01'
-    },
-    'initInput': {kind: 'struct', fields: [
-            ['validate_ethash', 'bool'],
-            ['dags_start_epoch', 'u64'],
-            ['dags_merkle_roots', ['H128']]
-        ]},
-    'dagMerkleRootInput': { kind: 'struct', fields: [
-            ['epoch', 'u64'],
-        ]},
-    'addBlockHeaderInput': { kind: 'struct', fields: [
-            ['block_header', ['u8']],
-            ['dag_nodes', ['DoubleNodeWithMerkleProof']],
-        ]},
-    'DoubleNodeWithMerkleProof': { kind: 'struct', fields: [
-            ['dag_nodes', ['H512']],
-            ['proof', ['H128']],
-        ]},
-    'H128': {kind: 'function', ser: hexToBuffer, deser: readerToHex(16) },
-    'H256': {kind: 'function', ser: hexToBuffer, deser: readerToHex(32) },
-    'H512': {kind: 'function', ser: hexToBuffer, deser: readerToHex(64) },
-    '?H256': {kind: 'option', type: 'H256'}
-};
-
-
 function serializeField(schema, value, fieldType, writer) {
     if (fieldType === 'u8') {
         writer.write_u8(value);
@@ -273,7 +241,7 @@ function getBorshTransactionLastResult(txResult) {
 }
 
 class Contract {
-    constructor(account, contractId, options) {
+    constructor(borshSchema, account, contractId, options) {
         this.account = account;
         this.contractId = contractId;
         options.viewMethods.forEach((d) => {
@@ -326,9 +294,40 @@ class Contract {
     }
 }
 
+const hexToBuffer = (hex) => Buffer.from(Web3.utils.hexToBytes(hex));
+const readerToHex = (len) => (reader) => Web3.utils.bytesToHex(reader.read_fixed_array(len));
+
+const borshSchema = {
+    'bool': {
+        kind: 'function',
+        ser: (b) => Buffer.from(Web3.utils.hexToBytes(b ? '0x01' : '0x00')),
+        deser: (z) => readerToHex(1)(z) === '0x01'
+    },
+    'initInput': {kind: 'struct', fields: [
+            ['validate_ethash', 'bool'],
+            ['dags_start_epoch', 'u64'],
+            ['dags_merkle_roots', ['H128']]
+        ]},
+    'dagMerkleRootInput': { kind: 'struct', fields: [
+            ['epoch', 'u64'],
+        ]},
+    'addBlockHeaderInput': { kind: 'struct', fields: [
+            ['block_header', ['u8']],
+            ['dag_nodes', ['DoubleNodeWithMerkleProof']],
+        ]},
+    'DoubleNodeWithMerkleProof': { kind: 'struct', fields: [
+            ['dag_nodes', ['H512']],
+            ['proof', ['H128']],
+        ]},
+    'H128': {kind: 'function', ser: hexToBuffer, deser: readerToHex(16) },
+    'H256': {kind: 'function', ser: hexToBuffer, deser: readerToHex(32) },
+    'H512': {kind: 'function', ser: hexToBuffer, deser: readerToHex(64) },
+    '?H256': {kind: 'option', type: 'H256'}
+};
+
 class EthBridgeContract extends Contract {
     constructor(account, contractId) {
-        super(account, contractId, {
+        super(borshSchema, account, contractId, {
             viewMethods: [{
                 methodName: "initialized",
                 inputFieldType: null,
@@ -387,9 +386,9 @@ function web3BlockToRlp(blockData) {
         }
     });
 
-    const account = new nearlib.Account(near.connection, 'ethbridge');
+    const account = new nearlib.Account(near.connection, process.env.NEAR_RELAYER_ACCOUNT_ID);
 
-    const ethBridgeContract = new EthBridgeContract(account, 'ethbridge');
+    const ethBridgeContract = new EthBridgeContract(account, process.env.NEAR_ETHBRIDGE_ACCOUNT_ID);
     await ethBridgeContract.accessKeyInit();
 
     let initialized = false;
@@ -431,24 +430,32 @@ function web3BlockToRlp(blockData) {
     const submitBlock = async (block, blockNumber) => {
         let sleepTimer = 1;
         const maxSleepTime = 10;
-        while (true) {
+        const sleep = async () => {
+            await new Promise((resolve, reject) => {
+                setTimeout(resolve, sleepTimer * 1000);
+            });
+            if (sleepTimer < maxSleepTime) {
+                sleepTimer += 1;
+            };
+        }
+        let ok = false;
+        for (let iters = 0; iters < 20; ++iters) {
             try {
                 let last_block_number_onchain = (await ethBridgeContract.last_block_number()).toNumber();
                 if (last_block_number_onchain > 0 && last_block_number_onchain < blockNumber - 1) {
                     console.log(`Sleeping ${sleepTimer} sec. The latest block on chain is ${last_block_number_onchain}, but need to submit block #${blockNumber}`);
-                    await new Promise((resolve, reject) => {
-                        setTimeout(resolve, sleepTimer * 1000);
-                    });
-                    if (sleepTimer < maxSleepTime) {
-                        sleepTimer += 1;
-                    }
-
+                    await sleep();
                 } else {
+                    ok = true;
                     break;
                 }
             } catch (e) {
                 console.log("Block awaiting failed :(", e);
+                await sleep();
             }
+        }
+        if (!ok) {
+            process.exit(1);
         }
 
         // Check bridge state, may be changed since computation could be long
@@ -506,7 +513,8 @@ function web3BlockToRlp(blockData) {
                     const blockRlp = web3.utils.bytesToHex(web3BlockToRlp(await web3.eth.getBlock(i)));
                     const block = JSON.parse(await execute(`./ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`));
                     submitBlock(block, i).catch((e) => {
-                        throw e;
+                        console.error(e);
+                        process.exit(2);
                     })
                     ok = true;
                     break;
@@ -518,7 +526,8 @@ function web3BlockToRlp(blockData) {
                 }
             }
             if (!ok) {
-                throw new Error(`Failed to create a proof for a block #${i}`)
+                console.error(`Failed to create a proof for a block #${i}`);
+                process.exit(3);
             }
         }
         console.log(
