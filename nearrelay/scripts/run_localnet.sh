@@ -83,4 +83,4 @@ NEAR_BRIDGE_OWNER_PRIVATE_KEY=0x2bdd21761a483f71054e14f5b827213567971c676928d9a1
     node "$DIR/../index.js" &
 
 # Successfully stop after 5m
-sleep 300 && kill -l 0 $$ && echo "Successfully worked for 5m, stopped"
+sleep 300 && kill -0 $$ && echo "Successfully worked for 5m, stopped"

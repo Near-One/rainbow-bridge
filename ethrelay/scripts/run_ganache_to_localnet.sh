@@ -90,4 +90,4 @@ BRIDGE_VALIDATE_ETHASH=false \
     node "$DIR/../index.js" &
 
 # Successfully stop after 5m
-sleep 300 && kill -l 0 $$ && echo "Successfully worked for 5m, stopped"
+sleep 300 && kill -0 $$ && echo "Successfully worked for 5m, stopped"
