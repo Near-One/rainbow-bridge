@@ -63,7 +63,7 @@ script:
   - if [ "$NEARBRIDGE_COVERAGE" = "1" ]; then
       cd ./nearbridge;
       yarn;
-      yarn run coverage && cat coverage/lcov.info | coveralls;
+      yarn run coverage && cat coverage/lcov.info | yarn run coveralls;
     fi
   - if [ "$NEARRELAY" = "1" ]; then
       cd ./ethbridge;
