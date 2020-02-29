@@ -25,14 +25,21 @@ env:
   - NEARBRIDGE_LINT=1
   - NEARBRIDGE_COVERAGE=1
   - NEARRELAY=1
-script:
+install:
   - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.2/install.sh | bash
   - nvm install 10.19.0
   - nvm use 10.19.0
+  - node --version
   - curl -o- -L https://yarnpkg.com/install.sh | bash
   - export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
-  - node --version
   - yarn --version
+  - if [ $TRAVIS_OS_NAME = linux ]; then 
+      curl -fsSL https://get.docker.com | bash;
+    else
+      brew install docker;
+    fi
+  - docker --version
+script:
   - if [ "$ETHBRIDGE" = "1" ]; then
       cd ./ethbridge;
       ./test.sh;
