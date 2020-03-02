@@ -2,14 +2,22 @@
 # https://github.com/sc-forks/solidity-coverage/blob/master/docs/faq.md
 #
 
-sudo: required
 dist: trusty
-language: node_js
 branches:
   only:
-  - master
-node_js:
-  - '10'
+    - master
+os:
+  - linux
+  - osx
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+jobs:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
 env:
   - ETHBRIDGE=1
   - ETHRELAY=1
@@ -17,21 +25,28 @@ env:
   - NEARBRIDGE_LINT=1
   - NEARBRIDGE_COVERAGE=1
   - NEARRELAY=1
+install:
+  - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.2/install.sh | bash
+  - nvm install 10.19.0
+  - nvm use 10.19.0
+  - node --version
+  - curl -o- -L https://yarnpkg.com/install.sh | bash
+  - export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
+  - yarn --version
+  - if [ $TRAVIS_OS_NAME = linux ]; then 
+      curl -fsSL https://get.docker.com | bash;
+    else
+      brew install docker;
+    fi
+  - docker --version
 script:
   - if [ "$ETHBRIDGE" = "1" ]; then
       cd ./ethbridge;
-      sh <(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs) -y && export PATH=$PATH:~/.cargo/bin;
-      rustup toolchain install stable;
-      rustup default stable;
-      rustup target add wasm32-unknown-unknown --toolchain stable;
       ./test.sh;
     fi
   - if [ "$ETHRELAY" = "1" ]; then
       cd ./ethbridge;
-      sh <(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs) -y && export PATH=$PATH:~/.cargo/bin;
-      rustup toolchain install stable;
-      rustup default stable;
-      rustup target add wasm32-unknown-unknown --toolchain stable;
+      rustup target add wasm32-unknown-unknown --toolchain $(rustup toolchain list | cut -d- -f1);
       ./build.sh;
       cd ../ethrelay/ethashproof;
       eval "$(gimme 1.12)";
@@ -40,11 +55,11 @@ script:
       cd ..;
       yarn && yarn run test;
     fi
-  - if [ $NEARBRIDGE = "1" ]; then
+  - if [ "$NEARBRIDGE" = "1" ]; then
       cd ./nearbridge;
       yarn;
       yarn run test;
-      npx codechecks;
+      yarn run codechecks;
     fi
   - if [ "$NEARBRIDGE_LINT" = "1" ]; then
       cd ./nearbridge;
@@ -54,14 +69,11 @@ script:
   - if [ "$NEARBRIDGE_COVERAGE" = "1" ]; then
       cd ./nearbridge;
       yarn;
-      yarn run coverage && cat coverage/lcov.info | coveralls;
+      yarn run coverage && cat coverage/lcov.info | yarn run coveralls;
     fi
   - if [ "$NEARRELAY" = "1" ]; then
       cd ./ethbridge;
-      sh <(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs) -y && export PATH=$PATH:~/.cargo/bin;
-      rustup toolchain install stable;
-      rustup default stable;
-      rustup target add wasm32-unknown-unknown --toolchain stable;
+      rustup target add wasm32-unknown-unknown --toolchain $(rustup toolchain list | cut -d- -f1);
       ./build.sh;
       cd ../nearrelay;
       yarn && yarn run test;
