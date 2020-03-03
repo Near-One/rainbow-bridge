@@ -1,2 +1,7 @@
 target
 res/eth_prover.wasm
+
+neardev/
+
+node_modules
+package-lock.json

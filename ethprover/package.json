@@ -1,0 +1,15 @@
+{
+  "name": "ethprover",
+  "version": "0.0.0",
+  "description": "EthProver test",
+  "main": "index.js",
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "nearlib": "^0.21.0",
+    "near-shell": "^0.20.1",
+    "ethereumjs-block": "^2.2.2",
+    "ethereumjs-util": "^6.2.0",
+    "web3": "^1.2.4"
+  }
+}
