@@ -33,8 +33,8 @@ The Rainbow bridge is a composition of software applications allowing smart cont
 
 Software:
 - **A.** *NearBridge* – smart contract of Near light client hosted in Ethereum network. It receives Near block headers, verifies and stores block hashes only.
-- **B.** *EthBridge* – smart contract of Ethereum light client hosted in Near network. It receives Ethereum block headers, verifies ethash and longest chain rule and stores block hashes only. Uses Merkle trees and hash preimages for verification.
-- **C.** *NearProver* - smart contract in Ethereum network performing verification of Near transaction result was included into Near block.
+- **B.** *EthBridge* – smart contract of Ethereum light client hosted in Near network. It receives Ethereum block headers, verifies ethash and longest chain rule and stores block hashes only.
+- **C.** *NearProver* - smart contract in Ethereum network performing verification of Near transaction result was included into Near block. Uses Merkle trees and hash preimages for verification.
 - **D.** *EthProver* - smart contract in Near network performing verification of Ethereum event was included into Ethereum block. Uses Merkle trees and hash preimages for verification.
 
 Relations:
