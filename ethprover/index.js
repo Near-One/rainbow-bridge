@@ -310,7 +310,7 @@ class EthProverContract extends Contract {
 
     const near = await nearlib.connect({
         nodeUrl: process.env.NEAR_NODE_URL, // 'https://rpc.nearprotocol.com',
-        networkId: process.env.NEAR_NODE_NETWORK_ID, // TODO: detect automatically
+        networkId: process.env.NEAR_NODE_NETWORK_ID,
         deps: {
             keyStore: new nearlib.keyStores.UnencryptedFileSystemKeyStore(__dirname + '/neardev')
         }
