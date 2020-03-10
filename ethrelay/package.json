@@ -11,10 +11,10 @@
   "license": "MIT",
   "dependencies": {
     "near-shell": "^0.20.1",
-    "nearlib": "^0.21.0",
+    "nearlib": "^0.22.0",
     "ganache-cli": "^6.9.0",
     "ethereumjs-block": "^2.2.2",
     "ethereumjs-util": "^6.2.0",
-    "web3": "^1.2.4"
+    "web3": "^1.2.6"
   }
 }

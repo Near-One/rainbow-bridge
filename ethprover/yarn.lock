@@ -3099,10 +3099,10 @@ nearlib@^0.20.0:
     text-encoding-utf-8 "^1.0.2"
     tweetnacl "^1.0.1"
 
-nearlib@^0.21.0:
-  version "0.21.0"
-  resolved "https://registry.yarnpkg.com/nearlib/-/nearlib-0.21.0.tgz#18e4edc2504fa1dfdb8a6a336ea2d0e20823bf06"
-  integrity sha512-FSHWxmMjYSh/zQ1x7FfR/o47kUmMyhWQuB+efJmX0C2GdNWeGNDrTmSpwsYDSDejLBkt6ayr4Nk7TsvdjJcgsQ==
+nearlib@^0.22.0:
+  version "0.22.0"
+  resolved "https://registry.yarnpkg.com/nearlib/-/nearlib-0.22.0.tgz#e7e9ed88752fb533c0920720f962f97395ddfec6"
+  integrity sha512-6yTc5Ti5oHFak8GSvuzHF7gTRIXRDIs822LiIqJWqoJ5emWktAZqWowS9taAazfG/joU2H0B3WX5Z46oIv4U0w==
   dependencies:
     "@types/bn.js" "^4.11.5"
     bn.js "^5.0.0"
@@ -4824,7 +4824,7 @@ web3-utils@1.2.6:
     underscore "1.9.1"
     utf8 "3.0.0"
 
-web3@^1.2.4:
+web3@^1.2.6:
   version "1.2.6"
   resolved "https://registry.yarnpkg.com/web3/-/web3-1.2.6.tgz#c497dcb14cdd8d6d9fb6b445b3b68ff83f8ccf68"
   integrity sha512-tpu9fLIComgxGrFsD8LUtA4s4aCZk7px8UfcdEy6kS2uDi/ZfR07KJqpXZMij7Jvlq+cQrTAhsPSiBVvoMaivA==
