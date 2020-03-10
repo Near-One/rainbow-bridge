@@ -21,6 +21,8 @@ fn assert_self() {
 }
 
 
+/// Defines an interface to call EthProver back as a callback with the result from the
+/// EthBridge contract.
 #[ext_contract(remote_self)]
 pub trait RemoteSelf {
     #[result_serializer(borsh)]
@@ -31,6 +33,9 @@ pub trait RemoteSelf {
     ) -> bool;
 }
 
+/// Defines an interface to call EthBridge contract to get the safe block hash for a given block
+/// number. It returns Some(hash) if the block hash is present in the safe canonical chain, or
+/// None if the block number is not part of the canonical chain yet.
 #[ext_contract(eth_bridge)]
 pub trait RemoteEthBridge {
     #[result_serializer(borsh)]
@@ -61,6 +66,10 @@ impl EthProver {
         a.iter().flat_map(|b| vec![b >> 4, b & 0x0F]).collect()
     }
 
+    /// Implementation of the callback when the EthBridge returns data.
+    /// This method can only be called by the EthProver contract itself (e.g. as callback).
+    /// - `block_hash` is the actual data from the EthBridge call
+    /// - `expected_block_hash` is the block hash that we expect to be passed by us.
     #[result_serializer(borsh)]
     pub fn on_block_hash(
         &self,
@@ -74,6 +83,9 @@ impl EthProver {
         return block_hash == Some(expected_block_hash);
     }
 
+    /// Externally visible method to verify that the given block hash is part of the safe canonical
+    /// chain on the remote EthBridge contract.
+    /// Returns a promise.
     #[result_serializer(borsh)]
     pub fn assert_ethbridge_hash(
         &self,
