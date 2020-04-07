@@ -5,6 +5,9 @@
   "main": "index.js",
   "author": "",
   "license": "MIT",
+  "scripts": {
+    "test": "scripts/run_localnet.sh"
+  },
   "dependencies": {
     "nearlib": "^0.22.0",
     "near-shell": "^0.20.1",
