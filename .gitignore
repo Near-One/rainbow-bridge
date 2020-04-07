@@ -3,4 +3,5 @@ node_modules
 **/.idea
 **/.near
 *.pyc
+neardev/
 ethrelay/testdir
