@@ -1,6 +1,6 @@
 {
   "name": "ethprover",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "EthProver test",
   "main": "index.js",
   "author": "",
@@ -9,10 +9,16 @@
     "test": "scripts/run_localnet.sh"
   },
   "dependencies": {
-    "nearlib": "^0.22.0",
-    "near-shell": "^0.20.1",
+    "@openzeppelin/cli": "^2.8.1",
+    "eth-object": "^1.0.3",
+    "eth-util-lite": "^1.0.1",
     "ethereumjs-block": "^2.2.2",
     "ethereumjs-util": "^6.2.0",
+    "ganache-cli": "^6.9.1",
+    "merkle-patricia-tree": "^3.0.0",
+    "near-shell": "^0.20.1",
+    "nearlib": "^0.22.0",
+    "promisfy": "^1.2.0",
     "web3": "^1.2.6"
   }
 }

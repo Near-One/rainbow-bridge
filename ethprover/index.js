@@ -3,6 +3,10 @@ const nearlib = require('nearlib');
 const BN = require('bn.js');
 const exec = require('child_process').exec;
 const utils = require('ethereumjs-util');
+const Tree = require('merkle-patricia-tree');
+const { Header, Proof, Receipt, Transaction, Log } = require('eth-object');
+const { encode, toBuffer } = require('eth-util-lite');
+const { promisfy } = require('promisfy');
 
 function execute(command, callback){
     return new Promise(resolve => exec(command, (error, stdout, stderr) => {
@@ -306,7 +310,43 @@ class EthProverContract extends Contract {
     }
 }
 
+function receiptFromWeb3(result) {
+    return new Receipt([
+        toBuffer((result.status ? 0x1 : 0x0) || result.root),
+        toBuffer(result.cumulativeGasUsed),
+        toBuffer(result.logsBloom),
+        result.logs.map(Log.fromRpc)
+    ]);
+}
+
 (async function () {
+    const web3 = new Web3(process.env.ETH_NODE_URL);
+    const emitter = new web3.eth.Contract(require('./build/contracts/Emitter.json').abi, process.env.ETH_CONTRACT_ADDRESS);
+    const events = await emitter.getPastEvents('allEvents');
+
+    // Get proof
+    // https://github.com/zmitton/eth-proof/blob/master/getProof.js#L39
+    const event = events[0];
+    const targetReceipt = await web3.eth.getTransactionReceipt(event.transactionHash);
+    const block = await web3.eth.getBlock(event.blockHash);
+    const blockReceipts = await Promise.all(block.transactions.map(web3.eth.getTransactionReceipt));
+    const tree = new Tree();
+
+    await Promise.all(blockReceipts.map((receipt, index) => {
+        const path = encode(index);
+        const serializedReceipt = receiptFromWeb3(receipt).serialize();
+        return promisfy(tree.put, tree)(path, serializedReceipt);
+    }));
+  
+    const [_, __, stack] = await promisfy(tree.findPath, tree)(encode(targetReceipt.transactionIndex))
+  
+    const proof = {
+        header: Header.fromRpc(block),
+        receiptProof: Proof.fromStack(stack),
+        txIndex: targetReceipt.transactionIndex,
+    };
+
+    console.log('proof:', proof);
 
     const near = await nearlib.connect({
         nodeUrl: process.env.NEAR_NODE_URL, // 'https://rpc.nearprotocol.com',

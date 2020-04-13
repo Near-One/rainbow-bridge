@@ -1,7 +1,4 @@
-target
-res/eth_prover.wasm
-
+build/
+target/
 neardev/
-
-node_modules
-package-lock.json
+.openzeppelin/

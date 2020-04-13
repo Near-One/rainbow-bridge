@@ -104,7 +104,6 @@ impl EthProver {
         ).into()
     }
 
-    /*
     pub fn verify_log_entry(
         &self,
         log_index: usize,
@@ -254,5 +253,4 @@ impl EthProver {
 
         expected_value.len() == 0
     }
-    */
 }
