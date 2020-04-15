@@ -15,8 +15,6 @@ oz compile
 ETH_CONTRACT_ADDRESS=$(oz deploy Emitter --kind regular --network development --silent --no-interactive)
 EXH_TX=$(oz send-tx --to $ETH_CONTRACT_ADDRESS --method "emitEvent(uint256,uint256,uint256)" --args 1,2,3 --network development)
 
-echo "xxx: $EXH_TX"
-
 $DIR/../build.sh
 
 ETH_NODE_URL="http://localhost:9545"
