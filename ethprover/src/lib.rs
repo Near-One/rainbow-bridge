@@ -1,21 +1,62 @@
 use rlp::{Rlp};
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
-//use near_bindgen::near_bindgen;
+use near_bindgen::{env, ext_contract, near_bindgen, PromiseOrValue};
 
 #[cfg(target_arch = "wasm32")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-//#[near_bindgen]
-#[derive(Default, Debug, Clone, BorshDeserialize, BorshSerialize)]
+type AccountId = String;
+const GAS: u64 = 100_000_000_000_000;
+
+#[near_bindgen]
+#[derive(BorshDeserialize, BorshSerialize)]
 pub struct EthProver {
-    bridge_smart_contract: String,
+    bridge_smart_contract: AccountId,
 }
 
-//#[near_bindgen]
+fn assert_self() {
+    assert_eq!(env::current_account_id(), env::predecessor_account_id());
+}
+
+
+/// Defines an interface to call EthProver back as a callback with the result from the
+/// EthBridge contract.
+#[ext_contract(remote_self)]
+pub trait RemoteSelf {
+    #[result_serializer(borsh)]
+    fn on_block_hash(
+        &self,
+        #[serializer(borsh)]
+        expected_block_hash: H256
+    ) -> bool;
+}
+
+/// Defines an interface to call EthBridge contract to get the safe block hash for a given block
+/// number. It returns Some(hash) if the block hash is present in the safe canonical chain, or
+/// None if the block number is not part of the canonical chain yet.
+#[ext_contract(eth_bridge)]
+pub trait RemoteEthBridge {
+    #[result_serializer(borsh)]
+    fn block_hash_safe(
+        &self,
+       #[serializer(borsh)]
+       index: u64
+    ) -> Option<H256>;
+}
+
+impl Default for EthProver {
+    fn default() -> Self {
+        env::panic(b"Not initialized yet.");
+    }
+}
+
+#[near_bindgen]
 impl EthProver {
-    pub fn init(bridge_smart_contract: String) -> Self {
+    #[init]
+    pub fn init(#[serializer(borsh)] bridge_smart_contract: AccountId) -> Self {
+        assert!(env::state_read::<EthProver>().is_none(), "The contract is already initialized");
         Self {
             bridge_smart_contract
         }
@@ -23,6 +64,44 @@ impl EthProver {
 
     fn extract_nibbles(a: Vec<u8>) -> Vec<u8> {
         a.iter().flat_map(|b| vec![b >> 4, b & 0x0F]).collect()
+    }
+
+    /// Implementation of the callback when the EthBridge returns data.
+    /// This method can only be called by the EthProver contract itself (e.g. as callback).
+    /// - `block_hash` is the actual data from the EthBridge call
+    /// - `expected_block_hash` is the block hash that we expect to be passed by us.
+    #[result_serializer(borsh)]
+    pub fn on_block_hash(
+        &self,
+        #[callback]
+        #[serializer(borsh)]
+        block_hash: Option<H256>,
+        #[serializer(borsh)]
+        expected_block_hash: H256,
+    ) -> bool {
+        assert_self();
+        return block_hash == Some(expected_block_hash);
+    }
+
+    /// Externally visible method to verify that the given block hash is part of the safe canonical
+    /// chain on the remote EthBridge contract.
+    /// Returns a promise.
+    #[result_serializer(borsh)]
+    pub fn assert_ethbridge_hash(
+        &self,
+        #[serializer(borsh)]
+        block_number: u64,
+        #[serializer(borsh)]
+        expected_block_hash: H256,
+    ) -> PromiseOrValue<bool> {
+        eth_bridge::block_hash_safe(
+            block_number,
+            &self.bridge_smart_contract,
+            0,
+            GAS,
+        ).then(
+            remote_self::on_block_hash(expected_block_hash, &env::current_account_id(), 0, GAS)
+        ).into()
     }
 
     pub fn verify_log_entry(
@@ -40,6 +119,14 @@ impl EthProver {
         // Verify block header was in the bridge
         // TODO: inter-contract call:
         //self.bridge_smart_contract.block_hashes(header.number) == header.hash;
+        eth_bridge::block_hash_safe(
+            header.number,
+            &self.bridge_smart_contract,
+            0,
+            GAS,
+        ).then(
+            remote_self::on_block_hash(header.hash.unwrap(), &env::current_account_id(), 0, GAS)
+        );
 
         // Verify log_entry included in receipt
         assert_eq!(receipt.logs[log_index], log_entry);

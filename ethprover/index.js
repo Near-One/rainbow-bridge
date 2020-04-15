@@ -2,10 +2,11 @@ const Web3 = require('web3');
 const nearlib = require('nearlib');
 const BN = require('bn.js');
 const exec = require('child_process').exec;
-const blockFromRpc = require('ethereumjs-block/from-rpc')
 const utils = require('ethereumjs-util');
-
-const roots = require('./dag_merkle_roots.json');
+const Tree = require('merkle-patricia-tree');
+const { Header, Proof, Receipt, Transaction, Log } = require('eth-object');
+const { encode, toBuffer } = require('eth-util-lite');
+const { promisfy } = require('promisfy');
 
 function execute(command, callback){
     return new Promise(resolve => exec(command, (error, stdout, stderr) => {
@@ -16,34 +17,15 @@ function execute(command, callback){
     }));
 };
 
-function subscribeOnBlocksRangesFrom(web3, block_number, handler) {
-    let inBlocksCallbacks = false;
-    let last_block_number = block_number;
-
-    web3.eth.subscribe("newBlockHeaders", async (error, event) => {
-        if (error) {
-            console.log(error);
-            return;
-        }
-
-        if (!inBlocksCallbacks && event.number - last_block_number > 4) {
-            inBlocksCallbacks = true;
-
-            let start = last_block_number;
-            let stop = event.number - 2;
-            last_block_number = stop;
-            await handler(start, stop);
-
-            inBlocksCallbacks = false;
-        }
-    });
-}
-
 function serializeField(schema, value, fieldType, writer) {
     if (fieldType === 'u8') {
         writer.write_u8(value);
     } else if (fieldType === 'u64') {
         writer.write_u64(value);
+    } else if (fieldType === 'bool') {
+        return writer.write_u8(value ? 1: 0);
+    } else if (fieldType === 'string') {
+        return writer.write_string(value);
     } else if (fieldType instanceof Array) {
         if (typeof fieldType[0] === 'number') {
             if (value.length !== fieldType[0]) {
@@ -85,6 +67,8 @@ function deserializeField(schema, fieldType, reader) {
         return reader.read_u64();
     } else if (fieldType === 'bool') {
         return !!reader.read_u8();
+    } else if (fieldType === 'string') {
+        return reader.read_string();
     } else if (fieldType instanceof Array) {
         if (typeof fieldType[0] === 'number') {
             return reader.read_fixed_array(fieldType[0]);
@@ -298,85 +282,72 @@ const hexToBuffer = (hex) => Buffer.from(Web3.utils.hexToBytes(hex));
 const readerToHex = (len) => (reader) => Web3.utils.bytesToHex(reader.read_fixed_array(len));
 
 const borshSchema = {
-    'bool': {
-        kind: 'function',
-        ser: (b) => Buffer.from(Web3.utils.hexToBytes(b ? '0x01' : '0x00')),
-        deser: (z) => readerToHex(1)(z) === '0x01'
-    },
     'initInput': {kind: 'struct', fields: [
-            ['validate_ethash', 'bool'],
-            ['dags_start_epoch', 'u64'],
-            ['dags_merkle_roots', ['H128']]
+        ['bridge_smart_contract', 'string']
         ]},
-    'dagMerkleRootInput': { kind: 'struct', fields: [
-            ['epoch', 'u64'],
+    'assertEthbridgeHashInput': { kind: 'struct', fields: [
+            ['block_number', 'u64'],
+            ['expected_block_hash', 'H256'],
         ]},
-    'addBlockHeaderInput': { kind: 'struct', fields: [
-            ['block_header', ['u8']],
-            ['dag_nodes', ['DoubleNodeWithMerkleProof']],
-        ]},
-    'DoubleNodeWithMerkleProof': { kind: 'struct', fields: [
-            ['dag_nodes', ['H512']],
-            ['proof', ['H128']],
-        ]},
-    'H128': {kind: 'function', ser: hexToBuffer, deser: readerToHex(16) },
     'H256': {kind: 'function', ser: hexToBuffer, deser: readerToHex(32) },
-    'H512': {kind: 'function', ser: hexToBuffer, deser: readerToHex(64) },
-    '?H256': {kind: 'option', type: 'H256'}
 };
 
-class EthBridgeContract extends Contract {
+class EthProverContract extends Contract {
     constructor(account, contractId) {
         super(borshSchema, account, contractId, {
-            viewMethods: [{
-                methodName: "initialized",
-                inputFieldType: null,
-                outputFieldType: 'bool',
-            }, {
-                methodName: "dag_merkle_root",
-                inputFieldType: "dagMerkleRootInput",
-                outputFieldType: 'H128',
-            }, {
-                methodName: "last_block_number",
-                inputFieldType: null,
-                outputFieldType: 'u64',
-            }, {
-                methodName: "block_hash",
-                inputFieldType: "u64",
-                outputFieldType: '?H256',
-            }, {
-                methodName: "block_hash_safe",
-                inputFieldType: "u64",
-                outputFieldType: '?H256',
-            }],
+            viewMethods: [],
 
             changeMethods: [{
                 methodName: "init",
                 inputFieldType: "initInput",
                 outputFieldType: null,
             }, {
-                methodName: "add_block_header",
-                inputFieldType: "addBlockHeaderInput",
-                outputFieldType: null,
+                methodName: "assert_ethbridge_hash",
+                inputFieldType: "assertEthbridgeHashInput",
+                outputFieldType: 'bool',
             }],
         })
     }
 }
 
-function web3BlockToRlp(blockData) {
-    blockData.difficulty = parseInt(blockData.difficulty, 10);
-    blockData.totalDifficulty = parseInt(blockData.totalDifficulty, 10);
-    blockData.uncleHash = blockData.sha3Uncles;
-    blockData.coinbase = blockData.miner;
-    blockData.transactionTrie = blockData.transactionsRoot;
-    blockData.receiptTrie = blockData.receiptsRoot;
-    blockData.bloom = blockData.logsBloom;
-    const blockHeader = blockFromRpc(blockData);
-    return utils.rlp.encode(blockHeader.header.raw);
+function receiptFromWeb3(result) {
+    return new Receipt([
+        toBuffer((result.status ? 0x1 : 0x0) || result.root),
+        toBuffer(result.cumulativeGasUsed),
+        toBuffer(result.logsBloom),
+        result.logs.map(Log.fromRpc)
+    ]);
 }
 
 (async function () {
-    const web3 = new Web3(process.env.ETHEREUM_NODE_URL);
+    const web3 = new Web3(process.env.ETH_NODE_URL);
+    const emitter = new web3.eth.Contract(require('./build/contracts/Emitter.json').abi, process.env.ETH_CONTRACT_ADDRESS);
+    const events = await emitter.getPastEvents('allEvents');
+
+    // Get proof
+    // https://github.com/zmitton/eth-proof/blob/master/getProof.js#L39
+    const event = events[0];
+    const targetReceipt = await web3.eth.getTransactionReceipt(event.transactionHash);
+    const block = await web3.eth.getBlock(event.blockHash);
+    const blockReceipts = await Promise.all(block.transactions.map(web3.eth.getTransactionReceipt));
+    const tree = new Tree();
+
+    await Promise.all(blockReceipts.map((receipt, index) => {
+        const path = encode(index);
+        const serializedReceipt = receiptFromWeb3(receipt).serialize();
+        return promisfy(tree.put, tree)(path, serializedReceipt);
+    }));
+  
+    const [_, __, stack] = await promisfy(tree.findPath, tree)(encode(targetReceipt.transactionIndex))
+  
+    const proof = {
+        header: Header.fromRpc(block),
+        receiptProof: Proof.fromStack(stack),
+        txIndex: targetReceipt.transactionIndex,
+    };
+
+    console.log('proof:', proof);
+
     const near = await nearlib.connect({
         nodeUrl: process.env.NEAR_NODE_URL, // 'https://rpc.nearprotocol.com',
         networkId: process.env.NEAR_NODE_NETWORK_ID,
@@ -385,153 +356,33 @@ function web3BlockToRlp(blockData) {
         }
     });
 
-    const account = new nearlib.Account(near.connection, process.env.NEAR_RELAYER_ACCOUNT_ID);
+    const account = new nearlib.Account(near.connection, process.env.NEAR_CALLER_ACCOUNT_ID);
 
-    const ethBridgeContract = new EthBridgeContract(account, process.env.NEAR_ETHBRIDGE_ACCOUNT_ID);
-    await ethBridgeContract.accessKeyInit();
+    const ethProverContract = new EthProverContract(account, process.env.NEAR_ETHPROVER_ACCOUNT_ID);
+    await ethProverContract.accessKeyInit();
 
-    let initialized = false;
+    // Will try to initialize
+    console.log('Trying to initialize...');
     try {
-        initialized = await ethBridgeContract.initialized();
+        await ethProverContract.init({
+            bridge_smart_contract: process.env.NEAR_ETHBRIDGE_ACCOUNT_ID,
+        });
+        console.log('Initialized!');
     } catch (e) {
         // I guess not
-    }
-    if (!initialized) {
-        console.log('EthBridge is not initialized, initializing...');
-        await ethBridgeContract.init({
-            validate_ethash: process.env.BRIDGE_VALIDATE_ETHASH === 'true',
-            dags_start_epoch: 0,
-            dags_merkle_roots: roots.dag_merkle_roots
-        }, new BN('1000000000000000'));
-        console.log('EthBridge initialization finished');
+        console.log('Probably already initialized', e);
     }
 
-    console.log('EthBridge check initialization...');
-    const first_root = await ethBridgeContract.dag_merkle_root({ epoch: 0 });
-    const last_root = await ethBridgeContract.dag_merkle_root({ epoch: 511 });
-    if (first_root === '0x55b891e842e58f58956a847cbbf67821' &&
-        last_root === '0x4aa6ca6ebef942d8766065b2e590fd32')
-    {
-        console.log('EthBridge initialized properly');
-    } else {
-        console.log('EthBridge initialization ERROR!');
-        return;
+    const blockNumber = process.env.NEAR_BLOCK_NUMBER;
+    const expectedBlockHash = process.env.NEAR_EXPECTED_BLOCK_HASH;
+    console.log(`Going to call the prover for block #${blockNumber} to be equal ${expectedBlockHash}`);
+    try {
+        const result = await ethProverContract.assert_ethbridge_hash({
+            block_number: blockNumber,
+            expected_block_hash: expectedBlockHash,
+        });
+        console.log(`It's ${result}!`);
+    } catch (e) {
+        console.log('The call has failed: ', e);
     }
-
-    let last_block_number = (await ethBridgeContract.last_block_number()).toNumber();
-    console.log("Contract block number is " + last_block_number);
-    if (last_block_number == 0) {
-        // Let's start bridge from current block since it is not initialized
-        last_block_number = await web3.eth.getBlockNumber();
-        console.log("Web3 block number is " + last_block_number);
-    }
-
-    const submitBlock = async (block, blockNumber) => {
-        let sleepTimer = 1;
-        const maxSleepTime = 10;
-        const sleep = async () => {
-            await new Promise((resolve, reject) => {
-                setTimeout(resolve, sleepTimer * 1000);
-            });
-            if (sleepTimer < maxSleepTime) {
-                sleepTimer += 1;
-            };
-        }
-        let ok = false;
-        for (let iters = 0; iters < 20; ++iters) {
-            try {
-                let last_block_number_onchain = (await ethBridgeContract.last_block_number()).toNumber();
-                if (last_block_number_onchain > 0 && last_block_number_onchain < blockNumber - 1) {
-                    console.log(`Sleeping ${sleepTimer} sec. The latest block on chain is ${last_block_number_onchain}, but need to submit block #${blockNumber}`);
-                    await sleep();
-                } else {
-                    ok = true;
-                    break;
-                }
-            } catch (e) {
-                console.log("Block awaiting failed :(", e);
-                await sleep();
-            }
-        }
-        if (!ok) {
-            process.exit(1);
-        }
-
-        // Check bridge state, may be changed since computation could be long
-        let timeBeforeSubmission = Date.now();
-        console.log(`Submitting block ${blockNumber} to EthBridge`);
-        const h512s = block.elements
-            .filter((_, index) => index % 2 === 0)
-            .map((element, index) => {
-                return web3.utils.padLeft(element, 64) + web3.utils.padLeft(block.elements[index*2 + 1], 64).substr(2)
-            });
-
-        const args = {
-            block_header: web3.utils.hexToBytes(block.header_rlp),
-            dag_nodes: h512s
-                .filter((_, index) => index % 2 === 0)
-                .map((element, index) => {
-                    return {
-                        dag_nodes: [element, h512s[index*2 + 1]],
-                        proof: block.merkle_proofs.slice(
-                            index * block.proof_length,
-                            (index + 1) * block.proof_length,
-                        ).map(leaf => web3.utils.padLeft(leaf, 32))
-                    };
-                }),
-        };
-
-        for (let i = 0; i < 10; ++i) {
-            try {
-                await ethBridgeContract.add_block_header(args, new BN('1000000000000000'));
-                console.log(
-                    "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
-                    "(" + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s per header)"
-                );
-                console.log(`Successfully submitted block ${blockNumber} to EthBridge`);
-                return;
-            } catch (e) {
-                // failed
-                console.log(`Sleeping 0.5sec. Failed at iteration #${i}:`, e);
-                await new Promise((resolve, reject) => {
-                    setTimeout(resolve, 500);
-                });
-            }
-        }
-
-        throw new Error("Failed to submit a block");
-    };
-
-    subscribeOnBlocksRangesFrom(web3, last_block_number, async (start, stop) => {
-        let timeBeforeProofsComputed = Date.now();
-        console.log(`Processing ${stop - start + 1} blocks from #${start} to #${stop}`);
-        for (let i = start; i <= stop; ++i) {
-            let ok = false;
-            for (let retryIter = 0; retryIter < 10; retryIter++) {
-                try {
-                    const blockRlp = web3.utils.bytesToHex(web3BlockToRlp(await web3.eth.getBlock(i)));
-                    const block = JSON.parse(await execute(`./ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`));
-                    submitBlock(block, i).catch((e) => {
-                        console.error(e);
-                        process.exit(2);
-                    })
-                    ok = true;
-                    break;
-                } catch (e) {
-                    console.log(`Sleeping 0.5sec. Failed at iteration #${retryIter}:`, e);
-                    await new Promise((resolve, reject) => {
-                        setTimeout(resolve, 500);
-                    });
-                }
-            }
-            if (!ok) {
-                console.error(`Failed to create a proof for a block #${i}`);
-                process.exit(3);
-            }
-        }
-        console.log(
-            "Proofs computation took " + Math.trunc((Date.now() - timeBeforeProofsComputed)/10)/100 + "s " +
-            "(" + Math.trunc((Date.now() - timeBeforeProofsComputed)/(stop - start + 1)/10)/100 + "s per header)"
-        );
-    });
 })()

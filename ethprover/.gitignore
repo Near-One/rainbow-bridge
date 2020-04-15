@@ -1,2 +1,4 @@
-target
-res/eth_prover.wasm
+build/
+target/
+neardev/
+.openzeppelin/

@@ -14,9 +14,9 @@ NEAR_RELAYER_ACCOUNT_ID="ethrelay-pusher"
 NEAR_ETHBRIDGE_ACCOUNT_ID="ethbridge"
 
 echo "Creating account to push blocks:"
-NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" create_account $NEAR_RELAYER_ACCOUNT_ID --masterAccount=NEAR_MASTER_ACCOUNT_ID --initialBalance 100000000 || echo "Skip creating ethbridge accout"
+NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" create_account $NEAR_RELAYER_ACCOUNT_ID --masterAccount=$NEAR_MASTER_ACCOUNT_ID --initialBalance 100000000 || echo "Skip creating ethbridge accout"
 echo "Creating account for smart contract:"
-NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" create_account $NEAR_ETHBRIDGE_ACCOUNT_ID --masterAccount=NEAR_MASTER_ACCOUNT_ID --initialBalance 100000000 || echo "Skip creating ethbridge accout"
+NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" create_account $NEAR_ETHBRIDGE_ACCOUNT_ID --masterAccount=$NEAR_MASTER_ACCOUNT_ID --initialBalance 100000000 || echo "Skip creating ethbridge accout"
 echo "Deploying smart contract:"
 NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" deploy --contractName $NEAR_ETHBRIDGE_ACCOUNT_ID --wasmFile "$DIR/../../ethbridge/res/eth_bridge.wasm" || echo "Skip deploying ethbridge smart contract"
 

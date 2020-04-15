@@ -926,9 +926,9 @@ dependencies = [
 
 [[package]]
 name = "near-bindgen"
-version = "0.3.11"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c608c649f330cfe0bf1634ccaa9108636d9bc7ced0d647b1e78524e0a5c02b3b"
+checksum = "45f4d3739f6391adb2743a2bf6574545dd14e752883509ec3a5736fd8045152a"
 dependencies = [
  "borsh",
  "near-bindgen-macros",
@@ -939,10 +939,11 @@ dependencies = [
 
 [[package]]
 name = "near-bindgen-core"
-version = "0.3.11"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c121efdec3b554a6c05b551f6c4c2099de98b04e921c561903ae026416bf7815"
+checksum = "3cfafa72d06811dd1125cdc051e42b9b5efa77b51323bf2ce2eea5e82ea043c6"
 dependencies = [
+ "Inflector",
  "proc-macro2 1.0.8",
  "quote 1.0.2",
  "syn 1.0.14",
@@ -950,24 +951,11 @@ dependencies = [
 
 [[package]]
 name = "near-bindgen-macros"
-version = "0.3.11"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c35b91e370b9b429ce128f0a07f71d0c1e908ebf63c372eb3371978c2fb46035"
+checksum = "3adebee5b3d33e85e16b4a754a41391200b174c6705f96ec3b07a504268d75aa"
 dependencies = [
  "near-bindgen-core",
- "near-bindgen-promise",
- "proc-macro2 1.0.8",
- "quote 1.0.2",
- "syn 1.0.14",
-]
-
-[[package]]
-name = "near-bindgen-promise"
-version = "0.3.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "093393e5a9bdf353133ef6479df05f0bae8a16761c5683e0198699370276215a"
-dependencies = [
- "Inflector",
  "proc-macro2 1.0.8",
  "quote 1.0.2",
  "syn 1.0.14",
@@ -1002,18 +990,18 @@ dependencies = [
 
 [[package]]
 name = "near-runtime-fees"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2703f396f86da4324073de543f970e62ab9e0622839f452fafe0775dfc96a361"
+checksum = "4eaa5f442d50ea81b176911ca6f239e6e5117847b17db4c27955d06059dbc618"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "near-vm-errors"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "810b4cc78c7451c6cbfd546dc3af13d7ea7ea4aaa37e253be12477d28fdb1c55"
+checksum = "b9e6a2d77423680ef49ff6339b4a59f7411620e7887ee916bf1fa6bb0b4d1bb3"
 dependencies = [
  "borsh",
  "near-rpc-error-macro",
@@ -1022,9 +1010,9 @@ dependencies = [
 
 [[package]]
 name = "near-vm-logic"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "968337bef99ec3d8b079050082b25b16c2b7c0a765324ed9547bbfd3a40cdd0b"
+checksum = "3f87797f20df249093ae025b97ca912e2914e6e3117484c4b0d1305f47da3ad0"
 dependencies = [
  "bs58",
  "byteorder",
