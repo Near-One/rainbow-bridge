@@ -94,23 +94,20 @@ impl EthProver {
         #[serializer(borsh)]
         expected_block_hash: H256,
     ) -> PromiseOrValue<bool> {
-        eth_bridge::block_hash_safe(
-            block_number,
-            &self.bridge_smart_contract,
-            0,
-            GAS,
-        ).then(
+        eth_bridge::block_hash_safe(block_number, &self.bridge_smart_contract, 0, GAS).then(
             remote_self::on_block_hash(expected_block_hash, &env::current_account_id(), 0, GAS)
         ).into()
     }
 
     pub fn verify_log_entry(
         &self,
-        log_index: usize,
+        log_index: u64,
         log_entry_data: Vec<u8>,
+        receipt_index: u64,
         receipt_data: Vec<u8>,
         header_data: Vec<u8>,
         proof: Vec<Vec<u8>>,
+        skip_bridge_call: bool
     ) -> bool {
         let log_entry: LogEntry = rlp::decode(log_entry_data.as_slice()).unwrap();
         let receipt: Receipt = rlp::decode(receipt_data.as_slice()).unwrap();
@@ -119,22 +116,19 @@ impl EthProver {
         // Verify block header was in the bridge
         // TODO: inter-contract call:
         //self.bridge_smart_contract.block_hashes(header.number) == header.hash;
-        eth_bridge::block_hash_safe(
-            header.number,
-            &self.bridge_smart_contract,
-            0,
-            GAS,
-        ).then(
-            remote_self::on_block_hash(header.hash.unwrap(), &env::current_account_id(), 0, GAS)
-        );
+        if !skip_bridge_call {
+            eth_bridge::block_hash_safe(header.number, &self.bridge_smart_contract, 0, GAS).then(
+                remote_self::on_block_hash(header.hash.unwrap(), &env::current_account_id(), 0, GAS)
+            );
+        }
 
         // Verify log_entry included in receipt
-        assert_eq!(receipt.logs[log_index], log_entry);
+        assert_eq!(receipt.logs[log_index as usize], log_entry);
 
         // Verify receipt included into header
         Self::verify_trie_proof(
             header.receipts_root,
-            rlp::encode(&log_index),
+            rlp::encode(&receipt_index),
             proof,
             0,
             0,

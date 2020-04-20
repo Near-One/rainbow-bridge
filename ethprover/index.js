@@ -319,6 +319,14 @@ function receiptFromWeb3(result) {
     ]);
 }
 
+function logFromWeb3(result) {
+    return new Log([
+        toBuffer(result.address),
+        result.raw.topics.map(toBuffer),
+        toBuffer(result.raw.data)
+    ]);
+}
+
 (async function () {
     const web3 = new Web3(process.env.ETH_NODE_URL);
     const emitter = new web3.eth.Contract(require('./build/contracts/Emitter.json').abi, process.env.ETH_CONTRACT_ADDRESS);
@@ -346,7 +354,10 @@ function receiptFromWeb3(result) {
         txIndex: targetReceipt.transactionIndex,
     };
 
-    console.log('proof:', proof);
+    console.log('let header_data = hex"' + proof.header.serialize().toString('hex') + '";');
+    console.log('let receipt_data = hex"' + receiptFromWeb3(blockReceipts[proof.txIndex]).serialize().toString('hex') + '";');
+    console.log('let proof = hex"' + proof.receiptProof.serialize().toString('hex') + '";');
+    console.log('let log_entry = hex"' + logFromWeb3(event).serialize().toString('hex') + '";');
 
     const near = await nearlib.connect({
         nodeUrl: process.env.NEAR_NODE_URL, // 'https://rpc.nearprotocol.com',

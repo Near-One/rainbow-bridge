@@ -1,0 +1,118 @@
+use futures::future::join_all;
+use std::panic;
+
+use crate::{DoubleNodeWithMerkleProof, EthBridge};
+use eth_types::*;
+use hex::FromHex;
+use rlp::RlpStream;
+use serde::{Deserialize, Deserializer};
+use web3::futures::Future;
+use web3::types::Block;
+
+//#[macro_use]
+//extern crate lazy_static;
+use lazy_static::lazy_static;
+
+fn catch_unwind_silent<F: FnOnce() -> R + panic::UnwindSafe, R>(f: F) -> std::thread::Result<R> {
+    let prev_hook = panic::take_hook();
+    panic::set_hook(Box::new(|_| {}));
+    let result = panic::catch_unwind(f);
+    panic::set_hook(prev_hook);
+    result
+}
+
+#[derive(Debug)]
+struct Hex(pub Vec<u8>);
+
+impl<'de> Deserialize<'de> for Hex {
+    fn deserialize<D>(deserializer: D) -> Result<Self, <D as Deserializer<'de>>::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let mut s = <String as Deserialize>::deserialize(deserializer)?;
+        if s.starts_with("0x") {
+            s = s[2..].to_string();
+        }
+        if s.len() % 2 == 1 {
+            s.insert_str(0, "0");
+        }
+        Ok(Hex(Vec::from_hex(&s).map_err(|err| {
+            serde::de::Error::custom(err.to_string())
+        })?))
+    }
+}
+
+// TESTS
+
+use near_bindgen::MockedBlockchain;
+use near_bindgen::{testing_env, VMContext};
+
+lazy_static! {
+    static ref WEB3RS: web3::Web3<web3::transports::Http> = {
+        let (eloop, transport) = web3::transports::Http::new(
+            "https://mainnet.infura.io/v3/b5f870422ee5454fb11937e947154cd2",
+        )
+        .unwrap();
+        eloop.into_remote();
+        web3::Web3::new(transport)
+    };
+}
+
+fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
+    VMContext {
+        current_account_id: "alice.near".to_string(),
+        signer_account_id: "bob.near".to_string(),
+        signer_account_pk: vec![0, 1, 2],
+        predecessor_account_id: "carol.near".to_string(),
+        input,
+        block_index: 0,
+        block_timestamp: 0,
+        account_balance: 0,
+        account_locked_balance: 0,
+        storage_usage: 0,
+        attached_deposit: 0,
+        prepaid_gas: 10u64.pow(18),
+        random_seed: vec![0, 1, 2],
+        is_view,
+        output_data_receivers: vec![],
+    }
+}
+
+#[test]
+fn add_dags_merkle_roots() {
+    testing_env!(get_context(vec![], false));
+
+    let dmr = read_roots_collection();
+    let contract = EthProver::init("ethbridge");
+
+    let log_index = 0;
+    let log_entry = hex"f89b940f5ea0a652e851678ebf77b69484bfcd31f9459bf842a000032a912636b05d31af43f00b91359ddcfddebcffa7c15470a13ba1992e10f0a00000000000000000000000000000000000000000000000000000000000000001b84000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003";
+    let receipt_index = 0;
+    let receipt_data = hex"f901a601825bb0b9010000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000200000000000000000000000000000000000000000004000000000000000000000000020000000000000000040000000000000000000000000000000000000000000000000000000000000000000f89df89b940f5ea0a652e851678ebf77b69484bfcd31f9459bf842a000032a912636b05d31af43f00b91359ddcfddebcffa7c15470a13ba1992e10f0a00000000000000000000000000000000000000000000000000000000000000001b84000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003";
+    let header_data = hex"f901f6a072a8f0d0c03e150c9fb75aac4955e046fa16e47e9ba7c8e0d8e0f99500a4ae18a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347940000000000000000000000000000000000000000a0ac6a553626a565ae605da5c2c703ea63eb318a3c3fc62eaa24e7d7dd45566ac9a088ce77ae7b5397b5d679148424f8d6c6e715feb4f5b206132f6092ad896bf23da0f11406c226b6d85d0d437a2c85592b59cb1841d17f0c2cdd6d70e413b549c2e2b9010000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000200000000000000000000000000000000000000000004000000000000000000000000020000000000000000040000000000000000000000000000000000000000000000000000000000000000000300383989680825bb0845e9da20380a00000000000000000000000000000000000000000000000000000000000000000880000000000000000";
+    let proof = hex"f901b2f901af822080b901a9f901a601825bb0b9010000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000200000000000000000000000000000000000000000004000000000000000000000000020000000000000000040000000000000000000000000000000000000000000000000000000000000000000f89df89b940f5ea0a652e851678ebf77b69484bfcd31f9459bf842a000032a912636b05d31af43f00b91359ddcfddebcffa7c15470a13ba1992e10f0a00000000000000000000000000000000000000000000000000000000000000001b84000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003";
+
+    let result = contract.verify_log_entry(
+        log_index,
+        log_entry,
+        receipt_index,
+        receipt_data,
+        header_data,
+        proof,
+        true
+    );
+
+    // log_index: u64,
+    // log_entry_data: Vec<u8>,
+    // receipt_index: u64,
+    // receipt_data: Vec<u8>,
+    // header_data: Vec<u8>,
+    // proof: Vec<Vec<u8>>,
+
+    // assert_eq!(dmr.dag_merkle_roots[0], contract.dag_merkle_root(0));
+    // assert_eq!(dmr.dag_merkle_roots[10], contract.dag_merkle_root(10));
+    // assert_eq!(dmr.dag_merkle_roots[511], contract.dag_merkle_root(511));
+
+    // let result = catch_unwind_silent(|| contract.dag_merkle_root(512));
+    // assert!(result.is_err());
+}
