@@ -6,7 +6,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 set -o errexit
 
 # Executes cleanup function at script exit.
-trap cleanup EXIT
+#trap cleanup EXIT
 
 waitport() {
     while ! nc -z localhost $1 ; do sleep 1 ; done
@@ -31,7 +31,7 @@ nearnode_running() {
 }
 
 start_nearnode() {
-    echo "ethrelay" | "$DIR/start_localnet.py" --home "$DIR/.near" --image "nearprotocol/nearcore:ethdenver"
+    echo "ethrelay" | "$DIR/start_localnet.py" --home "$HOME/.near" --image "nearprotocol/nearcore"
     waitport $nearnode_port
 }
 
@@ -39,7 +39,7 @@ if nearnode_running; then
     echo "Using existing nearnode instance"
 else
     echo "Starting our own nearnode instance"
-    rm -rf "$DIR/.near"
+    rm -rf "/Users/maksymzavershynskyi/.near"
     start_nearnode
     node_started=1
 fi
@@ -79,15 +79,16 @@ fi
 NODE_URL="http://localhost:3030"
 
 echo "Creating account for smart contract:"
-NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" create_account ethbridge --masterAccount=ethrelay --initialBalance 100000000 || echo "Skip creating ethbridge accout"
+NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$HOME/.near" --keyPath "$HOME/.near/validator_key.json" create_account ethbridge --masterAccount=ethrelay --initialBalance 100000000 || echo "Skip creating ethbridge accout"
 echo "Deploying smart contract:"
-NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$DIR/.near" --keyPath "$DIR/.near/validator_key.json" deploy --contractName ethbridge --wasmFile "$DIR/../../ethbridge/res/eth_bridge.wasm" || echo "Skip deploying ethbridge smart contract"
+NODE_ENV=local yarn run near --nodeUrl=$NODE_URL --homeDir "$HOME/.near" --keyPath "$HOME/.near/validator_key.json" deploy --contractName ethbridge --wasmFile "$DIR/../../ethbridge/res/eth_bridge.wasm" || echo "Skip deploying ethbridge smart contract"
 
-BRIDGE_VALIDATE_ETHASH=false \
-    NEAR_NODE_URL="http://localhost:3030" \
-    NEAR_NODE_NETWORK_ID=local \
-    ETHEREUM_NODE_URL="ws://localhost:$ganache_port" \
-    node "$DIR/../index.js" &
-
-# Successfully stop after 5m
-sleep 300 && kill -0 $$ && echo "Successfully worked for 5m, stopped"
+echo "Running relayer"
+#BRIDGE_VALIDATE_ETHASH=false \
+#    NEAR_NODE_URL="http://localhost:3030" \
+#    NEAR_NODE_NETWORK_ID=local \
+#    ETHEREUM_NODE_URL="ws://localhost:$ganache_port" \
+#    node "$DIR/../index.js" &
+#
+## Successfully stop after 5m
+#sleep 300 && kill -0 $$ && echo "Successfully worked for 5m, stopped"

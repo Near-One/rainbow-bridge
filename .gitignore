@@ -2,6 +2,9 @@ node_modules
 .idea
 **/.idea
 **/.near
+**/.vscode
 *.pyc
 neardev/
 ethrelay/testdir
+
+venv
