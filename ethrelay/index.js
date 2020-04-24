@@ -378,6 +378,8 @@ function web3BlockToRlp(blockData) {
 (async function () {
 
     const web3 = new Web3(process.env.ETHEREUM_NODE_URL);
+    let keyStore = new nearlib.keyStores.InMemoryKeyStore();
+    keyStore.setKey(process.env.NEAR_NODE_NETWORK_ID, )
     const near = await nearlib.connect({
         nodeUrl: process.env.NEAR_NODE_URL, // 'https://rpc.nearprotocol.com',
         networkId: process.env.NEAR_NODE_NETWORK_ID, // TODO: detect automatically

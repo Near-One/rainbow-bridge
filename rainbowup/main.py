@@ -6,12 +6,10 @@ import os
 import time
 import urllib
 
+from rainbowup.rainbowuplib.ganache_daemon import GanacheDaemon
+
 # Port for the local Near node
 NEAR_LOCAL_NODE_RPC_PORT = 3030
-# Port for the local Ganache instance
-GANACHE_PORT = 9545
-# Key that we use for Ganache PID in the config file.
-GANACHE_PID_KEY = 'ganache_pid'
 
 class RainbowupArgParser(object):
 
@@ -77,7 +75,7 @@ Run rainbowup <command> --help to see help for specific command.
     # Try connecting to the Near node.
     def _is_near_node_running(self):
         url = urllib.parse.urlparse(self._node_url())
-        p = subprocess.Popen(['nc', '-z', url.netloc, str(url.port)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(['nc', '-z', url.hostname, str(url.port)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         p.communicate()
         return p.returncode == 0
 
@@ -90,14 +88,14 @@ Run rainbowup <command> --help to see help for specific command.
     # Wait for the operation to return true.
     def _wait(self, f, max_time = 60, delta = 5):
         for i in range(0, max_time + delta, delta):
-            if f:
+            if f():
                 return
             else:
                 if i != max_time:
                     time.sleep(delta)
-                    print("Cannot reach the node %s. Retrying in %s seconds", self._node_url(), delta)
+                    print("Retrying in %s seconds" % delta)
                 else:
-                    print("Cannot reach the node %s after %s seconds", self._node_url(), max_time)
+                    print("Failed to wait after %s seconds" % max_time)
                     exit(1)
 
     # Account id in Near blockchain that can be used by the bridge.
@@ -108,31 +106,33 @@ Run rainbowup <command> --help to see help for specific command.
         else:
             return 'ethbridge'
 
-    # Read value from .rainbowup/config.json
-    def _read_config_kv(self, key):
+    def _read_config(self):
         fp = os.path.join(self.args.home, 'config.json')
         if os.path.exists(fp):
-            return json.load(fp)[key]
+            with open(fp, 'r') as f:
+                return json.load(f)
+        return dict()
+
+    def _write_config(self, config):
+        fp = os.path.join(self.args.home, 'config.json')
+        with open(fp, 'w+') as f:
+            return json.dump(config, f)
+
+    # Read value from .rainbowup/config.json
+    def _read_config_kv(self, key):
+        return self._read_config().get(key)
 
     # Write key value to .rainbowup/config.json
     def _write_config_kv(self, key, value):
-        fp = os.path.join(self.args.home, 'config.json')
-        config = dict()
-        if os.path.exists(fp):
-             config = json.load(fp)
-        if value is None:
-            config.pop(key)
-        else:
-            config[key] = value
-        json.dump(fp, config)
+        config = self._read_config()
+        config[key] = value
+        self._write_config(config)
 
+    # Remove key value from .rainbowup/config.json
     def _remove_config_kv(self, key):
-        fp = os.path.join(self.args.home, 'config.json')
-        config = dict()
-        if os.path.exists(fp):
-            config = json.load(fp)
+        config = self._read_config()
         config.pop(key)
-        json.dump(fp, config)
+        self._write_config(config)
 
     def prepare(self):
         # Compile Eth Bridge contract
@@ -145,12 +145,12 @@ Run rainbowup <command> --help to see help for specific command.
         # Install EthRelay dependencies
         subprocess.check_output(['yarn'], cwd=os.path.join(self.args.source, 'ethrelay'))
         # Build ethashproof module
-        subprocess.check_output(['./build.sh'], cwd=os.path.join(self.args.source, 'ethrelay/ethashproof'))
+        subprocess.check_output(['./build.sh'], cwd=os.path.join(self.args.source, 'ethrelay/ethashproof'), shell=True)
 
     def run(self):
         # If external node is not specified then we must start local node.
         if not self._is_external_node():
-            p = subprocess.Popen(['main.py', 'devnet'], cwd=self.args.nearup_source, stdin=subprocess.PIPE)
+            p = subprocess.Popen(['python3', 'main.py', 'devnet'], cwd=self.args.nearup_source, stdin=subprocess.PIPE)
             p.communicate(input=self._near_account_id().encode())
             if p.returncode != 0:
                 print("Failed to start the local node")
@@ -161,33 +161,19 @@ Run rainbowup <command> --help to see help for specific command.
         self._wait(self._is_near_node_running)
 
         # If Ethereum network is not specified then we need to start Ganache and wait for it.
-        if not self.arg.eth_network:
-            accounts = [
-                '--account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200,1000000000000000000000000"',
-                '--account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201,1000000000000000000000000"',
-                '--account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501202,1000000000000000000000000"',
-                '--account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501203,1000000000000000000000000"',
-                '--account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501204,1000000000000000000000000"',
-                '--account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501205,1000000000000000000000000"',
-                '--account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501206,1000000000000000000000000"',
-                '--account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501207,1000000000000000000000000"',
-                '--account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501208,1000000000000000000000000"',
-                '--account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501209,1000000000000000000000000"'
-            ]
-            p = subprocess.Popen(['yarn', 'run', 'ganache-cli', '--blockTime', '12', '--gasLimit', '10000000', '-p', str(GANACHE_PORT)] + accounts, cwd=os.path.join(self.args.source, 'ethrelay'))
-            p.communicate()
-            self._write_config_kv(GANACHE_PID_KEY, str(p.pid))
+        if not self.args.eth_network:
+            d = GanacheDaemon(self.args)
+            d.start()
             # We cannot really check the external Ethereum network like that so we only do it for Ganache.
-            self._wait(self._is_ganache_running())
+            self._wait(GanacheDaemon.is_running)
 
     def stop(self):
         # If external node is not specified then it must have been run locally.
         if not self._is_external_node():
-            subprocess.check_output(['main.py', 'stop'], cwd=self.args.nearup_source)
-        # If local Ganache was started then stop it.
-        if self._read_config_kv(GANACHE_PID_KEY):
-            subprocess.check_output(['kill', self._remove_config_kv(GANACHE_PID_KEY)])
-            self._remove_config_kv(GANACHE_PID_KEY)
+            subprocess.check_output(['python3', 'main.py', 'stop'], cwd=self.args.nearup_source)
+        # Stop local Ganache, if any.
+        d = GanacheDaemon(self.args)
+        d.stop()
 
     def cleanup(self):
         # Remove the data and potentially source files.
