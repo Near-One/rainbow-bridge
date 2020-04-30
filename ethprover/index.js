@@ -310,12 +310,20 @@ class EthProverContract extends Contract {
     }
 }
 
-function receiptFromWeb3(result) {
+function receiptFromWeb3(result, state_root) {
     return new Receipt([
-        toBuffer((result.status ? 0x1 : 0x0) || result.root),
+        toBuffer(result.status ? 0x1 : 0x0),
         toBuffer(result.cumulativeGasUsed),
         toBuffer(result.logsBloom),
-        result.logs.map(Log.fromRpc)
+        result.logs.map(logFromRpc)
+    ]);
+}
+
+function logFromRpc(result) {
+    return new Log([
+        toBuffer(result.address),
+        result.topics.map(toBuffer),
+        toBuffer(result.data)
     ]);
 }
 
@@ -329,8 +337,11 @@ function logFromWeb3(result) {
 
 (async function () {
     const web3 = new Web3(process.env.ETH_NODE_URL);
+    await web3.eth.getBlock('latest');
+
     const emitter = new web3.eth.Contract(require('./build/contracts/Emitter.json').abi, process.env.ETH_CONTRACT_ADDRESS);
     const events = await emitter.getPastEvents('allEvents');
+    console.log('events', events);
 
     // Get proof
     // https://github.com/zmitton/eth-proof/blob/master/getProof.js#L39
@@ -354,11 +365,21 @@ function logFromWeb3(result) {
         txIndex: targetReceipt.transactionIndex,
     };
 
-    console.log('let header_data = hex"' + proof.header.serialize().toString('hex') + '";');
-    console.log('let receipt_data = hex"' + receiptFromWeb3(blockReceipts[proof.txIndex]).serialize().toString('hex') + '";');
-    console.log('let proof = hex"' + proof.receiptProof.serialize().toString('hex') + '";');
-    console.log('let log_entry = hex"' + logFromWeb3(event).serialize().toString('hex') + '";');
+    console.log('event: ', event);
+    console.log('receipt: ', blockReceipts[proof.txIndex]);
 
+    console.log('let header_data = Vec::from_hex("' + proof.header.serialize().toString('hex') + '").unwrap();');
+    console.log('let receipt_data = Vec::from_hex("' + receiptFromWeb3(blockReceipts[proof.txIndex]).serialize().toString('hex') + '").unwrap();');
+    console.log('let log_entry = Vec::from_hex("' + logFromWeb3(event).serialize().toString('hex') + '").unwrap();');
+    console.log('let proof = vec![');
+    for (let rec of proof.receiptProof) {
+        for (let r of rec) {
+            console.log('    Vec::from_hex("' + r.toString('hex') + '").unwrap(),');
+        }
+    }
+    console.log('];');
+    console.log(proof.receiptProof);
+    
     const near = await nearlib.connect({
         nodeUrl: process.env.NEAR_NODE_URL, // 'https://rpc.nearprotocol.com',
         networkId: process.env.NEAR_NODE_NETWORK_ID,

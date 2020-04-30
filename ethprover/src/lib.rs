@@ -7,6 +7,10 @@ use near_bindgen::{env, ext_contract, near_bindgen, PromiseOrValue};
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+#[cfg(not(target_arch = "wasm32"))]
+#[cfg(test)]
+mod tests;
+
 type AccountId = String;
 const GAS: u64 = 100_000_000_000_000;
 
@@ -94,6 +98,10 @@ impl EthProver {
         #[serializer(borsh)]
         expected_block_hash: H256,
     ) -> PromiseOrValue<bool> {
+        self.bridge_smart_contract.setup(0, GAS).block_hash_safe(block_number).then(
+            env::current_account_id().setup(0, GAS).on_block_hash(expected_block_hash)
+        );
+
         eth_bridge::block_hash_safe(block_number, &self.bridge_smart_contract, 0, GAS).then(
             remote_self::on_block_hash(expected_block_hash, &env::current_account_id(), 0, GAS)
         ).into()
@@ -152,6 +160,7 @@ impl EthProver {
     /// Verification:  https://github.com/slockit/in3/wiki/Ethereum-Verification-and-MerkleProof#receipt-proof
     /// Article:       https://medium.com/@ouvrard.pierre.alain/merkle-proof-verification-for-ethereum-patricia-tree-48f29658eec
     /// Python impl:   https://gist.github.com/paouvrard/7bb947bf5de0fa0dc69d0d254d82252a
+    /// JS impl:       https://github.com/slockit/in3/blob/master/src/util/merkleProof.ts
     ///
     fn verify_trie_proof(
         expected_root: H256,
@@ -163,6 +172,7 @@ impl EthProver {
     ) -> bool {
         let node = &proof[proof_index];
         let dec = Rlp::new(&node.as_slice());
+        println!("{:}", dec);
 
         if key_index == 0 { // trie root is always a hash
             assert_eq!(near_keccak256(node), (expected_root.0).0);
