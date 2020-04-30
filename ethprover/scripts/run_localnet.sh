@@ -25,8 +25,14 @@ cleanup_ethrelay() {
 }
 
 oz compile
+
 ETH_CONTRACT_ADDRESS=$(oz deploy Emitter --kind regular --network development --silent --no-interactive)
 echo "ETH_CONTRACT_ADDRESS: $ETH_CONTRACT_ADDRESS"
+
+#oz send-tx --to $ETH_CONTRACT_ADDRESS --method "emitEvent2(uint256,uint256,uint256)" --args 1,2,3 --network development >/dev/null 2>&1 &
+#oz send-tx --to $ETH_CONTRACT_ADDRESS --method "emitEvent2(uint256,uint256,uint256)" --args 1,2,3 --network development >/dev/null 2>&1 &
+#oz send-tx --to $ETH_CONTRACT_ADDRESS --method "emitEvent2(uint256,uint256,uint256)" --args 1,2,3 --network development >/dev/null 2>&1 &
+#oz send-tx --to $ETH_CONTRACT_ADDRESS --method "emitEvent2(uint256,uint256,uint256)" --args 1,2,3 --network development >/dev/null 2>&1 &
 ETH_TX=$(oz send-tx --to $ETH_CONTRACT_ADDRESS --method "emitEvent(uint256,uint256,uint256)" --args 1,2,3 --network development)
 echo "ETH_TX: $ETH_TX"
 

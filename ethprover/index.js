@@ -337,7 +337,8 @@ function logFromWeb3(result) {
 
 (async function () {
     const web3 = new Web3(process.env.ETH_NODE_URL);
-    await web3.eth.getBlock('latest');
+    const lastBlock = await web3.eth.getBlock('latest');
+    console.log('lastBlock:', lastBlock.blockNumber);
 
     const emitter = new web3.eth.Contract(require('./build/contracts/Emitter.json').abi, process.env.ETH_CONTRACT_ADDRESS);
     const events = await emitter.getPastEvents('allEvents');
@@ -354,10 +355,15 @@ function logFromWeb3(result) {
     await Promise.all(blockReceipts.map((receipt, index) => {
         const path = encode(index);
         const serializedReceipt = receiptFromWeb3(receipt).serialize();
+        console.log('tree.put');
+        console.log('path', path);
+        console.log('serializedReceipt', serializedReceipt);
         return promisfy(tree.put, tree)(path, serializedReceipt);
     }));
   
-    const [_, __, stack] = await promisfy(tree.findPath, tree)(encode(targetReceipt.transactionIndex))
+    const [_, __, stack] = await promisfy(tree.findPath, tree)(encode(targetReceipt.transactionIndex));
+
+    console.log('stack', stack);
   
     const proof = {
         header: Header.fromRpc(block),
