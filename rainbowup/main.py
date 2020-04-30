@@ -53,6 +53,7 @@ Run rainbowup <command> --help to see help for specific command.
             self.args.source = os.path.join(self.args.home, "source")
         if not os.path.exists(self.args.source):
             subprocess.check_output(['git', 'clone', 'https://github.com/nearprotocol/near-bridge/', self.args.source])
+            subprocess.check_output(['git', 'checkout', 'rainbowbridgeup'], cwd=os.path.join(self.args.source, 'near-bridge'))
             print('Downloaded source of the Rainbow Bridge into %s' % self.args.source)
             subprocess.check_output(['git', 'submodule', 'update', '--init', '--recursive'], cwd=self.args.source)
             print('Downloaded source submodules')
