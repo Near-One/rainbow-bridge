@@ -73,7 +73,7 @@ impl EthProver {
     fn concat_nibbles(a: Vec<u8>) -> Vec<u8> {
         a.iter().enumerate().filter(|(i, _)| i % 2 == 0).zip(
             a.iter().enumerate().filter(|(i, _)| i % 2 == 1)
-        ).map(|((_, x), (_, y))| x * 16 + y).collect()
+        ).map(|((_, x), (_, y))| (x << 4) | y).collect()
     }
 
     /// Implementation of the callback when the EthBridge returns data.
@@ -140,8 +140,6 @@ impl EthProver {
             header.receipts_root,
             rlp::encode(&receipt_index),
             proof,
-            0,
-            0,
             receipt_data
         )
     }
@@ -151,10 +149,6 @@ impl EthProver {
     /// @param expected_root is the expected root of the current proof node.
     /// @param key is the key for which we are proving the value.
     /// @param proof is the proof the key nibbles as path.
-    /// @param key_index keeps track of the index while stepping through
-    ///     the key nibbles.
-    /// @param proof_index keeps track of the index while stepping through
-    ///     the proof nodes.
     /// @param expected_value is the key's value expected to be stored in
     ///     the last node (leaf node) of the proof.
     ///
@@ -165,6 +159,22 @@ impl EthProver {
     /// JS impl:       https://github.com/slockit/in3/blob/master/src/util/merkleProof.ts
     ///
     fn verify_trie_proof(
+        expected_root: H256,
+        key: Vec<u8>,
+        proof: Vec<Vec<u8>>,
+        expected_value: Vec<u8>
+    ) -> bool {
+        Self::_verify_trie_proof(
+            expected_root,
+            key,
+            proof,
+            0,
+            0,
+            expected_value
+        )
+    }
+
+    fn _verify_trie_proof(
         expected_root: H256,
         key: Vec<u8>,
         proof: Vec<Vec<u8>>,
@@ -187,16 +197,16 @@ impl EthProver {
 
         if dec.iter().count() == 17 {
             // branch node
-            if key_index >= key.len() {
+            if key_index == key.len() {
                 if dec.at(dec.iter().count() - 1).unwrap().as_val::<Vec<u8>>().unwrap() == expected_value {
                     // value stored in the branch
                     return true;
                 }
             }
-            else {
+            else if key_index < key.len() {
                 let new_expected_root = dec.at(key[key_index] as usize).unwrap().as_val::<Vec<u8>>().unwrap();
                 if new_expected_root.len() != 0 {
-                    return Self::verify_trie_proof(
+                    return Self::_verify_trie_proof(
                         new_expected_root.into(),
                         key,
                         proof,
@@ -205,6 +215,8 @@ impl EthProver {
                         expected_value
                     );
                 }
+            } else {
+                panic!("This should not be reached if the proof has the correct format");
             }
         }
         else if dec.iter().count() == 2 {
@@ -233,7 +245,7 @@ impl EthProver {
                 let extension_length = shared_nibbles.len();
                 if Self::concat_nibbles(shared_nibbles.to_vec()) == &key[key_index..key_index + extension_length] {
                     let new_expected_root = dec.at(1).unwrap().as_val::<Vec<u8>>().unwrap();
-                    return Self::verify_trie_proof(
+                    return Self::_verify_trie_proof(
                         new_expected_root.into(),
                         key,
                         proof,
@@ -249,7 +261,7 @@ impl EthProver {
                 let extension_length = 1 + shared_nibbles.len();
                 if nibble == key[key_index] && Self::concat_nibbles(shared_nibbles.to_vec()) == &key[key_index + 1..key_index + extension_length] {
                     let new_expected_root = dec.at(1).unwrap().as_val::<Vec<u8>>().unwrap();
-                    return Self::verify_trie_proof(
+                    return Self::_verify_trie_proof(
                         new_expected_root.into(),
                         key,
                         proof,
