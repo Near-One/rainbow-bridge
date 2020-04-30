@@ -400,8 +400,11 @@ function web3BlockToRlp(blockData) {
             process.env.BRIDGE_ACC_ID,
             bridgeKeyPair.publicKey,
             (new BN(10)).pow(new BN(27)));
+    } catch (e) {
+    }
+    try {
         let data = fs.readFileSync(process.env.BRIDGE_CONTRACT_PATH);
-        await masterAccount.deployContract(data);
+        await ethBridgeAccount.deployContract(data);
     } catch (e) {
     }
     const ethBridgeContract = new EthBridgeContract(ethBridgeAccount, process.env.BRIDGE_ACC_ID);

@@ -44,7 +44,7 @@ Run rainbowup <command> --help to see help for specific command.
         parser.add_argument('--near_network_id', help='If specified, will use this network id instead of `local`.',
                             default='local')
         parser.add_argument('--near_master_key_path', help='If specified, will use this key and the corresponding '
-                                                    'account id to create accounts needed for the bridge.')
+                                                      'account id to create accounts needed for the bridge.')
         self.args = parser.parse_args()
         self.args.home = os.path.abspath(self.args.home)
         os.makedirs(self.args.home, exist_ok=True)
@@ -53,7 +53,7 @@ Run rainbowup <command> --help to see help for specific command.
             self.args.source = os.path.join(self.args.home, "source")
         if not os.path.exists(self.args.source):
             subprocess.check_output(['git', 'clone', 'https://github.com/nearprotocol/near-bridge/', self.args.source])
-            subprocess.check_output(['git', 'checkout', 'rainbowbridgeup'], cwd=os.path.join(self.args.source, 'near-bridge'))
+            subprocess.check_output(['git', 'checkout', 'rainbowbridgeup'], cwd=self.args.source)
             print('Downloaded source of the Rainbow Bridge into %s' % self.args.source)
             subprocess.check_output(['git', 'submodule', 'update', '--init', '--recursive'], cwd=self.args.source)
             print('Downloaded source submodules')
@@ -65,7 +65,7 @@ Run rainbowup <command> --help to see help for specific command.
         if not self.args.nearcore_source:
             self.args.nearcore_source = os.path.join(self.args.home, "nearcore")
         if not os.path.exists(self.args.nearcore_source):
-            subprocess.check_output(['git', 'clone', 'https://github.com/near/nearcore', self.args.nearcore_source])
+            subprocess.check_output(['git', 'clone', 'https://github.com/nearprotocol/nearcore', self.args.nearcore_source])
             print('Downloaded source of the nearcore into %s' % self.args.nearcore_source)
 
         if self.args.near_master_key_path:
@@ -161,12 +161,16 @@ Run rainbowup <command> --help to see help for specific command.
 
     def prepare(self):
         # Compile source of nearcore
-        subprocess.check_output(['cargo', 'build', '--package', 'neard', '--bin', 'near'], cwd=self.args.nearcore_source)
+        subprocess.check_output(['cargo', 'build', '--package', 'neard', '--bin', 'neard'], cwd=self.args.nearcore_source)
         print("Compiled source of nearcore")
 
         # Compile Eth Bridge contract
         subprocess.check_output(['./build.sh'], cwd=os.path.join(self.args.source, 'ethbridge'))
-        print('Compiled Eth Bridge contract')
+        print('Compiled EthBridge contract')
+
+        # Compile Eth Prover contract
+        subprocess.check_output(['./build.sh'], cwd=os.path.join(self.args.source, 'ethprover'))
+        print('Compiled EthProver contract')
 
         # Copy compiled contract to the home directory
         subprocess.check_output(['cp', os.path.join(self.args.source, 'ethbridge/res/eth_bridge.wasm'), self.args.home])
@@ -178,7 +182,7 @@ Run rainbowup <command> --help to see help for specific command.
 
     def run(self):
         # If external node is not specified then we must start local node.
-        if not self._is_external_node():
+        if not self._is_external_node() and not self._is_near_node_running():
             p = subprocess.Popen(['python3', 'main.py', 'localnet', '--num-nodes', '1', '--home', self._near_datafolder(), '--binary-path', os.path.join(self.args.nearcore_source, 'target/debug')], cwd=self._nearup_source(), stdin=subprocess.PIPE)
             p.communicate()
             if p.returncode != 0:
@@ -206,9 +210,7 @@ Run rainbowup <command> --help to see help for specific command.
                            bridge_sk=self._near_master_sk(),  # Use the same key for now.
                            )
         d.run()
-        input("Press Enter to terminate...")
-        if not self._is_external_node():
-            subprocess.check_output(['python3', 'main.py', 'localnet', '--stop'], cwd=self._nearup_source())
+        input("Press Enter to terminate the relay...")
 
     def cleanup(self):
         if not self._is_external_node() and self._is_near_node_running():
