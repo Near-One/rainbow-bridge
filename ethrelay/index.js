@@ -4,6 +4,7 @@ const BN = require('bn.js');
 const exec = require('child_process').exec;
 const blockFromRpc = require('ethereumjs-block/from-rpc')
 const utils = require('ethereumjs-util');
+const fs = require('fs');
 
 const roots = require('./dag_merkle_roots.json');
 
@@ -379,18 +380,31 @@ function web3BlockToRlp(blockData) {
 
     const web3 = new Web3(process.env.ETHEREUM_NODE_URL);
     let keyStore = new nearlib.keyStores.InMemoryKeyStore();
-    keyStore.setKey(process.env.NEAR_NODE_NETWORK_ID, )
+    await keyStore.setKey(process.env.NEAR_NODE_NETWORK_ID, process.env.MASTER_ACC_ID, nearlib.KeyPair.fromString(process.env.MASTER_SK));
+    await keyStore.setKey(process.env.NEAR_NODE_NETWORK_ID, process.env.BRIDGE_ACC_ID, nearlib.KeyPair.fromString(process.env.BRIDGE_SK));
     const near = await nearlib.connect({
         nodeUrl: process.env.NEAR_NODE_URL, // 'https://rpc.nearprotocol.com',
         networkId: process.env.NEAR_NODE_NETWORK_ID, // TODO: detect automatically
+        masterAccount: process.env.MASTER_ACC_ID,
         deps: {
-            keyStore: new nearlib.keyStores.UnencryptedFileSystemKeyStore(__dirname + '/neardev')
+            keyStore: keyStore
         }
     });
 
-    const account = new nearlib.Account(near.connection, process.env.NEAR_RELAYER_ACCOUNT_ID);
-
-    const ethBridgeContract = new EthBridgeContract(account, process.env.NEAR_ETHBRIDGE_ACCOUNT_ID);
+    const masterAccount = new nearlib.Account(near.connection, process.env.MASTER_ACC_ID);
+    // Use master account to create account for EthBridge
+    let bridgeKeyPair = nearlib.KeyPair.fromString(process.env.BRIDGE_SK);
+    let ethBridgeAccount = new nearlib.Account(near.connection, process.env.BRIDGE_ACC_ID);
+    try {
+        await masterAccount.createAccount(
+            process.env.BRIDGE_ACC_ID,
+            bridgeKeyPair.publicKey,
+            (new BN(10)).pow(new BN(27)));
+        let data = fs.readFileSync(process.env.BRIDGE_CONTRACT_PATH);
+        await masterAccount.deployContract(data);
+    } catch (e) {
+    }
+    const ethBridgeContract = new EthBridgeContract(ethBridgeAccount, process.env.BRIDGE_ACC_ID);
     await ethBridgeContract.accessKeyInit();
 
     let initialized = false;
