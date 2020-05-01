@@ -7,7 +7,7 @@ from rainbowup.rainbowuplib.daemon import Daemon
 GANACHE_PORT = 9545
 
 
-class GanacheDaemon:
+class GanacheService:
     def __init__(self, args):
         self.args = args
 

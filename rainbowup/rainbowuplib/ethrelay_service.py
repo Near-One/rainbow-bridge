@@ -3,7 +3,7 @@ import subprocess
 from rainbowup.rainbowuplib.daemon import Daemon
 
 
-class EthRelayDaemon:
+class EthRelayService:
     def __init__(self, args,
                  eth_node_url,
                  near_node_url,

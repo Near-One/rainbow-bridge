@@ -6,8 +6,8 @@ import os
 import time
 import urllib
 
-from rainbowup.rainbowuplib.ganache_daemon import GanacheDaemon
-from rainbowup.rainbowuplib.ethrelay_daemon import EthRelayDaemon
+from rainbowup.rainbowuplib.ganache_service import GanacheService
+from rainbowup.rainbowuplib.ethrelay_service import EthRelayService
 
 # Port for the local Near node
 NEAR_LOCAL_NODE_RPC_PORT = 3030
@@ -108,7 +108,7 @@ Run rainbowup <command> --help to see help for specific command.
 
     def _eth_node_url(self):
         if not self.args.eth_network:
-            return GanacheDaemon.url()
+            return GanacheService.url()
         elif self.args.eth_network == 'ropsten':
             return "wss://ropsten.infura.io/ws/v3/b5f870422ee5454fb11937e947154cd2"
         elif self.args.eth_network == 'mainnet':
@@ -180,7 +180,7 @@ Run rainbowup <command> --help to see help for specific command.
         # Build ethashproof module
         subprocess.check_output(['./build.sh'], cwd=os.path.join(self.args.source, 'ethrelay/ethashproof'), shell=True)
 
-    def run(self):
+    def _run(self):
         # If external node is not specified then we must start local node.
         if not self._is_external_node() and not self._is_near_node_running():
             p = subprocess.Popen(['python3', 'main.py', 'localnet', '--num-nodes', '1', '--home', self._near_datafolder(), '--binary-path', os.path.join(self.args.nearcore_source, 'target/debug')], cwd=self._nearup_source(), stdin=subprocess.PIPE)
@@ -195,13 +195,13 @@ Run rainbowup <command> --help to see help for specific command.
 
         # If Ethereum network is not specified then we need to start Ganache and wait for it.
         if not self.args.eth_network:
-            d = GanacheDaemon(self.args)
+            d = GanacheService(self.args)
             d.run()
             # We cannot really check the external Ethereum network like that so we only do it for Ganache.
-            self._wait(GanacheDaemon.is_running)
+            self._wait(GanacheService.is_running)
 
         # Start EthRelay daemon.
-        d = EthRelayDaemon(self.args,
+        d = EthRelayService(self.args,
                            eth_node_url=self._eth_node_url(),
                            near_node_url=self._near_node_url(),
                            master_acc_id=self._near_master_account_id(),
@@ -210,6 +210,9 @@ Run rainbowup <command> --help to see help for specific command.
                            bridge_sk=self._near_master_sk(),  # Use the same key for now.
                            )
         d.run()
+
+    def run(self):
+        self._run()
         input("Press Enter to terminate the relay...")
 
     def cleanup(self):
@@ -221,6 +224,9 @@ Run rainbowup <command> --help to see help for specific command.
     def test(self):
         # Run tests on the eth bridge contract
         subprocess.check_output(['./test.sh'], cwd=os.path.join(self.args.source, 'ethbridge'))
+        # Start up the bridge
+        self._run()
+        # TODO: Call EthProver tests.
 
 
 if __name__ == '__main__':
