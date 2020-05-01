@@ -336,7 +336,7 @@ function logFromWeb3(result) {
 }
 
 (async function () {
-    const web3 = new Web3(process.env.ETH_NODE_URL);
+    const web3 = new Web3(process.env.ETHEREUM_NODE_URL);
     const lastBlock = await web3.eth.getBlock('latest');
     console.log('lastBlock:', lastBlock.blockNumber);
 

@@ -1,6 +1,5 @@
 import os
 import subprocess
-from rainbowup.rainbowuplib.daemon import Daemon
 
 
 class EthRelayService:

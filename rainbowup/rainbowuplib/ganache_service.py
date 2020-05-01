@@ -1,7 +1,6 @@
 import os
 import subprocess
 import time
-from rainbowup.rainbowuplib.daemon import Daemon
 
 # Port for the local Ganache instance
 GANACHE_PORT = 9545
