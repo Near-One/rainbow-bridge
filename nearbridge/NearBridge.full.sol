@@ -370,6 +370,7 @@ library Borsh {
     function decodeBytes32(Data memory data) internal pure shift(data, 32) returns(byte[32] memory value) {
         bytes memory raw = data.raw;
         uint256 offset = data.offset;
+        // solium-disable-next-line security/no-inline-assembly
         assembly {
             mstore(value, mload(add(add(raw, 32), offset)))
         }
@@ -378,6 +379,7 @@ library Borsh {
     function decodeBytes64(Data memory data) internal pure shift(data, 64) returns(byte[64] memory value) {
         bytes memory raw = data.raw;
         uint256 offset = data.offset;
+        // solium-disable-next-line security/no-inline-assembly
         assembly {
             mstore(value, mload(add(add(raw, 32), offset)))
             mstore(add(value, 32), mload(add(add(raw, 64), offset)))
@@ -387,6 +389,7 @@ library Borsh {
     function decodeBytes65(Data memory data) internal pure shift(data, 65) returns(byte[65] memory value) {
         bytes memory raw = data.raw;
         uint256 offset = data.offset;
+        // solium-disable-next-line security/no-inline-assembly
         assembly {
             mstore(value, mload(add(add(raw, 32), offset)))
             mstore(add(value, 32), mload(add(add(raw, 64), offset)))
@@ -513,7 +516,11 @@ library NearDecoder {
         ExecutionOutcomeWithId outcome_with_id;
     }
 
-    function decodeExecutionOutcomeWithIdAndProof(Borsh.Data memory data) internal pure returns(ExecutionOutcomeWithIdAndProof memory outcome) {
+    function decodeExecutionOutcomeWithIdAndProof(Borsh.Data memory data)
+        internal
+        pure
+        returns(ExecutionOutcomeWithIdAndProof memory outcome)
+    {
         outcome.proof = data.decodeMerklePath();
         outcome.block_hash = data.decodeBytes32();
         outcome.outcome_with_id = data.decodeExecutionOutcomeWithId();
@@ -523,7 +530,7 @@ library NearDecoder {
 // File: contracts/NearBridge.sol
 
 pragma solidity ^0.5.0;
-pragma experimental ABIEncoderV2;
+pragma experimental ABIEncoderV2; // solium-disable-line no-experimental
 
 
 

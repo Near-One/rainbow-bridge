@@ -17,7 +17,7 @@ cleanup() {
     if [ -n "$node_started" ]; then
         docker kill nearcore watchtower > /dev/null &
     fi
-    
+
     # Kill the ganache instance that we started (if we started one and if it's still running).
     if [ -n "$ganache_pid" ] && ps -p $ganache_pid > /dev/null; then
         kill $ganache_pid
