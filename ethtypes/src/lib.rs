@@ -243,7 +243,7 @@ pub struct LogEntry {
 
 #[derive(Debug, Clone, PartialEq, Eq, RlpEncodableDerive, RlpDecodableDerive)]
 pub struct Receipt {
-    pub state_root: H256,
+    pub status: bool,
     pub gas_used: U256,
 	pub log_bloom: Bloom,
 	pub logs: Vec<LogEntry>,

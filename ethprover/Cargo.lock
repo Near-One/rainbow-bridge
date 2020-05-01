@@ -330,6 +330,7 @@ version = "0.1.0"
 dependencies = [
  "borsh",
  "eth-types",
+ "hex",
  "lazy_static",
  "near-bindgen",
  "rlp",
@@ -567,6 +568,12 @@ checksum = "eff2656d88f158ce120947499e971d743c05dbcbed62e5bd2f38f1698bbc3772"
 dependencies = [
  "libc",
 ]
+
+[[package]]
+name = "hex"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "644f9158b2f133fd50f5fb3242878846d9eb792e445c893805ff0e3824006e35"
 
 [[package]]
 name = "http"

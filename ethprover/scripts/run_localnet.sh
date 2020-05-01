@@ -9,11 +9,32 @@ source $DIR/../../scripts/start_nearcore.sh
 set -o errexit
 
 start_ganache_if_needed
-start_nearcore_if_needed
+#start_nearcore_if_needed
+$DIR/../../ethrelay/scripts/run_ganache_to_localnet.sh &
+ethrelay_pid=$!
+sleep 10
+
+# Executes cleanup function at script exit.
+trap_add cleanup_ethrelay EXIT
+
+cleanup_ethrelay() {
+    # Kill the ganache instance that we started (if we started one and if it's still running).
+    if [ -n "$ethrelay_pid" ] && ps -p $ethrelay_pid > /dev/null; then
+        kill $ethrelay_pid
+    fi
+}
 
 oz compile
+
 ETH_CONTRACT_ADDRESS=$(oz deploy Emitter --kind regular --network development --silent --no-interactive)
-EXH_TX=$(oz send-tx --to $ETH_CONTRACT_ADDRESS --method "emitEvent(uint256,uint256,uint256)" --args 1,2,3 --network development)
+echo "ETH_CONTRACT_ADDRESS: $ETH_CONTRACT_ADDRESS"
+
+#oz send-tx --to $ETH_CONTRACT_ADDRESS --method "emitEvent2(uint256,uint256,uint256)" --args 1,2,3 --network development >/dev/null 2>&1 &
+#oz send-tx --to $ETH_CONTRACT_ADDRESS --method "emitEvent2(uint256,uint256,uint256)" --args 1,2,3 --network development >/dev/null 2>&1 &
+#oz send-tx --to $ETH_CONTRACT_ADDRESS --method "emitEvent2(uint256,uint256,uint256)" --args 1,2,3 --network development >/dev/null 2>&1 &
+#oz send-tx --to $ETH_CONTRACT_ADDRESS --method "emitEvent2(uint256,uint256,uint256)" --args 1,2,3 --network development >/dev/null 2>&1 &
+ETH_TX=$(oz send-tx --to $ETH_CONTRACT_ADDRESS --method "emitEvent(uint256,uint256,uint256)" --args 1,2,3 --network development)
+echo "ETH_TX: $ETH_TX"
 
 $DIR/../build.sh
 

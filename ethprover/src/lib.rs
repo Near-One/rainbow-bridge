@@ -7,6 +7,10 @@ use near_bindgen::{env, ext_contract, near_bindgen, PromiseOrValue};
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+#[cfg(not(target_arch = "wasm32"))]
+#[cfg(test)]
+mod tests;
+
 type AccountId = String;
 const GAS: u64 = 100_000_000_000_000;
 
@@ -66,6 +70,12 @@ impl EthProver {
         a.iter().flat_map(|b| vec![b >> 4, b & 0x0F]).collect()
     }
 
+    fn concat_nibbles(a: Vec<u8>) -> Vec<u8> {
+        a.iter().enumerate().filter(|(i, _)| i % 2 == 0).zip(
+            a.iter().enumerate().filter(|(i, _)| i % 2 == 1)
+        ).map(|((_, x), (_, y))| (x << 4) | y).collect()
+    }
+
     /// Implementation of the callback when the EthBridge returns data.
     /// This method can only be called by the EthProver contract itself (e.g. as callback).
     /// - `block_hash` is the actual data from the EthBridge call
@@ -94,23 +104,20 @@ impl EthProver {
         #[serializer(borsh)]
         expected_block_hash: H256,
     ) -> PromiseOrValue<bool> {
-        eth_bridge::block_hash_safe(
-            block_number,
-            &self.bridge_smart_contract,
-            0,
-            GAS,
-        ).then(
+        eth_bridge::block_hash_safe(block_number, &self.bridge_smart_contract, 0, GAS).then(
             remote_self::on_block_hash(expected_block_hash, &env::current_account_id(), 0, GAS)
         ).into()
     }
 
     pub fn verify_log_entry(
         &self,
-        log_index: usize,
+        log_index: u64,
         log_entry_data: Vec<u8>,
+        receipt_index: u64,
         receipt_data: Vec<u8>,
         header_data: Vec<u8>,
         proof: Vec<Vec<u8>>,
+        skip_bridge_call: bool
     ) -> bool {
         let log_entry: LogEntry = rlp::decode(log_entry_data.as_slice()).unwrap();
         let receipt: Receipt = rlp::decode(receipt_data.as_slice()).unwrap();
@@ -119,25 +126,20 @@ impl EthProver {
         // Verify block header was in the bridge
         // TODO: inter-contract call:
         //self.bridge_smart_contract.block_hashes(header.number) == header.hash;
-        eth_bridge::block_hash_safe(
-            header.number,
-            &self.bridge_smart_contract,
-            0,
-            GAS,
-        ).then(
-            remote_self::on_block_hash(header.hash.unwrap(), &env::current_account_id(), 0, GAS)
-        );
+        if !skip_bridge_call {
+            eth_bridge::block_hash_safe(header.number, &self.bridge_smart_contract, 0, GAS).then(
+                remote_self::on_block_hash(header.hash.unwrap(), &env::current_account_id(), 0, GAS)
+            );
+        }
 
         // Verify log_entry included in receipt
-        assert_eq!(receipt.logs[log_index], log_entry);
+        assert_eq!(receipt.logs[log_index as usize], log_entry);
 
         // Verify receipt included into header
         Self::verify_trie_proof(
             header.receipts_root,
-            rlp::encode(&log_index),
+            rlp::encode(&receipt_index),
             proof,
-            0,
-            0,
             receipt_data
         )
     }
@@ -147,10 +149,6 @@ impl EthProver {
     /// @param expected_root is the expected root of the current proof node.
     /// @param key is the key for which we are proving the value.
     /// @param proof is the proof the key nibbles as path.
-    /// @param key_index keeps track of the index while stepping through
-    ///     the key nibbles.
-    /// @param proof_index keeps track of the index while stepping through
-    ///     the proof nodes.
     /// @param expected_value is the key's value expected to be stored in
     ///     the last node (leaf node) of the proof.
     ///
@@ -158,8 +156,25 @@ impl EthProver {
     /// Verification:  https://github.com/slockit/in3/wiki/Ethereum-Verification-and-MerkleProof#receipt-proof
     /// Article:       https://medium.com/@ouvrard.pierre.alain/merkle-proof-verification-for-ethereum-patricia-tree-48f29658eec
     /// Python impl:   https://gist.github.com/paouvrard/7bb947bf5de0fa0dc69d0d254d82252a
+    /// JS impl:       https://github.com/slockit/in3/blob/master/src/util/merkleProof.ts
     ///
     fn verify_trie_proof(
+        expected_root: H256,
+        key: Vec<u8>,
+        proof: Vec<Vec<u8>>,
+        expected_value: Vec<u8>
+    ) -> bool {
+        Self::_verify_trie_proof(
+            expected_root,
+            key,
+            proof,
+            0,
+            0,
+            expected_value
+        )
+    }
+
+    fn _verify_trie_proof(
         expected_root: H256,
         key: Vec<u8>,
         proof: Vec<Vec<u8>>,
@@ -180,18 +195,18 @@ impl EthProver {
             assert_eq!(near_keccak256(node), (expected_root.0).0);
         }
 
-        if dec.size() == 17 {
+        if dec.iter().count() == 17 {
             // branch node
-            if key_index >= key.len() {
-                if dec.at(dec.size() - 1).unwrap().as_raw().to_vec() == expected_value {
+            if key_index == key.len() {
+                if dec.at(dec.iter().count() - 1).unwrap().as_val::<Vec<u8>>().unwrap() == expected_value {
                     // value stored in the branch
                     return true;
                 }
             }
-            else {
-                let new_expected_root = dec.at(key[key_index] as usize).unwrap().as_raw();
+            else if key_index < key.len() {
+                let new_expected_root = dec.at(key[key_index] as usize).unwrap().as_val::<Vec<u8>>().unwrap();
                 if new_expected_root.len() != 0 {
-                    return Self::verify_trie_proof(
+                    return Self::_verify_trie_proof(
                         new_expected_root.into(),
                         key,
                         proof,
@@ -200,25 +215,27 @@ impl EthProver {
                         expected_value
                     );
                 }
+            } else {
+                panic!("This should not be reached if the proof has the correct format");
             }
         }
-        else if dec.size() == 2 {
+        else if dec.iter().count() == 2 {
             // leaf or extension node
             // get prefix and optional nibble from the first byte
-            let nibbles = Self::extract_nibbles(dec.at(0).unwrap().as_raw().to_vec());
+            let nibbles = Self::extract_nibbles(dec.at(0).unwrap().as_val::<Vec<u8>>().unwrap());
             let (prefix, nibble) = (nibbles[0], nibbles[1]);
 
             if prefix == 2 {
                 // even leaf node
                 let key_end = &nibbles[2..];
-                if key_end == &key[key_index..] && expected_value == dec.at(1).unwrap().as_raw() {
+                if Self::concat_nibbles(key_end.to_vec()) == &key[key_index..] && expected_value == dec.at(1).unwrap().as_val::<Vec<u8>>().unwrap() {
                     return true;
                 }
             }
             else if prefix == 3 {
                 // odd leaf node
                 let key_end = &nibbles[2..];
-                if nibble == key[key_index] && key_end == &key[key_index + 1..] && expected_value == dec.at(1).unwrap().as_raw() {
+                if nibble == key[key_index] && Self::concat_nibbles(key_end.to_vec()) == &key[key_index + 1..] && expected_value == dec.at(1).unwrap().as_val::<Vec<u8>>().unwrap() {
                     return true;
                 }
             }
@@ -226,9 +243,9 @@ impl EthProver {
                 // even extension node
                 let shared_nibbles = &nibbles[2..];
                 let extension_length = shared_nibbles.len();
-                if shared_nibbles == &key[key_index..key_index + extension_length] {
-                    let new_expected_root = dec.at(1).unwrap().as_raw();
-                    return Self::verify_trie_proof(
+                if Self::concat_nibbles(shared_nibbles.to_vec()) == &key[key_index..key_index + extension_length] {
+                    let new_expected_root = dec.at(1).unwrap().as_val::<Vec<u8>>().unwrap();
+                    return Self::_verify_trie_proof(
                         new_expected_root.into(),
                         key,
                         proof,
@@ -242,9 +259,9 @@ impl EthProver {
                 // odd extension node
                 let shared_nibbles = &nibbles[2..];
                 let extension_length = 1 + shared_nibbles.len();
-                if nibble == key[key_index] && shared_nibbles == &key[key_index + 1..key_index + extension_length] {
-                    let new_expected_root = dec.at(1).unwrap().as_raw();
-                    return Self::verify_trie_proof(
+                if nibble == key[key_index] && Self::concat_nibbles(shared_nibbles.to_vec()) == &key[key_index + 1..key_index + extension_length] {
+                    let new_expected_root = dec.at(1).unwrap().as_val::<Vec<u8>>().unwrap();
+                    return Self::_verify_trie_proof(
                         new_expected_root.into(),
                         key,
                         proof,
@@ -257,6 +274,8 @@ impl EthProver {
             else {
                 panic!("This should not be reached if the proof has the correct format");
             }
+        } else {
+            panic!("This should not be reached if the proof has the correct format");
         }
 
         expected_value.len() == 0
