@@ -377,7 +377,6 @@ function web3BlockToRlp(blockData) {
 }
 
 (async function () {
-
     const web3 = new Web3(process.env.ETHEREUM_NODE_URL);
     let keyStore = new nearlib.keyStores.InMemoryKeyStore();
     await keyStore.setKey(process.env.NEAR_NODE_NETWORK_ID, process.env.MASTER_ACC_ID, nearlib.KeyPair.fromString(process.env.MASTER_SK));
