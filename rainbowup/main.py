@@ -5,6 +5,7 @@ import sys
 import os
 import time
 import urllib
+import urllib.parse
 
 from rainbowuplib.ganache_service import GanacheService
 from rainbowuplib.ethrelay_service import EthRelayService
