@@ -175,10 +175,10 @@ Run rainbowup <command> --help to see help for specific command.
         # Copy compiled contract to the home directory
         subprocess.check_output(['cp', os.path.join(self.args.source, 'ethbridge/res/eth_bridge.wasm'), self.args.home])
 
-        # Install EthRelay dependencies
-        subprocess.check_output(['yarn'], cwd=os.path.join(self.args.source, 'ethrelay'))
+        # Install services dependencies
+        subprocess.check_output(['yarn'], cwd=os.path.join(self.args.source, 'services'))
         # Build ethashproof module
-        subprocess.check_output(['./build.sh'], cwd=os.path.join(self.args.source, 'ethrelay/ethashproof'), shell=True)
+        subprocess.check_output(['./build.sh'], cwd=os.path.join(self.args.source, 'services/vendor/ethashproof'), shell=True)
 
     def _run(self):
         # If external node is not specified then we must start local node.

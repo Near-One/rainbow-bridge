@@ -1,31 +1,13 @@
 const Web3 = require('web3');
 const nearlib = require('nearlib');
-const BN = require('bn.js');
-const exec = require('child_process').exec;
-const utils = require('ethereumjs-util');
-const Tree = require('merkle-patricia-tree');
-const { Header, Proof, Receipt, Transaction, Log } = require('eth-object');
-const { encode, toBuffer } = require('eth-util-lite');
-const { promisfy } = require('promisfy');
 
-function execute(command, callback){
-    return new Promise(resolve => exec(command, (error, stdout, stderr) => {
-        if (error) {
-            console.log(error);
-        }
-        resolve(stdout);
-    }));
-};
+const BN = require('bn.js');
 
 function serializeField(schema, value, fieldType, writer) {
     if (fieldType === 'u8') {
         writer.write_u8(value);
     } else if (fieldType === 'u64') {
         writer.write_u64(value);
-    } else if (fieldType === 'bool') {
-        return writer.write_u8(value ? 1: 0);
-    } else if (fieldType === 'string') {
-        return writer.write_string(value);
     } else if (fieldType instanceof Array) {
         if (typeof fieldType[0] === 'number') {
             if (value.length !== fieldType[0]) {
@@ -67,8 +49,6 @@ function deserializeField(schema, fieldType, reader) {
         return reader.read_u64();
     } else if (fieldType === 'bool') {
         return !!reader.read_u8();
-    } else if (fieldType === 'string') {
-        return reader.read_string();
     } else if (fieldType instanceof Array) {
         if (typeof fieldType[0] === 'number') {
             return reader.read_fixed_array(fieldType[0]);
@@ -197,7 +177,7 @@ const signAndSendTransaction = async (accessKey, account, receiverId, actions) =
     const status = await account.connection.provider.status();
 
     const [txHash, signedTx] = await nearlib.transactions.signTransaction(
-      receiverId, ++accessKey.nonce, actions, nearlib.utils.serialize.base_decode(status.sync_info.latest_block_hash), account.connection.signer, account.accountId, account.connection.networkId
+        receiverId, ++accessKey.nonce, actions, nearlib.utils.serialize.base_decode(status.sync_info.latest_block_hash), account.connection.signer, account.accountId, account.connection.networkId
     );
     console.log("TxHash", nearlib.utils.serialize.base_encode(txHash));
 
@@ -224,19 +204,18 @@ function getBorshTransactionLastResult(txResult) {
     return txResult && Buffer.from(txResult.status.SuccessValue, 'base64');
 }
 
-class Contract {
-    constructor(borshSchema, account, contractId, options) {
+class BorshContract {
+    constructor(borshSchema, account, options) {
         this.account = account;
-        this.contractId = contractId;
         options.viewMethods.forEach((d) => {
             Object.defineProperty(this, d.methodName, {
                 writable: false,
                 enumerable: true,
                 value: async (args) => {
                     args = serialize(borshSchema, d.inputFieldType, args);
-                    const result = await this.account.connection.provider.query(`call/${this.contractId}/${d.methodName}`, nearlib.utils.serialize.base_encode(args));
+                    const result = await this.account.connection.provider.query(`call/${this.account.accountId}/${d.methodName}`, nearlib.utils.serialize.base_encode(args));
                     if (result.logs) {
-                        this.account.printLogs(contractId, result.logs);
+                        this.account.printLogs(this.account.accountId, result.logs);
                     }
                     return result.result && result.result.length > 0 && deserialize(borshSchema, d.outputFieldType, Buffer.from(result.result));
                 }
@@ -249,11 +228,11 @@ class Contract {
                 value: async (args, gas, amount) => {
                     args = serialize(borshSchema, d.inputFieldType, args);
                     try {
-                        const rawResult = await signAndSendTransaction(this.accessKey, this.account, this.contractId, [nearlib.transactions.functionCall(
-                          d.methodName,
-                          Buffer.from(args),
-                          gas || DEFAULT_FUNC_CALL_AMOUNT,
-                          amount
+                        const rawResult = await signAndSendTransaction(this.accessKey, this.account, this.account.accountId, [nearlib.transactions.functionCall(
+                            d.methodName,
+                            Buffer.from(args),
+                            gas || DEFAULT_FUNC_CALL_AMOUNT,
+                            amount
                         )]);
 
                         const result = getBorshTransactionLastResult(rawResult);
@@ -281,149 +260,6 @@ class Contract {
 const hexToBuffer = (hex) => Buffer.from(Web3.utils.hexToBytes(hex));
 const readerToHex = (len) => (reader) => Web3.utils.bytesToHex(reader.read_fixed_array(len));
 
-const borshSchema = {
-    'initInput': {kind: 'struct', fields: [
-        ['bridge_smart_contract', 'string']
-        ]},
-    'assertEthbridgeHashInput': { kind: 'struct', fields: [
-            ['block_number', 'u64'],
-            ['expected_block_hash', 'H256'],
-        ]},
-    'H256': {kind: 'function', ser: hexToBuffer, deser: readerToHex(32) },
-};
-
-class EthProverContract extends Contract {
-    constructor(account, contractId) {
-        super(borshSchema, account, contractId, {
-            viewMethods: [],
-
-            changeMethods: [{
-                methodName: "init",
-                inputFieldType: "initInput",
-                outputFieldType: null,
-            }, {
-                methodName: "assert_ethbridge_hash",
-                inputFieldType: "assertEthbridgeHashInput",
-                outputFieldType: 'bool',
-            }],
-        })
-    }
-}
-
-function receiptFromWeb3(result, state_root) {
-    return new Receipt([
-        toBuffer(result.status ? 0x1 : 0x0),
-        toBuffer(result.cumulativeGasUsed),
-        toBuffer(result.logsBloom),
-        result.logs.map(logFromRpc)
-    ]);
-}
-
-function logFromRpc(result) {
-    return new Log([
-        toBuffer(result.address),
-        result.topics.map(toBuffer),
-        toBuffer(result.data)
-    ]);
-}
-
-function logFromWeb3(result) {
-    return new Log([
-        toBuffer(result.address),
-        result.raw.topics.map(toBuffer),
-        toBuffer(result.raw.data)
-    ]);
-}
-
-(async function () {
-    const web3 = new Web3(process.env.ETHEREUM_NODE_URL);
-    const lastBlock = await web3.eth.getBlock('latest');
-    console.log('lastBlock:', lastBlock.blockNumber);
-
-    const emitter = new web3.eth.Contract(require('./build/contracts/Emitter.json').abi,
-        process.env.EMITTER_CONTRACT_ADDRESS);
-    const events = await emitter.getPastEvents('allEvents');
-    console.log('events', events);
-
-    // Get proof
-    // https://github.com/zmitton/eth-proof/blob/master/getProof.js#L39
-    const event = events[0];
-    const targetReceipt = await web3.eth.getTransactionReceipt(event.transactionHash);
-    const block = await web3.eth.getBlock(event.blockHash);
-    const blockReceipts = await Promise.all(block.transactions.map(web3.eth.getTransactionReceipt));
-    const tree = new Tree();
-
-    await Promise.all(blockReceipts.map((receipt, index) => {
-        const path = encode(index);
-        const serializedReceipt = receiptFromWeb3(receipt).serialize();
-        console.log('tree.put');
-        console.log('path', path);
-        console.log('serializedReceipt', serializedReceipt);
-        return promisfy(tree.put, tree)(path, serializedReceipt);
-    }));
-  
-    const [_, __, stack] = await promisfy(tree.findPath, tree)(encode(targetReceipt.transactionIndex));
-
-    console.log('stack', stack);
-  
-    const proof = {
-        header: Header.fromRpc(block),
-        receiptProof: Proof.fromStack(stack),
-        txIndex: targetReceipt.transactionIndex,
-    };
-
-    console.log('event: ', event);
-    console.log('receipt: ', blockReceipts[proof.txIndex]);
-
-    console.log('let header_data = Vec::from_hex("' + proof.header.serialize().toString('hex') + '").unwrap();');
-    console.log('let receipt_data = Vec::from_hex("' + receiptFromWeb3(blockReceipts[proof.txIndex]).serialize().toString('hex') + '").unwrap();');
-    console.log('let log_entry = Vec::from_hex("' + logFromWeb3(event).serialize().toString('hex') + '").unwrap();');
-    console.log('let proof = vec![');
-    for (let rec of proof.receiptProof) {
-        for (let r of rec) {
-            console.log('    Vec::from_hex("' + r.toString('hex') + '").unwrap(),');
-        }
-    }
-    console.log('];');
-    console.log(proof.receiptProof);
-    
-    const near = await nearlib.connect({
-        nodeUrl: process.env.NEAR_NODE_URL, // 'https://rpc.nearprotocol.com',
-        networkId: process.env.NEAR_NODE_NETWORK_ID,
-        deps: {
-            keyStore: new nearlib.keyStores.UnencryptedFileSystemKeyStore(__dirname + '/neardev')
-        }
-    });
-
-    const account = new nearlib.Account(near.connection, process.env.MASTER_ACC_ID);
-
-    const ethProverContract = new EthProverContract(account, process.env.PROVER_ACC_ID);
-    await ethProverContract.accessKeyInit();
-
-    // Will try to initialize
-    console.log('Trying to initialize...');
-    try {
-        await ethProverContract.init({
-            bridge_smart_contract: process.env.NEAR_ETHBRIDGE_ACCOUNT_ID,
-        });
-        console.log('Initialized!');
-    } catch (e) {
-        // I guess not
-        console.log('Probably already initialized', e);
-    }
-
-    // TODO: The follow two arguments are currently constants.
-    // Instead we should be retrieving them in the loop and feeding to the prover.
-    const blockNumber = 9591235;
-    const expectedBlockHash = '0x4825597982da98143abc4720083439ebd2e698637a2edd7565a2e198b18f17cd';
-    console.log(`Going to call the prover for block #${blockNumber} to be equal ${expectedBlockHash}`);
-    try {
-        const result = await ethProverContract.assert_ethbridge_hash({
-            block_number: blockNumber,
-            expected_block_hash: expectedBlockHash,
-        });
-        console.log(`It's ${result}!`);
-    } catch (e) {
-        console.log('The call has failed: ', e);
-    }
-})()
+exports.BorshContract = BorshContract;
+exports.hexToBuffer = hexToBuffer;
+exports.readerToHex = readerToHex;
