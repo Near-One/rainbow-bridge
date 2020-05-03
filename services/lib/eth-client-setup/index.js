@@ -24,6 +24,7 @@ class EthClientSetup {
         this.ethProverPK = nearlib.KeyPair.fromString(this.ethProverSK).publicKey;
         this.ethProverInitBalance = process.env.ETH_PROVER_INIT_BALANCE;
         this.ethProverContractPath = process.env.ETH_PROVER_CONTRACT_PATH;
+        this.validateEthash = process.env.VALIDATE_ETHASH;
 
         this.keyStore = new nearlib.keyStores.InMemoryKeyStore();
         await this.keyStore.setKey(this.nearNodeNetworkId, this.masterAccountId, nearlib.KeyPair.fromString(this.masterAccountSK));
@@ -51,7 +52,7 @@ class EthClientSetup {
         await this.verifyAccount(this.ethClientAccId);
         this.ethClientAccount = new nearlib.Account(this.near.connection, this.ethClientAccId);
         this.ethClientContract = new EthClientContract(this.ethClientAccount);
-        await this.ethClientContract.maybeInitialize(false);
+        await this.ethClientContract.maybeInitialize(this.validateEthash == 'true');
 
         await this.maybeCreateAccount(this.ethProverAccId, this.ethProverPK, this.ethProverInitBalance, this.ethProverContractPath);
         await this.maybeCreateAccount(this.ethProverAccId, this.ethClientPK, this.ethClientInitBalance, this.ethClientContractPath);

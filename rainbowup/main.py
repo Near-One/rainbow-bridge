@@ -208,6 +208,7 @@ Run rainbowup <command> --help to see help for specific command.
                            master_sk=self._near_master_sk(),
                            bridge_acc_id='ethbridge',
                            bridge_sk=self._near_master_sk(),  # Use the same key for now.
+                           validate_ethash='true' if self.args.eth_network else 'false'
                            )
         d.run()
 
