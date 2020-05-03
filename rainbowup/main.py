@@ -6,8 +6,8 @@ import os
 import time
 import urllib
 
-from rainbowup.rainbowuplib.ganache_service import GanacheService
-from rainbowup.rainbowuplib.ethrelay_service import EthRelayService
+from rainbowuplib.ganache_service import GanacheService
+from rainbowuplib.ethrelay_service import EthRelayService
 
 # Port for the local Near node
 NEAR_LOCAL_NODE_RPC_PORT = 3030
