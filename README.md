@@ -13,8 +13,9 @@ The Ethereum<>NEAR bridge is going to be implemented as mutual smart contract ba
 
 ## Projects list
 
+- **Contract Setup**: NodeJS short-running tool that performs necessary setup and initialization of the contracts;
 - **EthBridge**: Rust (WASM) smart contract for Near blockchain, Ethereum light client storing hashes of blocks
-- **EthRelay**: NodeJS application, streaming Ethereum block headers to **EthBridge** smart contract in Near blockchain.
+- **EthRelay**: NodeJS service, streaming Ethereum block headers to **EthBridge** smart contract in Near blockchain.
 - **EthProver**: Rust (WASM) smart contract for Near blockchain, helps verify log entry was included in tx receipt, which was included in block
 - **NearBridge**: Solidity smart contractfor for Ethereum blockchain, Near light client stoging hashes of blocks
 - **NearRelay**: NodeJS application, streaming Near block headers to **NearBridge** smart contract in Ethereum blockchain.

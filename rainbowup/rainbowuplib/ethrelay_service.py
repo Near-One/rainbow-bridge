@@ -1,6 +1,5 @@
 import os
 import subprocess
-from rainbowup.rainbowuplib.daemon import Daemon
 
 
 class EthRelayService:
@@ -11,6 +10,7 @@ class EthRelayService:
                  master_sk,
                  bridge_acc_id,
                  bridge_sk,
+                 validate_ethash
                  ):
         self.args = args
         self.eth_node_url = eth_node_url
@@ -19,18 +19,27 @@ class EthRelayService:
         self.master_sk = master_sk
         self.bridge_acc_id = bridge_acc_id
         self.bridge_sk = bridge_sk
+        self.validate_ethash = validate_ethash
 
     def run(self):
         env = dict(
-            ETHEREUM_NODE_URL=self.eth_node_url,
+            ETH_NODE_URL=self.eth_node_url,
             NEAR_NODE_URL=self.near_node_url,
             NEAR_NODE_NETWORK_ID=self.args.near_network_id,
             MASTER_ACC_ID=self.master_acc_id,
             MASTER_SK=self.master_sk,
-            BRIDGE_ACC_ID=self.bridge_acc_id,
-            BRIDGE_SK=self.bridge_sk,
-            BRIDGE_CONTRACT_PATH=os.path.join(self.args.source, 'ethbridge/res/eth_bridge.wasm')
+
+            ETH_CLIENT_ACC_ID=self.bridge_acc_id,
+            ETH_CLIENT_SK=self.bridge_sk,
+            ETH_CLIENT_INIT_BALANCE="1000000000000000000000000000",
+            ETH_CLIENT_CONTRACT_PATH=os.path.join(self.args.source, 'ethbridge/res/eth_bridge.wasm'),
+
+            ETH_PROVER_ACC_ID="ethprover",
+            ETH_PROVER_SK=self.bridge_sk,
+            ETH_PROVER_INIT_BALANCE="1000000000000000000000000000",
+            ETH_PROVER_CONTRACT_PATH=os.path.join(self.args.source, 'ethprover/res/eth_prover.wasm'),
+            VALIDATE_ETHASH=self.validate_ethash
         )
         print(env)
         env = {**os.environ, **env}
-        subprocess.Popen(['node', 'index.js'], env=env, cwd=os.path.join(self.args.source, 'ethrelay'), shell=False)
+        subprocess.Popen(['node', 'index.js', 'start_ethrelay'], env=env, cwd=os.path.join(self.args.source, 'services'), shell=False)

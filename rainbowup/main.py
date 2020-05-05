@@ -5,9 +5,10 @@ import sys
 import os
 import time
 import urllib
+import urllib.parse
 
-from rainbowup.rainbowuplib.ganache_service import GanacheService
-from rainbowup.rainbowuplib.ethrelay_service import EthRelayService
+from rainbowuplib.ganache_service import GanacheService
+from rainbowuplib.ethrelay_service import EthRelayService
 
 # Port for the local Near node
 NEAR_LOCAL_NODE_RPC_PORT = 3030
@@ -175,10 +176,10 @@ Run rainbowup <command> --help to see help for specific command.
         # Copy compiled contract to the home directory
         subprocess.check_output(['cp', os.path.join(self.args.source, 'ethbridge/res/eth_bridge.wasm'), self.args.home])
 
-        # Install EthRelay dependencies
-        subprocess.check_output(['yarn'], cwd=os.path.join(self.args.source, 'ethrelay'))
+        # Install services dependencies
+        subprocess.check_output(['yarn'], cwd=os.path.join(self.args.source, 'services'))
         # Build ethashproof module
-        subprocess.check_output(['./build.sh'], cwd=os.path.join(self.args.source, 'ethrelay/ethashproof'), shell=True)
+        subprocess.check_output(['./build.sh'], cwd=os.path.join(self.args.source, 'services/vendor/ethashproof'), shell=True)
 
     def _run(self):
         # If external node is not specified then we must start local node.
@@ -208,6 +209,7 @@ Run rainbowup <command> --help to see help for specific command.
                            master_sk=self._near_master_sk(),
                            bridge_acc_id='ethbridge',
                            bridge_sk=self._near_master_sk(),  # Use the same key for now.
+                           validate_ethash='true' if self.args.eth_network else 'false'
                            )
         d.run()
 
