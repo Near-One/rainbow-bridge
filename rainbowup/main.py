@@ -165,21 +165,14 @@ Run rainbowup <command> --help to see help for specific command.
         subprocess.check_output(['cargo', 'build', '--package', 'neard', '--bin', 'neard'], cwd=self.args.nearcore_source)
         print("Compiled source of nearcore")
 
-        # Compile Eth Bridge contract
-        subprocess.check_output(['./build.sh'], cwd=os.path.join(self.args.source, 'ethbridge'))
-        print('Compiled EthBridge contract')
+        # Compile Rust contracts
+        subprocess.check_output(['./build_all.sh'], cwd=os.path.join(self.args.source, 'libs-rs'))
+        print('Compiled Rust contracts')
 
-        # Compile Eth Prover contract
-        subprocess.check_output(['./build.sh'], cwd=os.path.join(self.args.source, 'ethprover'))
-        print('Compiled EthProver contract')
-
-        # Copy compiled contract to the home directory
-        subprocess.check_output(['cp', os.path.join(self.args.source, 'ethbridge/res/eth_bridge.wasm'), self.args.home])
-
-        # Install services dependencies
-        subprocess.check_output(['yarn'], cwd=os.path.join(self.args.source, 'services'))
+        # Install environment dependencies
+        subprocess.check_output(['yarn'], cwd=os.path.join(self.args.source, 'environment'))
         # Build ethashproof module
-        subprocess.check_output(['./build.sh'], cwd=os.path.join(self.args.source, 'services/vendor/ethashproof'), shell=True)
+        subprocess.check_output(['./build.sh'], cwd=os.path.join(self.args.source, 'environment/vendor/ethashproof'), shell=True)
 
     def _run(self):
         # If external node is not specified then we must start local node.

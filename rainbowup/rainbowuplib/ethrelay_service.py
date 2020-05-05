@@ -32,14 +32,14 @@ class EthRelayService:
             ETH_CLIENT_ACC_ID=self.bridge_acc_id,
             ETH_CLIENT_SK=self.bridge_sk,
             ETH_CLIENT_INIT_BALANCE="1000000000000000000000000000",
-            ETH_CLIENT_CONTRACT_PATH=os.path.join(self.args.source, 'ethbridge/res/eth_bridge.wasm'),
+            ETH_CLIENT_CONTRACT_PATH=os.path.join(self.args.source, 'libs-rs/res/eth_client.wasm'),
 
             ETH_PROVER_ACC_ID="ethprover",
             ETH_PROVER_SK=self.bridge_sk,
             ETH_PROVER_INIT_BALANCE="1000000000000000000000000000",
-            ETH_PROVER_CONTRACT_PATH=os.path.join(self.args.source, 'ethprover/res/eth_prover.wasm'),
+            ETH_PROVER_CONTRACT_PATH=os.path.join(self.args.source, 'libs-rs/res/eth_prover.wasm'),
             VALIDATE_ETHASH=self.validate_ethash
         )
         print(env)
         env = {**os.environ, **env}
-        subprocess.Popen(['node', 'index.js', 'start_ethrelay'], env=env, cwd=os.path.join(self.args.source, 'services'), shell=False)
+        subprocess.Popen(['node', 'index.js', 'start_ethrelay'], env=env, cwd=os.path.join(self.args.source, 'environment'), shell=False)
