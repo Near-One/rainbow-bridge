@@ -4,7 +4,7 @@ const { Header, Proof, Receipt, Log } = require('eth-object');
 const { encode, toBuffer } = require('eth-util-lite');
 const { promisfy } = require('promisfy');
 
-function receiptFromWeb3(result, state_root) {
+function receiptFromWeb3(result) {
     return new Receipt([
         toBuffer(result.status ? 0x1 : 0x0),
         toBuffer(result.cumulativeGasUsed),
@@ -35,8 +35,8 @@ function logFromWeb3(result) {
     
     // Build a Patricia Merkle Trie
     const tree = new Tree();
-    await Promise.all(blockReceipts.map((receipt, index) => {
-        const path = encode(index);
+    await Promise.all(blockReceipts.map(receipt => {
+        const path = encode(receipt.transactionIndex);
         const serializedReceipt = receiptFromWeb3(receipt).serialize();
         return promisfy(tree.put, tree)(path, serializedReceipt);
     }));
