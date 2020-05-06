@@ -44,4 +44,14 @@ contract NearBridge is Ownable {
         header = data.decodeBlockHeaderInnerLite();
         require(data.finished(), "NearBridge: only block header should be passed");
     }
+
+    function hash(NearDecoder.LightClientBlock memory nearBlock) public view returns(bytes32) {
+        return keccak256(abi.encodePacked(
+            nearBlock.prev_block_hash,
+            keccak256(abi.encodePacked(
+                keccak256(nearBlock.inner_lite_borsh),
+                nearBlock.inner_rest_hash
+            ))
+        ));
+    }
 }

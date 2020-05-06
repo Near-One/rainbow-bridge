@@ -29,6 +29,14 @@ library Borsh {
         return data.offset == data.raw.length;
     }
 
+    function peekBytes(Data memory data, uint256 length) internal pure returns(bytes memory res) {
+        res = new bytes(length);
+        // TODO: Unroll 32-bytes blobs
+        for (uint i = 0; i < length; i++) {
+            res[i] = data.raw[data.offset + i];
+        }
+    }
+
     function decodeU8(Data memory data) internal pure shift(data, 1) returns(uint8 value) {
         value = uint8(data.raw[data.offset]);
     }
@@ -126,5 +134,27 @@ library Borsh {
             mstore(add(value, 32), mload(add(add(raw, 64), offset)))
         }
         value[64] = data.raw[data.offset + 64];
+    }
+
+    struct PublicKey {
+        uint256 x;
+        uint256 y;
+    }
+
+    function decodePublicKey(Borsh.Data memory data) internal pure returns(PublicKey memory key) {
+        key.x = decodeU256(data);
+        key.y = decodeU256(data);
+    }
+
+    struct Signature {
+        uint256 r;
+        uint256 s;
+        uint8 v;
+    }
+
+    function decodeSignature(Borsh.Data memory data) internal pure returns(Signature memory sig) {
+        sig.r = decodeU256(data);
+        sig.s = decodeU256(data);
+        sig.v = decodeU8(data);
     }
 }

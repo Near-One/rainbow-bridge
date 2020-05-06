@@ -9,6 +9,74 @@ library NearDecoder {
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
 
+    struct ValidatorStake {
+        string account_id;
+        Borsh.PublicKey public_key;
+        uint128 stake;
+    }
+
+    function decodeValidatorStake(Borsh.Data memory data) internal pure returns(ValidatorStake memory validatorStake) {
+        validatorStake.account_id = string(data.decodeBytes());
+        validatorStake.public_key = data.decodePublicKey();
+        validatorStake.stake = data.decodeU128();
+    }
+
+    struct OptionalValidatorStakes {
+        bool none;
+        ValidatorStake[] validatorStakes;
+    }
+
+    function decodeOptionalValidatorStakes(Borsh.Data memory data) internal pure returns(OptionalValidatorStakes memory stakes) {
+        stakes.none = (data.decodeU8() == 0);
+        if (!stakes.none) {
+            stakes.validatorStakes = new ValidatorStake[](data.decodeU32());
+            for (uint  i = 0; i < stakes.validatorStakes.length; i++) {
+                stakes.validatorStakes[i] = data.decodeValidatorStake();
+            }
+        }
+    }
+
+    struct OptionalSignature {
+        bool none;
+        Borsh.Signature signature;
+    }
+
+    function decodeOptionalSignature(Borsh.Data memory data) internal pure returns(OptionalSignature memory sig) {
+        sig.none = (data.decodeU8() == 0);
+        if (!sig.none) {
+            sig.signature = data.decodeSignature();
+        }
+    }
+
+    function decodeOptionalSignatures(Borsh.Data memory data) internal pure returns(OptionalSignature[] memory sigs) {
+        sigs = new OptionalSignature[](data.decodeU32());
+        for (uint  i = 0; i < sigs.length; i++) {
+            sigs[i] = data.decodeOptionalSignature();
+        }
+    }
+
+    struct LightClientBlock {
+        byte[32] prev_block_hash;
+        byte[32] next_block_inner_hash;
+        bytes inner_lite_borsh; // Additional raw member
+        BlockHeaderInnerLite inner_lite;
+        byte[32] inner_rest_hash;
+        OptionalValidatorStakes next_bps;
+        OptionalSignature[] approvals_next;
+        OptionalSignature[] approvals_after_next;
+    }
+
+    function decodeLightClientBlock(Borsh.Data memory data) internal pure returns(LightClientBlock memory header) {
+        header.prev_block_hash = data.decodeBytes32();
+        header.next_block_inner_hash = data.decodeBytes32();
+        header.inner_lite_borsh = data.peekBytes(288); // Bytes size of BlockHeaderInnerLite
+        header.inner_lite = data.decodeBlockHeaderInnerLite();
+        header.inner_rest_hash = data.decodeBytes32();
+        header.next_bps = data.decodeOptionalValidatorStakes();
+        header.approvals_next = data.decodeOptionalSignatures();
+        header.approvals_after_next = data.decodeOptionalSignatures();
+    }
+
     struct BlockHeaderInnerLite {
         uint64 height;              /// Height of this block since the genesis block (height 0).
         byte[32] epoch_id;          /// Epoch start hash of this block's epoch. Used for retrieving validator information
