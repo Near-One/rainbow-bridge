@@ -84,6 +84,16 @@ contract NearBridge is Ownable {
                 "Hash of block producers do not match"
             );
         }
+
+        // Finfish:
+        lastBlockNumber = nearBlock.inner_lite.height;
+        lastEpochId = nearBlock.inner_lite.epoch_id;
+        lastNextEpochId = nearBlock.inner_lite.next_epoch_id;
+        blockHashes[nearBlock.inner_lite.height] = hash(nearBlock);
+        emit BlockHashAdded(
+            lastBlockNumber,
+            blockHashes[lastBlockNumber]
+        );
     }
 
     function _checkValidatorSignatures(
