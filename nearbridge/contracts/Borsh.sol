@@ -37,6 +37,15 @@ library Borsh {
         }
     }
 
+    function peekKeccak256(Data memory data, uint256 length) internal pure returns(bytes32 res) {
+        bytes memory ptr = data.raw;
+        uint256 offset = data.offset;
+        // solium-disable-next-line security/no-inline-assembly
+        assembly {
+            res := keccak256(add(add(ptr, 32), offset), length)
+        }
+    }
+
     function decodeU8(Data memory data) internal pure shift(data, 1) returns(uint8 value) {
         value = uint8(data.raw[data.offset]);
     }
@@ -106,12 +115,12 @@ library Borsh {
         }
     }
 
-    function decodeBytes32(Data memory data) internal pure shift(data, 32) returns(byte[32] memory value) {
+    function decodeBytes32(Data memory data) internal pure shift(data, 32) returns(bytes32 value) {
         bytes memory raw = data.raw;
         uint256 offset = data.offset;
         // solium-disable-next-line security/no-inline-assembly
         assembly {
-            mstore(value, mload(add(add(raw, 32), offset)))
+            value := mload(add(add(raw, 32), offset))
         }
     }
 
@@ -147,14 +156,14 @@ library Borsh {
     }
 
     struct Signature {
-        uint256 r;
-        uint256 s;
+        bytes32 r;
+        bytes32 s;
         uint8 v;
     }
 
     function decodeSignature(Borsh.Data memory data) internal pure returns(Signature memory sig) {
-        sig.r = decodeU256(data);
-        sig.s = decodeU256(data);
+        sig.r = decodeBytes32(data);
+        sig.s = decodeBytes32(data);
         sig.v = decodeU8(data);
     }
 }
