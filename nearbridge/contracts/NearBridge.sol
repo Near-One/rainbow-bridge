@@ -27,17 +27,20 @@ contract NearBridge is Ownable {
         NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
         require(borsh.finished(), "NearBridge: only light client block should be passed");
 
+        bytes32 nearBlockHash = hash(nearBlock);
+        bytes32 nearBlockNextHash = nextHash(nearBlock, nearBlockHash);
+
         // 1. The height of the block is higher than the height of the current head
         require(
             nearBlock.inner_lite.height > lastBlockNumber,
-            "Height of the block is not valid"
+            "NearBridge: Height of the block is not valid"
         );
         lastBlockNumber = nearBlock.inner_lite.height;
 
         // 2. The epoch of the block is equal to the epoch_id or next_epoch_id known for the current head
         require(
             nearBlock.inner_lite.epoch_id == lastEpochId || nearBlock.inner_lite.epoch_id == lastNextEpochId,
-            "Epoch id of the block is not valid"
+            "NearBridge: Epoch id of the block is not valid"
         );
         lastEpochId = nearBlock.inner_lite.epoch_id;
         lastNextEpochId = nearBlock.inner_lite.next_epoch_id;
@@ -46,7 +49,7 @@ contract NearBridge is Ownable {
         if (nearBlock.inner_lite.epoch_id == lastNextEpochId) {
             require(
                 !nearBlock.next_bps.none,
-                "Next bps should no be None"
+                "NearBridge: Next bps should no be None"
             );
         }
 
@@ -61,27 +64,27 @@ contract NearBridge is Ownable {
         require(
             _checkValidatorSignatures(
                 totalStake,
-                nearBlock.next_block_inner_hash,
+                nearBlockHash,
                 nearBlock.approvals_next,
                 nearBlock.next_bps.validatorStakes
             ),
-            "Less than 2/3 voted for the next block"
+            "NearBridge: Less than 2/3 voted by the next block"
         );
         require(
             _checkValidatorSignatures(
                 totalStake,
-                nearBlock.next_block_inner_hash,
+                nearBlockNextHash,
                 nearBlock.approvals_after_next,
                 nearBlock.next_bps.validatorStakes
             ),
-            "Less than 2/3 voted for the block after next"
+            "NearBridge: Less than 2/3 voted by the block after next"
         );
 
         // 6. If next_bps is not none, sha256(borsh(next_bps)) corresponds to the next_bp_hash in inner_lite.
         if (!nearBlock.next_bps.none) {
             require(
                 nearBlock.next_bps.hash == nearBlock.inner_lite.next_bp_hash,
-                "Hash of block producers do not match"
+                "NearBridge: Hash of block producers do not match"
             );
         }
 
@@ -89,7 +92,7 @@ contract NearBridge is Ownable {
         lastBlockNumber = nearBlock.inner_lite.height;
         lastEpochId = nearBlock.inner_lite.epoch_id;
         lastNextEpochId = nearBlock.inner_lite.next_epoch_id;
-        blockHashes[nearBlock.inner_lite.height] = hash(nearBlock);
+        blockHashes[nearBlock.inner_lite.height] = nearBlockHash;
         emit BlockHashAdded(
             lastBlockNumber,
             blockHashes[lastBlockNumber]
@@ -120,7 +123,7 @@ contract NearBridge is Ownable {
                 ));
                 require(
                     publicKeyHashRecovered == address(uint160(bytes20(publicKeyHashComputed))),
-                    "Validator signature is not valid"
+                    "NearBridge: Validator signature is not valid"
                 );
                 votedFor = votedFor.add(validatorStakes[i].stake);
             }
@@ -128,33 +131,13 @@ contract NearBridge is Ownable {
             if (votedFor > totalStake.mul(2).div(3)) {
                 return true;
             }
-            if (votedAgainst > totalStake.mul(1).div(3)) {
+            if (votedAgainst >= totalStake.mul(1).div(3)) {
                 return false;
             }
         }
 
-        revert("Should never be reached");
+        revert("NearBridge: Should never be reached");
     }
-
-    // function addBlockHeaders(bytes[] memory blockHeaders) public onlyOwner {
-    //     uint256 largestBlockNumber = lastBlockNumber;
-    //     for (uint i = 0; i < blockHeaders.length; i++) {
-    //         NearDecoder.BlockHeaderInnerLite memory header = _readExactHeader(blockHeaders[i]);
-    //         _addBlockHash(header.height, keccak256(blockHeaders[i]));
-    //         if (header.height > largestBlockNumber) {
-    //             largestBlockNumber = header.height;
-    //         }
-    //     }
-
-    //     if (largestBlockNumber > lastBlockNumber) {
-    //         lastBlockNumber = largestBlockNumber;
-    //     }
-    // }
-
-    // function _addBlockHash(uint256 blockNumber, bytes32 hash) internal {
-    //     blockHashes[blockNumber] = hash;
-    //     emit BlockHashAdded(blockNumber, hash);
-    // }
 
     function hash(NearDecoder.LightClientBlock memory nearBlock) public view returns(bytes32) {
         return keccak256(abi.encodePacked(
@@ -163,6 +146,13 @@ contract NearBridge is Ownable {
                 nearBlock.inner_lite.hash,
                 nearBlock.inner_rest_hash
             ))
+        ));
+    }
+
+    function nextHash(NearDecoder.LightClientBlock memory nearBlock, bytes32 currentHash) public view returns(bytes32) {
+        return keccak256(abi.encodePacked(
+            currentHash,
+            nearBlock.next_block_inner_hash
         ));
     }
 }
