@@ -85,7 +85,7 @@ contract NearBridge is Ownable {
             );
         }
 
-        // Finfish:
+        // Finish:
         lastBlockNumber = nearBlock.inner_lite.height;
         lastEpochId = nearBlock.inner_lite.epoch_id;
         lastNextEpochId = nearBlock.inner_lite.next_epoch_id;
