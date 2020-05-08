@@ -8,6 +8,10 @@ function serializeField(schema, value, fieldType, writer) {
         writer.write_u8(value);
     } else if (fieldType === 'u64') {
         writer.write_u64(value);
+    } else if (fieldType === 'bool') {
+        return writer.write_u8(value ? 1: 0);
+    } else if (fieldType === 'string') {
+        return writer.write_string(value);
     } else if (fieldType instanceof Array) {
         if (typeof fieldType[0] === 'number') {
             if (value.length !== fieldType[0]) {
@@ -49,6 +53,8 @@ function deserializeField(schema, fieldType, reader) {
         return reader.read_u64();
     } else if (fieldType === 'bool') {
         return !!reader.read_u8();
+    } else if (fieldType === 'string') {
+        return reader.read_string();
     } else if (fieldType instanceof Array) {
         if (typeof fieldType[0] === 'number') {
             return reader.read_fixed_array(fieldType[0]);

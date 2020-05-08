@@ -1,5 +1,6 @@
 const {EthClientSetup} = require('./lib/eth-client-setup');
 const {EthRelay} = require('./lib/eth-relay');
+const {EthProofExtractor} = require('./lib/eth-proof-extractor');
 
 (async function () {
     switch (process.argv[2]) {
@@ -14,6 +15,12 @@ const {EthRelay} = require('./lib/eth-relay');
             const ethRelay = new EthRelay();
             ethRelay.initialize(setup.ethClientContract, process.env.ETH_NODE_URL);
             await ethRelay.run();
+            break;
+        }
+        case 'extract_proof': {
+            const ethProofExtractor = new EthProofExtractor();
+            ethProofExtractor.initialize(process.env.ETH_NODE_URL);
+            await ethProofExtractor.debugPrint(process.env.TX_HASH);
             break;
         }
         default: {

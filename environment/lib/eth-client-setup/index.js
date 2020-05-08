@@ -2,6 +2,7 @@ const nearlib = require('nearlib');
 const fs = require('fs');
 const BN = require('bn.js');
 const {EthClientContract} = require('../eth-client-contract');
+const {EthProverContract} = require('../eth-prover-contract');
 
 class EthClientSetup {
     constructor() {
@@ -56,6 +57,9 @@ class EthClientSetup {
 
         await this.maybeCreateAccount(this.ethProverAccId, this.ethProverPK, this.ethProverInitBalance, this.ethProverContractPath);
         await this.maybeCreateAccount(this.ethProverAccId, this.ethClientPK, this.ethClientInitBalance, this.ethClientContractPath);
+        this.ethProverAccount = new nearlib.Account(this.near.connection, this.ethProverAccId);
+        this.ethProverContract = new EthProverContract(this.ethProverAccount);
+        await this.ethProverContract.maybeInitialize(this.ethClientAccId);
     }
 
     // Check if account exists and if it does not creates it using master account. Also deploys the code and creates
