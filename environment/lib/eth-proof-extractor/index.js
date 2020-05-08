@@ -38,8 +38,8 @@ class EthProofExtractor {
         const blockReceipts = await Promise.all(block.transactions.map(this.web3.eth.getTransactionReceipt));
         // Build a Patricia Merkle Trie
         const tree = new Tree();
-        await Promise.all(blockReceipts.map((receipt, index) => {
-            const path = encode(index);
+        await Promise.all(blockReceipts.map(receipt => {
+            const path = encode(receipt.transactionIndex);
             const serializedReceipt = receiptFromWeb3(receipt).serialize();
             return promisfy(tree.put, tree)(path, serializedReceipt);
         }));
