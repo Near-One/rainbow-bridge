@@ -23,6 +23,9 @@ const {EthProofExtractor} = require('./lib/eth-proof-extractor');
             await ethProofExtractor.debugPrint(process.env.TX_HASH);
             break;
         }
+        case 'start_nearrelay': {
+
+        }
         default: {
             console.log(`Unrecognized command ${process.argv}`);
             process.exit(1);
