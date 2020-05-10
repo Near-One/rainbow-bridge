@@ -4,10 +4,10 @@ pragma experimental ABIEncoderV2; // solium-disable-line no-experimental
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "./NearDecoder.sol";
+import "./ED25519.sol";
 
 
 contract NearBridge is Ownable {
-
     using SafeMath for uint256;
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
@@ -21,6 +21,11 @@ contract NearBridge is Ownable {
         uint256 indexed blockNumber,
         bytes32 blockHash
     );
+
+    constructor(bytes32 firstEpochId, bytes32 firstNextEpochId) public {
+        lastEpochId = firstEpochId;
+        lastNextEpochId = firstNextEpochId;
+    }
 
     function addLightClientBlock(bytes memory data) public {
         Borsh.Data memory borsh = Borsh.from(data);
@@ -102,7 +107,7 @@ contract NearBridge is Ownable {
     function _checkValidatorSignatures(
         uint256 totalStake,
         bytes32 next_block_inner_hash,
-        NearDecoder.OptionalSignature[] memory approvals,
+        NearDecoder.OptionalED25519Signature[] memory approvals,
         NearDecoder.ValidatorStake[] memory validatorStakes
     ) internal view returns(bool) {
         uint256 votedFor = 0;
@@ -111,18 +116,12 @@ contract NearBridge is Ownable {
             if (approvals[i].none) {
                 votedAgainst = votedAgainst.add(validatorStakes[i].stake);
             } else {
-                address publicKeyHashRecovered = ecrecover(
-                    next_block_inner_hash,
-                    approvals[i].signature.v,
-                    approvals[i].signature.r,
-                    approvals[i].signature.s
-                );
-                bytes32 publicKeyHashComputed = keccak256(abi.encodePacked(
-                    validatorStakes[i].public_key.x,
-                    validatorStakes[i].public_key.y
-                ));
                 require(
-                    publicKeyHashRecovered == address(uint160(bytes20(publicKeyHashComputed))),
+                    ED25519.verify(
+                        next_block_inner_hash,
+                        validatorStakes[i].public_key.xy,
+                        approvals[i].signature.rs
+                    ),
                     "NearBridge: Validator signature is not valid"
                 );
                 votedFor = votedFor.add(validatorStakes[i].stake);

@@ -11,13 +11,13 @@ library NearDecoder {
 
     struct ValidatorStake {
         string account_id;
-        Borsh.PublicKey public_key;
+        Borsh.ED25519PublicKey public_key;
         uint128 stake;
     }
 
     function decodeValidatorStake(Borsh.Data memory data) internal pure returns(ValidatorStake memory validatorStake) {
         validatorStake.account_id = string(data.decodeBytes());
-        validatorStake.public_key = data.decodePublicKey();
+        validatorStake.public_key = data.decodeED25519PublicKey();
         validatorStake.stake = data.decodeU128();
     }
 
@@ -45,22 +45,22 @@ library NearDecoder {
         }
     }
 
-    struct OptionalSignature {
+    struct OptionalED25519Signature {
         bool none;
-        Borsh.Signature signature;
+        Borsh.ED25519Signature signature;
     }
 
-    function decodeOptionalSignature(Borsh.Data memory data) internal pure returns(OptionalSignature memory sig) {
+    function decodeOptionalED25519Signature(Borsh.Data memory data) internal pure returns(OptionalED25519Signature memory sig) {
         sig.none = (data.decodeU8() == 0);
         if (!sig.none) {
-            sig.signature = data.decodeSignature();
+            sig.signature = data.decodeED25519Signature();
         }
     }
 
-    function decodeOptionalSignatures(Borsh.Data memory data) internal pure returns(OptionalSignature[] memory sigs) {
-        sigs = new OptionalSignature[](data.decodeU32());
+    function decodeOptionalED25519Signatures(Borsh.Data memory data) internal pure returns(OptionalED25519Signature[] memory sigs) {
+        sigs = new OptionalED25519Signature[](data.decodeU32());
         for (uint  i = 0; i < sigs.length; i++) {
-            sigs[i] = data.decodeOptionalSignature();
+            sigs[i] = data.decodeOptionalED25519Signature();
         }
     }
 
@@ -70,8 +70,8 @@ library NearDecoder {
         BlockHeaderInnerLite inner_lite;
         bytes32 inner_rest_hash;
         OptionalValidatorStakes next_bps;
-        OptionalSignature[] approvals_next;
-        OptionalSignature[] approvals_after_next;
+        OptionalED25519Signature[] approvals_next;
+        OptionalED25519Signature[] approvals_after_next;
     }
 
     function decodeLightClientBlock(Borsh.Data memory data) internal pure returns(LightClientBlock memory header) {
@@ -80,8 +80,8 @@ library NearDecoder {
         header.inner_lite = data.decodeBlockHeaderInnerLite();
         header.inner_rest_hash = data.decodeBytes32();
         header.next_bps = data.decodeOptionalValidatorStakes();
-        header.approvals_next = data.decodeOptionalSignatures();
-        header.approvals_after_next = data.decodeOptionalSignatures();
+        header.approvals_next = data.decodeOptionalED25519Signatures();
+        header.approvals_after_next = data.decodeOptionalED25519Signatures();
     }
 
     struct BlockHeaderInnerLite {
@@ -97,7 +97,7 @@ library NearDecoder {
     }
 
     function decodeBlockHeaderInnerLite(Borsh.Data memory data) internal pure returns(BlockHeaderInnerLite memory header) {
-        header.hash = data.peekKeccak256(288);
+        header.hash = data.peekKeccak256(176);
         header.height = data.decodeU64();
         header.epoch_id = data.decodeBytes32();
         header.next_epoch_id = data.decodeBytes32();

@@ -375,27 +375,6 @@ library Borsh {
             mstore(value, mload(add(add(raw, 32), offset)))
         }
     }
-
-    function decodeBytes64(Data memory data) internal pure shift(data, 64) returns(byte[64] memory value) {
-        bytes memory raw = data.raw;
-        uint256 offset = data.offset;
-        // solium-disable-next-line security/no-inline-assembly
-        assembly {
-            mstore(value, mload(add(add(raw, 32), offset)))
-            mstore(add(value, 32), mload(add(add(raw, 64), offset)))
-        }
-    }
-
-    function decodeBytes65(Data memory data) internal pure shift(data, 65) returns(byte[65] memory value) {
-        bytes memory raw = data.raw;
-        uint256 offset = data.offset;
-        // solium-disable-next-line security/no-inline-assembly
-        assembly {
-            mstore(value, mload(add(add(raw, 32), offset)))
-            mstore(add(value, 32), mload(add(add(raw, 64), offset)))
-        }
-        value[64] = data.raw[data.offset + 64];
-    }
 }
 
 // File: contracts/NearDecoder.sol
