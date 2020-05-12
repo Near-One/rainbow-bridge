@@ -53,8 +53,8 @@ Run rainbowup <command> --help to see help for specific command.
         if not self.args.source:
             self.args.source = os.path.join(self.args.home, "source")
         if not os.path.exists(self.args.source):
-            subprocess.check_output(['git', 'clone', 'https://github.com/nearprotocol/near-bridge/', self.args.source])
-            subprocess.check_output(['git', 'checkout', 'rainbowbridgeup'], cwd=self.args.source)
+            subprocess.check_output(['git', 'clone', 'https://github.com/near/rainbow-bridge/', self.args.source])
+            # subprocess.check_output(['git', 'checkout', 'rainbowbridgeup'], cwd=self.args.source)
             print('Downloaded source of the Rainbow Bridge into %s' % self.args.source)
             subprocess.check_output(['git', 'submodule', 'update', '--init', '--recursive'], cwd=self.args.source)
             print('Downloaded source submodules')
@@ -165,21 +165,19 @@ Run rainbowup <command> --help to see help for specific command.
         subprocess.check_output(['cargo', 'build', '--package', 'neard', '--bin', 'neard'], cwd=self.args.nearcore_source)
         print("Compiled source of nearcore")
 
-        # Compile Eth Bridge contract
-        subprocess.check_output(['./build.sh'], cwd=os.path.join(self.args.source, 'ethbridge'))
-        print('Compiled EthBridge contract')
+        # Compile Rust contracts
+        subprocess.check_output(['./build_all.sh'], cwd=os.path.join(self.args.source, 'libs-rs'))
+        print('Compiled Rust contracts')
 
-        # Compile Eth Prover contract
-        subprocess.check_output(['./build.sh'], cwd=os.path.join(self.args.source, 'ethprover'))
-        print('Compiled EthProver contract')
+        # Build Solidity contracts
+        subprocess.check_output(['./build_all.sh'], cwd=os.path.join(self.args.source, 'libs-sol'))
+        print('Built Solidity contracts')
 
-        # Copy compiled contract to the home directory
-        subprocess.check_output(['cp', os.path.join(self.args.source, 'ethbridge/res/eth_bridge.wasm'), self.args.home])
-
-        # Install services dependencies
-        subprocess.check_output(['yarn'], cwd=os.path.join(self.args.source, 'services'))
+        # Install environment dependencies
+        subprocess.check_output(['yarn'], cwd=os.path.join(self.args.source, 'environment'))
         # Build ethashproof module
-        subprocess.check_output(['./build.sh'], cwd=os.path.join(self.args.source, 'services/vendor/ethashproof'), shell=True)
+        subprocess.check_output(['./build.sh'], cwd=os.path.join(self.args.source, 'environment/vendor/ethashproof'), shell=True)
+        print('Compiled ethashproof module')
 
     def _run(self):
         # If external node is not specified then we must start local node.
@@ -225,10 +223,41 @@ Run rainbowup <command> --help to see help for specific command.
 
     def test(self):
         # Run tests on the eth bridge contract
-        subprocess.check_output(['./test.sh'], cwd=os.path.join(self.args.source, 'ethbridge'))
+        # subprocess.check_output(['./test.sh'], cwd=os.path.join(self.args.source, 'ethbridge'))
         # Start up the bridge
         self._run()
-        # TODO: Call EthProver tests.
+
+        # Deploy emitter to Ganache.
+        stdout = subprocess.check_output(
+            ['yarn', 'run', 'oz', 'deploy', 'Emitter', '--kind', 'regular', '--network', 'development', '--silent',
+             '--no-interactive'], cwd=os.path.join(self.args.source, 'libs-sol/emitter'))
+        contract_address = next((s for s in stdout.decode("utf-8").split("\n") if s.startswith("0x")), None)
+        p = subprocess.Popen(
+            ['yarn', 'run', 'oz', 'send-tx', '--to', contract_address, '--method', '"emitEvent(uint256,uint256,uint256)"', '--args', '1,2,3', '--network', 'development', '--no-interactive'],
+            cwd=os.path.join(self.args.source, 'libs-sol/emitter'),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        p.wait()
+
+        stderr = p.stderr.read().decode().strip()
+        prefix = '- Transaction successful. Transaction hash: '
+        tx_hash = next((s for s in stderr.split("\n") if s.startswith(prefix)), None)[len(prefix):]
+        print(stderr)
+
+        env = dict(
+            ETH_NODE_URL=self._eth_node_url(),
+            TX_HASH=tx_hash
+        )
+        print(env)
+        env = {**os.environ, **env}
+
+        p = subprocess.Popen(
+            ['node', 'index.js', 'extract_proof'],
+            env=env,
+            cwd=os.path.join(self.args.source, 'environment'))
+        p.wait()
+
 
 
 if __name__ == '__main__':
