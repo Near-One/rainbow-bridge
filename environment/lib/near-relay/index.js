@@ -98,7 +98,9 @@ class NearRelay {
             setTimeout(checkNearStatus, 10000);
         };
 
-        checkNearStatus();
+        await checkNearStatus();
     }
 
 }
+
+exports.NearRelay = NearRelay;
