@@ -41,5 +41,14 @@ class EthRelayService:
             VALIDATE_ETHASH=self.validate_ethash
         )
         print(env)
-        env = {**os.environ, **env}
-        subprocess.Popen(['node', 'index.js', 'start_ethrelay'], env=env, cwd=os.path.join(self.args.source, 'environment'), shell=False)
+        if self.args.rainbow_environment_image:
+            env_list = sum(list(map(lambda k: ['-e', k + '=' + env[k]], env)), [])
+            client_contract_path = os.path.abspath(env["ETH_CLIENT_CONTRACT_PATH"])
+            prover_contract_path = os.path.abspath(env["ETH_PROVER_CONTRACT_PATH"])
+            subprocess.Popen(['docker', 'run', '--network', 'host',
+                            '-v', f'{client_contract_path}:{client_contract_path}',
+                            '-v', f'{prover_contract_path}:{prover_contract_path}',
+                            *env_list, self.args.rainbow_environment_image, 'start_ethrelay'])
+        else:
+            env = {**os.environ, **env}
+            subprocess.Popen(['node', 'index.js', 'start_ethrelay'], env=env, cwd=os.path.join(self.args.source, 'environment'), shell=False)

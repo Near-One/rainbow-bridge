@@ -46,6 +46,8 @@ Run rainbowup <command> --help to see help for specific command.
                             default='local')
         parser.add_argument('--near_master_key_path', help='If specified, will use this key and the corresponding '
                                                       'account id to create accounts needed for the bridge.')
+        parser.add_argument('--rainbow_environment_image', help='If specified, will use this docker image to start EthRelayer'
+                                                                ' or NearRelayer instead of native nodejs')
         self.args = parser.parse_args()
         self.args.home = os.path.abspath(self.args.home)
         os.makedirs(self.args.home, exist_ok=True)
