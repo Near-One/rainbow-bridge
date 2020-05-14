@@ -1,7 +1,7 @@
+use crate::EthProver;
 use hex::FromHex;
 use rlp::RlpStream;
 use serde::{Deserialize, Deserializer};
-use crate::{EthProver};
 
 //#[macro_use]
 //extern crate lazy_static;
@@ -119,7 +119,7 @@ fn complex_tx_res() {
     let log_entry = Vec::from_hex("f89b945885d2a27bd4c6d111b83bc3fc359ed951e8e6f8f863a0ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3efa00000000000000000000000009b24ee0bfbf708b541fb65b6087d6e991a0d11a8a00000000000000000000000005a012de1a4c89b496e0a276158552abe6f843a6fa0000000000000000000000000000000000000000000000001135631d5283a4000").unwrap();
     let proof = vec![
         vec![
-            Vec::from_hex("0ceed761f9ef77af663b4d3ba5254eda2ba35ad0b32a06d57d350be62c8f2b98").unwrap(),
+            Vec::from_hex("c684a63b18c933f0b45d6863ec63d5beb49e191992479fe3cbf1dc6709661337").unwrap(),
             Vec::from_hex("297cb12d9b6b25bff0bd3199bfd2fdb4b3fca45416ecc355958b68dc1b7bc7a3").unwrap(),
             Vec::from_hex("870bde7cc109d51463b1b8e77ebb36cb4021ddc7df0fd31c3140cad3260236e8").unwrap(),
             Vec::from_hex("8ddcf32ce5a1ac912bddc28f2f25df0921aaff8f100f2979028b27baa5b191f1").unwrap(),

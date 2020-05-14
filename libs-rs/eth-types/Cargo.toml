@@ -8,6 +8,7 @@ edition = "2018"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+serde = { version = "1.0", features = ["derive"] }
 near-bindgen = "0.4.1"
 borsh = "0.2.10"
 rlp = "0.4.2"
