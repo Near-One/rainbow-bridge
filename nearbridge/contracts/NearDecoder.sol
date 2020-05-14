@@ -31,17 +31,22 @@ library NearDecoder {
     function decodeOptionalValidatorStakes(Borsh.Data memory data) internal pure returns(OptionalValidatorStakes memory stakes) {
         stakes.none = (data.decodeU8() == 0);
         if (!stakes.none) {
-            uint256 start = data.offset;
             stakes.validatorStakes = new ValidatorStake[](data.decodeU32());
+
+            bytes memory bps_data = "";
             for (uint i = 0; i < stakes.validatorStakes.length; i++) {
                 stakes.validatorStakes[i] = data.decodeValidatorStake();
+
+                bps_data = abi.encodePacked(
+                    bps_data,
+                    sha256(abi.encodePacked(stakes.validatorStakes[i].account_id)),
+                    sha256(abi.encodePacked(stakes.validatorStakes[i].public_key.xy)),
+                    sha256(abi.encodePacked(stakes.validatorStakes[i].stake))
+                );
             }
-            uint256 stop = data.offset;
 
             // Calculate keccak256(borsh(bps))
-            data.offset = start;
-            stakes.hash = data.peekKeccak256(stop - start);
-            data.offset = stop;
+            stakes.hash = sha256(bps_data);
         }
     }
 
@@ -70,7 +75,7 @@ library NearDecoder {
         BlockHeaderInnerLite inner_lite;
         bytes32 inner_rest_hash;
         OptionalValidatorStakes next_bps;
-        OptionalED25519Signature[] approvals_next;
+        OptionalED25519Signature[] approvals_next; // TODO: delete
         OptionalED25519Signature[] approvals_after_next;
     }
 

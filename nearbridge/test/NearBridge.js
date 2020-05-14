@@ -104,6 +104,7 @@ contract('NearBridge', function ([_, addr1]) {
     it('should be ok', async function () {
         const data = cookLightClientBlock(require('./block_1736172.json'));
         console.log(data.toString('hex'));
+        await this.bridge.deposit({ value: web3.utils.toWei('1') });
         await this.bridge.addLightClientBlock(data);
     });
 });
