@@ -263,10 +263,7 @@ fn add_blocks_2_and_3() {
         contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
     }
 
-    assert_eq!(
-        (hashes[1].0).0,
-        (contract.block_hash(3).unwrap().0).0
-    );
+    assert_eq!((hashes[1].0).0, (contract.block_hash(3).unwrap().0).0);
 }
 
 #[test]
@@ -309,10 +306,7 @@ fn add_400000_block_only() {
         blocks.into_iter().next().unwrap(),
         block_with_proof.to_double_node_with_merkle_proof_vec(),
     );
-    assert_eq!(
-        (hashes[0].0).0,
-        (contract.block_hash(400_000).unwrap().0).0
-    );
+    assert_eq!((hashes[0].0).0, (contract.block_hash(400_000).unwrap().0).0);
 }
 
 #[test]
@@ -373,14 +367,8 @@ fn add_2_blocks_from_400000() {
     for (block, proof) in blocks.into_iter().zip(blocks_with_proofs.into_iter()) {
         contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
     }
-    assert_eq!(
-        (hashes[0].0).0,
-        (contract.block_hash(400_000).unwrap().0).0
-    );
-    assert_eq!(
-        (hashes[1].0).0,
-        (contract.block_hash(400_001).unwrap().0).0
-    );
+    assert_eq!((hashes[0].0).0, (contract.block_hash(400_000).unwrap().0).0);
+    assert_eq!((hashes[1].0).0, (contract.block_hash(400_001).unwrap().0).0);
 }
 
 // #[test]

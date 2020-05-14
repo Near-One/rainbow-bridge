@@ -1,7 +1,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
-use near_bindgen::near_bindgen;
 use near_bindgen::collections::{Map, Set};
+use near_bindgen::near_bindgen;
 
 #[cfg(target_arch = "wasm32")]
 #[global_allocator]
@@ -85,14 +85,14 @@ impl Default for EthBridge {
 impl EthBridge {
     #[init]
     pub fn init(
-        #[serializer(borsh)]
-        validate_ethash: bool,
-        #[serializer(borsh)]
-        dags_start_epoch: u64,
-        #[serializer(borsh)]
-        dags_merkle_roots: Vec<H128>
+        #[serializer(borsh)] validate_ethash: bool,
+        #[serializer(borsh)] dags_start_epoch: u64,
+        #[serializer(borsh)] dags_merkle_roots: Vec<H128>,
     ) -> Self {
-        assert!(near_bindgen::env::state_read::<EthBridge>().is_none(), "Already initialized");
+        assert!(
+            near_bindgen::env::state_read::<EthBridge>().is_none(),
+            "Already initialized"
+        );
         Self {
             validate_ethash,
             dags_start_epoch,
@@ -115,33 +115,24 @@ impl EthBridge {
 
     #[result_serializer(borsh)]
     pub fn last_block_number(&self) -> u64 {
-        self.infos.get(&self.best_header_hash).unwrap_or_default().number
+        self.infos
+            .get(&self.best_header_hash)
+            .unwrap_or_default()
+            .number
     }
 
     #[result_serializer(borsh)]
-    pub fn dag_merkle_root(
-        &self,
-        #[serializer(borsh)]
-        epoch: u64
-    ) -> H128 {
+    pub fn dag_merkle_root(&self, #[serializer(borsh)] epoch: u64) -> H128 {
         self.dags_merkle_roots[(&epoch - self.dags_start_epoch) as usize]
     }
 
     #[result_serializer(borsh)]
-    pub fn block_hash(
-        &self,
-        #[serializer(borsh)]
-        index: u64
-    ) -> Option<H256> {
+    pub fn block_hash(&self, #[serializer(borsh)] index: u64) -> Option<H256> {
         self.canonical_header_hashes.get(&index)
     }
 
     #[result_serializer(borsh)]
-    pub fn block_hash_safe(
-        &self,
-        #[serializer(borsh)]
-        index: u64
-    ) -> Option<H256> {
+    pub fn block_hash_safe(&self, #[serializer(borsh)] index: u64) -> Option<H256> {
         let best_info = self.infos.get(&self.best_header_hash).unwrap_or_default();
         if best_info.number < index + NUMBER_OF_BLOCKS_SAFE {
             None
@@ -153,10 +144,8 @@ impl EthBridge {
     #[result_serializer(borsh)]
     pub fn add_block_header(
         &mut self,
-        #[serializer(borsh)]
-        block_header: Vec<u8>,
-        #[serializer(borsh)]
-        dag_nodes: Vec<DoubleNodeWithMerkleProof>,
+        #[serializer(borsh)] block_header: Vec<u8>,
+        #[serializer(borsh)] dag_nodes: Vec<DoubleNodeWithMerkleProof>,
     ) {
         let header: BlockHeader = rlp::decode(block_header.as_slice()).unwrap();
 
@@ -168,14 +157,22 @@ impl EthBridge {
 
         let header_hash = header.hash.unwrap();
         if self.infos.get(&header_hash).is_some() {
-            near_bindgen::env::log(format!("The header #{} is already known.", header.number).as_bytes());
+            near_bindgen::env::log(
+                format!("The header #{} is already known.", header.number).as_bytes(),
+            );
             // The header is already known
             return;
         }
 
-        let prev = self.headers.get(&header.parent_hash).expect("Parent header should be present to add a new header");
+        let prev = self
+            .headers
+            .get(&header.parent_hash)
+            .expect("Parent header should be present to add a new header");
 
-        assert!(Self::verify_header(&self, &header, &prev, &dag_nodes), "The new header should be valid");
+        assert!(
+            Self::verify_header(&self, &header, &prev, &dag_nodes),
+            "The new header should be valid"
+        );
 
         self.maybe_store_header(header);
     }
@@ -186,7 +183,13 @@ impl EthBridge {
     fn maybe_store_header(&mut self, header: BlockHeader) {
         let best_info = self.infos.get(&self.best_header_hash).unwrap_or_default();
         if best_info.number > header.number + NUMBER_OF_BLOCKS_FINALITY {
-            near_bindgen::env::log(format!("The header #{} is too old. The latest is #{}", header.number, best_info.number).as_bytes());
+            near_bindgen::env::log(
+                format!(
+                    "The header #{} is too old. The latest is #{}",
+                    header.number, best_info.number
+                )
+                .as_bytes(),
+            );
             // It's too late to add this block header.
             return;
         }
@@ -202,8 +205,10 @@ impl EthBridge {
         };
         self.infos.insert(&header_hash, &info);
         self.add_recent_header_hash(info.number, &header_hash);
-        if info.total_difficulty > best_info.total_difficulty ||
-            (info.total_difficulty == best_info.total_difficulty && header.difficulty % 2 == U256::default()) {
+        if info.total_difficulty > best_info.total_difficulty
+            || (info.total_difficulty == best_info.total_difficulty
+                && header.difficulty % 2 == U256::default())
+        {
             // The new header is the tip of the new canonical chain.
             // We need to update hashes of the canonical chain to match the new header.
             near_bindgen::env::log(format!(
@@ -215,13 +220,14 @@ impl EthBridge {
             // If the new header has a lower number than the previous header, we need to cleaning
             // it going forward.
             if best_info.number > info.number {
-                for number in info.number+1..=best_info.number {
+                for number in info.number + 1..=best_info.number {
                     self.canonical_header_hashes.remove(&number);
                 }
             }
             // Replacing the global best header hash.
             self.best_header_hash = header_hash;
-            self.canonical_header_hashes.insert(&info.number, &header_hash);
+            self.canonical_header_hashes
+                .insert(&info.number, &header_hash);
 
             // Replacing past hashes until we converge into the same parent.
             // Starting from the parent hash.
@@ -245,16 +251,27 @@ impl EthBridge {
 
             self.maybe_gc(best_info.number, info.number);
         } else {
-            near_bindgen::env::log(format!("The received header #{} doesn't have the best total difficulty.", info.number).as_bytes());
+            near_bindgen::env::log(
+                format!(
+                    "The received header #{} doesn't have the best total difficulty.",
+                    info.number
+                )
+                .as_bytes(),
+            );
         }
     }
 
     /// Removes old headers beyond the finality.
     fn maybe_gc(&mut self, last_best_number: u64, new_best_number: u64) {
         if new_best_number > last_best_number && last_best_number >= NUMBER_OF_BLOCKS_FINALITY {
-            for number in last_best_number - NUMBER_OF_BLOCKS_FINALITY..new_best_number - NUMBER_OF_BLOCKS_FINALITY {
+            for number in last_best_number - NUMBER_OF_BLOCKS_FINALITY
+                ..new_best_number - NUMBER_OF_BLOCKS_FINALITY
+            {
                 if let Some(mut hashes) = self.recent_header_hashes.get(&number) {
-                    near_bindgen::env::log(format!("Removing {} old header(s) at #{}", hashes.len(), number).as_bytes());
+                    near_bindgen::env::log(
+                        format!("Removing {} old header(s) at #{}", hashes.len(), number)
+                            .as_bytes(),
+                    );
                     for hash in hashes.iter() {
                         self.infos.remove(&hash);
                         self.headers.remove(&hash);
@@ -263,7 +280,9 @@ impl EthBridge {
                     self.recent_header_hashes.remove(&number);
                 }
             }
-            near_bindgen::env::log(format!("There are {} headers remaining", self.headers.len()).as_bytes());
+            near_bindgen::env::log(
+                format!("There are {} headers remaining", self.headers.len()).as_bytes(),
+            );
         }
     }
 
@@ -298,13 +317,9 @@ impl EthBridge {
         // 2. Added condition: header.parent_hash() == prev.hash()
         //
         ethereum_types::U256::from((result.0).0) < ethash::cross_boundary(header.difficulty.0)
-            && (
-                !self.validate_ethash
-                || (
-                    header.difficulty < header.difficulty * 101 / 100
-                    && header.difficulty > header.difficulty * 99 / 100
-                )
-            )
+            && (!self.validate_ethash
+                || (header.difficulty < header.difficulty * 101 / 100
+                    && header.difficulty > header.difficulty * 99 / 100))
             && header.gas_used <= header.gas_limit
             && header.gas_limit < prev.gas_limit * 1025 / 1024
             && header.gas_limit > prev.gas_limit * 1023 / 1024
