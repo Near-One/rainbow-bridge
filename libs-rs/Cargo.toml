@@ -1,5 +1,6 @@
 [workspace]
 members = [
+		"btc-client",
     "eth-client",
     "eth-prover",
     "eth-types"
