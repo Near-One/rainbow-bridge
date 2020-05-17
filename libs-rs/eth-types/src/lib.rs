@@ -1,11 +1,17 @@
-use std::io::{Error, Read, Write};
-use rlp::{Rlp, RlpStream, DecoderError as RlpDecoderError, Decodable as RlpDecodable, Encodable as RlpEncodable};
-use rlp_derive::{RlpEncodable as RlpEncodableDerive, RlpDecodable as RlpDecodableDerive};
-use ethereum_types;
-#[cfg(not(target_arch = "wasm32"))]
-use serde::{Serialize, Deserialize};
 use borsh::{BorshDeserialize, BorshSerialize};
-use derive_more::{Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into};
+use derive_more::{
+    Add, AddAssign, Display, Div, DivAssign, From, Into, Mul, MulAssign, Rem, RemAssign, Sub,
+    SubAssign,
+};
+use ethereum_types;
+use rlp::{
+    Decodable as RlpDecodable, DecoderError as RlpDecoderError, Encodable as RlpEncodable, Rlp,
+    RlpStream,
+};
+use rlp_derive::{RlpDecodable as RlpDecodableDerive, RlpEncodable as RlpEncodableDerive};
+#[cfg(not(target_arch = "wasm32"))]
+use serde::{Deserialize, Serialize};
+use std::io::{Error, Read, Write};
 
 macro_rules! arr_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
@@ -75,7 +81,7 @@ macro_rules! arr_declare_wrapper_and_serde {
                 Ok($name(<ethereum_types::$name>::decode(rlp)?))
             }
         }
-    }
+    };
 }
 
 arr_declare_wrapper_and_serde!(H64, 8);
@@ -88,7 +94,29 @@ arr_declare_wrapper_and_serde!(Bloom, 256);
 
 macro_rules! uint_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
-        #[derive(Default, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug, Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign, Display, From, Into)]
+        #[derive(
+            Default,
+            Clone,
+            Copy,
+            Eq,
+            PartialEq,
+            Ord,
+            PartialOrd,
+            Debug,
+            Add,
+            Sub,
+            Mul,
+            Div,
+            Rem,
+            AddAssign,
+            SubAssign,
+            MulAssign,
+            DivAssign,
+            RemAssign,
+            Display,
+            From,
+            Into,
+        )]
         #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
         pub struct $name(pub ethereum_types::$name);
 
@@ -124,7 +152,7 @@ macro_rules! uint_declare_wrapper_and_serde {
                 Ok($name(<ethereum_types::$name>::decode(rlp)?))
             }
         }
-    }
+    };
 }
 
 uint_declare_wrapper_and_serde!(U64, 1);
@@ -220,11 +248,14 @@ impl RlpDecodable for BlockHeader {
             partial_hash: None,
         };
 
-        block_header.partial_hash = Some(near_keccak256({
-            let mut stream = RlpStream::new();
-            block_header.stream_rlp(&mut stream, true);
-            stream.out().as_slice()
-        }).into());
+        block_header.partial_hash = Some(
+            near_keccak256({
+                let mut stream = RlpStream::new();
+                block_header.stream_rlp(&mut stream, true);
+                stream.out().as_slice()
+            })
+            .into(),
+        );
 
         Ok(block_header)
     }
@@ -234,9 +265,9 @@ impl RlpDecodable for BlockHeader {
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, RlpEncodableDerive, RlpDecodableDerive)]
 pub struct LogEntry {
-	pub address: Address,
-	pub topics: Vec<H256>,
-	pub data: Vec<u8>,
+    pub address: Address,
+    pub topics: Vec<H256>,
+    pub data: Vec<u8>,
 }
 
 // Receipt Header
@@ -245,8 +276,8 @@ pub struct LogEntry {
 pub struct Receipt {
     pub status: bool,
     pub gas_used: U256,
-	pub log_bloom: Bloom,
-	pub logs: Vec<LogEntry>,
+    pub log_bloom: Bloom,
+    pub logs: Vec<LogEntry>,
 }
 
 //

@@ -6,7 +6,7 @@ const { promisfy } = require('promisfy');
 
 function receiptFromWeb3(result, state_root) {
     return new Receipt([
-        toBuffer(result.status ? 0x1 : 0x0),
+        toBuffer(result.status ? 0x1 : state_root),
         toBuffer(result.cumulativeGasUsed),
         toBuffer(result.logsBloom),
         result.logs.map(logFromWeb3)

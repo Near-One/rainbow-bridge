@@ -366,6 +366,7 @@ dependencies = [
  "near-bindgen",
  "rlp",
  "rlp-derive",
+ "serde",
 ]
 
 [[package]]
