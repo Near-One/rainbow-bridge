@@ -1,4 +1,5 @@
-use crate::{Counter};
+use crate::{BtcClientContract};
+use std::collections::HashMap;
 
 // use the attribute below for unit tests
 #[cfg(test)]
@@ -31,40 +32,53 @@ mod tests {
         }
     }
 
-    // mark individual unit tests with #[test] for them to be registered and fired
     #[test]
-    fn increment() {
+    fn accept_header() {
         // set up the mock context into the testing environment
         let context = get_context(vec![], false);
         testing_env!(context);
         // instantiate a contract variable with the counter at zero
-        let mut contract = Counter { val: 0 };
+        let mut contract = BtcClientContract { val: 0, most_recent_block_hash: "".to_string(), blocks: HashMap::new() };
         contract.increment();
         println!("Value after increment: {}", contract.get_num());
         // confirm that we received 1 when calling get_num
         assert_eq!(1, contract.get_num());
     }
 
-    #[test]
-    fn decrement() {
-        let context = get_context(vec![], false);
-        testing_env!(context);
-        let mut contract = Counter { val: 0 };
-        contract.decrement();
-        println!("Value after decrement: {}", contract.get_num());
-        // confirm that we received -1 when calling get_num
-        assert_eq!(-1, contract.get_num());
-    }
+    // mark individual unit tests with #[test] for them to be registered and fired
+    // #[test]
+    // fn increment() {
+    //     // set up the mock context into the testing environment
+    //     let context = get_context(vec![], false);
+    //     testing_env!(context);
+    //     // instantiate a contract variable with the counter at zero
+    //     let mut contract = BtcClientContract { val: 0 };
+    //     contract.increment();
+    //     println!("Value after increment: {}", contract.get_num());
+    //     // confirm that we received 1 when calling get_num
+    //     assert_eq!(1, contract.get_num());
+    // }
 
-    #[test]
-    fn increment_and_reset() {
-        let context = get_context(vec![], false);
-        testing_env!(context);
-        let mut contract = Counter { val: 0 };
-        contract.increment();
-        contract.reset();
-        println!("Value after reset: {}", contract.get_num());
-        // confirm that we received -1 when calling get_num
-        assert_eq!(0, contract.get_num());
-    }
+    // #[test]
+    // fn decrement() {
+    //     let context = get_context(vec![], false);
+    //     testing_env!(context);
+    //     let mut contract = BtcClientContract { val: 0 };
+    //     contract.decrement();
+    //     println!("Value after decrement: {}", contract.get_num());
+    //     // confirm that we received -1 when calling get_num
+    //     assert_eq!(-1, contract.get_num());
+    // }
+
+    // #[test]
+    // fn increment_and_reset() {
+    //     let context = get_context(vec![], false);
+    //     testing_env!(context);
+    //     let mut contract = BtcClientContract { val: 0 };
+    //     contract.increment();
+    //     contract.reset();
+    //     println!("Value after reset: {}", contract.get_num());
+    //     // confirm that we received -1 when calling get_num
+    //     assert_eq!(0, contract.get_num());
+    // }
 }

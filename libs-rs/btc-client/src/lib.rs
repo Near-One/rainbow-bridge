@@ -1,18 +1,6 @@
-// BTC2NearClient Rust contract that has two methods: 
-// 1) accept_header — method should accept btc header and verify proof of work;
-// 2) verify_header — method that accepts hash of the header and replies with 
-//    true of false statement whether the header was verified and accepted;
-
-// fn accept_header(btc_header: String) {
-//  println!("{:?}", btc_header);
-// }
-
-// fn verify_header(btc_header: String) {
-
-// }
-
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::{env, near_bindgen};
+use std::collections::HashMap;
 
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
@@ -23,13 +11,67 @@ mod tests;
 // More built-in Rust attributes here: https://doc.rust-lang.org/reference/attributes.html#built-in-attributes-index
 #[near_bindgen]
 #[derive(Default, BorshDeserialize, BorshSerialize)]
-pub struct Counter {
+pub struct BtcClientContract {
     // See more data types at https://doc.rust-lang.org/book/ch03-02-data-types.html
     val: i8, // i8 is signed. unsigned integers are also available: u8, u16, u32, u64, u128
+
+    most_recent_block_hash: String,
+    blocks: HashMap<String, Block>,
 }
 
 #[near_bindgen]
-impl Counter {
+#[derive(Default, BorshDeserialize, BorshSerialize)]
+pub struct Block {
+    header: Header,
+    height: u128
+}
+
+#[near_bindgen]
+#[derive(Default, BorshDeserialize, BorshSerialize)]
+pub struct Header {
+    prev_block_hash: String,
+    merkle_root_hash: String,
+    version: u32,
+    time: u32,
+    n_bits: u32,
+    nonce: u32
+}
+
+#[near_bindgen]
+impl BtcClientContract {    
+    /** 
+     * Accept a block header and verifies proof of work.
+     */
+    pub fn accept_header(block_header: String) {
+        println!("Received block header {}", block_header);
+
+        // // Convert block_header into hash
+        // block_header_hash = sha256(sha256(block_header))
+
+        // if (verify_header(block_header_hash)) {
+        //     let prev_block_hash = get_prev_block_hash(block_header)
+        //     let header = Header { prev_block_hash: prev_block_hash, }
+        //     let new_block = Block { header: header }
+        //     self.blocks[block_header_hash] = new_block
+        // }
+    }
+
+    /** 
+     * Method that accepts hash of the header and returns true if the header was 
+     * verified and accepted. False otherwise.
+     */
+    pub fn verify_header(block_header_hash: String) -> bool {
+        return true
+    }
+
+    /**
+     * Accepts proof of a specific transaction hash and verifies that the header in the 
+     * proof was verified, and then checks that the merkle path in the proof is correct.
+     */
+    pub fn verify_txn(txHash: String) {
+
+    }
+
     /// Returns 8-bit signed integer of the counter value.
     ///
     /// This must match the type from our struct's 'val' defined above.
