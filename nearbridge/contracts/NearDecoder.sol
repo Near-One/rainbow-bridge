@@ -40,13 +40,19 @@ library NearDecoder {
                 bps_data = abi.encodePacked(
                     bps_data,
                     sha256(abi.encodePacked(stakes.validatorStakes[i].account_id)),
-                    sha256(abi.encodePacked(stakes.validatorStakes[i].public_key.xy)),
-                    sha256(abi.encodePacked(stakes.validatorStakes[i].stake))
+                    sha256(abi.encodePacked(uint8(0), stakes.validatorStakes[i].public_key.xy)),
+                    sha256(bigEndianToLittleEndian(abi.encodePacked(stakes.validatorStakes[i].stake)))
                 );
             }
 
-            // Calculate keccak256(borsh(bps))
             stakes.hash = sha256(bps_data);
+        }
+    }
+
+    function bigEndianToLittleEndian(bytes memory data) internal pure returns(bytes memory result) {
+        result = new bytes(data.length);
+        for (uint i = 0; i < data.length; i++) {
+            result[i] = data[data.length - 1 - i];
         }
     }
 
