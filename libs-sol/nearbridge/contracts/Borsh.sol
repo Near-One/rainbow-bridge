@@ -29,14 +29,6 @@ library Borsh {
         return data.offset == data.raw.length;
     }
 
-    function peekBytes(Data memory data, uint256 length) internal pure returns(bytes memory res) {
-        res = new bytes(length);
-        // TODO: Unroll 32-bytes blobs
-        for (uint i = 0; i < length; i++) {
-            res[i] = data.raw[data.offset + i];
-        }
-    }
-
     function peekKeccak256(Data memory data, uint256 length) internal pure returns(bytes32 res) {
         bytes memory ptr = data.raw;
         uint256 offset = data.offset;
@@ -124,27 +116,6 @@ library Borsh {
         }
     }
 
-    function decodeBytes64(Data memory data) internal pure shift(data, 64) returns(byte[64] memory value) {
-        bytes memory raw = data.raw;
-        uint256 offset = data.offset;
-        // solium-disable-next-line security/no-inline-assembly
-        assembly {
-            mstore(value, mload(add(add(raw, 32), offset)))
-            mstore(add(value, 32), mload(add(add(raw, 64), offset)))
-        }
-    }
-
-    function decodeBytes65(Data memory data) internal pure shift(data, 65) returns(byte[65] memory value) {
-        bytes memory raw = data.raw;
-        uint256 offset = data.offset;
-        // solium-disable-next-line security/no-inline-assembly
-        assembly {
-            mstore(value, mload(add(add(raw, 32), offset)))
-            mstore(add(value, 32), mload(add(add(raw, 64), offset)))
-        }
-        value[64] = data.raw[data.offset + 64];
-    }
-
     struct PublicKey {
         uint256 x;
         uint256 y;
@@ -153,6 +124,14 @@ library Borsh {
     function decodePublicKey(Borsh.Data memory data) internal pure returns(PublicKey memory key) {
         key.x = decodeU256(data);
         key.y = decodeU256(data);
+    }
+
+    struct ED25519PublicKey {
+        bytes32 xy;
+    }
+
+    function decodeED25519PublicKey(Borsh.Data memory data) internal pure returns(ED25519PublicKey memory key) {
+        key.xy = decodeBytes32(data);
     }
 
     struct Signature {
@@ -165,5 +144,14 @@ library Borsh {
         sig.r = decodeBytes32(data);
         sig.s = decodeBytes32(data);
         sig.v = decodeU8(data);
+    }
+
+    struct ED25519Signature {
+        bytes32[2] rs;
+    }
+
+    function decodeED25519Signature(Borsh.Data memory data) internal pure returns(ED25519Signature memory sig) {
+        sig.rs[0] = decodeBytes32(data);
+        sig.rs[1] = decodeBytes32(data);
     }
 }
