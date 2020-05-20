@@ -9,13 +9,25 @@ const borshSchema = {
             ['expected_block_hash', 'H256'],
         ]},
     'H256': {kind: 'function', ser: hexToBuffer, deser: readerToHex(32) },
+    'verifyLogEntry': { kind: 'struct', fields: [
+            ['log_index', 'u64'],
+            ['log_entry_data', ['u8']],
+            ['receipt_index', 'u64'],
+            ['receipt_data', ['u8']],
+            ['header_data', ['u8']],
+            ['proof', [[['u8']]]],
+            ['skip_bridge_call', 'bool'],
+        ]},
 };
 
 class EthProverContract extends BorshContract {
     constructor(account) {
         super(borshSchema, account, {
-            viewMethods: [],
-
+            viewMethods: [{
+                methodName: "verify_log_entry",
+                inputFieldType: "verifyLogEntry",
+                outputFieldType: 'bool',
+            }],
             changeMethods: [{
                 methodName: "init",
                 inputFieldType: "initInput",
@@ -44,3 +56,5 @@ class EthProverContract extends BorshContract {
 }
 
 exports.EthProverContract = EthProverContract;
+// For debugging;
+exports.borshSchema = borshSchema;

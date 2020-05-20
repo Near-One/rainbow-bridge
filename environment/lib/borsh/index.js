@@ -269,3 +269,5 @@ const readerToHex = (len) => (reader) => Web3.utils.bytesToHex(reader.read_fixed
 exports.BorshContract = BorshContract;
 exports.hexToBuffer = hexToBuffer;
 exports.readerToHex = readerToHex;
+// For debugging only.
+exports.serialize = serialize;

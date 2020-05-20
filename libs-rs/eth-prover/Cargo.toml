@@ -17,8 +17,6 @@ borsh = "0.2.10"
 rlp = "0.4.2"
 
 [dev-dependencies]
-web3 = "0.8.0"
-lazy_static = "1.4.0"
 hex = "0.4.2"
 
 [features]

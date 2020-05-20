@@ -1,6 +1,7 @@
 const {EthClientSetup} = require('./lib/eth-client-setup');
 const {EthRelay} = require('./lib/eth-relay');
 const {EthProofExtractor} = require('./lib/eth-proof-extractor');
+const {EthProverTester} = require('./lib/eth-prover-tester');
 
 (async function () {
     switch (process.argv[2]) {
@@ -23,8 +24,13 @@ const {EthProofExtractor} = require('./lib/eth-proof-extractor');
             await ethProofExtractor.debugPrint(process.env.TX_HASH);
             break;
         }
-        case 'start_nearrelay': {
-
+        case 'test_ethprover': {
+            const setup = new EthClientSetup();
+            await setup.initialize();
+            const tester = new EthProverTester(process.env.ETH_NODE_URL, setup.ethClientContract, setup.ethProverContract);
+            console.log("TESTING");
+            await tester.run();
+            break;
         }
         default: {
             console.log(`Unrecognized command ${process.argv}`);

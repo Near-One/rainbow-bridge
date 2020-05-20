@@ -347,12 +347,10 @@ dependencies = [
  "borsh",
  "eth-types",
  "hex",
- "lazy_static",
  "near-bindgen",
  "rlp",
  "serde",
  "serde_json",
- "web3",
  "wee_alloc",
 ]
 
