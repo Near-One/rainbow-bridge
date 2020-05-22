@@ -15,7 +15,7 @@ const borshSchema = {
             ['receipt_index', 'u64'],
             ['receipt_data', ['u8']],
             ['header_data', ['u8']],
-            ['proof', [[['u8']]]],
+            ['proof', [['u8']]],
             ['skip_bridge_call', 'bool'],
         ]},
 };
@@ -23,12 +23,14 @@ const borshSchema = {
 class EthProverContract extends BorshContract {
     constructor(account) {
         super(borshSchema, account, {
-            viewMethods: [{
+            viewMethods: [],
+            changeMethods: [
+            {
                 methodName: "verify_log_entry",
                 inputFieldType: "verifyLogEntry",
                 outputFieldType: 'bool',
-            }],
-            changeMethods: [{
+            },
+                {
                 methodName: "init",
                 inputFieldType: "initInput",
                 outputFieldType: null,

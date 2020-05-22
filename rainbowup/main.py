@@ -114,9 +114,9 @@ Run rainbowup <command> --help to see help for specific command.
         if not self.args.eth_network:
             return GanacheService.url()
         elif self.args.eth_network == 'ropsten':
-            return "wss://ropsten.infura.io/ws/v3/b5f870422ee5454fb11937e947154cd2"
+            return "wss://ropsten.infura.io/ws/v3/4772c01d2363412ea16cf0f1c85b54b7"
         elif self.args.eth_network == 'mainnet':
-            return "wss://mainnet.infura.io/ws/v3/b5f870422ee5454fb11937e947154cd2"
+            return "wss://mainnet.infura.io/ws/v3/4772c01d2363412ea16cf0f1c85b54b7"
 
     # Account id in Near blockchain that can be used by the bridge.
     def _near_master_account_id(self):
