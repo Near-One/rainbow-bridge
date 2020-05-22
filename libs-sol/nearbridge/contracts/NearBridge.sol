@@ -4,13 +4,18 @@ pragma experimental ABIEncoderV2; // solium-disable-line no-experimental
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "./NearDecoder.sol";
-import "./ED25519.sol";
+import "./Ed25519.sol";
 
 
 contract NearBridge is Ownable {
     using SafeMath for uint256;
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
+
+    struct BlockProducer {
+        Borsh.ED25519PublicKey publicKey;
+        uint128 stake;
+    }
 
     struct State {
         uint256 height;
@@ -19,6 +24,9 @@ contract NearBridge is Ownable {
         address submitter;
         uint256 validAfter;
         bytes32 hash;
+
+        uint256 bps_count;
+        mapping(uint256 => BlockProducer) bps;
     }
 
     uint256 constant public LOCK_ETH_AMOUNT = 1 ether;
@@ -61,30 +69,40 @@ contract NearBridge is Ownable {
         // 4. approvals_next and approvals_after_next contain signatures that check out against the block producers for the epoch of the block
         // 5. The signatures present in both approvals_next and approvals_after_next correspond to more than 2/3 of the total stake
         uint256 totalStake = 0;
-        for (uint i = 0; i < nearBlock.next_bps.validatorStakes.length; i++) {
+        for (uint i = 0; i < prev.bps_count; i++) {
             totalStake = totalStake.add(
-                nearBlock.next_bps.validatorStakes[i].stake
+                prev.bps[i].stake
             );
         }
-        require(
-            _checkValidatorSignatures(
-                totalStake,
-                nearBlockHash,
-                nearBlock.approvals_next,
-                nearBlock.next_bps.validatorStakes
-            ),
-            "NearBridge: Less than 2/3 voted by the next block"
-        );
-        require(
-            _checkValidatorSignatures(
-                totalStake,
-                nearBlockNextHash,
-                nearBlock.approvals_after_next,
-                nearBlock.next_bps.validatorStakes
-            ),
-            "NearBridge: Less than 2/3 voted by the block after next"
-        );
 
+        bool votingSuccced = _checkValidatorSignatures(
+            nearBlock.inner_lite.height,
+            totalStake,
+            nearBlockHash,
+            nearBlock.approvals_next,
+            prev.bps
+        );
+        if (!votingSuccced) {
+            _payRewardAndRollBack(user, receiver);
+            return;
+        }
+
+        votingSuccced = _checkValidatorSignatures(
+            nearBlock.inner_lite.height,
+            totalStake,
+            nearBlockNextHash,
+            nearBlock.approvals_after_next,
+            prev.bps
+        );
+        if (!votingSuccced) {
+            _payRewardAndRollBack(user, receiver);
+            return;
+        }
+
+        revert("Should not be reached");
+    }
+
+    function _payRewardAndRollBack(address user, address payable receiver) internal {
         // Pay reward
         balanceOf[user] = balanceOf[user].sub(LOCK_ETH_AMOUNT);
         receiver.transfer(LOCK_ETH_AMOUNT);
@@ -102,6 +120,7 @@ contract NearBridge is Ownable {
         NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
         require(borsh.finished(), "NearBridge: only light client block should be passed");
         bytes32 nearBlockHash = hash(nearBlock);
+        bytes32 nearBlockNextHash = nextHash(nearBlock, nearBlockHash);
 
         // 1. The height of the block is higher than the height of the current head
         require(
@@ -133,19 +152,21 @@ contract NearBridge is Ownable {
         // }
         // require(
         //     _checkValidatorSignatures(
+        //         nearBlock.inner_lite.height,
         //         totalStake,
         //         nearBlockHash,
         //         nearBlock.approvals_next,
-        //         nearBlock.next_bps.validatorStakes
+        //         prev.bps
         //     ),
         //     "NearBridge: Less than 2/3 voted by the next block"
         // );
         // require(
         //     _checkValidatorSignatures(
+        //         nearBlock.inner_lite.height,
         //         totalStake,
         //         nearBlockNextHash,
         //         nearBlock.approvals_after_next,
-        //         nearBlock.next_bps.validatorStakes
+        //         prev.bps
         //     ),
         //     "NearBridge: Less than 2/3 voted by the block after next"
         // );
@@ -160,14 +181,25 @@ contract NearBridge is Ownable {
 
         // Finish:
         prev = last;
+        prev.bps_count = last.bps_count;
+        for (uint i = 0; i < prev.bps_count; i++) {
+            prev.bps[i] = last.bps[i];
+        }
         last = State({
             height: nearBlock.inner_lite.height,
             epochId: nearBlock.inner_lite.epoch_id,
             nextEpochId: nearBlock.inner_lite.next_epoch_id,
             submitter: msg.sender,
             validAfter: block.timestamp.add(LOCK_DURATION),
-            hash: keccak256(data)
+            hash: keccak256(data),
+            bps_count: nearBlock.next_bps.validatorStakes.length
         });
+        for (uint i = 0; i < nearBlock.next_bps.validatorStakes.length; i++) {
+            last.bps[i] = BlockProducer({
+                publicKey: nearBlock.next_bps.validatorStakes[i].public_key,
+                stake: nearBlock.next_bps.validatorStakes[i].stake
+            });
+        }
         blockHashes[nearBlock.inner_lite.height] = nearBlockHash;
         emit BlockHashAdded(
             last.height,
@@ -176,10 +208,11 @@ contract NearBridge is Ownable {
     }
 
     function _checkValidatorSignatures(
+        uint64 height,
         uint256 totalStake,
         bytes32 next_block_inner_hash,
         NearDecoder.OptionalED25519Signature[] memory approvals,
-        NearDecoder.ValidatorStake[] memory validatorStakes
+        mapping(uint256 => BlockProducer) storage validatorStakes
     ) internal view returns(bool) {
         uint256 votedFor = 0;
         uint256 votedAgainst = 0;
@@ -187,11 +220,16 @@ contract NearBridge is Ownable {
             if (approvals[i].none) {
                 votedAgainst = votedAgainst.add(validatorStakes[i].stake);
             } else {
+                bytes memory data = abi.encodePacked(uint8(0), next_block_inner_hash, _reversedUint64(height), bytes23(0));
+                (bytes32 arg1, bytes9 arg2) = abi.decode(data, (bytes32, bytes9));
+
                 require(
-                    ED25519.verify(
-                        next_block_inner_hash,
-                        validatorStakes[i].public_key.xy,
-                        approvals[i].signature.rs
+                    Ed25519.check(
+                        validatorStakes[i].publicKey.xy,
+                        approvals[i].signature.rs[0],
+                        approvals[i].signature.rs[1],
+                        arg1,
+                        arg2
                     ),
                     "NearBridge: Validator signature is not valid"
                 );
@@ -224,5 +262,15 @@ contract NearBridge is Ownable {
             currentHash,
             nearBlock.next_block_inner_hash
         ));
+    }
+
+    function _reversedUint64(uint64 data) private pure returns(uint64 res) {
+        res = data;
+        res = ((res & 0x00000000FFFFFFFF) << 32)
+            | ((res & 0xFFFFFFFF00000000) >> 32);
+        res = ((res & 0x0000FFFF0000FFFF) << 16)
+            | ((res & 0xFFFF0000FFFF0000) >> 16);
+        res = ((res & 0x00FF00FF00FF00FF) << 8)
+            | ((res & 0xFF00FF00FF00FF00) >> 8);
     }
 }
