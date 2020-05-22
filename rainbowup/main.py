@@ -9,6 +9,7 @@ import urllib.parse
 
 from rainbowuplib.ganache_service import GanacheService
 from rainbowuplib.ethrelay_service import EthRelayService
+from rainbowuplib.ethprover_tester_service import EthProverTesterService
 
 # Port for the local Near node
 NEAR_LOCAL_NODE_RPC_PORT = 3030
@@ -38,8 +39,8 @@ Run rainbowup <command> --help to see help for specific command.
         parser.add_argument('--nearcore_source', help="If specified, will use nearcore source in that folder. Otherwise "
                                                     "will use `~/.rainbowup/nearcore`. If source does not exist it will "
                                                     "download it from github.")
-        parser.add_argument('--eth_network', help='If specified will use this Ethereum network, instead of starting '
-                                                  'Ganache', choices=['ropsten', 'mainnet'])
+        parser.add_argument('--eth_node_url', help='If specified will use external Ethereum node instead of starting'
+                                                   'Ganache')
         parser.add_argument('--near_node_url', help='If specified, will not start local Near node and will connect to '
                                                     'the specified node. Requires --near_master_key_path to be specified.')
         parser.add_argument('--near_network_id', help='If specified, will use this network id instead of `local`.',
@@ -110,12 +111,7 @@ Run rainbowup <command> --help to see help for specific command.
         return os.path.join(self.args.home, 'near')
 
     def _eth_node_url(self):
-        if not self.args.eth_network:
-            return GanacheService.url()
-        elif self.args.eth_network == 'ropsten':
-            return "wss://ropsten.infura.io/ws/v3/b5f870422ee5454fb11937e947154cd2"
-        elif self.args.eth_network == 'mainnet':
-            return "wss://mainnet.infura.io/ws/v3/b5f870422ee5454fb11937e947154cd2"
+        return self.args.eth_node_url or GanacheService.url()
 
     # Account id in Near blockchain that can be used by the bridge.
     def _near_master_account_id(self):
@@ -203,14 +199,14 @@ Run rainbowup <command> --help to see help for specific command.
 
         # Start EthRelay daemon.
         d = EthRelayService(self.args,
-                           eth_node_url=self._eth_node_url(),
-                           near_node_url=self._near_node_url(),
-                           master_acc_id=self._near_master_account_id(),
-                           master_sk=self._near_master_sk(),
-                           bridge_acc_id='ethbridge',
-                           bridge_sk=self._near_master_sk(),  # Use the same key for now.
-                           validate_ethash='true' if self.args.eth_network else 'false'
-                           )
+                            eth_node_url=self._eth_node_url(),
+                            near_node_url=self._near_node_url(),
+                            master_acc_id=self._near_master_account_id(),
+                            master_sk=self._near_master_sk(),
+                            bridge_acc_id='ethbridge',
+                            bridge_sk=self._near_master_sk(),  # Use the same key for now.
+                            validate_ethash='true' if self.args.eth_network else 'false'
+                            )
         d.run()
 
     def run(self):
@@ -224,6 +220,19 @@ Run rainbowup <command> --help to see help for specific command.
         subprocess.check_output(['rm', '-rf', self.args.home])
 
     def test(self):
+        # Start EthRelay daemon.
+        d = EthProverTesterService(self.args,
+                                   eth_node_url=self._eth_node_url(),
+                                   near_node_url=self._near_node_url(),
+                                   master_acc_id=self._near_master_account_id(),
+                                   master_sk=self._near_master_sk(),
+                                   bridge_acc_id='ethbridge',
+                                   bridge_sk=self._near_master_sk(),  # Use the same key for now.
+                                   validate_ethash='true' if self.args.eth_network else 'false'
+                                   )
+        d.run().wait()
+
+    def _test(self):
         # Run tests on the eth bridge contract
         # subprocess.check_output(['./test.sh'], cwd=os.path.join(self.args.source, 'ethbridge'))
         # Start up the bridge

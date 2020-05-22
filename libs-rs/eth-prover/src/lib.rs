@@ -108,15 +108,16 @@ impl EthProver {
             .into()
     }
 
+    #[result_serializer(borsh)]
     pub fn verify_log_entry(
         &self,
-        log_index: u64,
-        log_entry_data: Vec<u8>,
-        receipt_index: u64,
-        receipt_data: Vec<u8>,
-        header_data: Vec<u8>,
-        proof: Vec<Vec<u8>>,
-        skip_bridge_call: bool,
+        #[serializer(borsh)] log_index: u64,
+        #[serializer(borsh)] log_entry_data: Vec<u8>,
+        #[serializer(borsh)] receipt_index: u64,
+        #[serializer(borsh)] receipt_data: Vec<u8>,
+        #[serializer(borsh)] header_data: Vec<u8>,
+        #[serializer(borsh)] proof: Vec<Vec<u8>>,
+        #[serializer(borsh)] skip_bridge_call: bool,
     ) -> bool {
         let log_entry: LogEntry = rlp::decode(log_entry_data.as_slice()).unwrap();
         let receipt: Receipt = rlp::decode(receipt_data.as_slice()).unwrap();

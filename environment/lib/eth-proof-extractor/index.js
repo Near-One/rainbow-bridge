@@ -84,3 +84,5 @@ class EthProofExtractor {
 }
 
 exports.EthProofExtractor = EthProofExtractor;
+exports.receiptFromWeb3 = receiptFromWeb3;
+exports.logFromWeb3 = logFromWeb3;
