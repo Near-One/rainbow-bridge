@@ -1,5 +1,6 @@
-use crate::{BtcClientContract};
+use crate::{BtcClientContract, BlockHeader, HashStr};
 use std::collections::HashMap;
+use near_sdk::{env};
 
 // use the attribute below for unit tests
 #[cfg(test)]
@@ -34,51 +35,41 @@ mod tests {
 
     #[test]
     fn accept_header() {
-        // set up the mock context into the testing environment
         let context = get_context(vec![], false);
         testing_env!(context);
-        // instantiate a contract variable with the counter at zero
-        let mut contract = BtcClientContract { val: 0, most_recent_block_hash: "".to_string(), blocks: HashMap::new() };
-        contract.increment();
-        println!("Value after increment: {}", contract.get_num());
-        // confirm that we received 1 when calling get_num
-        assert_eq!(1, contract.get_num());
+
+        let mut contract = BtcClientContract { 
+            most_recent_block_hash: HashStr { value: "".to_string() }, 
+            blocks: HashMap::new() 
+        };
+        let block_header = BlockHeader{ 
+            block_hash: HashStr{ value: "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f".to_string() },
+            version: 1,
+            prev_block_hash: HashStr{ value:"0000000000000000000000000000000000000000000000000000000000000000".to_string() },
+            merkle_root_hash: HashStr{ value:"4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b".to_string() },
+            time: 1231006505,
+            n_bits: 486604799,
+            nonce: 2083236893
+        };
+        contract.accept_header(block_header);
+        // TODO test other verifications.
     }
 
-    // mark individual unit tests with #[test] for them to be registered and fired
-    // #[test]
-    // fn increment() {
-    //     // set up the mock context into the testing environment
-    //     let context = get_context(vec![], false);
-    //     testing_env!(context);
-    //     // instantiate a contract variable with the counter at zero
-    //     let mut contract = BtcClientContract { val: 0 };
-    //     contract.increment();
-    //     println!("Value after increment: {}", contract.get_num());
-    //     // confirm that we received 1 when calling get_num
-    //     assert_eq!(1, contract.get_num());
-    // }
-
-    // #[test]
-    // fn decrement() {
-    //     let context = get_context(vec![], false);
-    //     testing_env!(context);
-    //     let mut contract = BtcClientContract { val: 0 };
-    //     contract.decrement();
-    //     println!("Value after decrement: {}", contract.get_num());
-    //     // confirm that we received -1 when calling get_num
-    //     assert_eq!(-1, contract.get_num());
-    // }
-
-    // #[test]
-    // fn increment_and_reset() {
-    //     let context = get_context(vec![], false);
-    //     testing_env!(context);
-    //     let mut contract = BtcClientContract { val: 0 };
-    //     contract.increment();
-    //     contract.reset();
-    //     println!("Value after reset: {}", contract.get_num());
-    //     // confirm that we received -1 when calling get_num
-    //     assert_eq!(0, contract.get_num());
-    // }
+    #[test]
+    fn calculate_block_hash() {
+        let context = get_context(vec![], false);
+        testing_env!(context);
+        
+        let block_header = BlockHeader{ 
+            block_hash: HashStr{ value: "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f".to_string() },
+            version: 1,
+            prev_block_hash: HashStr{ value:"0000000000000000000000000000000000000000000000000000000000000000".to_string() },
+            merkle_root_hash: HashStr{ value:"4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b".to_string() },
+            time: 1231006505,
+            n_bits: 486604799,
+            nonce: 2083236893
+        };
+        let block_hash = BtcClientContract::calculate_block_hash(block_header);
+        assert_eq!("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", block_hash);
+    }
 }

@@ -204,6 +204,7 @@ version = "0.1.0"
 dependencies = [
  "arrutil",
  "borsh 0.2.10",
+ "byteorder",
  "futures",
  "hex",
  "lazy_static",
@@ -211,7 +212,6 @@ dependencies = [
  "near-sdk",
  "primal",
  "rlp",
- "rustc-hex",
  "serde",
  "serde_json",
  "web3",
