@@ -1,7 +1,7 @@
-const {EthClientSetup} = require('./lib/eth-client-setup');
-const {EthRelay} = require('./lib/eth-relay');
-const {EthProofExtractor} = require('./lib/eth-proof-extractor');
-const {EthProverTester} = require('./lib/eth-prover-tester');
+const { EthClientSetup } = require('./lib/eth-client-setup');
+const { EthRelay } = require('./lib/eth-relay');
+const { EthProofExtractor } = require('./lib/eth-proof-extractor');
+const { EthProverTester } = require('./lib/eth-prover-tester');
 
 (async function () {
     switch (process.argv[2]) {
@@ -22,6 +22,7 @@ const {EthProverTester} = require('./lib/eth-prover-tester');
             const ethProofExtractor = new EthProofExtractor();
             ethProofExtractor.initialize(process.env.ETH_NODE_URL);
             await ethProofExtractor.debugPrint(process.env.TX_HASH);
+            ethProofExtractor.destroy()
             break;
         }
         case 'test_ethprover': {
@@ -30,6 +31,8 @@ const {EthProverTester} = require('./lib/eth-prover-tester');
             const tester = new EthProverTester(process.env.ETH_NODE_URL, setup.ethClientContract, setup.ethProverContract);
             console.log("TESTING");
             await tester.run();
+            tester.destroy();
+            console.log("DONE");
             break;
         }
         default: {

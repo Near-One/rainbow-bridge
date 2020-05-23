@@ -68,7 +68,7 @@ class EthProofExtractor {
         console.log('let receipt_data = Vec::from_hex("' + receiptFromWeb3(receipt).serialize().toString('hex') + '").unwrap();');
         let logs = '';
         for (const log of receipt.logs) {
-            logs += 'Vec::from_hex("' + logFromWeb3(log).serialize().toString('hex') +'").unwrap(),'
+            logs += 'Vec::from_hex("' + logFromWeb3(log).serialize().toString('hex') + '").unwrap(),'
         }
         console.log(`let logs = vec![ ${logs} ]`);
         console.log('let proof = vec![');
@@ -80,6 +80,12 @@ class EthProofExtractor {
             console.log('    ],');
         }
         console.log('];');
+    }
+
+    destroy() {
+        if (this.web3.currentProvider.connection.close) { // Only WebSocket provider has close, HTTPS don't
+            this.web3.currentProvider.connection.close();
+        }
     }
 }
 
