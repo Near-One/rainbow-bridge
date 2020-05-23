@@ -34,7 +34,7 @@ struct HashStr {
 }
 
 #[near_bindgen]
-impl BtcClientContract {    
+impl BtcClientContract {
     /** 
      * Accept a block header and verifies proof of work.
      */
@@ -63,9 +63,26 @@ impl BtcClientContract {
         }
 
         // TODO verify difficulty.
-        // TODO verify that we're within 6 confirmations.
-
+        if (Self::within6Confirms(self, block_header.clone())) {
+            return false;
+        }
         return true;
+    }
+
+    fn within6Confirms(
+        &self,
+        block_header: BlockHeader
+    ) -> bool {
+        let mut block_hash = self.most_recent_block_hash.clone();
+        let mut i = 0;
+        while (i < 6) {
+            if (block_header.block_hash.clone() == block_hash) {
+                return true;
+            }
+            block_hash = block_header.prev_block_hash.clone();
+            i += 1;
+        }
+        return false;
     }
 
     /**
@@ -75,6 +92,7 @@ impl BtcClientContract {
     pub fn verify_txn(txHash: String) {
 
     } 
+
 }
 
 impl BtcClientContract { 
