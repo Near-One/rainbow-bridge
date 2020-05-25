@@ -64,8 +64,9 @@ mod tests {
             most_recent_block_hash: HashStr { value: "".to_string() }, 
             blocks: HashMap::new() 
         };
+
         // Block 100000.
-        let block_header = BlockHeader{ 
+        let block_header_100000 = BlockHeader{ 
             block_hash: HashStr{ value: "000000000003ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506".to_string() },
             version: 1,
             prev_block_hash: HashStr{ value:"000000000002d01c1fccc21636b607dfd930d31d01c3a62104612a1719011250".to_string() },
@@ -74,7 +75,79 @@ mod tests {
             n_bits: 453281356,
             nonce: 274148111
         };
-        contract.accept_header(block_header);
+
+        // Block 100001.
+        let block_header_100001 = BlockHeader{ 
+            block_hash: HashStr{ value: "00000000000080b66c911bd5ba14a74260057311eaeb1982802f7010f1a9f090".to_string() },
+            version: 1,
+            prev_block_hash: HashStr{ value:"000000000003ba27aa200b1cecaad478d2b00432346c3f1f3986da1afd33e506".to_string() },
+            merkle_root_hash: HashStr{ value:"7fe79307aeb300d910d9c4bec5bacb4c7e114c7dfd6789e19f3a733debb3bb6a".to_string() },
+            time: 1293624404,
+            n_bits: 453281356,
+            nonce: 2613872960
+        };
+
+        // Block 100002.
+        let block_header_100002 = BlockHeader{ 
+            block_hash: HashStr{ value: "0000000000013b8ab2cd513b0261a14096412195a72a0c4827d229dcc7e0f7af".to_string() },
+            version: 1,
+            prev_block_hash: HashStr{ value:"00000000000080b66c911bd5ba14a74260057311eaeb1982802f7010f1a9f090".to_string() },
+            merkle_root_hash: HashStr{ value:"2fda58e5959b0ee53c5253da9b9f3c0c739422ae04946966991cf55895287552".to_string() },
+            time: 1293625051,
+            n_bits: 453281356,
+            nonce: 2478813466
+        };
+        
+        // Block 100003.
+        let block_header_100003 = BlockHeader{ 
+            block_hash: HashStr{ value: "000000000002a0a74129007b1481d498d0ff29725e9f403837d517683abac5e1".to_string() },
+            version: 1,
+            prev_block_hash: HashStr{ value:"0000000000013b8ab2cd513b0261a14096412195a72a0c4827d229dcc7e0f7af".to_string() },
+            merkle_root_hash: HashStr{ value:"5f17bef3616d703f27d05f0125b1720ba925a61fc44008dac6c438d609fc7937".to_string() },
+            time: 1293625258,
+            n_bits: 453281356,
+            nonce: 2194287892
+        };
+
+        // Block 100004.
+        let block_header_100004 = BlockHeader{ 
+            block_hash: HashStr{ value: "000000000000b0b8b4e8105d62300d63c8ec1a1df0af1c2cdbd943b156a8cd79".to_string() },
+            version: 1,
+            prev_block_hash: HashStr{ value:"000000000002a0a74129007b1481d498d0ff29725e9f403837d517683abac5e1".to_string() },
+            merkle_root_hash: HashStr{ value:"a5c67f0b44c1a342dec9135a566fd93f0c728452d1dbf850f4f9a47af82aed77".to_string() },
+            time: 1293625358,
+            n_bits: 453281356,
+            nonce: 2731388424
+        };
+
+        // Block 100005.
+        let block_header_100005 = BlockHeader{ 
+            block_hash: HashStr{ value: "000000000000dab0130bbcc991d3d7ae6b81aa6f50a798888dfe62337458dc45".to_string() },
+            version: 1,
+            prev_block_hash: HashStr{ value:"000000000000b0b8b4e8105d62300d63c8ec1a1df0af1c2cdbd943b156a8cd79".to_string() },
+            merkle_root_hash: HashStr{ value:"63194f18be0af63f2c6bc9dc0f777cbefed3d9415c4af83f3ee3a3d669c00cb5".to_string() },
+            time: 1293625703,
+            n_bits: 453281356,
+            nonce: 1667081359
+        };
+        
+        let block_header_100006 = BlockHeader{ 
+            block_hash: HashStr{ value: "0000000000009b958a82c10804bd667722799cc3b457bc061cd4b7779110cd60".to_string() },
+            version: 1,
+            prev_block_hash: HashStr{ value:"000000000000dab0130bbcc991d3d7ae6b81aa6f50a798888dfe62337458dc45".to_string() },
+            merkle_root_hash: HashStr{ value:"75c9a01add867b2fd57b2b70b246a9d8eaf14727673ccb01c85c974f2f8a7221".to_string() },
+            time: 1293626048,
+            n_bits: 453281356,
+            nonce: 1834239867
+        };
+
+        contract.accept_header(block_header_100000);
+        contract.accept_header(block_header_100001);
+        contract.accept_header(block_header_100002);
+        contract.accept_header(block_header_100003);
+        contract.accept_header(block_header_100004);
+        contract.accept_header(block_header_100005);
+        contract.accept_header(block_header_100006);
 
         let merkle_proof = MerkleProof { 
             tx_hash: HashStr{ value: "fff2525b8931402dd09222c50775608f75787bd2b87e56995a7bdd30f79702c4".to_string() },

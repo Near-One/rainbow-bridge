@@ -70,32 +70,12 @@ impl BtcClientContract {
         if (calculated_block_hash != block_header.block_hash.value) {
             return false;
         }
-        // TODO verify difficulty.
-        if (Self::within6Confirms(self, block_header.clone())) {
-            return false
-        }
         
         // Verify the hash is smaller than the target.
         if (calculated_block_hash > nbits_hex) {
             return false;
         }
         return true;
-    }
-
-    fn within6Confirms(
-        &self,
-        block_header: BlockHeader
-    ) -> bool {
-        let mut block_hash = self.most_recent_block_hash.clone();
-        let mut i = 0;
-        while (i < 6) {
-            if (block_header.block_hash.clone() == block_hash) {
-                return true;
-            }
-            block_hash = block_header.prev_block_hash.clone();
-            i += 1;
-        }
-        return false;
     }
 
     /**
@@ -122,7 +102,9 @@ impl BtcClientContract {
             return false;
         }
 
-        // TODO check for 6 confirmations.
+        if (Self::within_6_confirms(self, block_hash)) {
+            return false;
+        }
         // TODO check for paid fee.
         // TODO check tx_hash is in the main chain, ie not a fork.
 
@@ -156,6 +138,22 @@ impl BtcClientContract {
         return result_hash;
     }
 
+    fn within_6_confirms(
+        &self,
+        block_hash: &String
+    ) -> bool {
+        let mut block_hash_pointer = self.most_recent_block_hash.clone();
+        let mut i = 0;
+        while (i < 6) {
+            if (block_hash.clone() == block_hash_pointer.value) {
+                return true;
+            }
+            block_hash_pointer = self.blocks.get(&block_hash_pointer).unwrap().prev_block_hash.clone();
+            i += 1;
+        }
+        return false;
+    }
+
     fn concat_hash(a: HashStr, b: HashStr) -> HashStr {
         let ab = [Self::little_endian(&a.value), Self::little_endian(&b.value)].concat();
         return HashStr{ value: Self::double_sha256(&ab) };
@@ -169,13 +167,6 @@ impl BtcClientContract {
         let time_hex = Self::get_hex(block_header.time);
         let nbits_hex = Self::get_hex(block_header.n_bits);
         let nonce_hex = Self::get_hex(block_header.nonce);
-
-        // println!("{}", version_hex);
-        // println!("{}", prev_hash_hex);
-        // println!("{}", merkle_root_hex);
-        // println!("{}", time_hex);
-        // println!("{}", nbits_hex);
-        // println!("{}", nonce_hex);
 
         return Self::double_sha256(&[version_hex, prev_hash_hex, merkle_root_hex, time_hex, nbits_hex, nonce_hex].concat());
     }
