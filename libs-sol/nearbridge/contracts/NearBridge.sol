@@ -103,7 +103,6 @@ contract NearBridge is Ownable {
         NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
         require(borsh.finished(), "NearBridge: only light client block should be passed");
         bytes32 nearBlockHash = hash(nearBlock);
-        bytes32 nearBlockNextHash = nextHash(nearBlock, nearBlockHash);
 
         // 1. The height of the block is higher than the height of the current head
         require(
@@ -220,7 +219,7 @@ contract NearBridge is Ownable {
         revert("NearBridge: Should never be reached");
     }
 
-    function hash(NearDecoder.LightClientBlock memory nearBlock) public view returns(bytes32) {
+    function hash(NearDecoder.LightClientBlock memory nearBlock) public pure returns(bytes32) {
         return keccak256(abi.encodePacked(
             nearBlock.prev_block_hash,
             keccak256(abi.encodePacked(
@@ -230,7 +229,7 @@ contract NearBridge is Ownable {
         ));
     }
 
-    function nextHash(NearDecoder.LightClientBlock memory nearBlock, bytes32 currentHash) public view returns(bytes32) {
+    function nextHash(NearDecoder.LightClientBlock memory nearBlock, bytes32 currentHash) public pure returns(bytes32) {
         return keccak256(abi.encodePacked(
             currentHash,
             nearBlock.next_block_inner_hash

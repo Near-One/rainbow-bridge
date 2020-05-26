@@ -95,7 +95,7 @@ library NearDecoder {
         bytes32 hash; // Additional computable element
     }
 
-    function decodeBlockHeaderInnerLite(Borsh.Data memory data) internal view returns(BlockHeaderInnerLite memory header) {
+    function decodeBlockHeaderInnerLite(Borsh.Data memory data) internal pure returns(BlockHeaderInnerLite memory header) {
         header.hash = data.peekKeccak256(208);
         header.height = data.decodeU64();
         header.epoch_id = data.decodeBytes32();

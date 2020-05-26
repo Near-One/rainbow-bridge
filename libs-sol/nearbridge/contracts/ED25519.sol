@@ -1,4 +1,4 @@
-pragma solidity >=0.5;
+pragma solidity ^0.5.0;
 
 
 // https://gist.github.com/abacabadabacaba/cb927b5ebe6db63f00b98902503ffc76
