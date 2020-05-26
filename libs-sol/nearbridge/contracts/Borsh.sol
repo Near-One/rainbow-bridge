@@ -127,12 +127,12 @@ library Borsh {
         }
     }
 
-    struct PublicKey {
+    struct SECP256K1PublicKey {
         uint256 x;
         uint256 y;
     }
 
-    function decodePublicKey(Borsh.Data memory data) internal pure returns(PublicKey memory key) {
+    function decodeSECP256K1PublicKey(Borsh.Data memory data) internal pure returns(SECP256K1PublicKey memory key) {
         key.x = decodeU256(data);
         key.y = decodeU256(data);
     }

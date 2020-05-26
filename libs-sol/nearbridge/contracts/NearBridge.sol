@@ -167,7 +167,7 @@ contract NearBridge is Ownable {
         });
         for (uint i = 0; i < nearBlock.next_bps.validatorStakes.length; i++) {
             last.bps[i] = BlockProducer({
-                publicKey: nearBlock.next_bps.validatorStakes[i].public_key,
+                publicKey: nearBlock.next_bps.validatorStakes[i].public_key.ed25519,
                 stake: nearBlock.next_bps.validatorStakes[i].stake
             });
         }

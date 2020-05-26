@@ -25,6 +25,7 @@ function cookLightClientBlock(block) {
         block.next_bps.map(next_bp => [
             web3.utils.toBN(next_bp.account_id.length).toBuffer('le', 4),
             Buffer.from(next_bp.account_id),
+            next_bp.public_key.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
             bs58.decode(next_bp.public_key.substr(8)),
             web3.utils.toBN(next_bp.stake).toBuffer('le', 16)
         ]),
@@ -59,6 +60,7 @@ function cookLightClientBlock(block) {
             block.next_bps.map(next_bp => Buffer.concat([
                 web3.utils.toBN(next_bp.account_id.length).toBuffer('le', 4),
                 Buffer.from(next_bp.account_id),
+                next_bp.public_key.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
                 bs58.decode(next_bp.public_key.substr(8)),
                 web3.utils.toBN(next_bp.stake).toBuffer('le', 16)
             ])),

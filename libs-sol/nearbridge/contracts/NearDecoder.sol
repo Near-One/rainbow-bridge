@@ -9,15 +9,36 @@ library NearDecoder {
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
 
+    struct PublicKey {
+        uint8 enumIndex;
+
+        Borsh.ED25519PublicKey ed25519;
+        Borsh.SECP256K1PublicKey secp256k1;
+    }
+
+    function decodePublicKey(Borsh.Data memory data) internal pure returns(PublicKey memory key) {
+        key.enumIndex = data.decodeU8();
+
+        if (key.enumIndex == 0) {
+            key.ed25519 = data.decodeED25519PublicKey();
+        }
+        else if (key.enumIndex == 1) {
+            key.secp256k1 = data.decodeSECP256K1PublicKey();
+        }
+        else {
+            revert("NearBridge: Only ED25519 and SECP256K1 signatures are supported");
+        }
+    }
+
     struct ValidatorStake {
         string account_id;
-        Borsh.ED25519PublicKey public_key;
+        PublicKey public_key;
         uint128 stake;
     }
 
     function decodeValidatorStake(Borsh.Data memory data) internal pure returns(ValidatorStake memory validatorStake) {
         validatorStake.account_id = string(data.decodeBytes());
-        validatorStake.public_key = data.decodeED25519PublicKey();
+        validatorStake.public_key = data.decodePublicKey();
         validatorStake.stake = data.decodeU128();
     }
 
