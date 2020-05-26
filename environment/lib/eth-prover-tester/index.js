@@ -1,9 +1,9 @@
 const utils = require('ethereumjs-util');
 const Web3 = require('web3');
 const BN = require('bn.js');
-const {EthProofExtractor, receiptFromWeb3, logFromWeb3} = require('../eth-proof-extractor');
-const {borshSchema} = require('../eth-prover-contract');
-const {serialize} = require('../borsh');
+const { EthProofExtractor, receiptFromWeb3, logFromWeb3 } = require('../eth-proof-extractor');
+const { borshSchema } = require('../eth-prover-contract');
+const { serialize } = require('../borsh');
 
 // Tests EthProver in the following way:
 // * Gets the last block submitted to EthClient;
@@ -22,7 +22,7 @@ class EthProverTester {
         // Number of blocks to process.
         const numBlocks = 1;
         // let firstBlock = (await this.ethClientContract.last_block_number()).toNumber() - 1;
-        let firstBlock = 10111700;
+        let firstBlock = 10;
         let lastBlock = firstBlock;
         // Wait for the blocks to be accepted by the EthClient.
         while (firstBlock + numBlocks > lastBlock) {
@@ -35,7 +35,8 @@ class EthProverTester {
         let extractor = new EthProofExtractor();
         extractor.initialize(this.ethNodeURL);
         let test_num = 0;
-        for (let currBlock = firstBlock; firstBlock <= lastBlock; firstBlock++) {
+
+        for (let currBlock = firstBlock; currBlock <= lastBlock; currBlock++) {
             let block = await this.web3.eth.getBlock(currBlock);
             for (let txHash of block.transactions) {
                 const receipt = await extractor.extractReceipt(txHash);
@@ -113,7 +114,7 @@ class EthProverTester {
                         args,
                         new BN('1000000000000000')
                     );
-                    
+
                     if (!result) {
                         process.exit(1);
                     }
@@ -122,6 +123,13 @@ class EthProverTester {
                     console.log(`TEST NUM ${test_num} SUCCEEDED`);
                 }
             }
+        }
+        extractor.destroy();
+    }
+
+    destroy() {
+        if (this.web3.currentProvider.connection.close) { // Only WebSocket provider has close, HTTPS don't
+            this.web3.currentProvider.connection.close();
         }
     }
 }
