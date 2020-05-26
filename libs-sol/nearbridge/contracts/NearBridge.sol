@@ -57,7 +57,7 @@ contract NearBridge is Ownable {
         msg.sender.transfer(LOCK_ETH_AMOUNT);
     }
 
-    function validate(address user, address payable receiver, bytes memory data) public {
+    function challenge(address user, address payable receiver, bytes memory data, uint256 signatureIndex) public {
         require(last.hash == keccak256(data), "Data did not match");
         require(block.timestamp < last.validAfter, "Lock period already passed");
 
@@ -66,34 +66,17 @@ contract NearBridge is Ownable {
         bytes32 nearBlockHash = hash(nearBlock);
         bytes32 nearBlockNextHash = nextHash(nearBlock, nearBlockHash);
 
-        // 4. approvals_next and approvals_after_next contain signatures that check out against the block producers for the epoch of the block
-        // 5. The signatures present in both approvals_next and approvals_after_next correspond to more than 2/3 of the total stake
-        uint256 totalStake = 0;
-        for (uint i = 0; i < prev.bps_count; i++) {
-            totalStake = totalStake.add(
-                prev.bps[i].stake
-            );
-        }
+        bytes memory tempData = abi.encodePacked(uint8(0), nearBlockNextHash, _reversedUint64(nearBlock.inner_lite.height), bytes23(0));
+        (bytes32 arg1, bytes9 arg2) = abi.decode(tempData, (bytes32, bytes9));
 
-        bool votingSuccced = _checkValidatorSignatures(
-            nearBlock.inner_lite.height,
-            totalStake,
-            nearBlockHash,
-            nearBlock.approvals_next,
-            prev.bps
+        bool votingSuccced = Ed25519.check(
+            prev.bps[signatureIndex].publicKey.xy,
+            nearBlock.approvals_after_next[signatureIndex].signature.rs[0],
+            nearBlock.approvals_after_next[signatureIndex].signature.rs[1],
+            arg1,
+            arg2
         );
-        if (!votingSuccced) {
-            _payRewardAndRollBack(user, receiver);
-            return;
-        }
 
-        votingSuccced = _checkValidatorSignatures(
-            nearBlock.inner_lite.height,
-            totalStake,
-            nearBlockNextHash,
-            nearBlock.approvals_after_next,
-            prev.bps
-        );
         if (!votingSuccced) {
             _payRewardAndRollBack(user, receiver);
             return;
@@ -142,34 +125,23 @@ contract NearBridge is Ownable {
             );
         }
 
-        // 4. approvals_next and approvals_after_next contain signatures that check out against the block producers for the epoch of the block
-        // 5. The signatures present in both approvals_next and approvals_after_next correspond to more than 2/3 of the total stake
-        // uint256 totalStake = 0;
-        // for (uint i = 0; i < nearBlock.next_bps.validatorStakes.length; i++) {
-        //     totalStake = totalStake.add(
-        //         nearBlock.next_bps.validatorStakes[i].stake
-        //     );
-        // }
-        // require(
-        //     _checkValidatorSignatures(
-        //         nearBlock.inner_lite.height,
-        //         totalStake,
-        //         nearBlockHash,
-        //         nearBlock.approvals_next,
-        //         prev.bps
-        //     ),
-        //     "NearBridge: Less than 2/3 voted by the next block"
-        // );
-        // require(
-        //     _checkValidatorSignatures(
-        //         nearBlock.inner_lite.height,
-        //         totalStake,
-        //         nearBlockNextHash,
-        //         nearBlock.approvals_after_next,
-        //         prev.bps
-        //     ),
-        //     "NearBridge: Less than 2/3 voted by the block after next"
-        // );
+        // 4. approvals_after_next contain signatures that check out against the block producers for the epoch of the block
+        // 5. The signatures present in approvals_after_next correspond to more than 2/3 of the total stake
+        uint256 totalStake = 0;
+        uint256 votedFor = 0;
+        if (prev.bps_count > 0) {
+            require(nearBlock.next_bps.validatorStakes.length == prev.bps_count, "NearBridge: number of BPs should match number of approvals");
+        }
+        for (uint i = 0; i < nearBlock.next_bps.validatorStakes.length; i++) {
+            totalStake = totalStake.add(
+                nearBlock.next_bps.validatorStakes[i].stake
+            );
+            if (!nearBlock.approvals_after_next[i].none) {
+                // Assume presented signatures are valid, but this could be challenged
+                votedFor = votedFor.add(nearBlock.next_bps.validatorStakes[i].stake);
+            }
+        }
+        require(votedFor > totalStake.mul(2).div(3), "NearBridge: Less than 2/3 voted by the block after next");
 
         // 6. If next_bps is not none, sha256(borsh(next_bps)) corresponds to the next_bp_hash in inner_lite.
         if (!nearBlock.next_bps.none) {
@@ -224,6 +196,7 @@ contract NearBridge is Ownable {
                 (bytes32 arg1, bytes9 arg2) = abi.decode(data, (bytes32, bytes9));
 
                 require(
+                    validatorStakes[i].publicKey.xy != 0 &&
                     Ed25519.check(
                         validatorStakes[i].publicKey.xy,
                         approvals[i].signature.rs[0],
