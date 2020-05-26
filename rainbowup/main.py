@@ -191,7 +191,7 @@ Run rainbowup <command> --help to see help for specific command.
         self._wait(self._is_near_node_running)
 
         # If Ethereum network is not specified then we need to start Ganache and wait for it.
-        if not self.args.eth_network:
+        if not self.args.eth_node_url:
             d = GanacheService(self.args)
             d.run()
             # We cannot really check the external Ethereum network like that so we only do it for Ganache.
@@ -205,7 +205,7 @@ Run rainbowup <command> --help to see help for specific command.
                             master_sk=self._near_master_sk(),
                             bridge_acc_id='ethbridge',
                             bridge_sk=self._near_master_sk(),  # Use the same key for now.
-                            validate_ethash='true' if self.args.eth_network else 'false'
+                            validate_ethash='true' if self.args.eth_node_url else 'false'
                             )
         d.run()
 
@@ -228,7 +228,7 @@ Run rainbowup <command> --help to see help for specific command.
                                    master_sk=self._near_master_sk(),
                                    bridge_acc_id='ethbridge',
                                    bridge_sk=self._near_master_sk(),  # Use the same key for now.
-                                   validate_ethash='true' if self.args.eth_network else 'false'
+                                   validate_ethash='true' if self.args.eth_node_url else 'false'
                                    )
         d.run().wait()
 
