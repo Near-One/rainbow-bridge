@@ -535,7 +535,7 @@ library NearDecoder {
     }
 
     function decodeBlockHeaderInnerLite(Borsh.Data memory data) internal pure returns(BlockHeaderInnerLite memory header) {
-        header.hash = data.peekKeccak256(208);
+        header.hash = data.peekSha256(208);
         header.height = data.decodeU64();
         header.epoch_id = data.decodeBytes32();
         header.next_epoch_id = data.decodeBytes32();

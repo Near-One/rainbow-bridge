@@ -127,6 +127,8 @@ library Borsh {
         }
     }
 
+    // Public key
+
     struct SECP256K1PublicKey {
         uint256 x;
         uint256 y;
@@ -145,13 +147,15 @@ library Borsh {
         key.xy = decodeBytes32(data);
     }
 
-    struct Signature {
+    // Signature
+
+    struct SECP256K1Signature {
         bytes32 r;
         bytes32 s;
         uint8 v;
     }
 
-    function decodeSignature(Borsh.Data memory data) internal pure returns(Signature memory sig) {
+    function decodeSECP256K1Signature(Borsh.Data memory data) internal pure returns(SECP256K1Signature memory sig) {
         sig.r = decodeBytes32(data);
         sig.s = decodeBytes32(data);
         sig.v = decodeU8(data);

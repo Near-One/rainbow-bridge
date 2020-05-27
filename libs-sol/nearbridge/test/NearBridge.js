@@ -32,10 +32,11 @@ function cookLightClientBlock(block) {
 
         web3.utils.toBN(block.approvals_after_next.length).toBuffer('le', 4),
         block.approvals_after_next.map(
-            signature => Buffer.concat([
+            signature => [
                 Buffer.from([signature ? 1 : 0]),
+                signature.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
                 signature ? bs58.decode(signature.substr(8)) : Buffer.from([])
-            ])
+            ]
         ),
     ]);
     
@@ -71,6 +72,7 @@ function cookLightClientBlock(block) {
             block.approvals_after_next.map(
                 signature => Buffer.concat([
                     Buffer.from([signature ? 1 : 0]),
+                    signature.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
                     signature ? bs58.decode(signature.substr(8)) : Buffer.from([])
                 ])
             ),
@@ -81,16 +83,15 @@ function cookLightClientBlock(block) {
 contract('NearBridge', function ([_, addr1]) {
     beforeEach(async function () {
         this.decoder = await NearDecoder.new();
-        this.bridge = await NearBridge.new(
-            "0xedb63664f3b62c4a24ab7acf1c4462ad55217748814fe6aea9bc0453694635b7",
-            "0x81039bbb1b93afa4d586b867ac068bc7170421b01a6a802e4b2e29e5e8357bf8"
-        );
+        this.bridge = await NearBridge.new();
     });
 
     it('should be ok', async function () {
-        const data = cookLightClientBlock(require('./block_1498.json'));
-        console.log(data.toString('hex'));
+        const data_120998 = cookLightClientBlock(require('./block_120998.json'));
+        //const data_120999 = cookLightClientBlock(require('./block_120999.json'));
+
         await this.bridge.deposit({ value: web3.utils.toWei('1') });
-        await this.bridge.addLightClientBlock(data);
+        await this.bridge.initWithBlock(data_120998);
+        //await this.bridge.addLightClientBlock(data_120999);
     });
 });
