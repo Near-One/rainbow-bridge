@@ -2,6 +2,7 @@ const { EthClientSetup } = require('./lib/eth-client-setup');
 const { EthRelay } = require('./lib/eth-relay');
 const { EthProofExtractor } = require('./lib/eth-proof-extractor');
 const { EthProverTester } = require('./lib/eth-prover-tester');
+const { Eth2NearTransferExample } = require('./lib/eth2near-transfer-example');
 
 (async function () {
     switch (process.argv[2]) {
@@ -33,6 +34,16 @@ const { EthProverTester } = require('./lib/eth-prover-tester');
             await tester.run();
             tester.destroy();
             console.log("DONE");
+            break;
+        }
+        case 'eth2near_transfer': {
+            const transfer = new Eth2NearTransferExample(process.env.ETH_NODE_URL,
+                process.env.ETH_MASTER_SK,
+                process.env.ETH_CONTRACTS_DIR,
+                process.env.NEAR_LOCKER_ACCOUNT
+                );
+            await transfer.initialize();
+            await transfer.run();
             break;
         }
         default: {
