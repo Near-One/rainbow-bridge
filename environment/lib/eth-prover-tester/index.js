@@ -21,8 +21,8 @@ class EthProverTester {
     async run() {
         // Number of blocks to process.
         const numBlocks = 1;
-        // let firstBlock = (await this.ethClientContract.last_block_number()).toNumber() - 1;
-        let firstBlock = 10;
+        let firstBlock = (await this.ethClientContract.last_block_number()).toNumber() - 1;
+        // let firstBlock = 10;
         let lastBlock = firstBlock;
         // Wait for the blocks to be accepted by the EthClient.
         while (firstBlock + numBlocks > lastBlock) {
