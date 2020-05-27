@@ -62,37 +62,15 @@ contract NearBridge is Ownable {
         Borsh.Data memory borsh = Borsh.from(data);
         NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
 
-        bytes memory message = abi.encodePacked(uint8(0), nearBlock.next_hash, _reversedUint64(nearBlock.inner_lite.height), bytes23(0));
+        bool validSignature = _checkValidatorSignature(
+            nearBlock.inner_lite.height,
+            nearBlock.inner_lite.hash,
+            nearBlock.approvals_after_next[signatureIndex].signature,
+            prev.next_bps[signatureIndex].publicKey
+        );
+        require(!validSignature, "Can't challenge valid signature");
 
-        bool votingSuccced = false;
-        if (nearBlock.approvals_after_next[signatureIndex].signature.enumIndex == 0) {
-            (bytes32 arg1, bytes9 arg2) = abi.decode(message, (bytes32, bytes9));
-            votingSuccced = Ed25519.check(
-                backup.next_bps[signatureIndex].publicKey.ed25519.xy,
-                nearBlock.approvals_after_next[signatureIndex].signature.ed25519.rs[0],
-                nearBlock.approvals_after_next[signatureIndex].signature.ed25519.rs[1],
-                arg1,
-                arg2
-            );
-        }
-        else {
-            votingSuccced = ecrecover(
-                keccak256(message),
-                nearBlock.approvals_after_next[signatureIndex].signature.secp256k1.v,
-                nearBlock.approvals_after_next[signatureIndex].signature.secp256k1.r,
-                nearBlock.approvals_after_next[signatureIndex].signature.secp256k1.s
-            ) == address(uint256(keccak256(abi.encodePacked(
-                backup.next_bps[signatureIndex].publicKey.secp256k1.x,
-                backup.next_bps[signatureIndex].publicKey.secp256k1.y
-            ))));
-        }
-
-        if (!votingSuccced) {
-            _payRewardAndRollBack(user, receiver);
-            return;
-        }
-
-        revert("Should not be reached");
+        _payRewardAndRollBack(user, receiver);
     }
 
     function _payRewardAndRollBack(address user, address payable receiver) internal {
@@ -105,31 +83,6 @@ contract NearBridge is Ownable {
         last = backup;
     }
 
-    function toString(address account) public pure returns(string memory) {
-        return toString(abi.encodePacked(account));
-    }
-
-    function toString(uint256 value) public pure returns(string memory) {
-        return toString(abi.encodePacked(value));
-    }
-
-    function toString(bytes32 value) public pure returns(string memory) {
-        return toString(abi.encodePacked(value));
-    }
-
-    function toString(bytes memory data) public pure returns(string memory) {
-        bytes memory alphabet = "0123456789abcdef";
-
-        bytes memory str = new bytes(2 + data.length * 2);
-        str[0] = '0';
-        str[1] = 'x';
-        for (uint i = 0; i < data.length; i++) {
-            str[2+i*2] = alphabet[uint(uint8(data[i] >> 4))];
-            str[3+i*2] = alphabet[uint(uint8(data[i] & 0x0f))];
-        }
-        return string(str);
-    }
-
     function initWithBlock(bytes memory data) public {
         require(!initialized, "NearBridge: already initialized");
         initialized = true;
@@ -140,7 +93,6 @@ contract NearBridge is Ownable {
 
         // TODO: rm
         require(nearBlock.hash == bytes32(0x1a7a07b5eee1f4d8d7e47864d533143972f858464bacdc698774d167fb1b40e6), "Near block hash not match");
-        //revert(toString(nearBlock.hash));
 
         _updateBlock(nearBlock, data);
     }
