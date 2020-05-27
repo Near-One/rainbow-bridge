@@ -9,50 +9,60 @@ library NearDecoder {
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
 
+    struct PublicKey {
+        uint8 enumIndex;
+
+        Borsh.ED25519PublicKey ed25519;
+        Borsh.SECP256K1PublicKey secp256k1;
+    }
+
+    function decodePublicKey(Borsh.Data memory data) internal pure returns(PublicKey memory key) {
+        key.enumIndex = data.decodeU8();
+
+        if (key.enumIndex == 0) {
+            key.ed25519 = data.decodeED25519PublicKey();
+        }
+        else if (key.enumIndex == 1) {
+            key.secp256k1 = data.decodeSECP256K1PublicKey();
+        }
+        else {
+            revert("NearBridge: Only ED25519 and SECP256K1 signatures are supported");
+        }
+    }
+
     struct ValidatorStake {
         string account_id;
-        Borsh.ED25519PublicKey public_key;
+        PublicKey public_key;
         uint128 stake;
     }
 
     function decodeValidatorStake(Borsh.Data memory data) internal pure returns(ValidatorStake memory validatorStake) {
         validatorStake.account_id = string(data.decodeBytes());
-        validatorStake.public_key = data.decodeED25519PublicKey();
+        validatorStake.public_key = data.decodePublicKey();
         validatorStake.stake = data.decodeU128();
     }
 
     struct OptionalValidatorStakes {
         bool none;
-        ValidatorStake[] validatorStakes;
 
+        ValidatorStake[] validatorStakes;
         bytes32 hash; // Additional computable element
     }
 
-    function decodeOptionalValidatorStakes(Borsh.Data memory data) internal pure returns(OptionalValidatorStakes memory stakes) {
+    function decodeOptionalValidatorStakes(Borsh.Data memory data) internal view returns(OptionalValidatorStakes memory stakes) {
         stakes.none = (data.decodeU8() == 0);
         if (!stakes.none) {
-            stakes.validatorStakes = new ValidatorStake[](data.decodeU32());
+            uint256 start = data.offset;
 
-            bytes memory bps_data = "";
+            stakes.validatorStakes = new ValidatorStake[](data.decodeU32());
             for (uint i = 0; i < stakes.validatorStakes.length; i++) {
                 stakes.validatorStakes[i] = data.decodeValidatorStake();
-
-                bps_data = abi.encodePacked(
-                    bps_data,
-                    sha256(abi.encodePacked(stakes.validatorStakes[i].account_id)),
-                    sha256(abi.encodePacked(uint8(0), stakes.validatorStakes[i].public_key.xy)),
-                    sha256(bigEndianToLittleEndian(abi.encodePacked(stakes.validatorStakes[i].stake)))
-                );
             }
 
-            stakes.hash = sha256(bps_data);
-        }
-    }
-
-    function bigEndianToLittleEndian(bytes memory data) internal pure returns(bytes memory result) {
-        result = new bytes(data.length);
-        for (uint i = 0; i < data.length; i++) {
-            result[i] = data[data.length - 1 - i];
+            uint256 stop = data.offset;
+            data.offset = start;
+            stakes.hash = data.peekSha256(stop - start);
+            data.offset = stop;
         }
     }
 
@@ -81,17 +91,15 @@ library NearDecoder {
         BlockHeaderInnerLite inner_lite;
         bytes32 inner_rest_hash;
         OptionalValidatorStakes next_bps;
-        OptionalED25519Signature[] approvals_next; // TODO: delete
         OptionalED25519Signature[] approvals_after_next;
     }
 
-    function decodeLightClientBlock(Borsh.Data memory data) internal pure returns(LightClientBlock memory header) {
+    function decodeLightClientBlock(Borsh.Data memory data) internal view returns(LightClientBlock memory header) {
         header.prev_block_hash = data.decodeBytes32();
         header.next_block_inner_hash = data.decodeBytes32();
         header.inner_lite = data.decodeBlockHeaderInnerLite();
         header.inner_rest_hash = data.decodeBytes32();
         header.next_bps = data.decodeOptionalValidatorStakes();
-        header.approvals_next = data.decodeOptionalED25519Signatures();
         header.approvals_after_next = data.decodeOptionalED25519Signatures();
     }
 
@@ -103,12 +111,13 @@ library NearDecoder {
         bytes32 outcome_root;       /// Root of the outcomes of transactions and receipts.
         uint64 timestamp;           /// Timestamp at which the block was built.
         bytes32 next_bp_hash;       /// Hash of the next epoch block producers set
+        bytes32 block_merkle_root;
 
         bytes32 hash; // Additional computable element
     }
 
     function decodeBlockHeaderInnerLite(Borsh.Data memory data) internal pure returns(BlockHeaderInnerLite memory header) {
-        header.hash = data.peekKeccak256(176);
+        header.hash = data.peekKeccak256(208);
         header.height = data.decodeU64();
         header.epoch_id = data.decodeBytes32();
         header.next_epoch_id = data.decodeBytes32();
@@ -116,6 +125,7 @@ library NearDecoder {
         header.outcome_root = data.decodeBytes32();
         header.timestamp = data.decodeU64();
         header.next_bp_hash = data.decodeBytes32();
+        header.block_merkle_root = data.decodeBytes32();
     }
 
     struct ExecutionStatus {
