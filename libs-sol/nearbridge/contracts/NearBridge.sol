@@ -137,7 +137,7 @@ contract NearBridge is Ownable {
             );
             if (!nearBlock.approvals_after_next[i].none) {
                 // Assume presented signatures are valid, but this could be challenged
-                votedFor = votedFor.add(nearBlock.next_bps.validatorStakes[i].stake);
+                votedFor = votedFor.add(prev.bps[i].stake);
             }
         }
         require(votedFor > totalStake.mul(2).div(3), "NearBridge: Less than 2/3 voted by the block after next");
