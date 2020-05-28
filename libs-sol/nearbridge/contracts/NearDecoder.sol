@@ -124,11 +124,11 @@ library NearDecoder {
         }
 
         header.hash = sha256(abi.encodePacked(
-            header.prev_block_hash,
             sha256(abi.encodePacked(
                 header.inner_lite.hash,
                 header.inner_rest_hash
-            ))
+            )),
+            header.prev_block_hash
         ));
 
         header.next_hash = sha256(abi.encodePacked(

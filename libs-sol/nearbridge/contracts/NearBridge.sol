@@ -91,10 +91,7 @@ contract NearBridge is Ownable {
         NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
         require(borsh.finished(), "NearBridge: only light client block should be passed");
 
-        // TODO: rm
-        require(nearBlock.hash == bytes32(0x1a7a07b5eee1f4d8d7e47864d533143972f858464bacdc698774d167fb1b40e6), "Near block hash not match");
-
-        _updateBlock(nearBlock, data);
+        _updateBlock(nearBlock, data, true);
     }
 
     function addLightClientBlock(bytes memory data) public payable {
@@ -131,7 +128,7 @@ contract NearBridge is Ownable {
             require(nearBlock.approvals_after_next.length == prev.next_bps_length, "NearBridge: number of BPs should match number of approvals");
 
             uint256 votedFor = 0;
-            for (uint i = 0; i < prev.next_bps_length; i++) {
+            for (uint i = 0; i < nearBlock.approvals_after_next.length; i++) {
                 if (!nearBlock.approvals_after_next[i].none) {
                     // Assume presented signatures are valid, but this could be challenged
                     votedFor = votedFor.add(prev.next_bps[i].stake);
@@ -149,10 +146,10 @@ contract NearBridge is Ownable {
             );
         }
 
-        _updateBlock(nearBlock, data);
+        _updateBlock(nearBlock, data, false);
     }
 
-    function _updateBlock(NearDecoder.LightClientBlock memory nearBlock, bytes memory data) internal {
+    function _updateBlock(NearDecoder.LightClientBlock memory nearBlock, bytes memory data, bool init) internal {
         backup = last;
         for (uint i = 0; i < backup.next_bps_length; i++) {
             backup.next_bps[i] = last.next_bps[i];
@@ -178,7 +175,7 @@ contract NearBridge is Ownable {
             epochId: nearBlock.inner_lite.epoch_id,
             nextEpochId: nearBlock.inner_lite.next_epoch_id,
             submitter: msg.sender,
-            validAfter: block.timestamp.add(LOCK_DURATION),
+            validAfter: init ? 0 : block.timestamp.add(LOCK_DURATION),
             hash: keccak256(data),
             next_bps_length: nearBlock.next_bps.validatorStakes.length,
             next_total_stake: totalStake
