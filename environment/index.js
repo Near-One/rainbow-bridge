@@ -37,7 +37,12 @@ const { Eth2NearTransferExample } = require('./lib/eth2near-transfer-example');
             break;
         }
         case 'eth2near_transfer': {
-            const transfer = new Eth2NearTransferExample(process.env.ETH_NODE_URL,
+            const setup = new EthClientSetup();
+            await setup.initialize();
+
+            const transfer = new Eth2NearTransferExample(
+                setup.ethProverContract,
+                process.env.ETH_NODE_URL,
                 process.env.ETH_MASTER_SK,
                 process.env.ETH_CONTRACTS_DIR,
                 process.env.NEAR_LOCKER_ACCOUNT

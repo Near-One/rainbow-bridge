@@ -5,3 +5,5 @@ set -e
 
 ./eth-client/build.sh
 ./eth-prover/build.sh
+./fungible-token/build.sh
+./locker/build.sh

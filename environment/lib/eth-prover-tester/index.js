@@ -80,7 +80,7 @@ class EthProverTester {
                         _proof.push(utils.rlp.encode(node));
                     }
 
-                    const skip_bridge_call = true;
+                    const skip_bridge_call = false;
 
                     // const borsh_log_index = serialize(borshSchema, 'u64', log_index).toString('hex');
                     // const borsh_log_entry_data = serialize(borshSchema, ['u8'], log_entry_data).toString('hex');

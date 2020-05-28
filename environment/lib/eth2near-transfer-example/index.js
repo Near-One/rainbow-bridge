@@ -1,10 +1,13 @@
+const utils = require('ethereumjs-util');
 const Web3 = require('web3');
-const nearlib = require('nearlib');
 const fs = require('fs');
 const path = require('path');
+const BN = require('bn.js');
+const { EthProofExtractor, receiptFromWeb3, logFromWeb3 } = require('../eth-proof-extractor');
 
 class Eth2NearTransferExample {
-    constructor(ethNodeURL, ethMasterSK, ethContractsDir, nearLockerAccount) {
+    constructor(ethProverContract, ethNodeURL, ethMasterSK, ethContractsDir, nearLockerAccount) {
+        this.ethProverContract = ethProverContract;
         this.ethNodeURL = ethNodeURL;
         this.ethMasterSK = ethMasterSK;
         this.ethContractsDir = ethContractsDir;
@@ -62,7 +65,7 @@ class Eth2NearTransferExample {
 
     // Lock token in a loop.
     async run() {
-        this.subscribeToLocked();
+        await this.subscribeToLocked();
         const lockToken = async () => {
             // First approve transfer on the token.
             try {
@@ -94,13 +97,61 @@ class Eth2NearTransferExample {
     }
 
     // Subscribe to `Locked` event, extract the proof and submit it to the Locker contract on Near blockchain.
-    subscribeToLocked() {
+    async subscribeToLocked() {
+        let extractor = new EthProofExtractor();
+        extractor.initialize(this.ethNodeURL);
+        let ethProverContract = this.ethProverContract;
         this.tokenLockerContract.events.Locked({
             "fromBlock": "latest"
         },
-        function(error, event) {
+        async function(error, event) {
             console.log(event);
-            // TODO: For non-ganache networks extract the proof and submit it to the Locker contract on Near blockchain.
+            const receipt = await extractor.extractReceipt(event.transactionHash);
+            const block = await extractor.extractBlock(receipt.blockNumber);
+            const tree = await extractor.buildTrie(block);
+            const proof = await extractor.extractProof(block, tree, receipt.transactionIndex);
+
+            let txLogIndex = -1;
+            let logFound = false;
+            for (const log of receipt.logs) {
+                txLogIndex++;
+                const blockLogIndex = log.logIndex;
+                if (blockLogIndex == event.logIndex) {
+                    logFound = true;
+                    const log_entry_data = logFromWeb3(log).serialize();
+                    const receipt_index = proof.txIndex;
+                    const receipt_data = receiptFromWeb3(receipt).serialize();
+                    const header_data = proof.header.serialize();
+                    let _proof = [];
+                    for (let node of proof.receiptProof) {
+                        _proof.push(utils.rlp.encode(node));
+                    }
+
+                    const skip_bridge_call = true;
+
+                    const args = {
+                        log_index: txLogIndex,
+                        log_entry_data: log_entry_data,
+                        receipt_index: receipt_index,
+                        receipt_data: receipt_data,
+                        header_data: header_data,
+                        proof: _proof,
+                        skip_bridge_call: skip_bridge_call,
+                    };
+
+                    let result = await ethProverContract.verify_log_entry(
+                        args,
+                        new BN('1000000000000000')
+                    );
+                    console.log("Verified log entry");
+
+                    break;
+                }
+            }
+
+            if (!logFound) {
+                console.log(`ERROR log not found for event ${event}`);
+            }
         }
         );
     }
