@@ -13,7 +13,7 @@ contract NearBridge is Ownable {
     using NearDecoder for Borsh.Data;
 
     struct BlockProducer {
-        Borsh.ED25519PublicKey publicKey;
+        NearDecoder.PublicKey publicKey;
         uint128 stake;
     }
 
@@ -25,15 +25,18 @@ contract NearBridge is Ownable {
         uint256 validAfter;
         bytes32 hash;
 
-        uint256 bps_count;
-        mapping(uint256 => BlockProducer) bps;
+        uint256 next_bps_length;
+        uint256 next_total_stake;
+        mapping(uint256 => BlockProducer) next_bps;
     }
 
     uint256 constant public LOCK_ETH_AMOUNT = 1 ether;
     uint256 constant public LOCK_DURATION = 1 hours;
 
+    bool initialized;
     State public last;
     State public prev;
+    State public backup;
     mapping(uint256 => bytes32) public blockHashes;
     mapping(address => uint256) public balanceOf;
 
@@ -41,11 +44,6 @@ contract NearBridge is Ownable {
         uint256 indexed height,
         bytes32 blockHash
     );
-
-    constructor(bytes32 firstEpochId, bytes32 firstNextEpochId) public {
-        last.epochId = firstEpochId;
-        last.nextEpochId = firstNextEpochId;
-    }
 
     function deposit() public payable {
         require(msg.value == LOCK_ETH_AMOUNT && balanceOf[msg.sender] == 0);
@@ -63,26 +61,16 @@ contract NearBridge is Ownable {
 
         Borsh.Data memory borsh = Borsh.from(data);
         NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
-        bytes32 nearBlockHash = hash(nearBlock);
-        bytes32 nearBlockNextHash = nextHash(nearBlock, nearBlockHash);
 
-        bytes memory tempData = abi.encodePacked(uint8(0), nearBlockNextHash, _reversedUint64(nearBlock.inner_lite.height), bytes23(0));
-        (bytes32 arg1, bytes9 arg2) = abi.decode(tempData, (bytes32, bytes9));
-
-        bool votingSuccced = Ed25519.check(
-            prev.bps[signatureIndex].publicKey.xy,
-            nearBlock.approvals_after_next[signatureIndex].signature.rs[0],
-            nearBlock.approvals_after_next[signatureIndex].signature.rs[1],
-            arg1,
-            arg2
+        bool validSignature = _checkValidatorSignature(
+            nearBlock.inner_lite.height,
+            nearBlock.inner_lite.hash,
+            nearBlock.approvals_after_next[signatureIndex].signature,
+            prev.next_bps[signatureIndex].publicKey
         );
+        require(!validSignature, "Can't challenge valid signature");
 
-        if (!votingSuccced) {
-            _payRewardAndRollBack(user, receiver);
-            return;
-        }
-
-        revert("Should not be reached");
+        _payRewardAndRollBack(user, receiver);
     }
 
     function _payRewardAndRollBack(address user, address payable receiver) internal {
@@ -92,7 +80,18 @@ contract NearBridge is Ownable {
 
         // Erase last state
         delete blockHashes[last.height];
-        last = prev;
+        last = backup;
+    }
+
+    function initWithBlock(bytes memory data) public {
+        require(!initialized, "NearBridge: already initialized");
+        initialized = true;
+
+        Borsh.Data memory borsh = Borsh.from(data);
+        NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
+        require(borsh.finished(), "NearBridge: only light client block should be passed");
+
+        _updateBlock(nearBlock, data, true);
     }
 
     function addLightClientBlock(bytes memory data) public payable {
@@ -102,7 +101,6 @@ contract NearBridge is Ownable {
         Borsh.Data memory borsh = Borsh.from(data);
         NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
         require(borsh.finished(), "NearBridge: only light client block should be passed");
-        bytes32 nearBlockHash = hash(nearBlock);
 
         // 1. The height of the block is higher than the height of the current head
         require(
@@ -120,27 +118,25 @@ contract NearBridge is Ownable {
         if (nearBlock.inner_lite.epoch_id == last.nextEpochId) {
             require(
                 !nearBlock.next_bps.none,
-                "NearBridge: Next bps should no be None"
+                "NearBridge: Next next_bps should no be None"
             );
         }
 
         // 4. approvals_after_next contain signatures that check out against the block producers for the epoch of the block
         // 5. The signatures present in approvals_after_next correspond to more than 2/3 of the total stake
-        uint256 totalStake = 0;
-        uint256 votedFor = 0;
-        if (prev.bps_count > 0) {
-            require(nearBlock.next_bps.validatorStakes.length == prev.bps_count, "NearBridge: number of BPs should match number of approvals");
-        }
-        for (uint i = 0; i < nearBlock.next_bps.validatorStakes.length; i++) {
-            totalStake = totalStake.add(
-                nearBlock.next_bps.validatorStakes[i].stake
-            );
-            if (!nearBlock.approvals_after_next[i].none) {
-                // Assume presented signatures are valid, but this could be challenged
-                votedFor = votedFor.add(prev.bps[i].stake);
+        if (prev.next_total_stake > 0) {
+            require(nearBlock.approvals_after_next.length == prev.next_bps_length, "NearBridge: number of BPs should match number of approvals");
+
+            uint256 votedFor = 0;
+            for (uint i = 0; i < nearBlock.approvals_after_next.length; i++) {
+                if (!nearBlock.approvals_after_next[i].none) {
+                    // Assume presented signatures are valid, but this could be challenged
+                    votedFor = votedFor.add(prev.next_bps[i].stake);
+                }
             }
+
+            require(votedFor > prev.next_total_stake.mul(2).div(3), "NearBridge: Less than 2/3 voted by the block after next");
         }
-        require(votedFor > totalStake.mul(2).div(3), "NearBridge: Less than 2/3 voted by the block after next");
 
         // 6. If next_bps is not none, sha256(borsh(next_bps)) corresponds to the next_bp_hash in inner_lite.
         if (!nearBlock.next_bps.none) {
@@ -150,99 +146,93 @@ contract NearBridge is Ownable {
             );
         }
 
-        // Finish:
-        prev = last;
-        prev.bps_count = last.bps_count;
-        for (uint i = 0; i < prev.bps_count; i++) {
-            prev.bps[i] = last.bps[i];
+        _updateBlock(nearBlock, data, false);
+    }
+
+    function _updateBlock(NearDecoder.LightClientBlock memory nearBlock, bytes memory data, bool init) internal {
+        backup = last;
+        for (uint i = 0; i < backup.next_bps_length; i++) {
+            backup.next_bps[i] = last.next_bps[i];
         }
+
+        // If next epoch
+        if (nearBlock.inner_lite.epoch_id == last.nextEpochId) {
+            prev = last;
+            for (uint i = 0; i < prev.next_bps_length; i++) {
+                prev.next_bps[i] = last.next_bps[i];
+            }
+        }
+
+        // Compute total stake
+        uint256 totalStake = 0;
+        for (uint i = 0; i < nearBlock.next_bps.validatorStakes.length; i++) {
+            totalStake = totalStake.add(nearBlock.next_bps.validatorStakes[i].stake);
+        }
+
+        // Update last
         last = State({
             height: nearBlock.inner_lite.height,
             epochId: nearBlock.inner_lite.epoch_id,
             nextEpochId: nearBlock.inner_lite.next_epoch_id,
             submitter: msg.sender,
-            validAfter: block.timestamp.add(LOCK_DURATION),
+            validAfter: init ? 0 : block.timestamp.add(LOCK_DURATION),
             hash: keccak256(data),
-            bps_count: nearBlock.next_bps.validatorStakes.length
+            next_bps_length: nearBlock.next_bps.validatorStakes.length,
+            next_total_stake: totalStake
         });
+
         for (uint i = 0; i < nearBlock.next_bps.validatorStakes.length; i++) {
-            last.bps[i] = BlockProducer({
-                publicKey: nearBlock.next_bps.validatorStakes[i].public_key.ed25519,
+            last.next_bps[i] = BlockProducer({
+                publicKey: nearBlock.next_bps.validatorStakes[i].public_key,
                 stake: nearBlock.next_bps.validatorStakes[i].stake
             });
         }
-        blockHashes[nearBlock.inner_lite.height] = nearBlockHash;
+
+        blockHashes[nearBlock.inner_lite.height] = nearBlock.hash;
         emit BlockHashAdded(
             last.height,
             blockHashes[last.height]
         );
     }
 
-    function _checkValidatorSignatures(
+    function _checkValidatorSignature(
         uint64 height,
-        uint256 totalStake,
         bytes32 next_block_inner_hash,
-        NearDecoder.OptionalED25519Signature[] memory approvals,
-        mapping(uint256 => BlockProducer) storage validatorStakes
+        NearDecoder.Signature memory signature,
+        NearDecoder.PublicKey storage publicKey
     ) internal view returns(bool) {
-        uint256 votedFor = 0;
-        uint256 votedAgainst = 0;
-        for (uint i = 0; i < approvals.length; i++) {
-            if (approvals[i].none) {
-                votedAgainst = votedAgainst.add(validatorStakes[i].stake);
-            } else {
-                bytes memory data = abi.encodePacked(uint8(0), next_block_inner_hash, _reversedUint64(height), bytes23(0));
-                (bytes32 arg1, bytes9 arg2) = abi.decode(data, (bytes32, bytes9));
+        bytes memory message = abi.encodePacked(uint8(0), next_block_inner_hash, _reversedUint64(height), bytes23(0));
 
-                require(
-                    validatorStakes[i].publicKey.xy != 0 &&
-                    Ed25519.check(
-                        validatorStakes[i].publicKey.xy,
-                        approvals[i].signature.rs[0],
-                        approvals[i].signature.rs[1],
-                        arg1,
-                        arg2
-                    ),
-                    "NearBridge: Validator signature is not valid"
-                );
-                votedFor = votedFor.add(validatorStakes[i].stake);
-            }
-
-            if (votedFor > totalStake.mul(2).div(3)) {
-                return true;
-            }
-            if (votedAgainst >= totalStake.mul(1).div(3)) {
-                return false;
-            }
+        if (signature.enumIndex == 0) {
+            (bytes32 arg1, bytes9 arg2) = abi.decode(message, (bytes32, bytes9));
+            return Ed25519.check(
+                publicKey.ed25519.xy,
+                signature.ed25519.rs[0],
+                signature.ed25519.rs[1],
+                arg1,
+                arg2
+            );
         }
-
-        revert("NearBridge: Should never be reached");
+        else {
+            return ecrecover(
+                keccak256(message),
+                signature.secp256k1.v + (signature.secp256k1.v < 27 ? 27 : 0),
+                signature.secp256k1.r,
+                signature.secp256k1.s
+            ) == address(uint256(keccak256(abi.encodePacked(
+                publicKey.secp256k1.x,
+                publicKey.secp256k1.y
+            ))));
+        }
     }
 
-    function hash(NearDecoder.LightClientBlock memory nearBlock) public pure returns(bytes32) {
-        return keccak256(abi.encodePacked(
-            nearBlock.prev_block_hash,
-            keccak256(abi.encodePacked(
-                nearBlock.inner_lite.hash,
-                nearBlock.inner_rest_hash
-            ))
-        ));
-    }
-
-    function nextHash(NearDecoder.LightClientBlock memory nearBlock, bytes32 currentHash) public pure returns(bytes32) {
-        return keccak256(abi.encodePacked(
-            currentHash,
-            nearBlock.next_block_inner_hash
-        ));
-    }
-
-    function _reversedUint64(uint64 data) private pure returns(uint64 res) {
-        res = data;
-        res = ((res & 0x00000000FFFFFFFF) << 32)
-            | ((res & 0xFFFFFFFF00000000) >> 32);
-        res = ((res & 0x0000FFFF0000FFFF) << 16)
-            | ((res & 0xFFFF0000FFFF0000) >> 16);
-        res = ((res & 0x00FF00FF00FF00FF) << 8)
-            | ((res & 0xFF00FF00FF00FF00) >> 8);
+    function _reversedUint64(uint64 data) private pure returns(uint64 r) {
+        r = data;
+        r = ((r & 0x00000000FFFFFFFF) << 32) |
+            ((r & 0xFFFFFFFF00000000) >> 32);
+        r = ((r & 0x0000FFFF0000FFFF) << 16) |
+            ((r & 0xFFFF0000FFFF0000) >> 16);
+        r = ((r & 0x00FF00FF00FF00FF) << 8) |
+            ((r & 0xFF00FF00FF00FF00) >> 8);
     }
 }
