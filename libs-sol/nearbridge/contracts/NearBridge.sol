@@ -214,7 +214,7 @@ contract NearBridge is Ownable {
 
         if (signature.enumIndex == 0) {
             (bytes32 arg1, bytes9 arg2) = abi.decode(message, (bytes32, bytes9));
-            return Ed25519.check(
+            return publicKey.ed25519.xy != bytes32(0) && Ed25519.check(
                 publicKey.ed25519.xy,
                 signature.ed25519.rs[0],
                 signature.ed25519.rs[1],
