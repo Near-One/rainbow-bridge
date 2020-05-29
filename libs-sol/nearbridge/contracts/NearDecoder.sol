@@ -132,8 +132,8 @@ library NearDecoder {
         ));
 
         header.next_hash = sha256(abi.encodePacked(
-            header.hash,
-            header.next_block_inner_hash
+            header.next_block_inner_hash,
+            header.hash
         ));
     }
 

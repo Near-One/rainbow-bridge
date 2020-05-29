@@ -55,32 +55,41 @@ contract NearBridge is Ownable {
         msg.sender.transfer(LOCK_ETH_AMOUNT);
     }
 
-    function challenge(address user, address payable receiver, bytes memory data, uint256 signatureIndex) public {
+    function challenge(address payable receiver, uint256 signatureIndex, bytes memory data) public {
         require(last.hash == keccak256(data), "Data did not match");
         require(block.timestamp < last.validAfter, "Lock period already passed");
 
+        require(
+            !checkBlockProducerSignatureInLastBlock(signatureIndex, data),
+            "Can't challenge valid signature"
+        );
+
+        _payRewardAndRollBack(receiver);
+    }
+
+    function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex, bytes memory data) public view returns(bool) {
         Borsh.Data memory borsh = Borsh.from(data);
         NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
 
-        bool validSignature = _checkValidatorSignature(
+        return _checkValidatorSignature(
             nearBlock.inner_lite.height,
-            nearBlock.inner_lite.hash,
+            nearBlock.next_hash,
             nearBlock.approvals_after_next[signatureIndex].signature,
             prev.next_bps[signatureIndex].publicKey
         );
-        require(!validSignature, "Can't challenge valid signature");
-
-        _payRewardAndRollBack(user, receiver);
     }
 
-    function _payRewardAndRollBack(address user, address payable receiver) internal {
+    function _payRewardAndRollBack(address payable receiver) internal {
         // Pay reward
-        balanceOf[user] = balanceOf[user].sub(LOCK_ETH_AMOUNT);
+        balanceOf[last.submitter] = balanceOf[last.submitter].sub(LOCK_ETH_AMOUNT);
         receiver.transfer(LOCK_ETH_AMOUNT);
 
-        // Erase last state
+        // Restore last state from backup
         delete blockHashes[last.height];
         last = backup;
+        for (uint i = 0; i < last.next_bps_length; i++) {
+            last.next_bps[i] = backup.next_bps[i];
+        }
     }
 
     function initWithBlock(bytes memory data) public {
@@ -197,11 +206,11 @@ contract NearBridge is Ownable {
 
     function _checkValidatorSignature(
         uint64 height,
-        bytes32 next_block_inner_hash,
+        bytes32 next_block_hash,
         NearDecoder.Signature memory signature,
         NearDecoder.PublicKey storage publicKey
     ) internal view returns(bool) {
-        bytes memory message = abi.encodePacked(uint8(0), next_block_inner_hash, _reversedUint64(height), bytes23(0));
+        bytes memory message = abi.encodePacked(uint8(0), next_block_hash, _reversedUint64(height + 2), bytes23(0));
 
         if (signature.enumIndex == 0) {
             (bytes32 arg1, bytes9 arg2) = abi.decode(message, (bytes32, bytes9));

@@ -125,5 +125,7 @@ contract('NearBridge', function ([_, addr1]) {
         expect(await this.bridge.blockHashes(121998)).to.be.equal(
             '0x2358c4881bbd111d2e4352b6a7e6c7595fb39d3c9897d3c624006be1ef809abf'
         );
+
+        expect(await this.bridge.checkBlockProducerSignatureInLastBlock(0, block_121998)).to.be.true;
     });
 });
