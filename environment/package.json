@@ -7,6 +7,7 @@
   "license": "MIT",
   "dependencies": {
     "@openzeppelin/cli": "^2.8.1",
+    "commander": "^5.1.0",
     "eth-object": "^1.0.3",
     "eth-util-lite": "^1.0.1",
     "ethereumjs-block": "^2.2.2",
@@ -14,6 +15,7 @@
     "ganache-cli": "^6.9.0",
     "merkle-patricia-tree": "^3.0.0",
     "nearlib": "^0.22.0",
+    "pm2": "^4.4.0",
     "promisfy": "^1.2.0",
     "web3": "^1.2.6"
   }
