@@ -9,3 +9,5 @@ async function main() {
   program.command('start <service>').action(StartCommand.execute);
   await program.parseAsync(process.argv);
 }
+
+main();
