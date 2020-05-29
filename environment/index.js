@@ -3,6 +3,7 @@ const { EthRelay } = require('./lib/eth-relay');
 const { EthProofExtractor } = require('./lib/eth-proof-extractor');
 const { EthProverTester } = require('./lib/eth-prover-tester');
 const { Eth2NearTransferExample } = require('./lib/eth2near-transfer-example');
+const nearlib = require('nearlib');
 
 (async function () {
     switch (process.argv[2]) {
@@ -42,10 +43,12 @@ const { Eth2NearTransferExample } = require('./lib/eth2near-transfer-example');
 
             const transfer = new Eth2NearTransferExample(
                 setup.ethProverContract,
+                setup.nearLockerContract,
+                setup.nearTokenContract,
                 process.env.ETH_NODE_URL,
                 process.env.ETH_MASTER_SK,
                 process.env.ETH_CONTRACTS_DIR,
-                process.env.NEAR_LOCKER_ACCOUNT
+                process.env.NEAR_USER_ACCOUNT
                 );
             await transfer.initialize();
             await transfer.run();

@@ -13,6 +13,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 pub struct Locker {
     prover_account: AccountId,
     skip_client_call: bool,
+    initialized: bool,
 }
 
 impl Default for Locker {
@@ -65,14 +66,21 @@ pub struct Proof {
 #[near_bindgen]
 impl Locker {
     #[init]
-    pub fn new(
+    pub fn init(
         #[serializer(borsh)] prover_account: AccountId,
         #[serializer(borsh)] skip_client_call: bool) -> Self {
         Self {
             prover_account,
-            skip_client_call
+            skip_client_call,
+            initialized: true
         }
     }
+
+    #[result_serializer(borsh)]
+    pub fn initialized(&self) -> bool {
+       self.initialized
+    }
+
 
     pub fn unlock_token(&self,
                         #[serializer(borsh)] token_account: AccountId,

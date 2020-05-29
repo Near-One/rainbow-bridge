@@ -6,12 +6,14 @@ const BN = require('bn.js');
 const { EthProofExtractor, receiptFromWeb3, logFromWeb3 } = require('../eth-proof-extractor');
 
 class Eth2NearTransferExample {
-    constructor(ethProverContract, ethNodeURL, ethMasterSK, ethContractsDir, nearLockerAccount) {
+    constructor(ethProverContract, nearLockerContract, nearTokenContract, ethNodeURL, ethMasterSK, ethContractsDir, nearUserAccount) {
         this.ethProverContract = ethProverContract;
+        this.nearLockerContract = nearLockerContract;
+        this.nearTokenContract = nearTokenContract;
         this.ethNodeURL = ethNodeURL;
         this.ethMasterSK = ethMasterSK;
         this.ethContractsDir = ethContractsDir;
-        this.nearLockerAccount = nearLockerAccount;
+        this.nearUserAccount = nearUserAccount;
     }
 
     async initialize() {
@@ -82,7 +84,7 @@ class Eth2NearTransferExample {
             // Then transfer it from the token locker.
             try {
                 console.log("Transferring tokens to the token locker.");
-                const approve_tx = await this.tokenLockerContract.methods.lockToken(this.myERC20Contract.options.address, 1, this.nearLockerAccount).send({
+                const approve_tx = await this.tokenLockerContract.methods.lockToken(this.myERC20Contract.options.address, 1, this.nearUserAccount).send({
                     from: this.ethMasterAccount,
                     gas: 5000000,
                     handleRevert: true,
@@ -101,6 +103,9 @@ class Eth2NearTransferExample {
         let extractor = new EthProofExtractor();
         extractor.initialize(this.ethNodeURL);
         let ethProverContract = this.ethProverContract;
+        let nearTokenContract = this.nearTokenContract;
+        let nearLockerContract = this.nearLockerContract;
+
         this.tokenLockerContract.events.Locked({
             "fromBlock": "latest"
         },
@@ -144,6 +149,37 @@ class Eth2NearTransferExample {
                         new BN('1000000000000000')
                     );
                     console.log("Verified log entry");
+
+                    const proof_locker = {
+                        log_index: txLogIndex,
+                        log_entry_data: log_entry_data,
+                        receipt_index: receipt_index,
+                        receipt_data: receipt_data,
+                        header_data: header_data,
+                        proof: _proof,
+                    };
+
+                    const new_owner_id = event.returnValues.accountId;
+                    const amount = event.returnValues.amount;
+
+                    const args_locker = {
+                        token_account: nearTokenContract.contractId,
+                        new_owner_id: new_owner_id,
+                        amount: amount,
+                        proof: proof_locker
+                    };
+
+
+                    await nearLockerContract.unlock_token(
+                        args_locker,
+                        new BN('1000000000000000')
+                    );
+                    console.log(`Transferred ${amount} tokens to ${new_owner_id}`);
+
+                    let new_balance = await nearTokenContract.get_balance({
+                        "owner_id": new_owner_id
+                    });
+                    console.log(`New ${new_owner_id} balance is ${new_balance}`);
 
                     break;
                 }
