@@ -1,5 +1,11 @@
 'use strict'
 
-const {RunCommand} = require('./commands/run');
+const {StartCommand} = require('./commands/start');
+const {program} = require('commander');
 
-(async function() { (new RunCommand()).execute(process.argv[2]); })()
+program.version('0.1.0');
+
+async function main() {
+  program.command('start <service>').action(StartCommand.execute);
+  await program.parseAsync(process.argv);
+}
