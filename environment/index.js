@@ -9,12 +9,13 @@ const {TestCommand} = require('./commands/test');
 
 program.version('0.1.0');
 
-async function main() {
-  program.command('clean').action(CleanCommand.execute);
-  program.command('start <service>').action(StartCommand.execute);
-  program.command('prepare').action(PrepareCommand.execute);
-  program.command('test').action(TestCommand.execute);
-  await program.parseAsync(process.argv);
-}
+program.command('clean').action(CleanCommand.execute);
+program.command('start <service>').action(StartCommand.execute);
+program.command('prepare')
+    .action(PrepareCommand.execute)
+    .option('--bridge-src <bridge_src>', 'Path to the rainbow-bridge source',
+            '')
+    .option('--core-src <core_src>', 'Path to the nearcore source', '');
+program.command('test').action(TestCommand.execute);
 
-main();
+program.parse(process.argv);
