@@ -1,7 +1,7 @@
+const {exec} = require('child_process');
+
 class CleanCommand {
-  static async execute() {
-    console.log("TODO (chefsale): Implement CleanCommand");
-  }
+  static execute() { exec('rm -rf ~/.rainbowup && pm2 kill'); }
 }
 
 exports.CleanCommand = CleanCommand;
