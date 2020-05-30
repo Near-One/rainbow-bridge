@@ -3,6 +3,8 @@ const exec = require('child_process').exec;
 const utils = require('ethereumjs-util');
 const BN = require('bn.js');
 const blockFromRpc = require('ethereumjs-block/from-rpc')
+const fs = require('fs').promises;
+const Path = require('path');
 
 function execute(command, callback){
     return new Promise(resolve => exec(command, (error, stdout, stderr) => {
@@ -26,9 +28,16 @@ function web3BlockToRlp(blockData) {
 }
 
 class EthRelay {
-    initialize(ethClientContract, ethNodeURL) {
+    initialize(ethClientContract, ethNodeURL, options={
+        mode: 'normal'
+    }) {
+        /// mode: normal | download_only | prove_only
+        /// when mode is download_only, options.path is the dir to save blocks, each blocks is saved in <blocknumber.json>
+        /// when mode is prove_only, options.path is the dir to load block jsons
+        /// when mode is normal, it do both download and prove
         this.ethClientContract = ethClientContract;
         this.web3 = new Web3(ethNodeURL);
+        this.options = options;
     }
 
     async run() {
@@ -47,13 +56,22 @@ class EthRelay {
                 let ok = false;
                 for (let retryIter = 0; retryIter < 10; retryIter++) {
                     try {
-                        const blockRlp = this.web3.utils.bytesToHex(web3BlockToRlp(await this.web3.eth.getBlock(i)));
-                        const unparsedBlock = await execute(`./vendor/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`);
-                        const block = JSON.parse(unparsedBlock);
-                        this.submitBlock(block, i).catch((e) => {
-                            console.error(e);
-                            process.exit(2);
-                        })
+                        let block;
+                        if (this.options.mode == 'prove_only') {
+                            block = await this.loadBlock(this.options.path, i);
+                        } else {
+                            const blockRlp = this.web3.utils.bytesToHex(web3BlockToRlp(await this.web3.eth.getBlock(i)));
+                            const unparsedBlock = await execute(`./vendor/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`);
+                            block = JSON.parse(unparsedBlock);
+                        }
+                        if (this.options.mode == 'download_only') {
+                            await this.saveBlock(i, block, this.options.path)
+                        } else {
+                            this.submitBlock(block, i).catch((e) => {
+                                console.error(e);
+                                process.exit(2);
+                            })
+                        }
                         ok = true;
                         break;
                     } catch (e) {
@@ -68,10 +86,12 @@ class EthRelay {
                     process.exit(3);
                 }
             }
-            console.log(
-                "Proofs computation took " + Math.trunc((Date.now() - timeBeforeProofsComputed)/10)/100 + "s " +
-                "(" + Math.trunc((Date.now() - timeBeforeProofsComputed)/(stop - start + 1)/10)/100 + "s per header)"
-            );
+            if (this.options.mode != "download_only") {
+                console.log(
+                    "Proofs computation took " + Math.trunc((Date.now() - timeBeforeProofsComputed)/10)/100 + "s " +
+                    "(" + Math.trunc((Date.now() - timeBeforeProofsComputed)/(stop - start + 1)/10)/100 + "s per header)"
+                );
+            }
         });
     }
 
@@ -171,6 +191,17 @@ class EthRelay {
                 inBlocksCallbacks = false;
             }
         });
+    }
+
+    async saveBlock(i, block, path) {
+        let file = Path.join(path, `${i}.json`);
+        await fs.writeFile(file, JSON.stringify(block));
+    }
+
+    async loadBlock(path, i) {
+        let file = Path.join(path, `${i}.json`);
+        let block = await fs.readFile(file);
+        return JSON.parse(block);
     }
 }
 
