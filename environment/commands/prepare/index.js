@@ -3,8 +3,7 @@ const path = require('path')
 
 class PrepareCommand {
   static execute(command) {
-    var scriptDir =
-        path.resolve(process.cwd(), "../rainbowup/scripts/prepare.sh");
+    var scriptDir = path.resolve(process.cwd(), "scripts/prepare.sh");
 
     let shell = [
       "bash",
