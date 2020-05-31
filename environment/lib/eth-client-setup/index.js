@@ -3,6 +3,7 @@ const fs = require('fs');
 const BN = require('bn.js');
 const {EthClientContract} = require('../eth-client-contract');
 const {EthProverContract} = require('../eth-prover-contract');
+const {TokenLockerContract} = require('../near-locker-contract');
 
 class EthClientSetup {
     constructor() {
@@ -27,10 +28,25 @@ class EthClientSetup {
         this.ethProverContractPath = process.env.ETH_PROVER_CONTRACT_PATH;
         this.validateEthash = process.env.VALIDATE_ETHASH;
 
+        this.nearTokenAccId = process.env.NEAR_TOKEN_ACC_ID;
+        this.nearTokenSK = process.env.NEAR_TOKEN_SK;
+        this.nearTokenPK = nearlib.KeyPair.fromString(this.nearTokenSK).publicKey;
+        this.nearTokenInitNearBalance = process.env.NEAR_TOKEN_INIT_NEAR_BALANCE;
+        this.nearTokenContractPath = process.env.NEAR_TOKEN_CONTRACT_PATH;
+
+        this.nearLockerAccId = process.env.NEAR_LOCKER_ACC_ID;
+        this.nearLockerSK = process.env.NEAR_LOCKER_SK;
+        this.nearLockerPK = nearlib.KeyPair.fromString(this.nearLockerSK).publicKey;
+        this.nearLockerInitNearBalance = process.env.NEAR_LOCKER_INIT_NEAR_BALANCE;
+        this.nearLockerInitTokenBalance = process.env.NEAR_LOCKER_INIT_TOKEN_BALANCE;
+        this.nearLockerContractPath = process.env.NEAR_LOCKER_CONTRACT_PATH;
+
         this.keyStore = new nearlib.keyStores.InMemoryKeyStore();
         await this.keyStore.setKey(this.nearNodeNetworkId, this.masterAccountId, nearlib.KeyPair.fromString(this.masterAccountSK));
         await this.keyStore.setKey(this.nearNodeNetworkId, this.ethClientAccId, nearlib.KeyPair.fromString(this.ethClientSK));
         await this.keyStore.setKey(this.nearNodeNetworkId, this.ethProverAccId, nearlib.KeyPair.fromString(this.ethProverSK));
+        await this.keyStore.setKey(this.nearNodeNetworkId, this.nearTokenAccId, nearlib.KeyPair.fromString(this.ethProverSK));
+        await this.keyStore.setKey(this.nearNodeNetworkId, this.nearLockerAccId, nearlib.KeyPair.fromString(this.ethProverSK));
         this.near = await nearlib.connect({
             nodeUrl: this.nearNodeURL,
             networkId: this.nearNodeNetworkId,
@@ -56,10 +72,30 @@ class EthClientSetup {
         await this.ethClientContract.maybeInitialize(this.validateEthash == 'true');
 
         await this.maybeCreateAccount(this.ethProverAccId, this.ethProverPK, this.ethProverInitBalance, this.ethProverContractPath);
-        await this.maybeCreateAccount(this.ethProverAccId, this.ethClientPK, this.ethClientInitBalance, this.ethClientContractPath);
         this.ethProverAccount = new nearlib.Account(this.near.connection, this.ethProverAccId);
         this.ethProverContract = new EthProverContract(this.ethProverAccount);
         await this.ethProverContract.maybeInitialize(this.ethClientAccId);
+
+        await this.maybeCreateAccount(this.nearTokenAccId, this.nearTokenPK, this.nearTokenInitNearBalance, this.nearTokenContractPath);
+        this.nearTokenAccount = new nearlib.Account(this.near.connection, this.nearTokenAccId);
+        this.nearTokenContract = new nearlib.Contract(this.nearTokenAccount, this.nearTokenAccId, {
+            changeMethods: ['new'],
+            viewMethods: ['get_balance']
+        });
+        try {
+            // Try initializing token contract
+            await this.nearTokenContract.new({
+                "owner_id": this.nearLockerAccId,
+                "total_supply": this.nearLockerInitTokenBalance
+            });
+        } catch (e) {
+            // I guess not
+        }
+
+        await this.maybeCreateAccount(this.nearLockerAccId, this.nearLockerPK, this.nearLockerInitNearBalance, this.nearLockerContractPath);
+        this.nearLockerAccount = new nearlib.Account(this.near.connection, this.nearLockerAccId);
+        this.nearLockerContract = new TokenLockerContract(this.nearLockerAccount);
+        await this.nearLockerContract.maybeInitialize(this.ethProverAccId, this.validateEthash != 'true');
     }
 
     // Check if account exists and if it does not creates it using master account. Also deploys the code and creates

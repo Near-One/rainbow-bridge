@@ -202,17 +202,16 @@ Run rainbowup <command> --help to see help for specific command.
         self._write_config(config)
 
     def prepare(self):
-        # Compile source of nearcore
-        subprocess.check_output([
-            'bash',
-            'prepare.sh',
-            '--source',
-            self.args.source,
-            '--nearcore_source',
-            self.args.nearcore_source,
-        ],
-                                cwd=os.path.join(self.args.source,
-                                                 'rainbowup/scripts'))
+        env=dict(BRIDGE_SRC=self.args.source, CORE_SRC=self.args.nearcore_source)
+        env = {**os.environ, **env}
+        p = subprocess.Popen(
+            ['bash', 'prepare.sh'],
+            cwd=os.path.join(self.args.source, 'rainbowup/scripts'),
+            env=env
+        )
+        p.wait()
+        if p.returncode:
+            exit(1)
 
     def _run(self):
         # If external node is not specified then we must start local node.

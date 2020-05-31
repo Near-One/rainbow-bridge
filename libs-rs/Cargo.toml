@@ -2,7 +2,9 @@
 members = [
     "eth-client",
     "eth-prover",
-    "eth-types"
+    "eth-types",
+    "fungible-token",
+    "locker"
 ]
 
 [profile.release]
