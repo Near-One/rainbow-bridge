@@ -38,6 +38,17 @@ library Borsh {
         }
     }
 
+    function peekSha256(Data memory data, uint256 length) internal view returns(bytes32) {
+        bytes memory ptr = data.raw;
+        uint256 offset = data.offset;
+        bytes32[1] memory result;
+        // solium-disable-next-line security/no-inline-assembly
+        assembly {
+            pop(staticcall(gas, 0x02, add(add(ptr, 32), offset), length, result, 32))
+        }
+        return result[0];
+    }
+
     function decodeU8(Data memory data) internal pure shift(data, 1) returns(uint8 value) {
         value = uint8(data.raw[data.offset]);
     }
@@ -116,12 +127,14 @@ library Borsh {
         }
     }
 
-    struct PublicKey {
+    // Public key
+
+    struct SECP256K1PublicKey {
         uint256 x;
         uint256 y;
     }
 
-    function decodePublicKey(Borsh.Data memory data) internal pure returns(PublicKey memory key) {
+    function decodeSECP256K1PublicKey(Borsh.Data memory data) internal pure returns(SECP256K1PublicKey memory key) {
         key.x = decodeU256(data);
         key.y = decodeU256(data);
     }
@@ -134,13 +147,15 @@ library Borsh {
         key.xy = decodeBytes32(data);
     }
 
-    struct Signature {
+    // Signature
+
+    struct SECP256K1Signature {
         bytes32 r;
         bytes32 s;
         uint8 v;
     }
 
-    function decodeSignature(Borsh.Data memory data) internal pure returns(Signature memory sig) {
+    function decodeSECP256K1Signature(Borsh.Data memory data) internal pure returns(SECP256K1Signature memory sig) {
         sig.r = decodeBytes32(data);
         sig.s = decodeBytes32(data);
         sig.v = decodeU8(data);

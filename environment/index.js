@@ -1,62 +1,21 @@
-const { EthClientSetup } = require('./lib/eth-client-setup');
-const { EthRelay } = require('./lib/eth-relay');
-const { EthProofExtractor } = require('./lib/eth-proof-extractor');
-const { EthProverTester } = require('./lib/eth-prover-tester');
-const { Eth2NearTransferExample } = require('./lib/eth2near-transfer-example');
-const nearlib = require('nearlib');
+'use strict'
 
-(async function () {
-    switch (process.argv[2]) {
-        case 'eth_client_setup': {
-            const setup = new EthClientSetup();
-            await setup.initialize();
-            break;
-        }
-        case 'start_ethrelay': {
-            const setup = new EthClientSetup();
-            await setup.initialize();
-            const ethRelay = new EthRelay();
-            ethRelay.initialize(setup.ethClientContract, process.env.ETH_NODE_URL);
-            await ethRelay.run();
-            break;
-        }
-        case 'extract_proof': {
-            const ethProofExtractor = new EthProofExtractor();
-            ethProofExtractor.initialize(process.env.ETH_NODE_URL);
-            await ethProofExtractor.debugPrint(process.env.TX_HASH);
-            ethProofExtractor.destroy()
-            break;
-        }
-        case 'test_ethprover': {
-            const setup = new EthClientSetup();
-            await setup.initialize();
-            const tester = new EthProverTester(process.env.ETH_NODE_URL, setup.ethClientContract, setup.ethProverContract);
-            console.log("TESTING");
-            await tester.run();
-            tester.destroy();
-            console.log("DONE");
-            break;
-        }
-        case 'eth2near_transfer': {
-            const setup = new EthClientSetup();
-            await setup.initialize();
+const {program} = require('commander');
 
-            const transfer = new Eth2NearTransferExample(
-                setup.ethProverContract,
-                setup.nearLockerContract,
-                setup.nearTokenContract,
-                process.env.ETH_NODE_URL,
-                process.env.ETH_MASTER_SK,
-                process.env.ETH_CONTRACTS_DIR,
-                process.env.NEAR_USER_ACCOUNT
-                );
-            await transfer.initialize();
-            await transfer.run();
-            break;
-        }
-        default: {
-            console.log(`Unrecognized command ${process.argv}`);
-            process.exit(1);
-        }
-    }
-})()
+const {CleanCommand} = require('./commands/clean');
+const {PrepareCommand} = require('./commands/prepare');
+const {StartCommand} = require('./commands/start');
+const {TestCommand} = require('./commands/test');
+
+program.version('0.1.0');
+
+program.command('clean').action(CleanCommand.execute);
+program.command('start <service>').action(StartCommand.execute);
+program.command('prepare')
+    .action(PrepareCommand.execute)
+    .option('--bridge-src <bridge_src>', 'Path to the rainbow-bridge source',
+            '')
+    .option('--core-src <core_src>', 'Path to the nearcore source', '');
+program.command('test').action(TestCommand.execute);
+
+program.parse(process.argv);

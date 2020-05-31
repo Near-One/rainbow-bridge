@@ -26,6 +26,7 @@
         "truffle-flattener": "^1.4.4"
     },
     "scripts": {
-        "dist": "dist.sh"
+        "dist": "truffle-flattener ./contracts/Soliditemp.sol > Soliditemp.full.sol && solcjs --bin --abi --optimize Soliditemp.full.sol && mv Soliditemp_full_sol_Soliditemp.bin Soliditemp.full.bin && mv Soliditemp_full_sol_Soliditemp.abi Soliditemp.full.abi && rm *_sol_*"
     }
 }
+
