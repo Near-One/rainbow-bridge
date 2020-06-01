@@ -98,4 +98,4 @@ program.command('init-near-test-contracts')
         'The account of the prover contract that it locker contract can use to validate proofs.',
         '');
 
-program.parse(process.argv);
+(async () => { program.parse(process.argv); })();

@@ -20,3 +20,5 @@ class InitNEARTestContracts {
     // TODO: Finish initialization of the accounts.
   }
 }
+
+exports.InitNEARTestContracts = InitNEARTestContracts;
