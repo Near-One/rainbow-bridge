@@ -11,7 +11,7 @@ function serializeField(schema, value, fieldType, writer) {
     } else if (fieldType === 'u128') {
         writer.write_u128(value);
     } else if (fieldType === 'bool') {
-        return writer.write_u8(value ? 1: 0);
+        return writer.write_u8(value ? 1 : 0);
     } else if (fieldType === 'string') {
         return writer.write_string(value);
     } else if (fieldType instanceof Array) {
@@ -21,7 +21,9 @@ function serializeField(schema, value, fieldType, writer) {
             }
             writer.write_fixed_array(value);
         } else {
-            writer.write_array(value, (item) => { serializeField(schema, item, fieldType[0], writer); });
+            writer.write_array(value, (item) => {
+                serializeField(schema, item, fieldType[0], writer);
+            });
         }
     } else {
         const structSchema = schema[fieldType];

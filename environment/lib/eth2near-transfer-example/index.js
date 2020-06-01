@@ -3,7 +3,11 @@ const Web3 = require('web3');
 const fs = require('fs');
 const path = require('path');
 const BN = require('bn.js');
-const { EthProofExtractor, receiptFromWeb3, logFromWeb3 } = require('../eth-proof-extractor');
+const {
+    EthProofExtractor,
+    receiptFromWeb3,
+    logFromWeb3
+} = require('../eth-proof-extractor');
 
 class Eth2NearTransferExample {
     constructor(ethProverContract, nearLockerContract, nearTokenContract, ethNodeURL, ethMasterSK, ethContractsDir, nearUserAccount) {
@@ -107,88 +111,88 @@ class Eth2NearTransferExample {
         let nearLockerContract = this.nearLockerContract;
 
         this.tokenLockerContract.events.Locked({
-            "fromBlock": "latest"
-        },
-        async function(error, event) {
-            console.log(event);
-            const receipt = await extractor.extractReceipt(event.transactionHash);
-            const block = await extractor.extractBlock(receipt.blockNumber);
-            const tree = await extractor.buildTrie(block);
-            const proof = await extractor.extractProof(block, tree, receipt.transactionIndex);
+                "fromBlock": "latest"
+            },
+            async function(error, event) {
+                console.log(event);
+                const receipt = await extractor.extractReceipt(event.transactionHash);
+                const block = await extractor.extractBlock(receipt.blockNumber);
+                const tree = await extractor.buildTrie(block);
+                const proof = await extractor.extractProof(block, tree, receipt.transactionIndex);
 
-            let txLogIndex = -1;
-            let logFound = false;
-            for (const log of receipt.logs) {
-                txLogIndex++;
-                const blockLogIndex = log.logIndex;
-                if (blockLogIndex == event.logIndex) {
-                    logFound = true;
-                    const log_entry_data = logFromWeb3(log).serialize();
-                    const receipt_index = proof.txIndex;
-                    const receipt_data = receiptFromWeb3(receipt).serialize();
-                    const header_data = proof.header.serialize();
-                    let _proof = [];
-                    for (let node of proof.receiptProof) {
-                        _proof.push(utils.rlp.encode(node));
+                let txLogIndex = -1;
+                let logFound = false;
+                for (const log of receipt.logs) {
+                    txLogIndex++;
+                    const blockLogIndex = log.logIndex;
+                    if (blockLogIndex == event.logIndex) {
+                        logFound = true;
+                        const log_entry_data = logFromWeb3(log).serialize();
+                        const receipt_index = proof.txIndex;
+                        const receipt_data = receiptFromWeb3(receipt).serialize();
+                        const header_data = proof.header.serialize();
+                        let _proof = [];
+                        for (let node of proof.receiptProof) {
+                            _proof.push(utils.rlp.encode(node));
+                        }
+
+                        const skip_bridge_call = true;
+
+                        const args = {
+                            log_index: txLogIndex,
+                            log_entry_data: log_entry_data,
+                            receipt_index: receipt_index,
+                            receipt_data: receipt_data,
+                            header_data: header_data,
+                            proof: _proof,
+                            skip_bridge_call: skip_bridge_call,
+                        };
+
+                        let result = await ethProverContract.verify_log_entry(
+                            args,
+                            new BN('1000000000000000')
+                        );
+                        console.log("Verified log entry");
+
+                        const proof_locker = {
+                            log_index: txLogIndex,
+                            log_entry_data: log_entry_data,
+                            receipt_index: receipt_index,
+                            receipt_data: receipt_data,
+                            header_data: header_data,
+                            proof: _proof,
+                        };
+
+                        const new_owner_id = event.returnValues.accountId;
+                        const amount = event.returnValues.amount;
+
+                        const args_locker = {
+                            token_account: nearTokenContract.contractId,
+                            new_owner_id: new_owner_id,
+                            amount: amount,
+                            proof: proof_locker
+                        };
+
+
+                        await nearLockerContract.unlock_token(
+                            args_locker,
+                            new BN('1000000000000000')
+                        );
+                        console.log(`Transferred ${amount} tokens to ${new_owner_id}`);
+
+                        let new_balance = await nearTokenContract.get_balance({
+                            "owner_id": new_owner_id
+                        });
+                        console.log(`New ${new_owner_id} balance is ${new_balance}`);
+
+                        break;
                     }
+                }
 
-                    const skip_bridge_call = true;
-
-                    const args = {
-                        log_index: txLogIndex,
-                        log_entry_data: log_entry_data,
-                        receipt_index: receipt_index,
-                        receipt_data: receipt_data,
-                        header_data: header_data,
-                        proof: _proof,
-                        skip_bridge_call: skip_bridge_call,
-                    };
-
-                    let result = await ethProverContract.verify_log_entry(
-                        args,
-                        new BN('1000000000000000')
-                    );
-                    console.log("Verified log entry");
-
-                    const proof_locker = {
-                        log_index: txLogIndex,
-                        log_entry_data: log_entry_data,
-                        receipt_index: receipt_index,
-                        receipt_data: receipt_data,
-                        header_data: header_data,
-                        proof: _proof,
-                    };
-
-                    const new_owner_id = event.returnValues.accountId;
-                    const amount = event.returnValues.amount;
-
-                    const args_locker = {
-                        token_account: nearTokenContract.contractId,
-                        new_owner_id: new_owner_id,
-                        amount: amount,
-                        proof: proof_locker
-                    };
-
-
-                    await nearLockerContract.unlock_token(
-                        args_locker,
-                        new BN('1000000000000000')
-                    );
-                    console.log(`Transferred ${amount} tokens to ${new_owner_id}`);
-
-                    let new_balance = await nearTokenContract.get_balance({
-                        "owner_id": new_owner_id
-                    });
-                    console.log(`New ${new_owner_id} balance is ${new_balance}`);
-
-                    break;
+                if (!logFound) {
+                    console.log(`ERROR log not found for event ${event}`);
                 }
             }
-
-            if (!logFound) {
-                console.log(`ERROR log not found for event ${event}`);
-            }
-        }
         );
     }
 

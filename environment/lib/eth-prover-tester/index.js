@@ -1,9 +1,17 @@
 const utils = require('ethereumjs-util');
 const Web3 = require('web3');
 const BN = require('bn.js');
-const { EthProofExtractor, receiptFromWeb3, logFromWeb3 } = require('../eth-proof-extractor');
-const { borshSchema } = require('../eth-prover-contract');
-const { serialize } = require('../borsh');
+const {
+    EthProofExtractor,
+    receiptFromWeb3,
+    logFromWeb3
+} = require('../eth-proof-extractor');
+const {
+    borshSchema
+} = require('../eth-prover-contract');
+const {
+    serialize
+} = require('../borsh');
 
 // Tests EthProver in the following way:
 // * Gets the last block submitted to EthClient;

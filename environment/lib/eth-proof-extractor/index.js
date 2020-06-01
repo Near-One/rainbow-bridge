@@ -1,8 +1,18 @@
 const Web3 = require('web3');
 const Tree = require('merkle-patricia-tree');
-const { Header, Proof, Receipt, Log } = require('eth-object');
-const { encode, toBuffer } = require('eth-util-lite');
-const { promisfy } = require('promisfy');
+const {
+    Header,
+    Proof,
+    Receipt,
+    Log
+} = require('eth-object');
+const {
+    encode,
+    toBuffer
+} = require('eth-util-lite');
+const {
+    promisfy
+} = require('promisfy');
 
 function receiptFromWeb3(result, state_root) {
     return new Receipt([

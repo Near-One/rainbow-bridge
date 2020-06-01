@@ -1,13 +1,18 @@
 const nearlib = require('nearlib');
 const fs = require('fs');
 const BN = require('bn.js');
-const {EthClientContract} = require('../eth-client-contract');
-const {EthProverContract} = require('../eth-prover-contract');
-const {TokenLockerContract} = require('../near-locker-contract');
+const {
+    EthClientContract
+} = require('../eth-client-contract');
+const {
+    EthProverContract
+} = require('../eth-prover-contract');
+const {
+    TokenLockerContract
+} = require('../near-locker-contract');
 
 class EthClientSetup {
-    constructor() {
-    }
+    constructor() {}
     async initialize() {
         this.nearNodeURL = process.env.NEAR_NODE_URL;
         this.nearNodeNetworkId = process.env.NEAR_NODE_NETWORK_ID;

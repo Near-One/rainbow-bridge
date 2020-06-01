@@ -1,6 +1,10 @@
 const Web3 = require('web3');
 const BN = require('bn.js');
-const {BorshContract, hexToBuffer, readerToHex} = require('../borsh');
+const {
+    BorshContract,
+    hexToBuffer,
+    readerToHex
+} = require('../borsh');
 const roots = require('./dag_merkle_roots.json');
 
 const borshSchema = {
@@ -9,26 +13,53 @@ const borshSchema = {
         ser: (b) => Buffer.from(Web3.utils.hexToBytes(b ? '0x01' : '0x00')),
         deser: (z) => readerToHex(1)(z) === '0x01'
     },
-    'initInput': {kind: 'struct', fields: [
+    'initInput': {
+        kind: 'struct',
+        fields: [
             ['validate_ethash', 'bool'],
             ['dags_start_epoch', 'u64'],
             ['dags_merkle_roots', ['H128']]
-        ]},
-    'dagMerkleRootInput': { kind: 'struct', fields: [
+        ]
+    },
+    'dagMerkleRootInput': {
+        kind: 'struct',
+        fields: [
             ['epoch', 'u64'],
-        ]},
-    'addBlockHeaderInput': { kind: 'struct', fields: [
+        ]
+    },
+    'addBlockHeaderInput': {
+        kind: 'struct',
+        fields: [
             ['block_header', ['u8']],
             ['dag_nodes', ['DoubleNodeWithMerkleProof']],
-        ]},
-    'DoubleNodeWithMerkleProof': { kind: 'struct', fields: [
+        ]
+    },
+    'DoubleNodeWithMerkleProof': {
+        kind: 'struct',
+        fields: [
             ['dag_nodes', ['H512']],
             ['proof', ['H128']],
-        ]},
-    'H128': {kind: 'function', ser: hexToBuffer, deser: readerToHex(16) },
-    'H256': {kind: 'function', ser: hexToBuffer, deser: readerToHex(32) },
-    'H512': {kind: 'function', ser: hexToBuffer, deser: readerToHex(64) },
-    '?H256': {kind: 'option', type: 'H256'}
+        ]
+    },
+    'H128': {
+        kind: 'function',
+        ser: hexToBuffer,
+        deser: readerToHex(16)
+    },
+    'H256': {
+        kind: 'function',
+        ser: hexToBuffer,
+        deser: readerToHex(32)
+    },
+    'H512': {
+        kind: 'function',
+        ser: hexToBuffer,
+        deser: readerToHex(64)
+    },
+    '?H256': {
+        kind: 'option',
+        type: 'H256'
+    }
 };
 
 class EthClientContract extends BorshContract {
@@ -89,10 +120,14 @@ class EthClientContract extends BorshContract {
         }
 
         console.log('Checking EthClient initialization.');
-        const first_root = await this.dag_merkle_root({ epoch: 0 });
-        const last_root = await this.dag_merkle_root({ epoch: 511 });
+        const first_root = await this.dag_merkle_root({
+            epoch: 0
+        });
+        const last_root = await this.dag_merkle_root({
+            epoch: 511
+        });
         if (!(first_root === '0x55b891e842e58f58956a847cbbf67821' &&
-            last_root === '0x4aa6ca6ebef942d8766065b2e590fd32')) {
+                last_root === '0x4aa6ca6ebef942d8766065b2e590fd32')) {
             console.log(`EthClient initialization error! The first and last roots are ${first_root} and ${last_root}`);
             process.exit(1);
         }
