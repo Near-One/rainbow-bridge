@@ -3,7 +3,9 @@ const { program } = require('commander');
 
 const { CleanCommand } = require('./commands/clean');
 const { PrepareCommand } = require('./commands/prepare');
-const { StartCommand } = require('./commands/start');
+const { StartEthRelayCommand } = require('./commands/start/eth-relay.js');
+const { StartGanacheNodeCommand } = require('./commands/start/ganache.js');
+const { StartLocalNearNodeCommand } = require('./commands/start/near.js');
 const { TestCommand } = require('./commands/test');
 const { TransferFunETH2NEAR } = require('./commands/transfer-fun-eth2near');
 const { InitETHTestContracts } = require('./commands/init-eth-test-contracts');
@@ -14,7 +16,41 @@ program.version('0.1.0');
 
 program.command('clean').action(CleanCommand.execute);
 
-program.command('start <service>').action(StartCommand.execute);
+const startCommand = program.command('start');
+
+startCommand.command('near-node')
+    .action(StartLocalNearNodeCommand.execute);
+
+startCommand.command('ganache')
+    .action(StartGanacheNodeCommand.execute);
+
+startCommand.command('eth-relay')
+    .action(StartEthRelayCommand.execute)
+    .option(
+        '--near-master-account <near_master_account>',
+        'The account of the master account on NEAR that can be used to deploy and initialize the test contracts.' +
+            ' This account will also own the initial supply of the fungible tokens.',
+        '',
+    )
+    .option(
+        '--near-master-sk <near_master_sk>',
+        'The secret key of the master account.',
+    )
+    .option(
+        '--near-network-id <near_network_id>',
+        'The identifier of the NEAR network that the given NEAR node is expected to represent.',
+        'local',
+    )
+    .option(
+        '--near-node-url <near_node_url>',
+        'The URL of the NEAR node.',
+        '',
+    )
+    .option(
+        '--eth-node-url <eth_node_url>',
+        'The URL of the Ethereum node.',
+        '',
+    );
 
 program.command('prepare')
     .action(PrepareCommand.execute)

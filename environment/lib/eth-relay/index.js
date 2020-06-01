@@ -11,7 +11,7 @@ function execute (command, callback) {
         }
         resolve(stdout);
     }));
-};
+}
 
 function web3BlockToRlp (blockData) {
     blockData.difficulty = parseInt(blockData.difficulty, 10);
@@ -84,7 +84,7 @@ class EthRelay {
             });
             if (sleepTimer < maxSleepTime) {
                 sleepTimer += 1;
-            };
+            }
         };
         let ok = false;
         for (let iters = 0; iters < 20; ++iters) {
