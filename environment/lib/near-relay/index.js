@@ -29,8 +29,7 @@ class NearRelay {
         // Initialize contract interface.
         this.nearClientContract = new this.web3.eth.Contract(
             JSON.parse(fs.readFileSync(path.join(this.nearClientContractPath, 'NearBridge.full.abi'))),
-            process.env.NEAR_BRIDGE_SMART_CONTRACT_ADDRESS,
-            {
+            process.env.NEAR_BRIDGE_SMART_CONTRACT_ADDRESS, {
                 from: this.clientAccount,
                 handleRevert: true,
             }
@@ -51,7 +50,7 @@ class NearRelay {
     }
 
     async run() {
-        const checkNearStatus = async function () {
+        const checkNearStatus = async function() {
             let latest_submitted_block = Number(await this.nearClientContract.methods.lastBlockNumber().call());
             console.log('latest_submitted_block', typeof latest_submitted_block, latest_submitted_block);
 
@@ -80,7 +79,9 @@ class NearRelay {
             // TODO: Investigate how to use new feature web3.eth.handleRevert
             try {
                 console.log(`Submitting ${blocks.length} blocks`);
-                const tx = await this.nearClientContract.methods.addBlockHeaders(blocks).send({ gas: 5000000 });
+                const tx = await this.nearClientContract.methods.addBlockHeaders(blocks).send({
+                    gas: 5000000
+                });
                 console.log('Sumbitted!');
             } catch (txRevertMessage) {
                 const err = txRevertMessage.toString();

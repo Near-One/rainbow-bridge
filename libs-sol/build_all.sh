@@ -4,11 +4,16 @@
 set -e
 
 # Build emitter contract
-for CONTRACT in emitter example-token-locker
-do
-  pushd "$CONTRACT"
-  yarn
-  yarn run oz compile
-  popd
-done
+echo "Building emitter"
+pushd "emitter"
+yarn
+yarn run oz compile
+popd
+
+echo "Building token locker"
+# Build contracts for locking token.
+pushd "example-token-locker"
+yarn
+./dist.sh
+popd
 

@@ -1,9 +1,17 @@
 const utils = require('ethereumjs-util');
 const Web3 = require('web3');
 const BN = require('bn.js');
-const { EthProofExtractor, receiptFromWeb3, logFromWeb3 } = require('../eth-proof-extractor');
-const { borshSchema } = require('../eth-prover-contract');
-const { serialize } = require('../borsh');
+const {
+    EthProofExtractor,
+    receiptFromWeb3,
+    logFromWeb3
+} = require('../eth-proof-extractor');
+const {
+    borshSchema
+} = require('../eth-prover-contract');
+const {
+    serialize
+} = require('../borsh');
 
 // Tests EthProver in the following way:
 // * Gets the last block submitted to EthClient;
@@ -21,8 +29,8 @@ class EthProverTester {
     async run() {
         // Number of blocks to process.
         const numBlocks = 1;
-        // let firstBlock = (await this.ethClientContract.last_block_number()).toNumber() - 1;
-        let firstBlock = 10;
+        let firstBlock = (await this.ethClientContract.last_block_number()).toNumber() - 1;
+        // let firstBlock = 10;
         let lastBlock = firstBlock;
         // Wait for the blocks to be accepted by the EthClient.
         while (firstBlock + numBlocks > lastBlock) {
@@ -80,7 +88,7 @@ class EthProverTester {
                         _proof.push(utils.rlp.encode(node));
                     }
 
-                    const skip_bridge_call = true;
+                    const skip_bridge_call = false;
 
                     // const borsh_log_index = serialize(borshSchema, 'u64', log_index).toString('hex');
                     // const borsh_log_entry_data = serialize(borshSchema, ['u8'], log_entry_data).toString('hex');

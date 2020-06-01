@@ -6,7 +6,7 @@ const blockFromRpc = require('ethereumjs-block/from-rpc')
 const fs = require('fs').promises;
 const Path = require('path');
 
-function execute(command, callback){
+function execute(command, callback) {
     return new Promise(resolve => exec(command, (error, stdout, stderr) => {
         if (error) {
             console.log(error);
@@ -88,8 +88,8 @@ class EthRelay {
             }
             if (this.options.mode != "download_only") {
                 console.log(
-                    "Proofs computation took " + Math.trunc((Date.now() - timeBeforeProofsComputed)/10)/100 + "s " +
-                    "(" + Math.trunc((Date.now() - timeBeforeProofsComputed)/(stop - start + 1)/10)/100 + "s per header)"
+                    "Proofs computation took " + Math.trunc((Date.now() - timeBeforeProofsComputed) / 10) / 100 + "s " +
+                    "(" + Math.trunc((Date.now() - timeBeforeProofsComputed) / (stop - start + 1) / 10) / 100 + "s per header)"
                 );
             }
         });
@@ -132,7 +132,7 @@ class EthRelay {
         const h512s = block.elements
             .filter((_, index) => index % 2 === 0)
             .map((element, index) => {
-                return this.web3.utils.padLeft(element, 64) + this.web3.utils.padLeft(block.elements[index*2 + 1], 64).substr(2)
+                return this.web3.utils.padLeft(element, 64) + this.web3.utils.padLeft(block.elements[index * 2 + 1], 64).substr(2)
             });
 
         const args = {
@@ -141,7 +141,7 @@ class EthRelay {
                 .filter((_, index) => index % 2 === 0)
                 .map((element, index) => {
                     return {
-                        dag_nodes: [element, h512s[index*2 + 1]],
+                        dag_nodes: [element, h512s[index * 2 + 1]],
                         proof: block.merkle_proofs.slice(
                             index * block.proof_length,
                             (index + 1) * block.proof_length,
@@ -154,8 +154,8 @@ class EthRelay {
             try {
                 await this.ethClientContract.add_block_header(args, new BN('1000000000000000'));
                 console.log(
-                    "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s " +
-                    "(" + Math.trunc((Date.now() - timeBeforeSubmission)/10)/100 + "s per header)"
+                    "Blocks submission took " + Math.trunc((Date.now() - timeBeforeSubmission) / 10) / 100 + "s " +
+                    "(" + Math.trunc((Date.now() - timeBeforeSubmission) / 10) / 100 + "s per header)"
                 );
                 console.log(`Successfully submitted block ${blockNumber} to EthClient`);
                 return;
