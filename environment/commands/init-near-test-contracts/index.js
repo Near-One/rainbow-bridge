@@ -32,7 +32,8 @@ class InitNEARTestContracts {
             viewMethods: ['get_balance'],
         });
         try {
-            // Try initializing the contract. Give it initial supply of tokens and assign to the locker contract.
+            // Try initializing the contract. Give it initial supply of tokens and
+            // assign to the locker contract.
             await tokenContract.new({
                 // Give 0 tokens to itself.
                 owner_id: tokenAccountId,
