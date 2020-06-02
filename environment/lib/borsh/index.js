@@ -214,17 +214,18 @@ function getBorshTransactionLastResult (txResult) {
 }
 
 class BorshContract {
-    constructor (borshSchema, account, options) {
+    constructor (borshSchema, account, contractId, options) {
         this.account = account;
+        this.contractId = contractId;
         options.viewMethods.forEach((d) => {
             Object.defineProperty(this, d.methodName, {
                 writable: false,
                 enumerable: true,
                 value: async (args) => {
                     args = serialize(borshSchema, d.inputFieldType, args);
-                    const result = await this.account.connection.provider.query(`call/${this.account.accountId}/${d.methodName}`, nearlib.utils.serialize.base_encode(args));
+                    const result = await this.account.connection.provider.query(`call/${this.contractId}/${d.methodName}`, nearlib.utils.serialize.base_encode(args));
                     if (result.logs) {
-                        this.account.printLogs(this.account.accountId, result.logs);
+                        this.account.printLogs(this.contractId, result.logs);
                     }
                     return result.result && result.result.length > 0 && deserialize(borshSchema, d.outputFieldType, Buffer.from(result.result));
                 },
@@ -237,7 +238,7 @@ class BorshContract {
                 value: async (args, gas, amount) => {
                     args = serialize(borshSchema, d.inputFieldType, args);
                     try {
-                        const rawResult = await signAndSendTransaction(this.accessKey, this.account, this.account.accountId, [nearlib.transactions.functionCall(
+                        const rawResult = await signAndSendTransaction(this.accessKey, this.account, this.contractId, [nearlib.transactions.functionCall(
                             d.methodName,
                             Buffer.from(args),
                             gas || DEFAULT_FUNC_CALL_AMOUNT,

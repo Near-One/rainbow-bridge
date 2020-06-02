@@ -40,8 +40,8 @@ const borshSchema = {
 };
 
 class EthProverContract extends BorshContract {
-    constructor (account) {
-        super(borshSchema, account, {
+    constructor (account, contractId) {
+        super(borshSchema, account, contractId, {
             viewMethods: [],
             changeMethods: [{
                 methodName: 'verify_log_entry',

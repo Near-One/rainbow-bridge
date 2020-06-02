@@ -44,8 +44,8 @@ const borshSchema = {
 };
 
 class TokenLockerContract extends BorshContract {
-    constructor (account) {
-        super(borshSchema, account, {
+    constructor (account, contractId) {
+        super(borshSchema, account, contractId, {
             viewMethods: [{
                 methodName: 'initialized',
                 inputFieldType: null,

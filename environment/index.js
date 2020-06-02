@@ -31,6 +31,9 @@ program.command('transfer-fun-eth2near')
         '--eth-token-address <eth_token_address>',
         'Address of the ERC20 token on Ethereum network that will be transferred.',
         '')
+    .option('--eth-token-abi-path <eth_token_abi_path>',
+        'Path to an ABI file describing Ethereum token contract interface',
+        '')
     .option(
         '--eth-locker-address <eth_locker_address>',
         'Address of the token locker contract on Ethereum network that will be locking the token on Ethereum side.',

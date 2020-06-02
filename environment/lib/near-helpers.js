@@ -43,7 +43,7 @@ async function accountExists (near, accountId) {
 // Checks whether the account has the key specified in the keyStore.
 async function accountHasTheKey (near, accountId) {
     const account = new nearlib.Account(near.connection, accountId);
-    const keyStoreKey = await near.config.keyStore.getKey(near.config.networkId, accountId);
+    const keyStoreKey = await near.config.deps.keyStore.getKey(near.config.networkId, accountId);
     const keys = await account.getAccessKeys();
     const accessKey = keys.find(key => key.public_key === keyStoreKey.getPublicKey().toString());
     if (accessKey) {

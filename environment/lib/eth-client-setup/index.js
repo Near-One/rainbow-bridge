@@ -72,12 +72,12 @@ class EthClientSetup {
         await this.maybeCreateAccount(this.ethClientAccId, this.ethClientPK, this.ethClientInitBalance, this.ethClientContractPath);
         await this.verifyAccount(this.ethClientAccId);
         this.ethClientAccount = new nearlib.Account(this.near.connection, this.ethClientAccId);
-        this.ethClientContract = new EthClientContract(this.ethClientAccount);
+        this.ethClientContract = new EthClientContract(this.ethClientAccount, this.ethClientAccId);
         await this.ethClientContract.maybeInitialize(this.validateEthash == 'true');
 
         await this.maybeCreateAccount(this.ethProverAccId, this.ethProverPK, this.ethProverInitBalance, this.ethProverContractPath);
         this.ethProverAccount = new nearlib.Account(this.near.connection, this.ethProverAccId);
-        this.ethProverContract = new EthProverContract(this.ethProverAccount);
+        this.ethProverContract = new EthProverContract(this.ethProverAccount, this.ethProverAccId);
         await this.ethProverContract.maybeInitialize(this.ethClientAccId);
 
         await this.maybeCreateAccount(this.nearTokenAccId, this.nearTokenPK, this.nearTokenInitNearBalance, this.nearTokenContractPath);
@@ -98,7 +98,7 @@ class EthClientSetup {
 
         await this.maybeCreateAccount(this.nearLockerAccId, this.nearLockerPK, this.nearLockerInitNearBalance, this.nearLockerContractPath);
         this.nearLockerAccount = new nearlib.Account(this.near.connection, this.nearLockerAccId);
-        this.nearLockerContract = new TokenLockerContract(this.nearLockerAccount);
+        this.nearLockerContract = new TokenLockerContract(this.nearLockerAccount, this.nearLockerAccId);
         await this.nearLockerContract.maybeInitialize(this.ethProverAccId, this.validateEthash != 'true');
     }
 
