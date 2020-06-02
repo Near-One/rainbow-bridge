@@ -9,6 +9,7 @@ const {TestCommand} = require('./commands/test');
 const {TransferFunETH2NEAR} = require('./commands/transfer-fun-eth2near');
 const {InitETHTestContracts} = require('./commands/init-eth-test-contracts');
 const {InitNEARTestContracts} = require('./commands/init-near-test-contracts');
+const {DumpETHHeaders} = require('./commands/dump-eth-headers');
 
 program.version('0.1.0');
 
@@ -98,4 +99,10 @@ program.command('init-near-test-contracts')
         'The account of the prover contract that it locker contract can use to validate proofs.',
         '');
 
+program.command('dump-eth-headers')
+    .option('--path <path>', 'Dir path to savedump eth headers')
+    .option('--start-block [start_block]', 'Start block number to dump')
+    .option('--end-block [end_block]', 'End block number to dump')
+    .action(DumpETHHeaders.execute);
+    
 (async () => { await program.parseAsync(process.argv); })();
