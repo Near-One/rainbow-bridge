@@ -4,33 +4,33 @@ const BN = require('bn.js');
 
 // Check if account exists and if it does not creates it using master account. Also deploys the code and creates
 // an access key.
-async function maybeCreateAccount(near, masterAccountId, accountId, accountPK, initBalance, contractPath) {
+async function maybeCreateAccount (near, masterAccountId, accountId, accountPK, initBalance, contractPath) {
     if (!await accountExists(near, accountId)) {
-        console.log("Account %s does not exist creating it.", accountId);
+        console.log('Account %s does not exist creating it.', accountId);
         const masterAccount = new nearlib.Account(near.connection, masterAccountId);
         const balance = new BN(initBalance);
         try {
             await masterAccount.createAccount(accountId, accountPK, balance);
         } catch (e) {
-            console.log("Failed to create account %s. ERROR: %s", accountId, e);
+            console.log('Failed to create account %s. ERROR: %s', accountId, e);
             process.exit(1);
         }
-        console.log("Created account %s", accountId);
+        console.log('Created account %s', accountId);
 
         const account = new nearlib.Account(near.connection, accountId);
         try {
             const data = fs.readFileSync(contractPath);
             await account.deployContract(data);
         } catch (e) {
-            console.log("Failed to deploy contract to account %s. ERROR: %s", accountId, e);
+            console.log('Failed to deploy contract to account %s. ERROR: %s', accountId, e);
             process.exit(1);
         }
-        console.log("Deployed contract to account %s", accountId);
+        console.log('Deployed contract to account %s', accountId);
     }
 }
 
 // Checks whether the account exists.
-async function accountExists(near, accountId) {
+async function accountExists (near, accountId) {
     const account = new nearlib.Account(near.connection, accountId);
     try {
         await account.fetchState();
@@ -41,7 +41,7 @@ async function accountExists(near, accountId) {
 }
 
 // Checks whether the account has the key specified in the keyStore.
-async function accountHasTheKey(near, accountId) {
+async function accountHasTheKey (near, accountId) {
     const account = new nearlib.Account(near.connection, accountId);
     const keyStoreKey = await near.config.keyStore.getKey(near.config.networkId, accountId);
     const keys = await account.getAccessKeys();
@@ -54,14 +54,14 @@ async function accountHasTheKey(near, accountId) {
 }
 
 // Verify that account exists and it has the key that we specified in the keyStore.
-async function verifyAccount(near, accountId) {
+async function verifyAccount (near, accountId) {
     if (!await accountExists(near, accountId)) {
-        console.log("Failed to fetch state of the %s account. Is it initialized?", accountId);
+        console.log('Failed to fetch state of the %s account. Is it initialized?', accountId);
         process.exit(1);
     }
 
     if (!await accountHasTheKey(near, accountId)) {
-        console.log("Account %s does not have the access key that can be used to operate with it.", accountId);
+        console.log('Account %s does not have the access key that can be used to operate with it.', accountId);
         process.exit(1);
     }
 }

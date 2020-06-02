@@ -2,18 +2,18 @@ const nearlib = require('nearlib');
 const fs = require('fs');
 const BN = require('bn.js');
 const {
-    EthClientContract
+    EthClientContract,
 } = require('../eth-client-contract');
 const {
-    EthProverContract
+    EthProverContract,
 } = require('../eth-prover-contract');
 const {
-    TokenLockerContract
+    TokenLockerContract,
 } = require('../near-locker-contract');
 
 class EthClientSetup {
-    constructor() {}
-    async initialize() {
+    constructor () {}
+    async initialize () {
         this.nearNodeURL = process.env.NEAR_NODE_URL;
         this.nearNodeNetworkId = process.env.NEAR_NODE_NETWORK_ID;
 
@@ -57,14 +57,13 @@ class EthClientSetup {
             networkId: this.nearNodeNetworkId,
             masterAccount: this.masterAccountId,
             deps: {
-                keyStore: this.keyStore
-            }
+                keyStore: this.keyStore,
+            },
         });
 
         // const masterAccount = new nearlib.Account(this.near.connection, this.masterAccountId);
         // const balance = new BN('1000000000000000000000000000');
         // await masterAccount.createAccount('foobarbar6', this.ethClientPK, balance);
-
 
         // Initialize accounts and deploy the contracts. Call initialization functions if needed.
         await this.verifyAccount(this.masterAccountId);
@@ -85,13 +84,13 @@ class EthClientSetup {
         this.nearTokenAccount = new nearlib.Account(this.near.connection, this.nearTokenAccId);
         this.nearTokenContract = new nearlib.Contract(this.nearTokenAccount, this.nearTokenAccId, {
             changeMethods: ['new'],
-            viewMethods: ['get_balance']
+            viewMethods: ['get_balance'],
         });
         try {
             // Try initializing token contract
             await this.nearTokenContract.new({
-                "owner_id": this.nearLockerAccId,
-                "total_supply": this.nearLockerInitTokenBalance
+                owner_id: this.nearLockerAccId,
+                total_supply: this.nearLockerInitTokenBalance,
             });
         } catch (e) {
             // I guess not
@@ -105,33 +104,33 @@ class EthClientSetup {
 
     // Check if account exists and if it does not creates it using master account. Also deploys the code and creates
     // an access key.
-    async maybeCreateAccount(accountId, accountPK, initBalance, contractPath) {
+    async maybeCreateAccount (accountId, accountPK, initBalance, contractPath) {
         if (!await this.accountExists(accountId)) {
-            console.log("Account %s does not exist creating it.", accountId);
+            console.log('Account %s does not exist creating it.', accountId);
             const masterAccount = new nearlib.Account(this.near.connection, this.masterAccountId);
             const balance = new BN(initBalance);
             try {
                 await masterAccount.createAccount(accountId, accountPK, balance);
             } catch (e) {
-                console.log("Failed to create account %s. ERROR: %s", accountId, e);
+                console.log('Failed to create account %s. ERROR: %s', accountId, e);
                 process.exit(1);
             }
-            console.log("Created account %s", accountId);
+            console.log('Created account %s', accountId);
 
             const account = new nearlib.Account(this.near.connection, accountId);
             try {
                 const data = fs.readFileSync(contractPath);
                 await account.deployContract(data);
             } catch (e) {
-                console.log("Failed to deploy contract to account %s. ERROR: %s", accountId, e);
+                console.log('Failed to deploy contract to account %s. ERROR: %s', accountId, e);
                 process.exit(1);
             }
-            console.log("Deployed contract to account %s", accountId);
+            console.log('Deployed contract to account %s', accountId);
         }
     }
 
     // Checks whether the account exists.
-    async accountExists(accountId) {
+    async accountExists (accountId) {
         const account = new nearlib.Account(this.near.connection, accountId);
         try {
             await account.fetchState();
@@ -142,7 +141,7 @@ class EthClientSetup {
     }
 
     // Checks whether the account has the key specified in the keyStore.
-    async accountHasTheKey(accountId) {
+    async accountHasTheKey (accountId) {
         const account = new nearlib.Account(this.near.connection, accountId);
         const keyStoreKey = await this.keyStore.getKey(this.nearNodeNetworkId, accountId);
         const keys = await account.getAccessKeys();
@@ -155,14 +154,14 @@ class EthClientSetup {
     }
 
     // Verify that account exists and it has the key that we specified in the keyStore.
-    async verifyAccount(accountId) {
+    async verifyAccount (accountId) {
         if (!await this.accountExists(accountId)) {
-            console.log("Failed to fetch state of the %s account. Is it initialized?", accountId);
+            console.log('Failed to fetch state of the %s account. Is it initialized?', accountId);
             process.exit(1);
         }
 
         if (!await this.accountHasTheKey(accountId)) {
-            console.log("Account %s does not have the access key that can be used to operate with it.", accountId);
+            console.log('Account %s does not have the access key that can be used to operate with it.', accountId);
             process.exit(1);
         }
     }

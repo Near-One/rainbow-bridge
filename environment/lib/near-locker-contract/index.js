@@ -3,32 +3,32 @@ const BN = require('bn.js');
 const {
     BorshContract,
     hexToBuffer,
-    readerToHex
+    readerToHex,
 } = require('../borsh');
 
 const borshSchema = {
-    'bool': {
+    bool: {
         kind: 'function',
         ser: (b) => Buffer.from(Web3.utils.hexToBytes(b ? '0x01' : '0x00')),
-        deser: (z) => readerToHex(1)(z) === '0x01'
+        deser: (z) => readerToHex(1)(z) === '0x01',
     },
-    'initInput': {
+    initInput: {
         kind: 'struct',
         fields: [
             ['prover_account', 'string'],
-            ['skip_client_call', 'bool']
-        ]
+            ['skip_client_call', 'bool'],
+        ],
     },
-    'unlockTokenInput': {
+    unlockTokenInput: {
         kind: 'struct',
         fields: [
             ['token_account', 'string'],
             ['new_owner_id', 'string'],
             ['amount', 'u128'],
-            ['proof', 'Proof']
-        ]
+            ['proof', 'Proof'],
+        ],
     },
-    'Proof': {
+    Proof: {
         kind: 'struct',
         fields: [
             ['log_index', 'u64'],
@@ -37,38 +37,38 @@ const borshSchema = {
             ['receipt_data', ['u8']],
             ['header_data', ['u8']],
             ['proof', [
-                ['u8']
+                ['u8'],
             ]],
-        ]
-    }
+        ],
+    },
 };
 
 class TokenLockerContract extends BorshContract {
-    constructor(account) {
+    constructor (account) {
         super(borshSchema, account, {
             viewMethods: [{
-                methodName: "initialized",
+                methodName: 'initialized',
                 inputFieldType: null,
                 outputFieldType: 'bool',
             }],
             changeMethods: [{
-                    methodName: "init",
-                    inputFieldType: "initInput",
-                    outputFieldType: null,
-                },
-                {
-                    methodName: "unlock_token",
-                    inputFieldType: "unlockTokenInput",
-                    outputFieldType: null,
-                }
+                methodName: 'init',
+                inputFieldType: 'initInput',
+                outputFieldType: null,
+            },
+            {
+                methodName: 'unlock_token',
+                inputFieldType: 'unlockTokenInput',
+                outputFieldType: null,
+            },
             ],
-        })
+        });
     }
 
     // Call initialization methods on the contract.
     // If `skip_client_call` is true will not verify the PoW by calling the
     // client.
-    async maybeInitialize(prover_account, skip_client_call) {
+    async maybeInitialize (prover_account, skip_client_call) {
         await this.accessKeyInit();
         let initialized = false;
         try {
@@ -79,10 +79,10 @@ class TokenLockerContract extends BorshContract {
         if (!initialized) {
             console.log('Initializing token locker');
             await this.init({
-                    prover_account: prover_account,
-                    skip_client_call: skip_client_call
-                },
-                new BN('1000000000000000'));
+                prover_account: prover_account,
+                skip_client_call: skip_client_call,
+            },
+            new BN('1000000000000000'));
             console.log('Token locker initialized');
         }
     }

@@ -2,10 +2,10 @@ const Web3 = require('web3');
 const nearlib = require('nearlib');
 const fs = require('fs');
 const path = require('path');
-const bs58 = require('bs58')
+const bs58 = require('bs58');
 
 class NearRelay {
-    constructor(ethNodeURL, nearNodeURL, nearNodeNetworkId, masterSK, nearClientContractPath) {
+    constructor (ethNodeURL, nearNodeURL, nearNodeNetworkId, masterSK, nearClientContractPath) {
         this.ethNodeURL = ethNodeURL;
         this.nearNodeURL = nearNodeURL;
         this.nearNodeNetworkId = nearNodeNetworkId;
@@ -13,11 +13,11 @@ class NearRelay {
         this.nearClientContractPath = nearClientContractPath;
     }
 
-    async initialize(shouldDeploy) {
+    async initialize (shouldDeploy) {
         this.web3 = new Web3(this.ethNodeURL);
         this.near = await nearlib.connect({
             nodeUrl: this.nearNodeURL,
-            networkId: this.nearNodeNetworkId
+            networkId: this.nearNodeNetworkId,
         });
 
         // Set master SK.
@@ -32,14 +32,14 @@ class NearRelay {
             process.env.NEAR_BRIDGE_SMART_CONTRACT_ADDRESS, {
                 from: this.clientAccount,
                 handleRevert: true,
-            }
+            },
         );
 
         // If required to deploy deploys the contract.
         if (shouldDeploy) {
             console.log('Deploying NearBridge smart contract');
             this.nearClientContract = await this.nearClientContract.deploy({
-                data: '0x' + fs.readFileSync(path.join(this.nearClientContractPath, 'NearBridge.full.bin'))
+                data: '0x' + fs.readFileSync(path.join(this.nearClientContractPath, 'NearBridge.full.bin')),
             }).send({
                 from: this.clientAccount,
                 gas: 3000000,
@@ -49,13 +49,13 @@ class NearRelay {
         }
     }
 
-    async run() {
-        const checkNearStatus = async function() {
-            let latest_submitted_block = Number(await this.nearClientContract.methods.lastBlockNumber().call());
+    async run () {
+        const checkNearStatus = async function () {
+            const latest_submitted_block = Number(await this.nearClientContract.methods.lastBlockNumber().call());
             console.log('latest_submitted_block', typeof latest_submitted_block, latest_submitted_block);
 
             const status = await this.near.connection.provider.status();
-            let lastNearBlock = status.sync_info.latest_block_height;
+            const lastNearBlock = status.sync_info.latest_block_height;
             console.log('lastNearBlock', typeof lastNearBlock, lastNearBlock);
 
             const promises = [];
@@ -80,7 +80,7 @@ class NearRelay {
             try {
                 console.log(`Submitting ${blocks.length} blocks`);
                 const tx = await this.nearClientContract.methods.addBlockHeaders(blocks).send({
-                    gas: 5000000
+                    gas: 5000000,
                 });
                 console.log('Sumbitted!');
             } catch (txRevertMessage) {
@@ -101,7 +101,6 @@ class NearRelay {
 
         await checkNearStatus();
     }
-
 }
 
 exports.NearRelay = NearRelay;

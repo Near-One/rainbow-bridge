@@ -3,7 +3,7 @@ const nearlib = require('nearlib');
 
 const BN = require('bn.js');
 
-function serializeField(schema, value, fieldType, writer) {
+function serializeField (schema, value, fieldType, writer) {
     if (fieldType === 'u8') {
         writer.write_u8(value);
     } else if (fieldType === 'u64') {
@@ -49,8 +49,7 @@ function serializeField(schema, value, fieldType, writer) {
     }
 }
 
-
-function deserializeField(schema, fieldType, reader) {
+function deserializeField (schema, fieldType, reader) {
     if (fieldType === 'u8') {
         return reader.read_u8();
     } else if (fieldType === 'u64') {
@@ -95,10 +94,9 @@ function deserializeField(schema, fieldType, reader) {
     }
 }
 
-
 /// Serialize given object using schema of the form:
 /// { class_name -> [ [field_name, field_type], .. ], .. }
-function serialize(schema, fieldType, obj) {
+function serialize (schema, fieldType, obj) {
     if (fieldType === null) {
         return new Uint8Array();
     }
@@ -107,36 +105,35 @@ function serialize(schema, fieldType, obj) {
     return writer.toArray();
 }
 
-
 class BinaryReader {
-    constructor(buf) {
+    constructor (buf) {
         this.buf = buf;
         this.offset = 0;
     }
 
-    read_u8() {
+    read_u8 () {
         const value = this.buf.readUInt8(this.offset);
         this.offset += 1;
         return value;
     }
 
-    read_u32() {
+    read_u32 () {
         const value = this.buf.readUInt32LE(this.offset);
         this.offset += 4;
         return value;
     }
 
-    read_u64() {
+    read_u64 () {
         const buf = this.read_buffer(8);
         return new BN(buf, 'le');
     }
 
-    read_u128() {
+    read_u128 () {
         const buf = this.read_buffer(16);
         return new BN(buf, 'le');
     }
 
-    read_buffer(len) {
+    read_buffer (len) {
         if ((this.offset + len) > this.buf.length) {
             throw new BorshError(`Expected buffer length ${len} isn't within bounds`);
         }
@@ -145,7 +142,7 @@ class BinaryReader {
         return result;
     }
 
-    read_string() {
+    read_string () {
         const len = this.read_u32();
         const buf = this.read_buffer(len);
         try {
@@ -156,11 +153,11 @@ class BinaryReader {
         }
     }
 
-    read_fixed_array(len) {
+    read_fixed_array (len) {
         return new Uint8Array(this.read_buffer(len));
     }
 
-    read_array(fn) {
+    read_array (fn) {
         const len = this.read_u32();
         const result = [];
         for (let i = 0; i < len; ++i) {
@@ -170,7 +167,7 @@ class BinaryReader {
     }
 }
 
-function deserialize(schema, fieldType, buffer) {
+function deserialize (schema, fieldType, buffer) {
     if (fieldType === null) {
         return null;
     }
@@ -189,9 +186,9 @@ const signAndSendTransaction = async (accessKey, account, receiverId, actions) =
     const status = await account.connection.provider.status();
 
     const [txHash, signedTx] = await nearlib.transactions.signTransaction(
-        receiverId, ++accessKey.nonce, actions, nearlib.utils.serialize.base_decode(status.sync_info.latest_block_hash), account.connection.signer, account.accountId, account.connection.networkId
+        receiverId, ++accessKey.nonce, actions, nearlib.utils.serialize.base_decode(status.sync_info.latest_block_hash), account.connection.signer, account.accountId, account.connection.networkId,
     );
-    console.log("TxHash", nearlib.utils.serialize.base_encode(txHash));
+    console.log('TxHash', nearlib.utils.serialize.base_encode(txHash));
 
     let result;
     try {
@@ -206,18 +203,18 @@ const signAndSendTransaction = async (accessKey, account, receiverId, actions) =
     }
 
     if (result.status.Failure) {
-        throw new Error(JSON.stringify(result.status.Failure))
+        throw new Error(JSON.stringify(result.status.Failure));
     }
 
     return result;
-}
+};
 
-function getBorshTransactionLastResult(txResult) {
+function getBorshTransactionLastResult (txResult) {
     return txResult && Buffer.from(txResult.status.SuccessValue, 'base64');
 }
 
 class BorshContract {
-    constructor(borshSchema, account, options) {
+    constructor (borshSchema, account, options) {
         this.account = account;
         options.viewMethods.forEach((d) => {
             Object.defineProperty(this, d.methodName, {
@@ -230,7 +227,7 @@ class BorshContract {
                         this.account.printLogs(this.account.accountId, result.logs);
                     }
                     return result.result && result.result.length > 0 && deserialize(borshSchema, d.outputFieldType, Buffer.from(result.result));
-                }
+                },
             });
         });
         options.changeMethods.forEach((d) => {
@@ -244,28 +241,27 @@ class BorshContract {
                             d.methodName,
                             Buffer.from(args),
                             gas || DEFAULT_FUNC_CALL_AMOUNT,
-                            amount
+                            amount,
                         )]);
 
                         const result = getBorshTransactionLastResult(rawResult);
                         return result && deserialize(borshSchema, d.outputFieldType, result);
                     } catch (e) {
-                        console.log("Failed: ", e);
+                        console.log('Failed: ', e);
                         throw e;
                     }
-                }
+                },
             });
         });
     }
 
-    async accessKeyInit() {
+    async accessKeyInit () {
         await this.account.ready;
 
         this.accessKey = await this.account.findAccessKey();
         if (!this.accessKey) {
             throw new Error(`Can not sign transactions for account ${this.account.accountId}, no matching key pair found in Signer.`, 'KeyNotFound');
         }
-
     }
 }
 
