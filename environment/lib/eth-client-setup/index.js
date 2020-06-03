@@ -7,9 +7,6 @@ const {
 const {
     EthProverContract,
 } = require('../eth-prover-contract');
-const {
-    TokenLockerContract,
-} = require('../near-locker-contract');
 
 class EthClientSetup {
     constructor () {}
@@ -79,27 +76,6 @@ class EthClientSetup {
         this.ethProverAccount = new nearlib.Account(this.near.connection, this.ethProverAccId);
         this.ethProverContract = new EthProverContract(this.ethProverAccount, this.ethProverAccId);
         await this.ethProverContract.maybeInitialize(this.ethClientAccId);
-
-        await this.maybeCreateAccount(this.nearTokenAccId, this.nearTokenPK, this.nearTokenInitNearBalance, this.nearTokenContractPath);
-        this.nearTokenAccount = new nearlib.Account(this.near.connection, this.nearTokenAccId);
-        this.nearTokenContract = new nearlib.Contract(this.nearTokenAccount, this.nearTokenAccId, {
-            changeMethods: ['new'],
-            viewMethods: ['get_balance'],
-        });
-        try {
-            // Try initializing token contract
-            await this.nearTokenContract.new({
-                owner_id: this.nearLockerAccId,
-                total_supply: this.nearLockerInitTokenBalance,
-            });
-        } catch (e) {
-            // I guess not
-        }
-
-        await this.maybeCreateAccount(this.nearLockerAccId, this.nearLockerPK, this.nearLockerInitNearBalance, this.nearLockerContractPath);
-        this.nearLockerAccount = new nearlib.Account(this.near.connection, this.nearLockerAccId);
-        this.nearLockerContract = new TokenLockerContract(this.nearLockerAccount, this.nearLockerAccId);
-        await this.nearLockerContract.maybeInitialize(this.ethProverAccId, this.validateEthash != 'true');
     }
 
     // Check if account exists and if it does not creates it using master account. Also deploys the code and creates

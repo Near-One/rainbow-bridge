@@ -49,10 +49,6 @@ program.command('transfer-fun-eth2near')
         'The identifier of the NEAR network that the given NEAR node is expected to represent.',
         '')
     .option(
-        '--near-locker-address <near_locker_address>',
-        'Address of the token locker contract on NEAR network that will be unlocking the token on Near side.',
-        '')
-    .option(
         '--near-token-address <near_token_address>',
         'Address of the fungible token on NEAR network that will be transferred.',
         '')

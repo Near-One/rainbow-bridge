@@ -9,9 +9,7 @@ const {
     logFromWeb3,
 } = require('../../lib/eth-proof-extractor');
 const { verifyAccount } = require('../../lib/near-helpers');
-const {
-    TokenLockerContract,
-} = require('../../lib/near-locker-contract');
+const { NearMintableToken } = require('../../lib/near-mintable-token');
 
 class TransferFunETH2NEAR {
     static async execute (command) {
@@ -79,8 +77,9 @@ class TransferFunETH2NEAR {
             changeMethods: ['new'],
             viewMethods: ['get_balance'],
         });
-        let nearLockerContract = new TokenLockerContract(nearReceiverAccount, command.nearLockerAddress);
-        await nearLockerContract.accessKeyInit();
+        let nearTokenContractBorsh = new NearMintableToken(nearReceiverAccount, command.nearTokenAddress);
+        await nearTokenContractBorsh.accessKeyInit();
+
         // Extract proof.
         const extractor = new EthProofExtractor();
         extractor.initialize(command.ethNodeUrl);
@@ -118,13 +117,12 @@ class TransferFunETH2NEAR {
                 const amount = lockedEvent.returnValues.amount;
 
                 const args_locker = {
-                    token_account: nearTokenContract.contractId,
                     new_owner_id: new_owner_id,
                     amount: amount,
                     proof: proof_locker,
                 };
 
-                await nearLockerContract.unlock_token(
+                await nearTokenContractBorsh.mint(
                     args_locker,
                     new BN('1000000000000000'),
                 );
