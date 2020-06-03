@@ -175,3 +175,5 @@ class EthRelay {
 }
 
 exports.EthRelay = EthRelay;
+exports.web3BlockToRlp = web3BlockToRlp;
+exports.execute = execute;

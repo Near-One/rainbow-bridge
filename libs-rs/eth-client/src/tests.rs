@@ -425,3 +425,51 @@ fn add_2_blocks_from_400000() {
 //         assert_eq!(hashes3[i - 8_000_015], (contract.block_hash(i as u64).unwrap().0).0.into());
 //     }
 // }
+
+#[test]
+fn predumped_block_can_be_added() {
+    use std::env;
+    use std::fs;
+
+    testing_env!(get_context(vec![], false));
+    
+    let mut blocks_with_proofs = fs::read_dir(env::var("ETH_HEADER_DIR").unwrap())
+        .unwrap()
+        .map(|path| path.unwrap().path().display().to_string())
+        .map(|s| {
+            (
+                s.clone()
+                    .split('/')
+                    .collect::<Vec<&str>>()
+                    .last()
+                    .unwrap()
+                    .split('.')
+                    .collect::<Vec<&str>>()
+                    .first()
+                    .unwrap()
+                    .parse::<u64>()
+                    .unwrap(),
+                s,
+            )
+        })
+        .collect::<Vec<_>>();
+    blocks_with_proofs.sort_by_key(|s| s.0);
+    let start_block_height = blocks_with_proofs.first().unwrap().0;
+    let blocks_with_proofs: Vec<_> = blocks_with_proofs
+        .iter()
+        .map(|filename| read_block(filename.1.to_string()))
+        .collect();
+
+    let mut contract = EthBridge::init(
+        true,
+        start_block_height / 30000,
+        vec![blocks_with_proofs.first().unwrap().merkle_root],
+    );
+
+    for block_with_proof in blocks_with_proofs.into_iter() {
+        contract.add_block_header(
+            block_with_proof.header_rlp.0.clone(),
+            block_with_proof.to_double_node_with_merkle_proof_vec(),
+        );
+    }
+}

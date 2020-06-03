@@ -1,6 +1,7 @@
 const Web3 = require('web3');
 const Path = require('path');
 const fs = require('fs').promises;
+const {web3BlockToRlp, execute} = require('../../lib/eth-relay');
 
 class DumpETHHeaders {
   static async execute({path, startBlock, endBlock, ethNodeUrl}) {
@@ -9,12 +10,18 @@ class DumpETHHeaders {
       endBlock = await web3.eth.getBlockNumber();
     }
     if (!startBlock) {
-      startBlock = Math.max(0, endBlock - 43000);
+      startBlock = Math.max(0, Number(endBlock) - 43000);
+    }
+    if (Number(startBlock)<0) {
+      startBlock = Math.max(0, Number(endBlock) + Number(startBlock))
     }
 
-    for (let b = startBlock; b <= endBlock; b++) {
+    for (let b = endBlock; b >= startBlock; b--) {
       console.log(`Downloading block ${b}`);
-      let block = await web3.eth.getBlock(b);
+      const blockRlp = web3.utils.bytesToHex(web3BlockToRlp(await web3.eth.getBlock(b)));
+      console.log(blockRlp);
+      const unparsedBlock = await execute(`./vendor/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`);
+      const block = JSON.parse(unparsedBlock);
       DumpETHHeaders.saveBlock(b, block, path);
     }
 
