@@ -23,7 +23,7 @@ class DumpETHHeaders {
     for (let b = endBlock; b >= startBlock; b--) {
       console.log(`Downloading block ${b}`);
       const blockRlp = web3.utils.bytesToHex(web3BlockToRlp(await web3.eth.getBlock(b)));
-      console.log(`Processing and dump block ${b}`);
+      console.log(`Processing block ${b}`);
       const unparsedBlock = await execute(`./vendor/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`);
       const block = JSON.parse(unparsedBlock);
       DumpETHHeaders.saveBlock(b, block, path);
