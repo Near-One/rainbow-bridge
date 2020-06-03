@@ -192,17 +192,6 @@ class EthRelay {
             }
         });
     }
-
-    async saveBlock(i, block, path) {
-        let file = Path.join(path, `${i}.json`);
-        await fs.writeFile(file, JSON.stringify(block));
-    }
-
-    async loadBlock(path, i) {
-        let file = Path.join(path, `${i}.json`);
-        let block = await fs.readFile(file);
-        return JSON.parse(block);
-    }
 }
 
 exports.EthRelay = EthRelay;

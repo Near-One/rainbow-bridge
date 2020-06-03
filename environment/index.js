@@ -100,9 +100,10 @@ program.command('init-near-test-contracts')
         '');
 
 program.command('dump-eth-headers')
+    .option('--eth-node-url <eth_node_url>', 'ETH node API url')
     .option('--path <path>', 'Dir path to savedump eth headers')
-    .option('--start-block [start_block]', 'Start block number to dump')
-    .option('--end-block [end_block]', 'End block number to dump')
+    .option('--start-block <start_block>', 'Start block number to dump')
+    .option('--end-block <end_block>', 'End block number to dump')
     .action(DumpETHHeaders.execute);
     
 (async () => { await program.parseAsync(process.argv); })();

@@ -1,17 +1,30 @@
-const {
-    EthClientSetup
-} = require('../../lib/eth-client-setup');
-const {
-    EthRelay
-} = require('../../lib/eth-relay');
+const Web3 = require('web3');
+const Path = require('path');
+const fs = require('fs').promises;
 
 class DumpETHHeaders {
-  static async execute(path, start_block, end_block) { 
-    const setup = new EthClientSetup();
-    await setup.initialize();
-    const ethRelay = new EthRelay();
-    ethRelay.initialize(setup.ethClientContract, process.env.ETH_NODE_URL, {mode: 'download_only', path: path});
-    await ethRelay.run();
+  static async execute({path, startBlock, endBlock, ethNodeUrl}) {
+    console.log('here')
+    let web3 = new Web3(ethNodeUrl);
+    console.log('there')
+    console.log(path)
+    console.log(endBlock)
+    for (let b = startBlock; b <= endBlock; b++) {
+      console.log(`Downloading block ${b}`);
+      let block = await web3.eth.getBlock(b);
+      DumpETHHeaders.saveBlock(b, block, path);
+    }
+
+    try {
+      // Only WebSocket provider can close.
+      web3.currentProvider.connection.close();
+    } catch (e) {
+    }
+  }
+
+  static async saveBlock(i, block, path) {
+    let file = Path.join(path, `${i}.json`);
+    await fs.writeFile(file, JSON.stringify(block));
   }
 }
 
