@@ -112,6 +112,8 @@ contract('NearBridge', function ([_, addr1]) {
             '0x508307e7af9bdbb297afa7af0541130eb32f0f028151319f5a4f7ae68b0ecc56'
         );
 
+        expect(await this.bridge.checkBlockProducerSignatureInLastBlock(0, block_121498)).to.be.true;
+
         await expectRevert(
             this.bridge.addLightClientBlock(block_121998),
             'Wait until last block become valid'
