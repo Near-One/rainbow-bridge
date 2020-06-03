@@ -51,6 +51,7 @@ contract NearBridge is Ownable {
     }
 
     function withdraw() public {
+        require(msg.sender != last.submitter || block.timestamp > last.validAfter);
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(LOCK_ETH_AMOUNT);
         msg.sender.transfer(LOCK_ETH_AMOUNT);
     }

@@ -14,7 +14,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::collections::Map;
 use near_sdk::json_types::U128;
-use near_sdk::{env, near_bindgen, AccountId, Balance};
+use near_sdk::{env, near_bindgen, AccountId, Balance, Promise, ext_contract};
 
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
@@ -62,6 +62,11 @@ pub struct FungibleToken {
 
     /// Total supply of the all token.
     pub total_supply: Balance,
+    /// The account of the prover that we can use to prove
+    pub prover_account: AccountId,
+    /// Whether the contract can mint tokens without verification of the Ethereum PoW. Should be
+    /// only set to `false` for testing and diagnostics purposes.
+    pub verify_ethash: bool,
 }
 
 impl Default for FungibleToken {
@@ -70,15 +75,50 @@ impl Default for FungibleToken {
     }
 }
 
+#[ext_contract(prover)]
+pub trait Prover {
+    #[result_serializer(borsh)]
+    fn verify_log_entry(
+        &self,
+        #[serializer(borsh)] log_index: u64,
+        #[serializer(borsh)] log_entry_data: Vec<u8>,
+        #[serializer(borsh)] receipt_index: u64,
+        #[serializer(borsh)] receipt_data: Vec<u8>,
+        #[serializer(borsh)] header_data: Vec<u8>,
+        #[serializer(borsh)] proof: Vec<Vec<u8>>,
+        #[serializer(borsh)] skip_bridge_call: bool,
+    ) -> bool;
+}
+
+#[derive(BorshDeserialize, BorshSerialize)]
+pub struct Proof {
+    log_index: u64,
+    log_entry_data: Vec<u8>,
+    receipt_index: u64,
+    receipt_data: Vec<u8>,
+    header_data: Vec<u8>,
+    proof: Vec<Vec<u8>>,
+}
+
+#[ext_contract(ext_fungible_token)]
+pub trait ExtFungibleToken {
+    #[result_serializer(borsh)]
+    fn finish_mint(&self,
+                       #[callback]
+                       #[serializer(borsh)] verification_success: bool,
+                       #[serializer(borsh)] new_owner_id: AccountId,
+                       #[serializer(borsh)] amount: U128) -> Promise;
+}
+
 #[near_bindgen]
 impl FungibleToken {
     /// Initializes the contract with the given total supply owned by the given `owner_id`.
     #[init]
-    pub fn new(owner_id: AccountId, total_supply: U128) -> Self {
+    pub fn new(owner_id: AccountId, total_supply: U128, prover_account: AccountId, verify_ethash: bool) -> Self {
         assert!(env::is_valid_account_id(owner_id.as_bytes()), "Owner's account ID is invalid");
         let total_supply = total_supply.into();
         assert!(!env::state_exists(), "Already initialized");
-        let mut ft = Self { accounts: Map::new(b"a".to_vec()), total_supply };
+        let mut ft = Self { accounts: Map::new(b"a".to_vec()), total_supply, prover_account, verify_ethash };
         let mut account = ft.get_account(&owner_id);
         account.balance = total_supply;
         ft.set_account(&owner_id, &account);
@@ -155,6 +195,55 @@ impl FungibleToken {
     pub fn transfer(&mut self, new_owner_id: AccountId, amount: U128) {
         // NOTE: New owner's Account ID checked in transfer_from
         self.transfer_from(env::predecessor_account_id(), new_owner_id, amount);
+    }
+
+    /// Mint the token, increasing the total supply given the proof that the mirror token was locked
+    /// on the Ethereum blockchain.
+    pub fn mint(&self,
+                #[serializer(borsh)] new_owner_id: AccountId,
+                #[serializer(borsh)] amount: U128,
+                #[serializer(borsh)] proof: Proof) -> Promise {
+        // TODO: Record events that were already used to mint the tokens.
+        let Proof {
+            log_index,
+            log_entry_data,
+            receipt_index,
+            receipt_data,
+            header_data,
+            proof,
+        } = proof;
+        prover::verify_log_entry(
+            log_index, log_entry_data, receipt_index, receipt_data, header_data, proof,
+            !self.verify_ethash,
+            &self.prover_account,
+            0,
+            env::prepaid_gas()/3
+        ).then(
+            ext_fungible_token::finish_mint(
+                new_owner_id,
+                amount,
+                &env::current_account_id(),
+                0,
+                env::prepaid_gas()/3
+            )
+        )
+    }
+
+    /// Finish minting once the proof was successfully validated. Can only be called by the contract
+    /// itself.
+    pub fn finish_mint(&mut self,
+                       #[callback] #[serializer(borsh)] verification_success: bool,
+                       #[serializer(borsh)] new_owner_id: AccountId,
+                       #[serializer(borsh)] amount: U128) {
+        assert_eq!(env::predecessor_account_id(), env::current_account_id(),
+                   "Finish transfer is only allowed to be called by the contract itself");
+        assert!(verification_success, "Failed to verify the proof");
+
+        let mut account = self.get_account(&new_owner_id);
+        let amount: Balance = amount.into();
+        account.balance += amount;
+        self.total_supply += amount;
+        self.set_account(&new_owner_id, &account);
     }
 
     /// Returns total supply of tokens.

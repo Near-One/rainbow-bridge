@@ -4,13 +4,13 @@ const BN = require('bn.js');
 const {
     EthProofExtractor,
     receiptFromWeb3,
-    logFromWeb3
+    logFromWeb3,
 } = require('../eth-proof-extractor');
 const {
-    borshSchema
+    borshSchema,
 } = require('../eth-prover-contract');
 const {
-    serialize
+    serialize,
 } = require('../borsh');
 
 // Tests EthProver in the following way:
@@ -19,17 +19,17 @@ const {
 // * For each block, for each transaction in this block, and for each log in that transaction, creates
 //   a proof and sends it to EthProver.
 class EthProverTester {
-    constructor(ethNodeURL, ethClientContract, ethProverContract) {
+    constructor (ethNodeURL, ethClientContract, ethProverContract) {
         this.web3 = new Web3(ethNodeURL);
         this.ethNodeURL = ethNodeURL;
         this.ethClientContract = ethClientContract;
         this.ethProverContract = ethProverContract;
     }
 
-    async run() {
+    async run () {
         // Number of blocks to process.
         const numBlocks = 1;
-        let firstBlock = (await this.ethClientContract.last_block_number()).toNumber() - 1;
+        const firstBlock = (await this.ethClientContract.last_block_number()).toNumber() - 1;
         // let firstBlock = 10;
         let lastBlock = firstBlock;
         // Wait for the blocks to be accepted by the EthClient.
@@ -40,13 +40,13 @@ class EthProverTester {
         console.log(`firstBlock=${firstBlock}; lastBlock=${lastBlock}`);
 
         // Loop over blocks.
-        let extractor = new EthProofExtractor();
+        const extractor = new EthProofExtractor();
         extractor.initialize(this.ethNodeURL);
         let test_num = 0;
 
         for (let currBlock = firstBlock; currBlock <= lastBlock; currBlock++) {
-            let block = await this.web3.eth.getBlock(currBlock);
-            for (let txHash of block.transactions) {
+            const block = await this.web3.eth.getBlock(currBlock);
+            for (const txHash of block.transactions) {
                 const receipt = await extractor.extractReceipt(txHash);
                 if (receipt.logs.length == 0) {
                     continue;
@@ -57,7 +57,7 @@ class EthProverTester {
                 let log_index = -1;
                 for (const log of receipt.logs) {
                     log_index++;
-                    console.log("===========================================================================");
+                    console.log('===========================================================================');
                     console.log(`BLOCK NUMBER ${receipt.blockNumber}`);
                     console.log(`TX_HASH ${txHash}`);
                     console.log(`LOG_INDEX ${log_index}`);
@@ -83,8 +83,8 @@ class EthProverTester {
                     const receipt_index = proof.txIndex;
                     const receipt_data = receiptFromWeb3(receipt).serialize();
                     const header_data = proof.header.serialize();
-                    let _proof = [];
-                    for (let node of proof.receiptProof) {
+                    const _proof = [];
+                    for (const node of proof.receiptProof) {
                         _proof.push(utils.rlp.encode(node));
                     }
 
@@ -105,7 +105,6 @@ class EthProverTester {
                     // console.log(`let actual_borsh_proof = "${borsh_proof}";`);
                     // console.log(`let actual_borsh_skip_bridge_call = "${borsh_skip_bridge_call}";`);
 
-
                     const args = {
                         log_index: log_index,
                         log_entry_data: log_entry_data,
@@ -118,9 +117,9 @@ class EthProverTester {
 
                     // const borsh_args = serialize(borshSchema, 'verifyLogEntry', args).toString('hex');
 
-                    let result = await this.ethProverContract.verify_log_entry(
+                    const result = await this.ethProverContract.verify_log_entry(
                         args,
-                        new BN('1000000000000000')
+                        new BN('1000000000000000'),
                     );
 
                     if (!result) {
@@ -135,14 +134,14 @@ class EthProverTester {
         extractor.destroy();
     }
 
-    destroy() {
+    destroy () {
         if (this.web3.currentProvider.connection.close) { // Only WebSocket provider has close, HTTPS don't
             this.web3.currentProvider.connection.close();
         }
     }
 }
 
-function sleep(ms) {
+function sleep (ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 

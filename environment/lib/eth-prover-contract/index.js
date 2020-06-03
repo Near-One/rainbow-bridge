@@ -1,29 +1,29 @@
 const {
     BorshContract,
     hexToBuffer,
-    readerToHex
+    readerToHex,
 } = require('../borsh');
 
 const borshSchema = {
-    'initInput': {
+    initInput: {
         kind: 'struct',
         fields: [
-            ['bridge_smart_contract', 'string']
-        ]
+            ['bridge_smart_contract', 'string'],
+        ],
     },
-    'assertEthbridgeHashInput': {
+    assertEthbridgeHashInput: {
         kind: 'struct',
         fields: [
             ['block_number', 'u64'],
             ['expected_block_hash', 'H256'],
-        ]
+        ],
     },
-    'H256': {
+    H256: {
         kind: 'function',
         ser: hexToBuffer,
-        deser: readerToHex(32)
+        deser: readerToHex(32),
     },
-    'verifyLogEntry': {
+    verifyLogEntry: {
         kind: 'struct',
         fields: [
             ['log_index', 'u64'],
@@ -32,36 +32,36 @@ const borshSchema = {
             ['receipt_data', ['u8']],
             ['header_data', ['u8']],
             ['proof', [
-                ['u8']
+                ['u8'],
             ]],
             ['skip_bridge_call', 'bool'],
-        ]
+        ],
     },
 };
 
 class EthProverContract extends BorshContract {
-    constructor(account) {
-        super(borshSchema, account, {
+    constructor (account, contractId) {
+        super(borshSchema, account, contractId, {
             viewMethods: [],
             changeMethods: [{
-                    methodName: "verify_log_entry",
-                    inputFieldType: "verifyLogEntry",
-                    outputFieldType: 'bool',
-                },
-                {
-                    methodName: "init",
-                    inputFieldType: "initInput",
-                    outputFieldType: null,
-                }, {
-                    methodName: "assert_ethbridge_hash",
-                    inputFieldType: "assertEthbridgeHashInput",
-                    outputFieldType: 'bool',
-                }
+                methodName: 'verify_log_entry',
+                inputFieldType: 'verifyLogEntry',
+                outputFieldType: 'bool',
+            },
+            {
+                methodName: 'init',
+                inputFieldType: 'initInput',
+                outputFieldType: null,
+            }, {
+                methodName: 'assert_ethbridge_hash',
+                inputFieldType: 'assertEthbridgeHashInput',
+                outputFieldType: 'bool',
+            },
             ],
-        })
+        });
     }
 
-    async maybeInitialize(ethClientAccId) {
+    async maybeInitialize (ethClientAccId) {
         await this.accessKeyInit();
 
         try {

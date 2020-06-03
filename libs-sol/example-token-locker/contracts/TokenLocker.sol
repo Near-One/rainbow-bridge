@@ -13,7 +13,6 @@ contract TokenLocker {
         emit Locked(address(0), msg.sender, msg.value, accountId);
     }
     function lockToken(IERC20 token, uint256 amount, string memory accountId) public {
-        token.approve(address(this), amount);
         token.safeTransferFrom(msg.sender, address(this), amount);
         emit Locked(address(token), msg.sender, amount, accountId);
     }
