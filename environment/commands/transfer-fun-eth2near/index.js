@@ -11,11 +11,11 @@ const {
 const { verifyAccount } = require('../../lib/near-helpers');
 const { NearMintableToken } = require('../../lib/near-mintable-token');
 
-function sleep(ms) {
+function sleep (ms) {
     return new Promise((resolve) => {
-      setTimeout(resolve, ms);
+        setTimeout(resolve, ms);
     });
-  }   
+}
 
 class TransferFunETH2NEAR {
     static async execute (command) {
@@ -69,7 +69,7 @@ class TransferFunETH2NEAR {
 
         await sleep(120000);
 
-        let keyStore = new nearlib.keyStores.InMemoryKeyStore();
+        const keyStore = new nearlib.keyStores.InMemoryKeyStore();
         await keyStore.setKey(command.nearNetworkId, command.nearReceiverAccount,
             nearlib.KeyPair.fromString(command.nearReceiverSk));
         const near = await nearlib.connect({
@@ -81,13 +81,11 @@ class TransferFunETH2NEAR {
         const nearReceiverAccount = new nearlib.Account(near.connection, command.nearReceiverAccount);
         await verifyAccount(near, command.nearReceiverAccount);
 
-
-
-        let nearTokenContract = new nearlib.Contract(nearReceiverAccount, command.nearTokenAddress, {
+        const nearTokenContract = new nearlib.Contract(nearReceiverAccount, command.nearTokenAddress, {
             changeMethods: ['new'],
             viewMethods: ['get_balance'],
         });
-        let nearTokenContractBorsh = new NearMintableToken(nearReceiverAccount, command.nearTokenAddress);
+        const nearTokenContractBorsh = new NearMintableToken(nearReceiverAccount, command.nearTokenAddress);
         await nearTokenContractBorsh.accessKeyInit();
 
         // Extract proof.

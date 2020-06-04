@@ -25,9 +25,9 @@ class InitNEARTestContracts {
         const tokenAccount = new nearlib.Account(near.connection, tokenAccountId);
         const tokenInitBalance = '1000000000000000000000000000';
         const tokenContractPath = path.join(command.contractsDir, 'fungible_token.wasm');
-        console.log("Deploying fungible token");
+        console.log('Deploying fungible token');
         await maybeCreateAccount(near, command.nearMasterAccount, tokenAccountId, tokenPK, tokenInitBalance, tokenContractPath);
-        let tokenContract = new nearlib.Contract(tokenAccount, tokenAccountId, {
+        const tokenContract = new nearlib.Contract(tokenAccount, tokenAccountId, {
             changeMethods: ['new'],
             viewMethods: ['get_balance'],
         });
@@ -38,14 +38,14 @@ class InitNEARTestContracts {
                 owner_id: tokenAccountId,
                 total_supply: '0',
                 prover_account: command.nearProverAccount,
-                verify_ethash: command.validateEthash === 'true'
+                verify_ethash: command.validateEthash === 'true',
             });
         } catch (e) {
             // I guess not
         }
 
-        console.log(`Fungible token deployed`);
-        console.log("Fungible token address:");
+        console.log('Fungible token deployed');
+        console.log('Fungible token address:');
         console.log(tokenAccountId);
     }
 }
