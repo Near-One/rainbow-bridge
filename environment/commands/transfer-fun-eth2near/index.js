@@ -11,25 +11,20 @@ const {
 const { verifyAccount } = require('../../lib/near-helpers');
 const { NearMintableToken } = require('../../lib/near-mintable-token');
 
+function sleep(ms) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  }   
+
 class TransferFunETH2NEAR {
     static async execute (command) {
         const web3 = new Web3(command.ethNodeUrl);
-        let keyStore = new nearlib.keyStores.InMemoryKeyStore();
-        await keyStore.setKey(command.nearNetworkId, command.nearReceiverAccount,
-            nearlib.KeyPair.fromString(command.nearReceiverSk));
-        const near = await nearlib.connect({
-            nodeUrl: command.nearNodeUrl,
-            networkId: command.nearNetworkId,
-            masterAccount: command.nearReceiverAccount,
-            deps: { keyStore: keyStore },
-        });
-        const nearReceiverAccount = new nearlib.Account(near.connection, command.nearReceiverAccount);
-        await verifyAccount(near, command.nearReceiverAccount);
 
         let ethSenderAccount = web3.eth.accounts.privateKeyToAccount(command.ethSenderSk);
         web3.eth.accounts.wallet.add(ethSenderAccount);
         web3.eth.defaultAccount = ethSenderAccount.address;
-        ethSenderAccount = (await web3.eth.getAccounts())[0];
+        ethSenderAccount = ethSenderAccount.address;
 
         // Approve tokens for transfer.
         const ethERC20Contract = new web3.eth.Contract(
@@ -71,6 +66,21 @@ class TransferFunETH2NEAR {
             console.log(txRevertMessage.toString());
             process.exit(1);
         }
+
+        await sleep(120000);
+
+        let keyStore = new nearlib.keyStores.InMemoryKeyStore();
+        await keyStore.setKey(command.nearNetworkId, command.nearReceiverAccount,
+            nearlib.KeyPair.fromString(command.nearReceiverSk));
+        const near = await nearlib.connect({
+            nodeUrl: command.nearNodeUrl,
+            networkId: command.nearNetworkId,
+            masterAccount: command.nearReceiverAccount,
+            deps: { keyStore: keyStore },
+        });
+        const nearReceiverAccount = new nearlib.Account(near.connection, command.nearReceiverAccount);
+        await verifyAccount(near, command.nearReceiverAccount);
+
 
 
         let nearTokenContract = new nearlib.Contract(nearReceiverAccount, command.nearTokenAddress, {

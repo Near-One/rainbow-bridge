@@ -9,7 +9,9 @@ class InitETHTestContracts {
         web3.eth.accounts.privateKeyToAccount(command.ethMasterSk);
         web3.eth.accounts.wallet.add(ethMasterAccount);
         web3.eth.defaultAccount = ethMasterAccount.address;
-        ethMasterAccount = (await web3.eth.getAccounts())[0];
+        ethMasterAccount = ethMasterAccount.address;
+        // let accs = await web3.eth.getAccounts();
+        // ethMasterAccount = (await web3.eth.getAccounts())[0];
 
         // Initialize MyERC20 contract.
         console.log('Deploying MyERC20 contract.');

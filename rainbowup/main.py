@@ -128,8 +128,17 @@ Run rainbowup <command> --help to see help for specific command.
     # Try connecting to the Near node.
     def _is_near_node_running(self):
         url = urllib.parse.urlparse(self._near_node_url())
+        port = url.port
+        if not port:
+            if url.scheme == 'https':
+                port = 443
+            elif url.scheme == 'http':
+                port = 80
+            else:
+                print("Cannot detect port for %s" % self._near_node_url())
+                exit(1)
         p = subprocess.Popen(
-            ['nc', '-z', url.hostname, str(url.port)],
+            ['nc', '-z', url.hostname, str(port)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
         p.communicate()
@@ -166,7 +175,7 @@ Run rainbowup <command> --help to see help for specific command.
     def _near_master_sk(self):
         if self._is_external_node():
             with open(self.args.near_master_key_path, 'r') as f:
-                return json.load(f)['secret_key']
+                return json.load(f)['private_key']
         else:
             with open(
                     os.path.join(self._near_datafolder(),
@@ -246,7 +255,7 @@ Run rainbowup <command> --help to see help for specific command.
             near_node_url=self._near_node_url(),
             master_acc_id=self._near_master_account_id(),
             master_sk=self._near_master_sk(),
-            bridge_acc_id='ethbridge',
+            bridge_acc_id='ethbridge0',
             bridge_sk=self._near_master_sk(),  # Use the same key for now.
             validate_ethash='true' if self.args.eth_node_url else 'false')
         d.run()

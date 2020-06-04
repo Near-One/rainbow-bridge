@@ -23,25 +23,25 @@ class EthRelayService:
                    MASTER_SK=self.master_sk,
                    ETH_CLIENT_ACC_ID=self.bridge_acc_id,
                    ETH_CLIENT_SK=self.bridge_sk,
-                   ETH_CLIENT_INIT_BALANCE="1000000000000000000000000000",
+                   ETH_CLIENT_INIT_BALANCE="100000000000000000000000000",
                    ETH_CLIENT_CONTRACT_PATH=os.path.join(
                        self.args.source, 'libs-rs/res/eth_client.wasm'),
-                   ETH_PROVER_ACC_ID="ethprover",
+                   ETH_PROVER_ACC_ID="ethprover0",
                    ETH_PROVER_SK=self.bridge_sk,
-                   ETH_PROVER_INIT_BALANCE="1000000000000000000000000000",
+                   ETH_PROVER_INIT_BALANCE="100000000000000000000000000",
                    ETH_PROVER_CONTRACT_PATH=os.path.join(
                        self.args.source, 'libs-rs/res/eth_prover.wasm'),
                    VALIDATE_ETHASH=self.validate_ethash,
 
-                   NEAR_TOKEN_ACC_ID="funtoken",
+                   NEAR_TOKEN_ACC_ID="funtoken0",
                    NEAR_TOKEN_SK=self.bridge_sk,
-                   NEAR_TOKEN_INIT_NEAR_BALANCE="1000000000000000000000000000",
+                   NEAR_TOKEN_INIT_NEAR_BALANCE="100000000000000000000000000",
                    NEAR_TOKEN_CONTRACT_PATH=os.path.join(
                        self.args.source, 'libs-rs/res/fungible_token.wasm'),
 
-                   NEAR_LOCKER_ACC_ID="nearlocker",
+                   NEAR_LOCKER_ACC_ID="nearlocker0",
                    NEAR_LOCKER_SK=self.bridge_sk,
-                   NEAR_LOCKER_INIT_NEAR_BALANCE="1000000000000000000000000000",
+                   NEAR_LOCKER_INIT_NEAR_BALANCE="100000000000000000000000000",
                    NEAR_LOCKER_INIT_TOKEN_BALANCE="1000000",
                    NEAR_LOCKER_CONTRACT_PATH=os.path.join(
                        self.args.source, 'libs-rs/res/locker.wasm')
