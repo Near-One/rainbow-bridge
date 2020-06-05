@@ -18,7 +18,7 @@ class DumpETHHeaders {
     } else {
       startBlock = Number(startBlock);
     }
-    console.log(`Download block ${endBlock} down to ${startBlock} to ${path}, totally ${endBlock - startBlock + 1} blocks`)
+    console.log(`Downloading block ${endBlock} down to ${startBlock} to ${path}. ${endBlock - startBlock + 1} blocks in total.`)
 
     for (let b = endBlock; b >= startBlock; b--) {
       console.log(`Downloading block ${b}`);
