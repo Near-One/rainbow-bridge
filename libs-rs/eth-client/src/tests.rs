@@ -432,24 +432,19 @@ fn predumped_block_can_be_added() {
     use std::fs;
 
     testing_env!(get_context(vec![], false));
-    
+
     let mut blocks_with_proofs = fs::read_dir(env::var("ETH_HEADER_DIR").unwrap())
         .unwrap()
-        .map(|path| path.unwrap().path().display().to_string())
-        .map(|s| {
+        .map(|path| {
+            let path = path.unwrap().path();
             (
-                s.clone()
-                    .split('/')
-                    .collect::<Vec<&str>>()
-                    .last()
+                path.file_stem()
                     .unwrap()
-                    .split('.')
-                    .collect::<Vec<&str>>()
-                    .first()
+                    .to_str()
                     .unwrap()
                     .parse::<u64>()
                     .unwrap(),
-                s,
+                path.display().to_string(),
             )
         })
         .collect::<Vec<_>>();
