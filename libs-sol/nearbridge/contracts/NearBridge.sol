@@ -35,6 +35,7 @@ contract NearBridge is INearBridge {
     uint256 constant public LOCK_DURATION = 1 hours;
 
     bool initialized;
+    Ed25519 edwards;
     State public last;
     State public prev;
     State public backup;
@@ -45,6 +46,10 @@ contract NearBridge is INearBridge {
         uint256 indexed height,
         bytes32 blockHash
     );
+
+    constructor(Ed25519 ed) public {
+        edwards = ed;
+    }
 
     function deposit() public payable {
         require(msg.value == LOCK_ETH_AMOUNT && balanceOf[msg.sender] == 0);
@@ -216,7 +221,7 @@ contract NearBridge is INearBridge {
 
         if (signature.enumIndex == 0) {
             (bytes32 arg1, bytes9 arg2) = abi.decode(message, (bytes32, bytes9));
-            return publicKey.ed25519.xy != bytes32(0) && Ed25519.check(
+            return publicKey.ed25519.xy != bytes32(0) && edwards.check(
                 publicKey.ed25519.xy,
                 signature.ed25519.rs[0],
                 signature.ed25519.rs[1],
