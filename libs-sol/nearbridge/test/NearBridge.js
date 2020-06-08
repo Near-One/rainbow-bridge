@@ -2,6 +2,7 @@
 const { expectRevert, time } = require('@openzeppelin/test-helpers');
 const bs58 = require('bs58')
 
+const Ed25519 = artifacts.require('Ed25519');
 const NearBridge = artifacts.require('NearBridge');
 const NearDecoder = artifacts.require('NearDecoder');
 
@@ -90,7 +91,7 @@ function borshify(block) {
 contract('NearBridge', function ([_, addr1]) {
     beforeEach(async function () {
         this.decoder = await NearDecoder.new();
-        this.bridge = await NearBridge.new();
+        this.bridge = await NearBridge.new((await Ed25519.deployed()).address);
         await this.bridge.deposit({ value: web3.utils.toWei('1') });
     });
 

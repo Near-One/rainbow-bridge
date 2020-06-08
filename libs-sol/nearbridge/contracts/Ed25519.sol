@@ -4,7 +4,7 @@ pragma solidity ^0.5.0;
 // https://gist.github.com/abacabadabacaba/cb927b5ebe6db63f00b98902503ffc76
 // https://gist.github.com/abacabadabacaba/9c395588c455ca1f7dccfa853d8fd56d
 // https://play.golang.org/p/obqA-XDYzdm
-library Ed25519 {
+contract Ed25519 {
     // Computes (v^(2^250-1), v^11) mod p
     function pow22501(uint256 v) private pure returns (uint256 p22501, uint256 p11) {
         p11 = mulmod(v, v, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
