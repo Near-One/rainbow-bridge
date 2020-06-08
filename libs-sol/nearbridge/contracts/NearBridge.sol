@@ -3,11 +3,12 @@ pragma experimental ABIEncoderV2; // solium-disable-line no-experimental
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/ownership/Ownable.sol";
+import "./INearBridge.sol";
 import "./NearDecoder.sol";
 import "./Ed25519.sol";
 
 
-contract NearBridge is Ownable {
+contract NearBridge is INearBridge {
     using SafeMath for uint256;
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
