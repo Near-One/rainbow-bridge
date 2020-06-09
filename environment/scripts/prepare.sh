@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+echo "ALL ARGS $@"
 
 RAINBOWUP_DIR=~/.rainbowup
 
@@ -49,6 +50,12 @@ while [[ $# -gt 0 ]] ; do
       ;;
   esac
 done
+
+echo 'AAAAA'
+echo "$LOCAL_BRIDGE_SRC"
+echo "$LOCAL_CORE_SRC"
+echo "$LOCAL_NEARUP_SRC"
+exit 0
 
 if test -z "$LOCAL_CORE_SRC"
 then

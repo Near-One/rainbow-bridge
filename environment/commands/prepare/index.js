@@ -20,9 +20,13 @@ class PrepareCommand {
 
         var prepareScript = exec(shell);
         prepareScript.stdout.on(
-            'data', function (data) { process.stdout.write(data.toString()); });
+            'data', function (data) {
+                console.log(data.toString());
+            });
         prepareScript.stderr.on(
-            'data', function (data) { process.stdout.write(data.toString()); });
+            'data', function (data) {
+                console.log(data.toString());
+             });
     }
 }
 
