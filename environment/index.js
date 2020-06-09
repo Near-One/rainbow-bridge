@@ -55,8 +55,10 @@ startCommand.command('eth-relay')
 program.command('prepare')
     .action(PrepareCommand.execute)
     .option('--bridge-src <bridge_src>', 'Path to the rainbow-bridge source',
-        '')
-    .option('--core-src <core_src>', 'Path to the nearcore source', '');
+        '~/.rainbowup/bridge')
+    .option('--core-src <core_src>', 'Path to the nearcore source', '~/.rainbowup/core')
+    .option('--nearup-src <nearup_src>', 'Path to the nearup source', '~/.rainbowup/nearup')
+    ;
 
 program.command('test').action(TestCommand.execute);
 
