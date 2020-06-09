@@ -72,13 +72,15 @@ class ETHDump {
       let log_index = -1;
       for (const log of receipt.logs) {
         log_index++;
+        const receipt_index = proof.txIndex;
+
         console.log('===========================================================================');
         console.log(`BLOCK NUMBER ${receipt.blockNumber}`);
+        console.log(`RECEIPT_INDEX ${receipt_index}`);
         console.log(`TX_HASH ${txHash}`);
         console.log(`LOG_INDEX ${log_index}`);
 
         const log_entry_data = logFromWeb3(log).serialize();
-        const receipt_index = proof.txIndex;
         const receipt_data = receiptFromWeb3(receipt).serialize();
         const header_data = proof.header.serialize();
         const _proof = [];
@@ -90,15 +92,16 @@ class ETHDump {
 
         const args = {
           log_index: log_index,
-          log_entry_data: log_entry_data,
+          log_entry_data: log_entry_data.toString('hex'),
           receipt_index: receipt_index,
-          receipt_data: receipt_data,
-          header_data: header_data,
-          proof: _proof,
+          receipt_data: receipt_data.toString('hex'),
+          header_data: header_data.toString('hex'),
+          proof: _proof.map((p) => p.toString('hex')),
           skip_bridge_call: skip_bridge_call,
         };
-
-        console.log(args);
+        
+        let file = Path.join(path, `${b}_${receipt_index}_${log_index}.json`);
+        await fs.writeFile(file, JSON.stringify(args));
       }
     }
   }

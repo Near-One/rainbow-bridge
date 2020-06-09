@@ -26,9 +26,9 @@ impl<'de> Deserialize<'de> for Hex {
 
 // TESTS
 
+use borsh::BorshSerialize;
 use near_bindgen::MockedBlockchain;
 use near_bindgen::{testing_env, VMContext};
-use borsh::BorshSerialize;
 
 fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
     VMContext {
@@ -284,7 +284,6 @@ fn complex_test2() {
     ));
 }
 
-
 #[test]
 fn complex_test3() {
     let log_index = 0;
@@ -318,16 +317,16 @@ fn complex_test3() {
     ]];
 
     let proof: Vec<Vec<u8>> = proof
-    .iter()
-    .map(|node| {
-        let mut stream = RlpStream::new();
-        stream.begin_list(node.len());
-        for item in node {
-            stream.append(item);
-        }
-        stream.out()
-    })
-    .collect();
+        .iter()
+        .map(|node| {
+            let mut stream = RlpStream::new();
+            stream.begin_list(node.len());
+            for item in node {
+                stream.append(item);
+            }
+            stream.out()
+        })
+        .collect();
 
     let actual_borsh_log_index = "0000000000000000";
     let actual_borsh_log_entry_data = "9d000000f89b94d26114cd6ee289accf82350c8d8487fedb8a0c07f863a0ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3efa00000000000000000000000002c7116a63ab91084a7a5d6fef2e4eda0c84487afa00000000000000000000000007d3cd5685188c6aa498697db91ca548a1249863ea0000000000000000000000000000000000000000000000001158e460913d00000";
@@ -337,7 +336,7 @@ fn complex_test3() {
     let actual_borsh_proof = "0200000053000000f851a06adc4881ae9f2b2bbbf70a60e5b05f0734c02d731e80ac1503231d851b24ffe680808080808080a0103165b38cd8ad3ffa4b1de70e7391ac2c321ffe265bc77f2316ba33288c37178080808080808080b0010000f901ad30b901a9f901a60182574ab9010000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000080000000000000000000000000002008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000010000000000000000000020000000000080000000000000000000000000000000000000000000000000000004000000f89df89b94d26114cd6ee289accf82350c8d8487fedb8a0c07f863a0ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3efa00000000000000000000000002c7116a63ab91084a7a5d6fef2e4eda0c84487afa00000000000000000000000007d3cd5685188c6aa498697db91ca548a1249863ea0000000000000000000000000000000000000000000000001158e460913d00000";
     let actual_borsh_skip_bridge_call = "01";
 
-    use borsh::{BorshSerialize};
+    use borsh::BorshSerialize;
     let borsh_log_index = log_index.try_to_vec().unwrap().encode_hex::<String>();
     let borsh_log_entry_data = log_entry.try_to_vec().unwrap().encode_hex::<String>();
     let borsh_receipt_index = receipt_index.try_to_vec().unwrap().encode_hex::<String>();
@@ -367,4 +366,60 @@ fn complex_test3() {
         proof,
         false
     ));
+}
+
+#[test]
+fn verify_dumped_log_entries() {
+    use std::env;
+    use std::fs;
+
+    // near_bindgen::env::set_blockchain_interface()
+
+    testing_env!(get_context(vec![], false));
+    let contract = EthProver::init("ethbridge".to_string());
+
+    let mut proofs = fs::read_dir(env::var("ETH_PROOF_DIR").unwrap())
+        .unwrap()
+        .map(|path| {
+            let path = path.unwrap().path();
+            let parts = path
+                .file_stem()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string()
+                .split("_")
+                .map(|part| part.parse::<u64>().unwrap())
+                .collect::<Vec<_>>();
+            ((parts[0], parts[1], parts[2]), path.display().to_string())
+        })
+        .collect::<Vec<_>>();
+    proofs.sort_by_key(|s| s.0);
+
+    #[derive(Debug, Deserialize)]
+    struct Args {
+        log_index: u64,
+        log_entry_data: Hex,
+        receipt_index: u64,
+        receipt_data: Hex,
+        header_data: Hex,
+        proof: Vec<Hex>,
+        skip_bridge_call: bool,
+    }
+
+    for filename in proofs.iter() {
+        let filename = filename.1.to_string();
+        let args: Args =
+            serde_json::from_reader(std::fs::File::open(std::path::Path::new(&filename)).unwrap())
+                .unwrap();
+        assert!(contract.verify_log_entry(
+            args.log_index,
+            args.log_entry_data.0,
+            args.receipt_index,
+            args.receipt_data.0,
+            args.header_data.0,
+            args.proof.iter().map(|p| p.0.clone()).collect(),
+            false
+        ));
+    }
 }
