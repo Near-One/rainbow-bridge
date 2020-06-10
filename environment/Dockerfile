@@ -14,6 +14,6 @@ COPY ./yarn.lock ./yarn.lock
 RUN yarn
 
 COPY ./lib ./lib
-COPY ./clean.js ./clean.js
+COPY ./index.js ./index.js
 
-ENTRYPOINT ["node", "clean.js"]
+ENTRYPOINT ["node", "index.js"]
