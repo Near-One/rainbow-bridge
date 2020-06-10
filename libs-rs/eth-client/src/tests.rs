@@ -450,18 +450,17 @@ fn predumped_block_can_be_added() {
         .collect::<Vec<_>>();
     blocks_with_proofs.sort_by_key(|s| s.0);
     let start_block_height = blocks_with_proofs.first().unwrap().0;
-    let blocks_with_proofs: Vec<_> = blocks_with_proofs
-        .iter()
-        .map(|filename| read_block(filename.1.to_string()))
-        .collect();
+
+    let first_block_with_proof = read_block(blocks_with_proofs.first().unwrap().1.to_string());
 
     let mut contract = EthBridge::init(
         true,
         start_block_height / 30000,
-        vec![blocks_with_proofs.first().unwrap().merkle_root],
+        vec![first_block_with_proof.merkle_root],
     );
 
-    for block_with_proof in blocks_with_proofs.into_iter() {
+    for filename in blocks_with_proofs.iter() {
+        let block_with_proof = read_block(filename.1.to_string());
         contract.add_block_header(
             block_with_proof.header_rlp.0.clone(),
             block_with_proof.to_double_node_with_merkle_proof_vec(),
