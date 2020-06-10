@@ -77,7 +77,7 @@ class StartEthRelayCommand {
         ProcessManager.connect((err) => {
             if (err) {
                 console.log(
-                    'Unable to connect to the ProcessManager deamon! Please retry.');
+                    'Unable to connect to the ProcessManager daemon! Please retry.');
                 return;
             }
             spawnProcess('eth-relay',

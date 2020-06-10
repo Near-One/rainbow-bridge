@@ -18,11 +18,24 @@ class PrepareCommand {
             shell = [shell, '--nearcore_source', command.coreSrc].join(' ');
         }
 
-        var prepareScript = exec(shell);
+        let env = {};
+        for (var e in process.env) {
+            env[e] = process.env[e];
+        }
+        env['LOCAL_BRIDGE_SRC']=command.bridgeSrc;
+        env['LOCAL_CORE_SRC']=command.coreSrc;
+        env['LOCAL_NEARUP_SRC']=command.nearupSrc;
+
+
+        var prepareScript = exec(shell, {env: env});
         prepareScript.stdout.on(
-            'data', function (data) { process.stdout.write(data.toString()); });
+            'data', function (data) {
+                console.log(data.toString());
+            });
         prepareScript.stderr.on(
-            'data', function (data) { process.stdout.write(data.toString()); });
+            'data', function (data) {
+                console.log(data.toString());
+             });
     }
 }
 
