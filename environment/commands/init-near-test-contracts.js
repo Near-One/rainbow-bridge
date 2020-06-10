@@ -1,6 +1,6 @@
 const nearlib = require('nearlib');
 const path = require('path');
-const { maybeCreateAccount, verifyAccount } = require('../../lib/near-helpers');
+const { maybeCreateAccount, verifyAccount } = require('../lib/near-helpers');
 
 class InitNEARTestContracts {
     static async execute (command) {
