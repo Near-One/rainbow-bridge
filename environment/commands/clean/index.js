@@ -4,7 +4,6 @@ const ProcessManager = require('pm2');
 class CleanCommand {
     static execute () {
         console.log('Stopping all the running processess...');
-
         ProcessManager.killDaemon((err) => {
             if (err) {
                 console.log(`Error stopping pm2 processes. ${err}`);
@@ -16,7 +15,6 @@ class CleanCommand {
                 }
             });
         });
-
         try {
             execSync('python3 ~/.rainbowup/nearup/nearup stop');
         } catch (err) {

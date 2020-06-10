@@ -6,6 +6,8 @@ const { PrepareCommand } = require('./commands/prepare');
 const { StartEthRelayCommand } = require('./commands/start/eth-relay.js');
 const { StartGanacheNodeCommand } = require('./commands/start/ganache.js');
 const { StartLocalNearNodeCommand } = require('./commands/start/near.js');
+const { StopLocalNearNodeCommand } = require('./commands/stop/near.js');
+const { StopManagedProcessCommand } = require('./commands/stop/process.js');
 const { TestCommand } = require('./commands/test');
 const { TransferFunETH2NEAR } = require('./commands/transfer-fun-eth2near');
 const { InitETHTestContracts } = require('./commands/init-eth-test-contracts');
@@ -52,13 +54,24 @@ startCommand.command('eth-relay')
         '',
     );
 
+const stopCommand = program.command('stop');
+
+stopCommand.command('near-node')
+    .action(StopLocalNearNodeCommand.execute);
+
+stopCommand.command('ganache')
+    .action(StopManagedProcessCommand.execute);
+
+stopCommand.command('ganache')
+    .action(StopManagedProcessCommand.execute);
+
 program.command('prepare')
     .action(PrepareCommand.execute)
     .option('--bridge-src <bridge_src>', 'Path to the rainbow-bridge source',
         '')
     .option('--core-src <core_src>', 'Path to the nearcore source', '')
     .option('--nearup-src <nearup_src>', 'Path to the nearup source', '')
-    ;
+;
 
 program.command('test').action(TestCommand.execute);
 
