@@ -62,7 +62,7 @@ stopCommand.command('near-node')
 stopCommand.command('ganache')
     .action(StopManagedProcessCommand.execute);
 
-stopCommand.command('ganache')
+stopCommand.command('eth-relay')
     .action(StopManagedProcessCommand.execute);
 
 program.command('prepare')
@@ -72,8 +72,6 @@ program.command('prepare')
     .option('--core-src <core_src>', 'Path to the nearcore source', '')
     .option('--nearup-src <nearup_src>', 'Path to the nearup source', '')
 ;
-
-program.command('test').action(TestCommand.execute);
 
 program.command('transfer-fun-eth2near')
     .action(TransferFunETH2NEAR.execute)
@@ -154,5 +152,5 @@ program.command('eth-dump <kind_of_data>')
     .option('--start-block <start_block>', 'Start block number (inclusive), default to be 4.3K blocks away from start block')
     .option('--end-block <end_block>', 'End block number (inclusive), default to be latest block')
     .action(ETHDump.execute);
-    
+
 (async () => { await program.parseAsync(process.argv); })();

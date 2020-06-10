@@ -1,12 +1,12 @@
 const Web3 = require('web3');
 const Path = require('path');
 const fs = require('fs').promises;
-const { web3BlockToRlp, execute } = require('../../lib/eth-relay');
+const { web3BlockToRlp, execute } = require('../lib/eth-relay');
 const {
     EthProofExtractor,
     receiptFromWeb3,
     logFromWeb3,
-} = require('../../lib/eth-proof-extractor');
+} = require('../lib/eth-proof-extractor');
 const utils = require('ethereumjs-util');
 
 class ETHDump {
@@ -99,7 +99,7 @@ class ETHDump {
                     proof: _proof.map((p) => p.toString('hex')),
                     skip_bridge_call: skip_bridge_call,
                 };
-        
+
                 const file = Path.join(path, `${b}_${receipt_index}_${log_index}.json`);
                 await fs.writeFile(file, JSON.stringify(args));
             }
