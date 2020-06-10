@@ -10,8 +10,9 @@ function spawnProcess (name, config) {
             console.log(
                 'Unable to list all the process running by the ProcessManager daemon!');
         }
-        if (process.length) {
+        if (process.length & process.status === 'running') {
             console.log('%s service is running...', name);
+            console.log(process);
             ProcessManager.disconnect();
         } else {
             console.log('%s service is not running...', name);

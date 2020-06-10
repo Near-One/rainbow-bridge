@@ -5,12 +5,12 @@ class CleanCommand {
         console.log('Stopping all the running processess...');
         try {
             execSync('pm2 kill');
-        } catch(err) {
+        } catch (err) {
             console.log(`Error stopping pm2 ${err}`);
         }
         try {
             execSync('python3 ~/.rainbowup/nearup/nearup stop');
-        } catch(err) {
+        } catch (err) {
             console.log(`Error stopping nerup ${err}`);
         }
         console.log('Cleaning ~/.rainbowup and ~/.nearup directories...');
