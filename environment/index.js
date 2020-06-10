@@ -58,7 +58,7 @@ program.command('prepare')
         '')
     .option('--core-src <core_src>', 'Path to the nearcore source', '')
     .option('--nearup-src <nearup_src>', 'Path to the nearup source', '')
-    ;
+;
 
 program.command('test').action(TestCommand.execute);
 
