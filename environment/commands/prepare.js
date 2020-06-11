@@ -19,7 +19,7 @@ class PrepareCommand {
         }
 
         const env = {};
-        for (var e in process.env) {
+        for (const e in process.env) {
             env[e] = process.env[e];
         }
         env.LOCAL_BRIDGE_SRC = command.bridgeSrc;

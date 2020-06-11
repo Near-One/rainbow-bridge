@@ -171,7 +171,7 @@ impl EthBridge {
 
         assert!(
             Self::verify_header(&self, &header, &prev, &dag_nodes),
-            "The new header should be valid"
+            "The new header {} should be valid", header.number
         );
 
         self.maybe_store_header(header);

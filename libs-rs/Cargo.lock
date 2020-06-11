@@ -902,17 +902,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "locker"
-version = "0.1.0"
-dependencies = [
- "borsh 0.6.1",
- "near-sdk",
- "serde",
- "serde_json",
- "wee_alloc",
-]
-
-[[package]]
 name = "log"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"

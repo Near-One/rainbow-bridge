@@ -25,7 +25,7 @@ function web3BlockToRlp (blockData) {
     return utils.rlp.encode(blockHeader.header.raw);
 }
 
-class EthRelay {
+class Eth2NearRelay {
     initialize (ethClientContract, ethNodeURL) {
         this.ethClientContract = ethClientContract;
         this.web3 = new Web3(ethNodeURL);
@@ -34,7 +34,7 @@ class EthRelay {
     async run () {
         let last_block_number = (await this.ethClientContract.last_block_number()).toNumber();
         console.log('Contract block number is ' + last_block_number);
-        if (last_block_number == 0) {
+        if (last_block_number === 0) {
             // Let's start bridge from current block since it is not initialized
             last_block_number = await this.web3.eth.getBlockNumber();
             console.log('Web3 block number is ' + last_block_number);
@@ -174,6 +174,6 @@ class EthRelay {
     }
 }
 
-exports.EthRelay = EthRelay;
+exports.Eth2NearRelay = Eth2NearRelay;
 exports.web3BlockToRlp = web3BlockToRlp;
 exports.execute = execute;

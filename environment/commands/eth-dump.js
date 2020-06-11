@@ -1,7 +1,7 @@
 const Web3 = require('web3');
 const Path = require('path');
 const fs = require('fs').promises;
-const { web3BlockToRlp, execute } = require('../lib/eth-relay');
+const { web3BlockToRlp, execute } = require('../lib/eth2near-relay');
 const {
     EthProofExtractor,
     receiptFromWeb3,
