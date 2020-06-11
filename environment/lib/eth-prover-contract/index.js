@@ -68,7 +68,7 @@ class EthProverContract extends BorshContract {
             await this.init({
                 bridge_smart_contract: ethClientAccId,
             });
-            console.log('Initialized!');
+            console.log('ETH2NEARProver initialized');
         } catch (e) {
             // I guess not
             console.log('Probably already initialized', e);

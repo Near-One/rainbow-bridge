@@ -8,7 +8,7 @@ function spawnProcess (name, config) {
     ProcessManager.describe(name, (err, process) => {
         if (err) {
             console.log(
-                'Unable to list all the process running by the ProcessManager deamon!');
+                'Unable to list all the process running by the ProcessManager daemon!');
         }
         if (process.length) {
             console.log('%s service is running...', name);
@@ -20,7 +20,7 @@ function spawnProcess (name, config) {
             ProcessManager.start(config, (err, proc) => {
                 console.log('%s started...', name);
                 if (!err) {
-                    console.log('Disconnecting from deamon');
+                    console.log('Disconnecting from daemon');
                 }
                 ProcessManager.disconnect();
             });

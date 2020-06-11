@@ -7,9 +7,9 @@ const {
     EthProofExtractor,
     receiptFromWeb3,
     logFromWeb3,
-} = require('../../lib/eth-proof-extractor');
-const { verifyAccount } = require('../../lib/near-helpers');
-const { NearMintableToken } = require('../../lib/near-mintable-token');
+} = require('../lib/eth-proof-extractor');
+const { verifyAccount } = require('../lib/near-helpers');
+const { NearMintableToken } = require('../lib/near-mintable-token');
 
 function sleep (ms) {
     return new Promise((resolve) => {
