@@ -20,8 +20,8 @@ class CleanCommand {
         } catch (err) {
             console.log(`Error stopping nerup ${err}`);
         }
-        console.log('Cleaning ~/.rainbowup and ~/.nearup directories...');
-        execSync('rm -rf ~/.rainbowup && rm -rf ~/.nearup');
+        console.log('Cleaning ~/.rainbowup , ~/.nearup , and ~/.near directories...');
+        execSync('rm -rf ~/.rainbowup && rm -rf ~/.nearup && rm -rf ~/.near');
         console.log('Cleaning done...');
     }
 }

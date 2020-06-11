@@ -2,7 +2,7 @@ const nearlib = require('nearlib');
 const fs = require('fs');
 const BN = require('bn.js');
 const {
-    EthClientContract,
+    Eth2NearClientContract,
 } = require('../eth-client-contract');
 const {
     EthProverContract,
@@ -81,7 +81,7 @@ class EthClientSetup {
         this.ethClientAccount =
         new nearlib.Account(this.near.connection, this.ethClientAccId);
         this.ethClientContract =
-        new EthClientContract(this.ethClientAccount, this.ethClientAccId);
+        new Eth2NearClientContract(this.ethClientAccount, this.ethClientAccId);
         await this.ethClientContract.maybeInitialize(this.validateEthash === 'true');
 
         await this.maybeCreateAccount(this.ethProverAccId, this.ethProverPK,

@@ -8,8 +8,8 @@ const { StartGanacheNodeCommand } = require('./commands/start/ganache.js');
 const { StartLocalNearNodeCommand } = require('./commands/start/near.js');
 const { StopLocalNearNodeCommand } = require('./commands/stop/near.js');
 const { StopManagedProcessCommand } = require('./commands/stop/process.js');
-const { TestCommand } = require('./commands/test');
 const { TransferFunETH2NEAR } = require('./commands/transfer-fun-eth2near');
+const { InitNEARContracts } = require('./commands/init-near-contracts');
 const { InitETHTestContracts } = require('./commands/init-eth-test-contracts');
 const { InitNEARTestContracts } = require('./commands/init-near-test-contracts');
 const { ETHDump } = require('./commands/eth-dump');
@@ -24,19 +24,23 @@ startCommand.command('near-node')
     .action(StartLocalNearNodeCommand.execute);
 
 startCommand.command('ganache')
-    .action(StartGanacheNodeCommand.execute);
+    .action(StartGanacheNodeCommand.execute)
+    .option('--daemon [daemon]', 'Whether the process should be launched as a daemon.', 'true')
+;
 
 startCommand.command('eth-relay')
     .action(StartEthRelayCommand.execute)
     .option(
-        '--near-master-account <near_master_account>',
-        'The account of the master account on NEAR that can be used to deploy and initialize the test contracts.' +
-            ' This account will also own the initial supply of the fungible tokens.',
-        '',
+        '--master-account <master_account>',
+        'The account on NEAR that can be used to submit headers to the client.'
     )
     .option(
-        '--near-master-sk <near_master_sk>',
+        '--master-sk <master_sk>',
         'The secret key of the master account.',
+    )
+    .option(
+        '--client-account <client_account>',
+        'The account of Eth2NearClient contract.'
     )
     .option(
         '--near-network-id <near_network_id>',
@@ -52,7 +56,9 @@ startCommand.command('eth-relay')
         '--eth-node-url <eth_node_url>',
         'The URL of the Ethereum node.',
         '',
-    );
+    )
+    .option('--daemon [daemon]', 'Whether the process should be launched as a daemon.', 'true')
+;
 
 const stopCommand = program.command('stop');
 
@@ -112,6 +118,41 @@ program.command('transfer-fun-eth2near')
         '')
     .option('--amount <amount>', 'Amount of tokens to transfer.', '');
 
+program.command('init-near-contracts')
+    .description('deploys and initializes Eth2NearClient and Eth2NearProver contracts to NEAR blockchain.')
+    .action(InitNEARContracts.execute)
+    .option('--near-node-url <near_node_url>', 'The URL of the NEAR node.')
+    .option(
+        '--near-network-id <near_network_id>',
+        'The identifier of the NEAR network that the given NEAR node is expected to represent.')
+    .option(
+        '--master-account <master_account>',
+        'The account of the master account on NEAR blockchain that can be used to deploy and initialize the test contracts.' +
+        ' This account will also own the initial supply of the fungible tokens.')
+    .option('--master-sk <master_sk>',
+        'The secret key of the master account on NEAR blockchain.')
+    .option(
+        '--client-account <client_account>',
+        'The account of the Eth2NearClient contract that can be used to accept ETH headers.', 'eth2nearclient')
+    .option('--client-sk [client_sk]',
+        'The secret key of the Eth2NearClient account. If not specified will use master SK.')
+    .option('--client-contract-path <client_contract_path>',
+        'The path to the Wasm file containing the Eth2NearClient contract.')
+    .option('--client-init-balance <client_init_balance>',
+        'The initial balance of Eth2NearClient contract in femtoNEAR.', '100000000000000000000000000')
+    .option('--validate-ethash [validate_ethash]', 'Whether Eth2NearClient contract needs to validate the PoW.' +
+        ' Should only be set to false for testing and diagnostics.', 'true')
+    .option(
+        '--prover-account <prover_account>',
+        'The account of the Eth2NearProver contract that can be used to validate proofs.', 'eth2nearprover')
+    .option('--prover-sk [prover_sk]',
+        'The secret key of the Eth2NearProver account. If not specified will use master SK.')
+    .option('--prover-contract-path <prover_contract_path>',
+        'The path to the Wasm file containing the Eth2NearProver contract.')
+    .option('--prover-init-balance <prover_init_balance>',
+        'The initial balance of Eth2NearProver contract in femtoNEAR.', '100000000000000000000000000')
+;
+
 program.command('init-eth-test-contracts')
     .action(InitETHTestContracts.execute)
     .option('--eth-node-url <eth_node_url>', 'The URL of the Ethereum node.',
@@ -131,20 +172,27 @@ program.command('init-near-test-contracts')
         '--near-network-id <near_network_id>',
         'The identifier of the NEAR network that the given NEAR node is expected to represent.',
         '')
+    .option(
+        '--master-account <master_account>',
+        'The master account on NEAR that can be used to deploy and initialize the test contracts.')
+    .option('--master-sk <master_sk>',
+        'The secret key of the master account.')
     .option('--contracts-dir <contracts_dir>',
         'The path to the wasm files of the test contracts.', '')
     .option(
-        '--near-master-account <near_master_account>',
-        'The account of the master account on NEAR that can be used to deploy and initialize the test contracts.' +
-            ' This account will also own the initial supply of the fungible tokens.',
-        '')
-    .option('--near-master-sk <near_master_sk>',
-        'The secret key of the master account.', '')
-    .option('--validate_ethash <validate_ethash>', '', 'true')
+        '--token-account <token_account>',
+        'The account of the token contract that can be used to validate proofs.', 'eth2neartoken')
+    .option('--token-sk [token_sk]',
+        'The secret key of the token account. If not specified will use master SK.')
+    .option('--token-contract-path <token_contract_path>',
+        'The path to the Wasm file containing the token contract.')
+    .option('--token-init-balance <token_init_balance>',
+        'The initial balance of token contract in femtoNEAR.', '100000000000000000000000000')
     .option(
-        '--near-prover-account <near_prover_account>',
-        'The account of the prover contract that it locker contract can use to validate proofs.',
-        '');
+        '--prover-account <prover_account>',
+        'The account of the Eth2NearProver contract that test contracts will use to validate proofs.',
+        'eth2nearprover')
+;
 
 program.command('eth-dump <kind_of_data>')
     .option('--eth-node-url <eth_node_url>', 'ETH node API url')
