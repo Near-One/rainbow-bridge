@@ -1,7 +1,14 @@
-# Bridge
+<div align="center">
 
-[![Build Status](https://travis-ci.org/nearprotocol/near-bridge.svg?branch=master)](https://travis-ci.org/nearprotocol/near-bridge)
-[![Coverage Status](https://coveralls.io/repos/github/nearprotocol/near-bridge/badge.svg)](https://coveralls.io/github/nearprotocol/near-bridge)
+  <h1><code>Rainbow Bridge</code></h1>
+
+  <p>
+    <strong>Ethereum to Near trustless, fully decentralized, bidirectional bridge</strong>
+  </p>
+  
+  <p>
+    <a href="https://travis-ci.com/near/rainbow-bridge"><img src="https://travis-ci.com/near/rainbow-bridge.svg?branch=master" alt="Travis Build" /></a>
+  </p>
 
 ## Local test run
 
