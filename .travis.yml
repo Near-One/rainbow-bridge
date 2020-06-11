@@ -1,7 +1,3 @@
-#
-# https://github.com/sc-forks/solidity-coverage/blob/master/docs/faq.md
-#
-
 dist: bionic
 branches:
   only:
