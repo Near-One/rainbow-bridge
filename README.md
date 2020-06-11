@@ -9,6 +9,7 @@
   <p>
     <a href="https://travis-ci.com/near/rainbow-bridge"><img src="https://travis-ci.com/near/rainbow-bridge.svg?branch=master" alt="Travis Build" /></a>
   </p>
+</div>
 
 ## Local test run
 
