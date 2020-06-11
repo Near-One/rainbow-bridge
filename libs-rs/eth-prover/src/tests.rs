@@ -368,14 +368,18 @@ fn complex_test3() {
     ));
 }
 
+#[cfg(feature = "expensive_tests")]
 #[test]
 fn verify_dumped_log_entries() {
     use std::env;
     use std::fs;
+    use near_bindgen::VMConfig;
+    use indicatif::{ProgressBar, ProgressStyle};
 
-    // near_bindgen::env::set_blockchain_interface()
-
-    testing_env!(get_context(vec![], false));
+    let mut vm_config = VMConfig::free();
+    vm_config.limit_config.max_number_logs = u64::MAX;
+    vm_config.limit_config.max_promises_per_function_call_action = u64::MAX;
+    testing_env!(get_context(vec![], false), vm_config, Default::default());
     let contract = EthProver::init("ethbridge".to_string());
 
     let mut proofs = fs::read_dir(env::var("ETH_PROOF_DIR").unwrap())
@@ -407,6 +411,11 @@ fn verify_dumped_log_entries() {
         skip_bridge_call: bool,
     }
 
+    let bar = ProgressBar::new(proofs.len() as _);
+    bar.set_style(ProgressStyle::default_bar().template(
+        "[elapsed {elapsed_precise} remaining {eta_precise}] Verifying {bar} {pos:>7}/{len:>7}"
+    ));
+
     for filename in proofs.iter() {
         let filename = filename.1.to_string();
         let args: Args =
@@ -421,5 +430,7 @@ fn verify_dumped_log_entries() {
             args.proof.iter().map(|p| p.0.clone()).collect(),
             false
         ));
+        bar.inc(1);
     }
+    bar.finish();
 }
