@@ -18,6 +18,7 @@ rlp = "0.4.2"
 
 [dev-dependencies]
 hex = "0.4.2"
+indicatif = "0.14"
 
 [features]
-default = []
+expensive_tests = []
