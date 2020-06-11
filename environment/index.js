@@ -9,8 +9,9 @@ const { StartLocalNearNodeCommand } = require('./commands/start/near.js');
 const { StopLocalNearNodeCommand } = require('./commands/stop/near.js');
 const { StopManagedProcessCommand } = require('./commands/stop/process.js');
 const { TransferFunETH2NEAR } = require('./commands/transfer-fun-eth2near');
-const { InitNEARContracts } = require('./commands/init-near-contracts');
+const { InitEthContractsCommand } = require('./commands/init-eth-contracts');
 const { InitETHTestContracts } = require('./commands/init-eth-test-contracts');
+const { InitNEARContracts } = require('./commands/init-near-contracts');
 const { InitNEARTestContracts } = require('./commands/init-near-test-contracts');
 const { ETHDump } = require('./commands/eth-dump');
 
@@ -32,7 +33,7 @@ startCommand.command('eth-relay')
     .action(StartEthRelayCommand.execute)
     .option(
         '--master-account <master_account>',
-        'The account on NEAR that can be used to submit headers to the client.'
+        'The account on NEAR that can be used to submit headers to the client.',
     )
     .option(
         '--master-sk <master_sk>',
@@ -40,7 +41,7 @@ startCommand.command('eth-relay')
     )
     .option(
         '--client-account <client_account>',
-        'The account of Eth2NearClient contract.'
+        'The account of Eth2NearClient contract.',
     )
     .option(
         '--near-network-id <near_network_id>',
@@ -117,6 +118,51 @@ program.command('transfer-fun-eth2near')
         'Secret key of the account on NEAR that will be receiving the token. This key will be used to pay for the gas.',
         '')
     .option('--amount <amount>', 'Amount of tokens to transfer.', '');
+
+program.command('init-eth-contracts')
+    .action(InitEthContractsCommand.execute)
+    .option(
+        '--near-network-id <near_network_id>',
+        'The identifier of the NEAR network that the given NEAR node is expected to represent.',
+        'local',
+    )
+    .option(
+        '--near-node-url <near_node_url>',
+        'The URL of the NEAR node.',
+        '',
+    )
+    .option(
+        '--eth-node-url <eth_node_url>',
+        'The URL of the Ethereum node.',
+        '',
+    )
+    .option(
+        '--master-account <master_account>',
+        'The account of the master account on NEAR blockchain that can be used to deploy and initialize the test contracts.' +
+        ' This account will also own the initial supply of the fungible tokens.')
+    .option('--master-sk <master_sk>',
+        'The secret key of the master account on NEAR blockchain.')
+    .option(
+        '--client-account <client_account>',
+        'The account of the Eth2NearClient contract that can be used to accept ETH headers.', 'eth2nearclient')
+    .option('--client-sk [client_sk]',
+        'The secret key of the Eth2NearClient account. If not specified will use master SK.')
+    .option('--client-contract-path <client_contract_path>',
+        'The path to the Wasm file containing the Eth2NearClient contract.')
+    .option('--client-init-balance <client_init_balance>',
+        'The initial balance of Eth2NearClient contract in femtoNEAR.', '100000000000000000000000000')
+    .option('--validate-ethash [validate_ethash]', 'Whether Eth2NearClient contract needs to validate the PoW.' +
+        ' Should only be set to false for testing and diagnostics.', 'true')
+    .option(
+        '--prover-account <prover_account>',
+        'The account of the Eth2NearProver contract that can be used to validate proofs.', 'eth2nearprover')
+    .option('--prover-sk [prover_sk]',
+        'The secret key of the Eth2NearProver account. If not specified will use master SK.')
+    .option('--prover-contract-path <prover_contract_path>',
+        'The path to the Wasm file containing the Eth2NearProver contract.')
+    .option('--prover-init-balance <prover_init_balance>',
+        'The initial balance of Eth2NearProver contract in femtoNEAR.', '100000000000000000000000000')
+;
 
 program.command('init-near-contracts')
     .description('deploys and initializes Eth2NearClient and Eth2NearProver contracts to NEAR blockchain.')

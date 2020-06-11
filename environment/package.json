@@ -1,35 +1,36 @@
 {
-  "name": "environment",
-  "version": "1.0.0",
-  "description": "Sets up the environment needed for the bridge to work.",
-  "main": "index.js",
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "@openzeppelin/cli": "^2.8.1",
-    "commander": "^5.1.0",
-    "eth-object": "^1.0.3",
-    "eth-util-lite": "^1.0.1",
-    "ethereumjs-block": "^2.2.2",
-    "ethereumjs-util": "^6.2.0",
-    "ganache-cli": "^6.9.0",
-    "ganache-core": "^2.10.2",
-    "merkle-patricia-tree": "^3.0.0",
-    "nearlib": "^0.22.0",
-    "pm2": "^4.4.0",
-    "promisfy": "^1.2.0",
-    "web3": "^1.2.6"
-  },
-  "devDependencies": {
-    "eslint": "^6.8.0",
-    "eslint-config-standard": "^14.1.1",
-    "eslint-plugin-import": "^2.20.2",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^4.0.1",
-    "eslint-plugin-standard": "^4.0.0"
-  },
-  "scripts": {
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
-  }
+    "name": "environment",
+    "version": "1.0.0",
+    "description": "Sets up the environment needed for the bridge to work.",
+    "main": "index.js",
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "@openzeppelin/cli": "^2.8.1",
+        "commander": "^5.1.0",
+        "configstore": "^5.0.1",
+        "eth-object": "^1.0.3",
+        "eth-util-lite": "^1.0.1",
+        "ethereumjs-block": "^2.2.2",
+        "ethereumjs-util": "^6.2.0",
+        "ganache-cli": "^6.9.0",
+        "ganache-core": "^2.10.2",
+        "merkle-patricia-tree": "^3.0.0",
+        "nearlib": "^0.22.0",
+        "pm2": "^4.4.0",
+        "promisfy": "^1.2.0",
+        "web3": "^1.2.6"
+    },
+    "devDependencies": {
+        "eslint": "^6.8.0",
+        "eslint-config-standard": "^14.1.1",
+        "eslint-plugin-import": "^2.20.2",
+        "eslint-plugin-node": "^11.1.0",
+        "eslint-plugin-promise": "^4.0.1",
+        "eslint-plugin-standard": "^4.0.0"
+    },
+    "scripts": {
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix"
+    }
 }
