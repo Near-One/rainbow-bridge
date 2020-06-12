@@ -1,12 +1,11 @@
 branches:
   only:
     - master
-os:
-  - linux
-  - osx
+os: linux
 dist: bionic
 language: rust
 install:
+  - rustup target add wasm32-unknown-unknown
   - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.2/install.sh | bash
   - nvm install 14
   - nvm use 14
@@ -17,8 +16,6 @@ install:
 script:
   - cargo --version # explictitly overwrite to avoid travis run cargo test on root dir
 jobs:
-  # allow_failures:
-  #   - rust: nightly
   fast_finish: true
   include:
     # name is helpful because it displays on github ui
@@ -48,6 +45,7 @@ jobs:
       - cd libs-sol
       - ./build_all.sh
     - name: nearbridge test
+      os: osx
       script:
       - cd libs-sol/nearbridge
       - yarn
@@ -58,6 +56,7 @@ jobs:
       - yarn
       - yarn lint:js # TODO: solidity lint seems buggy and haven't figured out how to fix it
     - name: nearbridge coverage
+      os: osx
       script:
       - cd libs-sol/nearbridge
       - yarn
