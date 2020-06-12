@@ -44,7 +44,21 @@ jobs:
       - yarn
       - yarn run lint
     - name: build all solidity contracts
-    script:
+      script:
       - cd libs-sol
       - ./build_all.sh
-    
+    - name: nearbridge test
+      script:
+      - cd libs-sol/nearbridge
+      - yarn
+      - yarn test
+    - name: nearbridge lint
+      script:
+      - cd libs-sol/nearbridge
+      - yarn
+      - yarn lint:js # TODO: solidity lint seems buggy and haven't figured out how to fix it
+    - name: nearbridge coverage
+      script:
+      - cd libs-sol/nearbridge
+      - yarn
+      - yarn coverage
