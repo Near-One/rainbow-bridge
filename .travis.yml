@@ -21,23 +21,30 @@ jobs:
   #   - rust: nightly
   fast_finish: true
   include:
-    - script: ci/test_verify_eth_headers.sh
-    - script: ci/test_verify_eth_proofs.sh
-    - script:
+    # name is helpful because it displays on github ui
+    - name: verify eth headers
+      script: ci/test_verify_eth_headers.sh
+    - name: verify eth proofs
+      script: ci/test_verify_eth_proofs.sh
+    - name: eth-client tests
+      script:
       - cd libs-rs
       - eth-client/test.sh
-    - script:
+    - name: eth-prover tests
+      script:
       - cd libs-rs
       - eth-prover/test.sh
-    - script:
+    - name: build all rust contracts
+      script:
       - cd libs-rs
-      - ./build-all.sh
-    - name: Environment Lint
+      - ./build_all.sh
+    - name: enviroment lint
       script:
       - cd environment
       - yarn
       - yarn run lint
-    - script:
+    - name: build all solidity contracts
+    script:
       - cd libs-sol
       - ./build_all.sh
     
