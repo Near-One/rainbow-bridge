@@ -5,7 +5,7 @@
   <p>
     <strong>Ethereum to Near trustless, fully decentralized, bidirectional bridge</strong>
   </p>
-  
+
   <p>
     <a href="https://travis-ci.com/near/rainbow-bridge"><img src="https://travis-ci.com/near/rainbow-bridge.svg?branch=master" alt="Travis Build" /></a>
   </p>
@@ -41,12 +41,25 @@ Note, you can use environment variables to pass sensitive data which will not le
 
 
 ## Usage example
-
 Go to `environment` folder.
 
 ### Launching blockchains locally
 
 First start the services that will emulate locally the NEAR and the Ethereum blockchains:
+## Configs and flags
+
+There are three layers of configuration, overriding each other with highest priorities first:
+
+1. Environment variables
+2. Flags passed throught the command line
+3. Configuration files in ~/.rainbowup/config.json
+
+More about specific configurations:
+
+**(TODO)**
+
+## Local test run
+To locally test the bridge run:
 ```bash
 node index.js clean
 node index.js prepare
@@ -97,3 +110,40 @@ node index.js transfer-eth-erc20-to-near --amount 1 --eth-sender-sk 0x2bdd21761a
 Note, when we deployed ERC20 to the Ethereum blockchain we have minted a large number of tokens to the default master
 key of Ganache, so we have transferred ERC20 tokens from it to `alice.test.near`.
 Notice that we are using `nearfuntoken` account here to pay for the NEAR gas fees, any account for which we know a secret key would've worked too.
+You must observe blocks being submitted.
+
+Docker:
+
+## Currently we have the following docker options:
+
+1. Rainbow Docker image containing rainbowup ready for running
+	- run the rainbowup docker image with a custom command
+2. A development docker compose setup (docker-compose-dev.yml)
+	- ganache
+	- local near node
+	- eth-relay
+3. A production docker compose setup (docker-compose-prod.yml)
+	- eth-relay
+
+## Running the docker setup:
+
+1. One options is to adapt the current config.json specified in the root folder of the project and build a new image.
+2. Specifying the configuration flags through environment variables.
+
+We recommend a usage of both, encouraging using the config.json for common configurations, while passing the secrets through environment variables.
+
+Examples:
+
+```
+# Creating a docker image
+docker build .
+
+# Running the development env with config setup
+docker-compose up
+
+# Running the development env with ENV overrides 
+docker-compose -f docker-compose-dev.yml up -e MASTER_SK=<key> -e ...
+
+# Running the production env just use:
+docker-compose -f docker-compose-prod.yml instead
+```
