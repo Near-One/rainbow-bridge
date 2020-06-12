@@ -27,3 +27,27 @@ jobs:
   include:
     - script: ci/test_verify_eth_headers.sh
     - script: ci/test_verify_eth_proofs.sh
+    - script:
+      - cd libs-rs
+      - eth-client/test.sh
+    - script:
+      - cd libs-rs
+      - eth-prover/test.sh
+    - script:
+      - cd libs-rs
+      - fungible-token/test.sh
+    - script:
+      - cd libs-rs
+      - ./build-all.sh
+    - language: node_js
+      node_js: 14
+      script:
+      - cd environment
+      - yarn
+      - yarn run lint
+    - language: node_js
+      node_js: 14
+      script:
+      - cd libs-sol
+      - build_all.sh
+    

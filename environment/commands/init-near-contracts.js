@@ -34,11 +34,11 @@ class InitNEARContracts {
         const clientPk = nearlib.KeyPair.fromString(clientSk).publicKey;
         const proverPk = nearlib.KeyPair.fromString(proverSk).publicKey;
 
-        let keyStore = new nearlib.keyStores.InMemoryKeyStore();
+        const keyStore = new nearlib.keyStores.InMemoryKeyStore();
         await keyStore.setKey(nearNetworkId, masterAccount, nearlib.KeyPair.fromString(masterSk));
         await keyStore.setKey(nearNetworkId, clientAccount, nearlib.KeyPair.fromString(clientSk));
         await keyStore.setKey(nearNetworkId, proverAccount, nearlib.KeyPair.fromString(proverSk));
-        let near = await nearlib.connect({
+        const near = await nearlib.connect({
             nodeUrl: nearNodeUrl,
             networkId: nearNetworkId,
             masterAccount: masterAccount,
@@ -55,10 +55,10 @@ class InitNEARContracts {
         await verifyAccount(near, proverAccount);
 
         console.log('Initializing client and prover contracts.');
-        let clientContract = new Eth2NearClientContract(new nearlib.Account(near.connection, clientAccount), clientAccount);
+        const clientContract = new Eth2NearClientContract(new nearlib.Account(near.connection, clientAccount), clientAccount);
         await clientContract.maybeInitialize(validateEthash === 'true');
 
-        let proverContract = new EthProverContract(new nearlib.Account(near.connection, proverAccount), proverAccount);
+        const proverContract = new EthProverContract(new nearlib.Account(near.connection, proverAccount), proverAccount);
         await proverContract.maybeInitialize(clientAccount);
     }
 }

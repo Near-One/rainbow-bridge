@@ -32,7 +32,7 @@ startCommand.command('eth-relay')
     .action(StartEthRelayCommand.execute)
     .option(
         '--master-account <master_account>',
-        'The account on NEAR that can be used to submit headers to the client.'
+        'The account on NEAR that can be used to submit headers to the client.',
     )
     .option(
         '--master-sk <master_sk>',
@@ -40,7 +40,7 @@ startCommand.command('eth-relay')
     )
     .option(
         '--client-account <client_account>',
-        'The account of Eth2NearClient contract.'
+        'The account of Eth2NearClient contract.',
     )
     .option(
         '--near-network-id <near_network_id>',

@@ -88,7 +88,7 @@ class Eth2NearTransferExample {
             // Then transfer it from the token locker.
             try {
                 console.log('Transferring tokens to the token locker.');
-                const approve_tx = await this.tokenLockerContract.methods.lockToken(this.myERC20Contract.options.address, 1, this.nearUserAccount).send({
+                await this.tokenLockerContract.methods.lockToken(this.myERC20Contract.options.address, 1, this.nearUserAccount).send({
                     from: this.ethMasterAccount,
                     gas: 5000000,
                     handleRevert: true,

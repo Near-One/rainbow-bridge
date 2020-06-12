@@ -145,12 +145,12 @@ class BinaryReader {
     read_string () {
         const len = this.read_u32();
         const buf = this.read_buffer(len);
-        try {
-            // NOTE: Using TextDecoder to fail on invalid UTF-8
-            return textDecoder.decode(buf);
-        } catch (e) {
-            throw new BorshError(`Error decoding UTF-8 string: ${e}`);
-        }
+        // try {
+        // NOTE: Using TextDecoder to fail on invalid UTF-8
+        return textDecoder.decode(buf);
+        // } catch (e) {
+        //     throw new BorshError(`Error decoding UTF-8 string: ${e}`);
+        // }
     }
 
     read_fixed_array (len) {
