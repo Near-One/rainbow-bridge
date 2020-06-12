@@ -36,6 +36,19 @@ contract NearProver {
             }
         }
 
+        hash = sha256(abi.encodePacked(hash));
+
+        //TODO(Anton): please refactor this code out
+        for (uint i = 0; i <fullOutcomeProof.outcome_root_proof.items.length; i++) {
+            ProofDecoder.MerklePathItem memory item = fullOutcomeProof.outcome_root_proof.items[i];
+            if (item.direction == 0) {
+                hash = sha256(abi.encodePacked(item.hash, hash));
+            }
+            else {
+                hash = sha256(abi.encodePacked(hash, item.hash));
+            }
+        }
+
         require(
             hash == fullOutcomeProof.block_header_lite.inner_lite.outcome_root,
             "NearProver: merkle proof is not valid"
@@ -45,5 +58,6 @@ contract NearProver {
             bridge.blockHashes(fullOutcomeProof.block_header_lite.inner_lite.height) == fullOutcomeProof.block_header_lite.hash,
             "NearProver: block hash not matches"
         );
+        return true;
     }
 }
