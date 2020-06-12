@@ -1,15 +1,11 @@
-dist: bionic
 branches:
   only:
     - master
 os:
   - linux
   - osx
+dist: bionic
 language: rust
-rust:
-  - stable
-  - beta
-  - nightly
 install:
   - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.2/install.sh | bash
   - nvm install 14
@@ -21,8 +17,8 @@ install:
 script:
   - cargo --version # explictitly overwrite to avoid travis run cargo test on root dir
 jobs:
-  allow_failures:
-    - rust: nightly
+  # allow_failures:
+  #   - rust: nightly
   fast_finish: true
   include:
     - script: ci/test_verify_eth_headers.sh
@@ -39,15 +35,11 @@ jobs:
     - script:
       - cd libs-rs
       - ./build-all.sh
-    - language: node_js
-      node_js: 14
-      script:
+    - script:
       - cd environment
       - yarn
       - yarn run lint
-    - language: node_js
-      node_js: 14
-      script:
+    - script:
       - cd libs-sol
       - build_all.sh
     

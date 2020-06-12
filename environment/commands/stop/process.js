@@ -10,7 +10,11 @@ class StopManagedProcessCommand {
                 process.exit(1);
             }
             console.log(serviceName, 'successfully stopped...');
-            ProcessManager.disconnect((err) => { });
+            ProcessManager.disconnect((err) => {
+                if (err) {
+                    console.error(err);
+                }
+            });
         });
     }
 }

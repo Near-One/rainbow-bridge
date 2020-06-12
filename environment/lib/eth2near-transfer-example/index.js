@@ -114,6 +114,9 @@ class Eth2NearTransferExample {
             fromBlock: 'latest',
         },
         async function (error, event) {
+            if (error) {
+                console.error(error);
+            }
             console.log(event);
             const receipt = await extractor.extractReceipt(event.transactionHash);
             const block = await extractor.extractBlock(receipt.blockNumber);
@@ -125,7 +128,7 @@ class Eth2NearTransferExample {
             for (const log of receipt.logs) {
                 txLogIndex++;
                 const blockLogIndex = log.logIndex;
-                if (blockLogIndex == event.logIndex) {
+                if (blockLogIndex === event.logIndex) {
                     logFound = true;
                     const log_entry_data = logFromWeb3(log).serialize();
                     const receipt_index = proof.txIndex;
@@ -148,7 +151,7 @@ class Eth2NearTransferExample {
                         skip_bridge_call: skip_bridge_call,
                     };
 
-                    const result = await ethProverContract.verify_log_entry(
+                    await ethProverContract.verify_log_entry(
                         args,
                         new BN('1000000000000000'),
                     );
