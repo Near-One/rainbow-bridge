@@ -1,12 +1,13 @@
 const ProcessManager = require('pm2');
 const { spawnProcess } = require('./helpers');
 const ganache = require('ganache-core');
+const { RainbowConfig } = require('../../lib/config');
 
 const GANACHE_PORT = 9545;
 
 class StartGanacheNodeCommand {
-    static async execute (command) {
-        if (command.daemon === 'true') {
+    static async execute () {
+        if (RainbowConfig.param('daemon') === 'true') {
             ProcessManager.connect((err) => {
                 if (err) {
                     console.log(
@@ -24,6 +25,9 @@ class StartGanacheNodeCommand {
                     }
                 );
             });
+            RainbowConfig.setParam('eth-node-url', 'ws://localhost:9545');
+            RainbowConfig.setParam('eth-master-sk', '0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200');
+            RainbowConfig.saveConfig();
         } else {
             const server = ganache.server({
                 logger: console,

@@ -6,30 +6,31 @@ const {
 const {
     EthProverContract,
 } = require('../lib/eth-prover-contract');
+const { RainbowConfig } = require('../lib/config');
 
 class InitNEARContracts {
-    static async execute (command) {
-        const masterAccount = command.masterAccount;
-        const masterSk = command.masterSk;
-        const clientAccount = command.clientAccount;
-        let clientSk = command.clientSk;
+    static async execute () {
+        const masterAccount = RainbowConfig.param('near-master-account');
+        const masterSk = RainbowConfig.param('near-master-sk');
+        const clientAccount = RainbowConfig.param('eth2near-client-account');
+        let clientSk = RainbowConfig.param('eth2near-client-sk');
         if (!clientSk) {
             clientSk = masterSk;
         }
-        const clientContractPath = command.clientContractPath;
-        const clientInitBalance = command.clientInitBalance;
+        const clientContractPath = RainbowConfig.param('eth2near-client-contract-path');
+        const clientInitBalance = RainbowConfig.param('eth2near-client-init-balance');
 
-        const proverAccount = command.proverAccount;
-        let proverSk = command.proverSk;
+        const proverAccount = RainbowConfig.param('eth2near-prover-account');
+        let proverSk = RainbowConfig.param('eth2near-prover-sk');
         if (!proverSk) {
             proverSk = masterSk;
         }
-        const proverContractPath = command.proverContractPath;
-        const proverInitBalance = command.proverInitBalance;
+        const proverContractPath = RainbowConfig.param('eth2near-prover-contract-path');
+        const proverInitBalance = RainbowConfig.param('eth2near-prover-init-balance');
 
-        const nearNodeUrl = command.nearNodeUrl;
-        const nearNetworkId = command.nearNetworkId;
-        const validateEthash = command.validateEthash;
+        const nearNodeUrl = RainbowConfig.param('near-node-url');
+        const nearNetworkId = RainbowConfig.param('near-network-id');
+        const validateEthash = RainbowConfig.param('eth2near-client-validate-ethash');
 
         const clientPk = nearlib.KeyPair.fromString(clientSk).publicKey;
         const proverPk = nearlib.KeyPair.fromString(proverSk).publicKey;
@@ -60,6 +61,8 @@ class InitNEARContracts {
 
         let proverContract = new EthProverContract(new nearlib.Account(near.connection, proverAccount), proverAccount);
         await proverContract.maybeInitialize(clientAccount);
+
+        RainbowConfig.saveConfig();
     }
 }
 

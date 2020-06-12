@@ -3,32 +3,11 @@ const nearlib = require('nearlib');
 const { spawnProcess } = require('./helpers');
 const { Eth2NearRelay } = require('../../lib/eth2near-relay');
 const { Eth2NearClientContract } = require('../../lib/eth2near-client-contract');
+const { RainbowConfig } = require('../../lib/config');
 
 class StartEthRelayCommand {
-    // Get args without daemon set on.
-    static getNoDaemonArgs(command) {
-        return [
-            'start',
-            'eth-relay',
-            '--master-account',
-            command.masterAccount,
-            '--master-sk',
-            command.masterSk,
-            '--client-account',
-            command.clientAccount,
-            '--near-network-id',
-            command.nearNetworkId,
-            '--near-node-url',
-            command.nearNodeUrl,
-            '--eth-node-url',
-            command.ethNodeUrl,
-            '--daemon',
-            'false'
-        ]
-    }
-
-    static async execute (command) {
-        if (command.daemon === 'true') {
+    static async execute () {
+        if (RainbowConfig.param('daemon') === 'true') {
             ProcessManager.connect((err) => {
                 if (err) {
                     console.log(
@@ -42,18 +21,18 @@ class StartEthRelayCommand {
                         interpreter: 'node',
                         error_file: '~/.rainbowup/logs/eth-relay/err.log',
                         out_file: '~/.rainbowup/logs/eth-relay/out.log',
-                        args: StartEthRelayCommand.getNoDaemonArgs(command)
+                        args: RainbowConfig.getArgsNoDaemon()
                     }
                 );
             });
         } else {
-            const masterAccount = command.masterAccount;
-            const masterSk = command.masterSk;
+            const masterAccount = RainbowConfig.param('near-master-account');
+            const masterSk = RainbowConfig.param('near-master-sk');
             let keyStore = new nearlib.keyStores.InMemoryKeyStore();
-            await keyStore.setKey(command.nearNetworkId, masterAccount, nearlib.KeyPair.fromString(masterSk));
+            await keyStore.setKey(RainbowConfig.param('near-network-id'), masterAccount, nearlib.KeyPair.fromString(masterSk));
             let near = await nearlib.connect({
-                nodeUrl: command.nearNodeUrl,
-                networkId: command.nearNetworkId,
+                nodeUrl: RainbowConfig.param('near-node-url'),
+                networkId: RainbowConfig.param('near-network-id'),
                 masterAccount: masterAccount,
                 deps: {
                     keyStore: keyStore,
@@ -62,9 +41,9 @@ class StartEthRelayCommand {
 
             const relay = new Eth2NearRelay();
             const clientContract =
-                new Eth2NearClientContract(new nearlib.Account(near.connection, masterAccount), command.clientAccount);
+                new Eth2NearClientContract(new nearlib.Account(near.connection, masterAccount), RainbowConfig.param('eth2near-client-account'));
             await clientContract.accessKeyInit();
-            relay.initialize(clientContract, command.ethNodeUrl);
+            relay.initialize(clientContract, RainbowConfig.param('eth-node-url'));
             await relay.run();
         }
     }
