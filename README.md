@@ -5,7 +5,7 @@
   <p>
     <strong>Ethereum to Near trustless, fully decentralized, bidirectional bridge</strong>
   </p>
-  
+
   <p>
     <a href="https://travis-ci.com/near/rainbow-bridge"><img src="https://travis-ci.com/near/rainbow-bridge.svg?branch=master" alt="Travis Build" /></a>
   </p>
@@ -42,8 +42,21 @@ Note, you can use environment variables to pass sensitive data which will not le
 
 ## Examples
 
-### Local test run
+## Configs and flags
 
+There are three layers of configuration, overriding each other with highest priorities first:
+
+1. Environment variables
+2. Flags passed throught the command line
+3. Configuration files in ~/.rainbowup/config.json
+
+More about specific configurations:
+
+**(TODO)**
+
+
+
+## Local test run
 To locally test the bridge run:
 ```bash
 node index.js clean
@@ -62,3 +75,43 @@ Then run
 pm2 logs
 ```
 You must observe blocks being submitted.
+
+Docker:
+
+## Currently we have the following docker options:
+
+1. Rainbow Docker image containing rainbowup ready for running
+	- run the rainbowup docker image with a custom command
+2. A development docker compose setup (docker-compose-dev.yml)
+	- ganache
+	- local near node
+	- eth-relay
+3. A production docker compose setup (docker-compose-prod.yml)
+	- eth-relay
+
+## Running the docker setup:
+
+1. One options is to adapt the current config.json specified in the root folder of the project and build a new image.
+2. Specifying the configuration flags through environment variables.
+
+We recommend a usage of both, encouraging using the config.json for common configurations, while passing the secrets through environment variables.
+
+Examples:
+
+```
+# Creating a docker image
+docker build .
+
+# Running the development env with config setup
+docker-compose -f docker-compose-dev.yml up
+
+# Running the development env with ENV overrides 
+docker-compose -f docker-compose-dev.yml up -e MASTER_SK=<key> -e ...
+
+# Running the production env just use:
+docker-compose -f docker-compose-prod.yml instead
+
+```
+
+
+
