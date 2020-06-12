@@ -62,3 +62,14 @@ jobs:
       - cd libs-sol/nearbridge
       - yarn
       - yarn coverage
+    - name: nearbridge codechecks
+      script:
+      - cd libs-sol/nearbridge
+      - yarn
+      - yarn codechecks
+    # TODO: this test fails now, uncomment after fix
+    # - name: nearprover test
+    #   script:
+    #   - cd libs-sol/nearprover
+    #   - yarn
+    #   - yarn test
