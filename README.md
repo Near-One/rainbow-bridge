@@ -46,7 +46,6 @@ Go to `environment` folder.
 ### Launching blockchains locally
 
 First start the services that will emulate locally the NEAR and the Ethereum blockchains:
-=======
 ## Configs and flags
 
 There are three layers of configuration, overriding each other with highest priorities first:
@@ -59,8 +58,8 @@ More about specific configurations:
 
 **(TODO)**
 
-
 ## Local test run
+To locally test the bridge run:
 ```bash
 node index.js clean
 node index.js prepare
@@ -102,7 +101,6 @@ Note, you can observe the logs of the relays by running:
 ```bash
 pm2 logs
 ```
-<<<<<<< HEAD
 
 ### Transferring tokens 
 Finally, let's transfer some tokens 
@@ -112,7 +110,6 @@ node index.js transfer-eth-erc20-to-near --amount 1 --eth-sender-sk 0x2bdd21761a
 Note, when we deployed ERC20 to the Ethereum blockchain we have minted a large number of tokens to the default master
 key of Ganache, so we have transferred ERC20 tokens from it to `alice.test.near`.
 Notice that we are using `nearfuntoken` account here to pay for the NEAR gas fees, any account for which we know a secret key would've worked too.
-=======
 You must observe blocks being submitted.
 
 Docker:
@@ -150,4 +147,3 @@ docker-compose -f docker-compose-dev.yml up -e MASTER_SK=<key> -e ...
 # Running the production env just use:
 docker-compose -f docker-compose-prod.yml instead
 ```
-
