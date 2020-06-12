@@ -46,7 +46,6 @@ class StartEthRelayCommand {
             console.log('Initializing Eth-Relay...');
             relay.initialize(clientContract, RainbowConfig.getParam('eth-node-url'));
             console.log('Starting Eth-Relay...');
-            console.log('Starting Eth-Relay...');
             await relay.run();
         }
     }
