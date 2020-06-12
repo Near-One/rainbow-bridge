@@ -1,0 +1,29 @@
+version: "3.3"
+services:
+  near-node:
+    build: .
+    network_mode: host
+    command: bash -c "node index.js start near-node; node index.js start near-node && while true; do sleep 30; done;"
+  ganache:
+    build: .
+    network_mode: host
+    command: >
+      bash -c "
+        while ! nc -z localhost 3030; do
+          sleep 1
+        done
+        node index.js start ganache --daemon false
+      "
+  eth-relay:
+    build: .
+    network_mode: host
+    depends_on: 
+      - ganache
+    command: >
+      bash -c "
+        while ! nc -z localhost 9545; do
+          sleep 1
+        done
+        node index.js init-near-contracts &&
+        node index.js start eth-relay --daemon false
+      "

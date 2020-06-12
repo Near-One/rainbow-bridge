@@ -60,7 +60,6 @@ More about specific configurations:
 **(TODO)**
 
 
-
 ## Local test run
 To locally test the bridge run:
 ```bash
@@ -144,7 +143,7 @@ Examples:
 docker build .
 
 # Running the development env with config setup
-docker-compose -f docker-compose-dev.yml up
+docker-compose up
 
 # Running the development env with ENV overrides 
 docker-compose -f docker-compose-dev.yml up -e MASTER_SK=<key> -e ...
