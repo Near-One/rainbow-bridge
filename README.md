@@ -61,7 +61,6 @@ More about specific configurations:
 
 
 ## Local test run
-To locally test the bridge run:
 ```bash
 node index.js clean
 node index.js prepare
