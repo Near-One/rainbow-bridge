@@ -1,4 +1,4 @@
-FROM golang:1.14.2-buster as build
+FROM ubuntu:18.04
 
 COPY ./vendor /vendor
 WORKDIR /vendor/ethashproof
