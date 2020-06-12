@@ -31,15 +31,13 @@ jobs:
       - eth-prover/test.sh
     - script:
       - cd libs-rs
-      - fungible-token/test.sh
-    - script:
-      - cd libs-rs
       - ./build-all.sh
-    - script:
+    - name: Environment Lint
+      script:
       - cd environment
       - yarn
       - yarn run lint
     - script:
       - cd libs-sol
-      - build_all.sh
+      - ./build_all.sh
     
