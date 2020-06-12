@@ -73,6 +73,7 @@ class StartGanacheNodeCommand {
                 gasLimit: 10000000,
                 port: GANACHE_PORT
             });
+            console.log("Starting ganache in blocking mode on port", GANACHE_PORT, "...",);
             server.listen(GANACHE_PORT, function (err, blockchain) {
                 if (err) {
                     console.log(`Ganache error ${err} on blockchain ${blockchain}`);

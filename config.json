@@ -1,0 +1,22 @@
+{
+    "nearNodeUrl": "http://localhost:3030",
+    "nearNetworkId": "local",
+    "nearMasterAccount": "node0",
+    "nearMasterSk": "ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP",
+    "ethNodeUrl": "ws://localhost:9545",
+    "ethMasterSk": "0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200",
+    "eth2nearClientContractPath": "~/.rainbowup/bridge/libs-rs/res/eth_client.wasm",
+    "eth2nearClientValidateEthash": "false",
+    "eth2nearProverContractPath": "~/.rainbowup/bridge/libs-rs/res/eth_prover.wasm",
+    "eth2nearClientSk": "ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP",
+    "eth2nearProverSk": "ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP",
+    "nearFunTokenContractPath": "~/.rainbowup/bridge/libs-rs/res/fungible_token.wasm",
+    "nearFunTokenSk": "ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP",
+    "nearFunTokenAccount": "nearfuntoken4",
+    "ethLockerAbiPath": "~/.rainbowup/bridge/libs-sol/token-locker/dist/TokenLocker.full.abi",
+    "ethLockerBinPath": "~/.rainbowup/bridge/libs-sol/token-locker/dist/TokenLocker.full.bin",
+    "ethLockerAddress": "0x7cC4B1851c35959D34e635A470F6b5C43bA3C9c9",
+    "ethErc20AbiPath": "~/.rainbowup/bridge/libs-sol/token-locker/dist/MyERC20.full.abi",
+    "ethErc20BinPath": "~/.rainbowup/bridge/libs-sol/token-locker/dist/MyERC20.full.bin",
+    "ethErc20Address": "0x9c47796Bc1e469a60dCBF680273ff011e45a1327"
+}

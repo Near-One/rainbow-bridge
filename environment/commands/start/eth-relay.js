@@ -64,7 +64,9 @@ class StartEthRelayCommand {
             const clientContract =
                 new Eth2NearClientContract(new nearlib.Account(near.connection, masterAccount), command.clientAccount);
             await clientContract.accessKeyInit();
+            console.log("Initializing Eth-Relay...");
             relay.initialize(clientContract, command.ethNodeUrl);
+            console.log("Starting Eth-Relay...");
             await relay.run();
         }
     }
