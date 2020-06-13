@@ -20,7 +20,20 @@ contract NearProver {
         bridge = _bridge;
     }
 
-    function proveOutcome(bytes memory proofData) public view returns(bool) {
+    function computeRoot(bytes32 hash, ProofDecoder.MerklePath memory proof) internal pure returns(bytes32) {
+        for (uint i = 0; i < proof.items.length; i++) {
+            ProofDecoder.MerklePathItem memory item = proof.items[i];
+            if (item.direction == 0) {
+                hash = sha256(abi.encodePacked(item.hash, hash));
+            }
+            else {
+                hash = sha256(abi.encodePacked(hash, item.hash));
+            }
+        }
+        return hash;
+    }
+
+    function proveOutcome(bytes memory proofData, bytes32 blockMerkleRoot) public view returns(bool) {
         Borsh.Data memory borshData = Borsh.from(proofData);
         ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borshData.decodeFullOutcomeProof();
         require(borshData.finished(), "NearProver: argument should be exact borsh serialization");
@@ -48,16 +61,19 @@ contract NearProver {
                 hash = sha256(abi.encodePacked(hash, item.hash));
             }
         }
+        revert("outcome root computation done");
 
         require(
             hash == fullOutcomeProof.block_header_lite.inner_lite.outcome_root,
             "NearProver: merkle proof is not valid"
         );
 
+        revert("before block proof computation");
+
         require(
-            bridge.blockHashes(fullOutcomeProof.block_header_lite.inner_lite.height) == fullOutcomeProof.block_header_lite.hash,
-            "NearProver: block hash not matches"
+            computeRoot(fullOutcomeProof.block_header_lite.hash, fullOutcomeProof.block_proof) == blockMerkleRoot, "NearProver: block proof is not valid"
         );
+        revert("after block proof computation");
         return true;
     }
 }
