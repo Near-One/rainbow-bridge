@@ -7,7 +7,7 @@ const GANACHE_PORT = 9545;
 
 class StartGanacheNodeCommand {
     static async execute () {
-        if (RainbowConfig.param('daemon') === 'true') {
+        if (RainbowConfig.getParam('daemon') === 'true') {
             ProcessManager.connect((err) => {
                 if (err) {
                     console.log(

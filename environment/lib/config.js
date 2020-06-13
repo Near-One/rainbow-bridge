@@ -61,17 +61,30 @@ class RainbowConfig {
     }
 
     // This function should be used to retrieve the actual value of the argument.
-    static param(name) {
+    static getParam(name) {
+        const res = this.maybeGetParam(name);
+        if (res === null) {
+                    console.error(`Parameter ${name} must be specified.`);
+                    process.exit(1);
+        }
+        return res;
+    }
+
+    static maybeGetParam(name) {
         if (!this.paramValues[name]) {
             let decl = this.paramDeclarations[name];
             if (decl.defaultValue) {
                 return decl.defaultValue;
             } else {
-                console.error(`Parameter ${name} must be specified.`);
-                process.exit(1);
+                const camelCase = changeCase.camelCase(name);
+                if (this.configFile.has(camelCase)) {
+                    return this.configFile.get(camelCase);
+                } else {
+                    return null;
+                }
             }
         } else {
-            return this.paramValues[name];
+            return this.paramValues[name].value;
         }
     }
 
@@ -89,6 +102,8 @@ class RainbowConfig {
                 result.push(`${value.value}`);
             }
         }
+        result.push('--daemon');
+        result.push('false');
         return result;
     }
 

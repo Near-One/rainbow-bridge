@@ -1,8 +1,9 @@
 const { exec } = require('child_process');
 const path = require('path');
+const { RainbowConfig } = require('../lib/config');
 
 class PrepareCommand {
-    static execute (command) {
+    static execute () {
         var scriptDir = path.resolve(process.cwd(), 'scripts/prepare.sh');
 
         let shell = [
@@ -10,21 +11,13 @@ class PrepareCommand {
             scriptDir,
         ].join(' ');
 
-        if (command.bridgeSrc) {
-            shell = [shell, '--source', command.bridgeSrc].join(' ');
-        }
-
-        if (command.coreSrc) {
-            shell = [shell, '--nearcore_source', command.coreSrc].join(' ');
-        }
-
         const env = {};
         for (const e in process.env) {
             env[e] = process.env[e];
         }
-        env.LOCAL_BRIDGE_SRC = command.bridgeSrc;
-        env.LOCAL_CORE_SRC = command.coreSrc;
-        env.LOCAL_NEARUP_SRC = command.nearupSrc;
+        env.LOCAL_BRIDGE_SRC = RainbowConfig.getParam('bridge-src');
+        env.LOCAL_CORE_SRC = RainbowConfig.getParam('core-src');
+        env.LOCAL_NEARUP_SRC = RainbowConfig.getParam('nearup-src');
 
         var prepareScript = exec(shell, { env: env });
         prepareScript.stdout.on(

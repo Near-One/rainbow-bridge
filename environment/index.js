@@ -82,6 +82,10 @@ RainbowConfig.declareOption(
     '100000000000000000000000000'
 );
 RainbowConfig.declareOption('daemon', 'Whether the process should be launched as a daemon.', 'true', true);
+RainbowConfig.declareOption("bridge-src", "Path to the rainbow-bridge source. It will be downloaded if not provided.");
+RainbowConfig.declareOption("core-src", "Path to the nearcore source. It will be downloaded if not provided.");
+RainbowConfig.declareOption("nearup-src", "Path to the nearup source. It will be downloaded if not provided.");
+
 
 program.version('0.1.0');
 
@@ -122,14 +126,15 @@ stopCommand.command('ganache')
 stopCommand.command('eth-relay')
     .action(StopManagedProcessCommand.execute);
 
+RainbowConfig.addOptions(
 program.command('prepare')
-    .action(PrepareCommand.execute)
-    .option('--bridge-src <bridge_src>', 'Path to the rainbow-bridge source',
-        '')
-    .option('--core-src <core_src>', 'Path to the nearcore source', '')
-    .option('--nearup-src <nearup_src>', 'Path to the nearup source', '')
-;
-
+    .action(PrepareCommand.execute),
+    [
+        'bridge-src',
+        'core-src',
+        'nearup-src'
+]);
+ 
 RainbowConfig.addOptions(
     program.command('init-near-contracts')
     .description('deploys and initializes Eth2NearClient and Eth2NearProver contracts to NEAR blockchain.')
