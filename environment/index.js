@@ -17,75 +17,74 @@ const { RainbowConfig } = require('./lib/config');
 
 RainbowConfig.declareOption(
     'near-network-id',
-    'The identifier of the NEAR network that the given NEAR node is expected to represent.'
-    );
+    'The identifier of the NEAR network that the given NEAR node is expected to represent.',
+);
 RainbowConfig.declareOption(
     'near-node-url',
-    'The URL of the NEAR node.'
+    'The URL of the NEAR node.',
 );
 RainbowConfig.declareOption(
     'eth-node-url',
-    'The URL of the Ethereum node.'
+    'The URL of the Ethereum node.',
 );
 RainbowConfig.declareOption(
     'near-master-account',
     'The account of the master account on NEAR blockchain that can be used to deploy and initialize the test contracts.' +
-    ' This account will also own the initial supply of the fungible tokens.'
+    ' This account will also own the initial supply of the fungible tokens.',
 );
 RainbowConfig.declareOption(
     'near-master-sk',
-    'The secret key of the master account on NEAR blockchain.'
+    'The secret key of the master account on NEAR blockchain.',
 );
 RainbowConfig.declareOption(
     'eth-master-sk',
-    'The secret key of the master account on Ethereum blockchain.'
+    'The secret key of the master account on Ethereum blockchain.',
 );
 RainbowConfig.declareOption(
     'eth2near-client-account',
     'The account of the Eth2NearClient contract that can be used to accept ETH headers.',
-    'eth2nearclient'
+    'eth2nearclient',
 );
 RainbowConfig.declareOption(
     'eth2near-client-sk',
-    'The secret key of the Eth2NearClient account. If not specified will use master SK.'
+    'The secret key of the Eth2NearClient account. If not specified will use master SK.',
 );
 RainbowConfig.declareOption(
     'eth2near-client-contract-path',
-    'The path to the Wasm file containing the Eth2NearClient contract.'
+    'The path to the Wasm file containing the Eth2NearClient contract.',
 );
 RainbowConfig.declareOption(
     'eth2near-client-init-balance',
     'The initial balance of Eth2NearClient contract in femtoNEAR.',
-   '100000000000000000000000000'
+    '100000000000000000000000000',
 );
 RainbowConfig.declareOption(
     'eth2near-client-validate-ethash',
     'The initial balance of Eth2NearClient contract in femtoNEAR.',
-    'true'
+    'true',
 );
 RainbowConfig.declareOption(
     'eth2near-prover-account',
     'The account of the Eth2NearProver contract that can be used to accept ETH headers.',
-    'eth2nearprover'
+    'eth2nearprover',
 );
 RainbowConfig.declareOption(
     'eth2near-prover-sk',
-    'The secret key of the Eth2NearProver account. If not specified will use master SK.'
+    'The secret key of the Eth2NearProver account. If not specified will use master SK.',
 );
 RainbowConfig.declareOption(
     'eth2near-prover-contract-path',
-    'The path to the Wasm file containing the Eth2NearProver contract.'
+    'The path to the Wasm file containing the Eth2NearProver contract.',
 );
 RainbowConfig.declareOption(
     'eth2near-prover-init-balance',
     'The initial balance of Eth2NearProver contract in femtoNEAR.',
-    '100000000000000000000000000'
+    '100000000000000000000000000',
 );
 RainbowConfig.declareOption('daemon', 'Whether the process should be launched as a daemon.', 'true', true);
-RainbowConfig.declareOption("bridge-src", "Path to the rainbow-bridge source. It will be downloaded if not provided.");
-RainbowConfig.declareOption("core-src", "Path to the nearcore source. It will be downloaded if not provided.");
-RainbowConfig.declareOption("nearup-src", "Path to the nearup source. It will be downloaded if not provided.");
-
+RainbowConfig.declareOption('bridge-src', 'Path to the rainbow-bridge source. It will be downloaded if not provided.');
+RainbowConfig.declareOption('core-src', 'Path to the nearcore source. It will be downloaded if not provided.');
+RainbowConfig.declareOption('nearup-src', 'Path to the nearup source. It will be downloaded if not provided.');
 
 program.version('0.1.0');
 
@@ -98,21 +97,21 @@ startCommand.command('near-node')
 
 RainbowConfig.addOptions(
     startCommand.command('ganache')
-    .action(StartGanacheNodeCommand.execute),
-    ['daemon']
+        .action(StartGanacheNodeCommand.execute),
+    ['daemon'],
 );
 
 RainbowConfig.addOptions(
     startCommand.command('eth-relay')
-    .action(StartEthRelayCommand.execute),
+        .action(StartEthRelayCommand.execute),
     [
         'near-master-account',
         'near-master-sk',
         'eth2near-client-account',
         'near-network-id',
         'near-node-url',
-        'daemon'
-    ]
+        'daemon',
+    ],
 );
 
 const stopCommand = program.command('stop');
@@ -127,18 +126,18 @@ stopCommand.command('eth-relay')
     .action(StopManagedProcessCommand.execute);
 
 RainbowConfig.addOptions(
-program.command('prepare')
-    .action(PrepareCommand.execute),
+    program.command('prepare')
+        .action(PrepareCommand.execute),
     [
         'bridge-src',
         'core-src',
-        'nearup-src'
-]);
+        'nearup-src',
+    ]);
  
 RainbowConfig.addOptions(
     program.command('init-near-contracts')
-    .description('deploys and initializes Eth2NearClient and Eth2NearProver contracts to NEAR blockchain.')
-    .action(InitNEARContracts.execute),
+        .description('deploys and initializes Eth2NearClient and Eth2NearProver contracts to NEAR blockchain.')
+        .action(InitNEARContracts.execute),
     [
         'near-network-id',
         'near-node-url',
@@ -242,6 +241,5 @@ program.command('transfer-fun-eth2near')
         'Secret key of the account on NEAR that will be receiving the token. This key will be used to pay for the gas.',
         '')
     .option('--amount <amount>', 'Amount of tokens to transfer.', '');
-
 
 (async () => { await program.parseAsync(process.argv); })();

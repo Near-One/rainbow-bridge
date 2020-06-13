@@ -21,16 +21,16 @@ class StartEthRelayCommand {
                         interpreter: 'node',
                         error_file: '~/.rainbowup/logs/eth-relay/err.log',
                         out_file: '~/.rainbowup/logs/eth-relay/out.log',
-                        args: ['start', 'eth-relay', ...RainbowConfig.getArgsNoDaemon()]
-                    }
+                        args: ['start', 'eth-relay', ...RainbowConfig.getArgsNoDaemon()],
+                    },
                 );
             });
         } else {
             const masterAccount = RainbowConfig.getParam('near-master-account');
             const masterSk = RainbowConfig.getParam('near-master-sk');
-            let keyStore = new nearlib.keyStores.InMemoryKeyStore();
+            const keyStore = new nearlib.keyStores.InMemoryKeyStore();
             await keyStore.setKey(RainbowConfig.getParam('near-network-id'), masterAccount, nearlib.KeyPair.fromString(masterSk));
-            let near = await nearlib.connect({
+            const near = await nearlib.connect({
                 nodeUrl: RainbowConfig.getParam('near-node-url'),
                 networkId: RainbowConfig.getParam('near-network-id'),
                 masterAccount: masterAccount,

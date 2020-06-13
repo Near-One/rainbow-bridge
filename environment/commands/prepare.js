@@ -6,7 +6,7 @@ class PrepareCommand {
     static execute () {
         var scriptDir = path.resolve(process.cwd(), 'scripts/prepare.sh');
 
-        let shell = [
+        const shell = [
             'bash',
             scriptDir,
         ].join(' ');

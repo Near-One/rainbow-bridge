@@ -15,7 +15,7 @@ class InitNEARContracts {
         const clientAccount = RainbowConfig.getParam('eth2near-client-account');
         let clientSk = RainbowConfig.maybeGetParam('eth2near-client-sk');
         if (!clientSk) {
-            console.log(`Key to call Eth2NearClient contract is not specified. Reusing master key.`);
+            console.log('Key to call Eth2NearClient contract is not specified. Reusing master key.');
             clientSk = masterSk;
             RainbowConfig.setParam('eth2near-client-sk', masterSk);
         }
@@ -25,7 +25,7 @@ class InitNEARContracts {
         const proverAccount = RainbowConfig.getParam('eth2near-prover-account');
         let proverSk = RainbowConfig.maybeGetParam('eth2near-prover-sk');
         if (!proverSk) {
-            console.log(`Key to call Eth2NearProver contract is not specified. Reusing master key.`);
+            console.log('Key to call Eth2NearProver contract is not specified. Reusing master key.');
             proverSk = masterSk;
             RainbowConfig.setParam('eth2near-prover-sk', masterSk);
         }
@@ -39,11 +39,11 @@ class InitNEARContracts {
         const clientPk = nearlib.KeyPair.fromString(clientSk).publicKey;
         const proverPk = nearlib.KeyPair.fromString(proverSk).publicKey;
 
-        let keyStore = new nearlib.keyStores.InMemoryKeyStore();
+        const keyStore = new nearlib.keyStores.InMemoryKeyStore();
         await keyStore.setKey(nearNetworkId, masterAccount, nearlib.KeyPair.fromString(masterSk));
         await keyStore.setKey(nearNetworkId, clientAccount, nearlib.KeyPair.fromString(clientSk));
         await keyStore.setKey(nearNetworkId, proverAccount, nearlib.KeyPair.fromString(proverSk));
-        let near = await nearlib.connect({
+        const near = await nearlib.connect({
             nodeUrl: nearNodeUrl,
             networkId: nearNetworkId,
             masterAccount: masterAccount,
@@ -60,10 +60,10 @@ class InitNEARContracts {
         await verifyAccount(near, proverAccount);
 
         console.log('Initializing client and prover contracts.');
-        let clientContract = new Eth2NearClientContract(new nearlib.Account(near.connection, clientAccount), clientAccount);
+        const clientContract = new Eth2NearClientContract(new nearlib.Account(near.connection, clientAccount), clientAccount);
         await clientContract.maybeInitialize(validateEthash === 'true');
 
-        let proverContract = new EthProverContract(new nearlib.Account(near.connection, proverAccount), proverAccount);
+        const proverContract = new EthProverContract(new nearlib.Account(near.connection, proverAccount), proverAccount);
         await proverContract.maybeInitialize(clientAccount);
 
         RainbowConfig.saveConfig();
