@@ -9,9 +9,10 @@ const { StartLocalNearNodeCommand } = require('./commands/start/near.js');
 const { StopLocalNearNodeCommand } = require('./commands/stop/near.js');
 const { StopManagedProcessCommand } = require('./commands/stop/process.js');
 const { TransferFunETH2NEAR } = require('./commands/transfer-fun-eth2near');
-const { InitETHTestContracts } = require('./commands/init-eth-test-contracts');
+const { InitETHLocker } = require('./commands/init-eth-locker');
+const { InitETHERC20 } = require('./commands/init-eth-erc20');
 const { InitNEARContracts } = require('./commands/init-near-contracts');
-const { InitNEARTestContracts } = require('./commands/init-near-test-contracts');
+const { InitNEARFunToken } = require('./commands/init-near-fun-token');
 const { ETHDump } = require('./commands/eth-dump');
 const { RainbowConfig } = require('./lib/config');
 
@@ -86,9 +87,66 @@ RainbowConfig.declareOption('bridge-src', 'Path to the rainbow-bridge source. It
 RainbowConfig.declareOption('core-src', 'Path to the nearcore source. It will be downloaded if not provided.');
 RainbowConfig.declareOption('nearup-src', 'Path to the nearup source. It will be downloaded if not provided.');
 
+// User-specific arguments.
+RainbowConfig.declareOption(
+    'near-fun-token-account',
+    'The account of the fungible token contract that will be used to mint tokens locked on Ethereum.',
+    'nearfuntoken',
+);
+RainbowConfig.declareOption(
+    'near-fun-token-sk',
+    'The secret key of the fungible token account. If not specified will use master SK.',
+);
+RainbowConfig.declareOption(
+    'near-fun-token-contract-path',
+    'The path to the Wasm file containing the fungible contract. Note, this version of fungible contract should support minting.',
+);
+RainbowConfig.declareOption(
+    'near-fun-token-init-balance',
+    'The initial balance of fungible token contract in femtoNEAR.',
+    '100000000000000000000000000',
+);
+RainbowConfig.declareOption(
+    'eth-erc20-address',
+    'ETH address of the ERC20 contract.'
+);
+RainbowConfig.declareOption(
+    'eth-erc20-abi-path',
+    'Path to the .abi file definining Ethereum ERC20 contract.'
+);
+RainbowConfig.declareOption(
+    'eth-erc20-bin-path',
+    'Path to the .bin file definining Ethereum ERC20 contract.'
+);
+RainbowConfig.declareOption(
+    'eth-locker-address',
+    'ETH address of the locker contract.'
+);
+RainbowConfig.declareOption(
+    'eth-locker-abi-path',
+    'Path to the .abi file definining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.'
+);
+RainbowConfig.declareOption(
+    'eth-locker-bin-path',
+    'Path to the .bin file definining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.'
+);
+
+
 program.version('0.1.0');
 
+// General-purpose commands.
 program.command('clean').action(CleanCommand.execute);
+
+RainbowConfig.addOptions(
+    program.command('prepare')
+        .action(PrepareCommand.execute),
+    [
+        'bridge-src',
+        'core-src',
+        'nearup-src',
+    ]);
+
+// Maintainer commands.
 
 const startCommand = program.command('start');
 
@@ -125,18 +183,10 @@ stopCommand.command('ganache')
 stopCommand.command('eth-relay')
     .action(StopManagedProcessCommand.execute);
 
-RainbowConfig.addOptions(
-    program.command('prepare')
-        .action(PrepareCommand.execute),
-    [
-        'bridge-src',
-        'core-src',
-        'nearup-src',
-    ]);
- 
+
 RainbowConfig.addOptions(
     program.command('init-near-contracts')
-        .description('deploys and initializes Eth2NearClient and Eth2NearProver contracts to NEAR blockchain.')
+        .description('Deploys and initializes Eth2NearClient and Eth2NearProver contracts to NEAR blockchain.')
         .action(InitNEARContracts.execute),
     [
         'near-network-id',
@@ -155,46 +205,44 @@ RainbowConfig.addOptions(
         'eth2near-prover-init-balance',
     ]);
 
-program.command('init-eth-test-contracts')
-    .action(InitETHTestContracts.execute)
-    .option('--eth-node-url <eth_node_url>', 'The URL of the Ethereum node.',
-        '')
-    .option(
-        '--eth-master-sk <eth_master_sk>',
-        'The secret key of the master account on Ethereum that can be used to deploy and initialize the test contracts.' +
-            ' This account will also own the initial supply of the ERC20 tokens.',
-        '')
-    .option('--contracts-dir <contracts_dir>',
-        'The path to the abi and bin files of the test contracts.', '');
+// User commands.
 
-program.command('init-near-test-contracts')
-    .action(InitNEARTestContracts.execute)
-    .option('--near-node-url <near_node_url>', 'The URL of the NEAR node.', '')
-    .option(
-        '--near-network-id <near_network_id>',
-        'The identifier of the NEAR network that the given NEAR node is expected to represent.',
-        '')
-    .option(
-        '--master-account <master_account>',
-        'The master account on NEAR that can be used to deploy and initialize the test contracts.')
-    .option('--master-sk <master_sk>',
-        'The secret key of the master account.')
-    .option('--contracts-dir <contracts_dir>',
-        'The path to the wasm files of the test contracts.', '')
-    .option(
-        '--token-account <token_account>',
-        'The account of the token contract that can be used to validate proofs.', 'eth2neartoken')
-    .option('--token-sk [token_sk]',
-        'The secret key of the token account. If not specified will use master SK.')
-    .option('--token-contract-path <token_contract_path>',
-        'The path to the Wasm file containing the token contract.')
-    .option('--token-init-balance <token_init_balance>',
-        'The initial balance of token contract in femtoNEAR.', '100000000000000000000000000')
-    .option(
-        '--prover-account <prover_account>',
-        'The account of the Eth2NearProver contract that test contracts will use to validate proofs.',
-        'eth2nearprover')
-;
+RainbowConfig.addOptions(
+    program.command('init-near-fun-token')
+        .description('Deploys and initializes mintable fungible token to NEAR blockchain. Requires locker on Ethereum side.')
+        .action(InitNEARFunToken.execute),
+        [
+            'near-fun-token-account',
+            'near-fun-token-sk',
+            'near-fun-token-contract-path',
+            'near-fun-token-init-balance',
+        ]
+);
+
+RainbowConfig.addOptions(
+    program.command('init-eth-locker')
+    .description('Deploys and initializes locker contract on Ethereum blockchain. Requires mintable fungible token on Near side.')
+    .action(InitETHLocker.execute),
+    [
+        'eth-node-url',
+        'eth-master-sk',
+        'eth-locker-abi-path',
+        'eth-locker-bin-path'
+    ]
+);
+
+RainbowConfig.addOptions(
+    program.command('init-eth-erc20')
+    .description('Deploys and initializes ERC20 contract on Ethereum blockchain.')
+    .action(InitETHERC20.execute),
+    [
+        'eth-node-url',
+        'eth-master-sk',
+        'eth-erc20-abi-path',
+        'eth-erc20-bin-path'
+    ]
+);
+
 
 program.command('eth-dump <kind_of_data>')
     .option('--eth-node-url <eth_node_url>', 'ETH node API url')
