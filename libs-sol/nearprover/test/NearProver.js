@@ -99,7 +99,7 @@ contract('NearProver', function ([_, addr1]) {
     });
 
     it('should be ok', async function () {
-        const proof1 = borshifyOutcomeProof(require('./proof1.json'));
+        const proof1 = borshifyOutcomeProof(require('./proof_9.json'));
         const lightClientBlockMerkleRoot = '0xf53f99cb3f82145317d18eb2949370a3a0be00ef068b5199a3315b5fe7a14fc8';
         expect(await this.prover.proveOutcome(proof1, lightClientBlockMerkleRoot)).to.be.true;
     });
