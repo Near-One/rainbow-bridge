@@ -8,7 +8,7 @@ const { StartGanacheNodeCommand } = require('./commands/start/ganache.js');
 const { StartLocalNearNodeCommand } = require('./commands/start/near.js');
 const { StopLocalNearNodeCommand } = require('./commands/stop/near.js');
 const { StopManagedProcessCommand } = require('./commands/stop/process.js');
-const { TransferFunETH2NEAR } = require('./commands/transfer-fun-eth2near');
+const { TransferETHERC20ToNear } = require('./commands/transfer-eth-erc20-to-near');
 const { InitETHLocker } = require('./commands/init-eth-locker');
 const { InitETHERC20 } = require('./commands/init-eth-erc20');
 const { InitNEARContracts } = require('./commands/init-near-contracts');
@@ -107,18 +107,6 @@ RainbowConfig.declareOption(
     '100000000000000000000000000',
 );
 RainbowConfig.declareOption(
-    'eth-erc20-address',
-    'ETH address of the ERC20 contract.'
-);
-RainbowConfig.declareOption(
-    'eth-erc20-abi-path',
-    'Path to the .abi file definining Ethereum ERC20 contract.'
-);
-RainbowConfig.declareOption(
-    'eth-erc20-bin-path',
-    'Path to the .bin file definining Ethereum ERC20 contract.'
-);
-RainbowConfig.declareOption(
     'eth-locker-address',
     'ETH address of the locker contract.'
 );
@@ -130,6 +118,19 @@ RainbowConfig.declareOption(
     'eth-locker-bin-path',
     'Path to the .bin file definining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.'
 );
+RainbowConfig.declareOption(
+    'eth-erc20-address',
+    'ETH address of the ERC20 contract.'
+);
+RainbowConfig.declareOption(
+    'eth-erc20-abi-path',
+    'Path to the .abi file definining Ethereum ERC20 contract.'
+);
+RainbowConfig.declareOption(
+    'eth-erc20-bin-path',
+    'Path to the .bin file definining Ethereum ERC20 contract.'
+);
+
 
 
 program.version('0.1.0');
@@ -243,6 +244,26 @@ RainbowConfig.addOptions(
     ]
 );
 
+RainbowConfig.addOptions(
+    program.command('transfer-eth-erc20-to-near')
+    .action(TransferETHERC20ToNear.execute)
+    .option('--amount <amount>', 'Amount of ERC20 tokens to transfer')
+    .option('--eth-sender-sk <eth_sender_sk>', 'The secret key of the Ethereum account that will be sending ERC20 token.')
+    .option('--near-receiver-account <near_receiver_account>', 'The account on NEAR blockchain that will be receiving the minted token.'),
+    [
+        'eth-node-url',
+        'eth-erc20-address',
+        'eth-erc20-abi-path',
+        'eth-locker-address',
+        'eth-locker-abi-path',
+        'near-node-url',
+        'near-network-id',
+        'near-fun-token-account',
+        'eth2near-client-account',
+        'near-master-account',
+        'near-master-sk'
+    ]
+);
 
 program.command('eth-dump <kind_of_data>')
     .option('--eth-node-url <eth_node_url>', 'ETH node API url')
@@ -250,44 +271,5 @@ program.command('eth-dump <kind_of_data>')
     .option('--start-block <start_block>', 'Start block number (inclusive), default to be 4.3K blocks away from start block')
     .option('--end-block <end_block>', 'End block number (inclusive), default to be latest block')
     .action(ETHDump.execute);
-
-program.command('transfer-fun-eth2near')
-    .action(TransferFunETH2NEAR.execute)
-    .option('--eth-node-url <eth_node_url>', 'The URL of the Ethereum node.',
-        '')
-    .option(
-        '--eth-token-address <eth_token_address>',
-        'Address of the ERC20 token on Ethereum network that will be transferred.',
-        '')
-    .option('--eth-token-abi-path <eth_token_abi_path>',
-        'Path to an ABI file describing Ethereum token contract interface',
-        '')
-    .option(
-        '--eth-locker-address <eth_locker_address>',
-        'Address of the token locker contract on Ethereum network that will be locking the token on Ethereum side.',
-        '')
-    .option('--eth-locker-abi-path <eth_locker_abi_path>',
-        'Path to an ABI file describing Ethereum locker contract interface',
-        '')
-    .option('--eth-sender-sk <eth_sender_sk>',
-        'Secret key of the account that owns the token.', '')
-    .option('--near-node-url <near_node_url>', 'The URL of the NEAR node.', '')
-    .option(
-        '--near-network-id <near_network_id>',
-        'The identifier of the NEAR network that the given NEAR node is expected to represent.',
-        '')
-    .option(
-        '--near-token-address <near_token_address>',
-        'Address of the fungible token on NEAR network that will be transferred.',
-        '')
-    .option(
-        '--near-receiver-account <near_receiver_account>',
-        'Address of the account that will be receiving the token on NEAR side. This account will also be paying for the gas.',
-        '')
-    .option(
-        '--near-receiver-sk <near_receier_sk>',
-        'Secret key of the account on NEAR that will be receiving the token. This key will be used to pay for the gas.',
-        '')
-    .option('--amount <amount>', 'Amount of tokens to transfer.', '');
 
 (async () => { await program.parseAsync(process.argv); })();

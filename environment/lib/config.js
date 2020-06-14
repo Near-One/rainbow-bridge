@@ -72,16 +72,16 @@ class RainbowConfig {
 
     static maybeGetParam (name) {
         if (!this.paramValues[name]) {
+            const camelCase = changeCase.camelCase(name);
+            if (this.configFile.has(camelCase)) {
+                return this.configFile.get(camelCase);
+            } else {
             const decl = this.paramDeclarations[name];
             if (decl.defaultValue) {
                 return decl.defaultValue;
             } else {
-                const camelCase = changeCase.camelCase(name);
-                if (this.configFile.has(camelCase)) {
-                    return this.configFile.get(camelCase);
-                } else {
-                    return null;
-                }
+                return null;
+            }
             }
         } else {
             return this.paramValues[name].value;
