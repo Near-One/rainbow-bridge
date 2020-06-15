@@ -7,7 +7,6 @@ RUN apt-get update && apt-get install -y \
     cmake \
     git \
     g++ \
-    nodejs \
     libssl-dev \
     llvm \
     netcat \
@@ -15,6 +14,8 @@ RUN apt-get update && apt-get install -y \
     python3 \
     && rm -rf /var/lib/apt/lists/*
 
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash -
+RUN apt-get install nodejs && npm -g install ganache-cli
 
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
