@@ -30,8 +30,10 @@ library Borsh {
     }
 
     function peekKeccak256(Data memory data, uint256 length) internal pure returns(bytes32 res) {
-        bytes memory ptr = data.raw;
-        uint256 offset = data.offset;
+        return bytesKeccak256(data.raw, data.offset, length);
+    }
+
+    function bytesKeccak256(bytes memory ptr, uint256 offset, uint256 length) internal pure returns(bytes32 res) {
         // solium-disable-next-line security/no-inline-assembly
         assembly {
             res := keccak256(add(add(ptr, 32), offset), length)
@@ -39,8 +41,10 @@ library Borsh {
     }
 
     function peekSha256(Data memory data, uint256 length) internal view returns(bytes32) {
-        bytes memory ptr = data.raw;
-        uint256 offset = data.offset;
+        return bytesSha256(data.raw, data.offset, length);
+    }
+
+    function bytesSha256(bytes memory ptr, uint256 offset, uint256 length) internal view returns(bytes32) {
         bytes32[1] memory result;
         // solium-disable-next-line security/no-inline-assembly
         assembly {

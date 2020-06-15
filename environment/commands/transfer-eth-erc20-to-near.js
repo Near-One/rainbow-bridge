@@ -10,6 +10,10 @@ const {
 } = require('../lib/eth-proof-extractor');
 const { verifyAccount } = require('../lib/near-helpers');
 const { NearMintableToken } = require('../lib/near-mintable-token');
+const { RainbowConfig } = require('../lib/config');
+const {
+    Eth2NearClientContract,
+} = require('../lib/eth2near-client-contract');
 
 function sleep (ms) {
     return new Promise((resolve) => {
@@ -17,23 +21,28 @@ function sleep (ms) {
     });
 }
 
-class TransferFunETH2NEAR {
+class TransferETHERC20ToNear {
     static async execute (command) {
-        const web3 = new Web3(command.ethNodeUrl);
+        const amount = command.amount;
+        const ethSenderSk = command.ethSenderSk;
+        const nearReceiverAccount = command.nearReceiverAccount;
 
-        let ethSenderAccount = web3.eth.accounts.privateKeyToAccount(command.ethSenderSk);
+        const web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
+
+        let ethSenderAccount = web3.eth.accounts.privateKeyToAccount(ethSenderSk);
         web3.eth.accounts.wallet.add(ethSenderAccount);
         web3.eth.defaultAccount = ethSenderAccount.address;
         ethSenderAccount = ethSenderAccount.address;
 
         // Approve tokens for transfer.
         const ethERC20Contract = new web3.eth.Contract(
-            JSON.parse(fs.readFileSync(command.ethTokenAbiPath)),
-            command.ethTokenAddress,
+            JSON.parse(fs.readFileSync(RainbowConfig.getParam('eth-erc20-abi-path'))),
+            RainbowConfig.getParam('eth-erc20-address'),
         );
         try {
             console.log('Approving token transfer.');
-            await ethERC20Contract.methods.approve(command.ethLockerAddress, Number(command.amount)).send({
+            await ethERC20Contract.methods.approve(RainbowConfig.getParam('eth-locker-address'),
+                Number(amount)).send({
                 from: ethSenderAccount,
                 gas: 5000000,
                 handleRevert: true,
@@ -47,13 +56,14 @@ class TransferFunETH2NEAR {
 
         // Lock the token.
         const ethTokenLockerContract = new web3.eth.Contract(
-            JSON.parse(fs.readFileSync(command.ethLockerAbiPath)),
-            command.ethLockerAddress,
+            JSON.parse(fs.readFileSync(RainbowConfig.getParam('eth-locker-abi-path'))),
+            RainbowConfig.getParam('eth-locker-address'),
         );
         let lockedEvent;
         try {
             console.log('Transferring tokens from the ERC20 account to the token locker account.');
-            const transaction = await ethTokenLockerContract.methods.lockToken(command.ethTokenAddress, Number(command.amount), command.nearReceiverAccount)
+            const transaction = await ethTokenLockerContract.methods.lockToken(RainbowConfig.getParam('eth-erc20-address'), Number(amount),
+                nearReceiverAccount)
                 .send({
                     from: ethSenderAccount,
                     gas: 5000000,
@@ -67,34 +77,50 @@ class TransferFunETH2NEAR {
             process.exit(1);
         }
 
-        await sleep(120000);
+        // await sleep(120000);
 
+        const nearMasterAccountId = RainbowConfig.getParam('near-master-account');
         const keyStore = new nearlib.keyStores.InMemoryKeyStore();
-        await keyStore.setKey(command.nearNetworkId, command.nearReceiverAccount,
-            nearlib.KeyPair.fromString(command.nearReceiverSk));
+        await keyStore.setKey(RainbowConfig.getParam('near-network-id'), nearMasterAccountId,
+            nearlib.KeyPair.fromString(RainbowConfig.getParam('near-master-sk')));
         const near = await nearlib.connect({
-            nodeUrl: command.nearNodeUrl,
-            networkId: command.nearNetworkId,
-            masterAccount: command.nearReceiverAccount,
+            nodeUrl: RainbowConfig.getParam('near-node-url'),
+            networkId: RainbowConfig.getParam('near-network-id'),
+            masterAccount: nearMasterAccountId,
             deps: { keyStore: keyStore },
         });
-        const nearReceiverAccount = new nearlib.Account(near.connection, command.nearReceiverAccount);
-        await verifyAccount(near, command.nearReceiverAccount);
+        const nearMasterAccount = new nearlib.Account(near.connection, nearMasterAccountId);
+        await verifyAccount(near, nearMasterAccountId);
 
-        const nearTokenContract = new nearlib.Contract(nearReceiverAccount, command.nearTokenAddress, {
+        const nearTokenContract = new nearlib.Contract(nearMasterAccount, RainbowConfig.getParam('near-fun-token-account'), {
             changeMethods: ['new'],
             viewMethods: ['get_balance'],
         });
-        const nearTokenContractBorsh = new NearMintableToken(nearReceiverAccount, command.nearTokenAddress);
+        const nearTokenContractBorsh = new NearMintableToken(nearMasterAccount, RainbowConfig.getParam('near-fun-token-account'));
         await nearTokenContractBorsh.accessKeyInit();
 
         // Extract proof.
         const extractor = new EthProofExtractor();
-        extractor.initialize(command.ethNodeUrl);
+        extractor.initialize(RainbowConfig.getParam('eth-node-url'));
         const receipt = await extractor.extractReceipt(lockedEvent.transactionHash);
         const block = await extractor.extractBlock(receipt.blockNumber);
         const tree = await extractor.buildTrie(block);
         const proof = await extractor.extractProof(block, tree, receipt.transactionIndex);
+
+        const blockNumber = block.number;
+        // Wait until client accepts this block number.
+        const clientAccount = RainbowConfig.getParam('eth2near-client-account');
+        const ethClientContract = new Eth2NearClientContract(nearMasterAccount, clientAccount);
+        while (true) {
+            const last_block_number = (await ethClientContract.last_block_number()).toNumber();
+            if (last_block_number < blockNumber) {
+                const delay = 10;
+                console.log(`Eth2NearClient is currently at block ${last_block_number}. Waiting for block ${blockNumber}. Sleeping for ${delay} sec.`);
+                await sleep(delay * 1000);
+            } else {
+                break;
+            }
+        }
 
         let txLogIndex = -1;
         let logFound = false;
@@ -157,4 +183,4 @@ class TransferFunETH2NEAR {
     }
 }
 
-exports.TransferFunETH2NEAR = TransferFunETH2NEAR;
+exports.TransferETHERC20ToNear = TransferETHERC20ToNear;
