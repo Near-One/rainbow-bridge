@@ -37,19 +37,19 @@ contract NearProver {
             hash,
             fullOutcomeProof.outcome_root_proof
         );
-        revert("outcome root computation done");
+//        revert("outcome root computation done");
 
         require(
             hash == fullOutcomeProof.block_header_lite.inner_lite.outcome_root,
             "NearProver: merkle proof is not valid"
         );
 
-        revert("before block proof computation");
+//        revert("before block proof computation");
 
         require(
             _computeRoot(fullOutcomeProof.block_header_lite.hash, fullOutcomeProof.block_proof) == blockMerkleRoot, "NearProver: block proof is not valid"
         );
-        revert("after block proof computation");
+//        revert("after block proof computation");
         return true;
     }
 
