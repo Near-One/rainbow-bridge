@@ -12,11 +12,6 @@ eval BRIDGE_SRC=~/.rainbowup/bridge
 eval CORE_SRC=~/.rainbowup/core
 eval NEARUP_SRC=~/.rainbowup/nearup
 
-if [ -d $RAINBOWUP_DIR ]; then
-	echo "~/.rainbowup already exists. Please run the clean"
-	exit 1	
-fi
-
 mkdir -p $RAINBOWUP_DIR
 
 if test -z "$LOCAL_CORE_SRC"

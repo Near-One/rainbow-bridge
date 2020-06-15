@@ -2,6 +2,7 @@ const util = require('util');
 const { execSync } = require('child_process');
 const request = require('request');
 const { getLocalNearNodeURL } = require('./helpers');
+const { RainbowConfig } = require('../../lib/config');
 
 class StartLocalNearNodeCommand {
     static execute () {
@@ -16,6 +17,11 @@ class StartLocalNearNodeCommand {
                 console.log('Local Node is already running. Skipping...');
             }
         });
+        RainbowConfig.setParam('near-node-url', 'http://localhost:3030');
+        RainbowConfig.setParam('near-network-id', 'local');
+        RainbowConfig.setParam('near-master-account', 'node0');
+        RainbowConfig.setParam('near-master-sk', 'ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP');
+        RainbowConfig.saveConfig();
     }
 }
 
