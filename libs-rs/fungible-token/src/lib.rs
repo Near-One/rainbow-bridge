@@ -64,9 +64,6 @@ pub struct FungibleToken {
     pub total_supply: Balance,
     /// The account of the prover that we can use to prove
     pub prover_account: AccountId,
-    /// Whether the contract can mint tokens without verification of the Ethereum PoW. Should be
-    /// only set to `false` for testing and diagnostics purposes.
-    pub verify_ethash: bool,
 }
 
 impl Default for FungibleToken {
@@ -114,11 +111,11 @@ pub trait ExtFungibleToken {
 impl FungibleToken {
     /// Initializes the contract with the given total supply owned by the given `owner_id`.
     #[init]
-    pub fn new(owner_id: AccountId, total_supply: U128, prover_account: AccountId, verify_ethash: bool) -> Self {
+    pub fn new(owner_id: AccountId, total_supply: U128, prover_account: AccountId) -> Self {
         assert!(env::is_valid_account_id(owner_id.as_bytes()), "Owner's account ID is invalid");
         let total_supply = total_supply.into();
         assert!(!env::state_exists(), "Already initialized");
-        let mut ft = Self { accounts: Map::new(b"a".to_vec()), total_supply, prover_account, verify_ethash };
+        let mut ft = Self { accounts: Map::new(b"a".to_vec()), total_supply, prover_account };
         let mut account = ft.get_account(&owner_id);
         account.balance = total_supply;
         ft.set_account(&owner_id, &account);
@@ -214,7 +211,7 @@ impl FungibleToken {
         } = proof;
         prover::verify_log_entry(
             log_index, log_entry_data, receipt_index, receipt_data, header_data, proof,
-            !self.verify_ethash,
+            false, // Do not skip bridge call. This is only used for development and diagnostics.
             &self.prover_account,
             0,
             env::prepaid_gas()/3
