@@ -19,6 +19,9 @@ rlp = "0.4.2"
 [dev-dependencies]
 hex = "0.4.2"
 indicatif = "0.14"
+lazy_static = "*"
+near-primitives = { git = "https://github.com/nearprotocol/nearcore.git" }
+near-runtime-standalone = { git = "https://github.com/nearprotocol/nearcore.git" }
 
 [features]
 expensive_tests = []
