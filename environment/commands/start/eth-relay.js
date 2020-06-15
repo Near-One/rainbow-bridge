@@ -6,7 +6,7 @@ const { Eth2NearClientContract } = require('../../lib/eth2near-client-contract')
 
 class StartEthRelayCommand {
     // Get args without daemon set on.
-    static getNoDaemonArgs(command) {
+    static getNoDaemonArgs (command) {
         return [
             'start',
             'eth-relay',
@@ -23,8 +23,8 @@ class StartEthRelayCommand {
             '--eth-node-url',
             command.ethNodeUrl,
             '--daemon',
-            'false'
-        ]
+            'false',
+        ];
     }
 
     static async execute (command) {
@@ -42,16 +42,16 @@ class StartEthRelayCommand {
                         interpreter: 'node',
                         error_file: '~/.rainbowup/logs/eth-relay/err.log',
                         out_file: '~/.rainbowup/logs/eth-relay/out.log',
-                        args: StartEthRelayCommand.getNoDaemonArgs(command)
-                    }
+                        args: StartEthRelayCommand.getNoDaemonArgs(command),
+                    },
                 );
             });
         } else {
             const masterAccount = command.masterAccount;
             const masterSk = command.masterSk;
-            let keyStore = new nearlib.keyStores.InMemoryKeyStore();
+            const keyStore = new nearlib.keyStores.InMemoryKeyStore();
             await keyStore.setKey(command.nearNetworkId, masterAccount, nearlib.KeyPair.fromString(masterSk));
-            let near = await nearlib.connect({
+            const near = await nearlib.connect({
                 nodeUrl: command.nearNodeUrl,
                 networkId: command.nearNetworkId,
                 masterAccount: masterAccount,
@@ -64,9 +64,9 @@ class StartEthRelayCommand {
             const clientContract =
                 new Eth2NearClientContract(new nearlib.Account(near.connection, masterAccount), command.clientAccount);
             await clientContract.accessKeyInit();
-            console.log("Initializing Eth-Relay...");
+            console.log('Initializing Eth-Relay...');
             relay.initialize(clientContract, command.ethNodeUrl);
-            console.log("Starting Eth-Relay...");
+            console.log('Starting Eth-Relay...');
             await relay.run();
         }
     }
