@@ -12,7 +12,7 @@ popd
 
 echo "Building token locker"
 # Build contracts for locking token.
-pushd "example-token-locker"
+pushd "token-locker"
 yarn
 ./dist.sh
 popd

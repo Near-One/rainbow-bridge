@@ -9,6 +9,15 @@
   <p>
     <a href="https://travis-ci.com/near/rainbow-bridge"><img src="https://travis-ci.com/near/rainbow-bridge.svg?branch=master" alt="Travis Build" /></a>
   </p>
+  <h3>
+        <a href="https://github.com/near/rainbow-bridge#installation">Installation</a>
+        <span> | </span>
+        <a href="https://github.com/near/rainbow-bridge#usage">Usage</a>
+        <span> | </span>
+        <a href="https://github.com/near/rainbow-bridge/tree/master/docs#documentation">Documentation</a>
+        <span> | </span>
+        <a href="https://github.com/near/rainbow-bridge#examples">Examples</a>
+  </h3>
 </div>
 
 ## Configs and flags
@@ -26,6 +35,29 @@ More about specific configurations:
 
 
 ## Local test run
+## Installation
+
+TODO: Need to publish it to npm.
+
+## Usage
+To learn the commands that you can use with the rainbow bridge run
+```bash
+node index.js --help
+```
+
+Parameters of each command can be specified through environment variables, command line arguments, entries in the `~/.rainbowup/config.js` config file, or the default value will be used -- in that priority.
+If argument is not provided and there is no default value the program will not execute.
+
+If script successfully executes a command then each parameter provided through the command line argument will be
+written into the config file. Additionally, if scripts generates new parameters (e.g. it deploys a contract to Ethereum
+and obtains its address) will also be written into the config file. Arguments should not be specified multiple times. 
+
+Note, you can use environment variables to pass sensitive data which will not lead to it being written into the config file.
+
+
+## Examples
+
+### Local test run
 
 To locally test the bridge run:
 ```bash
