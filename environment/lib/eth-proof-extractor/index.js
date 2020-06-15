@@ -57,7 +57,7 @@ class EthProofExtractor {
     }
 
     async extractProof (block, tree, transactionIndex) {
-        const [_, __, stack] = await promisfy(tree.findPath, tree)(encode(transactionIndex));
+        const [, , stack] = await promisfy(tree.findPath, tree)(encode(transactionIndex));
         return {
             header: Header.fromRpc(block),
             receiptProof: Proof.fromStack(stack),

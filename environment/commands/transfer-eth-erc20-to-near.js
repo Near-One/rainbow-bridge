@@ -15,7 +15,6 @@ const {
     Eth2NearClientContract,
 } = require('../lib/eth2near-client-contract');
 
-
 function sleep (ms) {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);
@@ -43,7 +42,7 @@ class TransferETHERC20ToNear {
         try {
             console.log('Approving token transfer.');
             await ethERC20Contract.methods.approve(RainbowConfig.getParam('eth-locker-address'),
-             Number(amount)).send({
+                Number(amount)).send({
                 from: ethSenderAccount,
                 gas: 5000000,
                 handleRevert: true,
@@ -64,7 +63,7 @@ class TransferETHERC20ToNear {
         try {
             console.log('Transferring tokens from the ERC20 account to the token locker account.');
             const transaction = await ethTokenLockerContract.methods.lockToken(RainbowConfig.getParam('eth-erc20-address'), Number(amount),
-            nearReceiverAccount)
+                nearReceiverAccount)
                 .send({
                     from: ethSenderAccount,
                     gas: 5000000,
@@ -113,10 +112,10 @@ class TransferETHERC20ToNear {
         const clientAccount = RainbowConfig.getParam('eth2near-client-account');
         const ethClientContract = new Eth2NearClientContract(nearMasterAccount, clientAccount);
         while (true) {
-            let last_block_number = (await ethClientContract.last_block_number()).toNumber();
+            const last_block_number = (await ethClientContract.last_block_number()).toNumber();
             if (last_block_number < blockNumber) {
-                let delay = 10;
-                console.log(`Eth2NearClient is currently at block ${last_block_number}. Waiting for block ${blockNumber}. Sleeping for ${delay} sec.`)
+                const delay = 10;
+                console.log(`Eth2NearClient is currently at block ${last_block_number}. Waiting for block ${blockNumber}. Sleeping for ${delay} sec.`);
                 await sleep(delay * 1000);
             } else {
                 break;
