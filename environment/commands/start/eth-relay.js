@@ -43,9 +43,10 @@ class StartEthRelayCommand {
             const clientContract =
                 new Eth2NearClientContract(new nearlib.Account(near.connection, masterAccount), RainbowConfig.getParam('eth2near-client-account'));
             await clientContract.accessKeyInit();
-            console.log("Initializing Eth-Relay...");
+            console.log('Initializing Eth-Relay...');
             relay.initialize(clientContract, RainbowConfig.getParam('eth-node-url'));
-            console.log("Starting Eth-Relay...");
+            console.log('Starting Eth-Relay...');
+            console.log('Starting Eth-Relay...');
             await relay.run();
         }
     }
