@@ -1,5 +1,6 @@
+#[cfg(test)]
+mod tests {
 use crate::EthProver;
-use hex;
 use hex::{FromHex, ToHex};
 use rlp::RlpStream;
 use serde::{Deserialize, Deserializer};
@@ -435,4 +436,6 @@ fn verify_dumped_log_entries() {
         bar.inc(1);
     }
     bar.finish();
+}
+
 }

@@ -3,6 +3,9 @@ use eth_types::*;
 use near_sdk::{env, ext_contract, near_bindgen, PromiseOrValue};
 use rlp::Rlp;
 
+#[cfg(test)]
+mod tests;
+
 #[cfg(target_arch = "wasm32")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
