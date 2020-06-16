@@ -92,6 +92,7 @@ function borshifyOutcomeProof(proof) {
     ]);
 }
 
+
 contract('NearProver', function ([_, addr1]) {
     beforeEach(async function () {
         this.bridge = await NearBridgeMock.new();
@@ -99,8 +100,16 @@ contract('NearProver', function ([_, addr1]) {
     });
 
     it('should be ok', async function () {
-        const proof1 = borshifyOutcomeProof(require('./proof_9.json'));
-        const lightClientBlockMerkleRoot = '0xf53f99cb3f82145317d18eb2949370a3a0be00ef068b5199a3315b5fe7a14fc8';
-        expect(await this.prover.proveOutcome(proof1, lightClientBlockMerkleRoot)).to.be.true;
+        const proof1 = borshifyOutcomeProof(require('./proof1.json'));
+        const blockRoot1 = '0x703bde7dded360be8f24a1c53dc119bd714f0e7298a1e44edc46026858d65ce0';
+        expect(await this.prover.proveOutcome(proof1, blockRoot1)).to.be.true;
+
+        const proof2 = borshifyOutcomeProof(require('./proof2.json'));
+        const blockRoot2 = '0x3a8ca5dfa850600c14233d6e1a31319d7f5285f0cd391416aaf9aaa8070b9040';
+        expect(await this.prover.proveOutcome(proof2, blockRoot2)).to.be.true;
+
+        const proof3 = borshifyOutcomeProof(require('./proof3.json'));
+        const blockRoot3 = '0x49702b4b256be142958fdc48e46284221c0033a0df714f6cf309ab29356cc1b1';
+        expect(await this.prover.proveOutcome(proof3, blockRoot3)).to.be.true;
     });
 });

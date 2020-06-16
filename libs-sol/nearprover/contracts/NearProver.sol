@@ -49,7 +49,6 @@ contract NearProver {
         require(
             _computeRoot(fullOutcomeProof.block_header_lite.hash, fullOutcomeProof.block_proof) == blockMerkleRoot, "NearProver: block proof is not valid"
         );
-//        revert("after block proof computation");
         return true;
     }
 
