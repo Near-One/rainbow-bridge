@@ -1,4 +1,5 @@
 use crate::EthProver;
+use hex;
 use hex::{FromHex, ToHex};
 use rlp::RlpStream;
 use serde::{Deserialize, Deserializer};
@@ -27,8 +28,8 @@ impl<'de> Deserialize<'de> for Hex {
 // TESTS
 
 use borsh::BorshSerialize;
-use near_bindgen::MockedBlockchain;
-use near_bindgen::{testing_env, VMContext};
+use near_sdk::MockedBlockchain;
+use near_sdk::{testing_env, VMContext};
 
 fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
     VMContext {
@@ -39,6 +40,7 @@ fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
         input,
         block_index: 0,
         block_timestamp: 0,
+        epoch_height: 0,
         account_balance: 0,
         account_locked_balance: 0,
         storage_usage: 0,
