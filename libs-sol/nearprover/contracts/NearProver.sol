@@ -20,14 +20,42 @@ contract NearProver {
         bridge = _bridge;
     }
 
-    function proveOutcome(bytes memory proofData) public view returns(bool) {
+    function proveOutcome(bytes memory proofData, bytes32 blockMerkleRoot) public view returns(bool) {
         Borsh.Data memory borshData = Borsh.from(proofData);
         ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borshData.decodeFullOutcomeProof();
         require(borshData.finished(), "NearProver: argument should be exact borsh serialization");
 
-        bytes32 hash = fullOutcomeProof.outcome_proof.outcome_with_id.hash;
-        for (uint i = 0; i < fullOutcomeProof.outcome_proof.proof.items.length; i++) {
-            ProofDecoder.MerklePathItem memory item = fullOutcomeProof.outcome_proof.proof.items[i];
+        bytes32 hash = _computeRoot(
+            fullOutcomeProof.outcome_proof.outcome_with_id.hash,
+            fullOutcomeProof.outcome_proof.proof
+        );
+
+        hash = sha256(abi.encodePacked(hash));
+
+        //TODO(Anton): please refactor this code out
+        hash = _computeRoot(
+            hash,
+            fullOutcomeProof.outcome_root_proof
+        );
+//        revert("outcome root computation done");
+
+        require(
+            hash == fullOutcomeProof.block_header_lite.inner_lite.outcome_root,
+            "NearProver: merkle proof is not valid"
+        );
+
+//        revert("before block proof computation");
+
+        require(
+            _computeRoot(fullOutcomeProof.block_header_lite.hash, fullOutcomeProof.block_proof) == blockMerkleRoot, "NearProver: block proof is not valid"
+        );
+        return true;
+    }
+
+    function _computeRoot(bytes32 node, ProofDecoder.MerklePath memory proof) internal pure returns(bytes32 hash) {
+        hash = node;
+        for (uint i = 0; i < proof.items.length; i++) {
+            ProofDecoder.MerklePathItem memory item = proof.items[i];
             if (item.direction == 0) {
                 hash = sha256(abi.encodePacked(item.hash, hash));
             }
@@ -35,15 +63,5 @@ contract NearProver {
                 hash = sha256(abi.encodePacked(hash, item.hash));
             }
         }
-
-        require(
-            hash == fullOutcomeProof.block_header_lite.inner_lite.outcome_root,
-            "NearProver: merkle proof is not valid"
-        );
-
-        require(
-            bridge.blockHashes(fullOutcomeProof.block_header_lite.inner_lite.height) == fullOutcomeProof.block_header_lite.hash,
-            "NearProver: block hash not matches"
-        );
     }
 }
