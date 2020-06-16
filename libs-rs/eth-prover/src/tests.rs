@@ -376,7 +376,7 @@ fn complex_test3() {
 fn verify_dumped_log_entries() {
     use std::env;
     use std::fs;
-    use near_bindgen::VMConfig;
+    use near_sdk::VMConfig;
     use indicatif::{ProgressBar, ProgressStyle};
 
     let mut vm_config = VMConfig::free();
