@@ -9,7 +9,7 @@ class InitNEARFunToken {
         const tokenAccount = RainbowConfig.getParam('near-fun-token-account');
         let tokenSk = RainbowConfig.maybeGetParam('near-fun-token-sk');
         if (!tokenSk) {
-            console.log(`Secret key for fungible token is not specified. Reusing master secret key.`);
+            console.log('Secret key for fungible token is not specified. Reusing master secret key.');
             tokenSk = masterSk;
             RainbowConfig.setParam('near-fun-token-sk', tokenSk);
         }

@@ -7,7 +7,7 @@ set -e
 echo "Building emitter"
 pushd "emitter"
 yarn
-yarn run oz compile
+yarn run oz compile --no-interactive
 popd
 
 echo "Building token locker"

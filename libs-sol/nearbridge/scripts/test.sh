@@ -45,6 +45,7 @@ start_ganache() {
     fi
 
     ganache_pid=$!
+    sleep 5
 }
 
 if ganache_running; then

@@ -108,30 +108,28 @@ RainbowConfig.declareOption(
 );
 RainbowConfig.declareOption(
     'eth-locker-address',
-    'ETH address of the locker contract.'
+    'ETH address of the locker contract.',
 );
 RainbowConfig.declareOption(
     'eth-locker-abi-path',
-    'Path to the .abi file definining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.'
+    'Path to the .abi file definining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
 );
 RainbowConfig.declareOption(
     'eth-locker-bin-path',
-    'Path to the .bin file definining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.'
+    'Path to the .bin file definining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
 );
 RainbowConfig.declareOption(
     'eth-erc20-address',
-    'ETH address of the ERC20 contract.'
+    'ETH address of the ERC20 contract.',
 );
 RainbowConfig.declareOption(
     'eth-erc20-abi-path',
-    'Path to the .abi file definining Ethereum ERC20 contract.'
+    'Path to the .abi file definining Ethereum ERC20 contract.',
 );
 RainbowConfig.declareOption(
     'eth-erc20-bin-path',
-    'Path to the .bin file definining Ethereum ERC20 contract.'
+    'Path to the .bin file definining Ethereum ERC20 contract.',
 );
-
-
 
 program.version('0.1.0');
 
@@ -184,7 +182,6 @@ stopCommand.command('ganache')
 stopCommand.command('eth-relay')
     .action(StopManagedProcessCommand.execute);
 
-
 RainbowConfig.addOptions(
     program.command('init-near-contracts')
         .description('Deploys and initializes Eth2NearClient and Eth2NearProver contracts to NEAR blockchain.')
@@ -212,44 +209,44 @@ RainbowConfig.addOptions(
     program.command('init-near-fun-token')
         .description('Deploys and initializes mintable fungible token to NEAR blockchain. Requires locker on Ethereum side.')
         .action(InitNEARFunToken.execute),
-        [
-            'near-fun-token-account',
-            'near-fun-token-sk',
-            'near-fun-token-contract-path',
-            'near-fun-token-init-balance',
-        ]
+    [
+        'near-fun-token-account',
+        'near-fun-token-sk',
+        'near-fun-token-contract-path',
+        'near-fun-token-init-balance',
+    ],
 );
 
 RainbowConfig.addOptions(
     program.command('init-eth-locker')
-    .description('Deploys and initializes locker contract on Ethereum blockchain. Requires mintable fungible token on Near side.')
-    .action(InitETHLocker.execute),
+        .description('Deploys and initializes locker contract on Ethereum blockchain. Requires mintable fungible token on Near side.')
+        .action(InitETHLocker.execute),
     [
         'eth-node-url',
         'eth-master-sk',
         'eth-locker-abi-path',
-        'eth-locker-bin-path'
-    ]
+        'eth-locker-bin-path',
+    ],
 );
 
 RainbowConfig.addOptions(
     program.command('init-eth-erc20')
-    .description('Deploys and initializes ERC20 contract on Ethereum blockchain.')
-    .action(InitETHERC20.execute),
+        .description('Deploys and initializes ERC20 contract on Ethereum blockchain.')
+        .action(InitETHERC20.execute),
     [
         'eth-node-url',
         'eth-master-sk',
         'eth-erc20-abi-path',
-        'eth-erc20-bin-path'
-    ]
+        'eth-erc20-bin-path',
+    ],
 );
 
 RainbowConfig.addOptions(
     program.command('transfer-eth-erc20-to-near')
-    .action(TransferETHERC20ToNear.execute)
-    .option('--amount <amount>', 'Amount of ERC20 tokens to transfer')
-    .option('--eth-sender-sk <eth_sender_sk>', 'The secret key of the Ethereum account that will be sending ERC20 token.')
-    .option('--near-receiver-account <near_receiver_account>', 'The account on NEAR blockchain that will be receiving the minted token.'),
+        .action(TransferETHERC20ToNear.execute)
+        .option('--amount <amount>', 'Amount of ERC20 tokens to transfer')
+        .option('--eth-sender-sk <eth_sender_sk>', 'The secret key of the Ethereum account that will be sending ERC20 token.')
+        .option('--near-receiver-account <near_receiver_account>', 'The account on NEAR blockchain that will be receiving the minted token.'),
     [
         'eth-node-url',
         'eth-erc20-address',
@@ -261,8 +258,8 @@ RainbowConfig.addOptions(
         'near-fun-token-account',
         'eth2near-client-account',
         'near-master-account',
-        'near-master-sk'
-    ]
+        'near-master-sk',
+    ],
 );
 
 program.command('eth-dump <kind_of_data>')
