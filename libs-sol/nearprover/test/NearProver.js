@@ -6,6 +6,22 @@ const NearProver = artifacts.require('NearProver');
 const NearBridgeMock = artifacts.require('NearBridgeMock');
 
 function borshifyOutcomeProof(proof) {
+    const statusToBuffer = status => {
+        console.log(status.SuccessValue);
+        if ('SuccessValue' in status) {
+            return Buffer.concat([
+                Buffer.from([2]),
+                Buffer.from([]),
+            ]);
+        } else if ('SuccessReceiptId' in status) {
+            return Buffer.concat([
+                Buffer.from([3]),
+                bs58.decode(status.SuccessReceiptId),
+            ]);
+        } else {
+            throw new Error("status not supported");
+        }
+    };
     return Buffer.concat([
         // outcome_proof
         web3.utils.toBN(proof.outcome_proof.proof.length).toBuffer('le', 4),
@@ -42,9 +58,10 @@ function borshifyOutcomeProof(proof) {
             // outcome_proof.outcome.gas_burnt
             web3.utils.toBN(proof.outcome_proof.outcome.gas_burnt).toBuffer('le', 8),
 
+            statusToBuffer(proof.outcome_proof.outcome.status),
             // outcome_proof.outcome.status.SuccessReceiptId
-            Buffer.from([3]), // TODO: support other status types
-            bs58.decode(proof.outcome_proof.outcome.status.SuccessReceiptId),
+            // Buffer.from([3]), // TODO: support other status types
+            // bs58.decode(proof.outcome_proof.outcome.status.SuccessReceiptId),
 
             // outcome_root_proof
             web3.utils.toBN(0).toBuffer('le', 4),
@@ -75,15 +92,24 @@ function borshifyOutcomeProof(proof) {
     ]);
 }
 
+
 contract('NearProver', function ([_, addr1]) {
     beforeEach(async function () {
         this.bridge = await NearBridgeMock.new();
-        await this.bridge.setBlockHashes(9, "0x2b37a318a99b18b16ae47869dbf0ccf78bc05f2096a9f18e8ca990edbe68c7db");
         this.prover = await NearProver.new(this.bridge.address);
     });
 
     it('should be ok', async function () {
-        const proof_9 = borshifyOutcomeProof(require('./proof_9.json'));
-        expect(await this.prover.proveOutcome(proof_9)).to.be.true;
+        const proof1 = borshifyOutcomeProof(require('./proof1.json'));
+        const blockRoot1 = '0x703bde7dded360be8f24a1c53dc119bd714f0e7298a1e44edc46026858d65ce0';
+        expect(await this.prover.proveOutcome(proof1, blockRoot1)).to.be.true;
+
+        const proof2 = borshifyOutcomeProof(require('./proof2.json'));
+        const blockRoot2 = '0x3a8ca5dfa850600c14233d6e1a31319d7f5285f0cd391416aaf9aaa8070b9040';
+        expect(await this.prover.proveOutcome(proof2, blockRoot2)).to.be.true;
+
+        const proof3 = borshifyOutcomeProof(require('./proof3.json'));
+        const blockRoot3 = '0x49702b4b256be142958fdc48e46284221c0033a0df714f6cf309ab29356cc1b1';
+        expect(await this.prover.proveOutcome(proof3, blockRoot3)).to.be.true;
     });
 });
