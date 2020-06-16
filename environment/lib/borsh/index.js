@@ -2,6 +2,15 @@ const Web3 = require('web3');
 const nearlib = require('nearlib');
 
 const BN = require('bn.js');
+const { TextDecoder } = require('util');
+
+class BorshError extends Error {
+    constructor (message) {
+        super(message);
+
+        this.name = this.constructor.name;
+    }
+}
 
 function serializeField (schema, value, fieldType, writer) {
     if (fieldType === 'u8') {
@@ -145,8 +154,9 @@ class BinaryReader {
     read_string () {
         const len = this.read_u32();
         const buf = this.read_buffer(len);
+        const textDecoder = TextDecoder();
         try {
-            // NOTE: Using TextDecoder to fail on invalid UTF-8
+        // NOTE: Using TextDecoder to fail on invalid UTF-8
             return textDecoder.decode(buf);
         } catch (e) {
             throw new BorshError(`Error decoding UTF-8 string: ${e}`);
@@ -190,12 +200,7 @@ const signAndSendTransaction = async (accessKey, account, receiverId, actions) =
     );
     console.log('TxHash', nearlib.utils.serialize.base_encode(txHash));
 
-    let result;
-    try {
-        result = await account.connection.provider.sendTransaction(signedTx);
-    } catch (error) {
-        throw error;
-    }
+    const result = await account.connection.provider.sendTransaction(signedTx);
 
     const flatLogs = [result.transaction_outcome, ...result.receipts_outcome].reduce((acc, it) => acc.concat(it.outcome.logs), []);
     if (flatLogs) {

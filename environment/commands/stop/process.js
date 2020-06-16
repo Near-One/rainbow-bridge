@@ -5,12 +5,16 @@ class StopManagedProcessCommand {
         const serviceName = command._name;
         console.log('Stopping process:', serviceName);
         ProcessManager.stop(serviceName, (err) => {
-        	if (err) {
+            if (err) {
                 console.log('Error stopping the process due to:', err);
                 process.exit(1);
-        	}
-        	console.log(serviceName, 'successfully stopped...');
-        	ProcessManager.disconnect((err) => {});
+            }
+            console.log(serviceName, 'successfully stopped...');
+            ProcessManager.disconnect((err) => {
+                if (err) {
+                    console.error(err);
+                }
+            });
         });
     }
 }
