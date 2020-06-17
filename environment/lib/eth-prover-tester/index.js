@@ -6,12 +6,12 @@ const {
     receiptFromWeb3,
     logFromWeb3,
 } = require('../eth-proof-extractor');
-const {
-    borshSchema,
-} = require('../eth-prover-contract');
-const {
-    serialize,
-} = require('../borsh');
+// const {
+//     borshSchema,
+// } = require('../eth-prover-contract');
+// const {
+//     serialize,
+// } = require('../borsh');
 
 // Tests EthProver in the following way:
 // * Gets the last block submitted to EthClient;
@@ -48,7 +48,7 @@ class EthProverTester {
             const block = await this.web3.eth.getBlock(currBlock);
             for (const txHash of block.transactions) {
                 const receipt = await extractor.extractReceipt(txHash);
-                if (receipt.logs.length == 0) {
+                if (receipt.logs.length === 0) {
                     continue;
                 }
                 const block = await extractor.extractBlock(receipt.blockNumber);

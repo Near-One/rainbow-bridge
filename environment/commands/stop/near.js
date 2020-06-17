@@ -5,7 +5,7 @@ class StopLocalNearNodeCommand {
         console.log('Stopping local near node...');
         const command = '~/.rainbowup/nearup/nearup stop';
         try {
-        	execSync(command);
+            execSync(command);
         } catch (err) {
             console.log('Error stopping local near node', err);
         }

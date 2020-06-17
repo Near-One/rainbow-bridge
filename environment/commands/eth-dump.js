@@ -15,7 +15,7 @@ class ETHDump {
         const extractor = new EthProofExtractor();
         extractor.initialize(ethNodeUrl);
 
-        if (kindOfData != 'headers' && kindOfData != 'proofs') {
+        if (kindOfData !== 'headers' && kindOfData !== 'proofs') {
             console.log('Usage: node index.js dump headers\n       node index.js dump proofs');
             process.exit(2);
         }
@@ -34,9 +34,9 @@ class ETHDump {
         console.log(`Downloading block ${endBlock} down to ${startBlock} to ${path}. ${endBlock - startBlock + 1} blocks in total.`);
 
         for (let b = endBlock; b >= startBlock; b--) {
-            if (kindOfData == 'headers') {
+            if (kindOfData === 'headers') {
                 await ETHDump.dumpHeaders(web3, b, path);
-            } else if (kindOfData == 'proofs') {
+            } else if (kindOfData === 'proofs') {
                 await ETHDump.dumpProofs(web3, extractor, b, path);
             }
         }
@@ -63,7 +63,7 @@ class ETHDump {
         const block = await web3.eth.getBlock(b);
         for (const txHash of block.transactions) {
             const receipt = await extractor.extractReceipt(txHash);
-            if (receipt.logs.length == 0) {
+            if (receipt.logs.length === 0) {
                 continue;
             }
             const block = await extractor.extractBlock(receipt.blockNumber);

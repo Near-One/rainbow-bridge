@@ -1,0 +1,78 @@
+{
+  "block_header_lite": {
+    "inner_lite": {
+      "block_merkle_root": "ERADog2W9oGFZSVx4qyZMhqTh4332Y1U5ABK4SxtokRu",
+      "epoch_id": "FDs5mSF56jvfNiVXM7gPfo4SCCpJC4QueavL9ne9anwz",
+      "height": 2558,
+      "next_bp_hash": "E2dfrCp1iZRDvHB855Q8mJ9nBdHQf2wJJBNiyYqwMLW4",
+      "next_epoch_id": "HTEy1Wkz3ATP9ELv9V7EF1bBwD4MD7hL12Ma2mYfbBkG",
+      "outcome_root": "5HS5b8ixx2MNZCWRP5eidQRKcshLQSe7CCRpeJ9WcbYH",
+      "prev_state_root": "3vEBYcxdg7uMAEVP8hc33a3V1cSkbstPwEPvnPgb1yLu",
+      "timestamp": 1592342625166816000
+    },
+    "inner_rest_hash": "2k1LbjPFT4k1guJJtybUaf1GFiZX3WHDYicBkL1gitjL",
+    "prev_block_hash": "FxvtmzU8asVgbZ58ndkjRh3iyZeTywGCgnWRjAaT1AGy"
+  },
+  "block_proof": [
+    {
+      "direction": "Right",
+      "hash": "Ffjtc9nbYR3PfLmWHMEPjEikua13qDNV73STMAzYuaxw"
+    },
+    {
+      "direction": "Left",
+      "hash": "62Qk6UQX13BEonJnfWhZddbtUwU9LmkEkvtdHW3FVjug"
+    },
+    {
+      "direction": "Left",
+      "hash": "FhPEr3MvL2Z25gNbv3cZ9LM3jiyP3pQGD3HPN6XSqh8t"
+    },
+    {
+      "direction": "Left",
+      "hash": "9P4ZfCjhYhwPzCjPt5N2Dk2MWpCdv6rj8Aa7Pu6KkpiU"
+    },
+    {
+      "direction": "Left",
+      "hash": "HYfugzNQgY1JSWwRqq9CgrAsVJ8QYMPdBMkDMBQMw5vr"
+    },
+    {
+      "direction": "Left",
+      "hash": "6XzwEvB2EXP4At8QoJsmFm7VqXHPrWQ8pZkYB7inPyui"
+    },
+    {
+      "direction": "Left",
+      "hash": "CzTTWTR9CY5fFFgmn3E85wGadHHRxvkjAUSLPWMdVt7e"
+    },
+    {
+      "direction": "Left",
+      "hash": "BU5r6Mq8EGRNK5wk4gReH2iA1LXqEWDFgTGeLDZSz4qU"
+    },
+    {
+      "direction": "Left",
+      "hash": "5VBxgfYEfJm8Ad5XrXZQUKbChKAArJFizo4KyQ9FHWvi"
+    },
+    {
+      "direction": "Right",
+      "hash": "DNywUqFXnPZrndcKJWUsjUjDMiF91FVHNh2ku5mQv7Rc"
+    },
+    {
+      "direction": "Left",
+      "hash": "4uBHGSz1Y9E4PUNFNryaetNZ3ikL3fE8x6oeboDbLtt4"
+    }
+  ],
+  "outcome_proof": {
+    "block_hash": "33XDeCb6epCopEnZ5rJ2eudSqxVPAeZwkrjdN7wx1RrY",
+    "id": "H614p8CSe73uqELYy3kA1fuZST1fGcuFEhJqHa7cpJXZ",
+    "outcome": {
+      "gas_burnt": 223182562500,
+      "logs": [],
+      "receipt_ids": [
+        "H9cve77RFcks8wSjwMypng77xrbaw4w38w6dDqkz7qLZ"
+      ],
+      "status": {
+        "SuccessReceiptId": "H9cve77RFcks8wSjwMypng77xrbaw4w38w6dDqkz7qLZ"
+      }
+    },
+    "proof": []
+  },
+  "outcome_root_proof": []
+}

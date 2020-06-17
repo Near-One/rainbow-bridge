@@ -79,7 +79,7 @@ class NearRelay {
             // TODO: Investigate how to use new feature web3.eth.handleRevert
             try {
                 console.log(`Submitting ${blocks.length} blocks`);
-                const tx = await this.nearClientContract.methods.addBlockHeaders(blocks).send({
+                await this.nearClientContract.methods.addBlockHeaders(blocks).send({
                     gas: 5000000,
                 });
                 console.log('Sumbitted!');

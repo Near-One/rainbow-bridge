@@ -153,8 +153,7 @@ fn rlp_append<TX>(header: &Block<TX>, stream: &mut RlpStream) {
 
 // TESTS
 
-use near_bindgen::MockedBlockchain;
-use near_bindgen::{testing_env, VMContext};
+use near_sdk::{testing_env, VMContext, MockedBlockchain};
 
 lazy_static! {
     static ref WEB3RS: web3::Web3<web3::transports::Http> = {
@@ -178,6 +177,7 @@ fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
         block_timestamp: 0,
         account_balance: 0,
         account_locked_balance: 0,
+        epoch_height: 0,
         storage_usage: 0,
         attached_deposit: 0,
         prepaid_gas: 10u64.pow(18),
@@ -431,7 +431,7 @@ fn add_2_blocks_from_400000() {
 fn predumped_block_can_be_added() {
     use std::env;
     use std::fs;
-    use near_bindgen::VMConfig;
+    use near_sdk::VMConfig;
     use indicatif::{ProgressBar, ProgressStyle};
 
     let mut vm_config = VMConfig::free();
