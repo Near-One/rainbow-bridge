@@ -86,7 +86,7 @@ impl EthProver {
         #[serializer(borsh)] expected_block_hash: H256,
     ) -> bool {
         assert_self();
-        return block_hash == Some(expected_block_hash);
+        block_hash == Some(expected_block_hash)
     }
 
     /// Externally visible method to verify that the given block hash is part of the safe canonical
@@ -224,7 +224,7 @@ impl EthProver {
                     .unwrap()
                     .as_val::<Vec<u8>>()
                     .unwrap();
-                if new_expected_root.len() != 0 {
+                if !new_expected_root.is_empty() {
                     return Self::_verify_trie_proof(
                         new_expected_root.into(),
                         key,
@@ -302,6 +302,6 @@ impl EthProver {
             panic!("This should not be reached if the proof has the correct format");
         }
 
-        expected_value.len() == 0
+        expected_value.is_empty()
     }
 }

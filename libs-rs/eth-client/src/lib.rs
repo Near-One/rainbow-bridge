@@ -110,7 +110,7 @@ impl EthBridge {
 
     #[result_serializer(borsh)]
     pub fn initialized(&self) -> bool {
-        self.dags_merkle_roots.len() > 0
+        !self.dags_merkle_roots.is_empty()
     }
 
     #[result_serializer(borsh)]

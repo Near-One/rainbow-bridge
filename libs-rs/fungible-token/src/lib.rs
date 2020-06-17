@@ -14,7 +14,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::collections::Map;
 use near_sdk::json_types::U128;
-use near_sdk::{env, near_bindgen, AccountId, Balance, Promise, ext_contract};
+use near_sdk::{env, ext_contract, near_bindgen, AccountId, Balance, Promise};
 
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
@@ -33,7 +33,10 @@ pub struct Account {
 impl Account {
     /// Initializes a new Account with 0 balance and no allowances for a given `account_hash`.
     pub fn new(account_hash: Vec<u8>) -> Self {
-        Self { balance: 0, allowances: Map::new(account_hash) }
+        Self {
+            balance: 0,
+            allowances: Map::new(account_hash),
+        }
     }
 
     /// Sets allowance for account `escrow_account_id` to `allowance`.
@@ -100,11 +103,14 @@ pub struct Proof {
 #[ext_contract(ext_fungible_token)]
 pub trait ExtFungibleToken {
     #[result_serializer(borsh)]
-    fn finish_mint(&self,
-                       #[callback]
-                       #[serializer(borsh)] verification_success: bool,
-                       #[serializer(borsh)] new_owner_id: AccountId,
-                       #[serializer(borsh)] amount: U128) -> Promise;
+    fn finish_mint(
+        &self,
+        #[callback]
+        #[serializer(borsh)]
+        verification_success: bool,
+        #[serializer(borsh)] new_owner_id: AccountId,
+        #[serializer(borsh)] amount: U128,
+    ) -> Promise;
 }
 
 #[near_bindgen]
@@ -112,10 +118,17 @@ impl FungibleToken {
     /// Initializes the contract with the given total supply owned by the given `owner_id`.
     #[init]
     pub fn new(owner_id: AccountId, total_supply: U128, prover_account: AccountId) -> Self {
-        assert!(env::is_valid_account_id(owner_id.as_bytes()), "Owner's account ID is invalid");
+        assert!(
+            env::is_valid_account_id(owner_id.as_bytes()),
+            "Owner's account ID is invalid"
+        );
         let total_supply = total_supply.into();
         assert!(!env::state_exists(), "Already initialized");
-        let mut ft = Self { accounts: Map::new(b"a".to_vec()), total_supply, prover_account };
+        let mut ft = Self {
+            accounts: Map::new(b"a".to_vec()),
+            total_supply,
+            prover_account,
+        };
         let mut account = ft.get_account(&owner_id);
         account.balance = total_supply;
         ft.set_account(&owner_id, &account);
@@ -148,7 +161,10 @@ impl FungibleToken {
     ///   then the allowance of the caller of the function (`predecessor_account_id`) on
     ///   the account of `owner_id` should be greater or equal than the transfer `amount`.
     pub fn transfer_from(&mut self, owner_id: AccountId, new_owner_id: AccountId, amount: U128) {
-        assert!(env::is_valid_account_id(owner_id.as_bytes()), "Owner's account ID is invalid");
+        assert!(
+            env::is_valid_account_id(owner_id.as_bytes()),
+            "Owner's account ID is invalid"
+        );
         assert!(
             env::is_valid_account_id(new_owner_id.as_bytes()),
             "New owner's account ID is invalid"
@@ -196,10 +212,12 @@ impl FungibleToken {
 
     /// Mint the token, increasing the total supply given the proof that the mirror token was locked
     /// on the Ethereum blockchain.
-    pub fn mint(&self,
-                #[serializer(borsh)] new_owner_id: AccountId,
-                #[serializer(borsh)] amount: U128,
-                #[serializer(borsh)] proof: Proof) -> Promise {
+    pub fn mint(
+        &self,
+        #[serializer(borsh)] new_owner_id: AccountId,
+        #[serializer(borsh)] amount: U128,
+        #[serializer(borsh)] proof: Proof,
+    ) -> Promise {
         // TODO: Record events that were already used to mint the tokens.
         let Proof {
             log_index,
@@ -210,30 +228,41 @@ impl FungibleToken {
             proof,
         } = proof;
         prover::verify_log_entry(
-            log_index, log_entry_data, receipt_index, receipt_data, header_data, proof,
+            log_index,
+            log_entry_data,
+            receipt_index,
+            receipt_data,
+            header_data,
+            proof,
             false, // Do not skip bridge call. This is only used for development and diagnostics.
             &self.prover_account,
             0,
-            env::prepaid_gas()/3
-        ).then(
-            ext_fungible_token::finish_mint(
-                new_owner_id,
-                amount,
-                &env::current_account_id(),
-                0,
-                env::prepaid_gas()/3
-            )
+            env::prepaid_gas() / 3,
         )
+        .then(ext_fungible_token::finish_mint(
+            new_owner_id,
+            amount,
+            &env::current_account_id(),
+            0,
+            env::prepaid_gas() / 3,
+        ))
     }
 
     /// Finish minting once the proof was successfully validated. Can only be called by the contract
     /// itself.
-    pub fn finish_mint(&mut self,
-                       #[callback] #[serializer(borsh)] verification_success: bool,
-                       #[serializer(borsh)] new_owner_id: AccountId,
-                       #[serializer(borsh)] amount: U128) {
-        assert_eq!(env::predecessor_account_id(), env::current_account_id(),
-                   "Finish transfer is only allowed to be called by the contract itself");
+    pub fn finish_mint(
+        &mut self,
+        #[callback]
+        #[serializer(borsh)]
+        verification_success: bool,
+        #[serializer(borsh)] new_owner_id: AccountId,
+        #[serializer(borsh)] amount: U128,
+    ) {
+        assert_eq!(
+            env::predecessor_account_id(),
+            env::current_account_id(),
+            "Finish transfer is only allowed to be called by the contract itself"
+        );
         assert!(verification_success, "Failed to verify the proof");
 
         let mut account = self.get_account(&new_owner_id);
@@ -259,12 +288,17 @@ impl FungibleToken {
     /// receives this information, the allowance may already be changed by the owner.
     /// So this method should only be used on the front-end to see the current allowance.
     pub fn get_allowance(&self, owner_id: AccountId, escrow_account_id: AccountId) -> U128 {
-        assert!(env::is_valid_account_id(owner_id.as_bytes()), "Owner's account ID is invalid");
+        assert!(
+            env::is_valid_account_id(owner_id.as_bytes()),
+            "Owner's account ID is invalid"
+        );
         assert!(
             env::is_valid_account_id(escrow_account_id.as_bytes()),
             "Escrow account ID is invalid"
         );
-        self.get_account(&owner_id).get_allowance(&escrow_account_id).into()
+        self.get_account(&owner_id)
+            .get_allowance(&escrow_account_id)
+            .into()
     }
 }
 
@@ -272,7 +306,9 @@ impl FungibleToken {
     /// Helper method to get the account details for `owner_id`.
     fn get_account(&self, owner_id: &AccountId) -> Account {
         let account_hash = env::sha256(owner_id.as_bytes());
-        self.accounts.get(&account_hash).unwrap_or_else(|| Account::new(account_hash))
+        self.accounts
+            .get(&account_hash)
+            .unwrap_or_else(|| Account::new(account_hash))
     }
 
     /// Helper method to set the account details for `owner_id` to the state.
@@ -336,7 +372,7 @@ mod tests {
         let context = get_context(carol());
         testing_env!(context);
         let total_supply = 1_000_000_000_000_000u128;
-        let contract = FungibleToken::new(bob(), total_supply.into());
+        let contract = FungibleToken::new(bob(), total_supply.into(), "prover".into());
         assert_eq!(contract.get_total_supply().0, total_supply);
         assert_eq!(contract.get_balance(bob()).0, total_supply);
     }
@@ -346,9 +382,9 @@ mod tests {
         let context = get_context(carol());
         testing_env!(context);
         let total_supply = 1_000_000_000_000_000u128;
-        let _contract = FungibleToken::new(bob(), total_supply.into());
+        let _contract = FungibleToken::new(bob(), total_supply.into(), "prover".into());
         catch_unwind_silent(|| {
-            FungibleToken::new(bob(), total_supply.into());
+            FungibleToken::new(bob(), total_supply.into(), "prover".into());
         })
         .unwrap_err();
     }
@@ -358,10 +394,13 @@ mod tests {
         let context = get_context(carol());
         testing_env!(context);
         let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = FungibleToken::new(carol(), total_supply.into());
+        let mut contract = FungibleToken::new(carol(), total_supply.into(), "prover".into());
         let transfer_amount = total_supply / 3;
         contract.transfer(bob(), transfer_amount.into());
-        assert_eq!(contract.get_balance(carol()).0, (total_supply - transfer_amount));
+        assert_eq!(
+            contract.get_balance(carol()).0,
+            (total_supply - transfer_amount)
+        );
         assert_eq!(contract.get_balance(bob()).0, transfer_amount);
     }
 
@@ -370,7 +409,7 @@ mod tests {
         let context = get_context(carol());
         testing_env!(context);
         let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = FungibleToken::new(carol(), total_supply.into());
+        let mut contract = FungibleToken::new(carol(), total_supply.into(), "prover".into());
         catch_unwind_silent(move || {
             contract.set_allowance(carol(), (total_supply / 2).into());
         })
@@ -382,7 +421,7 @@ mod tests {
         // Acting as carol
         testing_env!(get_context(carol()));
         let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = FungibleToken::new(carol(), total_supply.into());
+        let mut contract = FungibleToken::new(carol(), total_supply.into(), "prover".into());
         assert_eq!(contract.get_total_supply().0, total_supply);
         let allowance = total_supply / 3;
         let transfer_amount = allowance / 3;
@@ -391,9 +430,15 @@ mod tests {
         // Acting as bob now
         testing_env!(get_context(bob()));
         contract.transfer_from(carol(), alice(), transfer_amount.into());
-        assert_eq!(contract.get_balance(carol()).0, total_supply - transfer_amount);
+        assert_eq!(
+            contract.get_balance(carol()).0,
+            total_supply - transfer_amount
+        );
         assert_eq!(contract.get_balance(alice()).0, transfer_amount);
-        assert_eq!(contract.get_allowance(carol(), bob()).0, allowance - transfer_amount);
+        assert_eq!(
+            contract.get_allowance(carol(), bob()).0,
+            allowance - transfer_amount
+        );
     }
 
     #[test]
@@ -401,7 +446,7 @@ mod tests {
         // Acting as carol
         testing_env!(get_context(carol()));
         let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = FungibleToken::new(carol(), total_supply.into());
+        let mut contract = FungibleToken::new(carol(), total_supply.into(), "prover".into());
         assert_eq!(contract.get_total_supply().0, total_supply);
         let allowance = total_supply / 3;
         let transfer_amount = allowance / 3;
@@ -411,8 +456,14 @@ mod tests {
         testing_env!(get_context(bob()));
         assert_eq!(contract.get_balance(carol()).0, total_supply);
         contract.transfer_from(carol(), alice(), transfer_amount.into());
-        assert_eq!(contract.get_balance(carol()).0, (total_supply - transfer_amount));
+        assert_eq!(
+            contract.get_balance(carol()).0,
+            (total_supply - transfer_amount)
+        );
         assert_eq!(contract.get_balance(alice()).0, transfer_amount);
-        assert_eq!(contract.get_allowance(carol(), bob()).0, allowance - transfer_amount);
+        assert_eq!(
+            contract.get_allowance(carol(), bob()).0,
+            allowance - transfer_amount
+        );
     }
 }
