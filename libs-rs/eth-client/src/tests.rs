@@ -429,14 +429,14 @@ fn add_2_blocks_from_400000() {
 #[cfg(feature = "expensive_tests")]
 #[test]
 fn predumped_block_can_be_added() {
+    use indicatif::{ProgressBar, ProgressStyle};
+    use near_bindgen::VMConfig;
     use std::env;
     use std::fs;
-    use near_bindgen::VMConfig;
-    use indicatif::{ProgressBar, ProgressStyle};
 
     let mut vm_config = VMConfig::free();
-    vm_config.limit_config.max_number_logs = u64::MAX;
-    vm_config.limit_config.max_total_log_length = u64::MAX;
+    vm_config.limit_config.max_number_logs = std::u64::MAX;
+    vm_config.limit_config.max_total_log_length = std::u64::MAX;
     testing_env!(get_context(vec![], false), vm_config, Default::default());
 
     let mut blocks_with_proofs = fs::read_dir(env::var("ETH_HEADER_DIR").unwrap())
@@ -467,7 +467,7 @@ fn predumped_block_can_be_added() {
 
     let bar = ProgressBar::new(blocks_with_proofs.len() as _);
     bar.set_style(ProgressStyle::default_bar().template(
-        "[elapsed {elapsed_precise} remaining {eta_precise}] Verifying {bar} {pos:>7}/{len:>7}"
+        "[elapsed {elapsed_precise} remaining {eta_precise}] Verifying {bar} {pos:>7}/{len:>7}",
     ));
 
     for filename in blocks_with_proofs.iter() {
@@ -479,5 +479,4 @@ fn predumped_block_can_be_added() {
         bar.inc(1);
     }
     bar.finish();
-
 }
