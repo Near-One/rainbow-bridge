@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Deserializer};
+use serde_json::{json};
+use near_crypto::{InMemorySigner, KeyType, Signer};
 use eth_types::*;
 use near_primitives::{
     account::{AccessKey, Account},
@@ -9,9 +11,19 @@ use near_primitives::{
     transaction::{ExecutionOutcome, ExecutionStatus, Transaction},
     types::{AccountId, Balance},
 };
-use near_runtime_standalone::{init_runtime_and_signer, RuntimeStandalone};
+use near_runtime_standalone::{init_runtime_and_signer};
+pub use near_runtime_standalone::RuntimeStandalone;
 
 type TxResult = Result<ExecutionOutcome, ExecutionOutcome>;
+
+fn outcome_into_result(outcome: ExecutionOutcome) -> TxResult {
+    match outcome.status {
+        ExecutionStatus::SuccessValue(_) => Ok(outcome),
+        ExecutionStatus::Failure(_) => Err(outcome),
+        ExecutionStatus::SuccessReceiptId(_) => panic!("Unresolved ExecutionOutcome run runitme.resolve(tx) to resolve the filnal outcome of tx"),
+        ExecutionStatus::Unknown => unreachable!()
+    }
+}
 
 lazy_static::lazy_static! {
     static ref ETH_PROVER_WASM_BYTES: &'static [u8] = include_bytes!("../../res/eth_prover.wasm").as_ref();
@@ -103,8 +115,13 @@ impl ExternalUser {
         &self,
         runtime: &mut RuntimeStandalone,
         eth_client_account_id: AccountId,
-        validate_ethash: &str,
+        validate_ethash: bool,
     ) -> TxResult {
+        println!("{:?}", &json!({
+            "validate_ethash": validate_ethash,
+            "dags_start_epoch": 0,
+            "dags_merkle_roots": read_roots_collection_raw().dag_merkle_roots,
+        }));
         let tx = self
             .new_tx(runtime, eth_client_account_id)
             .create_account()
@@ -115,7 +132,7 @@ impl ExternalUser {
                 serde_json::to_vec(&json!({
                     "validate_ethash": validate_ethash,
                     "dags_start_epoch": 0,
-                    "dags_merkle_roots": read_roots_collection_raw().dag_merkle_roots, // TODO: copy eth-client read_roots_collection util etc.
+                    "dags_merkle_roots": read_roots_collection_raw().dag_merkle_roots,
                 })).unwrap(),
                 1000000000000000,
                 0,
@@ -149,6 +166,21 @@ impl ExternalUser {
         let res = runtime.resolve_tx(tx).unwrap();
         runtime.process_all().unwrap();
         outcome_into_result(res)
+    }
+
+    fn new_tx(&self, runtime: &RuntimeStandalone, receiver_id: AccountId) -> Transaction {
+        let nonce = runtime
+            .view_access_key(&self.account_id, &self.signer.public_key())
+            .unwrap()
+            .nonce
+            + 1;
+        Transaction::new(
+            self.account_id.clone(),
+            self.signer.public_key(),
+            receiver_id,
+            nonce,
+            CryptoHash::default(),
+        )
     }
 }
 
