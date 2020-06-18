@@ -54,7 +54,7 @@ function borshify (block) {
 }
 
 class Near2EthRelay {
-    async initialize() {
+    async initialize () {
         this.web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
         this.ethMasterAccount =
             this.web3.eth.accounts.privateKeyToAccount(RainbowConfig.getParam('eth-master-sk'));
@@ -99,10 +99,10 @@ class Near2EthRelay {
                         await sleep(300);
                     }
                 }
-                console.log(`Initializing with block`);
+                console.log('Initializing with block');
                 console.log(`${JSON.stringify(lightClientBlock)}`);
-                let borshBlock = borshify(lightClientBlock);
-                let tx = await this.clientContract.methods.initWithBlock(borshBlock).send({
+                const borshBlock = borshify(lightClientBlock);
+                const tx = await this.clientContract.methods.initWithBlock(borshBlock).send({
                     from: this.ethMasterAccount,
                     gas: 1000000,
                     handleRevert: true,
@@ -123,11 +123,11 @@ class Near2EthRelay {
         }
     }
 
-    async run() {
-        let clientContract = this.clientContract;
-        let web3 = this.web3;
-        let near = this.near;
-        let ethMasterAccount = this.ethMasterAccount;
+    async run () {
+        const clientContract = this.clientContract;
+        const web3 = this.web3;
+        const near = this.near;
+        const ethMasterAccount = this.ethMasterAccount;
         const step = async function () {
             // Sleep until the last Near block becomes valid.
             let lastClientBlock;
@@ -140,14 +140,14 @@ class Near2EthRelay {
                 console.log(`Current light client head is: hash=${clientBlockHash}, height=${clientBlockHeight}`);
                 const nearBlock = await near.connection.provider.block(Number(clientBlockHeight));
 
-                let latestBlock = await web3.eth.getBlock('latest');
+                const latestBlock = await web3.eth.getBlock('latest');
                 if (latestBlock.timestamp >= lastClientBlock.validAfter) {
-                    console.log(`Block is valid.`);
+                    console.log('Block is valid.');
                     break;
                 } else {
                     const sleepSec = (lastClientBlock.validAfter - latestBlock.timestamp);
                     console.log(`Block is not valid yet. Sleeping ${sleepSec} seconds.`);
-                    await sleep(sleepSec*1000);
+                    await sleep(sleepSec * 1000);
                 }
             }
 
@@ -156,7 +156,7 @@ class Near2EthRelay {
             const balance = await clientContract.methods.balanceOf(ethMasterAccount).call();
             if (balance === '0') {
                 console.log(`The sender account does not have enough stake. Transferring ${lockEthAmount} wei.`);
-                let depositTx = await clientContract.methods.deposit().send({
+                const depositTx = await clientContract.methods.deposit().send({
                     from: ethMasterAccount,
                     gas: 1000000,
                     handleRevert: true,
@@ -167,10 +167,10 @@ class Near2EthRelay {
 
             // Get new light client block.
             const lightClientBlock = await near.connection.provider.sendJsonRpc('next_light_client_block', [clientBlockHash]);
-            console.log(`Adding block`);
+            console.log('Adding block');
             console.log(`${JSON.stringify(lightClientBlock)}`);
 
-            let borshBlock = borshify(lightClientBlock);
+            const borshBlock = borshify(lightClientBlock);
             await clientContract.methods.addLightClientBlock(borshBlock).send({
                 from: ethMasterAccount,
                 gas: 1000000,

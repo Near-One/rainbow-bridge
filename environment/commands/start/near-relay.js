@@ -24,7 +24,7 @@ class StartNearRelayCommand {
                 );
             });
         } else {
-            let relay = new Near2EthRelay();
+            const relay = new Near2EthRelay();
             await relay.initialize();
             await relay.run();
         }

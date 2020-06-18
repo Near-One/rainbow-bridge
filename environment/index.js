@@ -264,7 +264,7 @@ RainbowConfig.addOptions(
         'eth-node-url',
         'eth-master-sk',
         'eth-ed25519-abi-path',
-        'eth-ed25519-bin-path'
+        'eth-ed25519-bin-path',
     ]);
 
 RainbowConfig.addOptions(
@@ -272,11 +272,11 @@ RainbowConfig.addOptions(
         .description('Deploys and initializes Near2EthClient.')
         .action(InitNear2EthClient.execute),
     [
-            'eth-node-url',
-            'eth-master-sk',
-            'near2eth-client-abi-path',
-            'near2eth-client-bin-path',
-            'eth-ed25519-address'
+        'eth-node-url',
+        'eth-master-sk',
+        'near2eth-client-abi-path',
+        'near2eth-client-bin-path',
+        'eth-ed25519-address',
     ]);
 
 // User commands.

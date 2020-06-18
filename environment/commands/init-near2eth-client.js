@@ -21,7 +21,7 @@ class InitNear2EthClient {
             await nearBridge
                 .deploy({
                     data: '0x' + fs.readFileSync(RainbowConfig.getParam('near2eth-client-bin-path')),
-                    arguments: [RainbowConfig.getParam('eth-ed25519-address')]
+                    arguments: [RainbowConfig.getParam('eth-ed25519-address')],
                 })
                 .send({
                     from: ethMasterAccount,
