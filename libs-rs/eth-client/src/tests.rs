@@ -430,7 +430,6 @@ fn add_2_blocks_from_400000() {
 #[test]
 fn predumped_block_can_be_added() {
     use indicatif::{ProgressBar, ProgressStyle};
-    use near_bindgen::VMConfig;
     use near_sdk::VMConfig;
     use std::env;
     use std::fs;
