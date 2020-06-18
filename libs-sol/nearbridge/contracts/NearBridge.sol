@@ -32,9 +32,10 @@ contract NearBridge is INearBridge {
     }
 
     uint256 constant public LOCK_ETH_AMOUNT = 1 ether;
-    uint256 constant public LOCK_DURATION = 1 hours;
+//    uint256 constant public LOCK_DURATION = 1 hours;
+    uint256 constant public LOCK_DURATION = 10 seconds;
 
-    bool initialized;
+    bool public initialized;
     Ed25519 edwards;
     State public last;
     State public prev;
