@@ -4,6 +4,7 @@ use serde::{Deserialize, Deserializer};
 use serde_json::{json};
 use near_crypto::{InMemorySigner, KeyType, Signer};
 use eth_types::*;
+use hex::FromHex;
 use near_primitives::{
     account::{AccessKey, Account},
     errors::{RuntimeError, TxExecutionError},
@@ -15,6 +16,39 @@ use near_runtime_standalone::{init_runtime_and_signer};
 pub use near_runtime_standalone::RuntimeStandalone;
 
 type TxResult = Result<ExecutionOutcome, ExecutionOutcome>;
+
+#[derive(Debug)]
+struct Hex(pub Vec<u8>);
+
+impl<'de> Deserialize<'de> for Hex {
+    fn deserialize<D>(deserializer: D) -> Result<Self, <D as Deserializer<'de>>::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let mut s = <String as Deserialize>::deserialize(deserializer)?;
+        if s.starts_with("0x") {
+            s = s[2..].to_string();
+        }
+        if s.len() % 2 == 1 {
+            s.insert_str(0, "0");
+        }
+        Ok(Hex(Vec::from_hex(&s).map_err(|err| {
+            serde::de::Error::custom(err.to_string())
+        })?))
+    }
+}
+
+#[derive(BorshSerialize)]
+struct EthClientInitArgs {
+    validate_ethash: bool,
+    dags_start_epoch: u64,
+    dags_merkle_roots: Vec<H128>
+}
+
+#[derive(BorshSerialize)]
+struct EthProverInitArgs {
+    bridge_smart_contract: AccountId
+}
 
 fn outcome_into_result(outcome: ExecutionOutcome) -> TxResult {
     match outcome.status {
@@ -117,11 +151,11 @@ impl ExternalUser {
         eth_client_account_id: AccountId,
         validate_ethash: bool,
     ) -> TxResult {
-        println!("{:?}", &json!({
-            "validate_ethash": validate_ethash,
-            "dags_start_epoch": 0,
-            "dags_merkle_roots": read_roots_collection_raw().dag_merkle_roots,
-        }));
+        let init_args = EthClientInitArgs {
+            validate_ethash,
+            dags_start_epoch: 0,
+            dags_merkle_roots: read_roots_collection().dag_merkle_roots,
+        };
         let tx = self
             .new_tx(runtime, eth_client_account_id)
             .create_account()
@@ -129,11 +163,7 @@ impl ExternalUser {
             .deploy_contract(ETH_CLIENT_WASM_BYTES.to_vec())
             .function_call(
                 "init".into(),
-                serde_json::to_vec(&json!({
-                    "validate_ethash": validate_ethash,
-                    "dags_start_epoch": 0,
-                    "dags_merkle_roots": read_roots_collection_raw().dag_merkle_roots,
-                })).unwrap(),
+                init_args.try_to_vec().unwrap(),
                 1000000000000000,
                 0,
             )
@@ -147,8 +177,11 @@ impl ExternalUser {
         &self,
         runtime: &mut RuntimeStandalone,
         eth_prover_account_id: AccountId,
-        eth_client_account_id: &str,
+        eth_client_account_id: AccountId,
     ) -> TxResult {
+        let init_args = EthProverInitArgs {
+            bridge_smart_contract: eth_client_account_id
+        };
         let tx = self
             .new_tx(runtime, eth_prover_account_id)
             .create_account()
@@ -156,9 +189,7 @@ impl ExternalUser {
             .deploy_contract(ETH_PROVER_WASM_BYTES.to_vec())
             .function_call(
                 "init".into(),
-                serde_json::to_vec(&json!({
-                    "bridge_smart_contract": eth_client_account_id
-                })).unwrap(),
+                init_args.try_to_vec().unwrap(),
                 1000000000000000,
                 0,
             )
@@ -189,9 +220,8 @@ pub fn new_root(account_id: AccountId) -> (RuntimeStandalone, ExternalUser) {
     (runtime, ExternalUser { account_id, signer })
 }
 
-#[derive(Debug, Deserialize)]
-struct RootsCollectionRaw {
-    pub dag_merkle_roots: Vec<String>,
+fn read_roots_collection() -> RootsCollection {
+    read_roots_collection_raw().into()
 }
 
 fn read_roots_collection_raw() -> RootsCollectionRaw {
@@ -199,4 +229,26 @@ fn read_roots_collection_raw() -> RootsCollectionRaw {
         std::fs::File::open(std::path::Path::new("../eth-client/src/data/dag_merkle_roots.json")).unwrap(),
     )
     .unwrap()
+}
+
+#[derive(Debug, Deserialize)]
+struct RootsCollectionRaw {
+    pub dag_merkle_roots: Vec<Hex>, // H128
+}
+
+#[derive(Debug, Deserialize)]
+struct RootsCollection {
+    pub dag_merkle_roots: Vec<H128>,
+}
+
+impl From<RootsCollectionRaw> for RootsCollection {
+    fn from(item: RootsCollectionRaw) -> Self {
+        Self {
+            dag_merkle_roots: item
+                .dag_merkle_roots
+                .iter()
+                .map(|e| H128::from(&e.0))
+                .collect(),
+        }
+    }
 }
