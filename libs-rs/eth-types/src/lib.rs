@@ -11,7 +11,9 @@ use rlp::{
 use rlp_derive::{RlpDecodable as RlpDecodableDerive, RlpEncodable as RlpEncodableDerive};
 #[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
-use std::io::{Error, Read, Write};
+use std::io::{Error, Write};
+
+const ERROR_UNEXPECTED_LENGTH_OF_INPUT: &str = "Unexpected length of input";
 
 macro_rules! arr_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
@@ -63,9 +65,16 @@ macro_rules! arr_declare_wrapper_and_serde {
 
         impl BorshDeserialize for $name {
             #[inline]
-            fn deserialize<R: Read>(reader: &mut R) -> Result<Self, Error> {
+            fn deserialize(buf: &mut &[u8]) -> Result<Self, Error> {
+                if buf.len() < $len {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        ERROR_UNEXPECTED_LENGTH_OF_INPUT,
+                    ));
+                }
                 let mut data = [0u8; $len];
-                reader.read_exact(&mut data)?;
+                data.copy_from_slice(&buf[..$len]);
+                *buf = &buf[$len..];
                 Ok($name(data.into()))
             }
         }
@@ -132,10 +141,10 @@ macro_rules! uint_declare_wrapper_and_serde {
 
         impl BorshDeserialize for $name {
             #[inline]
-            fn deserialize<R: Read>(reader: &mut R) -> Result<Self, Error> {
+            fn deserialize(buf: &mut &[u8]) -> Result<Self, Error> {
                 let mut data = [0u64; $len];
                 for i in 0..$len {
-                    data[i] = borsh::de::BorshDeserialize::deserialize(reader)?;
+                    data[i] = borsh::de::BorshDeserialize::deserialize(buf)?;
                 }
                 Ok($name(ethereum_types::$name(data)))
             }
@@ -284,18 +293,18 @@ pub struct Receipt {
 
 pub fn near_sha256(data: &[u8]) -> [u8; 32] {
     let mut buffer = [0u8; 32];
-    buffer.copy_from_slice(&near_bindgen::env::sha256(data).as_slice());
+    buffer.copy_from_slice(&near_sdk::env::sha256(data).as_slice());
     buffer
 }
 
 pub fn near_keccak256(data: &[u8]) -> [u8; 32] {
     let mut buffer = [0u8; 32];
-    buffer.copy_from_slice(&near_bindgen::env::keccak256(data).as_slice());
+    buffer.copy_from_slice(&near_sdk::env::keccak256(data).as_slice());
     buffer
 }
 
 pub fn near_keccak512(data: &[u8]) -> [u8; 64] {
     let mut buffer = [0u8; 64];
-    buffer.copy_from_slice(&near_bindgen::env::keccak512(data).as_slice());
+    buffer.copy_from_slice(&near_sdk::env::keccak512(data).as_slice());
     buffer
 }
