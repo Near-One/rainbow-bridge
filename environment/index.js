@@ -4,6 +4,7 @@ const { program } = require('commander');
 const { CleanCommand } = require('./commands/clean');
 const { PrepareCommand } = require('./commands/prepare');
 const { StartEthRelayCommand } = require('./commands/start/eth-relay.js');
+const { StartNearRelayCommand } = require('./commands/start/near-relay.js');
 const { StartGanacheNodeCommand } = require('./commands/start/ganache.js');
 const { StartLocalNearNodeCommand } = require('./commands/start/near.js');
 const { StopLocalNearNodeCommand } = require('./commands/stop/near.js');
@@ -15,6 +16,8 @@ const { InitNEARContracts } = require('./commands/init-near-contracts');
 const { InitNEARFunToken } = require('./commands/init-near-fun-token');
 const { ETHDump } = require('./commands/eth-dump');
 const { RainbowConfig } = require('./lib/config');
+const { InitEthEd25519 } = require('./commands/init-eth-ed25519');
+const { InitNear2EthClient } = require('./commands/init-near2eth-client');
 
 RainbowConfig.declareOption(
     'near-network-id',
@@ -112,11 +115,11 @@ RainbowConfig.declareOption(
 );
 RainbowConfig.declareOption(
     'eth-locker-abi-path',
-    'Path to the .abi file definining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
+    'Path to the .abi file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
 );
 RainbowConfig.declareOption(
     'eth-locker-bin-path',
-    'Path to the .bin file definining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
+    'Path to the .bin file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
 );
 RainbowConfig.declareOption(
     'eth-erc20-address',
@@ -124,11 +127,47 @@ RainbowConfig.declareOption(
 );
 RainbowConfig.declareOption(
     'eth-erc20-abi-path',
-    'Path to the .abi file definining Ethereum ERC20 contract.',
+    'Path to the .abi file defining Ethereum ERC20 contract.',
 );
 RainbowConfig.declareOption(
     'eth-erc20-bin-path',
-    'Path to the .bin file definining Ethereum ERC20 contract.',
+    'Path to the .bin file defining Ethereum ERC20 contract.',
+);
+RainbowConfig.declareOption(
+    'eth-ed25519-address',
+    'ETH address of the ED25519 contract.',
+);
+RainbowConfig.declareOption(
+    'eth-ed25519-abi-path',
+    'Path to the .abi file defining Ethereum ED25519 contract.',
+);
+RainbowConfig.declareOption(
+    'eth-ed25519-bin-path',
+    'Path to the .bin file defining Ethereum ED25519 contract.',
+);
+RainbowConfig.declareOption(
+    'near2eth-client-address',
+    'ETH address of the Near2EthClient contract.',
+);
+RainbowConfig.declareOption(
+    'near2eth-client-abi-path',
+    'Path to the .abi file defining Ethereum Near2EthClient contract.',
+);
+RainbowConfig.declareOption(
+    'near2eth-client-bin-path',
+    'Path to the .bin file defining Ethereum Near2EthClient contract.',
+);
+RainbowConfig.declareOption(
+    'near2eth-prover-address',
+    'ETH address of the Near2EthProver contract.',
+);
+RainbowConfig.declareOption(
+    'near2eth-prover-abi-path',
+    'Path to the .abi file defining Ethereum Near2EthProver contract.',
+);
+RainbowConfig.declareOption(
+    'near2eth-prover-bin-path',
+    'Path to the .bin file defining Ethereum Near2EthProver contract.',
 );
 
 program.version('0.1.0');
@@ -171,6 +210,20 @@ RainbowConfig.addOptions(
     ],
 );
 
+RainbowConfig.addOptions(
+    startCommand.command('near-relay')
+        .action(StartNearRelayCommand.execute),
+    [
+        'eth-node-url',
+        'eth-master-sk',
+        'near-node-url',
+        'near-network-id',
+        'near2eth-client-abi-path',
+        'near2eth-client-address',
+        'daemon',
+    ],
+);
+
 const stopCommand = program.command('stop');
 
 stopCommand.command('near-node')
@@ -201,6 +254,29 @@ RainbowConfig.addOptions(
         'eth2near-prover-sk',
         'eth2near-prover-contract-path',
         'eth2near-prover-init-balance',
+    ]);
+
+RainbowConfig.addOptions(
+    program.command('init-eth-ed25519')
+        .description('Deploys and initializes ED25519 Solidity contract. It replaces missing precompile.')
+        .action(InitEthEd25519.execute),
+    [
+        'eth-node-url',
+        'eth-master-sk',
+        'eth-ed25519-abi-path',
+        'eth-ed25519-bin-path',
+    ]);
+
+RainbowConfig.addOptions(
+    program.command('init-near2eth-client')
+        .description('Deploys and initializes Near2EthClient.')
+        .action(InitNear2EthClient.execute),
+    [
+        'eth-node-url',
+        'eth-master-sk',
+        'near2eth-client-abi-path',
+        'near2eth-client-bin-path',
+        'eth-ed25519-address',
     ]);
 
 // User commands.
