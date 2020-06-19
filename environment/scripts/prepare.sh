@@ -1,6 +1,5 @@
 #!/bin/bash
 set -euo pipefail
-echo "ALL ARGS $@"
 
 eval RAINBOWUP_DIR=~/.rainbowup
 
@@ -11,6 +10,10 @@ export LOCAL_NEARUP_SRC
 eval BRIDGE_SRC=~/.rainbowup/bridge
 eval CORE_SRC=~/.rainbowup/core
 eval NEARUP_SRC=~/.rainbowup/nearup
+
+
+echo $LOCAL_BRIDGE_SRC
+echo $BRIDGE_SRC
 
 mkdir -p $RAINBOWUP_DIR
 
