@@ -88,9 +88,9 @@ RainbowConfig.declareOption(
     '100000000000000000000000000',
 );
 RainbowConfig.declareOption('daemon', 'Whether the process should be launched as a daemon.', 'true', true);
-RainbowConfig.declareOption('bridge-src', 'Path to the rainbow-bridge source. It will be downloaded if not provided.');
-RainbowConfig.declareOption('core-src', 'Path to the nearcore source. It will be downloaded if not provided.');
-RainbowConfig.declareOption('nearup-src', 'Path to the nearup source. It will be downloaded if not provided.');
+RainbowConfig.declareOption('bridge-src', 'Path to the rainbow-bridge source. It will be downloaded if not provided.', '');
+RainbowConfig.declareOption('core-src', 'Path to the nearcore source. It will be downloaded if not provided.', '');
+RainbowConfig.declareOption('nearup-src', 'Path to the nearup source. It will be downloaded if not provided.', '');
 
 // User-specific arguments.
 RainbowConfig.declareOption(
