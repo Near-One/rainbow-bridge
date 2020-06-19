@@ -83,9 +83,9 @@ RainbowConfig.declareOption(
     '100000000000000000000000000',
 );
 RainbowConfig.declareOption('daemon', 'Whether the process should be launched as a daemon.', 'true', true);
-RainbowConfig.declareOption('bridge-src', 'Path to the rainbow-bridge source. It will be downloaded if not provided.');
-RainbowConfig.declareOption('core-src', 'Path to the nearcore source. It will be downloaded if not provided.');
-RainbowConfig.declareOption('nearup-src', 'Path to the nearup source. It will be downloaded if not provided.');
+RainbowConfig.declareOption('bridge-src', 'Path to the rainbow-bridge source. It will be downloaded if not provided.', '');
+RainbowConfig.declareOption('core-src', 'Path to the nearcore source. It will be downloaded if not provided.', '');
+RainbowConfig.declareOption('nearup-src', 'Path to the nearup source. It will be downloaded if not provided.', '');
 
 // User-specific arguments.
 RainbowConfig.declareOption(
@@ -117,6 +117,13 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
     'eth-locker-bin-path',
     'Path to the .bin file definining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.'
+    'Path to the .bin file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
+    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/token-locker/dist/TokenLocker.full.bin')
+    'Path to the .abi file definining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
+);
+RainbowConfig.declareOption(
+    'eth-locker-bin-path',
+    'Path to the .bin file definining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
 );
 RainbowConfig.declareOption(
     'eth-erc20-address',
@@ -129,6 +136,55 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
     'eth-erc20-bin-path',
     'Path to the .bin file definining Ethereum ERC20 contract.'
+    'Path to the .bin file defining Ethereum ERC20 contract.',
+    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/token-locker/dist/MyERC20.full.bin')
+);
+RainbowConfig.declareOption(
+    'eth-ed25519-address',
+    'ETH address of the ED25519 contract.',
+);
+RainbowConfig.declareOption(
+    'eth-ed25519-abi-path',
+    'Path to the .abi file defining Ethereum ED25519 contract.',
+    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/nearbridge/dist/Ed25519.full.abi')
+);
+RainbowConfig.declareOption(
+    'eth-ed25519-bin-path',
+    'Path to the .bin file defining Ethereum ED25519 contract.',
+    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/nearbridge/dist/Ed25519.full.bin')
+);
+RainbowConfig.declareOption(
+    'near2eth-client-address',
+    'ETH address of the Near2EthClient contract.',
+);
+RainbowConfig.declareOption(
+    'near2eth-client-abi-path',
+    'Path to the .abi file defining Ethereum Near2EthClient contract.',
+    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/nearbridge/dist/NearBridge.full.abi')
+);
+RainbowConfig.declareOption(
+    'near2eth-client-bin-path',
+    'Path to the .bin file defining Ethereum Near2EthClient contract.',
+    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/nearbridge/dist/NearBridge.full.bin')
+);
+RainbowConfig.declareOption(
+    'near2eth-prover-address',
+    'ETH address of the Near2EthProver contract.',
+);
+RainbowConfig.declareOption(
+    'near2eth-prover-abi-path',
+    'Path to the .abi file defining Ethereum Near2EthProver contract.',
+    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/nearprover/dist/NearProver.full.abi')
+);
+RainbowConfig.declareOption(
+    'near2eth-prover-bin-path',
+    'Path to the .bin file defining Ethereum Near2EthProver contract.',
+    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/nearprover/dist/NearProver.full.bin')
+    'Path to the .abi file definining Ethereum ERC20 contract.',
+);
+RainbowConfig.declareOption(
+    'eth-erc20-bin-path',
+    'Path to the .bin file definining Ethereum ERC20 contract.',
 );
 
 
