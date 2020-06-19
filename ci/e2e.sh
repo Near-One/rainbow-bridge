@@ -14,9 +14,6 @@ yarn
 node index.js prepare
 node index.js start near-node
 node index.js start ganache
-./scripts/start_ganache.sh &
-export GANACHE_PID=$!
-trap 'pkill -15 -P $GANACHE_PID' 0
 node index.js init-near-contracts
 node index.js init-eth-ed25519
 node index.js init-near2eth-client
