@@ -1,4 +1,4 @@
-const Web3 = require('Web3');
+const Web3 = require('web3');
 const nearlib = require('nearlib');
 const fs = require('fs');
 const bs58 = require('bs58');
