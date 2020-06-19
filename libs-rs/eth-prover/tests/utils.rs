@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Deserializer};
-use serde_json::{json};
 use near_crypto::{InMemorySigner, KeyType, Signer};
 use eth_types::*;
 use hex::FromHex;
@@ -155,7 +154,7 @@ impl ExternalUser {
     ) -> TxResult {
         let tx = self
             .new_tx(runtime, receiver_id.to_string())
-            .function_call(method.into(), args.to_vec(), 10000000000000000, deposit)
+            .function_call(method.into(), args.to_vec(), 300000000000000, deposit)
             .sign(&self.signer);
         let res = runtime.resolve_tx(tx).unwrap();
         runtime.process_all().unwrap();
