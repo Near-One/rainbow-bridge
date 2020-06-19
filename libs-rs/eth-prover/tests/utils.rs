@@ -14,11 +14,12 @@ use near_primitives::{
 };
 use near_runtime_standalone::{init_runtime_and_signer};
 pub use near_runtime_standalone::RuntimeStandalone;
+pub use near_sdk::VMContext;
 
 type TxResult = Result<ExecutionOutcome, ExecutionOutcome>;
 
 #[derive(Debug)]
-struct Hex(pub Vec<u8>);
+pub struct Hex(pub Vec<u8>);
 
 impl<'de> Deserialize<'de> for Hex {
     fn deserialize<D>(deserializer: D) -> Result<Self, <D as Deserializer<'de>>::Error>
@@ -144,6 +145,22 @@ impl ExternalUser {
         outcome_into_result(res)
     }
 
+    pub fn function_call(
+        &self,
+        runtime: &mut RuntimeStandalone,
+        receiver_id: &str,
+        method: &str,
+        args: &[u8],
+        deposit: u128,
+    ) -> TxResult {
+        let tx = self
+            .new_tx(runtime, receiver_id.to_string())
+            .function_call(method.into(), args.to_vec(), 10000000000000000, deposit)
+            .sign(&self.signer);
+        let res = runtime.resolve_tx(tx).unwrap();
+        runtime.process_all().unwrap();
+        outcome_into_result(res)
+    }
 
     pub fn init_eth_client(
         &self,
@@ -237,7 +254,7 @@ struct RootsCollectionRaw {
 }
 
 #[derive(Debug, Deserialize)]
-struct RootsCollection {
+pub struct RootsCollection {
     pub dag_merkle_roots: Vec<H128>,
 }
 
@@ -250,5 +267,124 @@ impl From<RootsCollectionRaw> for RootsCollection {
                 .map(|e| H128::from(&e.0))
                 .collect(),
         }
+    }
+}
+
+pub fn read_block(filename: String) -> BlockWithProofs {
+    read_block_raw(filename).into()
+}
+
+fn read_block_raw(filename: String) -> BlockWithProofsRaw {
+    serde_json::from_reader(std::fs::File::open(std::path::Path::new(&filename)).unwrap()).unwrap()
+}
+
+#[derive(Debug, Deserialize)]
+struct BlockWithProofsRaw {
+    pub proof_length: u64,
+    pub header_rlp: Hex,
+    pub merkle_root: Hex,        // H128
+    pub elements: Vec<Hex>,      // H256
+    pub merkle_proofs: Vec<Hex>, // H128
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BlockWithProofs {
+    pub proof_length: u64,
+    pub header_rlp: Hex,
+    pub merkle_root: H128,
+    pub elements: Vec<H256>,
+    pub merkle_proofs: Vec<H128>,
+}
+
+impl From<BlockWithProofsRaw> for BlockWithProofs {
+    fn from(item: BlockWithProofsRaw) -> Self {
+        Self {
+            proof_length: item.proof_length,
+            header_rlp: item.header_rlp,
+            merkle_root: H128::from(&item.merkle_root.0),
+            elements: item.elements.iter().map(|e| H256::from(&e.0)).collect(),
+            merkle_proofs: item
+                .merkle_proofs
+                .iter()
+                .map(|e| H128::from(&e.0))
+                .collect(),
+        }
+    }
+}
+
+#[derive(Default, Debug, Clone, BorshDeserialize, BorshSerialize)]
+pub struct DoubleNodeWithMerkleProof {
+    pub dag_nodes: Vec<H512>, // [H512; 2]
+    pub proof: Vec<H128>,
+}
+
+#[derive(BorshSerialize)]
+pub struct AddBlockHeaderArgs {
+    pub block_header: Vec<u8>,
+    pub dag_nodes: Vec<DoubleNodeWithMerkleProof>,
+}
+
+
+impl BlockWithProofs {
+    pub fn header(&self) -> Vec<u8> {
+        self.header_rlp.0.clone()
+    }
+
+    fn combine_dag_h256_to_h512(elements: Vec<H256>) -> Vec<H512> {
+        elements
+            .iter()
+            .zip(elements.iter().skip(1))
+            .enumerate()
+            .filter(|(i, _)| i % 2 == 0)
+            .map(|(_, (a, b))| {
+                let mut buffer = [0u8; 64];
+                buffer[..32].copy_from_slice(&(a.0).0);
+                buffer[32..].copy_from_slice(&(b.0).0);
+                H512(buffer.into())
+            })
+            .collect()
+    }
+
+    pub fn to_double_node_with_merkle_proof_vec(&self) -> Vec<DoubleNodeWithMerkleProof> {
+        let h512s = Self::combine_dag_h256_to_h512(self.elements.clone());
+        h512s
+            .iter()
+            .zip(h512s.iter().skip(1))
+            .enumerate()
+            .filter(|(i, _)| i % 2 == 0)
+            .map(|(i, (a, b))| DoubleNodeWithMerkleProof {
+                dag_nodes: vec![*a, *b],
+                proof: self.merkle_proofs
+                    [i / 2 * self.proof_length as usize..(i / 2 + 1) * self.proof_length as usize]
+                    .to_vec(),
+            })
+            .collect()
+    }
+}
+
+#[derive(BorshSerialize)]
+pub struct AssertEthbridgeHashArgs {
+    pub block_number: u64,
+    pub expected_block_hash: H256,
+}
+
+pub fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
+    VMContext {
+        current_account_id: "alice.near".to_string(),
+        signer_account_id: "bob.near".to_string(),
+        signer_account_pk: vec![0, 1, 2],
+        predecessor_account_id: "carol.near".to_string(),
+        input,
+        block_index: 0,
+        block_timestamp: 0,
+        account_balance: 0,
+        account_locked_balance: 0,
+        epoch_height: 0,
+        storage_usage: 0,
+        attached_deposit: 0,
+        prepaid_gas: 10u64.pow(18),
+        random_seed: vec![0, 1, 2],
+        is_view,
+        output_data_receivers: vec![],
     }
 }
