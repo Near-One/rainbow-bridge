@@ -132,7 +132,7 @@ class Eth2NearRelay {
 
         for (let i = 0; i < 10; ++i) {
             try {
-                await this.ethClientContract.add_block_header(args, new BN('1000000000000000'));
+                await this.ethClientContract.add_block_header(args, new BN('300000000000000'));
                 console.log(
                     'Blocks submission took ' + Math.trunc((Date.now() - timeBeforeSubmission) / 10) / 100 + 's ' +
                     '(' + Math.trunc((Date.now() - timeBeforeSubmission) / 10) / 100 + 's per header)',

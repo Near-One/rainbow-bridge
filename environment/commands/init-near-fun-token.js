@@ -1,6 +1,7 @@
 const nearlib = require('nearlib');
 const { maybeCreateAccount, verifyAccount } = require('../lib/near-helpers');
 const { RainbowConfig } = require('../lib/config');
+const { BN } = require('ethereumjs-util');
 
 class InitNEARFunToken {
     static async execute () {
@@ -47,9 +48,12 @@ class InitNEARFunToken {
                 owner_id: tokenAccount,
                 total_supply: '0',
                 prover_account: proverAccount,
-            });
+            },
+            new BN('300000000000000')
+            );
         } catch (err) {
             console.log(`Failed to initialize the token contract ${err}`);
+            process.exit(1);
         }
         console.log('Fungible token deployed');
         RainbowConfig.saveConfig();
