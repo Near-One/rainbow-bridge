@@ -119,7 +119,7 @@ class Eth2NearClientContract extends BorshContract {
                 validate_ethash: validate_ethash,
                 dags_start_epoch: 0,
                 dags_merkle_roots: roots.dag_merkle_roots,
-            }, new BN('1000000000000000'));
+            }, new BN('300000000000000'));
             console.log('EthClient initialized');
         }
 

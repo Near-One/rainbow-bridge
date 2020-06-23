@@ -62,7 +62,7 @@ class NearRelay {
 
             const promises = [];
             for (let i = latest_submitted_block; i < lastNearBlock; i += 10) {
-                promises.push(this.near.connection.provider.block(i));
+                promises.push(this.near.connection.provider.block({blockId: i}));
             }
 
             const blocks = (await Promise.all(promises)).map(block => {

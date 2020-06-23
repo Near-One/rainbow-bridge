@@ -163,7 +163,7 @@ class TransferETHERC20ToNear {
                 // @ts-ignore
                 await nearTokenContractBorsh.mint(
                     args_locker,
-                    new BN('1000000000000000'),
+                    new BN('300000000000000'),
                 );
                 console.log(`Transferred ${amount} tokens to ${new_owner_id}`);
 
