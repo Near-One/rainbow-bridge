@@ -12,9 +12,6 @@ eval CORE_SRC=~/.rainbowup/core
 eval NEARUP_SRC=~/.rainbowup/nearup
 
 
-echo $LOCAL_BRIDGE_SRC
-echo $BRIDGE_SRC
-
 mkdir -p $RAINBOWUP_DIR
 
 if test -z "$LOCAL_CORE_SRC"
@@ -23,7 +20,7 @@ echo "near-core home not specified..."
 git clone "https://github.com/nearprotocol/nearcore" $CORE_SRC
 else
 echo "Linking the specified local repo from ${LOCAL_CORE_SRC} to ${CORE_SRC}"
-ln -s $LOCAL_CORE_SRC $CORE_SRC 
+ln -s $LOCAL_CORE_SRC $CORE_SRC
 fi
 
 if test -z "$LOCAL_BRIDGE_SRC"
