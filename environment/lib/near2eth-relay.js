@@ -152,7 +152,7 @@ class Near2EthRelay {
                 clientBlockHash = bs58.encode(toBuffer(clientBlockHashHex));
                 console.log(`Current light client head is: hash=${clientBlockHash}, height=${clientBlockHeight}`);
                 // @ts-ignore
-                const _nearBlock = await near.connection.provider.block({blockId: Number(clientBlockHeight)});
+                const _nearBlock = await near.connection.provider.block({ blockId: Number(clientBlockHeight) });
 
                 const latestBlock = await web3.eth.getBlock('latest');
                 if (latestBlock.timestamp >= lastClientBlock.validAfter) {
