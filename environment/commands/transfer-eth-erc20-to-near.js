@@ -2,7 +2,7 @@ const utils = require('ethereumjs-util');
 const BN = require('bn.js');
 const Web3 = require('web3');
 const fs = require('fs');
-const nearlib = require('nearlib');
+const nearlib = require('near-api-js');
 const {
     EthProofExtractor,
     receiptFromWeb3,
@@ -27,6 +27,7 @@ class TransferETHERC20ToNear {
         const ethSenderSk = command.ethSenderSk;
         const nearReceiverAccount = command.nearReceiverAccount;
 
+        // @ts-ignore
         const web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
 
         let ethSenderAccount = web3.eth.accounts.privateKeyToAccount(ethSenderSk);
@@ -36,6 +37,7 @@ class TransferETHERC20ToNear {
 
         // Approve tokens for transfer.
         const ethERC20Contract = new web3.eth.Contract(
+            // @ts-ignore
             JSON.parse(fs.readFileSync(RainbowConfig.getParam('eth-erc20-abi-path'))),
             RainbowConfig.getParam('eth-erc20-address'),
         );
@@ -56,6 +58,7 @@ class TransferETHERC20ToNear {
 
         // Lock the token.
         const ethTokenLockerContract = new web3.eth.Contract(
+            // @ts-ignore
             JSON.parse(fs.readFileSync(RainbowConfig.getParam('eth-locker-abi-path'))),
             RainbowConfig.getParam('eth-locker-address'),
         );
@@ -112,6 +115,7 @@ class TransferETHERC20ToNear {
         const clientAccount = RainbowConfig.getParam('eth2near-client-account');
         const ethClientContract = new Eth2NearClientContract(nearMasterAccount, clientAccount);
         while (true) {
+            // @ts-ignore
             const last_block_number = (await ethClientContract.last_block_number()).toNumber();
             if (last_block_number < blockNumber) {
                 const delay = 10;
@@ -156,12 +160,14 @@ class TransferETHERC20ToNear {
                     proof: proof_locker,
                 };
 
+                // @ts-ignore
                 await nearTokenContractBorsh.mint(
                     args_locker,
                     new BN('1000000000000000'),
                 );
                 console.log(`Transferred ${amount} tokens to ${new_owner_id}`);
 
+                // @ts-ignore
                 const new_balance = await nearTokenContract.get_balance({
                     owner_id: new_owner_id,
                 });

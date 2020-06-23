@@ -4,8 +4,8 @@ const utils = require('ethereumjs-util');
 const BN = require('bn.js');
 const blockFromRpc = require('ethereumjs-block/from-rpc');
 
-function execute (command, callback) {
-    return new Promise(resolve => exec(command, (error, stdout, stderr) => {
+function execute (command, _callback) {
+    return new Promise(resolve => exec(command, (error, stdout, _stderr) => {
         if (error) {
             console.log(error);
         }
@@ -28,6 +28,7 @@ function web3BlockToRlp (blockData) {
 class Eth2NearRelay {
     initialize (ethClientContract, ethNodeURL) {
         this.ethClientContract = ethClientContract;
+        // @ts-ignore
         this.web3 = new Web3(ethNodeURL);
     }
 

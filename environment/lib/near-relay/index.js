@@ -1,5 +1,5 @@
 const Web3 = require('web3');
-const nearlib = require('nearlib');
+const nearlib = require('near-api-js');
 const fs = require('fs');
 const path = require('path');
 const bs58 = require('bs58');
@@ -14,6 +14,7 @@ class NearRelay {
     }
 
     async initialize (shouldDeploy) {
+        // @ts-ignore
         this.web3 = new Web3(this.ethNodeURL);
         this.near = await nearlib.connect({
             nodeUrl: this.nearNodeURL,
@@ -28,6 +29,7 @@ class NearRelay {
 
         // Initialize contract interface.
         this.nearClientContract = new this.web3.eth.Contract(
+            // @ts-ignore
             JSON.parse(fs.readFileSync(path.join(this.nearClientContractPath, 'NearBridge.full.abi'))),
             process.env.NEAR_BRIDGE_SMART_CONTRACT_ADDRESS, {
                 from: this.clientAccount,

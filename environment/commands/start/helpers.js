@@ -17,7 +17,7 @@ function spawnProcess (name, config) {
             console.log('%s service is not running...', name);
             console.log('Starting %s with command:', name);
             console.log('%s %s', config.script, config.args);
-            ProcessManager.start(config, (err, proc) => {
+            ProcessManager.start(config, (err, _proc) => {
                 console.log('%s started...', name);
                 if (!err) {
                     console.log('Disconnecting from daemon');
