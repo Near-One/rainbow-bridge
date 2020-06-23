@@ -4,6 +4,7 @@ const { RainbowConfig } = require('../lib/config');
 
 class InitNear2EthClient {
     static async execute () {
+        // @ts-ignore
         const web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
         let ethMasterAccount =
             web3.eth.accounts.privateKeyToAccount(RainbowConfig.getParam('eth-master-sk'));
@@ -16,6 +17,7 @@ class InitNear2EthClient {
         // Initialize client contract.
         console.log('Deploying Near2EthClient contract.');
         const nearBridge = new web3.eth.Contract(JSON.parse(
+            // @ts-ignore
             fs.readFileSync(RainbowConfig.getParam('near2eth-client-abi-path'))));
         const tx =
             await nearBridge

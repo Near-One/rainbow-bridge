@@ -5,11 +5,13 @@ const {
     hexToBuffer,
     readerToHex,
 } = require('../borsh');
+// @ts-ignore
 const roots = require('./dag_merkle_roots.json');
 
 const borshSchema = {
     bool: {
         kind: 'function',
+        // @ts-ignore
         ser: (b) => Buffer.from(Web3.utils.hexToBytes(b ? '0x01' : '0x00')),
         deser: (z) => readerToHex(1)(z) === '0x01',
     },
@@ -105,12 +107,14 @@ class Eth2NearClientContract extends BorshContract {
         await this.accessKeyInit();
         let initialized = false;
         try {
+            // @ts-ignore
             initialized = await this.initialized();
         } catch (e) {
             // I guess not
         }
         if (!initialized) {
             console.log('EthClient is not initialized, initializing...');
+            // @ts-ignore
             await this.init({
                 validate_ethash: validate_ethash,
                 dags_start_epoch: 0,
@@ -120,9 +124,11 @@ class Eth2NearClientContract extends BorshContract {
         }
 
         console.log('Checking EthClient initialization.');
+        // @ts-ignore
         const first_root = await this.dag_merkle_root({
             epoch: 0,
         });
+        // @ts-ignore
         const last_root = await this.dag_merkle_root({
             epoch: 511,
         });

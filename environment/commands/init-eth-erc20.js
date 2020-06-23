@@ -4,6 +4,7 @@ const { RainbowConfig } = require('../lib/config');
 
 class InitETHERC20 {
     static async execute () {
+        // @ts-ignore
         const web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
         let ethMasterAccount =
         web3.eth.accounts.privateKeyToAccount(RainbowConfig.getParam('eth-master-sk'));
@@ -14,6 +15,7 @@ class InitETHERC20 {
         // Initialize an ERC20 contract.
         console.log('Deploying ERC20 contract.');
         const myERC20Contract = new web3.eth.Contract(JSON.parse(
+            // @ts-ignore
             fs.readFileSync(RainbowConfig.getParam('eth-erc20-abi-path'))));
         const txERC20 =
         await myERC20Contract

@@ -1,4 +1,4 @@
-const nearlib = require('nearlib');
+const nearlib = require('near-api-js');
 const { maybeCreateAccount, verifyAccount } = require('../lib/near-helpers');
 const { RainbowConfig } = require('../lib/config');
 
@@ -20,7 +20,7 @@ class InitNEARFunToken {
         const nearNodeUrl = RainbowConfig.getParam('near-node-url');
         const nearNetworkId = RainbowConfig.getParam('near-network-id');
 
-        const tokenPk = nearlib.KeyPair.fromString(tokenSk).publicKey;
+        const tokenPk = nearlib.KeyPair.fromString(tokenSk).getPublicKey();
 
         const keyStore = new nearlib.keyStores.InMemoryKeyStore();
         await keyStore.setKey(nearNetworkId, masterAccount, nearlib.KeyPair.fromString(masterSk));
@@ -42,6 +42,7 @@ class InitNEARFunToken {
         try {
             // Try initializing the contract. Give it no initial tokens, since they will all be
             // minted using proofs. It is irrelevant what `owner_id` is since we have no initial tokens.
+            // @ts-ignore
             await tokenContract.new({
                 // Give 0 tokens to itself.
                 owner_id: tokenAccount,

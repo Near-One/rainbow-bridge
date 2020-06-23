@@ -10,7 +10,7 @@ class StartLocalNearNodeCommand {
             '~/.rainbowup/nearup/nearup localnet --num-nodes 1 --binary-path %s',
             '~/.rainbowup/core/target/debug',
         );
-        request(getLocalNearNodeURL(), { json: true }, (err, res, body) => {
+        request(getLocalNearNodeURL(), { json: true }, (err, _res, _body) => {
             if (err) {
                 console.log(execSync(command).toString());
             } else {
