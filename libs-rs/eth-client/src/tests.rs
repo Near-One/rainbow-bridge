@@ -9,8 +9,6 @@ use serde::{Deserialize, Deserializer};
 use web3::futures::Future;
 use web3::types::Block;
 
-//#[macro_use]
-//extern crate lazy_static;
 use lazy_static::lazy_static;
 
 fn catch_unwind_silent<F: FnOnce() -> R + panic::UnwindSafe, R>(f: F) -> std::thread::Result<R> {

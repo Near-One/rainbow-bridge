@@ -5,6 +5,9 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-$DIR/eth-client/build.sh
-$DIR/eth-prover/build.sh
-$DIR/fungible-token/build.sh
+cd $DIR/eth-client
+./build.sh
+cd $DIR/eth-prover
+./build.sh
+cd $DIR/fungible-token
+./build.sh

@@ -182,10 +182,6 @@ RainbowConfig.declareOption(
     'Path to the .bin file defining Ethereum Near2EthProver contract.',
     path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/nearprover/dist/NearProver.full.bin')
 );
-RainbowConfig.declareOption(
-    'eth-erc20-bin-path',
-    'Path to the .bin file definining Ethereum ERC20 contract.',
-);
 
 program.version('0.1.0');
 

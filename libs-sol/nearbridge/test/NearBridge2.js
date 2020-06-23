@@ -72,7 +72,7 @@ contract('NearBridge2', function ([_, addr1]) {
 
         await this.bridge.addLightClientBlock(block9610);
         expect(await this.bridge.blockHashes(9610)).to.be.equal(
-            '0x508307e7af9bdbb297afa7af0541130eb32f0f028151319f5a4f7ae68b0ecc56',
+            '0xf28629da269e59f2494c6bf283e9e67dadaa1c1f753607650d21e5e5b916a0dc',
         );
     });
 });

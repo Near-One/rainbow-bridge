@@ -64,12 +64,8 @@ class RainbowConfig {
     static getParam (name) {
         const res = this.maybeGetParam(name);
         if (res === null) {
-            if (!this.optionalValues.includes(name)) {
-                console.error(`Parameter ${name} must be specified.`);
-                process.exit(1);
-            } else {
-                return '';
-            }
+            console.error(`Parameter ${name} must be specified.`);
+            process.exit(1);
         }
         return res;
     }
@@ -131,8 +127,6 @@ class RainbowConfig {
 // where paramType is one of 'env', 'arg', 'config', 'default' representing where the
 // value is coming from.
 RainbowConfig.paramValues = {};
-
-RainbowConfig.optionalValues = ['bridge-src', 'core-src', 'nearup-src'];
 
 // Stores key values 'my-param-name' => { description: 'my description', defaultValue: 'default value', noConfig: false}
 // where default value might not be provided.

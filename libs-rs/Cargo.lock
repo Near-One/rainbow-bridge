@@ -675,6 +675,7 @@ dependencies = [
  "eth-types",
  "hex",
  "indicatif",
+ "lazy_static",
  "near-crypto",
  "near-primitives",
  "near-runtime-standalone",
