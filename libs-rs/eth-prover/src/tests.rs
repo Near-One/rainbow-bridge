@@ -1,5 +1,3 @@
-#[cfg(test)]
-mod tests {
 use crate::EthProver;
 use hex::{FromHex, ToHex};
 use rlp::RlpStream;
@@ -29,8 +27,8 @@ impl<'de> Deserialize<'de> for Hex {
 // TESTS
 
 use borsh::BorshSerialize;
-use near_sdk::MockedBlockchain;
-use near_sdk::{testing_env, VMContext};
+use near_bindgen::MockedBlockchain;
+use near_bindgen::{testing_env, VMContext};
 
 fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
     VMContext {
@@ -41,7 +39,6 @@ fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
         input,
         block_index: 0,
         block_timestamp: 0,
-        epoch_height: 0,
         account_balance: 0,
         account_locked_balance: 0,
         storage_usage: 0,
@@ -376,7 +373,7 @@ fn complex_test3() {
 fn verify_dumped_log_entries() {
     use std::env;
     use std::fs;
-    use near_sdk::VMConfig;
+    use near_bindgen::VMConfig;
     use indicatif::{ProgressBar, ProgressStyle};
 
     let mut vm_config = VMConfig::free();
@@ -436,6 +433,4 @@ fn verify_dumped_log_entries() {
         bar.inc(1);
     }
     bar.finish();
-}
-
 }

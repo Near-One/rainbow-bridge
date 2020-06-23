@@ -1,14 +1,15 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
-use near_sdk::{env, ext_contract, near_bindgen, PromiseOrValue};
+use near_bindgen::{env, ext_contract, near_bindgen, PromiseOrValue};
 use rlp::Rlp;
-
-#[cfg(test)]
-mod tests;
 
 #[cfg(target_arch = "wasm32")]
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
+#[cfg(not(target_arch = "wasm32"))]
+#[cfg(test)]
+mod tests;
 
 type AccountId = String;
 
