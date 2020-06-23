@@ -1,4 +1,4 @@
-const nearlib = require('nearlib');
+const nearlib = require('near-api-js');
 const fs = require('fs');
 const BN = require('bn.js');
 

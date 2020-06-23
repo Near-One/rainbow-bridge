@@ -1,5 +1,5 @@
 const ProcessManager = require('pm2');
-const nearlib = require('nearlib');
+const nearlib = require('near-api-js');
 const { spawnProcess } = require('./helpers');
 const { Eth2NearRelay } = require('../../lib/eth2near-relay');
 const { Eth2NearClientContract } = require('../../lib/eth2near-client-contract');

@@ -28,6 +28,7 @@ function web3BlockToRlp (blockData) {
 class Eth2NearRelay {
     initialize (ethClientContract, ethNodeURL) {
         this.ethClientContract = ethClientContract;
+        // @ts-ignore
         this.web3 = new Web3(ethNodeURL);
     }
 

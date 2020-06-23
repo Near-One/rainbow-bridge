@@ -19,6 +19,7 @@ class PrepareCommand {
         env.LOCAL_CORE_SRC = RainbowConfig.getParam('core-src');
         env.LOCAL_NEARUP_SRC = RainbowConfig.getParam('nearup-src');
 
+        // @ts-ignore
         var prepareScript = exec(shell, { env: env });
         prepareScript.stdout.on(
             'data', function (data) {

@@ -1,4 +1,4 @@
-const nearlib = require('nearlib');
+const nearlib = require('near-api-js');
 const { maybeCreateAccount, verifyAccount } = require('../lib/near-helpers');
 const {
     Eth2NearClientContract,
@@ -36,8 +36,8 @@ class InitNEARContracts {
         const nearNetworkId = RainbowConfig.getParam('near-network-id');
         const validateEthash = RainbowConfig.getParam('eth2near-client-validate-ethash');
 
-        const clientPk = nearlib.KeyPair.fromString(clientSk).publicKey;
-        const proverPk = nearlib.KeyPair.fromString(proverSk).publicKey;
+        const clientPk = nearlib.KeyPair.fromString(clientSk).getPublicKey();
+        const proverPk = nearlib.KeyPair.fromString(proverSk).getPublicKey();
 
         const keyStore = new nearlib.keyStores.InMemoryKeyStore();
         await keyStore.setKey(nearNetworkId, masterAccount, nearlib.KeyPair.fromString(masterSk));

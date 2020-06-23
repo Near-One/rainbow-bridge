@@ -9,6 +9,7 @@ class CleanCommand {
                 console.log(`Error stopping pm2 processes. ${err}`);
                 process.exit(1);
             }
+            // @ts-ignore
             ProcessManager.disconnect((err) => {
                 if (err) {
                     process.exit(1);

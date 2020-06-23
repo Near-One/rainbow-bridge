@@ -1,5 +1,5 @@
 const Web3 = require('web3');
-const nearlib = require('nearlib');
+const nearlib = require('near-api-js');
 
 const BN = require('bn.js');
 const { TextDecoder } = require('util');
@@ -154,6 +154,7 @@ class BinaryReader {
     read_string () {
         const len = this.read_u32();
         const buf = this.read_buffer(len);
+        // @ts-ignore
         const textDecoder = TextDecoder();
         try {
         // NOTE: Using TextDecoder to fail on invalid UTF-8
@@ -266,12 +267,15 @@ class BorshContract {
 
         this.accessKey = await this.account.findAccessKey();
         if (!this.accessKey) {
+          //@ts-ignore
             throw new Error(`Can not sign transactions for account ${this.account.accountId}, no matching key pair found in Signer.`, 'KeyNotFound');
         }
     }
 }
 
+// @ts-ignore
 const hexToBuffer = (hex) => Buffer.from(Web3.utils.hexToBytes(hex));
+// @ts-ignore
 const readerToHex = (len) => (reader) => Web3.utils.bytesToHex(reader.read_fixed_array(len));
 
 exports.BorshContract = BorshContract;
