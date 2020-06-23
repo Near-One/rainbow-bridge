@@ -65,7 +65,7 @@ class EthProverContract extends BorshContract {
         await this.accessKeyInit();
 
         try {
-          //@ts-ignore
+            // @ts-ignore
             await this.init({
                 bridge_smart_contract: ethClientAccId,
             });

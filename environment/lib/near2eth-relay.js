@@ -115,7 +115,7 @@ class Near2EthRelay {
                 console.log(`${JSON.stringify(lightClientBlock)}`);
                 const borshBlock = borshify(lightClientBlock);
                 // @ts-ignore
-                const tx = await this.clientContract.methods.initWithBlock(borshBlock).send({
+                const _tx = await this.clientContract.methods.initWithBlock(borshBlock).send({
                     from: this.ethMasterAccount,
                     gas: 1000000,
                     handleRevert: true,
@@ -152,7 +152,7 @@ class Near2EthRelay {
                 clientBlockHash = bs58.encode(toBuffer(clientBlockHashHex));
                 console.log(`Current light client head is: hash=${clientBlockHash}, height=${clientBlockHeight}`);
                 // @ts-ignore
-                const nearBlock = await near.connection.provider.block(Number(clientBlockHeight));
+                const _nearBlock = await near.connection.provider.block(Number(clientBlockHeight));
 
                 const latestBlock = await web3.eth.getBlock('latest');
                 if (latestBlock.timestamp >= lastClientBlock.validAfter) {
@@ -171,7 +171,7 @@ class Near2EthRelay {
             if (balance === '0') {
                 console.log(`The sender account does not have enough stake. Transferring ${lockEthAmount} wei.`);
                 // @ts-ignore
-                const depositTx = await clientContract.methods.deposit().send({
+                const _depositTx = await clientContract.methods.deposit().send({
                     from: ethMasterAccount,
                     gas: 1000000,
                     handleRevert: true,

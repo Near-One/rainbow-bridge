@@ -4,7 +4,7 @@ const { RainbowConfig } = require('../lib/config');
 
 class InitETHERC20 {
     static async execute () {
-        //@ts-ignore
+        // @ts-ignore
         const web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
         let ethMasterAccount =
         web3.eth.accounts.privateKeyToAccount(RainbowConfig.getParam('eth-master-sk'));

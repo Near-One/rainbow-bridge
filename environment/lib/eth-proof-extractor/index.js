@@ -33,7 +33,7 @@ function logFromWeb3 (result) {
 
 class EthProofExtractor {
     initialize (ethNodeURL) {
-        //@ts-ignore
+        // @ts-ignore
         this.web3 = new Web3(ethNodeURL);
     }
 

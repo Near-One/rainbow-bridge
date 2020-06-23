@@ -267,7 +267,7 @@ class BorshContract {
 
         this.accessKey = await this.account.findAccessKey();
         if (!this.accessKey) {
-          //@ts-ignore
+            // @ts-ignore
             throw new Error(`Can not sign transactions for account ${this.account.accountId}, no matching key pair found in Signer.`, 'KeyNotFound');
         }
     }

@@ -4,7 +4,7 @@ const { RainbowConfig } = require('../lib/config');
 
 class InitETHLocker {
     static async execute () {
-        //@ts-ignore
+        // @ts-ignore
         const web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
         let ethMasterAccount =
         web3.eth.accounts.privateKeyToAccount(RainbowConfig.getParam('eth-master-sk'));
@@ -15,8 +15,8 @@ class InitETHLocker {
         // Initialize Token Locker contract.
         console.log('Deploying Locker contract.');
         const tokenLockerContract = new web3.eth.Contract(JSON.parse(
-          //@ts-ignore
-          fs.readFileSync(RainbowConfig.getParam('eth-locker-abi-path'))));
+            // @ts-ignore
+            fs.readFileSync(RainbowConfig.getParam('eth-locker-abi-path'))));
         const txContractLocker =
         await tokenLockerContract
             .deploy({

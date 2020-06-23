@@ -11,7 +11,7 @@ const utils = require('ethereumjs-util');
 
 class ETHDump {
     static async execute (kindOfData, { path, startBlock, endBlock, ethNodeUrl }) {
-        //@ts-ignore
+        // @ts-ignore
         const web3 = new Web3(ethNodeUrl);
         const extractor = new EthProofExtractor();
         extractor.initialize(ethNodeUrl);
