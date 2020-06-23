@@ -190,7 +190,7 @@ function deserialize (schema, fieldType, buffer) {
     return result;
 }
 
-const DEFAULT_FUNC_CALL_AMOUNT = new BN('10000000000000000');
+const DEFAULT_FUNC_CALL_AMOUNT = new BN('300000000000000');
 
 const signAndSendTransaction = async (accessKey, account, receiverId, actions) => {
     // TODO: Find matching access key based on transaction

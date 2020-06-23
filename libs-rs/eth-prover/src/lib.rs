@@ -11,7 +11,6 @@ mod tests;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 type AccountId = String;
-const GAS: u64 = 100_000_000_000_000;
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
@@ -97,12 +96,12 @@ impl EthProver {
         #[serializer(borsh)] block_number: u64,
         #[serializer(borsh)] expected_block_hash: H256,
     ) -> PromiseOrValue<bool> {
-        eth_bridge::block_hash_safe(block_number, &self.bridge_smart_contract, 0, GAS)
+        eth_bridge::block_hash_safe(block_number, &self.bridge_smart_contract, 0, env::prepaid_gas()/3)
             .then(remote_self::on_block_hash(
                 expected_block_hash,
                 &env::current_account_id(),
                 0,
-                GAS,
+                10000000000000,
             ))
             .into()
     }
@@ -126,12 +125,12 @@ impl EthProver {
         // TODO: inter-contract call:
         //self.bridge_smart_contract.block_hashes(header.number) == header.hash;
         if !skip_bridge_call {
-            eth_bridge::block_hash_safe(header.number, &self.bridge_smart_contract, 0, GAS).then(
+            eth_bridge::block_hash_safe(header.number, &self.bridge_smart_contract, 0, 10000000000000).then(
                 remote_self::on_block_hash(
                     header.hash.unwrap(),
                     &env::current_account_id(),
                     0,
-                    GAS,
+                    env::prepaid_gas()/2,
                 ),
             );
         }
