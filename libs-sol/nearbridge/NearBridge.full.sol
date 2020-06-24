@@ -277,7 +277,7 @@ interface INearBridge {
         bytes32 blockHash
     );
 
-    function blockHashes(uint256 blokNumber) external view returns(bytes32);
+    function blockHashes(uint256 blockNumber) external view returns(bytes32);
 
     function balanceOf(address wallet) external view returns(uint256);
     function deposit() external payable;

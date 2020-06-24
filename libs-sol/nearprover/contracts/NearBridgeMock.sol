@@ -1,13 +1,14 @@
 pragma solidity ^0.5.0;
 
-import "../../../nearbridge/contracts/INearBridge.sol";
+import "../../nearbridge/contracts/INearBridge.sol";
 
 
 contract NearBridgeMock is INearBridge {
     mapping(uint256 => bytes32) public blockHashes;
+    mapping(uint256 => bytes32) public blockMerkleRoots;
 
-    function setBlockHashes(uint256 blockNumber, bytes32 hash) external returns(bytes32) {
-        blockHashes[blockNumber] = hash;
+    function setBlockMerkleRoot(uint256 blockNumber, bytes32 root) external {
+        blockMerkleRoots[blockNumber] = root;
     }
 
     function balanceOf(address /*wallet*/) external view returns(uint256) {
@@ -30,5 +31,6 @@ contract NearBridgeMock is INearBridge {
     }
 
     function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex, bytes calldata data) external view returns(bool) {
+        return true;
     }
 }
