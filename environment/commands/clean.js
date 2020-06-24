@@ -9,12 +9,12 @@ class CleanCommand {
                 console.log(`Error stopping pm2 processes. ${err}`);
                 process.exit(1);
             }
-            // @ts-ignore
-            ProcessManager.disconnect((err) => {
-                if (err) {
-                    process.exit(1);
-                }
-            });
+        });
+        // @ts-ignore
+        ProcessManager.disconnect((err) => {
+            if (err) {
+                process.exit(1);
+            }
         });
         try {
             execSync('python3 ~/.rainbowup/nearup/nearup stop');
@@ -22,7 +22,7 @@ class CleanCommand {
             console.log(`Error stopping nerup ${err}`);
         }
         console.log('Cleaning ~/.rainbowup , ~/.nearup , and ~/.near directories...');
-        execSync('rm -rf ~/.rainbowup && rm -rf ~/.nearup && rm -rf ~/.near');
+        execSync('rm -rf ~/.rainbowup; rm -rf ~/.nearup; rm -rf ~/.near');
         console.log('Cleaning done...');
     }
 }
