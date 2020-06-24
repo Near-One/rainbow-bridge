@@ -80,8 +80,6 @@ class TransferETHERC20ToNear {
             process.exit(1);
         }
 
-        // await sleep(120000);
-
         const nearMasterAccountId = RainbowConfig.getParam('near-master-account');
         const keyStore = new nearlib.keyStores.InMemoryKeyStore();
         await keyStore.setKey(RainbowConfig.getParam('near-network-id'), nearMasterAccountId,
