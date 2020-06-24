@@ -277,7 +277,8 @@ interface INearBridge {
         bytes32 blockHash
     );
 
-    function blockHashes(uint256 blokNumber) external view returns(bytes32);
+    function blockHashes(uint256 blockNumber) external view returns(bytes32);
+    function blockMerkleRoots(uint256 blockNumber) external view returns(bytes32);
 
     function balanceOf(address wallet) external view returns(uint256);
     function deposit() external payable;
@@ -1829,6 +1830,7 @@ contract NearBridge is INearBridge {
     State public prev;
     State public backup;
     mapping(uint256 => bytes32) public blockHashes;
+    mapping(uint256 => bytes32) public blockMerkleRoots;
     mapping(address => uint256) public balanceOf;
 
     event BlockHashAdded(
@@ -1882,6 +1884,7 @@ contract NearBridge is INearBridge {
 
         // Restore last state from backup
         delete blockHashes[last.height];
+        delete blockMerkleRoots[last.height];
         last = backup;
         for (uint i = 0; i < last.next_bps_length; i++) {
             last.next_bps[i] = backup.next_bps[i];
@@ -1994,6 +1997,7 @@ contract NearBridge is INearBridge {
         }
 
         blockHashes[nearBlock.inner_lite.height] = nearBlock.hash;
+        blockMerkleRoots[nearBlock.inner_lite.height] = nearBlock.inner_lite.block_merkle_root;
         emit BlockHashAdded(
             last.height,
             blockHashes[last.height]

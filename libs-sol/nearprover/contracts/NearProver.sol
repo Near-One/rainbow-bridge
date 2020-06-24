@@ -20,7 +20,7 @@ contract NearProver {
         bridge = _bridge;
     }
 
-    function proveOutcome(bytes memory proofData, bytes32 blockMerkleRoot) public view returns(bool) {
+    function proveOutcome(bytes memory proofData, uint256 blockHeight) public view returns(bool) {
         Borsh.Data memory borshData = Borsh.from(proofData);
         ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borshData.decodeFullOutcomeProof();
         require(borshData.finished(), "NearProver: argument should be exact borsh serialization");
@@ -32,22 +32,20 @@ contract NearProver {
 
         hash = sha256(abi.encodePacked(hash));
 
-        //TODO(Anton): please refactor this code out
         hash = _computeRoot(
             hash,
             fullOutcomeProof.outcome_root_proof
         );
-//        revert("outcome root computation done");
 
         require(
             hash == fullOutcomeProof.block_header_lite.inner_lite.outcome_root,
             "NearProver: merkle proof is not valid"
         );
 
-//        revert("before block proof computation");
+        bytes32 expectedBlockMerkleRoot = bridge.blockMerkleRoots(blockHeight);
 
         require(
-            _computeRoot(fullOutcomeProof.block_header_lite.hash, fullOutcomeProof.block_proof) == blockMerkleRoot, "NearProver: block proof is not valid"
+            _computeRoot(fullOutcomeProof.block_header_lite.hash, fullOutcomeProof.block_proof) == expectedBlockMerkleRoot, "NearProver: block proof is not valid"
         );
         return true;
     }
