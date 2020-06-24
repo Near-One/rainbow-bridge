@@ -186,6 +186,7 @@ class TransferETHERC20ToNear {
             web3.currentProvider.connection.close();
         } catch (e) {
         }
+        process.exit(0);
     }
 }
 
