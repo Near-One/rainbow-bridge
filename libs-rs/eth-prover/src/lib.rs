@@ -122,8 +122,6 @@ impl EthProver {
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
 
         // Verify block header was in the bridge
-        // TODO: inter-contract call:
-        //self.bridge_smart_contract.block_hashes(header.number) == header.hash;
         if !skip_bridge_call {
             eth_bridge::block_hash_safe(header.number, &self.bridge_smart_contract, 0, 10000000000000).then(
                 remote_self::on_block_hash(
