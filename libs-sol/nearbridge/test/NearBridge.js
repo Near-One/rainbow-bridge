@@ -109,6 +109,7 @@ contract('NearBridge', function ([_, addr1]) {
             await this.bridge.initWithBlock(firstBlockBorsh);
             await this.bridge.blockHashes(firstBlock.inner_lite.height);
             expect(await this.bridge.blockHashes(firstBlock.inner_lite.height)).to.be.a('string');
+            // expect(await this.bridge.checkBlockProducerSignatureInLastBlock(0, firstBlockBorsh)).to.be.true;
 
             for (let i = 1; i < blockFiles.length; i++) {
                 let block = require(process.env['NEAR_HEADERS_DIR'] +'/' + blockFiles[i]);
@@ -118,7 +119,7 @@ contract('NearBridge', function ([_, addr1]) {
                 expect(await this.bridge.blockHashes(block.inner_lite.height)).to.be.a('string');
                 console.log(i);
                 const now = await time.latest();
-                await timeIncreaseTo(now + time.duration.seconds(1));
+                await timeIncreaseTo(Number(now) + Number(time.duration.minutes(1)));
                 // expect(await this.bridge.checkBlockProducerSignatureInLastBlock(0, blockBorsh)).to.be.true;
             }
         })
