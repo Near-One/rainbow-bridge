@@ -1,16 +1,16 @@
 
-const { expectRevert, time } = require('@openzeppelin/test-helpers');
+// const { time } = require('@openzeppelin/test-helpers');
 const bs58 = require('bs58');
 
 const Ed25519 = artifacts.require('Ed25519');
 const NearBridge = artifacts.require('NearBridge');
 const NearDecoder = artifacts.require('NearDecoder');
 
-async function timeIncreaseTo (seconds) {
-    const delay = 1000 - new Date().getMilliseconds();
-    await new Promise(resolve => setTimeout(resolve, delay));
-    await time.increaseTo(seconds);
-}
+// async function timeIncreaseTo (seconds) {
+//     const delay = 1000 - new Date().getMilliseconds();
+//     await new Promise(resolve => setTimeout(resolve, delay));
+//     await time.increaseTo(seconds);
+// }
 
 function borshify (block) {
     return Buffer.concat([
