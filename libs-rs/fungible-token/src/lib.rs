@@ -100,6 +100,71 @@ pub struct Proof {
     proof: Vec<Vec<u8>>,
 }
 
+/// Data that was emitted by the Ethereum event.
+pub struct EthEventData {
+    pub token: String,
+    pub sender: String,
+    pub amount: Balance,
+    pub recipient: AccountId,
+}
+
+impl EthEventData {
+    /// Parse raw log entry data.
+    pub fn from_log_entry_data(data: &[u8]) -> Self {
+        use hex::ToHex;
+        use ethabi::{RawLog, Event, EventParam, ParamType, Hash};
+        use eth_types::*;
+
+        let event = Event { name: "Locked".to_string(),
+            inputs: vec![
+                EventParam {
+                    name: "token".to_string(),
+                    kind: ParamType::Address,
+                    indexed: true
+                },
+                EventParam {
+                    name: "sender".to_string(),
+                    kind: ParamType::Address,
+                    indexed: true
+                },
+                EventParam {
+                    name: "amount".to_string(),
+                    kind: ParamType::Uint(256),
+                    indexed: false
+                },
+                EventParam {
+                    name: "accountId".to_string(),
+                    kind: ParamType::String,
+                    indexed: false
+                }
+            ],
+            anonymous: false
+        };
+
+        let log_entry: LogEntry = rlp::decode(data).unwrap();
+        let raw_log = RawLog { topics: log_entry.topics.iter().map(|h| Hash::from(&((h.0).0))).collect(), data:  log_entry.data.clone()};
+        let log = event.parse_log(raw_log).unwrap();
+        let token = log.params[0].value.clone().to_address().unwrap().0;
+        let token = (&token).encode_hex::<String>();
+        let sender = log.params[1].value.clone().to_address().unwrap().0;
+        let sender = (&sender).encode_hex::<String>();
+        let amount = log.params[2].value.clone().to_uint().unwrap().as_u128();
+        let recipient = log.params[3].value.clone().to_string().unwrap();
+        Self {
+            token,
+            sender,
+            amount,
+            recipient
+        }
+    }
+}
+
+impl std::fmt::Display for EthEventData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "token: {}; sender: {}; amount: {}; recipient: {}", self.token, self.sender, self.amount, self.recipient)
+    }
+}
+
 #[ext_contract(ext_fungible_token)]
 pub trait ExtFungibleToken {
     #[result_serializer(borsh)]
@@ -212,12 +277,7 @@ impl FungibleToken {
 
     /// Mint the token, increasing the total supply given the proof that the mirror token was locked
     /// on the Ethereum blockchain.
-    pub fn mint(
-        &self,
-        #[serializer(borsh)] new_owner_id: AccountId,
-        #[serializer(borsh)] amount: U128,
-        #[serializer(borsh)] proof: Proof,
-    ) -> Promise {
+    pub fn mint(&self, #[serializer(borsh)] proof: Proof) -> Promise {
         // TODO: Record events that were already used to mint the tokens.
         let Proof {
             log_index,
@@ -227,6 +287,9 @@ impl FungibleToken {
             header_data,
             proof,
         } = proof;
+        let event = EthEventData::from_log_entry_data(&log_entry_data);
+        env::log(format!("{}", event).as_bytes());
+        let EthEventData{recipient, amount, ..} = event;
         prover::verify_log_entry(
             log_index,
             log_entry_data,
@@ -237,7 +300,15 @@ impl FungibleToken {
             false, // Do not skip bridge call. This is only used for development and diagnostics.
             &self.prover_account,
             0,
-            env::prepaid_gas() / 3,
+            env::prepaid_gas()/3
+        ).then(
+            ext_fungible_token::finish_mint(
+                recipient,
+                amount.into(),
+                &env::current_account_id(),
+                0,
+                env::prepaid_gas()/3
+            )
         )
         .then(ext_fungible_token::finish_mint(
             new_owner_id,
@@ -325,6 +396,7 @@ mod tests {
     use near_sdk::{testing_env, VMContext};
 
     use super::*;
+    use hex::ToHex;
 
     fn alice() -> AccountId {
         "alice.near".to_string()
@@ -334,6 +406,9 @@ mod tests {
     }
     fn carol() -> AccountId {
         "carol.near".to_string()
+    }
+    fn prover() -> AccountId {
+        "eth2nearprover".to_string()
     }
 
     fn catch_unwind_silent<F: FnOnce() -> R + std::panic::UnwindSafe, R>(
@@ -372,7 +447,7 @@ mod tests {
         let context = get_context(carol());
         testing_env!(context);
         let total_supply = 1_000_000_000_000_000u128;
-        let contract = FungibleToken::new(bob(), total_supply.into(), "prover".into());
+        let contract = FungibleToken::new(bob(), total_supply.into(), prover());
         assert_eq!(contract.get_total_supply().0, total_supply);
         assert_eq!(contract.get_balance(bob()).0, total_supply);
     }
@@ -382,9 +457,9 @@ mod tests {
         let context = get_context(carol());
         testing_env!(context);
         let total_supply = 1_000_000_000_000_000u128;
-        let _contract = FungibleToken::new(bob(), total_supply.into(), "prover".into());
+        let _contract = FungibleToken::new(bob(), total_supply.into(), prover());
         catch_unwind_silent(|| {
-            FungibleToken::new(bob(), total_supply.into(), "prover".into());
+            FungibleToken::new(bob(), total_supply.into(), prover());
         })
         .unwrap_err();
     }
@@ -394,7 +469,7 @@ mod tests {
         let context = get_context(carol());
         testing_env!(context);
         let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = FungibleToken::new(carol(), total_supply.into(), "prover".into());
+        let mut contract = FungibleToken::new(carol(), total_supply.into(), prover());
         let transfer_amount = total_supply / 3;
         contract.transfer(bob(), transfer_amount.into());
         assert_eq!(
@@ -409,7 +484,7 @@ mod tests {
         let context = get_context(carol());
         testing_env!(context);
         let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = FungibleToken::new(carol(), total_supply.into(), "prover".into());
+        let mut contract = FungibleToken::new(carol(), total_supply.into(), prover());
         catch_unwind_silent(move || {
             contract.set_allowance(carol(), (total_supply / 2).into());
         })
@@ -421,7 +496,7 @@ mod tests {
         // Acting as carol
         testing_env!(get_context(carol()));
         let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = FungibleToken::new(carol(), total_supply.into(), "prover".into());
+        let mut contract = FungibleToken::new(carol(), total_supply.into(), prover());
         assert_eq!(contract.get_total_supply().0, total_supply);
         let allowance = total_supply / 3;
         let transfer_amount = allowance / 3;
@@ -446,7 +521,7 @@ mod tests {
         // Acting as carol
         testing_env!(get_context(carol()));
         let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = FungibleToken::new(carol(), total_supply.into(), "prover".into());
+        let mut contract = FungibleToken::new(carol(), total_supply.into(), prover());
         assert_eq!(contract.get_total_supply().0, total_supply);
         let allowance = total_supply / 3;
         let transfer_amount = allowance / 3;

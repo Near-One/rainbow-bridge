@@ -99,7 +99,7 @@ class Near2EthRelay {
                 // Get most recent block from Near blockchain.
                 const status = await this.near.connection.provider.status();
                 // Get the block two blocks before that, to make sure it is final.
-                const headBlock = await this.near.connection.provider.block(status.sync_info.latest_block_height);
+                const headBlock = await this.near.connection.provider.block({ blockId: status.sync_info.latest_block_height });
                 // @ts-ignore
                 const lastFinalBlockHash = headBlock.header.last_final_block;
                 // TODO: For unknown reason the proof for the finalized block is not immediately available.
@@ -152,7 +152,7 @@ class Near2EthRelay {
                 clientBlockHash = bs58.encode(toBuffer(clientBlockHashHex));
                 console.log(`Current light client head is: hash=${clientBlockHash}, height=${clientBlockHeight}`);
                 // @ts-ignore
-                const _nearBlock = await near.connection.provider.block(Number(clientBlockHeight));
+                const _nearBlock = await near.connection.provider.block({ blockId: Number(clientBlockHeight) });
 
                 const latestBlock = await web3.eth.getBlock('latest');
                 if (latestBlock.timestamp >= lastClientBlock.validAfter) {

@@ -9,9 +9,6 @@ contract TokenLocker {
         uint256 amount,
         string accountId
     );
-    function lockEther(string memory accountId) public payable {
-        emit Locked(address(0), msg.sender, msg.value, accountId);
-    }
     function lockToken(IERC20 token, uint256 amount, string memory accountId) public {
         token.safeTransferFrom(msg.sender, address(this), amount);
         emit Locked(address(token), msg.sender, amount, accountId);
