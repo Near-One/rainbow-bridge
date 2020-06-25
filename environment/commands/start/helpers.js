@@ -7,8 +7,7 @@ const GANACHE_PORT = 9545;
 function spawnProcess (name, config) {
     ProcessManager.describe(name, (err, process) => {
         if (err) {
-            console.log(
-                'Unable to list all the process running by the ProcessManager daemon!');
+            console.log('Unable to list all the process running by the ProcessManager daemon!');
         }
         if (process.length) {
             console.log('%s service is running...', name);
