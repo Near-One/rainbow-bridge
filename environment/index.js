@@ -303,6 +303,7 @@ RainbowConfig.addOptions(
         'near-fun-token-sk',
         'near-fun-token-contract-path',
         'near-fun-token-init-balance',
+        'eth-locker-address',
     ],
 );
 
