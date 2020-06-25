@@ -116,13 +116,7 @@ class TransferETHERC20ToNear {
             const blockLogIndex = log.logIndex;
             if (blockLogIndex === lockedEvent.logIndex) {
                 logFound = true;
-
                 const log_entry_data = logFromWeb3(log).serialize();
-                console.log(`Log ${JSON.stringify(log)}`);
-                console.log(`Log entry ${logFromWeb3(log)}`);
-                console.log("log_entry_data");
-                console.log(log_entry_data.toString('hex'));
-                
                 const receipt_index = proof.txIndex;
                 const receipt_data = receiptFromWeb3(receipt).serialize();
                 const header_data = proof.header.serialize();
