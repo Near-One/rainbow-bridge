@@ -139,7 +139,7 @@ impl EthEventData {
         };
 
         let log_entry: LogEntry = rlp::decode(data).unwrap();
-        let raw_log = RawLog { topics: log_entry.topics.iter().map(|h| Hash::from(&((h.0).0))).collect(), data:  log_entry.data.into_bytes()};
+        let raw_log = RawLog { topics: log_entry.topics.iter().map(|h| Hash::from(&((h.0).0))).collect(), data:  log_entry.data.clone()};
         let log = event.parse_log(raw_log).unwrap();
         let token = log.params[0].value.clone().to_address().unwrap().0;
         let token = (&token).encode_hex::<String>();
