@@ -188,7 +188,7 @@ impl FungibleToken {
         assert!(env::is_valid_account_id(owner_id.as_bytes()), "Owner's account ID is invalid");
         let total_supply = total_supply.into();
         assert!(!env::state_exists(), "Already initialized");
-        let mut ft = Self { accounts: Map::new(b"a".to_vec()), total_supply, prover_account, locker_address };
+        let mut ft = Self { accounts: Map::new(b"a".to_vec()), total_supply, prover_account, locker_address, used_events: Default::default() };
         let mut account = ft.get_account(&owner_id);
         account.balance = total_supply;
         ft.set_account(&owner_id, &account);
