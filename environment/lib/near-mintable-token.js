@@ -11,14 +11,6 @@ const borshSchema = {
         ser: (b) => Buffer.from(Web3.utils.hexToBytes(b ? '0x01' : '0x00')),
         deser: (z) => readerToHex(1)(z) === '0x01',
     },
-    mintInput: {
-        kind: 'struct',
-        fields: [
-            ['new_owner_id', 'string'],
-            ['amount', 'u128'],
-            ['proof', 'Proof'],
-        ],
-    },
     Proof: {
         kind: 'struct',
         fields: [
@@ -40,7 +32,7 @@ class NearMintableToken extends BorshContract {
             viewMethods: [],
             changeMethods: [{
                 methodName: 'mint',
-                inputFieldType: 'mintInput',
+                inputFieldType: 'Proof',
                 outputFieldType: null,
             },
             ],
