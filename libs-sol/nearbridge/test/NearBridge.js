@@ -1,6 +1,7 @@
 
 const { expectRevert, time } = require('@openzeppelin/test-helpers');
 const bs58 = require('bs58');
+const fs = require('fs').promises;
 
 const Ed25519 = artifacts.require('Ed25519');
 const NearBridge = artifacts.require('NearBridge');
@@ -43,7 +44,9 @@ function borshify (block) {
         web3.utils.toBN(block.approvals_after_next.length).toBuffer('le', 4),
         Buffer.concat(
             block.approvals_after_next.map(
-                signature => Buffer.concat([
+                signature => signature === null ? 
+                Buffer.from([0]) :
+                Buffer.concat([
                     Buffer.from([signature ? 1 : 0]),
                     signature.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
                     signature ? bs58.decode(signature.substr(8)) : Buffer.from([]),
@@ -96,4 +99,28 @@ contract('NearBridge', function ([_, addr1]) {
 
         expect(await this.bridge.checkBlockProducerSignatureInLastBlock(0, block121998)).to.be.true;
     });
+
+    if(process.env['NEAR_HEADERS_DIR']) {
+        it('ok with many block headers', async function() {
+            let blockFiles = await fs.readdir(process.env['NEAR_HEADERS_DIR']);
+            blockFiles.sort((a, b) => Number(a.split('.')[0]) < Number(b.split('.')[0]));
+            const firstBlock = require(process.env['NEAR_HEADERS_DIR'] +'/' + blockFiles[0]);
+            const firstBlockBorsh = borshify(firstBlock);
+            await this.bridge.initWithBlock(firstBlockBorsh);
+            await this.bridge.blockHashes(firstBlock.inner_lite.height);
+            expect(await this.bridge.blockHashes(firstBlock.inner_lite.height)).to.be.a('string');
+
+            for (let i = 1; i < blockFiles.length; i++) {
+                let block = require(process.env['NEAR_HEADERS_DIR'] +'/' + blockFiles[i]);
+                const blockBorsh = borshify(block);
+                await this.bridge.addLightClientBlock(blockBorsh);
+                await this.bridge.blockHashes(block.inner_lite.height);
+                expect(await this.bridge.blockHashes(block.inner_lite.height)).to.be.a('string');
+                console.log(i);
+                const now = await time.latest();
+                await timeIncreaseTo(now + time.duration.seconds(1));
+                // expect(await this.bridge.checkBlockProducerSignatureInLastBlock(0, blockBorsh)).to.be.true;
+            }
+        })
+    }
 });
