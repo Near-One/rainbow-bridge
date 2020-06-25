@@ -12,7 +12,7 @@
 *    multiple accounts.
 */
 use borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::collections::Map;
+use near_sdk::collections::{Map, Set};
 use near_sdk::json_types::U128;
 use near_sdk::{env, near_bindgen, AccountId, Balance, Promise, ext_contract};
 
@@ -66,6 +66,8 @@ pub struct FungibleToken {
     pub prover_account: AccountId,
     /// Address of the Ethereum locker contract, in hex, without leading `0x`.
     pub locker_address: String,
+    /// Hashes of the events that were already used.
+    pub used_events: Set<Vec<u8>>
 }
 
 impl Default for FungibleToken {
@@ -265,10 +267,20 @@ impl FungibleToken {
         self.transfer_from(env::predecessor_account_id(), new_owner_id, amount);
     }
 
+    /// Record proof to make sure it is not re-used later for minting.
+    fn record_proof(&mut self, proof: &Proof) {
+        let mut data = proof.log_index.try_to_vec().unwrap();
+        data.extend(proof.receipt_index.try_to_vec().unwrap());
+        data.extend(proof.header_data.clone());
+        let key = env::sha256(&data);
+        assert!(!self.used_events.contains(&key), "Event cannot be reused for minting.");
+        self.used_events.insert(&key);
+    }
+
     /// Mint the token, increasing the total supply given the proof that the mirror token was locked
     /// on the Ethereum blockchain.
-    pub fn mint(&self, #[serializer(borsh)] proof: Proof) -> Promise {
-        // TODO: Record events that were already used to mint the tokens.
+    pub fn mint(&mut self, #[serializer(borsh)] proof: Proof) -> Promise {
+        self.record_proof(&proof);
         let Proof {
             log_index,
             log_entry_data,
@@ -313,6 +325,17 @@ impl FungibleToken {
         account.balance += amount;
         self.total_supply += amount;
         self.set_account(&new_owner_id, &account);
+    }
+
+    /// Burn given amount of tokens and unlock it on the Ethereum side for the recipient address.
+    pub fn burn(&mut self, amount: U128, recipient: String) -> (U128, String) {
+        let owner = env::predecessor_account_id();
+        let mut account = self.get_account(&owner);
+        assert!(account.balance >= amount.0, "Not enough balance");
+        account.balance -= amount.0;
+        self.total_supply -= amount.0;
+        self.set_account(&owner, &account);
+        (amount, recipient)
     }
 
     /// Returns total supply of tokens.
