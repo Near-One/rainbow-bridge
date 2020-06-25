@@ -398,6 +398,9 @@ mod tests {
     fn prover() -> AccountId {
         "eth2nearprover".to_string()
     }
+    fn locker() -> String {
+        "0123456789abcdef".to_string()
+    }
 
     fn catch_unwind_silent<F: FnOnce() -> R + std::panic::UnwindSafe, R>(
         f: F,
@@ -435,7 +438,7 @@ mod tests {
         let context = get_context(carol());
         testing_env!(context);
         let total_supply = 1_000_000_000_000_000u128;
-        let contract = FungibleToken::new(bob(), total_supply.into(), prover());
+        let contract = FungibleToken::new(bob(), total_supply.into(), prover(), locker());
         assert_eq!(contract.get_total_supply().0, total_supply);
         assert_eq!(contract.get_balance(bob()).0, total_supply);
     }
@@ -445,9 +448,9 @@ mod tests {
         let context = get_context(carol());
         testing_env!(context);
         let total_supply = 1_000_000_000_000_000u128;
-        let _contract = FungibleToken::new(bob(), total_supply.into(), prover());
+        let _contract = FungibleToken::new(bob(), total_supply.into(), prover(), locker());
         catch_unwind_silent(|| {
-            FungibleToken::new(bob(), total_supply.into(), prover());
+            FungibleToken::new(bob(), total_supply.into(), prover(), locker());
         })
         .unwrap_err();
     }
@@ -457,7 +460,7 @@ mod tests {
         let context = get_context(carol());
         testing_env!(context);
         let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = FungibleToken::new(carol(), total_supply.into(), prover());
+        let mut contract = FungibleToken::new(carol(), total_supply.into(), prover(), locker());
         let transfer_amount = total_supply / 3;
         contract.transfer(bob(), transfer_amount.into());
         assert_eq!(contract.get_balance(carol()).0, (total_supply - transfer_amount));
@@ -469,7 +472,7 @@ mod tests {
         let context = get_context(carol());
         testing_env!(context);
         let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = FungibleToken::new(carol(), total_supply.into(), prover());
+        let mut contract = FungibleToken::new(carol(), total_supply.into(), prover(), locker());
         catch_unwind_silent(move || {
             contract.set_allowance(carol(), (total_supply / 2).into());
         })
@@ -481,7 +484,7 @@ mod tests {
         // Acting as carol
         testing_env!(get_context(carol()));
         let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = FungibleToken::new(carol(), total_supply.into(), prover());
+        let mut contract = FungibleToken::new(carol(), total_supply.into(), prover(), locker());
         assert_eq!(contract.get_total_supply().0, total_supply);
         let allowance = total_supply / 3;
         let transfer_amount = allowance / 3;
@@ -500,7 +503,7 @@ mod tests {
         // Acting as carol
         testing_env!(get_context(carol()));
         let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = FungibleToken::new(carol(), total_supply.into(), prover());
+        let mut contract = FungibleToken::new(carol(), total_supply.into(), prover(), locker());
         assert_eq!(contract.get_total_supply().0, total_supply);
         let allowance = total_supply / 3;
         let transfer_amount = allowance / 3;
