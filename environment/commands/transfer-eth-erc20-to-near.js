@@ -164,7 +164,7 @@ class TransferETHERC20ToNear {
                     proof_locker,
                     new BN('300000000000000'),
                 );
-                console.log(`Transferred`);
+                console.log('Transferred');
 
                 // @ts-ignore
                 const new_balance = await nearTokenContract.get_balance({
