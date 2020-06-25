@@ -484,47 +484,4 @@ mod tests {
         assert_eq!(contract.get_balance(alice()).0, transfer_amount);
         assert_eq!(contract.get_allowance(carol(), bob()).0, allowance - transfer_amount);
     }
-
-    #[test]
-    fn test_log_entry() {
-        use hex::{FromHex, ToHex};
-        use ethabi::{RawLog, Event, EventParam, ParamType, Hash};
-        let event = Event { name: "Locked".to_string(),
-            inputs: vec![
-                EventParam {
-                    name: "token".to_string(),
-                    kind: ParamType::Address,
-                    indexed: true
-                },
-                EventParam {
-                    name: "sender".to_string(),
-                    kind: ParamType::Address,
-                    indexed: true
-                },
-                EventParam {
-                    name: "amount".to_string(),
-                    kind: ParamType::Uint(256),
-                    indexed: false
-                },
-                EventParam {
-                    name: "accountId".to_string(),
-                    kind: ParamType::String,
-                    indexed: false
-                }
-            ],
-            anonymous: false
-        };
-
-        let log_entry_data = r#"f8fc947cc4b1851c35959d34e635a470f6b5c43ba3c9c9f863a0dd85dc56b5b4da387bf69c28ec19b1d66e793e0d51b567882fa31dc50bbd32c5a000000000000000000000000085a84691547b7ccf19d7c31977a7f8c0af1fb25aa0000000000000000000000000df08f82de32b8d460adbe8d72043e3a7e25a3b39b88000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000f616c6963652e746573742e6e6561720000000000000000000000000000000000"#;
-        let log_entry_data: Vec<u8> = Vec::from_hex(log_entry_data).unwrap();
-        let log_entry: LogEntry = rlp::decode(&log_entry_data).unwrap();
-        let raw_log = RawLog { topics: log_entry.topics.iter().map(|h| Hash::from(&((h.0).0))).collect(), data:  log_entry.data.into_bytes()};
-        let log = event.parse_log(raw_log).unwrap();
-        let token = log.params[0].value.clone().to_address().unwrap().0;
-        let token = (&token).encode_hex::<String>();
-        let sender = log.params[1].value.clone().to_address().unwrap().0;
-        let sender = (&sender).encode_hex::<String>();
-        let amount = log.params[2].value.clone().to_uint().unwrap().as_u128();
-        let recipient = log.params[3].value.clone().to_string().unwrap();
-    }
 }

@@ -14,7 +14,6 @@ const { RainbowConfig } = require('../lib/config');
 const {
     Eth2NearClientContract,
 } = require('../lib/eth2near-client-contract');
-const { serialize } = require('../lib/borsh');
 
 function sleep (ms) {
     return new Promise((resolve) => {
