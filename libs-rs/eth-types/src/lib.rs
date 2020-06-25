@@ -272,11 +272,31 @@ impl RlpDecodable for BlockHeader {
 
 // Log
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, RlpEncodableDerive, RlpDecodableDerive)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, RlpDecodableDerive, RlpEncodableDerive)]
 pub struct LogEntry {
     pub address: Address,
     pub topics: Vec<H256>,
-    pub data: Vec<u8>,
+    pub data: String,
+}
+
+// impl rlp::Decodable for LogEntry {
+//     fn decode(rlp: &rlp::Rlp) -> Result<Self, rlp::DecoderError> {
+//         let result = LogEntry {
+//             address: rlp.val_at(0usize)?,
+//             topics: rlp.list_at(1usize)?,
+//             data: rlp.list_at(2usize)?,
+//         };
+//         Ok(result)
+//     }
+// }
+
+
+#[derive(Default, Debug, Clone, PartialEq, Eq, RlpEncodableDerive, RlpDecodableDerive)]
+pub struct LogEntryData {
+    pub token_address: Address,
+    pub sender_address: Address,
+    pub amount: U256,
+    pub recipient: String
 }
 
 // Receipt Header

@@ -243,6 +243,8 @@ class BorshContract {
                 enumerable: true,
                 value: async (args, gas, amount) => {
                     args = serialize(borshSchema, d.inputFieldType, args);
+                    console.log(`Calling ${d.methodName}`);
+                    console.log(args.toString('hex'));
                     try {
                         const rawResult = await signAndSendTransaction(this.accessKey, this.account, this.contractId, [nearlib.transactions.functionCall(
                             d.methodName,

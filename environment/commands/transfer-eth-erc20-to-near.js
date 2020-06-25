@@ -14,6 +14,7 @@ const { RainbowConfig } = require('../lib/config');
 const {
     Eth2NearClientContract,
 } = require('../lib/eth2near-client-contract');
+const { serialize } = require('../lib/borsh');
 
 function sleep (ms) {
     return new Promise((resolve) => {
@@ -108,22 +109,6 @@ class TransferETHERC20ToNear {
         const tree = await extractor.buildTrie(block);
         const proof = await extractor.extractProof(block, tree, receipt.transactionIndex);
 
-        const blockNumber = block.number;
-        // Wait until client accepts this block number.
-        const clientAccount = RainbowConfig.getParam('eth2near-client-account');
-        const ethClientContract = new Eth2NearClientContract(nearMasterAccount, clientAccount);
-        while (true) {
-            // @ts-ignore
-            const last_block_number = (await ethClientContract.last_block_number()).toNumber();
-            if (last_block_number < blockNumber) {
-                const delay = 10;
-                console.log(`Eth2NearClient is currently at block ${last_block_number}. Waiting for block ${blockNumber}. Sleeping for ${delay} sec.`);
-                await sleep(delay * 1000);
-            } else {
-                break;
-            }
-        }
-
         let txLogIndex = -1;
         let logFound = false;
         for (const log of receipt.logs) {
@@ -131,7 +116,13 @@ class TransferETHERC20ToNear {
             const blockLogIndex = log.logIndex;
             if (blockLogIndex === lockedEvent.logIndex) {
                 logFound = true;
+
                 const log_entry_data = logFromWeb3(log).serialize();
+                console.log(`Log ${JSON.stringify(log)}`);
+                console.log(`Log entry ${logFromWeb3(log)}`);
+                console.log("log_entry_data");
+                console.log(log_entry_data.toString('hex'));
+                
                 const receipt_index = proof.txIndex;
                 const receipt_data = receiptFromWeb3(receipt).serialize();
                 const header_data = proof.header.serialize();
@@ -151,25 +142,42 @@ class TransferETHERC20ToNear {
 
                 const new_owner_id = lockedEvent.returnValues.accountId;
                 const amount = lockedEvent.returnValues.amount;
+                console.log(`Transferring ${amount} tokens from ${lockedEvent.returnValues.token} ERC20. From ${lockedEvent.returnValues.sender} sender to ${new_owner_id} recipient`);
 
-                const args_locker = {
-                    new_owner_id: new_owner_id,
-                    amount: amount,
-                    proof: proof_locker,
-                };
+                const blockNumber = block.number;
+                // Wait until client accepts this block number.
+                const clientAccount = RainbowConfig.getParam('eth2near-client-account');
+                const ethClientContract = new Eth2NearClientContract(nearMasterAccount, clientAccount);
+                while (true) {
+                    // @ts-ignore
+                    const last_block_number = (await ethClientContract.last_block_number()).toNumber();
+                    if (last_block_number < blockNumber) {
+                        const delay = 10;
+                        console.log(`Eth2NearClient is currently at block ${last_block_number}. Waiting for block ${blockNumber}. Sleeping for ${delay} sec.`);
+                        await sleep(delay * 1000);
+                    } else {
+                        break;
+                    }
+                }
+
+                // @ts-ignore
+                const old_balance = await nearTokenContract.get_balance({
+                    owner_id: new_owner_id,
+                });
+                console.log(`Balance of ${new_owner_id} before the transfer is ${old_balance}`);
 
                 // @ts-ignore
                 await nearTokenContractBorsh.mint(
-                    args_locker,
+                    proof_locker,
                     new BN('300000000000000'),
                 );
-                console.log(`Transferred ${amount} tokens to ${new_owner_id}`);
+                console.log(`Transferred`);
 
                 // @ts-ignore
                 const new_balance = await nearTokenContract.get_balance({
                     owner_id: new_owner_id,
                 });
-                console.log(`New ${new_owner_id} balance is ${new_balance}`);
+                console.log(`Balance of ${new_owner_id} after the transfer is ${new_balance}`);
 
                 break;
             }
