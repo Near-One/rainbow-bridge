@@ -64,6 +64,8 @@ pub struct FungibleToken {
     pub total_supply: Balance,
     /// The account of the prover that we can use to prove
     pub prover_account: AccountId,
+    /// Address of the Ethereum locker contract, in hex, without leading `0x`.
+    pub locker_address: String,
 }
 
 impl Default for FungibleToken {
@@ -99,6 +101,7 @@ pub struct Proof {
 
 /// Data that was emitted by the Ethereum event.
 pub struct EthEventData {
+    pub locker_address: String,
     pub token: String,
     pub sender: String,
     pub amount: Balance,
@@ -139,6 +142,8 @@ impl EthEventData {
         };
 
         let log_entry: LogEntry = rlp::decode(data).unwrap();
+        let locker_address = log_entry.address.clone().0;
+        let locker_address = (&locker_address).encode_hex::<String>();
         let raw_log = RawLog { topics: log_entry.topics.iter().map(|h| Hash::from(&((h.0).0))).collect(), data:  log_entry.data.into_bytes()};
         let log = event.parse_log(raw_log).unwrap();
         let token = log.params[0].value.clone().to_address().unwrap().0;
@@ -148,6 +153,7 @@ impl EthEventData {
         let amount = log.params[2].value.clone().to_uint().unwrap().as_u128();
         let recipient = log.params[3].value.clone().to_string().unwrap();
         Self {
+            locker_address,
             token,
             sender,
             amount,
@@ -176,11 +182,11 @@ pub trait ExtFungibleToken {
 impl FungibleToken {
     /// Initializes the contract with the given total supply owned by the given `owner_id`.
     #[init]
-    pub fn new(owner_id: AccountId, total_supply: U128, prover_account: AccountId) -> Self {
+    pub fn new(owner_id: AccountId, total_supply: U128, prover_account: AccountId, locker_address: String) -> Self {
         assert!(env::is_valid_account_id(owner_id.as_bytes()), "Owner's account ID is invalid");
         let total_supply = total_supply.into();
         assert!(!env::state_exists(), "Already initialized");
-        let mut ft = Self { accounts: Map::new(b"a".to_vec()), total_supply, prover_account };
+        let mut ft = Self { accounts: Map::new(b"a".to_vec()), total_supply, prover_account, locker_address };
         let mut account = ft.get_account(&owner_id);
         account.balance = total_supply;
         ft.set_account(&owner_id, &account);
@@ -272,6 +278,7 @@ impl FungibleToken {
             proof,
         } = proof;
         let event = EthEventData::from_log_entry_data(&log_entry_data);
+        assert_eq!(self.locker_address, event.locker_address, "Event's address {} does not match locker address of this token {}", self.locker_address, event.locker_address);
         env::log(format!("{}", event).as_bytes());
         let EthEventData{recipient, amount, ..} = event;
         prover::verify_log_entry(

@@ -44,11 +44,13 @@ class InitNEARFunToken {
             // Try initializing the contract. Give it no initial tokens, since they will all be
             // minted using proofs. It is irrelevant what `owner_id` is since we have no initial tokens.
             // @ts-ignore
+            const lockerAddress = RainbowConfig.getParam('eth-locker-address');
             await tokenContract.new({
                 // Give 0 tokens to itself.
                 owner_id: tokenAccount,
                 total_supply: '0',
                 prover_account: proverAccount,
+                locker_address: lockerAddress.startsWith('0x') ? lockerAddress.substr(2) : lockerAddress
             },
             new BN('300000000000000'));
         } catch (err) {
