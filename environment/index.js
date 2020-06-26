@@ -329,6 +329,9 @@ RainbowConfig.addOptions(
         'eth-master-sk',
         'eth-locker-abi-path',
         'eth-locker-bin-path',
+        'eth-erc20-address',
+        'near-fun-token-account',
+        'near2eth-prover-address'
     ],
 );
 
