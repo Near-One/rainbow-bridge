@@ -102,6 +102,7 @@ contract('NearBridge', function ([_, addr1]) {
 
     if(process.env['NEAR_HEADERS_DIR']) {
         it('ok with many block headers', async function() {
+            this.timeout(0);
             let blockFiles = await fs.readdir(process.env['NEAR_HEADERS_DIR']);
             blockFiles.sort((a, b) => Number(a.split('.')[0]) < Number(b.split('.')[0]));
             const firstBlock = require(process.env['NEAR_HEADERS_DIR'] +'/' + blockFiles[0]);
@@ -119,11 +120,15 @@ contract('NearBridge', function ([_, addr1]) {
                 console.log(i);
                 const now = await time.latest();
                 await timeIncreaseTo(now.add(time.duration.seconds(10)));
-                for(let j = 0; j < block.approvals_after_next.length; j++) {
-                    console.log("checking approval "+j)
-                    if(block.approvals_after_next[j]) {
-                        console.log("approval j is not null"+j)
-                        expect(await this.bridge.checkBlockProducerSignatureInLastBlock(j, blockBorsh)).to.be.true;
+
+                if (i >= 600){
+                    console.log("checking block " + block.inner_lite.height);
+                    for(let j = 0; j < block.approvals_after_next.length; j++) {
+                        console.log("checking approval "+j)
+                        if(block.approvals_after_next[j]) {
+                            console.log("approval j is not null"+j)
+                            expect(await this.bridge.checkBlockProducerSignatureInLastBlock(j, blockBorsh)).to.be.true;
+                        }
                     }
                 }
             }
