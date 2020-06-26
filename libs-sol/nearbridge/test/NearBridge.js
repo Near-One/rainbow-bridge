@@ -89,7 +89,7 @@ contract('NearBridge', function ([_, addr1]) {
         );
 
         const now = await time.latest();
-        await timeIncreaseTo(now + time.duration.hours(1));
+        await timeIncreaseTo(now.add(time.duration.seconds(10))); // must use BN.add otherwise it's string concat
 
         // http post http://127.0.0.1:3030/ jsonrpc=2.0 method=next_light_client_block params:='["6RHW1exQNSSdCrjpKXBb8g1uQdmrmSvuiakZeKN58an9"]' id="dontcare"
         await this.bridge.addLightClientBlock(block121998);
@@ -125,7 +125,7 @@ contract('NearBridge', function ([_, addr1]) {
                 expect(await this.bridge.blockHashes(block.inner_lite.height)).to.be.a('string');
                 console.log(i);
                 const now = await time.latest();
-                await timeIncreaseTo(Number(now) + Number(time.duration.minutes(1)));
+                await timeIncreaseTo(now.add(time.duration.seconds(10)));
                 for(let j = 0; j < block.approvals_after_next.length; j++) {
                     console.log("checking approval "+j)
                     if(block.approvals_after_next[j]) {
