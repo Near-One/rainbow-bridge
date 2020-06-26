@@ -51,13 +51,7 @@ contract NearBridge is INearBridge {
         bytes32 blockHash
     );
 
-    constructor(Ed25519 ed) public {
-        edwards = ed;
-        lock_eth_amount = DEFAULT_LOCK_ETH_AMOUNT;
-        lock_duration = DEFAULT_LOCK_DURATION;
-    }
-
-    constructor(Ed25519 ed, uint256 l_eth, uint256 l_dur) {
+    constructor(Ed25519 ed, uint256 l_eth, uint256 l_dur) public {
         edwards = ed;
         lock_eth_amount = l_eth;
         lock_duration = l_dur;
