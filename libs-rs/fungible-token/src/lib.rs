@@ -329,9 +329,9 @@ impl FungibleToken {
     }
 
     /// Burn given amount of tokens and unlock it on the Ethereum side for the recipient address.
-    /// We return the amount as u128 and the address of the beneficiary as `[u8; 32]` for ease of
+    /// We return the amount as u128 and the address of the beneficiary as `[u8; 20]` for ease of
     /// processing on Solidity side.
-    pub fn burn(&mut self, amount: U128, recipient: String) -> (U128, [u8; 32]) {
+    pub fn burn(&mut self, amount: U128, recipient: String) -> (U128, [u8; 20]) {
         let owner = env::predecessor_account_id();
         let mut account = self.get_account(&owner);
         assert!(account.balance >= amount.0, "Not enough balance");
@@ -339,8 +339,8 @@ impl FungibleToken {
         self.total_supply -= amount.0;
         self.set_account(&owner, &account);
         let recipient = hex::decode(recipient).expect("recipient should be a hex");
-        assert_eq!(recipient.len(), 32, "Recipient should be a 32-bytes long address");
-        let mut raw_recipient = [0u8; 32];
+        assert_eq!(recipient.len(), 20, "Recipient should be a 20-bytes long address");
+        let mut raw_recipient = [0u8; 20];
         raw_recipient.copy_from_slice(&recipient);
         (amount, raw_recipient)
     }
