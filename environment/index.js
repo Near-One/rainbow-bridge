@@ -18,6 +18,7 @@ const { ETHDump } = require('./commands/eth-dump');
 const { RainbowConfig } = require('./lib/config');
 const { InitEthEd25519 } = require('./commands/init-eth-ed25519');
 const { InitNear2EthClient } = require('./commands/init-near2eth-client');
+const { InitNear2EthProver } = require('./commands/init-near2eth-prover');
 
 RainbowConfig.declareOption(
     'near-network-id',
@@ -290,6 +291,18 @@ RainbowConfig.addOptions(
         'near2eth-client-abi-path',
         'near2eth-client-bin-path',
         'eth-ed25519-address',
+    ]);
+
+RainbowConfig.addOptions(
+    program.command('init-near2eth-prover')
+        .description('Deploys and initializes Near2EthProver.')
+        .action(InitNear2EthProver.execute),
+    [
+            'eth-node-url',
+            'eth-master-sk',
+            'near2eth-prover-abi-path',
+            'near2eth-prover-bin-path',
+            'near2eth-client-address',
     ]);
 
 // User commands.

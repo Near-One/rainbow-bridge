@@ -78,6 +78,7 @@ First let's initialize the contracts that bridge needs to function:
 node index.js init-near-contracts
 node index.js init-eth-ed25519
 node index.js init-near2eth-client
+node index.js init-near2eth-prover
 ```
 
 Now, let's set up token on Ethereum blockchain that we can transfer to NEAR blockchain (this can be your own token).
