@@ -17,5 +17,5 @@ interface INearBridge {
     function initWithBlock(bytes calldata data) external;
     function addLightClientBlock(bytes calldata data) external payable;
     function challenge(address payable receiver, uint256 signatureIndex, bytes calldata data) external;
-    function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex, bytes calldata data) external view returns(bool);
+    function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex, bytes calldata data) external returns(bool);
 }

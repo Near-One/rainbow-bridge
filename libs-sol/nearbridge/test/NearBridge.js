@@ -109,13 +109,6 @@ contract('NearBridge', function ([_, addr1]) {
             await this.bridge.initWithBlock(firstBlockBorsh);
             await this.bridge.blockHashes(firstBlock.inner_lite.height);
             expect(await this.bridge.blockHashes(firstBlock.inner_lite.height)).to.be.a('string');
-            // for(let i = 0; i < firstBlock.approvals_after_next.length; i++) {
-            //     console.log("---==="+i)
-            //     if(firstBlock.approvals_after_next[i]) {
-            //         console.log("---==="+i)
-            //         expect(await this.bridge.checkBlockProducerSignatureInLastBlock(i, firstBlockBorsh)).to.be.true;
-            //     }
-            // }
 
             for (let i = 1; i < blockFiles.length; i++) {
                 let block = require(process.env['NEAR_HEADERS_DIR'] +'/' + blockFiles[i]);
@@ -133,7 +126,6 @@ contract('NearBridge', function ([_, addr1]) {
                         expect(await this.bridge.checkBlockProducerSignatureInLastBlock(j, blockBorsh)).to.be.true;
                     }
                 }
-                
             }
         })
     }

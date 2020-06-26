@@ -76,10 +76,18 @@ contract NearBridge is INearBridge {
         _payRewardAndRollBack(receiver);
     }
 
-    function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex, bytes memory data) public view returns(bool) {
+    event Debug(
+        Borsh.Data borsh,
+        NearDecoder.LightClientBlock nearBlock
+    );
+
+    function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex, bytes memory data) public returns(bool) {
         Borsh.Data memory borsh = Borsh.from(data);
         NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
-
+        emit Debug(
+            borsh,
+            nearBlock
+        );
         return _checkValidatorSignature(
             nearBlock.inner_lite.height,
             nearBlock.next_hash,
