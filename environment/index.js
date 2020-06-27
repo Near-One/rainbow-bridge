@@ -10,6 +10,7 @@ const { StartLocalNearNodeCommand } = require('./commands/start/near.js');
 const { StopLocalNearNodeCommand } = require('./commands/stop/near.js');
 const { StopManagedProcessCommand } = require('./commands/stop/process.js');
 const { TransferETHERC20ToNear } = require('./commands/transfer-eth-erc20-to-near');
+const { TransferEthERC20FromNear } = require('./commands/transfer-eth-erc20-from-near');
 const { InitETHLocker } = require('./commands/init-eth-locker');
 const { InitETHERC20 } = require('./commands/init-eth-erc20');
 const { InitNEARContracts } = require('./commands/init-near-contracts');
@@ -365,6 +366,27 @@ RainbowConfig.addOptions(
         'eth2near-client-account',
         'near-master-account',
         'near-master-sk',
+    ],
+);
+
+RainbowConfig.addOptions(
+    program.command('transfer-eth-erc20-from-near')
+        .action(TransferEthERC20FromNear.execute)
+        .option('--amount <amount>', 'Amount of ERC20 tokens to transfer')
+        .option('--near-sender-account <near_sender_account>', 'Near account that will be sending fungible token.')
+        .option('--near-sender-sk <near_sender_sk>', 'The secret key of Near account that will be sending the fungible token.')
+        .option('--eth-receiver-address <eth_receiver_address>', 'The account that will be receiving the token on Ethereum side.'),
+    [
+            'near-node-url',
+            'near-network-id',
+            'near-fun-token-account',
+            'eth-node-url',
+            'eth-erc20-address',
+            'eth-erc20-abi-path',
+            'eth-locker-address',
+            'eth-locker-abi-path',
+            'near2eth-client-abi-path',
+            'near2eth-client-address',
     ],
 );
 
