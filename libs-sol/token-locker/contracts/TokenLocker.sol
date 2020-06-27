@@ -59,6 +59,7 @@ contract TokenLocker {
         require(!status.failed, "Cannot use failed execution outcome for unlocking the tokens.");
         require(!status.unknown, "Cannot use unknown execution outcome for unlocking the tokens.");
         BurnResult memory result = _decodeBurnResult(status.successValue);
+
     }
 
     // TokenLocker is linked to the fungible token on Ethereum side and mintable fungible
