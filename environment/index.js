@@ -387,6 +387,10 @@ RainbowConfig.addOptions(
             'eth-locker-abi-path',
             'near2eth-client-abi-path',
             'near2eth-client-address',
+
+            // For diagnostics. Remove.
+            'near2eth-prover-abi-path',
+            'near2eth-prover-address',
     ],
 );
 

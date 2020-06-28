@@ -39,7 +39,7 @@ contract NearProver {
 
         require(
             hash == fullOutcomeProof.block_header_lite.inner_lite.outcome_root,
-            "NearProver: merkle proof is not valid"
+            "NearProver: outcome merkle proof is not valid"
         );
 
         bytes32 expectedBlockMerkleRoot = bridge.blockMerkleRoots(blockHeight);
