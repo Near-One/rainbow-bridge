@@ -95,7 +95,7 @@ node index.js init-near-fun-token
 Now start the services that will relay the information between the chains:
 ```bash
 node index.js start eth-relay
-node index.js start near-relay
+node index.js start near-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
 ```
 
 Note, you can observe the logs of the relays by running:
@@ -106,14 +106,22 @@ pm2 logs
 ### Transferring tokens 
 Finally, let's transfer some tokens 
 ```bash
-node index.js transfer-eth-erc20-to-near --amount 1 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account alice.test.near --near-master-account nearfuntoken
+node index.js transfer-eth-erc20-to-near --amount 1000 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account eth2nearprover --near-master-account nearfuntoken
 ```
 Note, when we deployed ERC20 to the Ethereum blockchain we have minted a large number of tokens to the default master
 key of Ganache, so we have transferred ERC20 tokens from it to `alice.test.near`.
 Notice that we are using `nearfuntoken` account here to pay for the NEAR gas fees, any account for which we know a secret key would've worked too.
 You must observe blocks being submitted.
 
-Docker:
+Now let's try to transfer one token back to Ethereum
+```bash
+node index.js transfer-eth-erc20-from-near --amount 1 --near-sender-account eth2nearprover \
+--near-sender-sk ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP --eth-receiver-address 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8
+```
+You should observe the change of the ERC20 balance as reported by the CLI. 
+
+
+# Docker:
 
 ## Currently we have the following docker options:
 
