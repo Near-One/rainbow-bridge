@@ -7,98 +7,12 @@ const { toBuffer } = require('eth-util-lite');
 const { verifyAccount } = require('../lib/near-helpers');
 const { NearMintableToken } = require('../lib/near-mintable-token');
 const { RainbowConfig } = require('../lib/config');
+const { borshifyOutcomeProof } = require(`../lib/borsh`);
 
 function sleep (ms) {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);
     });
-}
-
-function borshifyOutcomeProof(proof) {
-    const statusToBuffer = status => {
-        console.log(status.SuccessValue);
-        if ('SuccessValue' in status) {
-            return Buffer.concat([
-                Buffer.from([2]),
-                Buffer.from([]),
-            ]);
-        } else if ('SuccessReceiptId' in status) {
-            return Buffer.concat([
-                Buffer.from([3]),
-                bs58.decode(status.SuccessReceiptId),
-            ]);
-        } else {
-            throw new Error("status not supported");
-        }
-    };
-    return Buffer.concat([
-        // outcome_proof
-        Web3.utils.toBN(proof.outcome_proof.proof.length).toBuffer('le', 4),
-        Buffer.concat(
-            // outcome_proof.proof
-            proof.outcome_proof.proof.map(
-                p => Buffer.concat([
-                    bs58.decode(p.hash),
-                    Buffer.from([p.direction === 'Right' ? 1 : 0]),
-                ])
-            )
-        ),
-
-        // outcome_proof.block_hash
-        bs58.decode(proof.outcome_proof.block_hash),
-
-        // outcome_proof.id
-        bs58.decode(proof.outcome_proof.id),
-
-        // outcome_proof.outcome
-        Buffer.concat([
-            // outcome_proof.outcome.logs
-            Web3.utils.toBN(proof.outcome_proof.outcome.logs.length).toBuffer('le', 4),
-            // TODO: find "logs" example to serialize
-
-            // outcome_proof.outcome.receipt_ids
-            Web3.utils.toBN(proof.outcome_proof.outcome.receipt_ids.length).toBuffer('le', 4),
-            Buffer.concat(
-                proof.outcome_proof.outcome.receipt_ids.map(
-                    r => bs58.decode(r)
-                )
-            ),
-
-            // outcome_proof.outcome.gas_burnt
-            Web3.utils.toBN(proof.outcome_proof.outcome.gas_burnt).toBuffer('le', 8),
-
-            statusToBuffer(proof.outcome_proof.outcome.status),
-            // outcome_proof.outcome.status.SuccessReceiptId
-            // Buffer.from([3]), // TODO: support other status types
-            // bs58.decode(proof.outcome_proof.outcome.status.SuccessReceiptId),
-
-            // outcome_root_proof
-            Web3.utils.toBN(0).toBuffer('le', 4),
-
-            // block_header_lite
-            bs58.decode(proof.block_header_lite.prev_block_hash),
-            bs58.decode(proof.block_header_lite.inner_rest_hash),
-            Web3.utils.toBN(proof.block_header_lite.inner_lite.height).toBuffer('le', 8),
-            bs58.decode(proof.block_header_lite.inner_lite.epoch_id),
-            bs58.decode(proof.block_header_lite.inner_lite.next_epoch_id),
-            bs58.decode(proof.block_header_lite.inner_lite.prev_state_root),
-            bs58.decode(proof.block_header_lite.inner_lite.outcome_root),
-            Web3.utils.toBN(proof.block_header_lite.inner_lite.timestamp).toBuffer('le', 8),
-            bs58.decode(proof.block_header_lite.inner_lite.next_bp_hash),
-            bs58.decode(proof.block_header_lite.inner_lite.block_merkle_root),
-
-            // block_proof
-            Web3.utils.toBN(proof.block_proof.length).toBuffer('le', 4),
-            Buffer.concat(
-                proof.block_proof.map(
-                    bp => Buffer.concat([
-                        bs58.decode(bp.hash),
-                        Buffer.from([bp.direction === 'Right' ? 1 : 0]),
-                    ])
-                )
-            ),
-        ])
-    ]);
 }
 
 class TransferEthERC20FromNear {
@@ -175,48 +89,49 @@ class TransferEthERC20FromNear {
 
         // Wait for the block with the given receipt/transaction in Near2EthClient.
         let web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
-        let ethReceiverAccount = web3.eth.accounts.privateKeyToAccount(command.ethReceiverAddress);
-        web3.eth.accounts.wallet.add(ethReceiverAccount);
-        web3.eth.defaultAccount = ethReceiverAccount.address;
-        ethReceiverAccount = ethReceiverAccount.address;
+        let ethMasterAccount = web3.eth.accounts.privateKeyToAccount(RainbowConfig.getParam('eth-master-sk'));
+        web3.eth.accounts.wallet.add(ethMasterAccount);
+        web3.eth.defaultAccount = ethMasterAccount.address;
+        ethMasterAccount = ethMasterAccount.address;
         let clientContract = new web3.eth.Contract(
             // @ts-ignore
             JSON.parse(fs.readFileSync(RainbowConfig.getParam('near2eth-client-abi-path'))),
             RainbowConfig.getParam('near2eth-client-address'), {
-                from: ethReceiverAccount,
+                from: ethMasterAccount,
                 handleRevert: true,
             },
         );
 
-        let lastClientBlock;
-        let lastClientBlockHeight;
-        let clientBlockHash;
+        let clientBlock;
+        let clientBlockHeight;
+        let clientBlockValidAfter;
+        let clientBlockHashB58;
         let clientBlockHashHex;
-        let blockMerkleRoot;
+        let clientBlockMerkleRoot;
         while (true) {
-            lastClientBlock = await clientContract.methods.last().call();
-            const clientBlockHeight = lastClientBlock.height;
+            clientBlock = await clientContract.methods.last().call();
+            clientBlockHeight = new BN(clientBlock.height);
+            clientBlockValidAfter = new BN(clientBlock.validAfter);
             clientBlockHashHex = await clientContract.methods.blockHashes(clientBlockHeight).call();
-            blockMerkleRoot = await clientContract.methods.blockMerkleRoots(clientBlockHeight).call();
-            clientBlockHash = bs58.encode(toBuffer(clientBlockHashHex));
-            console.log(`Current light client head is: hash=${clientBlockHash}, height=${clientBlockHeight}`);
-            const latestBlock = await web3.eth.getBlock('latest');
-            const latestBlockTimestamp = new BN(latestBlock.timestamp);
-            lastClientBlockHeight = new BN(lastClientBlock.height);
-            const lastClientBlockValidAfter = new BN(lastClientBlock.validAfter);
-            if (lastClientBlockHeight > outcomeBlockHeight) {
-                console.log(`Near2EthClient block is at ${lastClientBlockHeight} which is further than the needed block ${outcomeBlockHeight}`);
+            clientBlockMerkleRoot = await clientContract.methods.blockMerkleRoots(clientBlockHeight).call();
+            clientBlockHashB58 = bs58.encode(toBuffer(clientBlockHashHex));
+            console.log(`Current light client head is: hash=${clientBlockHashB58}, height=${clientBlockHeight.toString()}`);
+
+            const chainBlock = await web3.eth.getBlock('latest');
+            const chainBlockTimestamp = new BN(chainBlock.timestamp);
+            if (clientBlockHeight.gt(outcomeBlockHeight)) {
+                console.log(`Near2EthClient block is at ${clientBlockHeight.toString()} which is further than the needed block ${outcomeBlockHeight.toString()}`);
                 break;
-            } else if (latestBlockTimestamp >= lastClientBlockValidAfter && lastClientBlockHeight == outcomeBlockHeight) {
-                console.log(`Near2EthClient block is at ${lastClientBlockHeight} which is the block of the outcome. And the light client block is valid.`);
+            } else if (chainBlockTimestamp.gte(clientBlockValidAfter) && clientBlockHeight.eq(outcomeBlockHeight)) {
+                console.log(`Near2EthClient block is at ${clientBlockHeight.toString()} which is the block of the outcome. And the light client block is valid.`);
                 break;
-            } else if (latestBlockTimestamp < lastClientBlockValidAfter && lastClientBlockHeight == outcomeBlockHeight){
-                const sleepSec = lastClientBlockValidAfter - latestBlockTimestamp;
-                console.log(`Block ${lastClientBlockHeight} is not valid yet. Sleeping ${sleepSec} seconds.`);
+            } else if (chainBlockTimestamp.lt(clientBlockValidAfter) && clientBlockHeight.eq(outcomeBlockHeight)) {
+                const sleepSec = clientBlockValidAfter.sub(chainBlockTimestamp).toNumber();
+                console.log(`Block ${clientBlockHeight.toString()} is not valid yet. Sleeping ${sleepSec} seconds.`);
                 await sleep(sleepSec * 1000);
             } else {
                 const sleepSec = 10;
-                console.log(`Block ${outcomeBlockHeight} is not available on the light client yet. Current height of light client is ${lastClientBlockHeight}. Sleeping ${sleepSec} seconds.`);
+                console.log(`Block ${outcomeBlockHeight.toString()} is not available on the light client yet. Current height of light client is ${clientBlockHeight.toString()}. Sleeping ${sleepSec} seconds.`);
                 await sleep(sleepSec * 1000);
             }
         }
@@ -235,7 +150,7 @@ class TransferEthERC20FromNear {
                 transaction_hash: txReceiptId,
                 // TODO: Use proper sender.
                 receiver_id: command.nearSenderAccount,
-                light_client_head: clientBlockHash
+                light_client_head: clientBlockHashB58
             });
         } else if (idType === 'receipt') {
             proofRes = await near.connection.provider.sendJsonRpc('light_client_proof', {
@@ -243,7 +158,7 @@ class TransferEthERC20FromNear {
                 receipt_id: txReceiptId,
                 // TODO: Use proper sender.
                 receiver_id: command.nearSenderAccount,
-                light_client_head: clientBlockHash
+                light_client_head: clientBlockHashB58
             });
         } else {
             console.error('Unreachable');
@@ -255,17 +170,46 @@ class TransferEthERC20FromNear {
             // @ts-ignore
             JSON.parse(fs.readFileSync(RainbowConfig.getParam('near2eth-prover-abi-path'))),
             RainbowConfig.getParam('near2eth-prover-address'), {
-                from: ethReceiverAccount,
+                from: ethMasterAccount,
                 handleRevert: true,
             },
         );
         const borshProofRes = borshifyOutcomeProof(proofRes);
-        console.log(JSON.stringify(proofRes));
-        console.log(lastClientBlockHeight.toString());
-        console.log(`hash: ${clientBlockHashHex}`);
-        console.log(`root: ${blockMerkleRoot}`);
-        let proverRes = await proverContract.methods.proveOutcome(borshProofRes, lastClientBlockHeight).call();
-        console.log("Hello");
+        console.log(`proof: ${JSON.stringify(proofRes)}`);
+        console.log(`client height: ${clientBlockHeight.toString()}`);
+        console.log(`root: ${clientBlockMerkleRoot}`);
+        let proverRes = await proverContract.methods.proveOutcome(borshProofRes, clientBlockHeight).call();
+
+        const ethTokenLockerContract = new web3.eth.Contract(
+            // @ts-ignore
+            JSON.parse(fs.readFileSync(RainbowConfig.getParam('eth-locker-abi-path'))),
+            RainbowConfig.getParam('eth-locker-address'), {
+                from: ethMasterAccount,
+                handleRevert: true,
+            },
+        );
+
+        const ethERC20Contract = new web3.eth.Contract(
+            // @ts-ignore
+            JSON.parse(fs.readFileSync(RainbowConfig.getParam('eth-erc20-abi-path'))),
+            RainbowConfig.getParam('eth-erc20-address'), {
+                from: ethMasterAccount,
+                handleRevert: true,
+            },
+        );
+
+        const oldBalance = await ethERC20Contract.methods.balanceOf(command.ethReceiverAddress).call();
+        console.log(`ERC20 balance of ${command.ethReceiverAddress} before the transfer: ${oldBalance}`);
+        const txUnlock = await ethTokenLockerContract.methods.unlockToken(
+            borshProofRes, clientBlockHeight
+        ).send({
+            from: ethMasterAccount,
+            gas: 5000000,
+            handleRevert: true
+        });
+        const totalSupply = await ethERC20Contract.methods.totalSupply().call();
+        const newBalance = await ethERC20Contract.methods.balanceOf(command.ethReceiverAddress).call();
+        console.log(`ERC20 balance of ${command.ethReceiverAddress} after the transfer: ${newBalance}`);
     }
 }
 

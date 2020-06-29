@@ -335,6 +335,7 @@ impl FungibleToken {
     /// Burn given amount of tokens and unlock it on the Ethereum side for the recipient address.
     /// We return the amount as u128 and the address of the beneficiary as `[u8; 20]` for ease of
     /// processing on Solidity side.
+    #[result_serializer(borsh)]
     pub fn burn(&mut self, amount: U128, recipient: String) -> (U128, [u8; 20]) {
         let owner = env::predecessor_account_id();
         let mut account = self.get_account(&owner);

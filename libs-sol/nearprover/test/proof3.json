@@ -1,78 +1,73 @@
 {
-  "block_header_lite": {
-    "inner_lite": {
-      "block_merkle_root": "DkCaiA9uLtRpDue9YU8HHpJNZCEEpsdRpBqVibhhk27t",
-      "epoch_id": "GyMTpmMNcs9hBswvyMs15TSkAu7gyuBmL7WeUM2FCiSP",
-      "height": 1350,
-      "next_bp_hash": "5ThLime66JsuHQe1uRaJNoauYUT3KQWxMJVbuPudbjuh",
-      "next_epoch_id": "AG4UNUZxaxG15AGNEq6cn1UA4aXLsThuQRiXo8NLJJ3J",
-      "outcome_root": "9zg5uV7crekbicu8GzaxfVbBSV7Hn9AjtsVZBVbZWAd5",
-      "prev_state_root": "48uhnXtQy1tjJtXjSnh46SD99NaYmbpuW8gAMHAT9rUp",
-      "timestamp": "1592341741718249000"
-    },
-    "inner_rest_hash": "5a3MCyTAEGH84JtCRLBgBSvccpoehJrr25tJozFzvFbC",
-    "prev_block_hash": "BShvSL2stqpUZkx7jqR4sqbDhJSKX8EUVtnhR7PuaL5a"
-  },
-  "block_proof": [
-    {
-      "direction": "Right",
-      "hash": "GRQkWCLmEBXrQABA4mJH37PEN4v7STDy279225rZGb23"
-    },
-    {
-      "direction": "Left",
-      "hash": "7CCsSjFFTxZFUeUhnCiFycFtdnoRukk8uLBUWyCxw6bk"
-    },
-    {
-      "direction": "Left",
-      "hash": "5TBhW91mbsDB5LVy6w6bRtnP51KFjKspaWRJfL4Bkrf"
-    },
-    {
-      "direction": "Right",
-      "hash": "GErEAG1CuiVGFFcFAZXvRr8t6bXjH2S7ujEKiqPKN5rW"
-    },
-    {
-      "direction": "Right",
-      "hash": "8Uy6oikdu3gY7n6zCqntdvM5ZFdtK3MZVikXDuztmbXo"
-    },
-    {
-      "direction": "Right",
-      "hash": "2b9Pk9E1S4ezdzDiQPQNpdo5tyv5gRLb7jc28CafS66L"
-    },
-    {
-      "direction": "Left",
-      "hash": "51yrKdZF8JoqkaQumPAn44Zg6oVkocyQpetQJZaHvada"
-    },
-    {
-      "direction": "Right",
-      "hash": "D8d8QeAj2WZzxXDPqCJG2UQeRKf4r6ter2dnaUQ77g81"
-    },
-    {
-      "direction": "Left",
-      "hash": "HJpMBdad7Aj3ofWy4UHp53jnbKHNLx7DtCBMnUyG92aT"
-    },
-    {
-      "direction": "Right",
-      "hash": "9HCrEkaAvJM4igpe6gFsXVgbJsRSmM6r6RS4miTizQEH"
-    },
-    {
-      "direction": "Left",
-      "hash": "9szvxe22En4at1i6nRZ3YY3EsMW4WAjUmGUXdafm5e9q"
-    }
-  ],
-  "outcome_proof": {
-    "block_hash": "EcBtsheEh4Hyjy57zQ8R8Rpih58vERBcRtHj26izsf1s",
-    "id": "32jSpKLBDXV4zvxfT2TzQzzCB7HDdCErbBadekGLUjUS",
-    "outcome": {
-      "gas_burnt": 223182562500,
-      "logs": [],
-      "receipt_ids": [
-        "6esogWPmbbXzjr3n5du1SjevyJXwYMuqUCpv9WS92DUG"
-      ],
-      "status": {
-        "SuccessReceiptId": "6esogWPmbbXzjr3n5du1SjevyJXwYMuqUCpv9WS92DUG"
+  "outcome_proof":{
+    "proof":[
+      {
+        "hash":"5yzGvaYdHfq4kZeoV6vnygvQd4Z683LXRkAXH1KDeG3U",
+        "direction":"Right"
       }
-    },
-    "proof": []
+    ],
+    "block_hash":"BUCRNeND73mVaFbwmLg7zduM95LHtN2vzK2HHvJNWEGM",
+    "id":"64J1o71ngkx2urRxj5UYa64v9fWT7yf1HxGHUYgthoSC",
+    "outcome":{
+      "logs":[
+
+      ],
+      "receipt_ids":[
+        "DzFs47QNEdibR1MTjAhUmigeJL5wo9sNdG8zgpGVN9B3"
+      ],
+      "gas_burnt":3633100297168,
+      "tokens_burnt":"18165501485840000",
+      "executor_id":"nearfuntoken",
+      "status":{
+        "SuccessValue":"WyIxIixbMTk2LDE5OSw3MywxMjcsMTkwLDI2LDEzNiwxMDQsNjUsMTYxLDE0OSwxNjUsMjE0LDM0LDIwNSw5Niw1LDYwLDE5LDExOF1d"
+      }
+    }
   },
-  "outcome_root_proof": []
+  "outcome_root_proof":[
+
+  ],
+  "block_header_lite":{
+    "prev_block_hash":"65WBPSVpqtfSrLypahveYzxs1C52AGexKVjqBrMoxWRn",
+    "inner_rest_hash":"22fymMDcV7YdKZHwvxH8kxbZVFdHh3MEmNXT4t9eWMFf",
+    "inner_lite":{
+      "height":1699,
+      "epoch_id":"8zEcgopfVM1xbkd5jfYu9Mpyd7GF76RPBXKshheqXBMX",
+      "next_epoch_id":"4VGtNxYqDFfgKSQ7b6VjYAFSzN17sKNm8pFhHnL2H8vJ",
+      "prev_state_root":"BWChofcus3fmDTj5zJWZxRbdaUiBWLUGWDpyaRXfQjui",
+      "outcome_root":"EPVTqyz9tKwcCXcyENZNZaBzcrN5mR1PrH2vHEZCJJkr",
+      "timestamp":"1593379656945908000",
+      "next_bp_hash":"BKD5rntrpPTgf9FtfVgdz9cDkFJCrwag77pGDAJtynu1",
+      "block_merkle_root":"FvvEfD3e7r3YkVKNMWHqB1QwvmnXg53Y4aVcW2fhnCkZ"
+    }
+  },
+  "block_proof":[
+    {
+      "hash":"J2CZD4NxihHFKG52U2yKuxgk6DnYcgwQhXfEy9j9HAeM",
+      "direction":"Right"
+    },
+    {
+      "hash":"3eHf57igSgyiFLHFauyMPiR6hEps7WZZGPVDunskYE9n",
+      "direction":"Left"
+    },
+    {
+      "hash":"Ad9aFkPwy6bavwEwrH8oRz9WAbofJMqp7XGrGyuHLmnj",
+      "direction":"Right"
+    },
+    {
+      "hash":"Ekn1Ze5UoYJsnxnJQeXZdvgtaVZG8mPubsftTEBSKr72",
+      "direction":"Left"
+    },
+    {
+      "hash":"9JRBfCoM37tGoeYzW5r31xhjajQouXhXFLozSCLShXQZ",
+      "direction":"Left"
+    },
+    {
+      "hash":"5PrDip98cCtboHfLXG53waLHHVLpmMA4jEwAH22dqECa",
+      "direction":"Left"
+    },
+    {
+      "hash":"8U29oeQgdyQ2dRfuQ6vnZMyxYuX4UbCoT4bwL44XC93U",
+      "direction":"Left"
+    }
+  ]
 }
