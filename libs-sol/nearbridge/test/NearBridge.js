@@ -117,7 +117,6 @@ contract('NearBridge', function ([_, addr1]) {
                 await this.bridge.addLightClientBlock(blockBorsh);
                 await this.bridge.blockHashes(block.inner_lite.height);
                 expect(await this.bridge.blockHashes(block.inner_lite.height)).to.be.a('string');
-                console.log(i);
                 const now = await time.latest();
                 await timeIncreaseTo(now.add(time.duration.seconds(10)));
 
@@ -126,7 +125,7 @@ contract('NearBridge', function ([_, addr1]) {
                     for(let j = 0; j < block.approvals_after_next.length; j++) {
                         console.log("checking approval "+j)
                         if(block.approvals_after_next[j]) {
-                            console.log("approval j is not null"+j)
+                            console.log("approval "+ j + " is not null")
                             expect(await this.bridge.checkBlockProducerSignatureInLastBlock(j, blockBorsh)).to.be.true;
                         }
                     }
