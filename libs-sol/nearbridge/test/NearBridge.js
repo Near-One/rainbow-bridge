@@ -47,9 +47,9 @@ function borshify (block) {
                 signature => signature === null ? 
                 Buffer.from([0]) :
                 Buffer.concat([
-                    Buffer.from([signature ? 1 : 0]),
+                    Buffer.from([1]),
                     signature.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
-                    signature ? bs58.decode(signature.substr(8)) : Buffer.from([]),
+                    bs58.decode(signature.substr(8)),
                 ]),
             ),
         ),
@@ -114,6 +114,7 @@ contract('NearBridge', function ([_, addr1]) {
             for (let i = 1; i < blockFiles.length; i++) {
                 let block = require(process.env['NEAR_HEADERS_DIR'] +'/' + blockFiles[i]);
                 const blockBorsh = borshify(block);
+                console.log("adding block " + block.inner_lite.height);
                 await this.bridge.addLightClientBlock(blockBorsh);
                 await this.bridge.blockHashes(block.inner_lite.height);
                 expect(await this.bridge.blockHashes(block.inner_lite.height)).to.be.a('string');
