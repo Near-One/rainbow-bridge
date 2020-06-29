@@ -54,22 +54,6 @@ library ProofDecoder {
                                     /// transaction was converted to a receipt. Contains the receipt_id of the generated receipt.
     }
 
-    function uintToString(uint v) internal pure returns (string memory str) {
-        uint maxlength = 100;
-        bytes memory reversed = new bytes(maxlength);
-        uint i = 0;
-        while (v != 0) {
-            uint remainder = v % 10;
-            v = v / 10;
-            reversed[i++] = bytes1(uint8(48 + remainder));
-        }
-        bytes memory s = new bytes(i + 1);
-        for (uint j = 0; j <= i; j++) {
-            s[j] = reversed[i - j];
-        }
-        str = string(s);
-    }
-
     function decodeExecutionStatus(Borsh.Data memory data) internal pure returns(ExecutionStatus memory executionStatus) {
         executionStatus.enumIndex = data.decodeU8();
         if (executionStatus.enumIndex == 0) {
@@ -82,12 +66,6 @@ library ProofDecoder {
         } else
         if (executionStatus.enumIndex == 2) {
             executionStatus.successValue = data.decodeBytes();
-
-//            revert(uintToString(data.decodeU32()));
-//            executionStatus.successValue = new bytes(data.decodeU32());
-//            for (uint i = 0; i < executionStatus.successValue.length; i++) {
-//                executionStatus.successValue[i] = byte(data.decodeU8());
-//            }
         } else
         if (executionStatus.enumIndex == 3) {
             executionStatus.successReceiptId = data.decodeBytes32();
@@ -139,42 +117,6 @@ library ProofDecoder {
 
         bytes32 hash;
     }
-
-    function char(byte b) internal pure returns (byte c) {
-        if (uint8(b) < uint8(10)) return byte(uint8(b) + 0x30);
-        else return byte(uint8(b) + 0x57);
-    }
-
-    function bytes32string(bytes32 b32) internal pure returns (string memory out) {
-        bytes memory s = new bytes(64);
-
-        for (uint i = 0; i < 32; i++) {
-            byte b = byte(b32[i]);
-            byte hi = byte(uint8(b) / 16);
-            byte lo = byte(uint8(b) - 16 * uint8(hi));
-            s[i*2] = char(hi);
-            s[i*2+1] = char(lo);
-        }
-
-        out = string(s);
-    }
-
-//    function bytes32ToString(bytes32 x) internal pure returns (string memory) {
-//        bytes memory bytesString = new bytes(32);
-//        uint charCount = 0;
-//        for (uint j = 0; j < 32; j++) {
-//            byte char = bytes1(bytes32(uint(x) * 2 ** (8 * j)));
-//            if (char != 0) {
-//                bytesString[charCount] = char;
-//                charCount++;
-//            }
-//        }
-//        bytes memory bytesStringTrimmed = new bytes(charCount);
-//        for (uint j = 0; j < charCount; j++) {
-//            bytesStringTrimmed[j] = bytesString[j];
-//        }
-//        return string(bytesStringTrimmed);
-//    }
 
     function decodeExecutionOutcomeWithId(Borsh.Data memory data) internal view returns(ExecutionOutcomeWithId memory outcome) {
         outcome.id = data.decodeBytes32();
