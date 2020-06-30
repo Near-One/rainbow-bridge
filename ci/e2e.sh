@@ -1,8 +1,6 @@
 #!/bin/bash
 # This test launch all commands and tranfer tokens
 # If run locally, you need a manually `node index.js clean`, `npm i -g ganache-cli`
-# and also make sure enviroment/vendor/ethashproof exist and build.sh because eth2near-relay
-# Always uses that binary instead of ~/.rainbowup
 
 set -exuo pipefail
 
@@ -11,7 +9,7 @@ ROOT_DIR=$CI_DIR/..
 
 cd $ROOT_DIR/environment
 yarn
-node index.js prepare
+# node index.js prepare
 node index.js start near-node
 node index.js start ganache
 ./scripts/start_ganache.sh &
