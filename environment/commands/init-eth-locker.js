@@ -21,6 +21,11 @@ class InitETHLocker {
         await tokenLockerContract
             .deploy({
                 data: '0x' + fs.readFileSync(RainbowConfig.getParam('eth-locker-bin-path')),
+                arguments: [
+                    RainbowConfig.getParam('eth-erc20-address'),
+                    Buffer.from(RainbowConfig.getParam('near-fun-token-account'), 'utf8'),
+                    RainbowConfig.getParam('near2eth-prover-address'),
+                ],
             })
             .send({
                 from: ethMasterAccount,

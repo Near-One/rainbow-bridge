@@ -65,7 +65,7 @@ class TransferETHERC20ToNear {
         let lockedEvent;
         try {
             console.log('Transferring tokens from the ERC20 account to the token locker account.');
-            const transaction = await ethTokenLockerContract.methods.lockToken(RainbowConfig.getParam('eth-erc20-address'), Number(amount),
+            const transaction = await ethTokenLockerContract.methods.lockToken(Number(amount),
                 nearReceiverAccount)
                 .send({
                     from: ethSenderAccount,
