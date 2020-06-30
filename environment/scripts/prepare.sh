@@ -10,6 +10,7 @@ export LOCAL_NEARUP_SRC
 eval BRIDGE_SRC=~/.rainbowup/bridge
 eval CORE_SRC=~/.rainbowup/core
 eval NEARUP_SRC=~/.rainbowup/nearup
+eval NEARUP_LOGS=~/.nearup/localnet-logs
 
 
 mkdir -p $RAINBOWUP_DIR
@@ -40,6 +41,7 @@ else
 echo "Linking the specified local repo from ${LOCAL_NEARUP_SRC} to ${NEARUP_SRC}"
 ln -s $LOCAL_NEARUP_SRC $NEARUP_SRC
 fi
+mkdir -p $NEARUP_LOGS
 
 cd $BRIDGE_SRC
 git submodule update --init --recursive
