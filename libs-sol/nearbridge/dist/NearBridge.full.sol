@@ -1820,10 +1820,6 @@ contract NearBridge is INearBridge {
         mapping(uint256 => BlockProducer) next_bps;
     }
 
-    uint256 constant public DEFAULT_LOCK_ETH_AMOUNT = 1 ether;
-//    uint256 constant public DEFAULT_LOCK_DURATION = 1 hours;
-    uint256 constant public DEFAULT_LOCK_DURATION = 10 seconds;
-
     bool public initialized;
     uint256 public lock_eth_amount;
     uint256 public lock_duration;
