@@ -1874,7 +1874,6 @@ contract NearBridge is INearBridge {
     function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex, bytes memory data) public view returns(bool) {
         Borsh.Data memory borsh = Borsh.from(data);
         NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
-
         return _checkValidatorSignature(
             nearBlock.inner_lite.height,
             nearBlock.next_hash,
@@ -2004,10 +2003,10 @@ contract NearBridge is INearBridge {
 
         blockHashes[nearBlock.inner_lite.height] = nearBlock.hash;
         blockMerkleRoots[nearBlock.inner_lite.height] = nearBlock.inner_lite.block_merkle_root;
-        emit BlockHashAdded(
-            last.height,
-            blockHashes[last.height]
-        );
+        //emit BlockHashAdded(
+        //    last.height,
+        //    blockHashes[last.height]
+        //);
     }
 
     function _checkValidatorSignature(
