@@ -11,6 +11,10 @@ contract NearBridgeMock is INearBridge {
         blockMerkleRoots[blockNumber] = root;
     }
 
+    function setBlockHash(uint256 blockNumber, bytes32 hash) external {
+        blockHashes[blockNumber] = hash;
+    }
+
     function balanceOf(address /*wallet*/) external view returns(uint256) {
         return 0;
     }

@@ -14,6 +14,9 @@ function sleep (ms) {
     });
 }
 
+/// Maximum number of retries a Web3 method call will perform.
+const MAX_WEB3_RETRIES = 1000;
+
 function borshify (block) {
     return Buffer.concat([
         bs58.decode(block.prev_block_hash),
@@ -102,7 +105,7 @@ class Near2EthRelay {
                 const headBlock = await this.near.connection.provider.block({ blockId: status.sync_info.latest_block_height });
                 // @ts-ignore
                 const lastFinalBlockHash = headBlock.header.last_final_block;
-                // TODO: For unknown reason the proof for the finalized block is not immediately available.
+                // The finalized block is not immediately available so we wait for it to become available.
                 let lightClientBlock = null;
                 while (!lightClientBlock) {
                     // @ts-ignore
@@ -151,9 +154,6 @@ class Near2EthRelay {
                 const clientBlockHashHex = await clientContract.methods.blockHashes(clientBlockHeight).call();
                 clientBlockHash = bs58.encode(toBuffer(clientBlockHashHex));
                 console.log(`Current light client head is: hash=${clientBlockHash}, height=${clientBlockHeight}`);
-                // @ts-ignore
-                const _nearBlock = await near.connection.provider.block({ blockId: Number(clientBlockHeight) });
-
                 const latestBlock = await web3.eth.getBlock('latest');
                 if (latestBlock.timestamp >= lastClientBlock.validAfter) {
                     console.log('Block is valid.');
@@ -171,12 +171,25 @@ class Near2EthRelay {
             if (balance === '0') {
                 console.log(`The sender account does not have enough stake. Transferring ${lockEthAmount} wei.`);
                 // @ts-ignore
-                const _depositTx = await clientContract.methods.deposit().send({
-                    from: ethMasterAccount,
-                    gas: 1000000,
-                    handleRevert: true,
-                    value: (new BN(lockEthAmount)),
-                });
+                let _depositTx;
+                for (let i = 0; i <= MAX_WEB3_RETRIES; i++) {
+                    if (i === MAX_WEB3_RETRIES) {
+                        console.error(`Failed ${MAX_WEB3_RETRIES} times`);
+                        process.exit(1);
+                    }
+                    try {
+                        _depositTx = await clientContract.methods.deposit().send({
+                            from: ethMasterAccount,
+                            gas: 1000000,
+                            handleRevert: true,
+                            value: (new BN(lockEthAmount)),
+                        });
+                        break;
+                    } catch(err) {
+                        console.log(`Encountered Web3 error while depositing stake ${err}`);
+                        await sleep(1000);
+                    }
+                }
                 console.log('Transferred.');
             }
 
@@ -187,11 +200,23 @@ class Near2EthRelay {
             console.log(`${JSON.stringify(lightClientBlock)}`);
 
             const borshBlock = borshify(lightClientBlock);
-            await clientContract.methods.addLightClientBlock(borshBlock).send({
-                from: ethMasterAccount,
-                gas: 1000000,
-                handleRevert: true,
-            });
+            for (let i = 0; i <= MAX_WEB3_RETRIES; i++) {
+                if (i === MAX_WEB3_RETRIES) {
+                    console.error(`Failed ${MAX_WEB3_RETRIES} times`);
+                    process.exit(1);
+                }
+                try {
+                    await clientContract.methods.addLightClientBlock(borshBlock).send({
+                        from: ethMasterAccount,
+                        gas: 1000000,
+                        handleRevert: true,
+                    });
+                    break;
+                } catch(err) {
+                    console.log(`Encountered Web3 error while submitting light client block ${err}`);
+                    await sleep(1000);
+                }
+            }
 
             await step();
         };

@@ -40,7 +40,6 @@
         "lint:sol": "solium -d .",
         "lint:sol:fix": "solium -d . --fix",
         "lint": "yarn run lint:js && yarn run lint:sol",
-        "lint:fix": "yarn run lint:js:fix && yarn run lint:sol:fix",
-        "dist": "truffle-flattener ./contracts/NearBridge.sol > NearBridge.full.sol && solcjs --bin --abi --optimize NearBridge.full.sol && mv NearBridge_full_sol_NearBridge.bin NearBridge.full.bin && mv NearBridge_full_sol_NearBridge.abi NearBridge.full.abi && rm *_sol_*"
+        "lint:fix": "yarn run lint:js:fix && yarn run lint:sol:fix"
     }
 }

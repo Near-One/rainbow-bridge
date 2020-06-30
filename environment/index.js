@@ -10,6 +10,7 @@ const { StartLocalNearNodeCommand } = require('./commands/start/near.js');
 const { StopLocalNearNodeCommand } = require('./commands/stop/near.js');
 const { StopManagedProcessCommand } = require('./commands/stop/process.js');
 const { TransferETHERC20ToNear } = require('./commands/transfer-eth-erc20-to-near');
+const { TransferEthERC20FromNear } = require('./commands/transfer-eth-erc20-from-near');
 const { InitETHLocker } = require('./commands/init-eth-locker');
 const { InitETHERC20 } = require('./commands/init-eth-erc20');
 const { InitNEARContracts } = require('./commands/init-near-contracts');
@@ -18,6 +19,7 @@ const { ETHDump } = require('./commands/eth-dump');
 const { RainbowConfig } = require('./lib/config');
 const { InitEthEd25519 } = require('./commands/init-eth-ed25519');
 const { InitNear2EthClient } = require('./commands/init-near2eth-client');
+const { InitNear2EthProver } = require('./commands/init-near2eth-prover');
 
 RainbowConfig.declareOption(
     'near-network-id',
@@ -292,6 +294,18 @@ RainbowConfig.addOptions(
         'eth-ed25519-address',
     ]);
 
+RainbowConfig.addOptions(
+    program.command('init-near2eth-prover')
+        .description('Deploys and initializes Near2EthProver.')
+        .action(InitNear2EthProver.execute),
+    [
+            'eth-node-url',
+            'eth-master-sk',
+            'near2eth-prover-abi-path',
+            'near2eth-prover-bin-path',
+            'near2eth-client-address',
+    ]);
+
 // User commands.
 
 RainbowConfig.addOptions(
@@ -316,6 +330,9 @@ RainbowConfig.addOptions(
         'eth-master-sk',
         'eth-locker-abi-path',
         'eth-locker-bin-path',
+        'eth-erc20-address',
+        'near-fun-token-account',
+        'near2eth-prover-address'
     ],
 );
 
@@ -349,6 +366,32 @@ RainbowConfig.addOptions(
         'eth2near-client-account',
         'near-master-account',
         'near-master-sk',
+    ],
+);
+
+RainbowConfig.addOptions(
+    program.command('transfer-eth-erc20-from-near')
+        .action(TransferEthERC20FromNear.execute)
+        .option('--amount <amount>', 'Amount of ERC20 tokens to transfer')
+        .option('--near-sender-account <near_sender_account>', 'Near account that will be sending fungible token.')
+        .option('--near-sender-sk <near_sender_sk>', 'The secret key of Near account that will be sending the fungible token.')
+        .option('--eth-receiver-address <eth_receiver_address>', 'The account that will be receiving the token on Ethereum side.'),
+    [
+            'near-node-url',
+            'near-network-id',
+            'near-fun-token-account',
+            'eth-node-url',
+            'eth-erc20-address',
+            'eth-erc20-abi-path',
+            'eth-locker-address',
+            'eth-locker-abi-path',
+            'near2eth-client-abi-path',
+            'near2eth-client-address',
+            'eth-master-sk',
+
+            // For diagnostics. Remove.
+            'near2eth-prover-abi-path',
+            'near2eth-prover-address',
     ],
 );
 

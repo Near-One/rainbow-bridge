@@ -6,9 +6,10 @@ import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "../../nearbridge/contracts/INearBridge.sol";
 import "../../nearbridge/contracts/NearDecoder.sol";
 import "./ProofDecoder.sol";
+import "./INearProver.sol";
 
 
-contract NearProver {
+contract NearProver is INearProver {
     using SafeMath for uint256;
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
@@ -39,7 +40,7 @@ contract NearProver {
 
         require(
             hash == fullOutcomeProof.block_header_lite.inner_lite.outcome_root,
-            "NearProver: merkle proof is not valid"
+            "NearProver: outcome merkle proof is not valid"
         );
 
         bytes32 expectedBlockMerkleRoot = bridge.blockMerkleRoots(blockHeight);

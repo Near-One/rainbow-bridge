@@ -26,7 +26,14 @@
         "truffle-flattener": "^1.4.4"
     },
     "scripts": {
-        "dist": "truffle-flattener ./contracts/Soliditemp.sol > Soliditemp.full.sol && solcjs --bin --abi --optimize Soliditemp.full.sol && mv Soliditemp_full_sol_Soliditemp.bin Soliditemp.full.bin && mv Soliditemp_full_sol_Soliditemp.abi Soliditemp.full.abi && rm *_sol_*"
+        "test": "scripts/test.sh",
+        "coverage": "scripts/coverage.sh",
+        "lint:js": "eslint .",
+        "lint:js:fix": "eslint . --fix",
+        "lint:sol": "solium -d .",
+        "lint:sol:fix": "solium -d . --fix",
+        "lint": "yarn run lint:js && yarn run lint:sol",
+        "lint:fix": "yarn run lint:js:fix && yarn run lint:sol:fix"
     }
 }
 
