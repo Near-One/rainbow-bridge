@@ -10,14 +10,17 @@ const { StartLocalNearNodeCommand } = require('./commands/start/near.js');
 const { StopLocalNearNodeCommand } = require('./commands/stop/near.js');
 const { StopManagedProcessCommand } = require('./commands/stop/process.js');
 const { TransferETHERC20ToNear } = require('./commands/transfer-eth-erc20-to-near');
+const { TransferEthERC20FromNear } = require('./commands/transfer-eth-erc20-from-near');
 const { InitETHLocker } = require('./commands/init-eth-locker');
 const { InitETHERC20 } = require('./commands/init-eth-erc20');
 const { InitNEARContracts } = require('./commands/init-near-contracts');
 const { InitNEARFunToken } = require('./commands/init-near-fun-token');
 const { ETHDump } = require('./commands/eth-dump');
+const { NearDump } = require('./commands/near-dump');
 const { RainbowConfig } = require('./lib/config');
 const { InitEthEd25519 } = require('./commands/init-eth-ed25519');
 const { InitNear2EthClient } = require('./commands/init-near2eth-client');
+const { InitNear2EthProver } = require('./commands/init-near2eth-prover');
 
 RainbowConfig.declareOption(
     'near-network-id',
@@ -304,6 +307,18 @@ RainbowConfig.addOptions(
         'near2eth-client-lock-duration'
     ]);
 
+RainbowConfig.addOptions(
+    program.command('init-near2eth-prover')
+        .description('Deploys and initializes Near2EthProver.')
+        .action(InitNear2EthProver.execute),
+    [
+            'eth-node-url',
+            'eth-master-sk',
+            'near2eth-prover-abi-path',
+            'near2eth-prover-bin-path',
+            'near2eth-client-address',
+    ]);
+
 // User commands.
 
 RainbowConfig.addOptions(
@@ -328,6 +343,9 @@ RainbowConfig.addOptions(
         'eth-master-sk',
         'eth-locker-abi-path',
         'eth-locker-bin-path',
+        'eth-erc20-address',
+        'near-fun-token-account',
+        'near2eth-prover-address'
     ],
 );
 
@@ -364,11 +382,48 @@ RainbowConfig.addOptions(
     ],
 );
 
+RainbowConfig.addOptions(
+    program.command('transfer-eth-erc20-from-near')
+        .action(TransferEthERC20FromNear.execute)
+        .option('--amount <amount>', 'Amount of ERC20 tokens to transfer')
+        .option('--near-sender-account <near_sender_account>', 'Near account that will be sending fungible token.')
+        .option('--near-sender-sk <near_sender_sk>', 'The secret key of Near account that will be sending the fungible token.')
+        .option('--eth-receiver-address <eth_receiver_address>', 'The account that will be receiving the token on Ethereum side.'),
+    [
+            'near-node-url',
+            'near-network-id',
+            'near-fun-token-account',
+            'eth-node-url',
+            'eth-erc20-address',
+            'eth-erc20-abi-path',
+            'eth-locker-address',
+            'eth-locker-abi-path',
+            'near2eth-client-abi-path',
+            'near2eth-client-address',
+            'eth-master-sk',
+
+            // For diagnostics. Remove.
+            'near2eth-prover-abi-path',
+            'near2eth-prover-address',
+    ],
+);
+
 program.command('eth-dump <kind_of_data>')
     .option('--eth-node-url <eth_node_url>', 'ETH node API url')
-    .option('--path <path>', 'Dir path to dump eth headers')
+    .option('--path <path>', 'Dir path to dump eth data')
     .option('--start-block <start_block>', 'Start block number (inclusive), default to be 4.3K blocks away from start block')
     .option('--end-block <end_block>', 'End block number (inclusive), default to be latest block')
     .action(ETHDump.execute);
+
+RainbowConfig.addOptions(
+    program.command('near-dump <kind_of_data>')
+        .option('--path <path>', 'Dir path to dump near data')
+        .option('--num-blocks <num_blocks>', 'Number of blocks to dump, default: 100')
+        .action(NearDump.execute),
+    [
+        'near-node-url',
+    ],
+);
+
 
 (async () => { await program.parseAsync(process.argv); })();

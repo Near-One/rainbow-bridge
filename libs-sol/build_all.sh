@@ -10,11 +10,10 @@ yarn
 ./dist.sh
 popd
 
-# Build emitter contract
-echo "Building emitter"
-pushd "emitter"
+echo "Building Near2EthProver contract"
+pushd "nearprover"
 yarn
-yarn run oz compile --no-interactive
+./dist.sh
 popd
 
 echo "Building token locker"

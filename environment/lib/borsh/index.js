@@ -3,6 +3,7 @@ const nearlib = require('near-api-js');
 
 const BN = require('bn.js');
 const { TextDecoder } = require('util');
+const { borshifyOutcomeProof } = require(`./nearProof`);
 
 class BorshError extends Error {
     constructor (message) {
@@ -281,5 +282,7 @@ const readerToHex = (len) => (reader) => Web3.utils.bytesToHex(reader.read_fixed
 exports.BorshContract = BorshContract;
 exports.hexToBuffer = hexToBuffer;
 exports.readerToHex = readerToHex;
+exports.borshifyOutcomeProof = borshifyOutcomeProof;
+
 // For debugging only.
 exports.serialize = serialize;
