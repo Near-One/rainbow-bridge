@@ -59,7 +59,7 @@ function borshify (block) {
 contract('NearBridge', function ([_, addr1]) {
     beforeEach(async function () {
         this.decoder = await NearDecoder.new();
-        this.bridge = await NearBridge.new((await Ed25519.deployed()).address);
+        this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(10));
         await this.bridge.deposit({ value: web3.utils.toWei('1') });
     });
 

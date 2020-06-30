@@ -158,6 +158,16 @@ RainbowConfig.declareOption(
     path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/nearbridge/dist/Ed25519.full.bin'),
 );
 RainbowConfig.declareOption(
+    'near2eth-client-lock-eth-amount',
+    'lock_eth_amount option when deploy near2eth-client contract. In wei.',
+    1e18,
+);
+RainbowConfig.declareOption(
+    'near2eth-client-lock-duration',
+    'lock_duration option when deploy near2eth-client contract. In seconds.',
+    10,
+);
+RainbowConfig.declareOption(
     'near2eth-client-address',
     'ETH address of the Near2EthClient contract.',
 );
@@ -293,6 +303,8 @@ RainbowConfig.addOptions(
         'near2eth-client-abi-path',
         'near2eth-client-bin-path',
         'eth-ed25519-address',
+        'near2eth-client-lock-eth-amount',
+        'near2eth-client-lock-duration'
     ]);
 
 RainbowConfig.addOptions(
