@@ -64,8 +64,8 @@ pub struct FungibleToken {
     pub total_supply: Balance,
     /// The account of the prover that we can use to prove
     pub prover_account: AccountId,
-    /// Address of the Ethereum locker contract, in hex, without leading `0x`.
-    pub locker_address: String,
+    /// Address of the Ethereum locker contract.
+    pub locker_address: [u8; 20],
     /// Hashes of the events that were already used.
     pub used_events: Set<Vec<u8>>
 }
@@ -103,7 +103,7 @@ pub struct Proof {
 
 /// Data that was emitted by the Ethereum event.
 pub struct EthEventData {
-    pub locker_address: String,
+    pub locker_address: [u8; 20],
     pub token: String,
     pub sender: String,
     pub amount: Balance,
@@ -144,8 +144,7 @@ impl EthEventData {
         };
 
         let log_entry: LogEntry = rlp::decode(data).unwrap();
-        let locker_address = log_entry.address.clone().0;
-        let locker_address = (&locker_address).encode_hex::<String>();
+        let locker_address = (log_entry.address.clone().0).0;
         let raw_log = RawLog { topics: log_entry.topics.iter().map(|h| Hash::from(&((h.0).0))).collect(), data:  log_entry.data.clone()};
         let log = event.parse_log(raw_log).unwrap();
         let token = log.params[0].value.clone().to_address().unwrap().0;
@@ -182,17 +181,22 @@ pub trait ExtFungibleToken {
 
 #[near_bindgen]
 impl FungibleToken {
-    /// Initializes the contract with the given total supply owned by the given `owner_id`.
+    /// Initializes the contract without total supply.
+    /// `prover_account`: NEAR account of the Eth2NearProver contract;
+    /// `locker_address`: Ethereum address of the locker contract, in hex.
     #[init]
-    pub fn new(owner_id: AccountId, total_supply: U128, prover_account: AccountId, locker_address: String) -> Self {
-        assert!(env::is_valid_account_id(owner_id.as_bytes()), "Owner's account ID is invalid");
-        let total_supply = total_supply.into();
+    pub fn new(prover_account: AccountId, locker_address: String) -> Self {
+        let data = hex::decode(locker_address).expect("`locker_address` should be a valid hex string.");
+        assert_eq!(data.len(), 20, "`locker_address` should be 20 bytes long");
+        let mut locker_address = [0u8; 20];
+        locker_address.copy_from_slice(&data);
         assert!(!env::state_exists(), "Already initialized");
-        let mut ft = Self { accounts: Map::new(b"a".to_vec()), total_supply, prover_account, locker_address, used_events: Default::default() };
-        let mut account = ft.get_account(&owner_id);
-        account.balance = total_supply;
-        ft.set_account(&owner_id, &account);
-        ft
+        Self {
+            accounts: Map::new(b"a".to_vec()),
+            total_supply: 0,
+            prover_account,
+            locker_address,
+            used_events: Set::new(b"u".to_vec()) }
     }
 
     /// Sets the `allowance` for `escrow_account_id` on the account of the caller of this contract
@@ -290,7 +294,8 @@ impl FungibleToken {
             proof,
         } = proof;
         let event = EthEventData::from_log_entry_data(&log_entry_data);
-        assert_eq!(self.locker_address.to_uppercase(), event.locker_address.to_uppercase(), "Event's address {} does not match locker address of this token {}", self.locker_address, event.locker_address);
+        assert_eq!(self.locker_address, event.locker_address, "Event's address {} does not match locker address of this token {}",
+                   hex::encode(&self.locker_address), hex::encode(&event.locker_address));
         env::log(format!("{}", event).as_bytes());
         let EthEventData{recipient, amount, ..} = event;
         prover::verify_log_entry(
@@ -328,14 +333,21 @@ impl FungibleToken {
     }
 
     /// Burn given amount of tokens and unlock it on the Ethereum side for the recipient address.
-    pub fn burn(&mut self, amount: U128, recipient: String) -> (U128, String) {
+    /// We return the amount as u128 and the address of the beneficiary as `[u8; 20]` for ease of
+    /// processing on Solidity side.
+    #[result_serializer(borsh)]
+    pub fn burn(&mut self, amount: U128, recipient: String) -> (U128, [u8; 20]) {
         let owner = env::predecessor_account_id();
         let mut account = self.get_account(&owner);
         assert!(account.balance >= amount.0, "Not enough balance");
         account.balance -= amount.0;
         self.total_supply -= amount.0;
         self.set_account(&owner, &account);
-        (amount, recipient)
+        let recipient = hex::decode(recipient).expect("recipient should be a hex");
+        assert_eq!(recipient.len(), 20, "Recipient should be a 20-bytes long address");
+        let mut raw_recipient = [0u8; 20];
+        raw_recipient.copy_from_slice(&recipient);
+        (amount, raw_recipient)
     }
 
     /// Returns total supply of tokens.
@@ -375,6 +387,19 @@ impl FungibleToken {
         let account_hash = env::sha256(owner_id.as_bytes());
         self.accounts.insert(&account_hash, &account);
     }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(test)]
+    fn new_with_supply(owner_id: AccountId, total_supply: U128, prover_account: AccountId, locker_address: String) -> Self {
+        assert!(env::is_valid_account_id(owner_id.as_bytes()), "Owner's account ID is invalid");
+        let total_supply = total_supply.into();
+        assert!(!env::state_exists(), "Already initialized");
+        let mut ft = Self { accounts: Map::new(b"a".to_vec()), total_supply, prover_account, locker_address, used_events: Set::new(b"u".to_vec()) };
+        let mut account = ft.get_account(&owner_id);
+        account.balance = total_supply;
+        ft.set_account(&owner_id, &account);
+        ft
+    }
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -384,7 +409,6 @@ mod tests {
     use near_sdk::{testing_env, VMContext};
 
     use super::*;
-    use hex::ToHex;
 
     fn alice() -> AccountId {
         "alice.near".to_string()
@@ -438,7 +462,7 @@ mod tests {
         let context = get_context(carol());
         testing_env!(context);
         let total_supply = 1_000_000_000_000_000u128;
-        let contract = FungibleToken::new(bob(), total_supply.into(), prover(), locker());
+        let contract = FungibleToken::new_with_supply(bob(), total_supply.into(), prover(), locker());
         assert_eq!(contract.get_total_supply().0, total_supply);
         assert_eq!(contract.get_balance(bob()).0, total_supply);
     }
@@ -448,9 +472,9 @@ mod tests {
         let context = get_context(carol());
         testing_env!(context);
         let total_supply = 1_000_000_000_000_000u128;
-        let _contract = FungibleToken::new(bob(), total_supply.into(), prover(), locker());
+        let _contract = FungibleToken::new_with_supply(bob(), total_supply.into(), prover(), locker());
         catch_unwind_silent(|| {
-            FungibleToken::new(bob(), total_supply.into(), prover(), locker());
+            FungibleToken::new_with_supply(bob(), total_supply.into(), prover(), locker());
         })
         .unwrap_err();
     }
@@ -460,7 +484,7 @@ mod tests {
         let context = get_context(carol());
         testing_env!(context);
         let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = FungibleToken::new(carol(), total_supply.into(), prover(), locker());
+        let mut contract = FungibleToken::new_with_supply(carol(), total_supply.into(), prover(), locker());
         let transfer_amount = total_supply / 3;
         contract.transfer(bob(), transfer_amount.into());
         assert_eq!(contract.get_balance(carol()).0, (total_supply - transfer_amount));
@@ -472,7 +496,7 @@ mod tests {
         let context = get_context(carol());
         testing_env!(context);
         let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = FungibleToken::new(carol(), total_supply.into(), prover(), locker());
+        let mut contract = FungibleToken::new_with_supply(carol(), total_supply.into(), prover(), locker());
         catch_unwind_silent(move || {
             contract.set_allowance(carol(), (total_supply / 2).into());
         })
@@ -484,7 +508,7 @@ mod tests {
         // Acting as carol
         testing_env!(get_context(carol()));
         let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = FungibleToken::new(carol(), total_supply.into(), prover(), locker());
+        let mut contract = FungibleToken::new_with_supply(carol(), total_supply.into(), prover(), locker());
         assert_eq!(contract.get_total_supply().0, total_supply);
         let allowance = total_supply / 3;
         let transfer_amount = allowance / 3;
@@ -503,7 +527,7 @@ mod tests {
         // Acting as carol
         testing_env!(get_context(carol()));
         let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = FungibleToken::new(carol(), total_supply.into(), prover(), locker());
+        let mut contract = FungibleToken::new_with_supply(carol(), total_supply.into(), prover(), locker());
         assert_eq!(contract.get_total_supply().0, total_supply);
         let allowance = total_supply / 3;
         let transfer_amount = allowance / 3;

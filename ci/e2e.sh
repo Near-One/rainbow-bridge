@@ -18,6 +18,7 @@ trap 'pkill -15 -P $GANACHE_PID' 0
 node index.js init-near-contracts
 node index.js init-eth-ed25519
 node index.js init-near2eth-client
+node index.js init-near2eth-prover
 node index.js init-eth-erc20
 node index.js init-eth-locker
 node index.js init-near-fun-token

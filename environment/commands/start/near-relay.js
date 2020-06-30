@@ -17,8 +17,8 @@ class StartNearRelayCommand {
                         name: 'near-relay',
                         script: 'index.js',
                         interpreter: 'node',
-                        error_file: '~/.rainbowup/logs/eth-relay/err.log',
-                        out_file: '~/.rainbowup/logs/eth-relay/out.log',
+                        error_file: '~/.rainbowup/logs/near-relay/err.log',
+                        out_file: '~/.rainbowup/logs/near-relay/out.log',
                         args: ['start', 'near-relay', ...RainbowConfig.getArgsNoDaemon()],
                     },
                 );

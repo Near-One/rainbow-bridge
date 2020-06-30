@@ -17,7 +17,7 @@ class ETHDump {
         extractor.initialize(ethNodeUrl);
 
         if (kindOfData !== 'headers' && kindOfData !== 'proofs') {
-            console.log('Usage: node index.js dump headers\n       node index.js dump proofs');
+            console.log('Usage: node index.js eth-dump headers\n       node index.js eth-dump proofs');
             process.exit(2);
         }
         if (!endBlock) {
