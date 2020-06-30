@@ -16,6 +16,7 @@ const { InitETHERC20 } = require('./commands/init-eth-erc20');
 const { InitNEARContracts } = require('./commands/init-near-contracts');
 const { InitNEARFunToken } = require('./commands/init-near-fun-token');
 const { ETHDump } = require('./commands/eth-dump');
+const { NearDump } = require('./commands/near-dump');
 const { RainbowConfig } = require('./lib/config');
 const { InitEthEd25519 } = require('./commands/init-eth-ed25519');
 const { InitNear2EthClient } = require('./commands/init-near2eth-client');
@@ -397,9 +398,20 @@ RainbowConfig.addOptions(
 
 program.command('eth-dump <kind_of_data>')
     .option('--eth-node-url <eth_node_url>', 'ETH node API url')
-    .option('--path <path>', 'Dir path to dump eth headers')
+    .option('--path <path>', 'Dir path to dump eth data')
     .option('--start-block <start_block>', 'Start block number (inclusive), default to be 4.3K blocks away from start block')
     .option('--end-block <end_block>', 'End block number (inclusive), default to be latest block')
     .action(ETHDump.execute);
+
+RainbowConfig.addOptions(
+    program.command('near-dump <kind_of_data>')
+        .option('--path <path>', 'Dir path to dump near data')
+        .option('--num-blocks <num_blocks>', 'Number of blocks to dump, default: 100')
+        .action(NearDump.execute),
+    [
+        'near-node-url',
+    ],
+);
+
 
 (async () => { await program.parseAsync(process.argv); })();

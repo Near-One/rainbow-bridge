@@ -54,10 +54,12 @@ function borshify (block) {
         Web3.utils.toBN(block.approvals_after_next.length).toBuffer('le', 4),
         Buffer.concat(
             block.approvals_after_next.map(
-                signature => Buffer.concat([
-                    Buffer.from([signature ? 1 : 0]),
+                signature => signature === null ?
+                Buffer.from([0]) :
+                Buffer.concat([
+                    Buffer.from([1]),
                     signature.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
-                    signature ? bs58.decode(signature.substr(8)) : Buffer.from([]),
+                    bs58.decode(signature.substr(8)),
                 ]),
             ),
         ),
