@@ -290,7 +290,7 @@ impl FungibleToken {
             proof,
         } = proof;
         let event = EthEventData::from_log_entry_data(&log_entry_data);
-        assert_eq!(self.locker_address, event.locker_address, "Event's address {} does not match locker address of this token {}", self.locker_address, event.locker_address);
+        assert_eq!(self.locker_address.to_uppercase(), event.locker_address.to_uppercase(), "Event's address {} does not match locker address of this token {}", self.locker_address, event.locker_address);
         env::log(format!("{}", event).as_bytes());
         let EthEventData{recipient, amount, ..} = event;
         prover::verify_log_entry(
