@@ -16,11 +16,11 @@ node index.js start ganache
 export GANACHE_PID=$!
 trap 'pkill -15 -P $GANACHE_PID' 0
 # Wait for the local node to start
-while ! nc -z localhost 3030; do
+while ! curl localhost:3030; do
   sleep 1
 done
 
-while ! nc -z localhost 9545; do
+while ! curl localhost:9545; do
   sleep 1
 done
 
