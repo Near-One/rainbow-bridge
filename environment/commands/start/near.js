@@ -7,7 +7,7 @@ const { RainbowConfig } = require('../../lib/config');
 class StartLocalNearNodeCommand {
     static execute () {
         const command = util.format(
-            '~/.rainbowup/nearup/nearup localnet --num-nodes 1 --binary-path %s',
+            'python3 ~/.rainbowup/nearup/main.py localnet --num-nodes 1 --binary-path %s',
             '~/.rainbowup/core/target/debug',
         );
         request(getLocalNearNodeURL(), { json: true }, (err, _res, _body) => {

@@ -59,7 +59,7 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
     'eth2near-client-contract-path',
     'The path to the Wasm file containing the Eth2NearClient contract.',
-    path.join(process.env.HOME, '.rainbowup/bridge/libs-rs/res/eth_client.wasm'),
+    path.join(__dirname, '../libs-rs/res/eth_client.wasm'),
 );
 RainbowConfig.declareOption(
     'eth2near-client-init-balance',
@@ -83,7 +83,7 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
     'eth2near-prover-contract-path',
     'The path to the Wasm file containing the Eth2NearProver contract.',
-    path.join(process.env.HOME, '.rainbowup/bridge/libs-rs/res/eth_prover.wasm'),
+    path.join(__dirname, '../libs-rs/res/eth_prover.wasm'),
 );
 RainbowConfig.declareOption(
     'eth2near-prover-init-balance',
@@ -91,7 +91,7 @@ RainbowConfig.declareOption(
     '100000000000000000000000000',
 );
 RainbowConfig.declareOption('daemon', 'Whether the process should be launched as a daemon.', 'true', true);
-RainbowConfig.declareOption('bridge-src', 'Path to the rainbow-bridge source. It will be downloaded if not provided.', '');
+RainbowConfig.declareOption('bridge-src', 'Path to the rainbow-bridge source. Will use current repo if not provided.', path.join(__dirname, '../'));
 RainbowConfig.declareOption('core-src', 'Path to the nearcore source. It will be downloaded if not provided.', '');
 RainbowConfig.declareOption('nearup-src', 'Path to the nearup source. It will be downloaded if not provided.', '');
 
@@ -108,7 +108,7 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
     'near-fun-token-contract-path',
     'The path to the Wasm file containing the fungible contract. Note, this version of fungible contract should support minting.',
-    path.join(process.env.HOME, '.rainbowup/bridge/libs-rs/res/fungible_token.wasm'),
+    path.join(__dirname, '../libs-rs/res/fungible_token.wasm'),
 );
 RainbowConfig.declareOption(
     'near-fun-token-init-balance',
@@ -122,12 +122,12 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
     'eth-locker-abi-path',
     'Path to the .abi file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
-    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/token-locker/dist/TokenLocker.full.abi'),
+    path.join(__dirname, '../libs-sol/token-locker/dist/TokenLocker.full.abi'),
 );
 RainbowConfig.declareOption(
     'eth-locker-bin-path',
     'Path to the .bin file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
-    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/token-locker/dist/TokenLocker.full.bin'),
+    path.join(__dirname, '../libs-sol/token-locker/dist/TokenLocker.full.bin'),
 );
 RainbowConfig.declareOption(
     'eth-erc20-address',
@@ -136,12 +136,12 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
     'eth-erc20-abi-path',
     'Path to the .abi file defining Ethereum ERC20 contract.',
-    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/token-locker/dist/MyERC20.full.abi'),
+    path.join(__dirname, '../libs-sol/token-locker/dist/MyERC20.full.abi'),
 );
 RainbowConfig.declareOption(
     'eth-erc20-bin-path',
     'Path to the .bin file defining Ethereum ERC20 contract.',
-    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/token-locker/dist/MyERC20.full.bin'),
+    path.join(__dirname, '../libs-sol/token-locker/dist/MyERC20.full.bin'),
 );
 RainbowConfig.declareOption(
     'eth-ed25519-address',
@@ -150,12 +150,12 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
     'eth-ed25519-abi-path',
     'Path to the .abi file defining Ethereum ED25519 contract.',
-    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/nearbridge/dist/Ed25519.full.abi'),
+    path.join(__dirname, '../libs-sol/nearbridge/dist/Ed25519.full.abi'),
 );
 RainbowConfig.declareOption(
     'eth-ed25519-bin-path',
     'Path to the .bin file defining Ethereum ED25519 contract.',
-    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/nearbridge/dist/Ed25519.full.bin'),
+    path.join(__dirname, '../libs-sol/nearbridge/dist/Ed25519.full.bin'),
 );
 RainbowConfig.declareOption(
     'near2eth-client-lock-eth-amount',
@@ -174,12 +174,12 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
     'near2eth-client-abi-path',
     'Path to the .abi file defining Ethereum Near2EthClient contract.',
-    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/nearbridge/dist/NearBridge.full.abi'),
+    path.join(__dirname, '../libs-sol/nearbridge/dist/NearBridge.full.abi'),
 );
 RainbowConfig.declareOption(
     'near2eth-client-bin-path',
     'Path to the .bin file defining Ethereum Near2EthClient contract.',
-    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/nearbridge/dist/NearBridge.full.bin'),
+    path.join(__dirname, '../libs-sol/nearbridge/dist/NearBridge.full.bin'),
 );
 RainbowConfig.declareOption(
     'near2eth-prover-address',
@@ -188,12 +188,12 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
     'near2eth-prover-abi-path',
     'Path to the .abi file defining Ethereum Near2EthProver contract.',
-    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/nearprover/dist/NearProver.full.abi'),
+    path.join(__dirname, '../libs-sol/nearprover/dist/NearProver.full.abi'),
 );
 RainbowConfig.declareOption(
     'near2eth-prover-bin-path',
     'Path to the .bin file defining Ethereum Near2EthProver contract.',
-    path.join(process.env.HOME, '.rainbowup/bridge/libs-sol/nearprover/dist/NearProver.full.bin'),
+    path.join(__dirname, '../libs-sol/nearprover/dist/NearProver.full.bin'),
 );
 
 program.version('0.1.0');

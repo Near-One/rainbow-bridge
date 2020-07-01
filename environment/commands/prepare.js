@@ -4,7 +4,7 @@ const { RainbowConfig } = require('../lib/config');
 
 class PrepareCommand {
     static execute () {
-        var scriptDir = path.resolve(process.cwd(), 'scripts/prepare.sh');
+        var scriptDir = path.resolve(__dirname, '../scripts/prepare.sh');
 
         const shell = [
             'bash',
