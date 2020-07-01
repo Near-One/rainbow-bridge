@@ -9,7 +9,6 @@ ROOT_DIR=$CI_DIR/..
 
 cd $ROOT_DIR/environment
 yarn
-node index.js clean
 node index.js prepare
 node index.js start near-node
 node index.js start ganache
