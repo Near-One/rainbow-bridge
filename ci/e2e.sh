@@ -25,15 +25,15 @@ node index.js init-eth-erc20
 node index.js init-eth-locker
 node index.js init-near-fun-token
 # First start pm2 daemon
-pm2 ping
+yarn run pm2 ping
 sleep 5
-pm2 list
+yarn run pm2 list
 node index.js start near-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
 sleep 5
-pm2 list
+yarn run pm2 list
 node index.js start eth-relay
 sleep 5
-pm2 list
+yarn run pm2 list
 node index.js transfer-eth-erc20-to-near --amount 1000 \
 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 \
 --near-receiver-account eth2nearprover --near-master-account nearfuntoken \
