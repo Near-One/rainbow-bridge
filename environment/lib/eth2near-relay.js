@@ -74,6 +74,7 @@ class Eth2NearRelay {
                 '(' + Math.trunc((Date.now() - timeBeforeProofsComputed) / (stop - start + 1) / 10) / 100 + 's per header)',
             );
         });
+        process.send('ready');
     }
 
     async submitBlock (block, blockNumber) {

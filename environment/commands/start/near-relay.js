@@ -20,6 +20,8 @@ class StartNearRelayCommand {
                         error_file: '~/.rainbowup/logs/near-relay/err.log',
                         out_file: '~/.rainbowup/logs/near-relay/out.log',
                         args: ['start', 'near-relay', ...RainbowConfig.getArgsNoDaemon()],
+                        wait_ready: true,
+                        kill_timeout: 60000
                     },
                 );
             });

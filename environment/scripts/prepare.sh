@@ -63,3 +63,6 @@ yarn
 cd $BRIDGE_SRC/environment/vendor/ethashproof
 ./build.sh
 echo 'Compiled ethashproof module'
+
+# Start the pm2 daemon if it is currently not running.
+pm2 ping

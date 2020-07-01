@@ -10,20 +10,19 @@ class CleanCommand {
                 process.exit(1);
             }
             // @ts-ignore
-            ProcessManager.disconnect((err) => {
-                if (err) {
-                    process.exit(1);
-                }
-            });
+            try {
+                execSync('python3 ~/.rainbowup/nearup/nearup stop');
+            } catch (err) {
+                console.log(`Error stopping nerup ${err}`);
+            }
+            console.log('Cleaning ~/.rainbowup , ~/.nearup , and ~/.near directories...');
+            execSync('rm -rf ~/.rainbowup && rm -rf ~/.nearup && rm -rf ~/.near');
+            console.log('Cleaning done...');
+
+            ProcessManager.disconnect();
+            process.exit(0);
         });
-        try {
-            execSync('python3 ~/.rainbowup/nearup/nearup stop');
-        } catch (err) {
-            console.log(`Error stopping nerup ${err}`);
-        }
-        console.log('Cleaning ~/.rainbowup , ~/.nearup , and ~/.near directories...');
-        execSync('rm -rf ~/.rainbowup && rm -rf ~/.nearup && rm -rf ~/.near');
-        console.log('Cleaning done...');
+
     }
 }
 

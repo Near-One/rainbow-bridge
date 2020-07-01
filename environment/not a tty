@@ -1,0 +1,14 @@
+Balance of eth2nearprover before burning: 1000
+Burning 1 tokens on NEAR blockchain in favor of EC8bE1A5630364292E56D01129E8ee8A9578d7D8.
+Current light client head is: hash=dmug82tF6m6FE2C8YEtarigZuBUkEHHSVx9GTQmNK3r, height=218
+Block 236 is not available on the light client yet. Current height of light client is 218. Sleeping 10 seconds.
+Current light client head is: hash=76pKARxYTtJ8X6UNrJoMCxBCjHbJ2EmywVvn1yZbymoQ, height=243
+Near2EthClient block is at 243 which is further than the needed block 236
+Burnt "1"
+Balance of eth2nearprover after burning: 999
+AQAAAAAAAAAAAAAAAAAAAOyL4aVjA2QpLlbQESno7oqVeNfY
+proof: {"outcome_proof":{"proof":[],"block_hash":"8Lu37v3XvutvhAzkURrMuyuwRmzViXLEPhmmQTC5Vrd3","id":"5uNzXxDP8aUXkfqKE2ygtcS1EejNHiVbNrGJSaRgVYWD","outcome":{"logs":[],"receipt_ids":["Hgm6oXYwMVv4mvFKBdGdTmRYrk33XhTMXDEMNo6kSUR9"],"gas_burnt":3579283092442,"tokens_burnt":"17896415462210000","executor_id":"nearfuntoken","status":{"SuccessValue":"AQAAAAAAAAAAAAAAAAAAAOyL4aVjA2QpLlbQESno7oqVeNfY"}}},"outcome_root_proof":[],"block_header_lite":{"prev_block_hash":"LjgTMvC8dPkuXFBMDCL6tSwEhKPXFWSYKfdAWNbRCeg","inner_rest_hash":"GTTvurtYtajPmjQRzNW8z8mM6pgoFtc5VujJrjAsiBVG","inner_lite":{"height":237,"epoch_id":"H9G5g8oxT3cdEcFjywTPPDmsYJm6xtEZkKHMhtCJ1oRj","next_epoch_id":"2x41HwJ91C1jkmUnd57SUsC797wNiTGdq4DdcbFYYx31","prev_state_root":"GwZ7GkiK3CCR6DTj1KAkM2fXj6pRuLUFgfEJyiQE3aik","outcome_root":"AAgK23JLmJeUyxxo2ZWTqfss1kM2PyCxeJRnUYSrTEKo","timestamp":"1593564998661315000","next_bp_hash":"3drL9A7LjV2E94c77hpsfy354PTE5UdhCriLovYXMQKt","block_merkle_root":"2RV9f6tCkP7EdGc6jdSSydZxY9h7hRV7tm2Z9evvLMVj"}},"block_proof":[{"hash":"AvZ2aV7pqBvWCQ1TkrC64cyMtu2832SZGWNdm4sze2bn","direction":"Right"},{"hash":"3hvfLjGv6sbuKQ97YPZNNozBfpCJeBRND17H7vyu5vAF","direction":"Right"},{"hash":"4f8RzWAYT8Jxojvj5X1mPNkCMCbxGpyHbeDJ2FBgacTP","direction":"Left"},{"hash":"4smFmtuLRhcaWooRyFTVei2g7QiBeFAik2o2HZActhvn","direction":"Left"},{"hash":"HmyUhyYqdT6S3Ea588Mrk25L3RGU8kg9hD85KzVu5QpL","direction":"Right"},{"hash":"E85qraRF35qBodcvbKQAby21efT8v8M6bUQFhV8m8UNM","direction":"Left"},{"hash":"TJ8ak4sBxHgksgXYuFeXCm3WGwL8faPzybLYWGKPUZx","direction":"Left"},{"hash":"576K5MBmAs42AxjbVDziWNJWWhyNFyEnVh5SLqeBLJRW","direction":"Left"}]}
+client height: 243
+root: 0x32e662c1b7fe9184a762e091540ebecffcdf75e9b6c99a33fbfb783c8b3d7379
+ERC20 balance of 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8 before the transfer: 0
+ERC20 balance of 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8 after the transfer: 1

@@ -11,11 +11,7 @@ class StopManagedProcessCommand {
             }
             console.log(serviceName, 'successfully stopped...');
             // @ts-ignore
-            ProcessManager.disconnect((err) => {
-                if (err) {
-                    console.error(err);
-                }
-            });
+            ProcessManager.disconnect();
         });
     }
 }

@@ -159,13 +159,13 @@ RainbowConfig.declareOption(
 );
 RainbowConfig.declareOption(
     'near2eth-client-lock-eth-amount',
-    'lock_eth_amount option when deploy near2eth-client contract. In wei.',
-    1e18,
+    'Amount of Ether that should be temporarily locked when submitting a new header to Near2EthClient, in wei.',
+    1e20,
 );
 RainbowConfig.declareOption(
     'near2eth-client-lock-duration',
-    'lock_duration option when deploy near2eth-client contract. In seconds.',
-    10,
+    'The challenge window during which anyone can challenge an incorrect ED25519 signature of the Near block, in Near2EthClient, in seconds.',
+    14400,
 );
 RainbowConfig.declareOption(
     'near2eth-client-address',

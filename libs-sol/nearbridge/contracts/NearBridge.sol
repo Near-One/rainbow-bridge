@@ -32,8 +32,8 @@ contract NearBridge is INearBridge {
     }
 
     bool public initialized;
-    uint256 public lock_eth_amount;
-    uint256 public lock_duration;
+    uint256 public lockEthAmount_;
+    uint256 public lockDuration_;
     Ed25519 edwards;
     State public last;
     State public prev;
@@ -47,21 +47,21 @@ contract NearBridge is INearBridge {
         bytes32 blockHash
     );
 
-    constructor(Ed25519 ed, uint256 l_eth, uint256 l_dur) public {
+    constructor(Ed25519 ed, uint256 lockEthAmount, uint256 lockDuration) public {
         edwards = ed;
-        lock_eth_amount = l_eth;
-        lock_duration = l_dur;
+        lockEthAmount_ = lockEthAmount;
+        lockDuration_ = lockDuration;
     }
 
     function deposit() public payable {
-        require(msg.value == lock_eth_amount && balanceOf[msg.sender] == 0);
+        require(msg.value == lockEthAmount_ && balanceOf[msg.sender] == 0);
         balanceOf[msg.sender] = balanceOf[msg.sender].add(msg.value);
     }
 
     function withdraw() public {
         require(msg.sender != last.submitter || block.timestamp > last.validAfter);
-        balanceOf[msg.sender] = balanceOf[msg.sender].sub(lock_eth_amount);
-        msg.sender.transfer(lock_eth_amount);
+        balanceOf[msg.sender] = balanceOf[msg.sender].sub(lockEthAmount_);
+        msg.sender.transfer(lockEthAmount_);
     }
 
     function challenge(address payable receiver, uint256 signatureIndex, bytes memory data) public {
@@ -89,8 +89,8 @@ contract NearBridge is INearBridge {
 
     function _payRewardAndRollBack(address payable receiver) internal {
         // Pay reward
-        balanceOf[last.submitter] = balanceOf[last.submitter].sub(lock_eth_amount);
-        receiver.transfer(lock_eth_amount);
+        balanceOf[last.submitter] = balanceOf[last.submitter].sub(lockEthAmount_);
+        receiver.transfer(lockEthAmount_);
 
         // Restore last state from backup
         delete blockHashes[last.height];
@@ -113,7 +113,7 @@ contract NearBridge is INearBridge {
     }
 
     function addLightClientBlock(bytes memory data) public payable {
-        require(balanceOf[msg.sender] >= lock_eth_amount, "Balance is not enough");
+        require(balanceOf[msg.sender] >= lockEthAmount_, "Balance is not enough");
         require(block.timestamp >= last.validAfter, "Wait until last block become valid");
 
         Borsh.Data memory borsh = Borsh.from(data);
@@ -193,7 +193,7 @@ contract NearBridge is INearBridge {
             epochId: nearBlock.inner_lite.epoch_id,
             nextEpochId: nearBlock.inner_lite.next_epoch_id,
             submitter: msg.sender,
-            validAfter: init ? 0 : block.timestamp.add(lock_duration),
+            validAfter: init ? 0 : block.timestamp.add(lockDuration_),
             hash: keccak256(data),
             next_bps_length: nearBlock.next_bps.validatorStakes.length,
             next_total_stake: totalStake

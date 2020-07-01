@@ -210,6 +210,7 @@ class TransferEthERC20FromNear {
         const totalSupply = await ethERC20Contract.methods.totalSupply().call();
         const newBalance = await ethERC20Contract.methods.balanceOf(command.ethReceiverAddress).call();
         console.log(`ERC20 balance of ${command.ethReceiverAddress} after the transfer: ${newBalance}`);
+        process.exit(0);
     }
 }
 
