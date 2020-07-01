@@ -16,6 +16,15 @@ node index.js start ganache
 ./scripts/start_ganache.sh > /dev/null 2>&1 &
 export GANACHE_PID=$!
 trap 'pkill -15 -P $GANACHE_PID' 0
+# Wait for the local node to start
+while ! nc -z localhost 3030; do
+  sleep 1
+done
+
+while ! nc -z localhost 9545; do
+  sleep 1
+done
+
 node index.js init-near-contracts
 node index.js init-eth-ed25519
 # Use short lockup time for tests
