@@ -10,7 +10,7 @@ ROOT_DIR=$CI_DIR/..
 cd $ROOT_DIR/environment
 yarn
 node index.js clean
-node index.js prepare --bridge-src /Users/maksymzavershynskyi/Projects/rainbow-bridge --core-src /Users/maksymzavershynskyi/Projects/nearcore --nearup-src /Users/maksymzavershynskyi/Projects/nearup
+node index.js prepare
 node index.js start near-node
 node index.js start ganache
 ./scripts/start_ganache.sh > /dev/null 2>&1 &
