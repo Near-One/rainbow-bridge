@@ -1,8 +1,6 @@
 #!/bin/bash
 # This test launch all commands and tranfer tokens
 # If run locally, you need a manually `node index.js clean`, `npm i -g ganache-cli`
-# and also make sure enviroment/vendor/ethashproof exist and build.sh because eth2near-relay
-# Always uses that binary instead of ~/.rainbowup
 
 set -exuo pipefail
 
