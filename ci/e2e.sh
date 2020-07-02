@@ -12,9 +12,6 @@ yarn
 node index.js prepare
 node index.js start near-node
 node index.js start ganache
-./scripts/start_ganache.sh > /dev/null 2>&1 &
-export GANACHE_PID=$!
-trap 'pkill -15 -P $GANACHE_PID' 0
 # Wait for the local node to start
 while ! curl localhost:3030; do
   sleep 1
@@ -52,3 +49,5 @@ node index.js transfer-eth-erc20-from-near --amount 1 --near-sender-account eth2
 --eth-receiver-address 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8 \
 2>&1 | tee -a /tmp/near2ethtransfer.out
 grep "after the transfer: 1" /tmp/near2ethtransfer.out
+
+node index.js stop ganache

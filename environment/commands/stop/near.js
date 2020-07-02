@@ -3,7 +3,7 @@ const { execSync } = require('child_process');
 class StopLocalNearNodeCommand {
     static execute () {
         console.log('Stopping local near node...');
-        const command = '~/.rainbowup/nearup/nearup stop';
+        const command = 'python3 ~/.rainbowup/nearup/main.py stop';
         try {
             execSync(command);
         } catch (err) {
