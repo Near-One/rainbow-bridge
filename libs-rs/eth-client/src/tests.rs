@@ -230,9 +230,11 @@ fn read_block_raw(filename: String) -> BlockWithProofsRaw {
 #[test]
 fn add_dags_merkle_roots() {
     testing_env!(get_context(vec![], false));
+    let (blocks, _) = get_blocks(&WEB3RS, 400_000, 400_001);
 
     let dmr = read_roots_collection();
-    let contract = EthBridge::init(true, 0, read_roots_collection().dag_merkle_roots);
+    let contract = EthBridge::init(
+        true, 0, read_roots_collection().dag_merkle_roots, blocks[0].clone(), 30, 10);
 
     assert_eq!(dmr.dag_merkle_roots[0], contract.dag_merkle_root(0));
     assert_eq!(dmr.dag_merkle_roots[10], contract.dag_merkle_root(10));
@@ -255,9 +257,9 @@ fn add_blocks_2_and_3() {
         .map(|filename| read_block((&filename).to_string()))
         .collect();
 
-    let mut contract = EthBridge::init(true, 0, read_roots_collection().dag_merkle_roots);
+    let mut contract = EthBridge::init(true, 0, read_roots_collection().dag_merkle_roots, blocks[0].clone(), 30, 10);
 
-    for (block, proof) in blocks.into_iter().zip(blocks_with_proofs.into_iter()) {
+    for (block, proof) in blocks.into_iter().zip(blocks_with_proofs.into_iter()).skip(1) {
         contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
     }
 
@@ -278,32 +280,7 @@ fn add_400000_block_only() {
     // [400000.json]
 
     let block_with_proof = read_block("./src/data/400000.json".to_string());
-
-    let mut contract = EthBridge::init(true, 400_000 / 30000, vec![block_with_proof.merkle_root]);
-
-    // let result = catch_unwind_silent(panic::AssertUnwindSafe(
-    //     || contract.add_block_headers(
-    //         blocks,
-    //         nonces.iter().map(|n| H64(n.0)).collect::<Vec<H64>>(),
-    //         vec![{
-    //             let h512s = combine_dag_h256_to_h512(block.elements);
-    //             h512s.iter().zip(h512s.iter().skip(1)).filter(|(i,_)| {
-    //                 i % 2 == 1
-    //             }).map(|(_,(a,b))| {
-    //                 DoubleNodeWithMerkleProof {
-    //                     dag_nodes: vec![*a, *b],
-    //                     proof: block.merkle_proofs,
-    //                 }
-    //             }).collect()
-    //         }]
-    //     )
-    // ));
-    // assert!(result.is_err());
-
-    contract.add_block_header(
-        blocks.into_iter().next().unwrap(),
-        block_with_proof.to_double_node_with_merkle_proof_vec(),
-    );
+    let contract = EthBridge::init(true, 400_000 / 30000, vec![block_with_proof.merkle_root], blocks[0].clone(), 30, 10);
     assert_eq!((hashes[0].0).0, (contract.block_hash(400_000).unwrap().0).0);
 }
 
@@ -321,9 +298,9 @@ fn add_two_blocks_from_8996776() {
             .map(|filename| read_block((&filename).to_string()))
             .collect();
 
-    let mut contract = EthBridge::init(true, 0, read_roots_collection().dag_merkle_roots);
+    let mut contract = EthBridge::init(true, 0, read_roots_collection().dag_merkle_roots, blocks[0].clone(), 30, 10);
 
-    for (block, proof) in blocks.into_iter().zip(blocks_with_proofs.into_iter()) {
+    for (block, proof) in blocks.into_iter().zip(blocks_with_proofs.into_iter()).skip(1) {
         contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
     }
 
@@ -360,69 +337,17 @@ fn add_2_blocks_from_400000() {
         true,
         400_000 / 30000,
         vec![blocks_with_proofs.first().unwrap().merkle_root],
+        blocks[0].clone(),
+        30,
+        10
     );
 
-    for (block, proof) in blocks.into_iter().zip(blocks_with_proofs.into_iter()) {
+    for (block, proof) in blocks.into_iter().zip(blocks_with_proofs.into_iter()).skip(1) {
         contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
     }
     assert_eq!((hashes[0].0).0, (contract.block_hash(400_000).unwrap().0).0);
     assert_eq!((hashes[1].0).0, (contract.block_hash(400_001).unwrap().0).0);
 }
-
-// #[test]
-// fn add_3_sequential_ranges_of_blocks() {
-//     testing_env!(get_context(vec![], false));
-//
-//     let (hashes1, blocks1) = get_blocks(&WEB3RS, 8_000_000, 8_000_011);
-//     let (hashes2, blocks2) = get_blocks(&WEB3RS, 8_000_010, 8_000_021);
-//     let (hashes3, blocks3) = get_blocks(&WEB3RS, 8_000_020, 8_000_031);
-//
-//     let blocks_with_proofs: Vec<BlockWithProofs> = [
-//         "./src/data/8000000.json",
-//         "./src/data/8000001.json"
-//     ].iter().map(|filename| read_block((&filename).to_string())).collect();
-//
-//     let mut contract = EthBridge::default();
-//     contract.init(true, 0, read_roots_collection().dag_merkle_roots);
-//
-//     contract.add_block_headers(blocks1);
-//     contract.add_block_headers(blocks2);
-//     contract.add_block_headers(blocks3);
-//
-//     for i in 8_000_000..8_000_010 {
-//         assert_eq!(hashes1[i - 8_000_000], (contract.block_hash(i as u64).unwrap().0).0.into());
-//     }
-//     for i in 8_000_010..8_000_020 {
-//         assert_eq!(hashes2[i - 8_000_010], (contract.block_hash(i as u64).unwrap().0).0.into());
-//     }
-//     for i in 8_000_020..8_000_030 {
-//         assert_eq!(hashes3[i - 8_000_020], (contract.block_hash(i as u64).unwrap().0).0.into());
-//     }
-// }
-
-// #[test]
-// fn add_3_intersecting_ranges_of_blocks() {
-//     testing_env!(get_context(vec![], false));
-
-//     let (hashes1, blocks1) = get_blocks(&WEB3RS, 8_000_000, 8_000_010);
-//     let (hashes2, blocks2) = get_blocks(&WEB3RS, 8_000_005, 8_000_020);
-//     let (hashes3, blocks3) = get_blocks(&WEB3RS, 8_000_015, 8_000_030);
-
-//     let mut contract = EthBridge::default();
-//     contract.add_block_headers(8_000_000 as u64, blocks1);
-//     contract.add_block_headers(8_000_005 as u64, blocks2);
-//     contract.add_block_headers(8_000_015 as u64, blocks3);
-
-//     for i in 8_000_000..8_000_010 {
-//         assert_eq!(hashes1[i - 8_000_000], (contract.block_hash(i as u64).unwrap().0).0.into());
-//     }
-//     for i in 8_000_005..8_000_020 {
-//         assert_eq!(hashes2[i - 8_000_005], (contract.block_hash(i as u64).unwrap().0).0.into());
-//     }
-//     for i in 8_000_015..8_000_030 {
-//         assert_eq!(hashes3[i - 8_000_015], (contract.block_hash(i as u64).unwrap().0).0.into());
-//     }
-// }
 
 #[cfg(feature = "expensive_tests")]
 #[test]
@@ -461,6 +386,9 @@ fn predumped_block_can_be_added() {
         true,
         start_block_height / 30000,
         vec![first_block_with_proof.merkle_root],
+        first_block_with_proof.header_rlp.0.clone(),
+        30,
+        10
     );
 
     let bar = ProgressBar::new(blocks_with_proofs.len() as _);
@@ -468,12 +396,16 @@ fn predumped_block_can_be_added() {
         "[elapsed {elapsed_precise} remaining {eta_precise}] Verifying {bar} {pos:>7}/{len:>7}"
     ));
 
-    for filename in blocks_with_proofs.iter() {
+    for filename in blocks_with_proofs.iter().skip(1) {
         let block_with_proof = read_block(filename.1.to_string());
         contract.add_block_header(
             block_with_proof.header_rlp.0.clone(),
             block_with_proof.to_double_node_with_merkle_proof_vec(),
         );
+        assert!(contract.canonical_header_hashes.len() <= 30);
+        assert!(contract.all_header_hashes.len() <= 10);
+        assert!(contract.headers.len() <= 10);
+        assert!(contract.infos.len() <= 10);
         bar.inc(1);
     }
     bar.finish();
