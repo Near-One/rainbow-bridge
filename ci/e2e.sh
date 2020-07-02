@@ -12,9 +12,6 @@ yarn
 node index.js prepare
 node index.js start near-node
 node index.js start ganache
-./scripts/start_ganache.sh &
-export GANACHE_PID=$!
-trap 'pkill -15 -P $GANACHE_PID' 0
 node index.js init-near-contracts
 node index.js init-eth-ed25519
 node index.js init-near2eth-client
@@ -25,3 +22,4 @@ node index.js init-near-fun-token
 node index.js start eth-relay
 node index.js start near-relay
 node index.js transfer-eth-erc20-to-near --amount 1 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account alice.test.near --near-master-account nearfuntoken
+node index.js stop ganache
