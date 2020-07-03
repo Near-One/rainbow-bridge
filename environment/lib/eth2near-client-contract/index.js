@@ -120,7 +120,6 @@ class Eth2NearClientContract extends BorshContract {
             // @ts-ignore
             initialized = await this.initialized();
         } catch (e) {
-            // I guess not
         }
         if (!initialized) {
             console.log('EthClient is not initialized, initializing...');

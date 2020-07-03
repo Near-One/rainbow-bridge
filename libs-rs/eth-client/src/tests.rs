@@ -1,7 +1,7 @@
 use futures::future::join_all;
 use std::panic;
 
-use crate::{DoubleNodeWithMerkleProof, EthBridge};
+use crate::{DoubleNodeWithMerkleProof, EthClient};
 use eth_types::*;
 use hex::FromHex;
 use rlp::RlpStream;
@@ -233,8 +233,8 @@ fn add_dags_merkle_roots() {
     let (blocks, _) = get_blocks(&WEB3RS, 400_000, 400_001);
 
     let dmr = read_roots_collection();
-    let contract = EthBridge::init(
-        true, 0, read_roots_collection().dag_merkle_roots, blocks[0].clone(), 30, 10);
+    let contract = EthClient::init(
+        true, 0, read_roots_collection().dag_merkle_roots, blocks[0].clone(), 30, 10, 10);
 
     assert_eq!(dmr.dag_merkle_roots[0], contract.dag_merkle_root(0));
     assert_eq!(dmr.dag_merkle_roots[10], contract.dag_merkle_root(10));
@@ -257,7 +257,7 @@ fn add_blocks_2_and_3() {
         .map(|filename| read_block((&filename).to_string()))
         .collect();
 
-    let mut contract = EthBridge::init(true, 0, read_roots_collection().dag_merkle_roots, blocks[0].clone(), 30, 10);
+    let mut contract = EthClient::init(true, 0, read_roots_collection().dag_merkle_roots, blocks[0].clone(), 30, 10, 10);
 
     for (block, proof) in blocks.into_iter().zip(blocks_with_proofs.into_iter()).skip(1) {
         contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
@@ -280,7 +280,7 @@ fn add_400000_block_only() {
     // [400000.json]
 
     let block_with_proof = read_block("./src/data/400000.json".to_string());
-    let contract = EthBridge::init(true, 400_000 / 30000, vec![block_with_proof.merkle_root], blocks[0].clone(), 30, 10);
+    let contract = EthClient::init(true, 400_000 / 30000, vec![block_with_proof.merkle_root], blocks[0].clone(), 30, 10, 10);
     assert_eq!((hashes[0].0).0, (contract.block_hash(400_000).unwrap().0).0);
 }
 
@@ -298,7 +298,7 @@ fn add_two_blocks_from_8996776() {
             .map(|filename| read_block((&filename).to_string()))
             .collect();
 
-    let mut contract = EthBridge::init(true, 0, read_roots_collection().dag_merkle_roots, blocks[0].clone(), 30, 10);
+    let mut contract = EthClient::init(true, 0, read_roots_collection().dag_merkle_roots, blocks[0].clone(), 30, 10, 10);
 
     for (block, proof) in blocks.into_iter().zip(blocks_with_proofs.into_iter()).skip(1) {
         contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
@@ -333,12 +333,13 @@ fn add_2_blocks_from_400000() {
             .map(|filename| read_block((&filename).to_string()))
             .collect();
 
-    let mut contract = EthBridge::init(
+    let mut contract = EthClient::init(
         true,
         400_000 / 30000,
         vec![blocks_with_proofs.first().unwrap().merkle_root],
         blocks[0].clone(),
         30,
+        10,
         10
     );
 
@@ -382,12 +383,13 @@ fn predumped_block_can_be_added() {
 
     let first_block_with_proof = read_block(blocks_with_proofs.first().unwrap().1.to_string());
 
-    let mut contract = EthBridge::init(
+    let mut contract = EthClient::init(
         true,
         start_block_height / 30000,
         vec![first_block_with_proof.merkle_root],
         first_block_with_proof.header_rlp.0.clone(),
         30,
+        10,
         10
     );
 
