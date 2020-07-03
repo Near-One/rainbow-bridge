@@ -168,7 +168,7 @@ class Near2EthRelay {
             }
 
             // Check whether master account has enough balance at stake.
-            const lockEthAmount = await clientContract.methods.LOCK_ETH_AMOUNT().call();
+            const lockEthAmount = await clientContract.methods.lock_eth_amount().call();
             const balance = await clientContract.methods.balanceOf(ethMasterAccount).call();
             if (balance === '0') {
                 console.log(`The sender account does not have enough stake. Transferring ${lockEthAmount} wei.`);
