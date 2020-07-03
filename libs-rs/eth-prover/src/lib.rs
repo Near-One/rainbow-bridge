@@ -23,18 +23,18 @@ fn assert_self() {
 }
 
 /// Defines an interface to call EthProver back as a callback with the result from the
-/// EthBridge contract.
+/// EthClient contract.
 #[ext_contract(remote_self)]
 pub trait RemoteSelf {
     #[result_serializer(borsh)]
     fn on_block_hash(&self, #[serializer(borsh)] expected_block_hash: H256) -> bool;
 }
 
-/// Defines an interface to call EthBridge contract to get the safe block hash for a given block
+/// Defines an interface to call EthClient contract to get the safe block hash for a given block
 /// number. It returns Some(hash) if the block hash is present in the safe canonical chain, or
 /// None if the block number is not part of the canonical chain yet.
-#[ext_contract(eth_bridge)]
-pub trait RemoteEthBridge {
+#[ext_contract(eth_client)]
+pub trait RemoteEthClient {
     #[result_serializer(borsh)]
     fn block_hash_safe(&self, #[serializer(borsh)] index: u64) -> Option<H256>;
 }
@@ -71,9 +71,9 @@ impl EthProver {
             .collect()
     }
 
-    /// Implementation of the callback when the EthBridge returns data.
+    /// Implementation of the callback when the EthClient returns data.
     /// This method can only be called by the EthProver contract itself (e.g. as callback).
-    /// - `block_hash` is the actual data from the EthBridge call
+    /// - `block_hash` is the actual data from the EthClient call
     /// - `expected_block_hash` is the block hash that we expect to be passed by us.
     #[result_serializer(borsh)]
     pub fn on_block_hash(
@@ -88,15 +88,15 @@ impl EthProver {
     }
 
     /// Externally visible method to verify that the given block hash is part of the safe canonical
-    /// chain on the remote EthBridge contract.
+    /// chain on the remote EthClient contract.
     /// Returns a promise.
     #[result_serializer(borsh)]
-    pub fn assert_ethbridge_hash(
+    pub fn assert_ethclient_hash(
         &self,
         #[serializer(borsh)] block_number: u64,
         #[serializer(borsh)] expected_block_hash: H256,
     ) -> PromiseOrValue<bool> {
-        eth_bridge::block_hash_safe(block_number, &self.bridge_smart_contract, 0, env::prepaid_gas()/3)
+        eth_client::block_hash_safe(block_number, &self.bridge_smart_contract, 0, env::prepaid_gas()/3)
             .then(remote_self::on_block_hash(
                 expected_block_hash,
                 &env::current_account_id(),
@@ -123,7 +123,7 @@ impl EthProver {
 
         // Verify block header was in the bridge
         if !skip_bridge_call {
-            eth_bridge::block_hash_safe(header.number, &self.bridge_smart_contract, 0, 10000000000000).then(
+            eth_client::block_hash_safe(header.number, &self.bridge_smart_contract, 0, 10000000000000).then(
                 remote_self::on_block_hash(
                     header.hash.unwrap(),
                     &env::current_account_id(),
@@ -167,7 +167,6 @@ impl EthProver {
         proof: Vec<Vec<u8>>,
         expected_value: Vec<u8>,
     ) -> bool {
-        // TODO: this is not the righ tway to split the key!
         let mut actual_key = vec![];
         for el in key {
             if actual_key.len() + 1 == proof.len() {

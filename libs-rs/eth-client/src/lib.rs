@@ -59,7 +59,7 @@ pub struct HeaderInfo {
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
-pub struct EthBridge {
+pub struct EthClient {
     /// Whether client validates the PoW when accepting the header. Should only be set to `false`
     /// for debugging, testing, diagnostic purposes when used with Ganache.
     validate_ethash: bool,
@@ -79,6 +79,9 @@ pub struct EthBridge {
     /// This is required to be able to adjust the canonical chain when the fork switch happens.
     /// The commonly used number is 500 blocks, so this number should be 500 in production.
     finalized_gc_threshold: u64,
+    /// Number of confirmations that applications can use to consider the transaction safe.
+    /// For most use cases 25 should be enough, for super safe cases it should be 500.
+    num_confirmations: u64,
     /// Hashes of the canonical chain mapped to their numbers. Stores up to `hashes_gc_threshold`
     /// entries.
     /// header number -> header hash
@@ -93,14 +96,14 @@ pub struct EthBridge {
     infos: UnorderedMap<H256, HeaderInfo>,
 }
 
-impl Default for EthBridge {
+impl Default for EthClient {
     fn default() -> Self {
-        env::panic(b"EthBridge is not initialized");
+        env::panic(b"EthClient is not initialized");
     }
 }
 
 #[near_bindgen]
-impl EthBridge {
+impl EthClient {
     #[init]
     pub fn init(
         #[serializer(borsh)] validate_ethash: bool,
@@ -108,10 +111,11 @@ impl EthBridge {
         #[serializer(borsh)] dags_merkle_roots: Vec<H128>,
         #[serializer(borsh)] first_header: Vec<u8>,
         #[serializer(borsh)] hashes_gc_threshold: u64,
-        #[serializer(borsh)] finalized_gc_threshold: u64
+        #[serializer(borsh)] finalized_gc_threshold: u64,
+        #[serializer(borsh)] num_confirmations: u64
     ) -> Self {
         assert!(
-            env::state_read::<EthBridge>().is_none(),
+            !Self::initialized(),
             "Already initialized"
         );
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
@@ -124,6 +128,7 @@ impl EthBridge {
             best_header_hash: header_hash.clone(),
             hashes_gc_threshold,
             finalized_gc_threshold,
+            num_confirmations,
             canonical_header_hashes: UnorderedMap::new(b"c".to_vec()),
             all_header_hashes: UnorderedMap::new(b"a".to_vec()),
             headers: UnorderedMap::new(b"h".to_vec()),
@@ -141,8 +146,8 @@ impl EthBridge {
     }
 
     #[result_serializer(borsh)]
-    pub fn initialized(&self) -> bool {
-        self.dags_merkle_roots.len() > 0
+    pub fn initialized() -> bool {
+        env::state_read::<EthClient>().is_some()
     }
 
     #[result_serializer(borsh)]
@@ -151,27 +156,28 @@ impl EthBridge {
     }
 
     #[result_serializer(borsh)]
-    pub fn last_header_number(&self) -> u64 {
+    pub fn last_block_number(&self) -> u64 {
         self.infos
             .get(&self.best_header_hash)
             .unwrap_or_default()
             .number
     }
 
+    /// Returns the block hash from the canonical chain.
     #[result_serializer(borsh)]
     pub fn block_hash(&self, #[serializer(borsh)] index: u64) -> Option<H256> {
         self.canonical_header_hashes.get(&index)
     }
 
+    /// Returns block hash and the number of confirmations.
     #[result_serializer(borsh)]
-    pub fn block_hash_confirmed(&self,
-                                #[serializer(borsh)] index: u64,
-                                #[serializer(borsh)] number_of_confirmations: u64) -> Option<H256> {
-        let best_info = self.infos.get(&self.best_header_hash).unwrap_or_default();
-        if best_info.number < index + number_of_confirmations {
+    pub fn block_hash_safe(&self, #[serializer(borsh)] index: u64) -> Option<H256> {
+        let header_hash = self.block_hash(index)?;
+        let last_block_number = self.last_block_number();
+        if index + self.num_confirmations > last_block_number {
             None
         } else {
-            self.block_hash(index)
+            Some(header_hash)
         }
     }
 
@@ -196,7 +202,7 @@ impl EthBridge {
     }
 }
 
-impl EthBridge {
+impl EthClient {
     /// Record the header. If needed update the canonical chain and perform the GC.
     fn record_header(&mut self, header: BlockHeader) {
         let best_info = self.infos.get(&self.best_header_hash).unwrap();

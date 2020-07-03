@@ -1,3 +1,4 @@
+const Web3 = require('web3');
 const nearlib = require('near-api-js');
 const { maybeCreateAccount, verifyAccount } = require('../lib/near-helpers');
 const {
@@ -61,7 +62,8 @@ class InitNEARContracts {
 
         console.log('Initializing client and prover contracts.');
         const clientContract = new Eth2NearClientContract(new nearlib.Account(near.connection, clientAccount), clientAccount);
-        await clientContract.maybeInitialize(validateEthash === 'true');
+        const web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
+        await clientContract.maybeInitialize(validateEthash === 'true', web3);
 
         const proverContract = new EthProverContract(new nearlib.Account(near.connection, proverAccount), proverAccount);
         await proverContract.maybeInitialize(clientAccount);
