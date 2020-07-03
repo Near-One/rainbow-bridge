@@ -42,7 +42,6 @@ echo "Linking the specified local repo from ${LOCAL_NEARUP_SRC} to ${NEARUP_SRC}
 ln -s $LOCAL_NEARUP_SRC $NEARUP_SRC
 fi
 mkdir -p $NEARUP_LOGS
-exit 0
 
 cd $BRIDGE_SRC
 git submodule update --init --recursive
