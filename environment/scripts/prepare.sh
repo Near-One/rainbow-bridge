@@ -62,6 +62,9 @@ echo "Built Solidity contracts"
 cd $BRIDGE_SRC/environment
 yarn
 
+cd $BRIDGE_SRC/environment/vendor/ganache
+yarn
+
 cd $BRIDGE_SRC/environment/vendor/ethashproof
 ./build.sh
 echo 'Compiled ethashproof module'
