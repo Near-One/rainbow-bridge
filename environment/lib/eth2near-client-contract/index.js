@@ -90,6 +90,10 @@ class Eth2NearClientContract extends BorshContract {
                 inputFieldType: 'u64',
                 outputFieldType: '?H256',
             }, {
+                methodName: 'known_hashes',
+                inputFieldType: 'u64',
+                outputFieldType: ['H256'],
+            }, {
                 methodName: 'block_hash_safe',
                 inputFieldType: 'u64',
                 outputFieldType: '?H256',

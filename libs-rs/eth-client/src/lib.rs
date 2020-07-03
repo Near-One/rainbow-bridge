@@ -169,6 +169,12 @@ impl EthClient {
         self.canonical_header_hashes.get(&index)
     }
 
+    /// Returns all hashes known for that height.
+    #[result_serializer(borsh)]
+    pub fn known_hashes(&self, #[serializer(borsh)] index: u64) -> Vec<H256> {
+        self.all_header_hashes.get(&index).unwrap_or_default()
+    }
+
     /// Returns block hash and the number of confirmations.
     #[result_serializer(borsh)]
     pub fn block_hash_safe(&self, #[serializer(borsh)] index: u64) -> Option<H256> {
@@ -217,7 +223,7 @@ impl EthClient {
 
         // Record this header in `all_hashes`.
         let mut all_hashes = self.all_header_hashes.get(&header_number).unwrap_or_default();
-        assert!(all_hashes.iter().find(|x| **x == header_hash).is_none(), "Header is already known.");
+        assert!(all_hashes.iter().find(|x| **x == header_hash).is_none(), "Header is already known. Number: {}", header_number);
         all_hashes.push(header_hash);
         self.all_header_hashes.insert(&header_number, &all_hashes);
 

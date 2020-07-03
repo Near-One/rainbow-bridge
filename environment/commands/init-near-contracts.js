@@ -69,6 +69,7 @@ class InitNEARContracts {
         await proverContract.maybeInitialize(clientAccount);
 
         RainbowConfig.saveConfig();
+        process.exit(0);
     }
 }
 
