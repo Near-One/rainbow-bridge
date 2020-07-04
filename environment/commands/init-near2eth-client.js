@@ -12,8 +12,6 @@ class InitNear2EthClient {
         web3.eth.defaultAccount = ethMasterAccount.address;
         ethMasterAccount = ethMasterAccount.address;
 
-        // Initialize ED25519 contract.
-
         // Initialize client contract.
         console.log('Deploying Near2EthClient contract.');
         const nearBridge = new web3.eth.Contract(JSON.parse(

@@ -5,6 +5,7 @@ const { CleanCommand } = require('./commands/clean');
 const { PrepareCommand } = require('./commands/prepare');
 const { StartEthRelayCommand } = require('./commands/start/eth-relay.js');
 const { StartNearRelayCommand } = require('./commands/start/near-relay.js');
+const { StartNearWatchdogCommand } = require('./commands/start/near-watchdog.js');
 const { StartGanacheNodeCommand } = require('./commands/start/ganache.js');
 const { StartLocalNearNodeCommand } = require('./commands/start/near.js');
 const { StopLocalNearNodeCommand } = require('./commands/stop/near.js');
@@ -246,6 +247,17 @@ RainbowConfig.addOptions(
         'near-network-id',
         'near2eth-client-abi-path',
         'near2eth-client-address',
+        'daemon',
+    ],
+);
+
+RainbowConfig.addOptions(
+    startCommand.command('near-watchdog')
+        .action(StartNearWatchdogCommand.execute),
+    [
+        'eth-node-url',
+        'eth-master-sk',
+        'near2eth-client-abi-path',
         'daemon',
     ],
 );
