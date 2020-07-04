@@ -21,7 +21,7 @@ contract NearProver is INearProver {
         bridge = _bridge;
     }
 
-    function proveOutcome(bytes memory proofData, uint256 blockHeight) public view returns(bool) {
+    function proveOutcome(bytes memory proofData, uint64 blockHeight) public view returns(bool) {
         Borsh.Data memory borshData = Borsh.from(proofData);
         ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borshData.decodeFullOutcomeProof();
         require(borshData.finished(), "NearProver: argument should be exact borsh serialization");

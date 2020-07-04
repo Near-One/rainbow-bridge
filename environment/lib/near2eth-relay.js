@@ -125,13 +125,6 @@ class Near2EthRelay {
                     gas: 1000000,
                     handleRevert: true,
                 });
-
-                // TODO: Remove
-                const lastClientBlock = await this.clientContract.methods.last().call();
-                const clientBlockHeight = lastClientBlock.height;
-                const clientBlockHashHex = await this.clientContract.methods.blockHashes(clientBlockHeight).call();
-                const clientBlockHash = bs58.encode(toBuffer(clientBlockHashHex));
-                console.log(`Hash: ${clientBlockHash}`);
             }
             console.log('Client is initialized.');
         } catch (txRevertMessage) {

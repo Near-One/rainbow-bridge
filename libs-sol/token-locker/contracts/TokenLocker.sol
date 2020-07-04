@@ -48,7 +48,7 @@ contract TokenLocker {
         emit Locked(address(ethToken_), msg.sender, amount, accountId);
     }
 
-    function unlockToken(bytes memory proofData, uint256 proofBlockHeight) public {
+    function unlockToken(bytes memory proofData, uint64 proofBlockHeight) public {
         bytes32 key = keccak256(proofData);
         require(!usedEvents_[key], "The burn event cannot be reused");
         usedEvents_[key] = true;
