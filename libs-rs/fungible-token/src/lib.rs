@@ -390,7 +390,7 @@ impl FungibleToken {
 
     #[cfg(not(target_arch = "wasm32"))]
     #[cfg(test)]
-    fn new_with_supply(owner_id: AccountId, total_supply: U128, prover_account: AccountId, locker_address: String) -> Self {
+    fn new_with_supply(owner_id: AccountId, total_supply: U128, prover_account: AccountId, locker_address: [u8; 20]) -> Self {
         assert!(env::is_valid_account_id(owner_id.as_bytes()), "Owner's account ID is invalid");
         let total_supply = total_supply.into();
         assert!(!env::state_exists(), "Already initialized");
@@ -422,8 +422,8 @@ mod tests {
     fn prover() -> AccountId {
         "eth2nearprover".to_string()
     }
-    fn locker() -> String {
-        "0123456789abcdef".to_string()
+    fn locker() -> [u8; 20] {
+        [0u8; 20]
     }
 
     fn catch_unwind_silent<F: FnOnce() -> R + std::panic::UnwindSafe, R>(
