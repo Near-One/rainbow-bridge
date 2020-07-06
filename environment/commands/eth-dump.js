@@ -69,7 +69,7 @@ class ETHDump {
             }
             const block = await extractor.extractBlock(receipt.blockNumber);
             const tree = await extractor.buildTrie(block);
-            const proof = await extractor.extractProof(block, tree, receipt.transactionIndex);
+            const proof = await extractor.extractProof(web3, block, tree, receipt.transactionIndex);
             let log_index = -1;
             for (const log of receipt.logs) {
                 log_index++;
@@ -83,7 +83,7 @@ class ETHDump {
 
                 const log_entry_data = logFromWeb3(log).serialize();
                 const receipt_data = receiptFromWeb3(receipt).serialize();
-                const header_data = proof.header.serialize();
+                const header_data = proof.header_rlp;
                 const _proof = [];
                 for (const node of proof.receiptProof) {
                     _proof.push(utils.rlp.encode(node));

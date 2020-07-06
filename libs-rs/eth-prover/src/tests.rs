@@ -4,6 +4,7 @@ use crate::EthProver;
 use hex::{FromHex, ToHex};
 use rlp::RlpStream;
 use serde::{Deserialize, Deserializer};
+use near_sdk::PromiseOrValue;
 
 #[derive(Debug)]
 struct Hex(pub Vec<u8>);
@@ -81,7 +82,7 @@ fn simple_tx_res() {
         stream.out()
     }).collect();
 
-    assert!(contract.verify_log_entry(
+    if let PromiseOrValue::Value(true) = contract.verify_log_entry(
         log_index,
         log_entry,
         receipt_index,
@@ -89,7 +90,7 @@ fn simple_tx_res() {
         header_data,
         proof,
         true
-    ));
+    ) {} else {panic!();}
 }
 
 #[test]
@@ -196,7 +197,7 @@ fn complex_tx_res() {
         stream.out()
     }).collect();
 
-    assert!(contract.verify_log_entry(
+    if let PromiseOrValue::Value(true) = contract.verify_log_entry(
         log_index,
         log_entry,
         receipt_index,
@@ -204,7 +205,7 @@ fn complex_tx_res() {
         header_data,
         proof,
         true
-    ));
+    ) {} else {panic!();}
 }
 
 #[test]
@@ -276,15 +277,15 @@ fn complex_test2() {
         })
         .collect();
 
-    assert!(contract.verify_log_entry(
+    if let PromiseOrValue::Value(true) = contract.verify_log_entry(
         log_index,
         log_entry,
         receipt_index,
         receipt_data,
         header_data,
         proof,
-        false
-    ));
+        true
+    ) {} else {panic!();}
 }
 
 #[test]
@@ -360,15 +361,15 @@ fn complex_test3() {
 
     let contract = EthProver::init("ethbridge".to_string());
 
-    assert!(contract.verify_log_entry(
+    if let PromiseOrValue::Value(true) = contract.verify_log_entry(
         log_index,
         log_entry,
         receipt_index,
         receipt_data,
         header_data,
         proof,
-        false
-    ));
+        true
+    ) {} else {panic!();}
 }
 
 #[cfg(feature = "expensive_tests")]
@@ -424,15 +425,18 @@ fn verify_dumped_log_entries() {
         let args: Args =
             serde_json::from_reader(std::fs::File::open(std::path::Path::new(&filename)).unwrap())
                 .unwrap();
-        assert!(contract.verify_log_entry(
+        if let PromiseOrValue(true) =contract.verify_log_entry(
             args.log_index,
             args.log_entry_data.0,
             args.receipt_index,
             args.receipt_data.0,
             args.header_data.0,
             args.proof.iter().map(|p| p.0.clone()).collect(),
-            false
-        ));
+            true
+        ) {
+        } else {
+            panic!();
+        }
         bar.inc(1);
     }
     bar.finish();
