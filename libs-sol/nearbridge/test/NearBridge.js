@@ -58,12 +58,14 @@ function borshify (block) {
 
 contract('NearBridge', function ([_, addr1]) {
     beforeEach(async function () {
-        this.decoder = await NearDecoder.new();
-        this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(10));
-        await this.bridge.deposit({ value: web3.utils.toWei('1') });
+
     });
 
     it('should be ok', async function () {
+        this.decoder = await NearDecoder.new();
+        this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(3600));
+        await this.bridge.deposit({ value: web3.utils.toWei('1') });
+
         const block120998 = borshify(require('./block_120998.json'));
         const block121498 = borshify(require('./block_121498.json'));
         const block121998 = borshify(require('./block_121998.json'));
@@ -81,7 +83,7 @@ contract('NearBridge', function ([_, addr1]) {
             '0x508307e7af9bdbb297afa7af0541130eb32f0f028151319f5a4f7ae68b0ecc56',
         );
 
-        expect(await this.bridge.checkBlockProducerSignatureInLastBlock(0, block121498)).to.be.true;
+        expect(await this.bridge.checkBlockProducerSignatureInLastBlock(0)).to.be.true;
 
         await expectRevert(
             this.bridge.addLightClientBlock(block121998),
@@ -89,7 +91,7 @@ contract('NearBridge', function ([_, addr1]) {
         );
 
         const now = await time.latest();
-        await timeIncreaseTo(now.add(time.duration.seconds(10))); // must use BN.add otherwise it's string concat
+        await timeIncreaseTo(now.add(time.duration.seconds(3600))); // must use BN.add otherwise it's string concat
 
         // http post http://127.0.0.1:3030/ jsonrpc=2.0 method=next_light_client_block params:='["6RHW1exQNSSdCrjpKXBb8g1uQdmrmSvuiakZeKN58an9"]' id="dontcare"
         await this.bridge.addLightClientBlock(block121998);
@@ -97,11 +99,14 @@ contract('NearBridge', function ([_, addr1]) {
             '0x2358c4881bbd111d2e4352b6a7e6c7595fb39d3c9897d3c624006be1ef809abf',
         );
 
-        expect(await this.bridge.checkBlockProducerSignatureInLastBlock(0, block121998)).to.be.true;
+        expect(await this.bridge.checkBlockProducerSignatureInLastBlock(0)).to.be.true;
     });
 
     if(process.env['NEAR_HEADERS_DIR']) {
         it('ok with many block headers', async function() {
+            this.decoder = await NearDecoder.new();
+            this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(10));
+            await this.bridge.deposit({ value: web3.utils.toWei('1') });
             this.timeout(0);
             let blockFiles = await fs.readdir(process.env['NEAR_HEADERS_DIR']);
             blockFiles.sort((a, b) => Number(a.split('.')[0]) < Number(b.split('.')[0]));
@@ -127,7 +132,7 @@ contract('NearBridge', function ([_, addr1]) {
                         console.log("checking approval "+j)
                         if(block.approvals_after_next[j]) {
                             console.log("approval "+ j + " is not null")
-                            expect(await this.bridge.checkBlockProducerSignatureInLastBlock(j, blockBorsh)).to.be.true;
+                            expect(await this.bridge.checkBlockProducerSignatureInLastBlock(j)).to.be.true;
                         }
                     }
                 }

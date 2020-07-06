@@ -106,7 +106,7 @@ class TransferETHERC20ToNear {
         const receipt = await extractor.extractReceipt(lockedEvent.transactionHash);
         const block = await extractor.extractBlock(receipt.blockNumber);
         const tree = await extractor.buildTrie(block);
-        const proof = await extractor.extractProof(block, tree, receipt.transactionIndex);
+        const proof = await extractor.extractProof(web3, block, tree, receipt.transactionIndex);
 
         let txLogIndex = -1;
         let logFound = false;
@@ -118,7 +118,7 @@ class TransferETHERC20ToNear {
                 const log_entry_data = logFromWeb3(log).serialize();
                 const receipt_index = proof.txIndex;
                 const receipt_data = receiptFromWeb3(receipt).serialize();
-                const header_data = proof.header.serialize();
+                const header_data = proof.header_rlp;
                 const _proof = [];
                 for (const node of proof.receiptProof) {
                     _proof.push(utils.rlp.encode(node));
@@ -144,9 +144,10 @@ class TransferETHERC20ToNear {
                 while (true) {
                     // @ts-ignore
                     const last_block_number = (await ethClientContract.last_block_number()).toNumber();
-                    if (last_block_number < blockNumber) {
+                    const is_safe = await ethClientContract.block_hash_safe(blockNumber);
+                    if (!is_safe) {
                         const delay = 10;
-                        console.log(`Eth2NearClient is currently at block ${last_block_number}. Waiting for block ${blockNumber}. Sleeping for ${delay} sec.`);
+                        console.log(`Eth2NearClient is currently at block ${last_block_number}. Waiting for block ${blockNumber} to be confirmed. Sleeping for ${delay} sec.`);
                         await sleep(delay * 1000);
                     } else {
                         break;

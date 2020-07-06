@@ -175,9 +175,10 @@ class TransferEthERC20FromNear {
             },
         );
         const borshProofRes = borshifyOutcomeProof(proofRes);
-        console.log(`proof: ${JSON.stringify(proofRes)}`);
-        console.log(`client height: ${clientBlockHeight.toString()}`);
-        console.log(`root: ${clientBlockMerkleRoot}`);
+        // Debugging output, uncomment for debugging.
+        // console.log(`proof: ${JSON.stringify(proofRes)}`);
+        // console.log(`client height: ${clientBlockHeight.toString()}`);
+        // console.log(`root: ${clientBlockMerkleRoot}`);
         let proverRes = await proverContract.methods.proveOutcome(borshProofRes, clientBlockHeight).call();
 
         const ethTokenLockerContract = new web3.eth.Contract(
@@ -210,6 +211,7 @@ class TransferEthERC20FromNear {
         const totalSupply = await ethERC20Contract.methods.totalSupply().call();
         const newBalance = await ethERC20Contract.methods.balanceOf(command.ethReceiverAddress).call();
         console.log(`ERC20 balance of ${command.ethReceiverAddress} after the transfer: ${newBalance}`);
+        process.exit(0);
     }
 }
 

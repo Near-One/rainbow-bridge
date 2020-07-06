@@ -42,7 +42,11 @@ impl<'de> Deserialize<'de> for Hex {
 struct EthClientInitArgs {
     validate_ethash: bool,
     dags_start_epoch: u64,
-    dags_merkle_roots: Vec<H128>
+    dags_merkle_roots: Vec<H128>,
+    first_header: Vec<u8>,
+    hashes_gc_threshold: u64,
+    finalized_gc_threshold: u64,
+    num_confirmations: u64
 }
 
 #[derive(BorshSerialize)]
@@ -167,10 +171,15 @@ impl ExternalUser {
         eth_client_account_id: AccountId,
         validate_ethash: bool,
     ) -> TxResult {
+        let block = read_block("../eth-client/src/data/10234001.json".to_string());
         let init_args = EthClientInitArgs {
             validate_ethash,
             dags_start_epoch: 0,
             dags_merkle_roots: read_roots_collection().dag_merkle_roots,
+            first_header: block.header(),
+            hashes_gc_threshold: 400000,
+            finalized_gc_threshold: 500,
+            num_confirmations: 10
         };
         let tx = self
             .new_tx(runtime, eth_client_account_id)

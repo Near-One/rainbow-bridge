@@ -19,12 +19,15 @@ contract NearBridge is INearBridge {
     }
 
     struct State {
-        uint256 height;
+        uint64 height;
         bytes32 epochId;
         bytes32 nextEpochId;
         address submitter;
         uint256 validAfter;
         bytes32 hash;
+        bytes32 next_hash;
+        uint256 approvals_after_next_length;
+        mapping(uint256 => NearDecoder.OptionalSignature) approvals_after_next;
 
         uint256 next_bps_length;
         uint256 next_total_stake;
@@ -38,12 +41,17 @@ contract NearBridge is INearBridge {
     State public last;
     State public prev;
     State public backup;
-    mapping(uint256 => bytes32) public blockHashes;
-    mapping(uint256 => bytes32) public blockMerkleRoots;
+    mapping(uint64 => bytes32) public blockHashes;
+    mapping(uint64 => bytes32) public blockMerkleRoots;
     mapping(address => uint256) public balanceOf;
 
     event BlockHashAdded(
-        uint256 indexed height,
+        uint64 indexed height,
+        bytes32 blockHash
+    );
+
+    event BlockHashReverted(
+        uint64 indexed height,
         bytes32 blockHash
     );
 
@@ -64,25 +72,22 @@ contract NearBridge is INearBridge {
         msg.sender.transfer(lock_eth_amount);
     }
 
-    function challenge(address payable receiver, uint256 signatureIndex, bytes memory data) public {
-        require(last.hash == keccak256(data), "Data did not match");
+    function challenge(address payable receiver, uint256 signatureIndex) public {
         require(block.timestamp < last.validAfter, "Lock period already passed");
 
         require(
-            !checkBlockProducerSignatureInLastBlock(signatureIndex, data),
+            !checkBlockProducerSignatureInLastBlock(signatureIndex),
             "Can't challenge valid signature"
         );
 
         _payRewardAndRollBack(receiver);
     }
 
-    function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex, bytes memory data) public view returns(bool) {
-        Borsh.Data memory borsh = Borsh.from(data);
-        NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
+    function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex) public view returns(bool) {
         return _checkValidatorSignature(
-            nearBlock.inner_lite.height,
-            nearBlock.next_hash,
-            nearBlock.approvals_after_next[signatureIndex].signature,
+            last.height,
+            last.next_hash,
+            last.approvals_after_next[signatureIndex].signature,
             prev.next_bps[signatureIndex].publicKey
         );
     }
@@ -95,9 +100,18 @@ contract NearBridge is INearBridge {
         // Restore last state from backup
         delete blockHashes[last.height];
         delete blockMerkleRoots[last.height];
+
+        emit BlockHashReverted(
+            last.height,
+            blockHashes[last.height]
+        );
+
         last = backup;
         for (uint i = 0; i < last.next_bps_length; i++) {
             last.next_bps[i] = backup.next_bps[i];
+        }
+        for (uint i = 0; i < last.approvals_after_next_length; i++) {
+            last.approvals_after_next[i] = backup.approvals_after_next[i];
         }
     }
 
@@ -195,6 +209,8 @@ contract NearBridge is INearBridge {
             submitter: msg.sender,
             validAfter: init ? 0 : block.timestamp.add(lock_duration),
             hash: keccak256(data),
+            next_hash: nearBlock.next_hash,
+            approvals_after_next_length: nearBlock.approvals_after_next.length,
             next_bps_length: nearBlock.next_bps.validatorStakes.length,
             next_total_stake: totalStake
         });
@@ -206,12 +222,17 @@ contract NearBridge is INearBridge {
             });
         }
 
+        for (uint i = 0; i < nearBlock.approvals_after_next.length; i++) {
+            last.approvals_after_next[i] = nearBlock.approvals_after_next[i];
+        }
+
         blockHashes[nearBlock.inner_lite.height] = nearBlock.hash;
         blockMerkleRoots[nearBlock.inner_lite.height] = nearBlock.inner_lite.block_merkle_root;
-        //emit BlockHashAdded(
-        //    last.height,
-        //    blockHashes[last.height]
-        //);
+
+        emit BlockHashAdded(
+            last.height,
+            blockHashes[last.height]
+        );
     }
 
     function _checkValidatorSignature(
