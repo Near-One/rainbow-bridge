@@ -425,7 +425,7 @@ fn verify_dumped_log_entries() {
         let args: Args =
             serde_json::from_reader(std::fs::File::open(std::path::Path::new(&filename)).unwrap())
                 .unwrap();
-        if let PromiseOrValue(true) =contract.verify_log_entry(
+        if let PromiseOrValue::Value(true) =contract.verify_log_entry(
             args.log_index,
             args.log_entry_data.0,
             args.receipt_index,
