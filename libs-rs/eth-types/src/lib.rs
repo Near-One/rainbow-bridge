@@ -310,8 +310,6 @@ pub struct Receipt {
     pub logs: Vec<LogEntry>,
 }
 
-//
-
 pub fn near_sha256(data: &[u8]) -> [u8; 32] {
     let mut buffer = [0u8; 32];
     buffer.copy_from_slice(&near_sdk::env::sha256(data).as_slice());

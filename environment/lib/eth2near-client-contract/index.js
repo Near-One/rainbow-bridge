@@ -1,3 +1,5 @@
+const {web3BlockToRlp} = require('../eth2near-relay');
+
 const Web3 = require('web3');
 const BN = require('bn.js');
 const {
@@ -21,6 +23,10 @@ const borshSchema = {
             ['validate_ethash', 'bool'],
             ['dags_start_epoch', 'u64'],
             ['dags_merkle_roots', ['H128']],
+            ['first_header', ['u8']],
+            ['hashes_gc_threshold', 'u64'],
+            ['finalized_gc_threshold', 'u64'],
+            ['num_confirmations', 'u64'],
         ],
     },
     dagMerkleRootInput: {
@@ -84,6 +90,10 @@ class Eth2NearClientContract extends BorshContract {
                 inputFieldType: 'u64',
                 outputFieldType: '?H256',
             }, {
+                methodName: 'known_hashes',
+                inputFieldType: 'u64',
+                outputFieldType: ['H256'],
+            }, {
                 methodName: 'block_hash_safe',
                 inputFieldType: 'u64',
                 outputFieldType: '?H256',
@@ -103,22 +113,27 @@ class Eth2NearClientContract extends BorshContract {
 
     // Call initialization methods on the contract.
     // If validate_ethash is true will do ethash validation otherwise it won't.
-    async maybeInitialize (validate_ethash) {
+    async maybeInitialize (validate_ethash, web3) {
         await this.accessKeyInit();
         let initialized = false;
         try {
             // @ts-ignore
             initialized = await this.initialized();
         } catch (e) {
-            // I guess not
         }
         if (!initialized) {
             console.log('EthClient is not initialized, initializing...');
+            const last_block_number = await web3.eth.getBlockNumber();
+            const blockRlp = web3BlockToRlp(await web3.eth.getBlock(last_block_number));
             // @ts-ignore
             await this.init({
                 validate_ethash: validate_ethash,
-                dags_start_epoch: 0,
+                dags_start_epoch: Math.trunc( last_block_number / 30000),
                 dags_merkle_roots: roots.dag_merkle_roots,
+                first_header: blockRlp,
+                hashes_gc_threshold: 40000,
+                finalized_gc_threshold: 500,
+                num_confirmations: 10,
             }, new BN('300000000000000'));
             console.log('EthClient initialized');
         }

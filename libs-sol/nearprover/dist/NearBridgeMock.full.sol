@@ -6,12 +6,17 @@ pragma solidity ^0.5.0;
 
 interface INearBridge {
     event BlockHashAdded(
-        uint256 indexed height,
+        uint64 indexed height,
         bytes32 blockHash
     );
 
-    function blockHashes(uint256 blockNumber) external view returns(bytes32);
-    function blockMerkleRoots(uint256 blockNumber) external view returns(bytes32);
+    event BlockHashReverted(
+        uint64 indexed height,
+        bytes32 blockHash
+    );
+
+    function blockHashes(uint64 blockNumber) external view returns(bytes32);
+    function blockMerkleRoots(uint64 blockNumber) external view returns(bytes32);
 
     function balanceOf(address wallet) external view returns(uint256);
     function deposit() external payable;
@@ -19,8 +24,8 @@ interface INearBridge {
 
     function initWithBlock(bytes calldata data) external;
     function addLightClientBlock(bytes calldata data) external payable;
-    function challenge(address payable receiver, uint256 signatureIndex, bytes calldata data) external;
-    function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex, bytes calldata data) external view returns(bool);
+    function challenge(address payable receiver, uint256 signatureIndex) external;
+    function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex) external view returns(bool);
 }
 
 // File: contracts/NearBridgeMock.sol
@@ -30,14 +35,14 @@ pragma solidity ^0.5.0;
 
 
 contract NearBridgeMock is INearBridge {
-    mapping(uint256 => bytes32) public blockHashes;
-    mapping(uint256 => bytes32) public blockMerkleRoots;
+    mapping(uint64 => bytes32) public blockHashes;
+    mapping(uint64 => bytes32) public blockMerkleRoots;
 
-    function setBlockMerkleRoot(uint256 blockNumber, bytes32 root) external {
+    function setBlockMerkleRoot(uint64 blockNumber, bytes32 root) external {
         blockMerkleRoots[blockNumber] = root;
     }
 
-    function setBlockHash(uint256 blockNumber, bytes32 hash) external {
+    function setBlockHash(uint64 blockNumber, bytes32 hash) external {
         blockHashes[blockNumber] = hash;
     }
 
@@ -57,10 +62,10 @@ contract NearBridgeMock is INearBridge {
     function addLightClientBlock(bytes calldata data) external payable {
     }
 
-    function challenge(address payable receiver, uint256 signatureIndex, bytes calldata data) external {
+    function challenge(address payable receiver, uint256 signatureIndex) external {
     }
 
-    function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex, bytes calldata data) external view returns(bool) {
+    function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex) external view returns(bool) {
         return true;
     }
 }

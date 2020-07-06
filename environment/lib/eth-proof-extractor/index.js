@@ -1,7 +1,7 @@
 const Web3 = require('web3');
 const Tree = require('merkle-patricia-tree');
+const utils = require('ethereumjs-util');
 const {
-    Header,
     Proof,
     Receipt,
     Log,
@@ -57,40 +57,34 @@ class EthProofExtractor {
         return tree;
     }
 
-    async extractProof (block, tree, transactionIndex) {
+    async extractProof (web3, block, tree, transactionIndex) {
         const [, , stack] = await promisfy(tree.findPath, tree)(encode(transactionIndex));
+
+        const blockData = await web3.eth.getBlock(block.number);
+        // Correctly compose and encode the header.
+        const header = [
+            blockData.parentHash,
+            blockData.sha3Uncles,
+            blockData.miner,
+            blockData.stateRoot,
+            blockData.transactionsRoot,
+            blockData.receiptsRoot,
+            blockData.logsBloom,
+            blockData.difficulty == "0" ? "0x": web3.utils.toHex(blockData.difficulty),
+            web3.utils.toHex(blockData.number),
+            web3.utils.toHex(blockData.gasLimit),
+            web3.utils.toHex(blockData.gasUsed),
+            web3.utils.toHex(blockData.timestamp),
+            blockData.extraData,
+            blockData.mixHash,
+            blockData.nonce,
+        ];
+
         return {
-            header: Header.fromRpc(block),
+            header_rlp: utils.rlp.encode(header),
             receiptProof: Proof.fromStack(stack),
             txIndex: transactionIndex,
         };
-    }
-
-    // Print debug information for the given transaction.
-    async debugPrint (txHash) {
-        const receipt = await this.extractReceipt(txHash);
-        console.log('RECEIPT %s', receipt);
-        const block = await this.extractBlock(receipt.blockNumber);
-        const tree = await this.buildTrie(block);
-        const proof = await this.extractProof(block, tree, receipt.transactionIndex);
-
-        console.log('let receipt_index = ' + proof.txIndex + ';');
-        console.log('let header_data = Vec::from_hex("' + proof.header.serialize().toString('hex') + '").unwrap();');
-        console.log('let receipt_data = Vec::from_hex("' + receiptFromWeb3(receipt).serialize().toString('hex') + '").unwrap();');
-        let logs = '';
-        for (const log of receipt.logs) {
-            logs += 'Vec::from_hex("' + logFromWeb3(log).serialize().toString('hex') + '").unwrap(),';
-        }
-        console.log(`let logs = vec![ ${logs} ]`);
-        console.log('let proof = vec![');
-        for (const rec of proof.receiptProof) {
-            console.log('    vec![');
-            for (const r of rec) {
-                console.log('        Vec::from_hex("' + r.toString('hex') + '").unwrap(),');
-            }
-            console.log('    ],');
-        }
-        console.log('];');
     }
 
     destroy () {

@@ -66,10 +66,6 @@ node index.js prepare
 node index.js start near-node
 node index.js start ganache
 ```
-In a separate window (this is a temporary workaround for [#96](https://github.com/near/rainbow-bridge/issues/96)):
-```bash
-./scripts/start_ganache.sh
-```
 
 ### Initializing the contracts
 
@@ -96,6 +92,7 @@ Now start the services that will relay the information between the chains:
 ```bash
 node index.js start eth-relay
 node index.js start near-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
+node index.js start near-watchdog --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501202
 ```
 
 Note, you can observe the logs of the relays by running:
@@ -115,8 +112,7 @@ You must observe blocks being submitted.
 
 Now let's try to transfer one token back to Ethereum
 ```bash
-node index.js transfer-eth-erc20-from-near --amount 1 --near-sender-account eth2nearprover \
---near-sender-sk ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP --eth-receiver-address 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8
+node index.js transfer-eth-erc20-from-near --amount 1 --near-sender-account eth2nearprover --near-sender-sk ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP --eth-receiver-address 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8
 ```
 You should observe the change of the ERC20 balance as reported by the CLI. 
 

@@ -1,6 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
-use near_sdk::collections::{UnorderedMap, UnorderedSet};
+use near_sdk::collections::UnorderedMap;
 use near_sdk::{near_bindgen, env};
 
 #[cfg(target_arch = "wasm32")]
@@ -49,6 +49,7 @@ impl DoubleNodeWithMerkleProof {
     }
 }
 
+/// Minimal information about a header.
 #[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct HeaderInfo {
     pub total_difficulty: U256,
@@ -58,59 +59,100 @@ pub struct HeaderInfo {
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
-pub struct EthBridge {
+pub struct EthClient {
+    /// Whether client validates the PoW when accepting the header. Should only be set to `false`
+    /// for debugging, testing, diagnostic purposes when used with Ganache.
     validate_ethash: bool,
+    /// The epoch from which the DAG merkle roots start.
     dags_start_epoch: u64,
+    /// DAG merkle roots for the next several years.
     dags_merkle_roots: Vec<H128>,
-
+    /// Hash of the header that has the highest cumulative difficulty. The current head of the
+    /// canonical chain.
     best_header_hash: H256,
+    /// We store the hashes of the blocks for the past `hashes_gc_threshold` headers.
+    /// Events that happen past this threshold cannot be verified by the client.
+    /// It is desirable that this number is larger than 7 days worth of headers, which is roughly
+    /// 40k Ethereum blocks. So this number should be 40k in production.
+    hashes_gc_threshold: u64,
+    /// We store full information about the headers for the past `finalized_gc_threshold` blocks.
+    /// This is required to be able to adjust the canonical chain when the fork switch happens.
+    /// The commonly used number is 500 blocks, so this number should be 500 in production.
+    finalized_gc_threshold: u64,
+    /// Number of confirmations that applications can use to consider the transaction safe.
+    /// For most use cases 25 should be enough, for super safe cases it should be 500.
+    num_confirmations: u64,
+    /// Hashes of the canonical chain mapped to their numbers. Stores up to `hashes_gc_threshold`
+    /// entries.
+    /// header number -> header hash
     canonical_header_hashes: UnorderedMap<u64, H256>,
-
+    /// All known header hashes. Stores up to `finalized_gc_threshold`.
+    /// header number -> hashes of all headers with this number.
+    all_header_hashes: UnorderedMap<u64, Vec<H256>>,
+    /// Known headers. Stores up to `finalized_gc_threshold`.
     headers: UnorderedMap<H256, BlockHeader>,
+    /// Minimal information about the headers, like cumulative difficulty. Stores up to
+    /// `finalized_gc_threshold`.
     infos: UnorderedMap<H256, HeaderInfo>,
-
-    recent_header_hashes: UnorderedMap<u64, UnorderedSet<H256>>,
 }
 
-const NUMBER_OF_BLOCKS_FINALITY: u64 = 30;
-const NUMBER_OF_BLOCKS_SAFE: u64 = 10;
-
-impl Default for EthBridge {
+impl Default for EthClient {
     fn default() -> Self {
-        env::panic(b"EthBridge is not initialized");
+        env::panic(b"EthClient is not initialized");
     }
 }
 
 #[near_bindgen]
-impl EthBridge {
+impl EthClient {
     #[init]
     pub fn init(
         #[serializer(borsh)] validate_ethash: bool,
         #[serializer(borsh)] dags_start_epoch: u64,
         #[serializer(borsh)] dags_merkle_roots: Vec<H128>,
+        #[serializer(borsh)] first_header: Vec<u8>,
+        #[serializer(borsh)] hashes_gc_threshold: u64,
+        #[serializer(borsh)] finalized_gc_threshold: u64,
+        #[serializer(borsh)] num_confirmations: u64
     ) -> Self {
         assert!(
-            env::state_read::<EthBridge>().is_none(),
+            !Self::initialized(),
             "Already initialized"
         );
-        Self {
+        let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
+        let header_hash = header.hash.unwrap().clone();
+        let header_number = header.number;
+        let mut res = Self {
             validate_ethash,
             dags_start_epoch,
             dags_merkle_roots,
-
-            best_header_hash: Default::default(),
+            best_header_hash: header_hash.clone(),
+            hashes_gc_threshold,
+            finalized_gc_threshold,
+            num_confirmations,
             canonical_header_hashes: UnorderedMap::new(b"c".to_vec()),
-
+            all_header_hashes: UnorderedMap::new(b"a".to_vec()),
             headers: UnorderedMap::new(b"h".to_vec()),
             infos: UnorderedMap::new(b"i".to_vec()),
-
-            recent_header_hashes: UnorderedMap::new(b"r".to_vec()),
-        }
+        };
+        res.canonical_header_hashes.insert(&header_number, &header_hash);
+        res.all_header_hashes.insert(&header_number, &vec![header_hash.clone()]);
+        res.headers.insert(&header_hash, &header);
+        res.infos.insert(&header_hash, &HeaderInfo {
+            total_difficulty: Default::default(),
+            parent_hash: Default::default(),
+            number: header_number
+        });
+        res
     }
 
     #[result_serializer(borsh)]
-    pub fn initialized(&self) -> bool {
-        self.dags_merkle_roots.len() > 0
+    pub fn initialized() -> bool {
+        env::state_read::<EthClient>().is_some()
+    }
+
+    #[result_serializer(borsh)]
+    pub fn dag_merkle_root(&self, #[serializer(borsh)] epoch: u64) -> H128 {
+        self.dags_merkle_roots[(&epoch - self.dags_start_epoch) as usize]
     }
 
     #[result_serializer(borsh)]
@@ -121,26 +163,33 @@ impl EthBridge {
             .number
     }
 
-    #[result_serializer(borsh)]
-    pub fn dag_merkle_root(&self, #[serializer(borsh)] epoch: u64) -> H128 {
-        self.dags_merkle_roots[(&epoch - self.dags_start_epoch) as usize]
-    }
-
+    /// Returns the block hash from the canonical chain.
     #[result_serializer(borsh)]
     pub fn block_hash(&self, #[serializer(borsh)] index: u64) -> Option<H256> {
         self.canonical_header_hashes.get(&index)
     }
 
+    /// Returns all hashes known for that height.
+    #[result_serializer(borsh)]
+    pub fn known_hashes(&self, #[serializer(borsh)] index: u64) -> Vec<H256> {
+        self.all_header_hashes.get(&index).unwrap_or_default()
+    }
+
+    /// Returns block hash and the number of confirmations.
     #[result_serializer(borsh)]
     pub fn block_hash_safe(&self, #[serializer(borsh)] index: u64) -> Option<H256> {
-        let best_info = self.infos.get(&self.best_header_hash).unwrap_or_default();
-        if best_info.number < index + NUMBER_OF_BLOCKS_SAFE {
+        let header_hash = self.block_hash(index)?;
+        let last_block_number = self.last_block_number();
+        if index + self.num_confirmations > last_block_number {
             None
         } else {
-            self.block_hash(index)
+            Some(header_hash)
         }
     }
 
+    /// Add the block header to the client.
+    /// `block_header` -- RLP-encoded Ethereum header;
+    /// `dag_nodes` -- dag nodes with their merkle proofs.
     #[result_serializer(borsh)]
     pub fn add_block_header(
         &mut self,
@@ -149,76 +198,51 @@ impl EthBridge {
     ) {
         let header: BlockHeader = rlp::decode(block_header.as_slice()).unwrap();
 
-        if self.best_header_hash == Default::default() {
-            // Submit very first block, can trust relayer
-            self.maybe_store_header(header);
-            return;
-        }
-
-        let header_hash = header.hash.unwrap();
-        if self.infos.get(&header_hash).is_some() {
-            env::log(
-                format!("The header #{} is already known.", header.number).as_bytes(),
-            );
-            // The header is already known
-            return;
-        }
-
         let prev = self
             .headers
             .get(&header.parent_hash)
             .expect("Parent header should be present to add a new header");
+        assert!(self.verify_header(&header, &prev, &dag_nodes), "The new header {} should be valid", header.number);
 
-        assert!(
-            Self::verify_header(&self, &header, &prev, &dag_nodes),
-            "The new header {} should be valid", header.number
-        );
-
-        self.maybe_store_header(header);
+        self.record_header(header);
     }
 }
 
-impl EthBridge {
-    /// Maybe stores a valid header in the contract.
-    fn maybe_store_header(&mut self, header: BlockHeader) {
-        let best_info = self.infos.get(&self.best_header_hash).unwrap_or_default();
-        if best_info.number > header.number + NUMBER_OF_BLOCKS_FINALITY {
-            env::log(
-                format!(
-                    "The header #{} is too old. The latest is #{}",
-                    header.number, best_info.number
-                )
-                .as_bytes(),
-            );
-            // It's too late to add this block header.
-            return;
-        }
+impl EthClient {
+    /// Record the header. If needed update the canonical chain and perform the GC.
+    fn record_header(&mut self, header: BlockHeader) {
+        let best_info = self.infos.get(&self.best_header_hash).unwrap();
         let header_hash = header.hash.unwrap();
-        self.headers.insert(&header_hash, &header);
+        let header_number = header.number;
+        if header_number + self.finalized_gc_threshold < best_info.number {
+            panic!("Header is too old to have a chance to appear on the canonical chain.");
+        }
 
-        let parent_info = self.infos.get(&header.parent_hash).unwrap_or_default();
-        // Have to compute new total difficulty
+        let parent_info = self.infos.get(&header.parent_hash)
+            .expect("Header has unknown parent. Parent should be submitted first.");
+
+        // Record this header in `all_hashes`.
+        let mut all_hashes = self.all_header_hashes.get(&header_number).unwrap_or_default();
+        assert!(all_hashes.iter().find(|x| **x == header_hash).is_none(), "Header is already known. Number: {}", header_number);
+        all_hashes.push(header_hash);
+        self.all_header_hashes.insert(&header_number, &all_hashes);
+
+        // Record full information about this header.
+        self.headers.insert(&header_hash, &header);
         let info = HeaderInfo {
             total_difficulty: parent_info.total_difficulty + header.difficulty,
             parent_hash: header.parent_hash.clone(),
-            number: header.number,
+            number: header_number,
         };
         self.infos.insert(&header_hash, &info);
-        self.add_recent_header_hash(info.number, &header_hash);
+
+        // Check if canonical chain needs to be updated.
         if info.total_difficulty > best_info.total_difficulty
             || (info.total_difficulty == best_info.total_difficulty
-                && header.difficulty % 2 == U256::default())
+            && header.difficulty % 2 == U256::default())
         {
-            // The new header is the tip of the new canonical chain.
-            // We need to update hashes of the canonical chain to match the new header.
-            env::log(format!(
-                "The received header #{} is the tip of the new canonical chain. There are total {} header hashes",
-                info.number,
-                self.canonical_header_hashes.len(),
-            ).as_bytes());
-
-            // If the new header has a lower number than the previous header, we need to cleaning
-            // it going forward.
+            // If the new header has a lower number than the previous header, we need to clean it
+            // going forward.
             if best_info.number > info.number {
                 for number in info.number + 1..=best_info.number {
                     self.canonical_header_hashes.remove(&number);
@@ -227,7 +251,7 @@ impl EthBridge {
             // Replacing the global best header hash.
             self.best_header_hash = header_hash;
             self.canonical_header_hashes
-                .insert(&info.number, &header_hash);
+                .insert(&header_number, &header_hash);
 
             // Replacing past hashes until we converge into the same parent.
             // Starting from the parent hash.
@@ -236,7 +260,7 @@ impl EthBridge {
             loop {
                 let prev_value = self.canonical_header_hashes.insert(&number, &current_hash);
                 // If the current block hash is 0 (unlikely), or the previous hash matches the
-                // current hash, then we chains converged and can stop now.
+                // current hash, then the chains converged and we can stop now.
                 if number == 0 || prev_value == Some(current_hash) {
                     break;
                 }
@@ -248,63 +272,59 @@ impl EthBridge {
                 }
                 number -= 1;
             }
-
-            self.maybe_gc(best_info.number, info.number);
-        } else {
-            env::log(
-                format!(
-                    "The received header #{} doesn't have the best total difficulty.",
-                    info.number
-                )
-                .as_bytes(),
-            );
-        }
-    }
-
-    /// Removes old headers beyond the finality.
-    fn maybe_gc(&mut self, last_best_number: u64, new_best_number: u64) {
-        if new_best_number > last_best_number && last_best_number >= NUMBER_OF_BLOCKS_FINALITY {
-            for number in last_best_number - NUMBER_OF_BLOCKS_FINALITY
-                ..new_best_number - NUMBER_OF_BLOCKS_FINALITY
-            {
-                if let Some(mut hashes) = self.recent_header_hashes.get(&number) {
-                    env::log(
-                        format!("Removing {} old header(s) at #{}", hashes.len(), number)
-                            .as_bytes(),
-                    );
-                    for hash in hashes.iter() {
-                        self.infos.remove(&hash);
-                        self.headers.remove(&hash);
-                    }
-                    hashes.clear();
-                    self.recent_header_hashes.remove(&number);
-                }
+            if header_number > self.hashes_gc_threshold {
+                self.gc_canonical_chain(header_number - self.hashes_gc_threshold);
             }
-            env::log(
-                format!("There are {} headers remaining", self.headers.len()).as_bytes(),
-            );
+            if header_number > self.finalized_gc_threshold {
+                self.gc_headers(header_number - self.finalized_gc_threshold);
+            }
         }
     }
 
-    fn add_recent_header_hash(&mut self, number: u64, hash: &H256) {
-        let mut hashes = self.recent_header_hashes.get(&number).unwrap_or_else(|| {
-            let mut set_id = Vec::with_capacity(9);
-            set_id.extend_from_slice(b"s");
-            set_id.extend(number.to_le_bytes().iter());
-            UnorderedSet::new(set_id)
-        });
-        hashes.insert(&hash);
-        self.recent_header_hashes.insert(&number, &hashes);
+    /// Remove hashes from the canonical chain that are at least as old as the given header number.
+    fn gc_canonical_chain(&mut self, mut header_number: u64) {
+        loop {
+            if self.canonical_header_hashes.get(&header_number).is_some() {
+                self.canonical_header_hashes.remove(&header_number);
+                if header_number == 0 {
+                    break;
+                } else {
+                    header_number -= 1;
+                }
+            } else {
+                break;
+            }
+        }
     }
 
+    /// Remove information about the headers that are at least as old as the given header number.
+    fn gc_headers(&mut self, mut header_number: u64) {
+        loop {
+            if let Some(all_headers) = self.all_header_hashes.get(&header_number) {
+                for hash in all_headers {
+                    self.headers.remove(&hash);
+                    self.infos.remove(&hash);
+                }
+                self.all_header_hashes.remove(&header_number);
+                if header_number == 0 {
+                    break;
+                } else {
+                    header_number -= 1;
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    /// Verify PoW of the header.
     fn verify_header(
         &self,
         header: &BlockHeader,
         prev: &BlockHeader,
         dag_nodes: &[DoubleNodeWithMerkleProof],
     ) -> bool {
-        let (_mix_hash, result) = Self::hashimoto_merkle(
-            self,
+        let (_mix_hash, result) = self.hashimoto_merkle(
             &header.partial_hash.unwrap(),
             &header.nonce,
             header.number,
@@ -329,23 +349,24 @@ impl EthBridge {
             && header.parent_hash == prev.hash.unwrap()
     }
 
+    /// Verify merkle paths to the DAG nodes.
     fn hashimoto_merkle(
         &self,
         header_hash: &H256,
         nonce: &H64,
-        block_number: u64,
+        header_number: u64,
         nodes: &[DoubleNodeWithMerkleProof],
     ) -> (H256, H256) {
         // Boxed index since ethash::hashimoto gets Fn, but not FnMut
         let index = std::cell::RefCell::new(0);
 
         // Reuse single Merkle root across all the proofs
-        let merkle_root = self.dag_merkle_root((block_number as usize / 30000) as u64);
+        let merkle_root = self.dag_merkle_root((header_number as usize / 30000) as u64);
 
         let pair = ethash::hashimoto_with_hasher(
             header_hash.0,
             nonce.0,
-            ethash::get_full_size(block_number as usize / 30000),
+            ethash::get_full_size(header_number as usize / 30000),
             |offset| {
                 let idx = *index.borrow_mut();
                 *index.borrow_mut() += 1;

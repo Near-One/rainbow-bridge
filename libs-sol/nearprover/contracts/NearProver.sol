@@ -21,7 +21,7 @@ contract NearProver is INearProver {
         bridge = _bridge;
     }
 
-    function proveOutcome(bytes memory proofData, uint256 blockHeight) public view returns(bool) {
+    function proveOutcome(bytes memory proofData, uint64 blockHeight) public view returns(bool) {
         Borsh.Data memory borshData = Borsh.from(proofData);
         ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borshData.decodeFullOutcomeProof();
         require(borshData.finished(), "NearProver: argument should be exact borsh serialization");
@@ -45,9 +45,11 @@ contract NearProver is INearProver {
 
         bytes32 expectedBlockMerkleRoot = bridge.blockMerkleRoots(blockHeight);
 
-        require(
-            _computeRoot(fullOutcomeProof.block_header_lite.hash, fullOutcomeProof.block_proof) == expectedBlockMerkleRoot, "NearProver: block proof is not valid"
-        );
+        if (expectedBlockMerkleRoot != fullOutcomeProof.block_header_lite.inner_lite.block_merkle_root) {
+            require(
+                _computeRoot(fullOutcomeProof.block_header_lite.hash, fullOutcomeProof.block_proof) == expectedBlockMerkleRoot, "NearProver: block proof is not valid"
+            );
+        }
         return true;
     }
 
