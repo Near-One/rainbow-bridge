@@ -116,33 +116,36 @@ impl EthProver {
         #[serializer(borsh)] header_data: Vec<u8>,
         #[serializer(borsh)] proof: Vec<Vec<u8>>,
         #[serializer(borsh)] skip_bridge_call: bool,
-    ) -> bool {
+    ) -> PromiseOrValue<bool> {
         let log_entry: LogEntry = rlp::decode(log_entry_data.as_slice()).unwrap();
         let receipt: Receipt = rlp::decode(receipt_data.as_slice()).unwrap();
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
 
+        // Verify log_entry included in receipt
+        assert_eq!(receipt.logs[log_index as usize], log_entry);
+
+        // Verify receipt included into header
+        let verification_result = Self::verify_trie_proof(
+            header.receipts_root,
+            rlp::encode(&receipt_index),
+            proof,
+            receipt_data,
+        );
+        if verification_result && skip_bridge_call {
+            return PromiseOrValue::Value(true);
+        } else if !verification_result {
+            return PromiseOrValue::Value(false);
+        }
+
         // Verify block header was in the bridge
-        if !skip_bridge_call {
-            eth_client::block_hash_safe(header.number, &self.bridge_smart_contract, 0, 10000000000000).then(
+        eth_client::block_hash_safe(header.number, &self.bridge_smart_contract, 0, 10000000000000).then(
                 remote_self::on_block_hash(
                     header.hash.unwrap(),
                     &env::current_account_id(),
                     0,
                     env::prepaid_gas()/2,
                 ),
-            );
-        }
-
-        // Verify log_entry included in receipt
-        assert_eq!(receipt.logs[log_index as usize], log_entry);
-
-        // Verify receipt included into header
-        Self::verify_trie_proof(
-            header.receipts_root,
-            rlp::encode(&receipt_index),
-            proof,
-            receipt_data,
-        )
+        ).into()
     }
 
     /// Iterate the proof following the key.

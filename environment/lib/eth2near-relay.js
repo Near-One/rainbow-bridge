@@ -63,14 +63,12 @@ class Eth2NearRelay {
                    const blockRlp = this.web3.utils.bytesToHex(web3BlockToRlp(await this.web3.eth.getBlock(clientBlockNumber + 1)));
                    const unparsedBlock = await execute(`./vendor/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`);
                    const block = JSON.parse(unparsedBlock);
-                   this.submitBlock(block, clientBlockNumber + 1).catch((e) => {
-                       console.error(e);
-                       process.exit(2);
-                   });
-                   await sleep(10000);
+                   await this.submitBlock(block, clientBlockNumber + 1);
                } catch (e) {
                    console.log(`Failed to submit a block ${e}`);
                }
+            } else {
+                await sleep(10000);
             }
         }
     }

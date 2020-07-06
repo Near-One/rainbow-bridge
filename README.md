@@ -92,7 +92,7 @@ Now start the services that will relay the information between the chains:
 ```bash
 node index.js start eth-relay
 node index.js start near-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
-node index.js start near-watchdog --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
+node index.js start near-watchdog --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501202
 ```
 
 Note, you can observe the logs of the relays by running:
