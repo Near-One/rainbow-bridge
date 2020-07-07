@@ -44,13 +44,13 @@ function borshify (block) {
         web3.utils.toBN(block.approvals_after_next.length).toBuffer('le', 4),
         Buffer.concat(
             block.approvals_after_next.map(
-                signature => signature === null ? 
-                Buffer.from([0]) :
-                Buffer.concat([
-                    Buffer.from([1]),
-                    signature.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
-                    bs58.decode(signature.substr(8)),
-                ]),
+                signature => signature === null
+                    ? Buffer.from([0])
+                    : Buffer.concat([
+                        Buffer.from([1]),
+                        signature.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
+                        bs58.decode(signature.substr(8)),
+                    ]),
             ),
         ),
     ]);
@@ -102,41 +102,41 @@ contract('NearBridge', function ([_, addr1]) {
         expect(await this.bridge.checkBlockProducerSignatureInLastBlock(0)).to.be.true;
     });
 
-    if(process.env['NEAR_HEADERS_DIR']) {
-        it('ok with many block headers', async function() {
+    if (process.env.NEAR_HEADERS_DIR) {
+        it('ok with many block headers', async function () {
             this.decoder = await NearDecoder.new();
             this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(10));
             await this.bridge.deposit({ value: web3.utils.toWei('1') });
             this.timeout(0);
-            let blockFiles = await fs.readdir(process.env['NEAR_HEADERS_DIR']);
+            const blockFiles = await fs.readdir(process.env.NEAR_HEADERS_DIR);
             blockFiles.sort((a, b) => Number(a.split('.')[0]) < Number(b.split('.')[0]));
-            const firstBlock = require(process.env['NEAR_HEADERS_DIR'] +'/' + blockFiles[0]);
+            const firstBlock = require(process.env.NEAR_HEADERS_DIR + '/' + blockFiles[0]);
             const firstBlockBorsh = borshify(firstBlock);
             await this.bridge.initWithBlock(firstBlockBorsh);
             await this.bridge.blockHashes(firstBlock.inner_lite.height);
             expect(await this.bridge.blockHashes(firstBlock.inner_lite.height)).to.be.a('string');
 
             for (let i = 1; i < blockFiles.length; i++) {
-                let block = require(process.env['NEAR_HEADERS_DIR'] +'/' + blockFiles[i]);
+                const block = require(process.env.NEAR_HEADERS_DIR + '/' + blockFiles[i]);
                 const blockBorsh = borshify(block);
-                console.log("adding block " + block.inner_lite.height);
+                console.log('adding block ' + block.inner_lite.height);
                 await this.bridge.addLightClientBlock(blockBorsh);
                 await this.bridge.blockHashes(block.inner_lite.height);
                 expect(await this.bridge.blockHashes(block.inner_lite.height)).to.be.a('string');
                 const now = await time.latest();
                 await timeIncreaseTo(now.add(time.duration.seconds(10)));
 
-                if (i >= 600){
-                    console.log("checking block " + block.inner_lite.height);
-                    for(let j = 0; j < block.approvals_after_next.length; j++) {
-                        console.log("checking approval "+j)
-                        if(block.approvals_after_next[j]) {
-                            console.log("approval "+ j + " is not null")
+                if (i >= 600) {
+                    console.log('checking block ' + block.inner_lite.height);
+                    for (let j = 0; j < block.approvals_after_next.length; j++) {
+                        console.log('checking approval ' + j);
+                        if (block.approvals_after_next[j]) {
+                            console.log('approval ' + j + ' is not null');
                             expect(await this.bridge.checkBlockProducerSignatureInLastBlock(j)).to.be.true;
                         }
                     }
                 }
             }
-        })
+        });
     }
 });

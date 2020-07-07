@@ -3,35 +3,35 @@ const Path = require('path');
 const { RainbowConfig } = require('../lib/config');
 const fetch = require('node-fetch');
 
-async function getLatestBlock(nearNodeUrl) {
-    let resp = await fetch(nearNodeUrl, {
+async function getLatestBlock (nearNodeUrl) {
+    const resp = await fetch(nearNodeUrl, {
         method: 'post',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: "dontcare",
-            method: "block",
+            jsonrpc: '2.0',
+            id: 'dontcare',
+            method: 'block',
             params: {
-                finality: "final",
-            }
-        })
+                finality: 'final',
+            },
+        }),
     });
-    let data = await resp.json();
+    const data = await resp.json();
     return data.result;
 }
 
-async function getNextLightClientBlock(nearNodeUrl, blockHash) {
-    let resp = await fetch(nearNodeUrl, {
+async function getNextLightClientBlock (nearNodeUrl, blockHash) {
+    const resp = await fetch(nearNodeUrl, {
         method: 'post',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: "dontcare",
-            method: "next_light_client_block",
-            params: [blockHash]
-        })
+            jsonrpc: '2.0',
+            id: 'dontcare',
+            method: 'next_light_client_block',
+            params: [blockHash],
+        }),
     });
-    let data = await resp.json();
+    const data = await resp.json();
     return data.result;
 }
 
@@ -62,7 +62,7 @@ class NearDump {
                 console.log(`Got new light client block at height ${block.inner_lite.height}`);
                 await NearDump.saveBlock(block.inner_lite.height, block, path);
                 latestBlock = newLatestBlock;
-                numBlocks--;          
+                numBlocks--;
             } else {
                 continue;
             }

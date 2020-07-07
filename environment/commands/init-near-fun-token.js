@@ -46,7 +46,7 @@ class InitNEARFunToken {
             const lockerAddress = RainbowConfig.getParam('eth-locker-address');
             await tokenContract.new({
                 prover_account: proverAccount,
-                locker_address: lockerAddress.startsWith('0x') ? lockerAddress.substr(2) : lockerAddress
+                locker_address: lockerAddress.startsWith('0x') ? lockerAddress.substr(2) : lockerAddress,
             },
             new BN('300000000000000'));
         } catch (err) {
