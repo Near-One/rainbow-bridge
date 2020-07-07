@@ -135,6 +135,7 @@ class Near2EthRelay {
     }
 
     async run () {
+        process.send('ready');
         const clientContract = this.clientContract;
         const web3 = this.web3;
         const near = this.near;

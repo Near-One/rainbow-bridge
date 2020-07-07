@@ -20,7 +20,7 @@ else
 fi
 
 ganache_running() {
-    nc -z localhost "$ganache_port"
+    curl localhost:"$ganache_port"
 }
 
 start_ganache() {

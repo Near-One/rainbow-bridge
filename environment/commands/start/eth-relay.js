@@ -22,6 +22,8 @@ class StartEthRelayCommand {
                         error_file: '~/.rainbowup/logs/eth-relay/err.log',
                         out_file: '~/.rainbowup/logs/eth-relay/out.log',
                         args: ['start', 'eth-relay', ...RainbowConfig.getArgsNoDaemon()],
+                        wait_ready: true,
+                        kill_timeout: 60000
                     },
                 );
             });
