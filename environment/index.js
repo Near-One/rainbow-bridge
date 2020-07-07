@@ -109,7 +109,7 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
     'near-fun-token-contract-path',
     'The path to the Wasm file containing the fungible contract. Note, this version of fungible contract should support minting.',
-    path.join(__dirname, '../libs-rs/res/fungible_token.wasm'),
+    path.join(__dirname, '../libs-rs/res/mintable_fungible_token.wasm'),
 );
 RainbowConfig.declareOption(
     'near-fun-token-init-balance',
