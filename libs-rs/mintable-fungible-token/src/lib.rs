@@ -27,7 +27,7 @@ Properties inherited from the standard Fungible Token:
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{UnorderedMap, UnorderedSet};
 use near_sdk::json_types::U128;
-use near_sdk::{env, near_bindgen, AccountId, Balance, Promise, StorageUsage, ext_contract};
+use near_sdk::{env, ext_contract, near_bindgen, AccountId, Balance, Promise, StorageUsage};
 
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
@@ -49,7 +49,10 @@ pub struct Account {
 impl Account {
     /// Initializes a new Account with 0 balance and no allowances for a given `account_hash`.
     pub fn new(account_hash: Vec<u8>) -> Self {
-        Self { balance: 0, allowances: UnorderedMap::new(account_hash) }
+        Self {
+            balance: 0,
+            allowances: UnorderedMap::new(account_hash),
+        }
     }
 
     /// Sets allowance for account `escrow_account_id` to `allowance`.
@@ -82,7 +85,7 @@ pub struct MintableFungibleToken {
     /// Address of the Ethereum locker contract.
     pub locker_address: [u8; 20],
     /// Hashes of the events that were already used.
-    pub used_events: UnorderedSet<Vec<u8>>
+    pub used_events: UnorderedSet<Vec<u8>>,
 }
 
 impl Default for MintableFungibleToken {
@@ -128,39 +131,47 @@ pub struct EthEventData {
 impl EthEventData {
     /// Parse raw log entry data.
     pub fn from_log_entry_data(data: &[u8]) -> Self {
-        use hex::ToHex;
-        use ethabi::{RawLog, Event, EventParam, ParamType, Hash};
         use eth_types::*;
+        use ethabi::{Event, EventParam, Hash, ParamType, RawLog};
+        use hex::ToHex;
 
-        let event = Event { name: "Locked".to_string(),
+        let event = Event {
+            name: "Locked".to_string(),
             inputs: vec![
                 EventParam {
                     name: "token".to_string(),
                     kind: ParamType::Address,
-                    indexed: true
+                    indexed: true,
                 },
                 EventParam {
                     name: "sender".to_string(),
                     kind: ParamType::Address,
-                    indexed: true
+                    indexed: true,
                 },
                 EventParam {
                     name: "amount".to_string(),
                     kind: ParamType::Uint(256),
-                    indexed: false
+                    indexed: false,
                 },
                 EventParam {
                     name: "accountId".to_string(),
                     kind: ParamType::String,
-                    indexed: false
-                }
+                    indexed: false,
+                },
             ],
-            anonymous: false
+            anonymous: false,
         };
 
         let log_entry: LogEntry = rlp::decode(data).unwrap();
         let locker_address = (log_entry.address.clone().0).0;
-        let raw_log = RawLog { topics: log_entry.topics.iter().map(|h| Hash::from(&((h.0).0))).collect(), data:  log_entry.data.clone()};
+        let raw_log = RawLog {
+            topics: log_entry
+                .topics
+                .iter()
+                .map(|h| Hash::from(&((h.0).0)))
+                .collect(),
+            data: log_entry.data.clone(),
+        };
         let log = event.parse_log(raw_log).unwrap();
         let token = log.params[0].value.clone().to_address().unwrap().0;
         let token = (&token).encode_hex::<String>();
@@ -173,25 +184,32 @@ impl EthEventData {
             token,
             sender,
             amount,
-            recipient
+            recipient,
         }
     }
 }
 
 impl std::fmt::Display for EthEventData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "token: {}; sender: {}; amount: {}; recipient: {}", self.token, self.sender, self.amount, self.recipient)
+        write!(
+            f,
+            "token: {}; sender: {}; amount: {}; recipient: {}",
+            self.token, self.sender, self.amount, self.recipient
+        )
     }
 }
 
 #[ext_contract(ext_fungible_token)]
 pub trait ExtFungibleToken {
     #[result_serializer(borsh)]
-    fn finish_mint(&self,
-                       #[callback]
-                       #[serializer(borsh)] verification_success: bool,
-                       #[serializer(borsh)] new_owner_id: AccountId,
-                       #[serializer(borsh)] amount: U128) -> Promise;
+    fn finish_mint(
+        &self,
+        #[callback]
+        #[serializer(borsh)]
+        verification_success: bool,
+        #[serializer(borsh)] new_owner_id: AccountId,
+        #[serializer(borsh)] amount: U128,
+    ) -> Promise;
 }
 
 #[near_bindgen]
@@ -201,7 +219,8 @@ impl MintableFungibleToken {
     /// `locker_address`: Ethereum address of the locker contract, in hex.
     #[init]
     pub fn new(prover_account: AccountId, locker_address: String) -> Self {
-        let data = hex::decode(locker_address).expect("`locker_address` should be a valid hex string.");
+        let data =
+            hex::decode(locker_address).expect("`locker_address` should be a valid hex string.");
         assert_eq!(data.len(), 20, "`locker_address` should be 20 bytes long");
         let mut locker_address = [0u8; 20];
         locker_address.copy_from_slice(&data);
@@ -211,14 +230,15 @@ impl MintableFungibleToken {
             total_supply: 0,
             prover_account,
             locker_address,
-            used_events: UnorderedSet::new(b"u".to_vec()) }
+            used_events: UnorderedSet::new(b"u".to_vec()),
+        }
     }
 
     /// Increments the `allowance` for `escrow_account_id` by `amount` on the account of the caller of this contract
-  /// (`predecessor_id`) who is the balance owner.
-  /// Requirements:
-  /// * Caller of the method has to attach deposit enough to cover storage difference at the
-  ///   fixed storage price defined in the contract.
+    /// (`predecessor_id`) who is the balance owner.
+    /// Requirements:
+    /// * Caller of the method has to attach deposit enough to cover storage difference at the
+    ///   fixed storage price defined in the contract.
     #[payable]
     pub fn inc_allowance(&mut self, escrow_account_id: AccountId, amount: U128) {
         let initial_storage = env::storage_usage();
@@ -232,7 +252,10 @@ impl MintableFungibleToken {
         }
         let mut account = self.get_account(&owner_id);
         let current_allowance = account.get_allowance(&escrow_account_id);
-        account.set_allowance(&escrow_account_id, current_allowance.saturating_add(amount.0));
+        account.set_allowance(
+            &escrow_account_id,
+            current_allowance.saturating_add(amount.0),
+        );
         self.set_account(&owner_id, &account);
         self.refund_storage(initial_storage);
     }
@@ -255,7 +278,10 @@ impl MintableFungibleToken {
         }
         let mut account = self.get_account(&owner_id);
         let current_allowance = account.get_allowance(&escrow_account_id);
-        account.set_allowance(&escrow_account_id, current_allowance.saturating_sub(amount.0));
+        account.set_allowance(
+            &escrow_account_id,
+            current_allowance.saturating_sub(amount.0),
+        );
         self.set_account(&owner_id, &account);
         self.refund_storage(initial_storage);
     }
@@ -347,7 +373,9 @@ impl MintableFungibleToken {
             env::is_valid_account_id(escrow_account_id.as_bytes()),
             "Escrow account ID is invalid"
         );
-        self.get_account(&owner_id).get_allowance(&escrow_account_id).into()
+        self.get_account(&owner_id)
+            .get_allowance(&escrow_account_id)
+            .into()
     }
 
     /// Mint the token, increasing the total supply given the proof that the mirror token was locked
@@ -370,37 +398,55 @@ impl MintableFungibleToken {
             proof,
         } = proof;
         let event = EthEventData::from_log_entry_data(&log_entry_data);
-        assert_eq!(self.locker_address, event.locker_address, "Event's address {} does not match locker address of this token {}",
-                   hex::encode(&self.locker_address), hex::encode(&event.locker_address));
+        assert_eq!(
+            self.locker_address,
+            event.locker_address,
+            "Event's address {} does not match locker address of this token {}",
+            hex::encode(&self.locker_address),
+            hex::encode(&event.locker_address)
+        );
         env::log(format!("{}", event).as_bytes());
-        let EthEventData{recipient, amount, ..} = event;
+        let EthEventData {
+            recipient, amount, ..
+        } = event;
         prover::verify_log_entry(
-            log_index, log_entry_data, receipt_index, receipt_data, header_data, proof,
+            log_index,
+            log_entry_data,
+            receipt_index,
+            receipt_data,
+            header_data,
+            proof,
             false, // Do not skip bridge call. This is only used for development and diagnostics.
             &self.prover_account,
             0,
-            env::prepaid_gas()/3
-        ).then(
-            ext_fungible_token::finish_mint(
-                recipient,
-                amount.into(),
-                &env::current_account_id(),
-                leftover_deposit,
-                env::prepaid_gas()/3
-            )
+            env::prepaid_gas() / 3,
         )
+        .then(ext_fungible_token::finish_mint(
+            recipient,
+            amount.into(),
+            &env::current_account_id(),
+            leftover_deposit,
+            env::prepaid_gas() / 3,
+        ))
     }
 
     /// Finish minting once the proof was successfully validated. Can only be called by the contract
     /// itself.
     #[payable]
-    pub fn finish_mint(&mut self,
-                       #[callback] #[serializer(borsh)] verification_success: bool,
-                       #[serializer(borsh)] new_owner_id: AccountId,
-                       #[serializer(borsh)] amount: U128 ) {
+    pub fn finish_mint(
+        &mut self,
+        #[callback]
+        #[serializer(borsh)]
+        verification_success: bool,
+        #[serializer(borsh)] new_owner_id: AccountId,
+        #[serializer(borsh)] amount: U128,
+    ) {
         let initial_storage = env::storage_usage();
-        assert_eq!(env::predecessor_account_id(), env::current_account_id(),
-                   "Finish transfer is only allowed to be called by the contract itself");
+        assert_eq!(
+            env::predecessor_account_id(),
+            env::current_account_id(),
+            "Finish transfer is only allowed to be called by the contract itself"
+        );
         assert!(verification_success, "Failed to verify the proof");
 
         let mut account = self.get_account(&new_owner_id);
@@ -423,7 +469,11 @@ impl MintableFungibleToken {
         self.total_supply -= amount.0;
         self.set_account(&owner, &account);
         let recipient = hex::decode(recipient).expect("recipient should be a hex");
-        assert_eq!(recipient.len(), 20, "Recipient should be a 20-bytes long address");
+        assert_eq!(
+            recipient.len(),
+            20,
+            "Recipient should be a 20-bytes long address"
+        );
         let mut raw_recipient = [0u8; 20];
         raw_recipient.copy_from_slice(&recipient);
         (amount, raw_recipient)
@@ -435,17 +485,25 @@ impl MintableFungibleToken {
         data.extend(proof.receipt_index.try_to_vec().unwrap());
         data.extend(proof.header_data.clone());
         let key = env::sha256(&data);
-        assert!(!self.used_events.contains(&key), "Event cannot be reused for minting.");
+        assert!(
+            !self.used_events.contains(&key),
+            "Event cannot be reused for minting."
+        );
         self.used_events.insert(&key);
-    }}
+    }
+}
 
 impl MintableFungibleToken {
-
     /// Helper method to get the account details for `owner_id`.
     fn get_account(&self, owner_id: &AccountId) -> Account {
-        assert!(env::is_valid_account_id(owner_id.as_bytes()), "Owner's account ID is invalid");
+        assert!(
+            env::is_valid_account_id(owner_id.as_bytes()),
+            "Owner's account ID is invalid"
+        );
         let account_hash = env::sha256(owner_id.as_bytes());
-        self.accounts.get(&account_hash).unwrap_or_else(|| Account::new(account_hash))
+        self.accounts
+            .get(&account_hash)
+            .unwrap_or_else(|| Account::new(account_hash))
     }
 
     /// Helper method to set the account details for `owner_id` to the state.
@@ -488,10 +546,19 @@ impl MintableFungibleToken {
     fn new_with_supply(owner_id: AccountId, total_supply: U128) -> Self {
         let prover_account = "testprover".to_string();
         let locker_address = [0u8; 20];
-        assert!(env::is_valid_account_id(owner_id.as_bytes()), "Owner's account ID is invalid");
+        assert!(
+            env::is_valid_account_id(owner_id.as_bytes()),
+            "Owner's account ID is invalid"
+        );
         let total_supply = total_supply.into();
         assert!(!env::state_exists(), "Already initialized");
-        let mut ft = Self { accounts: UnorderedMap::new(b"a".to_vec()), total_supply, prover_account, locker_address, used_events: UnorderedSet::new(b"u".to_vec()) };
+        let mut ft = Self {
+            accounts: UnorderedMap::new(b"a".to_vec()),
+            total_supply,
+            prover_account,
+            locker_address,
+            used_events: UnorderedSet::new(b"u".to_vec()),
+        };
         let mut account = ft.get_account(&owner_id);
         account.balance = total_supply;
         ft.set_account(&owner_id, &account);
@@ -578,7 +645,10 @@ mod tests {
         context.is_view = true;
         context.attached_deposit = 0;
         testing_env!(context.clone());
-        assert_eq!(contract.get_balance(carol()).0, (total_supply - transfer_amount));
+        assert_eq!(
+            contract.get_balance(carol()).0,
+            (total_supply - transfer_amount)
+        );
         assert_eq!(contract.get_balance(bob()).0, transfer_amount);
     }
 
@@ -643,12 +713,15 @@ mod tests {
         testing_env!(context.clone());
         contract.inc_allowance(bob(), total_supply.into());
         contract.inc_allowance(bob(), total_supply.into());
-        assert_eq!(contract.get_allowance(carol(), bob()), std::u128::MAX.into())
+        assert_eq!(
+            contract.get_allowance(carol(), bob()),
+            std::u128::MAX.into()
+        )
     }
 
     #[test]
     #[should_panic(
-    expected = "The required attached deposit is 33100000000000000000000, but the given attached deposit is is 0"
+        expected = "The required attached deposit is 33100000000000000000000, but the given attached deposit is is 0"
     )]
     fn test_self_allowance_fail_no_deposit() {
         let mut context = get_context(carol());
@@ -699,9 +772,15 @@ mod tests {
         context.is_view = true;
         context.attached_deposit = 0;
         testing_env!(context.clone());
-        assert_eq!(contract.get_balance(carol()).0, total_supply - transfer_amount);
+        assert_eq!(
+            contract.get_balance(carol()).0,
+            total_supply - transfer_amount
+        );
         assert_eq!(contract.get_balance(alice()).0, transfer_amount);
-        assert_eq!(contract.get_allowance(carol(), bob()).0, allowance - transfer_amount);
+        assert_eq!(
+            contract.get_allowance(carol(), bob()).0,
+            allowance - transfer_amount
+        );
     }
 
     #[test]
@@ -744,9 +823,15 @@ mod tests {
         context.is_view = true;
         context.attached_deposit = 0;
         testing_env!(context.clone());
-        assert_eq!(contract.get_balance(carol()).0, (total_supply - transfer_amount));
+        assert_eq!(
+            contract.get_balance(carol()).0,
+            (total_supply - transfer_amount)
+        );
         assert_eq!(contract.get_balance(alice()).0, transfer_amount);
-        assert_eq!(contract.get_allowance(carol(), bob()).0, allowance - transfer_amount);
+        assert_eq!(
+            contract.get_allowance(carol(), bob()).0,
+            allowance - transfer_amount
+        );
     }
 
     #[test]
