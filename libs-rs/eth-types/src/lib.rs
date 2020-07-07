@@ -299,7 +299,6 @@ impl rlp::Encodable for LogEntry {
     }
 }
 
-
 // Receipt Header
 
 #[derive(Debug, Clone, PartialEq, Eq, RlpEncodableDerive, RlpDecodableDerive)]

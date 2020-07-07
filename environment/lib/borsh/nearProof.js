@@ -1,15 +1,15 @@
 const Web3 = require('web3');
 const bs58 = require('bs58');
 
-function borshifyOutcomeProof(proof) {
+function borshifyOutcomeProof (proof) {
     const statusToBuffer = status => {
         console.log(status.SuccessValue);
         if ('SuccessValue' in status) {
-            let data = Buffer.from(status.SuccessValue, 'base64');
+            const data = Buffer.from(status.SuccessValue, 'base64');
             return Buffer.concat([
                 Buffer.from([2]),
                 Web3.utils.toBN(data.length).toBuffer('le', 4),
-                data
+                data,
             ]);
         } else if ('SuccessReceiptId' in status) {
             return Buffer.concat([
@@ -17,7 +17,7 @@ function borshifyOutcomeProof(proof) {
                 bs58.decode(status.SuccessReceiptId),
             ]);
         } else {
-            throw new Error("status not supported");
+            throw new Error('status not supported');
         }
     };
     return Buffer.concat([
@@ -27,8 +27,8 @@ function borshifyOutcomeProof(proof) {
                 p => Buffer.concat([
                     bs58.decode(p.hash),
                     Buffer.from([p.direction === 'Right' ? 1 : 0]),
-                ])
-            )
+                ]),
+            ),
         ),
 
         bs58.decode(proof.outcome_proof.block_hash),
@@ -41,8 +41,8 @@ function borshifyOutcomeProof(proof) {
             Web3.utils.toBN(proof.outcome_proof.outcome.receipt_ids.length).toBuffer('le', 4),
             Buffer.concat(
                 proof.outcome_proof.outcome.receipt_ids.map(
-                    r => bs58.decode(r)
-                )
+                    r => bs58.decode(r),
+                ),
             ),
 
             Web3.utils.toBN(proof.outcome_proof.outcome.gas_burnt).toBuffer('le', 8),
@@ -71,10 +71,10 @@ function borshifyOutcomeProof(proof) {
                     bp => Buffer.concat([
                         bs58.decode(bp.hash),
                         Buffer.from([bp.direction === 'Right' ? 1 : 0]),
-                    ])
-                )
+                    ]),
+                ),
             ),
-        ])
+        ]),
     ]);
 }
 

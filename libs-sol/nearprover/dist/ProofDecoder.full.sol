@@ -2,6 +2,7 @@
 // File: @openzeppelin/contracts/math/SafeMath.sol
 
 pragma solidity ^0.5.0;
+pragma solidity ^0.5.0;
 
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
@@ -160,7 +161,7 @@ library SafeMath {
 
 // File: ../nearbridge/contracts/Borsh.sol
 
-pragma solidity ^0.5.0;
+
 
 
 
