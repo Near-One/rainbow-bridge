@@ -1,0 +1,151 @@
+steps:
+    - command: |
+        source ~/.cargo/env
+        rustup default stable
+        ci/test_verify_eth_headers.sh
+    
+      label: "verify eth headers"
+      agents:
+      - "queue=bridge"
+  
+    - command: | 
+        source ~/.cargo/env
+        rustup default stable
+        ci/test_verify_eth_proofs.sh
+    
+      label: "verify eth proofs"
+      agents:
+      - "queue=bridge"
+  
+    - command: |
+        source ~/.cargo/env
+        rustup default stable
+        cd libs-rs
+        eth-client/test.sh
+    
+      label: "eth-client tests"
+      agents:
+      - "queue=bridge"
+  
+    - command: |
+        source ~/.cargo/env
+        rustup default stable
+        cd libs-rs
+        eth-prover/test.sh
+    
+      label: "eth-prover tests"
+      agents:
+      - "queue=bridge"
+  
+    - command: |
+        source ~/.cargo/env
+        rustup default stable
+        rustup target add wasm32-unknown-unknown
+        cd libs-rs
+        ./build_all.sh
+    
+      label: "build all rust contracts"
+      agents:
+      - "queue=bridge"
+  
+    - command: |
+        source ~/.cargo/env
+        source ~/.nvm/nvm.sh
+        cd libs-sol
+        ./build_all.sh
+    
+      label: "build all solidity contracts"
+      agents:
+      - "queue=bridge"
+  
+    - label: "lint" 
+      command: |
+        source ~/.cargo/env
+        source ~/.nvm/nvm.sh
+        cd environment
+        yarn
+        yarn run lint
+        cd ../libs-sol/nearbridge
+        yarn
+        yarn lint
+      agents:
+      - "queue=bridge"
+      soft_fail:
+      - exit_status: 1
+      - exit_status: 2
+  
+    - command: |
+        source ~/.nvm/nvm.sh
+        cd libs-sol/nearbridge
+        yarn
+        yarn test
+        node test/ed25519-test.js
+    
+      label: "nearbridge test"
+      agents:
+      - "queue=bridge"
+  
+    - command: |
+        source ~/.cargo/env
+        cd libs-rs
+        cargo test
+    
+      label: "rust contracts test"
+      agents:
+      - "queue=bridge"
+  
+    - command: | 
+        source ~/.nvm/nvm.sh
+        cd environment
+        yarn
+        cd ../libs-sol/nearprover
+        yarn
+        yarn test
+    
+      label: "nearprover test"
+      agents:
+      - "queue=bridge"
+    
+    - label: "e2e test"
+      command: |
+        source ~/.nvm/nvm.sh
+        source ~/.cargo/env
+  
+        export GOROOT=~/.go
+        export GOPATH=~/go
+        export PATH=$$GOPATH/bin:$$GOROOT/bin:$$PATH
+        npm i -g ganache-cli
+        git submodule update --init --recursive
+        cd environment/vendor/ethashproof
+        ./build.sh
+        cd -
+        rustup default stable
+        rustup target add wasm32-unknown-unknown
+        ci/e2e.sh
+    
+      timeout: 40
+    
+      agents:
+      - "queue=bridge-expensive"
+  
+    - command: |
+        source ~/.nvm/nvm.sh
+        ci/test_verify_near_headers.sh
+    
+      label: "verify near headers"
+      agents:
+      - "queue=bridge"
+  
+    - command: |
+        source ~/.nvm/nvm.sh
+        cd enviroment
+        yarn
+        cd ../libs-sol/nearprover
+        yarn
+        cd ../..
+        ci/test_verify_near_proofs.sh
+    
+      label: "verify near proofs"
+      agents:
+      - "queue=bridge"
+      branches: "dump-verify-near-proofs"
