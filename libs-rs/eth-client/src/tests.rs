@@ -151,7 +151,7 @@ fn rlp_append<TX>(header: &Block<TX>, stream: &mut RlpStream) {
 
 // TESTS
 
-use near_sdk::{testing_env, VMContext, MockedBlockchain};
+use near_sdk::{testing_env, MockedBlockchain, VMContext};
 
 lazy_static! {
     static ref WEB3RS: web3::Web3<web3::transports::Http> = {
@@ -234,7 +234,14 @@ fn add_dags_merkle_roots() {
 
     let dmr = read_roots_collection();
     let contract = EthClient::init(
-        true, 0, read_roots_collection().dag_merkle_roots, blocks[0].clone(), 30, 10, 10);
+        true,
+        0,
+        read_roots_collection().dag_merkle_roots,
+        blocks[0].clone(),
+        30,
+        10,
+        10,
+    );
 
     assert_eq!(dmr.dag_merkle_roots[0], contract.dag_merkle_root(0));
     assert_eq!(dmr.dag_merkle_roots[10], contract.dag_merkle_root(10));
@@ -257,9 +264,21 @@ fn add_blocks_2_and_3() {
         .map(|filename| read_block((&filename).to_string()))
         .collect();
 
-    let mut contract = EthClient::init(true, 0, read_roots_collection().dag_merkle_roots, blocks[0].clone(), 30, 10, 10);
+    let mut contract = EthClient::init(
+        true,
+        0,
+        read_roots_collection().dag_merkle_roots,
+        blocks[0].clone(),
+        30,
+        10,
+        10,
+    );
 
-    for (block, proof) in blocks.into_iter().zip(blocks_with_proofs.into_iter()).skip(1) {
+    for (block, proof) in blocks
+        .into_iter()
+        .zip(blocks_with_proofs.into_iter())
+        .skip(1)
+    {
         contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
     }
 
@@ -280,7 +299,15 @@ fn add_400000_block_only() {
     // [400000.json]
 
     let block_with_proof = read_block("./src/data/400000.json".to_string());
-    let contract = EthClient::init(true, 400_000 / 30000, vec![block_with_proof.merkle_root], blocks[0].clone(), 30, 10, 10);
+    let contract = EthClient::init(
+        true,
+        400_000 / 30000,
+        vec![block_with_proof.merkle_root],
+        blocks[0].clone(),
+        30,
+        10,
+        10,
+    );
     assert_eq!((hashes[0].0).0, (contract.block_hash(400_000).unwrap().0).0);
 }
 
@@ -298,9 +325,21 @@ fn add_two_blocks_from_8996776() {
             .map(|filename| read_block((&filename).to_string()))
             .collect();
 
-    let mut contract = EthClient::init(true, 0, read_roots_collection().dag_merkle_roots, blocks[0].clone(), 30, 10, 10);
+    let mut contract = EthClient::init(
+        true,
+        0,
+        read_roots_collection().dag_merkle_roots,
+        blocks[0].clone(),
+        30,
+        10,
+        10,
+    );
 
-    for (block, proof) in blocks.into_iter().zip(blocks_with_proofs.into_iter()).skip(1) {
+    for (block, proof) in blocks
+        .into_iter()
+        .zip(blocks_with_proofs.into_iter())
+        .skip(1)
+    {
         contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
     }
 
@@ -340,10 +379,14 @@ fn add_2_blocks_from_400000() {
         blocks[0].clone(),
         30,
         10,
-        10
+        10,
     );
 
-    for (block, proof) in blocks.into_iter().zip(blocks_with_proofs.into_iter()).skip(1) {
+    for (block, proof) in blocks
+        .into_iter()
+        .zip(blocks_with_proofs.into_iter())
+        .skip(1)
+    {
         contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
     }
     assert_eq!((hashes[0].0).0, (contract.block_hash(400_000).unwrap().0).0);
@@ -353,10 +396,10 @@ fn add_2_blocks_from_400000() {
 #[cfg(feature = "expensive_tests")]
 #[test]
 fn predumped_block_can_be_added() {
+    use indicatif::{ProgressBar, ProgressStyle};
+    use near_sdk::VMConfig;
     use std::env;
     use std::fs;
-    use near_sdk::VMConfig;
-    use indicatif::{ProgressBar, ProgressStyle};
 
     let mut vm_config = VMConfig::free();
     vm_config.limit_config.max_number_logs = u64::MAX;
@@ -390,12 +433,12 @@ fn predumped_block_can_be_added() {
         first_block_with_proof.header_rlp.0.clone(),
         30,
         10,
-        10
+        10,
     );
 
     let bar = ProgressBar::new(blocks_with_proofs.len() as _);
     bar.set_style(ProgressStyle::default_bar().template(
-        "[elapsed {elapsed_precise} remaining {eta_precise}] Verifying {bar} {pos:>7}/{len:>7}"
+        "[elapsed {elapsed_precise} remaining {eta_precise}] Verifying {bar} {pos:>7}/{len:>7}",
     ));
 
     for filename in blocks_with_proofs.iter().skip(1) {
@@ -411,5 +454,4 @@ fn predumped_block_can_be_added() {
         bar.inc(1);
     }
     bar.finish();
-
 }

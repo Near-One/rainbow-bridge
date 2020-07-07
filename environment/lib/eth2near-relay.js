@@ -49,7 +49,7 @@ class Eth2NearRelay {
             while (true) {
                 const chainBlock = await this.web3.eth.getBlock(clientBlockNumber);
                 const chainBlockHash = chainBlock.hash;
-                const clientHashes  = await this.ethClientContract.known_hashes(clientBlockNumber);
+                const clientHashes = await this.ethClientContract.known_hashes(clientBlockNumber);
                 if (clientHashes.find(x => x === chainBlockHash)) {
                     break;
                 } else {
@@ -59,14 +59,14 @@ class Eth2NearRelay {
             }
 
             if (clientBlockNumber < chainBlockNumber) {
-               try {
-                   const blockRlp = this.web3.utils.bytesToHex(web3BlockToRlp(await this.web3.eth.getBlock(clientBlockNumber + 1)));
-                   const unparsedBlock = await execute(`./vendor/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`);
-                   const block = JSON.parse(unparsedBlock);
-                   await this.submitBlock(block, clientBlockNumber + 1);
-               } catch (e) {
-                   console.log(`Failed to submit a block ${e}`);
-               }
+                try {
+                    const blockRlp = this.web3.utils.bytesToHex(web3BlockToRlp(await this.web3.eth.getBlock(clientBlockNumber + 1)));
+                    const unparsedBlock = await execute(`./vendor/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`);
+                    const block = JSON.parse(unparsedBlock);
+                    await this.submitBlock(block, clientBlockNumber + 1);
+                } catch (e) {
+                    console.log(`Failed to submit a block ${e}`);
+                }
             } else {
                 await sleep(10000);
             }
@@ -95,9 +95,9 @@ class Eth2NearRelay {
                 }),
         };
 
-         console.log(`Submitting block ${blockNumber} to EthClient`);
-         await this.ethClientContract.add_block_header(args, new BN('300000000000000'));
-         console.log(`Successfully submitted block ${blockNumber} to EthClient`);
+        console.log(`Submitting block ${blockNumber} to EthClient`);
+        await this.ethClientContract.add_block_header(args, new BN('300000000000000'));
+        console.log(`Successfully submitted block ${blockNumber} to EthClient`);
     }
 }
 

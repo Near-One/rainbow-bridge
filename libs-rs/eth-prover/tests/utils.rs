@@ -1,9 +1,8 @@
 #![allow(dead_code)]
 use borsh::{BorshDeserialize, BorshSerialize};
-use serde::{Deserialize, Deserializer};
-use near_crypto::{InMemorySigner, KeyType, Signer};
 use eth_types::*;
 use hex::FromHex;
+use near_crypto::{InMemorySigner, KeyType, Signer};
 use near_primitives::{
     account::{AccessKey, Account},
     errors::{RuntimeError, TxExecutionError},
@@ -11,9 +10,10 @@ use near_primitives::{
     transaction::{ExecutionOutcome, ExecutionStatus, Transaction},
     types::{AccountId, Balance},
 };
-use near_runtime_standalone::{init_runtime_and_signer};
+use near_runtime_standalone::init_runtime_and_signer;
 pub use near_runtime_standalone::RuntimeStandalone;
 pub use near_sdk::VMContext;
+use serde::{Deserialize, Deserializer};
 
 type TxResult = Result<ExecutionOutcome, ExecutionOutcome>;
 
@@ -46,12 +46,12 @@ struct EthClientInitArgs {
     first_header: Vec<u8>,
     hashes_gc_threshold: u64,
     finalized_gc_threshold: u64,
-    num_confirmations: u64
+    num_confirmations: u64,
 }
 
 #[derive(BorshSerialize)]
 struct EthProverInitArgs {
-    bridge_smart_contract: AccountId
+    bridge_smart_contract: AccountId,
 }
 
 fn outcome_into_result(outcome: ExecutionOutcome) -> TxResult {
@@ -179,7 +179,7 @@ impl ExternalUser {
             first_header: block.header(),
             hashes_gc_threshold: 400000,
             finalized_gc_threshold: 500,
-            num_confirmations: 10
+            num_confirmations: 10,
         };
         let tx = self
             .new_tx(runtime, eth_client_account_id)
@@ -205,7 +205,7 @@ impl ExternalUser {
         eth_client_account_id: AccountId,
     ) -> TxResult {
         let init_args = EthProverInitArgs {
-            bridge_smart_contract: eth_client_account_id
+            bridge_smart_contract: eth_client_account_id,
         };
         let tx = self
             .new_tx(runtime, eth_prover_account_id)
@@ -251,7 +251,10 @@ fn read_roots_collection() -> RootsCollection {
 
 fn read_roots_collection_raw() -> RootsCollectionRaw {
     serde_json::from_reader(
-        std::fs::File::open(std::path::Path::new("../eth-client/src/data/dag_merkle_roots.json")).unwrap(),
+        std::fs::File::open(std::path::Path::new(
+            "../eth-client/src/data/dag_merkle_roots.json",
+        ))
+        .unwrap(),
     )
     .unwrap()
 }
@@ -331,7 +334,6 @@ pub struct AddBlockHeaderArgs {
     pub block_header: Vec<u8>,
     pub dag_nodes: Vec<DoubleNodeWithMerkleProof>,
 }
-
 
 impl BlockWithProofs {
     pub fn header(&self) -> Vec<u8> {

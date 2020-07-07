@@ -1,4 +1,4 @@
-const {web3BlockToRlp} = require('../eth2near-relay');
+const { web3BlockToRlp } = require('../eth2near-relay');
 
 const Web3 = require('web3');
 const BN = require('bn.js');
@@ -128,7 +128,7 @@ class Eth2NearClientContract extends BorshContract {
             // @ts-ignore
             await this.init({
                 validate_ethash: validate_ethash,
-                dags_start_epoch: Math.trunc( last_block_number / 30000),
+                dags_start_epoch: Math.trunc(last_block_number / 30000),
                 dags_merkle_roots: roots.dag_merkle_roots,
                 first_header: blockRlp,
                 hashes_gc_threshold: 40000,

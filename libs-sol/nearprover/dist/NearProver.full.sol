@@ -2,6 +2,7 @@
 // File: @openzeppelin/contracts/math/SafeMath.sol
 
 pragma solidity ^0.5.0;
+pragma solidity ^0.5.0;
 
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
@@ -160,7 +161,8 @@ library SafeMath {
 
 // File: @openzeppelin/contracts/GSN/Context.sol
 
-pragma solidity ^0.5.0;
+
+
 
 /*
  * @dev Provides information about the current execution context, including the
@@ -191,6 +193,7 @@ contract Context {
 // File: @openzeppelin/contracts/ownership/Ownable.sol
 
 pragma solidity ^0.5.0;
+
 
 /**
  * @dev Contract module which provides a basic access control mechanism, where

@@ -6,6 +6,7 @@ import "../../nearprover/contracts/ProofDecoder.sol";
 import "../../nearbridge/contracts/NearDecoder.sol";
 import "../../nearbridge/contracts/Borsh.sol";
 
+
 contract TokenLocker {
     using SafeERC20 for IERC20;
     using Borsh for Borsh.Data;
@@ -66,7 +67,7 @@ contract TokenLocker {
         require(!status.failed, "Cannot use failed execution outcome for unlocking the tokens.");
         require(!status.unknown, "Cannot use unknown execution outcome for unlocking the tokens.");
         BurnResult memory result = _decodeBurnResult(status.successValue);
-         ethToken_.transfer(result.recipient, result.amount);
+        ethToken_.transfer(result.recipient, result.amount);
         emit Unlocked(result.amount, result.recipient);
     }
 

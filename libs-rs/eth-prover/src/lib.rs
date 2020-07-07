@@ -96,14 +96,19 @@ impl EthProver {
         #[serializer(borsh)] block_number: u64,
         #[serializer(borsh)] expected_block_hash: H256,
     ) -> PromiseOrValue<bool> {
-        eth_client::block_hash_safe(block_number, &self.bridge_smart_contract, 0, env::prepaid_gas()/3)
-            .then(remote_self::on_block_hash(
-                expected_block_hash,
-                &env::current_account_id(),
-                0,
-                10000000000000,
-            ))
-            .into()
+        eth_client::block_hash_safe(
+            block_number,
+            &self.bridge_smart_contract,
+            0,
+            env::prepaid_gas() / 3,
+        )
+        .then(remote_self::on_block_hash(
+            expected_block_hash,
+            &env::current_account_id(),
+            0,
+            10000000000000,
+        ))
+        .into()
     }
 
     #[result_serializer(borsh)]
@@ -138,14 +143,19 @@ impl EthProver {
         }
 
         // Verify block header was in the bridge
-        eth_client::block_hash_safe(header.number, &self.bridge_smart_contract, 0, 10000000000000).then(
-                remote_self::on_block_hash(
-                    header.hash.unwrap(),
-                    &env::current_account_id(),
-                    0,
-                    env::prepaid_gas()/2,
-                ),
-        ).into()
+        eth_client::block_hash_safe(
+            header.number,
+            &self.bridge_smart_contract,
+            0,
+            10000000000000,
+        )
+        .then(remote_self::on_block_hash(
+            header.hash.unwrap(),
+            &env::current_account_id(),
+            0,
+            env::prepaid_gas() / 2,
+        ))
+        .into()
     }
 
     /// Iterate the proof following the key.

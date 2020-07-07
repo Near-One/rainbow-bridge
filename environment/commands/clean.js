@@ -17,7 +17,7 @@ class CleanCommand {
             console.log('Cleaning ~/.rainbowup , ~/.nearup , and ~/.near directories...');
             execSync('rm -rf ~/.rainbowup && rm -rf ~/.nearup && rm -rf ~/.near');
             console.log('Cleaning done...');
-            process.exit(0)
+            process.exit(0);
         });
     }
 }
