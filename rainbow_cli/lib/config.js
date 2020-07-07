@@ -135,7 +135,7 @@ RainbowConfig.paramDeclarations = {};
 
 // File that stores config.
 RainbowConfig.configFile = new Configstore('', {}, {
-    configPath: path.join(homedir, '.rainbowup', 'config.json'),
+    configPath: path.join(homedir, '.rainbow', 'config.json'),
 });
 
 exports.RainbowConfig = RainbowConfig;

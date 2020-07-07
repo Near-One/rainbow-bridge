@@ -8,7 +8,7 @@ const {
     readerToHex,
 } = require('../borsh');
 // @ts-ignore
-const roots = require('./dag_merkle_roots.json');
+const roots = require('./dag_merkle_roots.json.js');
 
 const borshSchema = {
     bool: {

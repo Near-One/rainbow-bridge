@@ -14,8 +14,8 @@ class StartGanacheNodeCommand {
                 {
                     name: 'ganache',
                     script: './scripts/start_ganache.sh',
-                    error_file: '~/.rainbowup/logs/ganache/err.log',
-                    out_file: '~/.rainbowup/logs/ganache/out.log',
+                    error_file: '~/.rainbow/logs/ganache/err.log',
+                    out_file: '~/.rainbow/logs/ganache/out.log',
                     args: [],
                     env: process.env,
                 },

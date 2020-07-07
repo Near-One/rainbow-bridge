@@ -1,4 +1,4 @@
-const { borshifyOutcomeProof } = require('../../../environment/lib/borsh');
+const { borshifyOutcomeProof } = require('../../../rainbow_cli/lib/borsh');
 
 const NearProver = artifacts.require('NearProver');
 const NearBridgeMock = artifacts.require('NearBridgeMock');

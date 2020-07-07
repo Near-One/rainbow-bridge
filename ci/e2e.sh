@@ -7,7 +7,7 @@ set -exuo pipefail
 CI_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/tmp/ganache.out 2>&1 && pwd )"
 ROOT_DIR=$CI_DIR/..
 
-cd $ROOT_DIR/environment
+cd $ROOT_DIR/rainbow_cli
 yarn
 node index.js prepare
 node index.js start near-node

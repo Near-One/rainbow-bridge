@@ -30,7 +30,7 @@ To learn the commands that you can use with the rainbow bridge run
 node index.js --help
 ```
 
-Parameters of each command can be specified through environment variables, command line arguments, entries in the `~/.rainbowup/config.json` config file, or the default value will be used -- in that priority.
+Parameters of each command can be specified through environment variables, command line arguments, entries in the `~/.rainbow/config.json` config file, or the default value will be used -- in that priority.
 If argument is not provided and there is no default value the program will not execute.
 
 If script successfully executes a command then each parameter provided through the command line argument will be
@@ -41,7 +41,7 @@ Note, you can use environment variables to pass sensitive data which will not le
 
 
 ## Usage example
-Go to `environment` folder.
+Go to `rainbow_cli` folder.
 
 ### Launching blockchains locally
 
@@ -52,7 +52,7 @@ There are three layers of configuration, overriding each other with highest prio
 
 1. Environment variables
 2. Flags passed throught the command line
-3. Configuration files in ~/.rainbowup/config.json
+3. Configuration files in ~/.rainbow/config.json
 
 More about specific configurations:
 
@@ -121,8 +121,8 @@ You should observe the change of the ERC20 balance as reported by the CLI.
 
 ## Currently we have the following docker options:
 
-1. Rainbow Docker image containing rainbowup ready for running
-	- run the rainbowup docker image with a custom command
+1. Rainbow Docker image containing rainbow ready for running
+	- run the rainbow docker image with a custom command
 2. A development docker compose setup (docker-compose-dev.yml)
 	- ganache
 	- local near node

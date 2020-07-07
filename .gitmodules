@@ -1,4 +1,4 @@
-[submodule "environment/vendor/ethashproof"]
-	path = environment/vendor/ethashproof
+[submodule "rainbow_cli/vendor/ethashproof"]
+	path = rainbow_cli/vendor/ethashproof
 	url = https://github.com/nearprotocol/ethashproof
 	ignore = dirty

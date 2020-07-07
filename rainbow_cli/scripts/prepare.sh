@@ -1,19 +1,19 @@
 #!/bin/bash
 set -euo pipefail
 
-eval RAINBOWUP_DIR=~/.rainbowup
+eval RAINBOW_DIR=~/.rainbow
 
 export LOCAL_BRIDGE_SRC
 export LOCAL_CORE_SRC
 export LOCAL_NEARUP_SRC
 
-eval BRIDGE_SRC=~/.rainbowup/bridge
-eval CORE_SRC=~/.rainbowup/core
-eval NEARUP_SRC=~/.rainbowup/nearup
+eval BRIDGE_SRC=~/.rainbow/bridge
+eval CORE_SRC=~/.rainbow/core
+eval NEARUP_SRC=~/.rainbow/nearup
 eval NEARUP_LOGS=~/.nearup/localnet-logs
 
 
-mkdir -p $RAINBOWUP_DIR
+mkdir -p $RAINBOW_DIR
 
 if test -z "$LOCAL_CORE_SRC"
 then
@@ -63,14 +63,14 @@ cd $BRIDGE_SRC/libs-sol
 ./build_all.sh
 echo "Built Solidity contracts"
 
-# Install environment dependencies
-cd $BRIDGE_SRC/environment
+# Install rainbow_cli dependencies
+cd $BRIDGE_SRC/rainbow_cli
 yarn
 
-cd $BRIDGE_SRC/environment/vendor/ganache
+cd $BRIDGE_SRC/rainbow_cli/vendor/ganache
 yarn
 
-cd $BRIDGE_SRC/environment/vendor/ethashproof
+cd $BRIDGE_SRC/rainbow_cli/vendor/ethashproof
 ./build.sh
 echo 'Compiled ethashproof module'
 

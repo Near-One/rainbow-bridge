@@ -17,8 +17,8 @@ class StartNearWatchdogCommand {
                         name: 'near-watchdog',
                         script: 'index.js',
                         interpreter: 'node',
-                        error_file: '~/.rainbowup/logs/near-watchdog/err.log',
-                        out_file: '~/.rainbowup/logs/near-watchdog/out.log',
+                        error_file: '~/.rainbow/logs/near-watchdog/err.log',
+                        out_file: '~/.rainbow/logs/near-watchdog/out.log',
                         args: ['start', 'near-relay', ...RainbowConfig.getArgsNoDaemon()],
                     },
                 );
