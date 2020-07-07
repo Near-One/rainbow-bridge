@@ -9,10 +9,10 @@ function sleep (ms) {
 }
 
 class Near2EthWatchdog {
-    async initialize() {
+    async initialize () {
         // @ts-ignore
         this.web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
-        let ethMasterAccount =
+        const ethMasterAccount =
             this.web3.eth.accounts.privateKeyToAccount(RainbowConfig.getParam('eth-master-sk'));
         this.web3.eth.accounts.wallet.add(ethMasterAccount);
         this.web3.eth.defaultAccount = ethMasterAccount.address;
@@ -30,7 +30,7 @@ class Near2EthWatchdog {
         );
     }
 
-    async run() {
+    async run () {
         while (true) {
             const lastClientBlock = await this.clientContract.methods.last().call();
             const latestBlock = await this.web3.eth.getBlock('latest');
@@ -45,14 +45,14 @@ class Near2EthWatchdog {
             // We cannot memorize processed blocks because they might have been re-submitted with different data.
             for (let i = 0; i < lastClientBlock.approvals_after_next_length; i++) {
                 console.log(`Checking ${i} signature.`);
-                let result = await this.clientContract.methods.checkBlockProducerSignatureInLastBlock(i).call();
+                const result = await this.clientContract.methods.checkBlockProducerSignatureInLastBlock(i).call();
                 if (!result) {
                     console.log(`Challenging ${i} signature.`);
                     try {
                         await this.clientContract.methods.challenge(this.ethMasterAccount, i).send({
-                                from: this.ethMasterAccount,
-                                gas: 5000000,
-                            }
+                            from: this.ethMasterAccount,
+                            gas: 5000000,
+                        },
                         );
                     } catch (err) {
                         console.log(`Challenge failed. Maybe the block was already reverted? ${err}`);

@@ -1,7 +1,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
 use near_sdk::collections::UnorderedMap;
-use near_sdk::{near_bindgen, env};
+use near_sdk::{env, near_bindgen};
 
 #[cfg(target_arch = "wasm32")]
 #[global_allocator]
@@ -112,12 +112,9 @@ impl EthClient {
         #[serializer(borsh)] first_header: Vec<u8>,
         #[serializer(borsh)] hashes_gc_threshold: u64,
         #[serializer(borsh)] finalized_gc_threshold: u64,
-        #[serializer(borsh)] num_confirmations: u64
+        #[serializer(borsh)] num_confirmations: u64,
     ) -> Self {
-        assert!(
-            !Self::initialized(),
-            "Already initialized"
-        );
+        assert!(!Self::initialized(), "Already initialized");
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
         let header_hash = header.hash.unwrap().clone();
         let header_number = header.number;
@@ -134,14 +131,19 @@ impl EthClient {
             headers: UnorderedMap::new(b"h".to_vec()),
             infos: UnorderedMap::new(b"i".to_vec()),
         };
-        res.canonical_header_hashes.insert(&header_number, &header_hash);
-        res.all_header_hashes.insert(&header_number, &vec![header_hash.clone()]);
+        res.canonical_header_hashes
+            .insert(&header_number, &header_hash);
+        res.all_header_hashes
+            .insert(&header_number, &vec![header_hash.clone()]);
         res.headers.insert(&header_hash, &header);
-        res.infos.insert(&header_hash, &HeaderInfo {
-            total_difficulty: Default::default(),
-            parent_hash: Default::default(),
-            number: header_number
-        });
+        res.infos.insert(
+            &header_hash,
+            &HeaderInfo {
+                total_difficulty: Default::default(),
+                parent_hash: Default::default(),
+                number: header_number,
+            },
+        );
         res
     }
 
@@ -202,7 +204,11 @@ impl EthClient {
             .headers
             .get(&header.parent_hash)
             .expect("Parent header should be present to add a new header");
-        assert!(self.verify_header(&header, &prev, &dag_nodes), "The new header {} should be valid", header.number);
+        assert!(
+            self.verify_header(&header, &prev, &dag_nodes),
+            "The new header {} should be valid",
+            header.number
+        );
 
         self.record_header(header);
     }
@@ -218,12 +224,21 @@ impl EthClient {
             panic!("Header is too old to have a chance to appear on the canonical chain.");
         }
 
-        let parent_info = self.infos.get(&header.parent_hash)
+        let parent_info = self
+            .infos
+            .get(&header.parent_hash)
             .expect("Header has unknown parent. Parent should be submitted first.");
 
         // Record this header in `all_hashes`.
-        let mut all_hashes = self.all_header_hashes.get(&header_number).unwrap_or_default();
-        assert!(all_hashes.iter().find(|x| **x == header_hash).is_none(), "Header is already known. Number: {}", header_number);
+        let mut all_hashes = self
+            .all_header_hashes
+            .get(&header_number)
+            .unwrap_or_default();
+        assert!(
+            all_hashes.iter().find(|x| **x == header_hash).is_none(),
+            "Header is already known. Number: {}",
+            header_number
+        );
         all_hashes.push(header_hash);
         self.all_header_hashes.insert(&header_number, &all_hashes);
 
@@ -239,7 +254,7 @@ impl EthClient {
         // Check if canonical chain needs to be updated.
         if info.total_difficulty > best_info.total_difficulty
             || (info.total_difficulty == best_info.total_difficulty
-            && header.difficulty % 2 == U256::default())
+                && header.difficulty % 2 == U256::default())
         {
             // If the new header has a lower number than the previous header, we need to clean it
             // going forward.

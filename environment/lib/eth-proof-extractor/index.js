@@ -70,7 +70,7 @@ class EthProofExtractor {
             blockData.transactionsRoot,
             blockData.receiptsRoot,
             blockData.logsBloom,
-            blockData.difficulty == "0" ? "0x": web3.utils.toHex(blockData.difficulty),
+            blockData.difficulty == '0' ? '0x' : web3.utils.toHex(blockData.difficulty),
             web3.utils.toHex(blockData.number),
             web3.utils.toHex(blockData.gasLimit),
             web3.utils.toHex(blockData.gasUsed),

@@ -109,7 +109,7 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
     'near-fun-token-contract-path',
     'The path to the Wasm file containing the fungible contract. Note, this version of fungible contract should support minting.',
-    path.join(__dirname, '../libs-rs/res/fungible_token.wasm'),
+    path.join(__dirname, '../libs-rs/res/mintable_fungible_token.wasm'),
 );
 RainbowConfig.declareOption(
     'near-fun-token-init-balance',
@@ -316,7 +316,7 @@ RainbowConfig.addOptions(
         'near2eth-client-bin-path',
         'eth-ed25519-address',
         'near2eth-client-lock-eth-amount',
-        'near2eth-client-lock-duration'
+        'near2eth-client-lock-duration',
     ]);
 
 RainbowConfig.addOptions(
@@ -324,11 +324,11 @@ RainbowConfig.addOptions(
         .description('Deploys and initializes Near2EthProver.')
         .action(InitNear2EthProver.execute),
     [
-            'eth-node-url',
-            'eth-master-sk',
-            'near2eth-prover-abi-path',
-            'near2eth-prover-bin-path',
-            'near2eth-client-address',
+        'eth-node-url',
+        'eth-master-sk',
+        'near2eth-prover-abi-path',
+        'near2eth-prover-bin-path',
+        'near2eth-client-address',
     ]);
 
 // User commands.
@@ -357,7 +357,7 @@ RainbowConfig.addOptions(
         'eth-locker-bin-path',
         'eth-erc20-address',
         'near-fun-token-account',
-        'near2eth-prover-address'
+        'near2eth-prover-address',
     ],
 );
 
@@ -402,19 +402,19 @@ RainbowConfig.addOptions(
         .option('--near-sender-sk <near_sender_sk>', 'The secret key of Near account that will be sending the fungible token.')
         .option('--eth-receiver-address <eth_receiver_address>', 'The account that will be receiving the token on Ethereum side.'),
     [
-            'near-node-url',
-            'near-network-id',
-            'near-fun-token-account',
-            'eth-node-url',
-            'eth-erc20-address',
-            'eth-erc20-abi-path',
-            'eth-locker-address',
-            'eth-locker-abi-path',
-            'near2eth-client-abi-path',
-            'near2eth-client-address',
-            'eth-master-sk',
-            'near2eth-prover-abi-path',
-            'near2eth-prover-address',
+        'near-node-url',
+        'near-network-id',
+        'near-fun-token-account',
+        'eth-node-url',
+        'eth-erc20-address',
+        'eth-erc20-abi-path',
+        'eth-locker-address',
+        'eth-locker-abi-path',
+        'near2eth-client-abi-path',
+        'near2eth-client-address',
+        'eth-master-sk',
+        'near2eth-prover-abi-path',
+        'near2eth-prover-address',
     ],
 );
 
@@ -434,6 +434,5 @@ RainbowConfig.addOptions(
         'near-node-url',
     ],
 );
-
 
 (async () => { await program.parseAsync(process.argv); })();

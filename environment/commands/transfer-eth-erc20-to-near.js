@@ -164,6 +164,10 @@ class TransferETHERC20ToNear {
                 await nearTokenContractBorsh.mint(
                     proof_locker,
                     new BN('300000000000000'),
+                    // We need to attach tokens because minting increases the contract state, by <600 bytes, which
+                    // requires an additional 0.06 NEAR to be deposited to the account for state staking.
+                    // Note technically 0.0537 NEAR should be enough, but we round it up to stay on the safe side.
+                    (new BN('100000000000000000000')).mul(new BN('600')),
                 );
                 console.log('Transferred');
 

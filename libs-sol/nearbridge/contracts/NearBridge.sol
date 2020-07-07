@@ -259,7 +259,7 @@ contract NearBridge is INearBridge {
                 signature.secp256k1.v + (signature.secp256k1.v < 27 ? 27 : 0),
                 signature.secp256k1.r,
                 signature.secp256k1.s
-            ) == address(uint256(keccak256(abi.encodePacked(
+                ) == address(uint256(keccak256(abi.encodePacked(
                 publicKey.secp256k1.x,
                 publicKey.secp256k1.y
             ))));

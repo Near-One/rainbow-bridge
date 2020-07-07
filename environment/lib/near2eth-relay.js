@@ -54,13 +54,13 @@ function borshify (block) {
         Web3.utils.toBN(block.approvals_after_next.length).toBuffer('le', 4),
         Buffer.concat(
             block.approvals_after_next.map(
-                signature => signature === null ?
-                Buffer.from([0]) :
-                Buffer.concat([
-                    Buffer.from([1]),
-                    signature.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
-                    bs58.decode(signature.substr(8)),
-                ]),
+                signature => signature === null
+                    ? Buffer.from([0])
+                    : Buffer.concat([
+                        Buffer.from([1]),
+                        signature.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
+                        bs58.decode(signature.substr(8)),
+                    ]),
             ),
         ),
     ]);
@@ -181,7 +181,7 @@ class Near2EthRelay {
                             value: (new BN(lockEthAmount)),
                         });
                         break;
-                    } catch(err) {
+                    } catch (err) {
                         console.log(`Encountered Web3 error while depositing stake ${err}`);
                         await sleep(1000);
                     }
@@ -208,7 +208,7 @@ class Near2EthRelay {
                         handleRevert: true,
                     });
                     break;
-                } catch(err) {
+                } catch (err) {
                     console.log(`Encountered Web3 error while submitting light client block ${err}`);
                     await sleep(1000);
                 }

@@ -2,7 +2,7 @@
     "eth2nearClientContractPath": "~/.rainbowup/bridge/libs-rs/res/eth_client.wasm",
     "eth2nearClientValidateEthash": "false",
     "eth2nearProverContractPath": "~/.rainbowup/bridge/libs-rs/res/eth_prover.wasm",
-    "nearFunTokenContractPath": "~/.rainbowup/bridge/libs-rs/res/fungible_token.wasm",
+    "nearFunTokenContractPath": "~/.rainbowup/bridge/libs-rs/res/mintable_fungible_token.wasm",
     "ethLockerAbiPath": "~/.rainbowup/bridge/libs-sol/token-locker/dist/TokenLocker.full.abi",
     "ethLockerBinPath": "~/.rainbowup/bridge/libs-sol/token-locker/dist/TokenLocker.full.bin",
     "ethErc20AbiPath": "~/.rainbowup/bridge/libs-sol/token-locker/dist/MyERC20.full.abi",

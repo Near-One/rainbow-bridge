@@ -2,6 +2,7 @@
 // File: ../nearbridge/contracts/INearBridge.sol
 
 pragma solidity ^0.5.0;
+pragma solidity ^0.5.0;
 
 
 interface INearBridge {
@@ -30,7 +31,7 @@ interface INearBridge {
 
 // File: contracts/NearBridgeMock.sol
 
-pragma solidity ^0.5.0;
+
 
 
 
