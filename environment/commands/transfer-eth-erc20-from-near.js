@@ -8,13 +8,7 @@ const { verifyAccount } = require('../lib/near-helpers');
 const { NearMintableToken } = require('../lib/near-mintable-token');
 const { RainbowConfig } = require('../lib/config');
 const { borshifyOutcomeProof } = require('../lib/borsh');
-const { web3GetBlockNumber, web3GetBlock } = require('../lib/robust');
-
-function sleep (ms) {
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms);
-    });
-}
+const { sleep, web3GetBlock } = require('../lib/robust');
 
 class TransferEthERC20FromNear {
     static async execute (command) {

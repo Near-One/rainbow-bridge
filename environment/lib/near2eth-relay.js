@@ -7,13 +7,7 @@ const bs58 = require('bs58');
 const { toBuffer } = require('eth-util-lite');
 const { RainbowConfig } = require('./config');
 const { BN } = require('ethereumjs-util');
-const { web3GetBlockNumber, web3GetBlock } = require('../lib/robust');
-
-function sleep (ms) {
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms);
-    });
-}
+const { sleep, web3GetBlock } = require('../lib/robust');
 
 /// Maximum number of retries a Web3 method call will perform.
 const MAX_WEB3_RETRIES = 1000;

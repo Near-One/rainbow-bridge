@@ -7,7 +7,7 @@ const {
     hexToBuffer,
     readerToHex,
 } = require('../borsh');
-const { web3GetBlockNumber, web3GetBlock } = require('../../lib/robust');
+const { web3GetBlockNumber, web3GetBlock } = require('../robust');
 // @ts-ignore
 const roots = require('./dag_merkle_roots.json');
 

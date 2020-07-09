@@ -4,6 +4,7 @@ const nearlib = require('near-api-js');
 const BN = require('bn.js');
 const { TextDecoder } = require('util');
 const { borshifyOutcomeProof } = require('./nearProof');
+const { sleep } = require('../robust');
 
 class BorshError extends Error {
     constructor (message) {
@@ -211,6 +212,8 @@ const signAndSendTransaction = async (accessKey, account, receiverId, actions) =
             result = await account.connection.provider.sendTransaction(signedTx);
         
         } catch (e) {
+            // sleep to avoid socket hangout on retry too soon
+            await sleep(500);
             continue;
         }
 

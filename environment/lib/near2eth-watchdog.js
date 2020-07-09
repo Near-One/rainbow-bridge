@@ -1,13 +1,7 @@
 const Web3 = require('web3');
 const fs = require('fs');
 const { RainbowConfig } = require('./config');
-const { web3GetBlockNumber, web3GetBlock } = require('../lib/robust');
-
-function sleep (ms) {
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms);
-    });
-}
+const { sleep, web3GetBlock } = require('../lib/robust');
 
 class Near2EthWatchdog {
     async initialize () {

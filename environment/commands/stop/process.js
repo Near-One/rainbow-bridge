@@ -6,10 +6,15 @@ class StopManagedProcessCommand {
         console.log('Stopping process:', serviceName);
         ProcessManager.delete(serviceName, (err) => {
             if (err) {
-                console.log('Error stopping the process due to:', err);
-                process.exit(1);
+                if (!err.message.includes('process or namespace not found')) {
+                    console.log('Error stopping the process due to:', err);
+                    process.exit(1);
+                } else {
+                    console.log(serviceName, 'already stopped');
+                }
+            } else {
+                console.log(serviceName, 'successfully stopped...');
             }
-            console.log(serviceName, 'successfully stopped...');
             // @ts-ignore
             ProcessManager.disconnect();
         });

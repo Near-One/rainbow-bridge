@@ -13,7 +13,7 @@ const {
 const {
     promisfy,
 } = require('promisfy');
-const { web3GetBlockNumber, web3GetBlock } = require('../../lib/robust');
+const { web3GetBlockNumber, web3GetBlock } = require('../robust');
 
 function receiptFromWeb3 (result, state_root) {
     return new Receipt([

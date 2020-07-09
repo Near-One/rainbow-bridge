@@ -21,7 +21,9 @@ class StartNearRelayCommand {
                         out_file: '~/.rainbowup/logs/near-relay/out.log',
                         args: ['start', 'near-relay', ...RainbowConfig.getArgsNoDaemon()],
                         wait_ready: true,
-                        kill_timeout: 60000
+                        kill_timeout: 60000,
+                    logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS'
+
                     },
                 );
             });
