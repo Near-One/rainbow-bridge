@@ -219,17 +219,19 @@ const signAndSendTransaction = async (accessKey, account, receiverId, actions) =
             console.log(flatLogs);
         }
 
-        if (result.status.SuccessValue) {
+        if (result.status.SuccessValue !== undefined) {
             return result;
         }
 
         errorMsg = JSON.stringify(result.status.Failure);
         if (errorMsg.includes('Transaction nonce')) {
             continue;
+        } else {
+            break;
         }
     }
 
-    throw new Error();
+    throw new Error(errorMsg);
 };
 
 function getBorshTransactionLastResult (txResult) {
