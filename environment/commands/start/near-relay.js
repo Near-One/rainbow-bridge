@@ -22,7 +22,7 @@ class StartNearRelayCommand {
                         args: ['start', 'near-relay', ...RainbowConfig.getArgsNoDaemon()],
                         wait_ready: true,
                         kill_timeout: 60000,
-                    logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS'
+                        logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS'
 
                     },
                 );
