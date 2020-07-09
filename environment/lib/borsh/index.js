@@ -193,27 +193,43 @@ function deserialize (schema, fieldType, buffer) {
 
 const DEFAULT_FUNC_CALL_AMOUNT = new BN('300000000000000');
 
+const RETRY_SEND_TX = 10;
+
 const signAndSendTransaction = async (accessKey, account, receiverId, actions) => {
     // TODO: Find matching access key based on transaction
-    const status = await account.connection.provider.status();
+    let result;
+    let errorMsg;
+    for (let i = 0; i < RETRY_SEND_TX; i++) {
+        try {
+            const status = await account.connection.provider.status();
 
-    const [txHash, signedTx] = await nearlib.transactions.signTransaction(
-        receiverId, ++accessKey.nonce, actions, nearlib.utils.serialize.base_decode(status.sync_info.latest_block_hash), account.connection.signer, account.accountId, account.connection.networkId,
-    );
-    console.log('TxHash', nearlib.utils.serialize.base_encode(txHash));
+            const [txHash, signedTx] = await nearlib.transactions.signTransaction(
+                receiverId, ++accessKey.nonce, actions, nearlib.utils.serialize.base_decode(status.sync_info.latest_block_hash), account.connection.signer, account.accountId, account.connection.networkId,
+            );
+            console.log('TxHash', nearlib.utils.serialize.base_encode(txHash));
+        
+            result = await account.connection.provider.sendTransaction(signedTx);
+        
+        } catch (e) {
+            continue;
+        }
 
-    const result = await account.connection.provider.sendTransaction(signedTx);
+        const flatLogs = [result.transaction_outcome, ...result.receipts_outcome].reduce((acc, it) => acc.concat(it.outcome.logs), []);
+        if (flatLogs) {
+            console.log(flatLogs);
+        }
 
-    const flatLogs = [result.transaction_outcome, ...result.receipts_outcome].reduce((acc, it) => acc.concat(it.outcome.logs), []);
-    if (flatLogs) {
-        console.log(flatLogs);
+        if (result.status.SuccessValue) {
+            return result;
+        }
+
+        errorMsg = JSON.stringify(result.status.Failure);
+        if (errorMsg.includes('Transaction nonce')) {
+            continue;
+        }
     }
 
-    if (result.status.Failure) {
-        throw new Error(JSON.stringify(result.status.Failure));
-    }
-
-    return result;
+    throw new Error();
 };
 
 function getBorshTransactionLastResult (txResult) {
