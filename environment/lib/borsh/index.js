@@ -273,7 +273,6 @@ class BorshContract {
                         const result = getBorshTransactionLastResult(rawResult);
                         return result && deserialize(borshSchema, d.outputFieldType, result);
                     } catch (e) {
-                        console.log('Failed: ', e);
                         throw e;
                     }
                 },
