@@ -1,6 +1,7 @@
 const Web3 = require('web3');
 const fs = require('fs');
 const { RainbowConfig } = require('./config');
+const { web3GetBlockNumber, web3GetBlock } = require('../lib/robust');
 
 function sleep (ms) {
     return new Promise((resolve) => {
@@ -33,7 +34,7 @@ class Near2EthWatchdog {
     async run () {
         while (true) {
             const lastClientBlock = await this.clientContract.methods.last().call();
-            const latestBlock = await this.web3.eth.getBlock('latest');
+            const latestBlock = await web3GetBlock(this.web3, 'latest');
             console.log(`Examining block ${lastClientBlock.hash} height: ${lastClientBlock.height}`);
             if (latestBlock.timestamp >= lastClientBlock.valid) {
                 const timeDelta = 10;

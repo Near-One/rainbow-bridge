@@ -7,6 +7,7 @@ const {
     hexToBuffer,
     readerToHex,
 } = require('../borsh');
+const { web3GetBlockNumber, web3GetBlock } = require('../../lib/robust');
 // @ts-ignore
 const roots = require('./dag_merkle_roots.json');
 
@@ -123,8 +124,8 @@ class Eth2NearClientContract extends BorshContract {
         }
         if (!initialized) {
             console.log('EthClient is not initialized, initializing...');
-            const last_block_number = await web3.eth.getBlockNumber();
-            const blockRlp = web3BlockToRlp(await web3.eth.getBlock(last_block_number));
+            const last_block_number = await web3GetBlockNumber(web3);
+            const blockRlp = web3BlockToRlp(await web3GetBlock(web3, last_block_number));
             // @ts-ignore
             await this.init({
                 validate_ethash: validate_ethash,
