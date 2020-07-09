@@ -21,8 +21,8 @@ class CleanCommand {
                     console.log(`Error stopping nearup ${err}`);
                 }
             }
-            console.log('Cleaning ~/.rainbowup , ~/.nearup , and ~/.near directories...');
-            execSync('rm -rf ~/.rainbowup && rm -rf ~/.nearup && rm -rf ~/.near');
+            console.log('Cleaning ~/.rainbowup directory...');
+            execSync('rm -rf ~/.rainbowup');
             console.log('Cleaning done...');
             process.exit(0);
         });
