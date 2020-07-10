@@ -22,7 +22,7 @@ git clone "https://github.com/nearprotocol/nearcore" $CORE_SRC
 eval CURR_DIR=$(pwd)
 cd $CORE_SRC
 # Freeze nearcore version to avoid RPC changes breaking tests.
-git checkout d2f44e4e3cb7a09fd924f2f2fd0d697ce1b47f1c
+git checkout 86e4397ce107e2e1cd570ecd5df325d611d1b2ea
 cd $CURR_DIR
 else
 echo "Linking the specified local repo from ${LOCAL_CORE_SRC} to ${CORE_SRC}"
