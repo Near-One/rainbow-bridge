@@ -20,6 +20,7 @@ class StartNearWatchdogCommand {
                         error_file: '~/.rainbowup/logs/near-watchdog/err.log',
                         out_file: '~/.rainbowup/logs/near-watchdog/out.log',
                         args: ['start', 'near-relay', ...RainbowConfig.getArgsNoDaemon()],
+                        logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS',
                     },
                 );
             });
