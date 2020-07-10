@@ -71,8 +71,11 @@ class EthProverContract extends BorshContract {
             });
             console.log('ETH2NEARProver initialized');
         } catch (e) {
-            // I guess not
-            console.log('Probably already initialized', e);
+            if (e.message && e.message.includes('The contract is already initialized')) {
+                console.log('Contract is already initialized');
+            } else {
+                throw e;
+            }
         }
     }
 }

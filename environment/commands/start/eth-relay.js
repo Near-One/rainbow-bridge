@@ -23,7 +23,8 @@ class StartEthRelayCommand {
                         out_file: '~/.rainbowup/logs/eth-relay/out.log',
                         args: ['start', 'eth-relay', ...RainbowConfig.getArgsNoDaemon()],
                         wait_ready: true,
-                        kill_timeout: 60000
+                        kill_timeout: 60000,
+                        logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS'
                     },
                 );
             });

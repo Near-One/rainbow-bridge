@@ -7,12 +7,7 @@ const bs58 = require('bs58');
 const { toBuffer } = require('eth-util-lite');
 const { RainbowConfig } = require('./config');
 const { BN } = require('ethereumjs-util');
-
-function sleep (ms) {
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms);
-    });
-}
+const { sleep, web3GetBlock } = require('../lib/robust');
 
 /// Maximum number of retries a Web3 method call will perform.
 const MAX_WEB3_RETRIES = 1000;
@@ -150,7 +145,7 @@ class Near2EthRelay {
                 const clientBlockHashHex = await clientContract.methods.blockHashes(clientBlockHeight).call();
                 clientBlockHash = bs58.encode(toBuffer(clientBlockHashHex));
                 console.log(`Current light client head is: hash=${clientBlockHash}, height=${clientBlockHeight}`);
-                const latestBlock = await web3.eth.getBlock('latest');
+                const latestBlock = await web3GetBlock(web3, 'latest');
                 if (latestBlock.timestamp >= lastClientBlock.validAfter) {
                     console.log('Block is valid.');
                     break;
