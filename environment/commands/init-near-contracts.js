@@ -64,10 +64,8 @@ class InitNEARContracts {
         const clientContract = new Eth2NearClientContract(new nearlib.Account(near.connection, clientAccount), clientAccount);
         const web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
         await clientContract.maybeInitialize(validateEthash === 'true', web3);
-
         const proverContract = new EthProverContract(new nearlib.Account(near.connection, proverAccount), proverAccount);
         await proverContract.maybeInitialize(clientAccount);
-
         RainbowConfig.saveConfig();
         process.exit(0);
     }

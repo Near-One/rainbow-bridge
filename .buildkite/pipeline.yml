@@ -138,7 +138,7 @@ steps:
   
     - command: |
         source ~/.nvm/nvm.sh
-        cd enviroment
+        cd environment
         yarn
         cd ../libs-sol/nearprover
         yarn
@@ -148,4 +148,3 @@ steps:
       label: "verify near proofs"
       agents:
       - "queue=bridge"
-      branches: "dump-verify-near-proofs"
