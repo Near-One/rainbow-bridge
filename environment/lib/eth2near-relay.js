@@ -3,6 +3,7 @@ const exec = require('child_process').exec;
 const utils = require('ethereumjs-util');
 const BN = require('bn.js');
 const blockFromRpc = require('ethereumjs-block/from-rpc');
+const { web3GetBlockNumber, web3GetBlock, sleep } = require('../lib/robust');
 
 function execute (command, _callback) {
     return new Promise(resolve => exec(command, (error, stdout, _stderr) => {
@@ -25,12 +26,6 @@ function web3BlockToRlp (blockData) {
     return utils.rlp.encode(blockHeader.header.raw);
 }
 
-function sleep (ms) {
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms);
-    });
-}
-
 class Eth2NearRelay {
     initialize (ethClientContract, ethNodeURL) {
         this.ethClientContract = ethClientContract;
@@ -40,27 +35,42 @@ class Eth2NearRelay {
 
     async run () {
         while (true) {
-            let clientBlockNumber = (await this.ethClientContract.last_block_number()).toNumber();
-            console.log('Client block number is ' + clientBlockNumber);
-            const chainBlockNumber = await this.web3.eth.getBlockNumber();
-            console.log('Chain block number is ' + chainBlockNumber);
+            let clientBlockNumber;
+            let chainBlockNumber;
+            try {
+                // Even retry 10 times ethClientContract.last_block_number could still fail
+                // Return back to loop to avoid crash eth-relay.
+                clientBlockNumber = (await this.ethClientContract.last_block_number()).toNumber();
+                console.log('Client block number is ' + clientBlockNumber);
+                // web3 retry 10 times always success, but just in case
+                chainBlockNumber = await web3GetBlockNumber(this.web3);
+                console.log('Chain block number is ' + chainBlockNumber);
+            } catch (e) {
+                console.log(e);
+                continue;
+            }
 
             // Backtrack if chain switched the fork.
             while (true) {
-                const chainBlock = await this.web3.eth.getBlock(clientBlockNumber);
-                const chainBlockHash = chainBlock.hash;
-                const clientHashes = await this.ethClientContract.known_hashes(clientBlockNumber);
-                if (clientHashes.find(x => x === chainBlockHash)) {
-                    break;
-                } else {
-                    console.log(`Block ${chainBlockHash} height: ${clientBlockNumber} is not known to the client. Backtracking.`);
-                    clientBlockNumber -= 1;
+                try {
+                    const chainBlock = await web3GetBlock(this.web3, clientBlockNumber);
+                    const chainBlockHash = chainBlock.hash;
+                    const clientHashes = await this.ethClientContract.known_hashes(clientBlockNumber);
+                    if (clientHashes.find(x => x === chainBlockHash)) {
+                        break;
+                    } else {
+                        console.log(`Block ${chainBlockHash} height: ${clientBlockNumber} is not known to the client. Backtracking.`);
+                        clientBlockNumber -= 1;
+                    }
+                } catch (e) {
+                    console.log(e)
+                    continue;
                 }
             }
 
             if (clientBlockNumber < chainBlockNumber) {
                 try {
-                    const blockRlp = this.web3.utils.bytesToHex(web3BlockToRlp(await this.web3.eth.getBlock(clientBlockNumber + 1)));
+                    const blockRlp = this.web3.utils.bytesToHex(web3BlockToRlp(await web3GetBlock(this.web3, clientBlockNumber + 1)));
                     const unparsedBlock = await execute(`./vendor/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`);
                     const block = JSON.parse(unparsedBlock);
                     await this.submitBlock(block, clientBlockNumber + 1);

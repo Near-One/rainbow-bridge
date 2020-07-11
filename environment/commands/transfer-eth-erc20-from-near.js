@@ -8,12 +8,7 @@ const { verifyAccount } = require('../lib/near-helpers');
 const { NearMintableToken } = require('../lib/near-mintable-token');
 const { RainbowConfig } = require('../lib/config');
 const { borshifyOutcomeProof } = require('../lib/borsh');
-
-function sleep (ms) {
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms);
-    });
-}
+const { sleep, web3GetBlock } = require('../lib/robust');
 
 class TransferEthERC20FromNear {
     static async execute (command) {
@@ -114,7 +109,7 @@ class TransferEthERC20FromNear {
             clientBlockHashB58 = bs58.encode(toBuffer(clientBlockHashHex));
             console.log(`Current light client head is: hash=${clientBlockHashB58}, height=${clientBlockHeight.toString()}`);
 
-            const chainBlock = await web3.eth.getBlock('latest');
+            const chainBlock = await web3GetBlock(web3, 'latest');
             const chainBlockTimestamp = new BN(chainBlock.timestamp);
             if (clientBlockHeight.gt(outcomeBlockHeight)) {
                 console.log(`Near2EthClient block is at ${clientBlockHeight.toString()} which is further than the needed block ${outcomeBlockHeight.toString()}`);

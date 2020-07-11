@@ -18,6 +18,7 @@ class StartGanacheNodeCommand {
                     out_file: '~/.rainbowup/logs/ganache/out.log',
                     args: [],
                     env: process.env,
+                    logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS'
                 },
             );
         });

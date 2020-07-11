@@ -14,12 +14,7 @@ const { RainbowConfig } = require('../lib/config');
 const {
     Eth2NearClientContract,
 } = require('../lib/eth2near-client-contract');
-
-function sleep (ms) {
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms);
-    });
-}
+const { sleep } = require('../lib/robust');
 
 class TransferETHERC20ToNear {
     static async execute (command) {

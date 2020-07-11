@@ -13,6 +13,7 @@ const {
 const {
     promisfy,
 } = require('promisfy');
+const { web3GetBlockNumber, web3GetBlock } = require('../robust');
 
 function receiptFromWeb3 (result, state_root) {
     return new Receipt([
@@ -42,7 +43,7 @@ class EthProofExtractor {
     }
 
     async extractBlock (blockNumber) {
-        return await this.web3.eth.getBlock(blockNumber);
+        return await web3GetBlock(this.web3, blockNumber);
     }
 
     async buildTrie (block) {
