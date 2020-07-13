@@ -16,13 +16,8 @@ const {
 } = require('promisfy');
 const { web3GetBlockNumber, web3GetBlock } = require('../robust');
 
-function receiptFromWeb3(result, state_root) {
-    return new Receipt([
-        toBuffer(result.status ? 0x1 : state_root),
-        toBuffer(result.cumulativeGasUsed),
-        toBuffer(result.logsBloom),
-        result.logs.map(logFromWeb3),
-    ]);
+function receiptFromWeb3(result) {
+    return Receipt.fromWeb3(result);
 }
 
 function logFromWeb3(result) {

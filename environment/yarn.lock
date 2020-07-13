@@ -2583,9 +2583,9 @@ eth-lib@^0.2.8:
     elliptic "^6.4.0"
     xhr-request-promise "^0.1.2"
 
-eth-object@near/eth-object#010fa486460c67da2f1c8032510607163bbb13af:
+eth-object@near/eth-object#54e03b8aac8208cf724e206d49ffb8bdd30451d7:
   version "1.0.3"
-  resolved "https://codeload.github.com/near/eth-object/tar.gz/010fa486460c67da2f1c8032510607163bbb13af"
+  resolved "https://codeload.github.com/near/eth-object/tar.gz/54e03b8aac8208cf724e206d49ffb8bdd30451d7"
   dependencies:
     eth-util-lite near/eth-util-lite#master
     ethereumjs-util "^7.0.3"
