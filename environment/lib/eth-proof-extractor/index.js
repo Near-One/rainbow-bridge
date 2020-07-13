@@ -26,11 +26,7 @@ function receiptFromWeb3(result, state_root) {
 }
 
 function logFromWeb3(result) {
-    return new Log([
-        toBuffer(result.address),
-        result.topics.map(toBuffer),
-        toBuffer(result.data),
-    ]);
+    return Log.fromWeb3(result);
 }
 
 class EthProofExtractor {
