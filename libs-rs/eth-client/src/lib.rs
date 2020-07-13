@@ -287,10 +287,10 @@ impl EthClient {
                 }
                 number -= 1;
             }
-            if header_number > self.hashes_gc_threshold {
+            if header_number >= self.hashes_gc_threshold {
                 self.gc_canonical_chain(header_number - self.hashes_gc_threshold);
             }
-            if header_number > self.finalized_gc_threshold {
+            if header_number >= self.finalized_gc_threshold {
                 self.gc_headers(header_number - self.finalized_gc_threshold);
             }
         }
@@ -362,6 +362,7 @@ impl EthClient {
             && header.timestamp > prev.timestamp
             && header.number == prev.number + 1
             && header.parent_hash == prev.hash.unwrap()
+            && header.extra_data.len() <= 32
     }
 
     /// Verify merkle paths to the DAG nodes.
