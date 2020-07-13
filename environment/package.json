@@ -10,7 +10,7 @@
         "change-case": "^4.1.1",
         "commander": "^5.1.0",
         "configstore": "^5.0.1",
-        "eth-object": "near/eth-object#master",
+        "eth-object": "near/eth-object#010fa486460c67da2f1c8032510607163bbb13af",
         "eth-util-lite": "near/eth-util-lite#master",
         "ethereumjs-block": "^2.2.2",
         "ethereumjs-util": "^6.2.0",
