@@ -1,10 +1,10 @@
 {
-    "eth2nearClientContractPath": "~/.rainbowup/bridge/libs-rs/res/eth_client.wasm",
+    "eth2nearClientContractPath": "~/.rainbow/bridge/libs-rs/res/eth_client.wasm",
     "eth2nearClientValidateEthash": "false",
-    "eth2nearProverContractPath": "~/.rainbowup/bridge/libs-rs/res/eth_prover.wasm",
-    "nearFunTokenContractPath": "~/.rainbowup/bridge/libs-rs/res/mintable_fungible_token.wasm",
-    "ethLockerAbiPath": "~/.rainbowup/bridge/libs-sol/token-locker/dist/TokenLocker.full.abi",
-    "ethLockerBinPath": "~/.rainbowup/bridge/libs-sol/token-locker/dist/TokenLocker.full.bin",
-    "ethErc20AbiPath": "~/.rainbowup/bridge/libs-sol/token-locker/dist/MyERC20.full.abi",
-    "ethErc20BinPath": "~/.rainbowup/bridge/libs-sol/token-locker/dist/MyERC20.full.bin"
+    "eth2nearProverContractPath": "~/.rainbow/bridge/libs-rs/res/eth_prover.wasm",
+    "nearFunTokenContractPath": "~/.rainbow/bridge/libs-rs/res/mintable_fungible_token.wasm",
+    "ethLockerAbiPath": "~/.rainbow/bridge/libs-sol/token-locker/dist/TokenLocker.full.abi",
+    "ethLockerBinPath": "~/.rainbow/bridge/libs-sol/token-locker/dist/TokenLocker.full.bin",
+    "ethErc20AbiPath": "~/.rainbow/bridge/libs-sol/token-locker/dist/MyERC20.full.abi",
+    "ethErc20BinPath": "~/.rainbow/bridge/libs-sol/token-locker/dist/MyERC20.full.bin"
 }

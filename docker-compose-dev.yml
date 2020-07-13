@@ -1,18 +1,18 @@
 version: "3.3"
 services:
   near-node:
-    image: rainbowup-image
+    image: rainbow-image
     build: .
     command: bash -c "node index.js start near-node; node index.js start near-node && while true; do sleep 30; done;"
     ports:
       - 3030:3030
   ganache:
-    image: rainbowup-image
+    image: rainbow-image
     network_mode: host
     command: bash -c "node index.js start ganache --daemon false"
     ports:
       - 9545:9545
   eth-relay:
-    image: rainbowup-image
+    image: rainbow-image
     network_mode: host
     command: bash -c "node index.js start eth-relay --daemon false"
