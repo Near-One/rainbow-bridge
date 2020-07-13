@@ -3,7 +3,7 @@ const { spawnProcess } = require('./helpers');
 const { RainbowConfig } = require('../../lib/config');
 
 class StartGanacheNodeCommand {
-    static async execute () {
+    static async execute() {
         ProcessManager.connect((err) => {
             if (err) {
                 console.log(
@@ -14,8 +14,8 @@ class StartGanacheNodeCommand {
                 {
                     name: 'ganache',
                     script: './scripts/start_ganache.sh',
-                    error_file: '~/.rainbowup/logs/ganache/err.log',
-                    out_file: '~/.rainbowup/logs/ganache/out.log',
+                    error_file: '~/.rainbow/logs/ganache/err.log',
+                    out_file: '~/.rainbow/logs/ganache/out.log',
                     args: [],
                     env: process.env,
                     logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS'
