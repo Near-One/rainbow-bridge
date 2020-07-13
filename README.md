@@ -22,7 +22,7 @@
 
 ## Installation
 
-TODO: Need to publish it to npm.
+npm i -g rainbow-bridge-cli
 
 ## Usage
 To learn the commands that you can use with the rainbow bridge run

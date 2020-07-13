@@ -1,10 +1,21 @@
 {
-    "name": "rainbow_cli",
-    "version": "1.0.0",
+    "name": "rainbow-bridge-cli",
+    "version": "1.0.1",
     "description": "CLI to set up the environment needed for the bridge to work.",
     "main": "index.js",
-    "author": "",
+    "author": "Near Inc.",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/near/rainbow-bridge.git"
+    },
     "license": "MIT",
+    "keywords": [
+        "nearprotocol",
+        "decentralized",
+        "blockchain",
+        "ethereum",
+        "bridge"
+    ],
     "dependencies": {
         "@openzeppelin/cli": "^2.8.1",
         "change-case": "^4.1.1",
