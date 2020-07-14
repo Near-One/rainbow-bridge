@@ -15,9 +15,9 @@ class PrepareCommand {
         for (const e in process.env) {
             env[e] = process.env[e];
         }
-        env.LOCAL_BRIDGE_SRC = path.resolve(RainbowConfig.getParam('bridge-src'));
-        env.LOCAL_CORE_SRC = path.resolve(RainbowConfig.getParam('core-src'));
-        env.LOCAL_NEARUP_SRC = path.resolve(RainbowConfig.getParam('nearup-src'));
+        env.LOCAL_BRIDGE_SRC = RainbowConfig.getParam('bridge-src') && path.resolve(RainbowConfig.getParam('bridge-src'));
+        env.LOCAL_CORE_SRC = RainbowConfig.getParam('core-src') && path.resolve(RainbowConfig.getParam('bridge-src'));
+        env.LOCAL_NEARUP_SRC = RainbowConfig.getParam('nearup-src') && path.resolve(RainbowConfig.getParam('bridge-src'));
 
         // @ts-ignore
         var prepareScript = exec(shell, { env: env });
