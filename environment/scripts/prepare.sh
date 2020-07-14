@@ -1,19 +1,19 @@
 #!/bin/bash
 set -euo pipefail
 
-eval RAINBOWUP_DIR=~/.rainbowup
+eval rainbow_DIR=~/.rainbow
 
 export LOCAL_BRIDGE_SRC
 export LOCAL_CORE_SRC
 export LOCAL_NEARUP_SRC
 
-eval BRIDGE_SRC=~/.rainbowup/bridge
-eval CORE_SRC=~/.rainbowup/core
-eval NEARUP_SRC=~/.rainbowup/nearup
+eval BRIDGE_SRC=~/.rainbow/bridge
+eval CORE_SRC=~/.rainbow/core
+eval NEARUP_SRC=~/.rainbow/nearup
 eval NEARUP_LOGS=~/.nearup/localnet-logs
 
 
-mkdir -p $RAINBOWUP_DIR
+mkdir -p $rainbow_DIR
 
 if test -z "$LOCAL_CORE_SRC"
 then
