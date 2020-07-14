@@ -101,7 +101,7 @@ yarn
 node index.js clean
 node index.js prepare
 ```
-Then edit `~/.rainbowup/config.json` to be:
+Then edit `~/.rainbow/config.json` to be:
 ```json
 {
         "nearNetworkId": "testnet",
