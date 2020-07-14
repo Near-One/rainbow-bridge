@@ -6,12 +6,59 @@ const Ed25519 = artifacts.require('Ed25519');
 const NearBridge = artifacts.require('NearBridge');
 const NearDecoder = artifacts.require('NearDecoder');
 
-const { borshify } = require('../../../environment/lib/near2eth-relay');
-
 async function timeIncreaseTo (seconds) {
     const delay = 1000 - new Date().getMilliseconds();
     await new Promise(resolve => setTimeout(resolve, delay));
     await time.increaseTo(seconds);
+}
+
+function borshify (block) {
+    return Buffer.concat([
+        bs58.decode(block.prev_block_hash),
+        bs58.decode(block.next_block_inner_hash),
+        Buffer.concat([
+            // @ts-ignore
+            Web3.utils.toBN(block.inner_lite.height).toBuffer('le', 8),
+            bs58.decode(block.inner_lite.epoch_id),
+            bs58.decode(block.inner_lite.next_epoch_id),
+            bs58.decode(block.inner_lite.prev_state_root),
+            bs58.decode(block.inner_lite.outcome_root),
+            // @ts-ignore
+            Web3.utils.toBN(block.inner_lite.timestamp).toBuffer('le', 8),
+            bs58.decode(block.inner_lite.next_bp_hash),
+            bs58.decode(block.inner_lite.block_merkle_root),
+        ]),
+        bs58.decode(block.inner_rest_hash),
+
+        Buffer.from([1]),
+        // @ts-ignore
+        Web3.utils.toBN(block.next_bps.length).toBuffer('le', 4),
+        Buffer.concat(
+            block.next_bps.map(nextBp => Buffer.concat([
+                // @ts-ignore
+                Web3.utils.toBN(nextBp.account_id.length).toBuffer('le', 4),
+                Buffer.from(nextBp.account_id),
+                nextBp.public_key.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
+                bs58.decode(nextBp.public_key.substr(8)),
+                // @ts-ignore
+                Web3.utils.toBN(nextBp.stake).toBuffer('le', 16),
+            ])),
+        ),
+
+        // @ts-ignore
+        Web3.utils.toBN(block.approvals_after_next.length).toBuffer('le', 4),
+        Buffer.concat(
+            block.approvals_after_next.map(
+                signature => signature === null
+                    ? Buffer.from([0])
+                    : Buffer.concat([
+                        Buffer.from([1]),
+                        signature.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
+                        bs58.decode(signature.substr(8)),
+                    ]),
+            ),
+        ),
+    ]);
 }
 
 contract('NearBridge2', function ([_, addr1]) {
