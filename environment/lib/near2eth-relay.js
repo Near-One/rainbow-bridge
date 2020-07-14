@@ -130,7 +130,7 @@ class Near2EthRelay {
     }
 
     async run () {
-        process.send('ready');
+        // process.send('ready');
         const clientContract = this.clientContract;
         const web3 = this.web3;
         const near = this.near;
@@ -194,6 +194,7 @@ class Near2EthRelay {
                 }
                 try {
                     lightClientBlock = await near.connection.provider.sendJsonRpc('next_light_client_block', [clientBlockHash]);
+                    break;
                 } catch (err) {
                     console.log(`Encountered error while requesting light client block ${err}`);
                     await sleep(1000);

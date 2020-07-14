@@ -73,7 +73,7 @@ First let's initialize the contracts that bridge needs to function:
 ```bash
 node index.js init-near-contracts
 node index.js init-eth-ed25519
-node index.js init-near2eth-client --near2eth-client-lock-eth-amount 1e18 --near2eth-client-lock-duration 10
+node index.js init-near2eth-client --near2eth-client-lock-eth-amount 1000 --near2eth-client-lock-duration 10
 node index.js init-near2eth-prover
 ```
 

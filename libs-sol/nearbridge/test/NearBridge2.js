@@ -1,5 +1,5 @@
 
-// const { time } = require('@openzeppelin/test-helpers');
+const { time } = require('@openzeppelin/test-helpers');
 const bs58 = require('bs58');
 
 const Ed25519 = artifacts.require('Ed25519');
@@ -40,18 +40,50 @@ const { borshify } = require('../../../environment/lib/near2eth-relay');
 
 contract('NearBridge3', function ([_, addr1]) {
     beforeEach(async function () {
-        this.decoder = await NearDecoder.new();
-        this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(10));
-        await this.bridge.deposit({ value: web3.utils.toWei('1') });
+
     });
 
     it('should be ok', async function () {
-        const block9274566 = borshify(require('./block_9274566.json'));
+        this.decoder = await NearDecoder.new();
+        this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(3600));
+        await this.bridge.deposit({value: web3.utils.toWei('1')});
 
-        await this.bridge.initWithBlock(block9274566);
-        await this.bridge.blockHashes(9274566);
-        expect(await this.bridge.blockHashes(9274566)).to.be.equal(
-            '0x' + bs58.decode('HjUuxHjvSLzsjPDoLa1WzPusgtZyeoRA8i4SyHJuWGWL').toString('hex'),
-        );
+        const block9580503 = require('./block_9580503.json');
+        const block9580534 = require('./block_9580534.json');
+        const block9580624 = require('./block_9580624.json');
+
+        await this.bridge.initWithBlock(borshify(block9580503));
+        await this.bridge.blockHashes(9580503);
+
+        await this.bridge.addLightClientBlock(borshify(block9580534));
+        await this.bridge.blockHashes(9580534);
+
+        console.log("Verifying block 9580534");
+        for (let i = 0; i < block9580534.approvals_after_next.length; i++) {
+            if (block9580534.approvals_after_next[i]) {
+                if (await this.bridge.checkBlockProducerSignatureInLastBlock(i)) {
+                    console.log(`Signature ${i} is OK`);
+                } else {
+                    console.log(`Signature ${i} is NOT OK`);
+                }
+            }
+        }
+
+        const now = await time.latest();
+        await timeIncreaseTo(now.add(time.duration.seconds(3600)));
+
+        await this.bridge.addLightClientBlock(borshify(block9580624));
+        await this.bridge.blockHashes(9580624);
+
+        for (let i = 0; i < block9580624.approvals_after_next.length; i++) {
+            if (block9580624.approvals_after_next[i]) {
+                if (await this.bridge.checkBlockProducerSignatureInLastBlock(i)) {
+                    console.log(`Signature ${i} is OK`);
+                } else {
+                    console.log(`Signature ${i} is NOT OK`);
+                }
+            }
+        }
     });
 });
+
