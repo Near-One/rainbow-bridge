@@ -15,10 +15,19 @@ const backoff = (retries, fn, delay = DELAY, wait = BACKOFF) =>
 const web3GetBlockNumber = async (web3) => await backoff(RETRY, async () => await web3.eth.getBlockNumber());
 const web3GetBlock = async (web3, b) => await backoff(RETRY, async () => await web3.eth.getBlock(b));
 
+function normalizeEthKey(key) {
+    let result = key.toLowerCase();
+    if (!result.startsWith('0x')) {
+        result = '0x' + result;
+    }
+    return result;
+}
+
 module.exports = {
     retry,
     sleep,
     backoff,
     web3GetBlockNumber,
-    web3GetBlock
+    web3GetBlock,
+    normalizeEthKey
 }

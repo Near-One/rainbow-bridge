@@ -1,14 +1,14 @@
 const Web3 = require('web3');
 const fs = require('fs');
 const { RainbowConfig } = require('./config');
-const { sleep, web3GetBlock } = require('../lib/robust');
+const { sleep, web3GetBlock, normalizeEthKey } = require('../lib/robust');
 
 class Near2EthWatchdog {
     async initialize () {
         // @ts-ignore
         this.web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
         const ethMasterAccount =
-            this.web3.eth.accounts.privateKeyToAccount(RainbowConfig.getParam('eth-master-sk'));
+            this.web3.eth.accounts.privateKeyToAccount(normalizeEthKey(RainbowConfig.getParam('eth-master-sk')));
         this.web3.eth.accounts.wallet.add(ethMasterAccount);
         this.web3.eth.defaultAccount = ethMasterAccount.address;
         this.ethMasterAccount = ethMasterAccount.address;
