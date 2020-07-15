@@ -6,7 +6,7 @@ const { Eth2NearClientContract } = require('../../lib/eth2near-client-contract')
 const { RainbowConfig } = require('../../lib/config');
 
 class StartEthRelayCommand {
-    static async execute () {
+    static async execute() {
         if (RainbowConfig.getParam('daemon') === 'true') {
             ProcessManager.connect((err) => {
                 if (err) {
@@ -19,8 +19,8 @@ class StartEthRelayCommand {
                         name: 'eth-relay',
                         script: 'index.js',
                         interpreter: 'node',
-                        error_file: '~/.rainbowup/logs/eth-relay/err.log',
-                        out_file: '~/.rainbowup/logs/eth-relay/out.log',
+                        error_file: '~/.rainbow/logs/eth-relay/err.log',
+                        out_file: '~/.rainbow/logs/eth-relay/out.log',
                         args: ['start', 'eth-relay', ...RainbowConfig.getArgsNoDaemon()],
                         wait_ready: true,
                         kill_timeout: 60000,

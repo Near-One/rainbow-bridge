@@ -4,7 +4,7 @@ const { Near2EthWatchdog } = require('../../lib/near2eth-watchdog');
 const { RainbowConfig } = require('../../lib/config');
 
 class StartNearWatchdogCommand {
-    static async execute () {
+    static async execute() {
         if (RainbowConfig.getParam('daemon') === 'true') {
             ProcessManager.connect((err) => {
                 if (err) {
@@ -17,9 +17,9 @@ class StartNearWatchdogCommand {
                         name: 'near-watchdog',
                         script: 'index.js',
                         interpreter: 'node',
-                        error_file: '~/.rainbowup/logs/near-watchdog/err.log',
-                        out_file: '~/.rainbowup/logs/near-watchdog/out.log',
-                        args: ['start', 'near-relay', ...RainbowConfig.getArgsNoDaemon()],
+                        error_file: '~/.rainbow/logs/near-watchdog/err.log',
+                        out_file: '~/.rainbow/logs/near-watchdog/out.log',
+                        args: ['start', 'near-watchdog', ...RainbowConfig.getArgsNoDaemon()],
                         logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS',
                     },
                 );

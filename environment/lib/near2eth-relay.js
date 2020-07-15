@@ -7,7 +7,7 @@ const bs58 = require('bs58');
 const { toBuffer } = require('eth-util-lite');
 const { RainbowConfig } = require('./config');
 const { BN } = require('ethereumjs-util');
-const { sleep, web3GetBlock } = require('../lib/robust');
+const { sleep, web3GetBlock, normalizeEthKey } = require('../lib/robust');
 
 /// Maximum number of retries a Web3 method call will perform.
 const MAX_WEB3_RETRIES = 1000;
@@ -66,7 +66,7 @@ class Near2EthRelay {
         // @ts-ignore
         this.web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
         this.ethMasterAccount =
-            this.web3.eth.accounts.privateKeyToAccount(RainbowConfig.getParam('eth-master-sk'));
+            this.web3.eth.accounts.privateKeyToAccount(normalizeEthKey(RainbowConfig.getParam('eth-master-sk')));
         this.web3.eth.accounts.wallet.add(this.ethMasterAccount);
         this.web3.eth.defaultAccount = this.ethMasterAccount.address;
         this.ethMasterAccount = this.ethMasterAccount.address;
@@ -117,7 +117,7 @@ class Near2EthRelay {
                 // @ts-ignore
                 const _tx = await this.clientContract.methods.initWithBlock(borshBlock).send({
                     from: this.ethMasterAccount,
-                    gas: 1000000,
+                    gas: 2000000,
                     handleRevert: true,
                 });
             }
@@ -130,7 +130,7 @@ class Near2EthRelay {
     }
 
     async run () {
-        process.send('ready');
+        // process.send('ready');
         const clientContract = this.clientContract;
         const web3 = this.web3;
         const near = this.near;
@@ -171,7 +171,7 @@ class Near2EthRelay {
                     try {
                         _depositTx = await clientContract.methods.deposit().send({
                             from: ethMasterAccount,
-                            gas: 1000000,
+                            gas: 2000000,
                             handleRevert: true,
                             value: (new BN(lockEthAmount)),
                         });
@@ -186,7 +186,20 @@ class Near2EthRelay {
 
             // Get new light client block.
             // @ts-ignore
-            const lightClientBlock = await near.connection.provider.sendJsonRpc('next_light_client_block', [clientBlockHash]);
+            let lightClientBlock;
+            for (let i = 0; i <= MAX_WEB3_RETRIES; i++) {
+                if (i === MAX_WEB3_RETRIES) {
+                    console.error(`Failed ${MAX_WEB3_RETRIES} times`);
+                    process.exit(1);
+                }
+                try {
+                    lightClientBlock = await near.connection.provider.sendJsonRpc('next_light_client_block', [clientBlockHash]);
+                    break;
+                } catch (err) {
+                    console.log(`Encountered error while requesting light client block ${err}`);
+                    await sleep(1000);
+                }
+            }
             console.log('Adding block');
             console.log(`${JSON.stringify(lightClientBlock)}`);
 
@@ -199,7 +212,7 @@ class Near2EthRelay {
                 try {
                     await clientContract.methods.addLightClientBlock(borshBlock).send({
                         from: ethMasterAccount,
-                        gas: 1000000,
+                        gas: 2000000,
                         handleRevert: true,
                     });
                     break;
@@ -209,6 +222,11 @@ class Near2EthRelay {
                 }
             }
 
+            let sleepTime = (new BN(RainbowConfig.getParam('near2eth-relay-delay'))).toNumber();
+            if (sleepTime > 0) {
+                console.log(`Sleeping for ${sleepTime} seconds.`);
+                await  sleep(sleepTime * 1000);
+            }
             await step();
         };
 
@@ -217,3 +235,4 @@ class Near2EthRelay {
 }
 
 exports.Near2EthRelay = Near2EthRelay;
+exports.borshify = borshify;

@@ -1,7 +1,7 @@
 {
-    "name": "environment",
+    "name": "rainbow_cli",
     "version": "1.0.0",
-    "description": "Sets up the environment needed for the bridge to work.",
+    "description": "CLI to set up the environment needed for the bridge to work.",
     "main": "index.js",
     "author": "",
     "license": "MIT",

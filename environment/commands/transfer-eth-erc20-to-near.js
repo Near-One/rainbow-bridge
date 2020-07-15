@@ -15,6 +15,7 @@ const {
     Eth2NearClientContract,
 } = require('../lib/eth2near-client-contract');
 const { sleep } = require('../lib/robust');
+const { normalizeEthKey } = require('../lib/robust');
 
 class TransferETHERC20ToNear {
     static async execute (command) {
@@ -25,7 +26,7 @@ class TransferETHERC20ToNear {
         // @ts-ignore
         const web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
 
-        let ethSenderAccount = web3.eth.accounts.privateKeyToAccount(ethSenderSk);
+        let ethSenderAccount = web3.eth.accounts.privateKeyToAccount(normalizeEthKey(ethSenderSk));
         web3.eth.accounts.wallet.add(ethSenderAccount);
         web3.eth.defaultAccount = ethSenderAccount.address;
         ethSenderAccount = ethSenderAccount.address;
