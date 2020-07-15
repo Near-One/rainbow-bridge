@@ -1,19 +1,19 @@
 #!/bin/bash
 set -euo pipefail
 
-eval RAINBOWUP_DIR=~/.rainbowup
+eval rainbow_DIR=~/.rainbow
 
 export LOCAL_BRIDGE_SRC
 export LOCAL_CORE_SRC
 export LOCAL_NEARUP_SRC
 
-eval BRIDGE_SRC=~/.rainbowup/bridge
-eval CORE_SRC=~/.rainbowup/core
-eval NEARUP_SRC=~/.rainbowup/nearup
+eval BRIDGE_SRC=~/.rainbow/bridge
+eval CORE_SRC=~/.rainbow/core
+eval NEARUP_SRC=~/.rainbow/nearup
 eval NEARUP_LOGS=~/.nearup/localnet-logs
 
 
-mkdir -p $RAINBOWUP_DIR
+mkdir -p $rainbow_DIR
 
 if test -z "$LOCAL_CORE_SRC"
 then
@@ -22,7 +22,7 @@ git clone "https://github.com/nearprotocol/nearcore" $CORE_SRC
 eval CURR_DIR=$(pwd)
 cd $CORE_SRC
 # Freeze nearcore version to avoid RPC changes breaking tests.
-git checkout 86e4397ce107e2e1cd570ecd5df325d611d1b2ea
+git checkout d3478fe0af3c31572fc6fb73d921c378d79e3253
 cd $CURR_DIR
 else
 echo "Linking the specified local repo from ${LOCAL_CORE_SRC} to ${CORE_SRC}"

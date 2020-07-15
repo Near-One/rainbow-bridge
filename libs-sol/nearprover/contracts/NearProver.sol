@@ -50,6 +50,7 @@ contract NearProver is INearProver {
                 _computeRoot(fullOutcomeProof.block_header_lite.hash, fullOutcomeProof.block_proof) == expectedBlockMerkleRoot, "NearProver: block proof is not valid"
             );
         }
+
         return true;
     }
 

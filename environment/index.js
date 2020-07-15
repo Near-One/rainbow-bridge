@@ -196,6 +196,11 @@ RainbowConfig.declareOption(
     'Path to the .bin file defining Ethereum Near2EthProver contract.',
     path.join(__dirname, '../libs-sol/nearprover/dist/NearProver.full.bin'),
 );
+RainbowConfig.declareOption(
+    'near2eth-relay-delay',
+    'How many seconds should we wait after the NEAR header becomes valid before we submit the next one.',
+    '0',
+);
 
 program.version('0.1.0');
 
@@ -247,6 +252,7 @@ RainbowConfig.addOptions(
         'near-network-id',
         'near2eth-client-abi-path',
         'near2eth-client-address',
+        'near2eth-relay-delay',
         'daemon',
     ],
 );
