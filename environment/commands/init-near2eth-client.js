@@ -1,13 +1,14 @@
 const Web3 = require('web3');
 const fs = require('fs');
 const { RainbowConfig } = require('../lib/config');
+const { normalizeEthKey } = require('../lib/robust');
 
 class InitNear2EthClient {
     static async execute () {
         // @ts-ignore
         const web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
         let ethMasterAccount =
-            web3.eth.accounts.privateKeyToAccount(RainbowConfig.getParam('eth-master-sk'));
+            web3.eth.accounts.privateKeyToAccount(normalizeEthKey(RainbowConfig.getParam('eth-master-sk')));
         web3.eth.accounts.wallet.add(ethMasterAccount);
         web3.eth.defaultAccount = ethMasterAccount.address;
         ethMasterAccount = ethMasterAccount.address;
