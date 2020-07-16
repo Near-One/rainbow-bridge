@@ -47,11 +47,11 @@ class TransferETHERC20ToNear {
                     handleRevert: true,
                 });
             console.log('Approved token transfer.');
-            this.recordTransferLog({ finished: 'approve' })
+            TransferETHERC20ToNear.recordTransferLog({ finished: 'approve' })
         } catch (txRevertMessage) {
             console.log('Failed to approve.');
             console.log(txRevertMessage.toString());
-            this.showRetryAndExit();
+            TransferETHERC20ToNear.showRetryAndExit();
         }
     }
 
@@ -67,11 +67,11 @@ class TransferETHERC20ToNear {
                 });
             const lockedEvent = transaction.events.Locked;
             console.log('Success tranfer to locker');
-            this.recordTransferLog({ finished: 'approve', lockedEvent })
+            TransferETHERC20ToNear.recordTransferLog({ finished: 'approve', lockedEvent })
         } catch (txRevertMessage) {
             console.log('Failed to lock account.');
             console.log(txRevertMessage.toString());
-            this.showRetryAndExit();
+            TransferETHERC20ToNear.showRetryAndExit();
         }
     }
 
@@ -94,10 +94,10 @@ class TransferETHERC20ToNear {
             }
         }
         if (logFound) {
-            this.recordTransferLog({ finished: 'find-proof', proof, log, txLogIndex, receipt, lockedEvent, block })
+            TransferETHERC20ToNear.recordTransferLog({ finished: 'find-proof', proof, log, txLogIndex, receipt, lockedEvent, block })
         } else {
             console.log(`Failed to find log for event ${lockedEvent}`);
-            this.showRetryAndExit();
+            TransferETHERC20ToNear.showRetryAndExit();
         }
     }
 
@@ -138,7 +138,7 @@ class TransferETHERC20ToNear {
                 break;
             }
         }
-        this.recordTransferLog({ finished: 'block-safe', proof_locker, new_owner_id })
+        TransferETHERC20ToNear.recordTransferLog({ finished: 'block-safe', proof_locker, new_owner_id })
     }
 
     static async mint({ proof_locker, nearTokenContract, nearTokenContractBorsh, new_owner_id }) {
@@ -162,7 +162,7 @@ class TransferETHERC20ToNear {
         } catch (e) {
             console.log('Mint failed with error:');
             console.log(e);
-            this.showRetryAndExit();
+            TransferETHERC20ToNear.showRetryAndExit();
         }
 
         // @ts-ignore
@@ -170,7 +170,7 @@ class TransferETHERC20ToNear {
             owner_id: new_owner_id,
         });
         console.log(`Balance of ${new_owner_id} after the transfer is ${new_balance}`);
-        this.deleteTransferLog();
+        TransferETHERC20ToNear.deleteTransferLog();
     }
 
     static recordTransferLog(obj) {
@@ -195,7 +195,7 @@ class TransferETHERC20ToNear {
 
     static async execute(command) {
         initialCmd = command.parent.rawArgs.join(' ');
-        let transferLog = this.loadTransferLog();
+        let transferLog = TransferETHERC20ToNear.loadTransferLog();
         const amount = command.amount;
         const ethSenderSk = command.ethSenderSk;
         const nearReceiverAccount = command.nearReceiverAccount;
@@ -247,24 +247,31 @@ class TransferETHERC20ToNear {
         const clientAccount = RainbowConfig.getParam('eth2near-client-account');
         const ethClientContract = new Eth2NearClientContract(nearMasterAccount, clientAccount);
 
+        handleInterrupt = () => {
+            console.log('Receiving C-c');
+            console.log('Cancel transfer');
+            console.log('Continue transfer with command:');
+            console.log(initialCmd);
+            process.exit();
+        }
         if (transferLog.finished === undefined) {
-            await this.approve({ ethERC20Contract, amount, ethSenderAccount });
-            transferLog = this.loadTransferLog();
+            await TransferETHERC20ToNear.approve({ ethERC20Contract, amount, ethSenderAccount });
+            transferLog = TransferETHERC20ToNear.loadTransferLog();
         }
         if (transferLog.finished === 'approve') {
-            await this.lock({ ethTokenLockerContract, amount, nearReceiverAccount, ethSenderAccount });
-            transferLog = this.loadTransferLog();
+            await TransferETHERC20ToNear.lock({ ethTokenLockerContract, amount, nearReceiverAccount, ethSenderAccount });
+            transferLog = TransferETHERC20ToNear.loadTransferLog();
         }
         if (transferLog.finished === 'lock') {
-            await this.findProof({ extractor, lockedEvent: transferLog.lockedEvent, web3 });
-            transferLog = this.loadTransferLog();
+            await TransferETHERC20ToNear.findProof({ extractor, lockedEvent: transferLog.lockedEvent, web3 });
+            transferLog = TransferETHERC20ToNear.loadTransferLog();
         }
         if (transferLog.finished === 'find proof') {
-            await this.waitBlockSafe({ ethClientContract, ...transferLog });
-            transferLog = this.loadTransferLog();
+            await TransferETHERC20ToNear.waitBlockSafe({ ethClientContract, ...transferLog });
+            transferLog = TransferETHERC20ToNear.loadTransferLog();
         }
         if (transferLog.finished === 'block-safe') {
-            await this.mint({ nearTokenContract, nearTokenContractBorsh, ...transferLog });
+            await TransferETHERC20ToNear.mint({ nearTokenContract, nearTokenContractBorsh, ...transferLog });
         }
 
         try {
