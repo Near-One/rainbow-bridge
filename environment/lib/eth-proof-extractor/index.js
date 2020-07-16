@@ -2,6 +2,7 @@ const Web3 = require('web3');
 const Tree = require('merkle-patricia-tree');
 const utils = require('ethereumjs-util');
 const {
+    Header,
     Proof,
     Receipt,
     Log,
@@ -15,38 +16,29 @@ const {
 } = require('promisfy');
 const { web3GetBlockNumber, web3GetBlock } = require('../robust');
 
-function receiptFromWeb3 (result, state_root) {
-    return new Receipt([
-        toBuffer(result.status ? 0x1 : state_root),
-        toBuffer(result.cumulativeGasUsed),
-        toBuffer(result.logsBloom),
-        result.logs.map(logFromWeb3),
-    ]);
+function receiptFromWeb3(result) {
+    return Receipt.fromWeb3(result);
 }
 
-function logFromWeb3 (result) {
-    return new Log([
-        toBuffer(result.address),
-        result.topics.map(toBuffer),
-        toBuffer(result.data),
-    ]);
+function logFromWeb3(result) {
+    return Log.fromWeb3(result);
 }
 
 class EthProofExtractor {
-    initialize (ethNodeURL) {
+    initialize(ethNodeURL) {
         // @ts-ignore
         this.web3 = new Web3(ethNodeURL);
     }
 
-    async extractReceipt (txHash) {
+    async extractReceipt(txHash) {
         return await this.web3.eth.getTransactionReceipt(txHash);
     }
 
-    async extractBlock (blockNumber) {
+    async extractBlock(blockNumber) {
         return await web3GetBlock(this.web3, blockNumber);
     }
 
-    async buildTrie (block) {
+    async buildTrie(block) {
         const blockReceipts = await Promise.all(block.transactions.map(this.web3.eth.getTransactionReceipt));
         // Build a Patricia Merkle Trie
         const tree = new Tree();
@@ -58,37 +50,20 @@ class EthProofExtractor {
         return tree;
     }
 
-    async extractProof (web3, block, tree, transactionIndex) {
+    async extractProof(web3, block, tree, transactionIndex) {
         const [, , stack] = await promisfy(tree.findPath, tree)(encode(transactionIndex));
 
         const blockData = await web3.eth.getBlock(block.number);
         // Correctly compose and encode the header.
-        const header = [
-            blockData.parentHash,
-            blockData.sha3Uncles,
-            blockData.miner,
-            blockData.stateRoot,
-            blockData.transactionsRoot,
-            blockData.receiptsRoot,
-            blockData.logsBloom,
-            blockData.difficulty == '0' ? '0x' : web3.utils.toHex(blockData.difficulty),
-            web3.utils.toHex(blockData.number),
-            web3.utils.toHex(blockData.gasLimit),
-            web3.utils.toHex(blockData.gasUsed),
-            web3.utils.toHex(blockData.timestamp),
-            blockData.extraData,
-            blockData.mixHash,
-            blockData.nonce,
-        ];
-
+        const header = Header.fromWeb3(blockData);
         return {
-            header_rlp: utils.rlp.encode(header),
+            header_rlp: header.serialize(),
             receiptProof: Proof.fromStack(stack),
             txIndex: transactionIndex,
         };
     }
 
-    destroy () {
+    destroy() {
         if (this.web3.currentProvider.connection.close) { // Only WebSocket provider has close, HTTPS don't
             this.web3.currentProvider.connection.close();
         }
