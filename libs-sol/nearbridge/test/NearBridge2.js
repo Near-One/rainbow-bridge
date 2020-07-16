@@ -79,54 +79,39 @@ contract('NearBridge2', function ([_, addr1]) {
     });
 });
 
-// contract('NearBridge3', function ([_, addr1]) {
-//     beforeEach(async function () {
-//
-//     });
-//
-//     it('should be ok', async function () {
-//         this.decoder = await NearDecoder.new();
-//         this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(3600));
-//         await this.bridge.deposit({value: web3.utils.toWei('1')});
-//
-//         const block9580503 = require('./block_9580503.json');
-//         const block9580534 = require('./block_9580534.json');
-//         const block9580624 = require('./block_9580624.json');
-//
-//         await this.bridge.initWithBlock(borshify(block9580503));
-//         await this.bridge.blockHashes(9580503);
-//
-//         await this.bridge.addLightClientBlock(borshify(block9580534));
-//         await this.bridge.blockHashes(9580534);
-//
-//         console.log("Verifying block 9580534");
-//         for (let i = 0; i < block9580534.approvals_after_next.length; i++) {
-//             if (block9580534.approvals_after_next[i]) {
-//                 if (await this.bridge.checkBlockProducerSignatureInLastBlock(i)) {
-//                     console.log(`Signature ${i} is OK`);
-//                 } else {
-//                     console.log(`Signature ${i} is NOT OK`);
-//                 }
-//             }
-//         }
-//
-//         const now = await time.latest();
-//         await timeIncreaseTo(now.add(time.duration.seconds(3600)));
-//
-//         await this.bridge.addLightClientBlock(borshify(block9580624));
-//         await this.bridge.blockHashes(9580624);
-//
-//         for (let i = 0; i < block9580624.approvals_after_next.length; i++) {
-//             if (block9580624.approvals_after_next[i]) {
-//                 if (await this.bridge.checkBlockProducerSignatureInLastBlock(i)) {
-//                     console.log(`Signature ${i} is OK`);
-//                 } else {
-//                     console.log(`Signature ${i} is NOT OK`);
-//                 }
-//             }
-//         }
-//     });
-// });
+contract('Add second block in first epoch should be verifiable', function ([_, addr1]) {
+    beforeEach(async function () {
+
+    });
+
+    it('should be ok', async function () {
+        this.decoder = await NearDecoder.new();
+        this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(3600));
+        await this.bridge.deposit({ value: web3.utils.toWei('1') });
+
+        const block304 = require('./304.json');
+        const block308 = require('./308.json');
+
+        await this.bridge.initWithBlock(borshify(block304));
+        await this.bridge.blockHashes(304);
+
+        let now = await time.latest();
+        await timeIncreaseTo(now.add(time.duration.seconds(3600)));
+
+        await this.bridge.addLightClientBlock(borshify(block308));
+        await this.bridge.blockHashes(308);
+
+        for (let i = 0; i < block308.approvals_after_next.length; i++) {
+            if (block308.approvals_after_next[i]) {
+                if (await this.bridge.checkBlockProducerSignatureInLastBlock(i)) {
+                    console.log(`Signature ${i} is OK`);
+                } else {
+                    console.log(`Signature ${i} is NOT OK`);
+                }
+            }
+        }
+    });
+});
 
 contract('Test adding blocks in new epoch when bps change', function ([_, addr1]) {
     beforeEach(async function () {
