@@ -118,14 +118,27 @@ contract NearBridge is INearBridge {
         }
     }
 
-    function initWithBlock(bytes memory data) public {
+    function initWithBlock(bytes memory data, bytes memory initial_validators) public {
         require(!initialized, "NearBridge: already initialized");
         initialized = true;
 
         Borsh.Data memory borsh = Borsh.from(data);
         NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
-        require(borsh.finished(), "NearBridge: only light client block should be passed");
 
+        Borsh.Data memory initial_validators_borsh = Borsh.from(initial_validators);
+        NearDecoder.InitialValidators memory initialValidators = initial_validators_borsh.decodeInitialValidators();
+
+        require(borsh.finished(), "NearBridge: only light client block should be passed as first argument");
+        require(initial_validators_borsh.finished(), "NearBridge: only initial validators should be passed as second argument");
+
+        // Set prev's next_bps to be initialValidators so addLightClientBlock know current epoch's bps to verify
+        prev.next_bps_length = initialValidators.validator_stakes.length;
+        for (uint i = 0; i < initialValidators.validator_stakes.length; i++) {
+            prev.next_bps[i] = BlockProducer({
+                publicKey: initialValidators.validator_stakes[i].public_key,
+                stake: initialValidators.validator_stakes[i].stake
+            });
+        }        
         _updateBlock(nearBlock, data, true);
     }
 

@@ -7,13 +7,28 @@ const Ed25519 = artifacts.require('Ed25519');
 const NearBridge = artifacts.require('NearBridge');
 const NearDecoder = artifacts.require('NearDecoder');
 
-async function timeIncreaseTo (seconds) {
+async function timeIncreaseTo(seconds) {
     const delay = 1000 - new Date().getMilliseconds();
     await new Promise(resolve => setTimeout(resolve, delay));
     await time.increaseTo(seconds);
 }
 
-function borshify (block) {
+function borshifyInitialValidators(initialValidators) {
+    return Buffer.concat([
+        web3.utils.toBN(initialValidators.length).toBuffer('le', 4),
+        Buffer.concat(
+            initialValidators.map(nextBp => Buffer.concat([
+                web3.utils.toBN(nextBp.account_id.length).toBuffer('le', 4),
+                Buffer.from(nextBp.account_id),
+                nextBp.public_key.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
+                bs58.decode(nextBp.public_key.substr(8)),
+                web3.utils.toBN(nextBp.stake).toBuffer('le', 16),
+            ])),
+        ),
+    ]);
+}
+
+function borshify(block) {
     return Buffer.concat([
         bs58.decode(block.prev_block_hash),
         bs58.decode(block.next_block_inner_hash),
@@ -71,7 +86,8 @@ contract('NearBridge', function ([_, addr1]) {
         const block121998 = borshify(require('./block_121998.json'));
 
         // http post http://127.0.0.1:3030/ jsonrpc=2.0 method=next_light_client_block params:='["E8K1A51oMR5PkotxNGNkDnVQ9knD4WLn8oDcettqiZbn"]' id="dontcare"
-        await this.bridge.initWithBlock(block120998);
+        // We should use previous epoch's next_bps to initWithBlock with block_120998, but they happens to be same
+        await this.bridge.initWithBlock(block120998, borshifyInitialValidators(require('./block_120998.json').next_bps));
         await this.bridge.blockHashes(120998);
         expect(await this.bridge.blockHashes(120998)).to.be.equal(
             '0x1a7a07b5eee1f4d8d7e47864d533143972f858464bacdc698774d167fb1b40e6',
