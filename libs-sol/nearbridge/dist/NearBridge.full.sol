@@ -1884,6 +1884,9 @@ contract NearBridge is INearBridge {
     }
 
     function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex) public view returns(bool) {
+        if (last.approvals_after_next[signatureIndex].none) {
+            return true;
+        }
         return _checkValidatorSignature(
             last.height,
             last.next_hash,

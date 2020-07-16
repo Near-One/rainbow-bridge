@@ -266,7 +266,7 @@ class TransferETHERC20ToNear {
             await TransferETHERC20ToNear.findProof({ extractor, lockedEvent: transferLog.lockedEvent, web3 });
             transferLog = TransferETHERC20ToNear.loadTransferLog();
         }
-        if (transferLog.finished === 'find proof') {
+        if (transferLog.finished === 'find-proof') {
             await TransferETHERC20ToNear.waitBlockSafe({ ethClientContract, ...transferLog });
             transferLog = TransferETHERC20ToNear.loadTransferLog();
         }
