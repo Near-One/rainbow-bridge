@@ -2,6 +2,8 @@ const nearlib = require('near-api-js');
 const fs = require('fs');
 const BN = require('bn.js');
 
+const RETRY_NONCE = 10;
+
 // Check if account exists and if it does not creates it using master account. Also deploys the code and creates
 // an access key.
 async function maybeCreateAccount (near, masterAccountId, accountId, accountPK, initBalance, contractPath) {
@@ -9,20 +11,46 @@ async function maybeCreateAccount (near, masterAccountId, accountId, accountPK, 
         console.log('Account %s does not exist creating it.', accountId);
         const masterAccount = new nearlib.Account(near.connection, masterAccountId);
         const balance = new BN(initBalance);
-        try {
-            await masterAccount.createAccount(accountId, accountPK, balance);
-        } catch (e) {
-            console.log('Failed to create account %s. ERROR: %s', accountId, e);
+        let accountCreated = false;
+        for (let i = 0; i < RETRY_NONCE; i++) {
+            try {
+                await masterAccount.createAccount(accountId, accountPK, balance);
+                accountCreated = true;
+                break;
+            } catch (e) {
+                if (e.message.includes('Transaction nonce')) {
+                    continue;
+                }
+                console.log('Failed to create account %s. ERROR: %s', accountId, e);
+                process.exit(1);
+            }
+        }
+        if (!accountCreated) {
+            console.log(`Failed to create account %s in ${RETRY_NONCE} retries due to nonce`, accountId);
             process.exit(1);
         }
+
         console.log('Created account %s', accountId);
 
         const account = new nearlib.Account(near.connection, accountId);
-        try {
-            const data = fs.readFileSync(contractPath);
-            await account.deployContract(data);
-        } catch (e) {
-            console.log('Failed to deploy contract to account %s. ERROR: %s', accountId, e);
+
+        let contractDeployed = false;
+        for (let i = 0; i < RETRY_NONCE; i++) {
+            try {
+                const data = fs.readFileSync(contractPath);
+                await account.deployContract(data);
+                contractDeployed = true;
+                break;
+            } catch (e) {
+                if (e.message.includes('Transaction nonce')) {
+                    continue;
+                }
+                console.log('Failed to deploy contract to account %s. ERROR: %s', accountId, e);
+                process.exit(1);
+            }
+        }
+        if (!contractDeployed) {
+            console.log(`Failed to deploy contract to account %s in ${RETRY_NONCE} retries due to nonce`, accountId);
             process.exit(1);
         }
         console.log('Deployed contract to account %s', accountId);
