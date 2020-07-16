@@ -5,27 +5,33 @@ const { homedir } = require('os');
 const path = require('path');
 
 class CleanCommand {
-    static execute () {
+    static execute() {
         console.log('Stopping all the running processes...');
-        ProcessManager.killDaemon((err) => {
+        ProcessManager.connect((err) => {
             if (err) {
-                console.log(`Error stopping pm2 processes. ${err}`);
-                process.exit(1);
+                // Never happened, but just log in case
+                console.log('Failed to launch pm2 daemon');
             }
-            ProcessManager.disconnect();
-            if (existsSync(path.join(homedir(), '.rainbowup', 'nearup', 'main.py'))) {
-                try {
-                    console.log('Stopping nearup');
-                    execSync('python3 ~/.rainbowup/nearup/main.py stop');
-                } catch (err) {
-                    console.log(`Error stopping nearup ${err}`);
+            ProcessManager.killDaemon((err) => {
+                if (err) {
+                    console.log(`Error stopping pm2 processes. ${err}`);
+                    process.exit(1);
                 }
-            }
-            console.log('Cleaning ~/.rainbowup directory...');
-            execSync('rm -rf ~/.rainbowup');
-            console.log('Cleaning done...');
-            process.exit(0);
-        });
+                ProcessManager.disconnect();
+                if (existsSync(path.join(homedir(), '.rainbow', 'nearup', 'main.py'))) {
+                    try {
+                        console.log('Stopping nearup');
+                        execSync('python3 ~/.rainbow/nearup/main.py stop');
+                    } catch (err) {
+                        console.log(`Error stopping nearup ${err}`);
+                    }
+                }
+                console.log('Cleaning ~/.rainbow and ~/.near/localnet directory...');
+                execSync('rm -rf ~/.rainbow ~/.near/localnet');
+                console.log('Cleaning done...');
+                process.exit(0);
+            });
+        })
     }
 }
 

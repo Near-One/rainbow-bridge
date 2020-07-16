@@ -4,7 +4,7 @@ const { Near2EthRelay } = require('../../lib/near2eth-relay');
 const { RainbowConfig } = require('../../lib/config');
 
 class StartNearRelayCommand {
-    static async execute () {
+    static async execute() {
         if (RainbowConfig.getParam('daemon') === 'true') {
             ProcessManager.connect((err) => {
                 if (err) {
@@ -17,8 +17,8 @@ class StartNearRelayCommand {
                         name: 'near-relay',
                         script: 'index.js',
                         interpreter: 'node',
-                        error_file: '~/.rainbowup/logs/near-relay/err.log',
-                        out_file: '~/.rainbowup/logs/near-relay/out.log',
+                        error_file: '~/.rainbow/logs/near-relay/err.log',
+                        out_file: '~/.rainbow/logs/near-relay/out.log',
                         args: ['start', 'near-relay', ...RainbowConfig.getArgsNoDaemon()],
                         wait_ready: true,
                         kill_timeout: 60000,

@@ -9,7 +9,11 @@ ROOT_DIR=$CI_DIR/..
 
 cd $ROOT_DIR/environment
 yarn
-node index.js prepare
+if [ -n "${LOCAL_CORE_SRC+x}" ]; then
+  node index.js prepare --core-src "$LOCAL_CORE_SRC"
+else
+  node index.js prepare
+fi
 node index.js start near-node
 node index.js start ganache
 # Wait for the local node to start

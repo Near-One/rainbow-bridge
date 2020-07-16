@@ -9,6 +9,7 @@ const { NearMintableToken } = require('../lib/near-mintable-token');
 const { RainbowConfig } = require('../lib/config');
 const { borshifyOutcomeProof } = require('../lib/borsh');
 const { sleep, web3GetBlock } = require('../lib/robust');
+const { normalizeEthKey } = require('../lib/robust');
 
 class TransferEthERC20FromNear {
     static async execute (command) {
@@ -83,7 +84,7 @@ class TransferEthERC20FromNear {
 
         // Wait for the block with the given receipt/transaction in Near2EthClient.
         const web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
-        let ethMasterAccount = web3.eth.accounts.privateKeyToAccount(RainbowConfig.getParam('eth-master-sk'));
+        let ethMasterAccount = web3.eth.accounts.privateKeyToAccount(normalizeEthKey(RainbowConfig.getParam('eth-master-sk')));
         web3.eth.accounts.wallet.add(ethMasterAccount);
         web3.eth.defaultAccount = ethMasterAccount.address;
         ethMasterAccount = ethMasterAccount.address;

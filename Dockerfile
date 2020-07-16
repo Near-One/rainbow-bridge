@@ -1,7 +1,7 @@
 FROM ubuntu:18.04
 
 RUN apt-get update && apt-get install -y \
-COPY . /usr/src/
+    COPY . /usr/src/
 
 RUN apt-get update -qq && apt-get install -y \
     build-essential \
@@ -28,7 +28,7 @@ RUN curl https://sh.rustup.rs -sSf | \
     sh -s -- -y --no-modify-path --default-toolchain nightly-2020-05-15
 
 COPY . /usr/src/
-COPY config* ~/.rainbowup
+COPY config* ~/.rainbow
 
 WORKDIR /usr/src/environment
 RUN node index.js prepare
