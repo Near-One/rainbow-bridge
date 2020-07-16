@@ -67,7 +67,7 @@ class TransferETHERC20ToNear {
                 });
             const lockedEvent = transaction.events.Locked;
             console.log('Success tranfer to locker');
-            TransferETHERC20ToNear.recordTransferLog({ finished: 'approve', lockedEvent })
+            TransferETHERC20ToNear.recordTransferLog({ finished: 'lock', lockedEvent })
         } catch (txRevertMessage) {
             console.log('Failed to lock account.');
             console.log(txRevertMessage.toString());
