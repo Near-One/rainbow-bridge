@@ -142,6 +142,7 @@ contract('Test adding blocks in new epoch when bps change', function ([_, addr1]
         const block304 = require('./304.json');
         const block308 = require('./308.json');
         const block368 = require('./368.json');
+        const block369 = require('./369.json');
 
         await this.bridge.initWithBlock(borshify(block244));
         await this.bridge.blockHashes(244);
@@ -154,7 +155,20 @@ contract('Test adding blocks in new epoch when bps change', function ([_, addr1]
 
         now = await time.latest();
         await timeIncreaseTo(now.add(time.duration.seconds(3600)));
+
+        await this.bridge.addLightClientBlock(borshify(block308));
+        await this.bridge.blockHashes(308);
+
+        now = await time.latest();
+        await timeIncreaseTo(now.add(time.duration.seconds(3600)));
+
         await this.bridge.addLightClientBlock(borshify(block368));
         await this.bridge.blockHashes(368);
+
+        now = await time.latest();
+        await timeIncreaseTo(now.add(time.duration.seconds(3600)));
+
+        await this.bridge.addLightClientBlock(borshify(block369));
+        await this.bridge.blockHashes(369);
     });
 });

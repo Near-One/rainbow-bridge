@@ -1884,6 +1884,9 @@ contract NearBridge is INearBridge {
     }
 
     function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex) public view returns(bool) {
+        if (last.approvals_after_next[signatureIndex].none) {
+            return true;
+        }
         return _checkValidatorSignature(
             last.height,
             last.next_hash,
@@ -1926,6 +1929,22 @@ contract NearBridge is INearBridge {
         _updateBlock(nearBlock, data, true);
     }
 
+    function _checkBp(NearDecoder.LightClientBlock memory nearBlock, State storage prevEpochBlock) internal {
+        if (prevEpochBlock.next_total_stake > 0) {
+            require(nearBlock.approvals_after_next.length == prevEpochBlock.next_bps_length, "NearBridge: number of BPs should match number of approvals");
+
+            uint256 votedFor = 0;
+            for (uint i = 0; i < nearBlock.approvals_after_next.length; i++) {
+                if (!nearBlock.approvals_after_next[i].none) {
+                    // Assume presented signatures are valid, but this could be challenged
+                    votedFor = votedFor.add(prevEpochBlock.next_bps[i].stake);
+                }
+            }
+
+            require(votedFor > prevEpochBlock.next_total_stake.mul(2).div(3), "NearBridge: Less than 2/3 voted by the block after next");
+        }
+    }
+
     function addLightClientBlock(bytes memory data) public payable {
         require(balanceOf[msg.sender] >= lock_eth_amount, "Balance is not enough");
         require(block.timestamp >= last.validAfter, "Wait until last block become valid");
@@ -1956,18 +1975,10 @@ contract NearBridge is INearBridge {
 
         // 4. approvals_after_next contain signatures that check out against the block producers for the epoch of the block
         // 5. The signatures present in approvals_after_next correspond to more than 2/3 of the total stake
-        if (prev.next_total_stake > 0) {
-            require(nearBlock.approvals_after_next.length == prev.next_bps_length, "NearBridge: number of BPs should match number of approvals");
-
-            uint256 votedFor = 0;
-            for (uint i = 0; i < nearBlock.approvals_after_next.length; i++) {
-                if (!nearBlock.approvals_after_next[i].none) {
-                    // Assume presented signatures are valid, but this could be challenged
-                    votedFor = votedFor.add(prev.next_bps[i].stake);
-                }
-            }
-
-            require(votedFor > prev.next_total_stake.mul(2).div(3), "NearBridge: Less than 2/3 voted by the block after next");
+        if (nearBlock.inner_lite.epoch_id == last.epochId) {
+            _checkBp(nearBlock, prev);
+        } else {
+            _checkBp(nearBlock, last);
         }
 
         // 6. If next_bps is not none, sha256(borsh(next_bps)) corresponds to the next_bp_hash in inner_lite.
