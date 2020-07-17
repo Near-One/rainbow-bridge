@@ -17,16 +17,6 @@ const {
 const { sleep } = require('../lib/robust');
 const { normalizeEthKey } = require('../lib/robust');
 
-let handleInterrupt = null;
-
-process.on('SIGINT', function () {
-    if (handleInterrupt) {
-        handleInterrupt();
-    } else {
-        process.exit();
-    }
-});
-
 let initialCmd;
 
 class TransferETHERC20ToNear {
@@ -147,7 +137,6 @@ class TransferETHERC20ToNear {
             owner_id: new_owner_id,
         });
         console.log(`Balance of ${new_owner_id} before the transfer is ${old_balance}`);
-
         // @ts-ignore
         try {
             await nearTokenContractBorsh.mint(
@@ -177,9 +166,21 @@ class TransferETHERC20ToNear {
         fs.writeFileSync('transfer-eth-erc20-to-near.log.json', JSON.stringify(obj));
     }
 
+    static parseBuffer(obj) {
+        for (let i in obj) {
+            if (obj[i] && obj[i].type === 'Buffer') {
+                obj[i] = Buffer.from(obj[i].data);
+            } else if (obj[i] && typeof (obj[i]) === 'object') {
+                obj[i] = TransferETHERC20ToNear.parseBuffer(obj[i])
+            }
+        }
+        return obj;
+    }
+
     static loadTransferLog() {
         try {
-            return JSON.parse(fs.readFileSync('transfer-eth-erc20-to-near.log.json').toString()) || {};
+            let log = JSON.parse(fs.readFileSync('transfer-eth-erc20-to-near.log.json').toString()) || {};
+            return TransferETHERC20ToNear.parseBuffer(log);
         } catch (e) {
             return {};
         }
@@ -247,13 +248,6 @@ class TransferETHERC20ToNear {
         const clientAccount = RainbowConfig.getParam('eth2near-client-account');
         const ethClientContract = new Eth2NearClientContract(nearMasterAccount, clientAccount);
 
-        handleInterrupt = () => {
-            console.log('Receiving C-c');
-            console.log('Cancel transfer');
-            console.log('Continue transfer with command:');
-            console.log(initialCmd);
-            process.exit();
-        }
         if (transferLog.finished === undefined) {
             await TransferETHERC20ToNear.approve({ ethERC20Contract, amount, ethSenderAccount });
             transferLog = TransferETHERC20ToNear.loadTransferLog();
