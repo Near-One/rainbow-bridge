@@ -128,7 +128,8 @@ contract('NearBridge', function ([_, addr1]) {
             blockFiles.sort((a, b) => Number(a.split('.')[0]) < Number(b.split('.')[0]));
             const firstBlock = require(process.env.NEAR_HEADERS_DIR + '/' + blockFiles[0]);
             const firstBlockBorsh = borshify(firstBlock);
-            await this.bridge.initWithBlock(firstBlockBorsh);
+            // current bps happens to equal to next_bps 
+            await this.bridge.initWithBlock(firstBlockBorsh, borshifyInitialValidators(firstBlock.next_bps));
             await this.bridge.blockHashes(firstBlock.inner_lite.height);
             expect(await this.bridge.blockHashes(firstBlock.inner_lite.height)).to.be.a('string');
 
