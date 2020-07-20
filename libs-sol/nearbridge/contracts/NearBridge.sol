@@ -133,29 +133,31 @@ contract NearBridge is INearBridge {
 
         // Set prev's next_bps to be initialValidators so addLightClientBlock know current epoch's bps to verify
         prev.next_bps_length = initialValidators.validator_stakes.length;
+        uint256 totalStake = 0;
         for (uint i = 0; i < initialValidators.validator_stakes.length; i++) {
             prev.next_bps[i] = BlockProducer({
                 publicKey: initialValidators.validator_stakes[i].public_key,
                 stake: initialValidators.validator_stakes[i].stake
             });
-        }        
+            // Compute total stake
+            totalStake = totalStake.add(initialValidators.validator_stakes[i].stake);
+        }
+        prev.next_total_stake = totalStake;
         _updateBlock(nearBlock, data, true);
     }
 
     function _checkBp(NearDecoder.LightClientBlock memory nearBlock, State storage prevEpochBlock) internal {
-        if (prevEpochBlock.next_total_stake > 0) {
-            require(nearBlock.approvals_after_next.length == prevEpochBlock.next_bps_length, "NearBridge: number of BPs should match number of approvals");
+        require(nearBlock.approvals_after_next.length == prevEpochBlock.next_bps_length, "NearBridge: number of BPs should match number of approvals");
 
-            uint256 votedFor = 0;
-            for (uint i = 0; i < nearBlock.approvals_after_next.length; i++) {
-                if (!nearBlock.approvals_after_next[i].none) {
-                    // Assume presented signatures are valid, but this could be challenged
-                    votedFor = votedFor.add(prevEpochBlock.next_bps[i].stake);
-                }
+        uint256 votedFor = 0;
+        for (uint i = 0; i < nearBlock.approvals_after_next.length; i++) {
+            if (!nearBlock.approvals_after_next[i].none) {
+                // Assume presented signatures are valid, but this could be challenged
+                votedFor = votedFor.add(prevEpochBlock.next_bps[i].stake);
             }
-
-            require(votedFor > prevEpochBlock.next_total_stake.mul(2).div(3), "NearBridge: Less than 2/3 voted by the block after next");
         }
+
+        require(votedFor > prevEpochBlock.next_total_stake.mul(2).div(3), "NearBridge: Less than 2/3 voted by the block after next");
     }
 
     function addLightClientBlock(bytes memory data) public payable {
@@ -209,6 +211,9 @@ contract NearBridge is INearBridge {
         backup = last;
         for (uint i = 0; i < backup.next_bps_length; i++) {
             backup.next_bps[i] = last.next_bps[i];
+        }
+        for (uint i = 0; i < backup.approvals_after_next.length; i++) {
+            backup.approvals_after_next[i] = last.approvals_after_next[i];
         }
 
         // If next epoch
