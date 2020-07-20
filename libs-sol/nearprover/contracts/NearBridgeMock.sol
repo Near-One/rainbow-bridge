@@ -25,7 +25,7 @@ contract NearBridgeMock is INearBridge {
     function withdraw() external {
     }
 
-    function initWithBlock(bytes calldata data) external {
+    function initWithBlock(bytes calldata data, bytes calldata initialValidators) external {
     }
 
     function addLightClientBlock(bytes calldata data) external payable {
