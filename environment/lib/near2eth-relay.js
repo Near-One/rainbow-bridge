@@ -63,14 +63,14 @@ function borshify(block) {
 
 function borshifyInitialValidators(initialValidators) {
     return Buffer.concat([
-        web3.utils.toBN(initialValidators.length).toBuffer('le', 4),
+        Web3.utils.toBN(initialValidators.length).toBuffer('le', 4),
         Buffer.concat(
             initialValidators.map(nextBp => Buffer.concat([
-                web3.utils.toBN(nextBp.account_id.length).toBuffer('le', 4),
+                Web3.utils.toBN(nextBp.account_id.length).toBuffer('le', 4),
                 Buffer.from(nextBp.account_id),
                 nextBp.public_key.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
                 bs58.decode(nextBp.public_key.substr(8)),
-                web3.utils.toBN(nextBp.stake).toBuffer('le', 16),
+                Web3.utils.toBN(nextBp.stake).toBuffer('le', 16),
             ])),
         ),
     ]);
@@ -122,7 +122,7 @@ class Near2EthRelay {
                 let currentValidators = null;
                 while (!lightClientBlock) {
                     // @ts-ignore
-                    currentValidators = await this.near.connection.sendJsonRpc('validators', [null]).result;
+                    currentValidators = await this.near.connection.provider.validators(null);
                     if (!currentValidators) {
                         await sleep(300);
                         continue;
@@ -134,7 +134,8 @@ class Near2EthRelay {
                     }
                     // Because fetch currentValidators and lightClientBlock isn't atomic, it's possible we happen to
                     // fetch lightClentBlock cross epoch boundary. Fetch another time to ensure that's not the case.
-                    let currentValidatorsNow = await this.near.connection.sendJsonRpc('validators', [null]).result;
+                    // @ts-ignore
+                    let currentValidatorsNow = await this.near.connection.provider.validators(null);
                     if (!currentValidatorsNow || currentValidatorsNow.epoch_start_height != currentValidators.epoch_start_height) {
                         await sleep(300);
                         continue;
