@@ -212,7 +212,7 @@ contract NearBridge is INearBridge {
         for (uint i = 0; i < backup.next_bps_length; i++) {
             backup.next_bps[i] = last.next_bps[i];
         }
-        for (uint i = 0; i < backup.approvals_after_next.length; i++) {
+        for (uint i = 0; i < backup.approvals_after_next_length; i++) {
             backup.approvals_after_next[i] = last.approvals_after_next[i];
         }
 
