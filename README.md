@@ -41,6 +41,11 @@ Then install golang, [see](https://golang.org/dl/).
 We recommend using [nvm](https://github.com/nvm-sh/nvm) for installing node and npm, if you already don't have one.
 
 ## Usage
+You can either install `rainbow-bridge-cli` from npm or clone it and use locally.
+```bash
+npm i -g rainbow-bridge-cli
+```
+
 To learn the commands that you can use with the rainbow bridge run
 ```bash
 node index.js --help

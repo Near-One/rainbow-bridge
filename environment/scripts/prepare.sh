@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-eval rainbow_DIR=~/.rainbow
+eval RAINBOW_DIR=~/.rainbow
 
 export LOCAL_BRIDGE_SRC
 export LOCAL_CORE_SRC
@@ -13,7 +13,7 @@ eval NEARUP_SRC=~/.rainbow/nearup
 eval NEARUP_LOGS=~/.nearup/localnet-logs
 
 
-mkdir -p $rainbow_DIR
+mkdir -p $RAINBOW_DIR
 
 if test -z "$LOCAL_CORE_SRC"
 then
@@ -75,4 +75,4 @@ cd $BRIDGE_SRC/environment/vendor/ethashproof
 echo 'Compiled ethashproof module'
 
 # Start the pm2 daemon if it is currently not running.
-pm2 ping
+yarn pm2 ping
