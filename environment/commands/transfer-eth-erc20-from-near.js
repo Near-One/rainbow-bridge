@@ -84,7 +84,7 @@ class TransferEthERC20FromNear {
 
         // Wait for the block with the given receipt/transaction in Near2EthClient.
         let robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'));
-        const web3 = new robustWeb3.web3;
+        const web3 = robustWeb3.web3;
         let ethMasterAccount = web3.eth.accounts.privateKeyToAccount(normalizeEthKey(RainbowConfig.getParam('eth-master-sk')));
         web3.eth.accounts.wallet.add(ethMasterAccount);
         web3.eth.defaultAccount = ethMasterAccount.address;
