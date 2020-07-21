@@ -534,8 +534,15 @@ impl MintableFungibleToken {
                 + Balance::from(initial_storage - current_storage) * STORAGE_PRICE_PER_BYTE
         };
         if refund_amount > 0 {
-            env::log(format!("Refunding {} tokens for storage", refund_amount).as_bytes());
-            Promise::new(env::predecessor_account_id()).transfer(refund_amount);
+            env::log(
+                format!(
+                    "Refunding {} tokens for storage to {}",
+                    refund_amount,
+                    env::signer_account_id()
+                )
+                .as_bytes(),
+            );
+            Promise::new(env::signer_account_id()).transfer(refund_amount);
         }
     }
 
