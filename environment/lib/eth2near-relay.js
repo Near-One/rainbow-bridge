@@ -30,11 +30,12 @@ class Eth2NearRelay {
     initialize(ethClientContract, ethNodeURL) {
         this.ethClientContract = ethClientContract;
         // @ts-ignore
-        this.robustWeb3 = RobustWeb3(ethNodeURL);
+        this.robustWeb3 = new RobustWeb3(ethNodeURL);
         this.web3 = this.robustWeb3.web3;
     }
 
     async run() {
+        const robustWeb3 = this.robustWeb3;
         while (true) {
             let clientBlockNumber;
             let chainBlockNumber;
@@ -43,7 +44,7 @@ class Eth2NearRelay {
                 // Return back to loop to avoid crash eth-relay.
                 clientBlockNumber = (await this.ethClientContract.last_block_number()).toNumber();
                 console.log('Client block number is ' + clientBlockNumber);
-                chainBlockNumber = await this.web3.getBlockNumber();
+                chainBlockNumber = await robustWeb3.getBlockNumber();
                 console.log('Chain block number is ' + chainBlockNumber);
             } catch (e) {
                 console.log(e);
@@ -53,7 +54,7 @@ class Eth2NearRelay {
             // Backtrack if chain switched the fork.
             while (true) {
                 try {
-                    const chainBlock = await this.web3.getBlock(clientBlockNumber);
+                    const chainBlock = await robustWeb3.getBlock(clientBlockNumber);
                     const chainBlockHash = chainBlock.hash;
                     const clientHashes = await this.ethClientContract.known_hashes(clientBlockNumber);
                     if (clientHashes.find(x => x === chainBlockHash)) {
