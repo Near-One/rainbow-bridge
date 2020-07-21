@@ -133,7 +133,7 @@ class Near2EthRelay {
     async run() {
         // process.send('ready');
         const clientContract = this.clientContract;
-        const web3 = this.web3;
+        const robustWeb3 = this.robustWeb3;
         const near = this.near;
         const ethMasterAccount = this.ethMasterAccount;
         const step = async function () {
@@ -146,7 +146,7 @@ class Near2EthRelay {
                 const clientBlockHashHex = await clientContract.methods.blockHashes(clientBlockHeight).call();
                 clientBlockHash = bs58.encode(toBuffer(clientBlockHashHex));
                 console.log(`Current light client head is: hash=${clientBlockHash}, height=${clientBlockHeight}`);
-                const latestBlock = await this.robustWeb3.getBlock('latest');
+                const latestBlock = await robustWeb3.getBlock('latest');
                 if (latestBlock.timestamp >= lastClientBlock.validAfter) {
                     console.log('Block is valid.');
                     break;

@@ -40,7 +40,7 @@ class EthProofExtractor {
     }
 
     async buildTrie(block) {
-        const blockReceipts = await Promise.all(block.transactions.map(this.robustWeb3.getTransactionReceipt));
+        const blockReceipts = await Promise.all(block.transactions.map(t => this.robustWeb3.getTransactionReceipt(t)));
         // Build a Patricia Merkle Trie
         const tree = new Tree();
         await Promise.all(blockReceipts.map(receipt => {
