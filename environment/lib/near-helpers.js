@@ -6,7 +6,7 @@ const RETRY_NONCE = 10;
 
 // Check if account exists and if it does not creates it using master account. Also deploys the code and creates
 // an access key.
-async function maybeCreateAccount (near, masterAccountId, accountId, accountPK, initBalance, contractPath) {
+async function maybeCreateAccount(near, masterAccountId, accountId, accountPK, initBalance, contractPath) {
     if (!await accountExists(near, accountId)) {
         console.log('Account %s does not exist creating it.', accountId);
         const masterAccount = new nearlib.Account(near.connection, masterAccountId);
@@ -20,6 +20,11 @@ async function maybeCreateAccount (near, masterAccountId, accountId, accountPK, 
             } catch (e) {
                 if (e.message.includes('Transaction nonce')) {
                     continue;
+                }
+                if (e.message.includes('AccountAlreadyExists')) {
+                    // Last createAccount can timeout, but actually success later
+                    accountCreated = true;
+                    break;
                 }
                 console.log('Failed to create account %s. ERROR: %s', accountId, e);
                 process.exit(1);
@@ -58,7 +63,7 @@ async function maybeCreateAccount (near, masterAccountId, accountId, accountPK, 
 }
 
 // Checks whether the account exists.
-async function accountExists (near, accountId) {
+async function accountExists(near, accountId) {
     const account = new nearlib.Account(near.connection, accountId);
     try {
         await account.fetchState();
@@ -69,7 +74,7 @@ async function accountExists (near, accountId) {
 }
 
 // Checks whether the account has the key specified in the keyStore.
-async function accountHasTheKey (near, accountId) {
+async function accountHasTheKey(near, accountId) {
     const account = new nearlib.Account(near.connection, accountId);
     const keyStoreKey = await near.config.deps.keyStore.getKey(near.config.networkId, accountId);
     const keys = await account.getAccessKeys();
@@ -82,7 +87,7 @@ async function accountHasTheKey (near, accountId) {
 }
 
 // Verify that account exists and it has the key that we specified in the keyStore.
-async function verifyAccount (near, accountId) {
+async function verifyAccount(near, accountId) {
     if (!await accountExists(near, accountId)) {
         console.log('Failed to fetch state of the %s account. Is it initialized?', accountId);
         process.exit(1);

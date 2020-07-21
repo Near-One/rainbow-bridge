@@ -289,7 +289,7 @@ interface INearBridge {
     function deposit() external payable;
     function withdraw() external;
 
-    function initWithBlock(bytes calldata data) external;
+    function initWithBlock(bytes calldata data, bytes calldata initialValidators) external;
     function addLightClientBlock(bytes calldata data) external payable;
     function challenge(address payable receiver, uint256 signatureIndex) external;
     function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex) external view returns(bool);
@@ -591,6 +591,17 @@ library NearDecoder {
 
         bytes32 hash;
         bytes32 next_hash;
+    }
+
+    struct InitialValidators {
+        ValidatorStake[] validator_stakes;
+    }
+
+    function decodeInitialValidators(Borsh.Data memory data) internal view returns(InitialValidators memory validators) {
+        validators.validator_stakes = new ValidatorStake[](data.decodeU32());
+        for (uint i = 0; i < validators.validator_stakes.length; i++) {
+            validators.validator_stakes[i] = data.decodeValidatorStake();
+        }
     }
 
     function decodeLightClientBlock(Borsh.Data memory data) internal view returns(LightClientBlock memory header) {
@@ -1884,6 +1895,9 @@ contract NearBridge is INearBridge {
     }
 
     function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex) public view returns(bool) {
+        if (last.approvals_after_next[signatureIndex].none) {
+            return true;
+        }
         return _checkValidatorSignature(
             last.height,
             last.next_hash,
@@ -1915,15 +1929,46 @@ contract NearBridge is INearBridge {
         }
     }
 
-    function initWithBlock(bytes memory data) public {
+    function initWithBlock(bytes memory data, bytes memory initial_validators) public {
         require(!initialized, "NearBridge: already initialized");
         initialized = true;
 
         Borsh.Data memory borsh = Borsh.from(data);
         NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
-        require(borsh.finished(), "NearBridge: only light client block should be passed");
 
+        Borsh.Data memory initial_validators_borsh = Borsh.from(initial_validators);
+        NearDecoder.InitialValidators memory initialValidators = initial_validators_borsh.decodeInitialValidators();
+
+        require(borsh.finished(), "NearBridge: only light client block should be passed as first argument");
+        require(initial_validators_borsh.finished(), "NearBridge: only initial validators should be passed as second argument");
+
+        // Set prev's next_bps to be initialValidators so addLightClientBlock know current epoch's bps to verify
+        prev.next_bps_length = initialValidators.validator_stakes.length;
+        uint256 totalStake = 0;
+        for (uint i = 0; i < initialValidators.validator_stakes.length; i++) {
+            prev.next_bps[i] = BlockProducer({
+                publicKey: initialValidators.validator_stakes[i].public_key,
+                stake: initialValidators.validator_stakes[i].stake
+            });
+            // Compute total stake
+            totalStake = totalStake.add(initialValidators.validator_stakes[i].stake);
+        }
+        prev.next_total_stake = totalStake;
         _updateBlock(nearBlock, data, true);
+    }
+
+    function _checkBp(NearDecoder.LightClientBlock memory nearBlock, State storage prevEpochBlock) internal {
+        require(nearBlock.approvals_after_next.length == prevEpochBlock.next_bps_length, "NearBridge: number of BPs should match number of approvals");
+
+        uint256 votedFor = 0;
+        for (uint i = 0; i < nearBlock.approvals_after_next.length; i++) {
+            if (!nearBlock.approvals_after_next[i].none) {
+                // Assume presented signatures are valid, but this could be challenged
+                votedFor = votedFor.add(prevEpochBlock.next_bps[i].stake);
+            }
+        }
+
+        require(votedFor > prevEpochBlock.next_total_stake.mul(2).div(3), "NearBridge: Less than 2/3 voted by the block after next");
     }
 
     function addLightClientBlock(bytes memory data) public payable {
@@ -1956,18 +2001,10 @@ contract NearBridge is INearBridge {
 
         // 4. approvals_after_next contain signatures that check out against the block producers for the epoch of the block
         // 5. The signatures present in approvals_after_next correspond to more than 2/3 of the total stake
-        if (prev.next_total_stake > 0) {
-            require(nearBlock.approvals_after_next.length == prev.next_bps_length, "NearBridge: number of BPs should match number of approvals");
-
-            uint256 votedFor = 0;
-            for (uint i = 0; i < nearBlock.approvals_after_next.length; i++) {
-                if (!nearBlock.approvals_after_next[i].none) {
-                    // Assume presented signatures are valid, but this could be challenged
-                    votedFor = votedFor.add(prev.next_bps[i].stake);
-                }
-            }
-
-            require(votedFor > prev.next_total_stake.mul(2).div(3), "NearBridge: Less than 2/3 voted by the block after next");
+        if (nearBlock.inner_lite.epoch_id == last.epochId) {
+            _checkBp(nearBlock, prev);
+        } else {
+            _checkBp(nearBlock, last);
         }
 
         // 6. If next_bps is not none, sha256(borsh(next_bps)) corresponds to the next_bp_hash in inner_lite.
@@ -1985,6 +2022,9 @@ contract NearBridge is INearBridge {
         backup = last;
         for (uint i = 0; i < backup.next_bps_length; i++) {
             backup.next_bps[i] = last.next_bps[i];
+        }
+        for (uint i = 0; i < backup.approvals_after_next_length; i++) {
+            backup.approvals_after_next[i] = last.approvals_after_next[i];
         }
 
         // If next epoch
