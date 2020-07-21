@@ -12,7 +12,7 @@ const { sleep, web3GetBlock, normalizeEthKey } = require('../lib/robust');
 /// Maximum number of retries a Web3 method call will perform.
 const MAX_WEB3_RETRIES = 1000;
 
-function borshify (block) {
+function borshify(block) {
     return Buffer.concat([
         bs58.decode(block.prev_block_hash),
         bs58.decode(block.next_block_inner_hash),
@@ -61,8 +61,23 @@ function borshify (block) {
     ]);
 }
 
+function borshifyInitialValidators(initialValidators) {
+    return Buffer.concat([
+        Web3.utils.toBN(initialValidators.length).toBuffer('le', 4),
+        Buffer.concat(
+            initialValidators.map(nextBp => Buffer.concat([
+                Web3.utils.toBN(nextBp.account_id.length).toBuffer('le', 4),
+                Buffer.from(nextBp.account_id),
+                nextBp.public_key.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
+                bs58.decode(nextBp.public_key.substr(8)),
+                Web3.utils.toBN(nextBp.stake).toBuffer('le', 16),
+            ])),
+        ),
+    ]);
+}
+
 class Near2EthRelay {
-    async initialize () {
+    async initialize() {
         // @ts-ignore
         this.web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
         this.ethMasterAccount =
@@ -85,9 +100,9 @@ class Near2EthRelay {
             // @ts-ignore
             JSON.parse(fs.readFileSync(RainbowConfig.getParam('near2eth-client-abi-path'))),
             RainbowConfig.getParam('near2eth-client-address'), {
-                from: this.ethMasterAccount,
-                handleRevert: true,
-            },
+            from: this.ethMasterAccount,
+            handleRevert: true,
+        },
         );
 
         // Check if initialization is needed.
@@ -104,18 +119,34 @@ class Near2EthRelay {
                 const lastFinalBlockHash = headBlock.header.last_final_block;
                 // The finalized block is not immediately available so we wait for it to become available.
                 let lightClientBlock = null;
+                let currentValidators = null;
                 while (!lightClientBlock) {
                     // @ts-ignore
+                    currentValidators = await this.near.connection.provider.validators(null);
+                    if (!currentValidators) {
+                        await sleep(300);
+                        continue;
+                    }
                     lightClientBlock = await this.near.connection.provider.sendJsonRpc('next_light_client_block', [lastFinalBlockHash]);
                     if (!lightClientBlock) {
                         await sleep(300);
+                        continue;
+                    }
+                    // Because fetch currentValidators and lightClientBlock isn't atomic, it's possible we happen to
+                    // fetch lightClentBlock cross epoch boundary. Fetch another time to ensure that's not the case.
+                    // @ts-ignore
+                    let currentValidatorsNow = await this.near.connection.provider.validators(null);
+                    if (!currentValidatorsNow || currentValidatorsNow.epoch_start_height != currentValidators.epoch_start_height) {
+                        await sleep(300);
+                        continue;
                     }
                 }
                 console.log('Initializing with block');
                 console.log(`${JSON.stringify(lightClientBlock)}`);
                 const borshBlock = borshify(lightClientBlock);
+                const borshInitialValidators = borshifyInitialValidators(currentValidators.current_validators);
                 // @ts-ignore
-                const _tx = await this.clientContract.methods.initWithBlock(borshBlock).send({
+                const _tx = await this.clientContract.methods.initWithBlock(borshBlock, borshInitialValidators).send({
                     from: this.ethMasterAccount,
                     gas: 2000000,
                     handleRevert: true,
@@ -129,7 +160,7 @@ class Near2EthRelay {
         }
     }
 
-    async run () {
+    async run() {
         // process.send('ready');
         const clientContract = this.clientContract;
         const web3 = this.web3;
@@ -225,7 +256,7 @@ class Near2EthRelay {
             let sleepTime = (new BN(RainbowConfig.getParam('near2eth-relay-delay'))).toNumber();
             if (sleepTime > 0) {
                 console.log(`Sleeping for ${sleepTime} seconds.`);
-                await  sleep(sleepTime * 1000);
+                await sleep(sleepTime * 1000);
             }
             await step();
         };
