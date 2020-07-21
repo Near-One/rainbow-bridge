@@ -289,7 +289,7 @@ interface INearBridge {
     function deposit() external payable;
     function withdraw() external;
 
-    function initWithBlock(bytes calldata data) external;
+    function initWithBlock(bytes calldata data, bytes calldata initialValidators) external;
     function addLightClientBlock(bytes calldata data) external payable;
     function challenge(address payable receiver, uint256 signatureIndex) external;
     function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex) external view returns(bool);
@@ -591,6 +591,17 @@ library NearDecoder {
 
         bytes32 hash;
         bytes32 next_hash;
+    }
+
+    struct InitialValidators {
+        ValidatorStake[] validator_stakes;
+    }
+
+    function decodeInitialValidators(Borsh.Data memory data) internal view returns(InitialValidators memory validators) {
+        validators.validator_stakes = new ValidatorStake[](data.decodeU32());
+        for (uint i = 0; i < validators.validator_stakes.length; i++) {
+            validators.validator_stakes[i] = data.decodeValidatorStake();
+        }
     }
 
     function decodeLightClientBlock(Borsh.Data memory data) internal view returns(LightClientBlock memory header) {
