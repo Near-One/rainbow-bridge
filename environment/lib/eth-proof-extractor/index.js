@@ -14,7 +14,7 @@ const {
 const {
     promisfy,
 } = require('promisfy');
-const { web3GetBlockNumber, web3GetBlock } = require('../robust');
+const { RobustWeb3 } = require('../robust');
 
 function receiptFromWeb3(result) {
     return Receipt.fromWeb3(result);
@@ -27,19 +27,20 @@ function logFromWeb3(result) {
 class EthProofExtractor {
     initialize(ethNodeURL) {
         // @ts-ignore
-        this.web3 = new Web3(ethNodeURL);
+        this.robustWeb3 = new RobustWeb3(ethNodeURL);
+        this.web3 = this.robustWeb3.web3;
     }
 
     async extractReceipt(txHash) {
-        return await this.web3.eth.getTransactionReceipt(txHash);
+        return await this.robustWeb3.getTransactionReceipt(txHash);
     }
 
     async extractBlock(blockNumber) {
-        return await web3GetBlock(this.web3, blockNumber);
+        return await this.robustWeb3.getBlock(blockNumber);
     }
 
     async buildTrie(block) {
-        const blockReceipts = await Promise.all(block.transactions.map(this.web3.eth.getTransactionReceipt));
+        const blockReceipts = await Promise.all(block.transactions.map(this.robustWeb3.getTransactionReceipt));
         // Build a Patricia Merkle Trie
         const tree = new Tree();
         await Promise.all(blockReceipts.map(receipt => {

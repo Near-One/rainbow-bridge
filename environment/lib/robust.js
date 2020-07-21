@@ -1,5 +1,6 @@
 /// This module gives a few utils for robust error handling, 
 /// and wrap web3 with error handling and retry
+const Web3 = require('web3');
 
 const RETRY = 10;
 const DELAY = 500;
@@ -12,8 +13,57 @@ const backoff = (retries, fn, delay = DELAY, wait = BACKOFF) =>
         ? sleep(delay).then(() => backoff(retries - 1, fn, delay * wait))
         : Promise.reject(err));
 
-const web3GetBlockNumber = async (web3) => await backoff(RETRY, async () => await web3.eth.getBlockNumber());
-const web3GetBlock = async (web3, b) => await backoff(RETRY, async () => await web3.eth.getBlock(b));
+class RobustWeb3 {
+    constructor(ethNodeUrl) {
+        this.ethNodeUrl = ethNodeUrl;
+        this.web3 = new Web3(ethNodeUrl);
+    }
+
+    async getBlockNumber() {
+        let self = this;
+        await backoff(RETRY, async () => {
+            try {
+                return await self.web3.eth.getBlockNumber();
+            } catch (e) {
+                if (e && e.toString() === 'Error: connection not open') {
+                    self.web3 = new Web3(self.ethNodeUrl);
+                }
+            }
+        });
+    }
+
+    async getBlock(b) {
+        let self = this;
+        await backoff(RETRY, async () => {
+            try {
+                return await self.web3.eth.getBlock(b);
+            } catch (e) {
+                if (e && e.toString() === 'Error: connection not open') {
+                    self.web3 = new Web3(self.ethNodeUrl);
+                }
+            }
+        });
+    }
+
+    async getTransactionReceipt(t) {
+        let self = this;
+        await backoff(RETRY, async () => {
+            try {
+                return await self.web3.eth.getTransactionReceipt(t);
+            } catch (e) {
+                if (e && e.toString() === 'Error: connection not open') {
+                    self.web3 = new Web3(self.ethNodeUrl);
+                }
+            }
+        });
+    }
+
+    destroy() {
+        if (this.web3.currentProvider.connection.close) { // Only WebSocket provider has close, HTTPS don't
+            this.web3.currentProvider.connection.close();
+        }
+    }
+}
 
 function normalizeEthKey(key) {
     let result = key.toLowerCase();
@@ -27,7 +77,6 @@ module.exports = {
     retry,
     sleep,
     backoff,
-    web3GetBlockNumber,
-    web3GetBlock,
+    RobustWeb3,
     normalizeEthKey
 }

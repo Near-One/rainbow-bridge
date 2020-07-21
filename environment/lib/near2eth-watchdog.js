@@ -1,12 +1,13 @@
 const Web3 = require('web3');
 const fs = require('fs');
 const { RainbowConfig } = require('./config');
-const { sleep, web3GetBlock, normalizeEthKey } = require('../lib/robust');
+const { sleep, RobustWeb3, normalizeEthKey } = require('../lib/robust');
 
 class Near2EthWatchdog {
-    async initialize () {
+    async initialize() {
         // @ts-ignore
-        this.web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
+        this.robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'));
+        this.web3 = this.robustWeb3.web3;
         const ethMasterAccount =
             this.web3.eth.accounts.privateKeyToAccount(normalizeEthKey(RainbowConfig.getParam('eth-master-sk')));
         this.web3.eth.accounts.wallet.add(ethMasterAccount);
@@ -19,16 +20,16 @@ class Near2EthWatchdog {
             // @ts-ignore
             JSON.parse(fs.readFileSync(RainbowConfig.getParam('near2eth-client-abi-path'))),
             RainbowConfig.getParam('near2eth-client-address'), {
-                from: this.ethMasterAccount,
-                handleRevert: true,
-            },
+            from: this.ethMasterAccount,
+            handleRevert: true,
+        },
         );
     }
 
-    async run () {
+    async run() {
         while (true) {
             const lastClientBlock = await this.clientContract.methods.last().call();
-            const latestBlock = await web3GetBlock(this.web3, 'latest');
+            const latestBlock = await this.robustWeb3.getBlock('latest');
             console.log(`Examining block ${lastClientBlock.hash} height: ${lastClientBlock.height}`);
             if (latestBlock.timestamp >= lastClientBlock.valid) {
                 const timeDelta = 10;

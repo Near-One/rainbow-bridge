@@ -18,7 +18,7 @@ const { sleep } = require('../lib/robust');
 const { normalizeEthKey } = require('../lib/robust');
 
 class TransferETHERC20ToNear {
-    static async execute (command) {
+    static async execute(command) {
         const amount = command.amount;
         const ethSenderSk = command.ethSenderSk;
         const nearReceiverAccount = command.nearReceiverAccount;
@@ -41,10 +41,10 @@ class TransferETHERC20ToNear {
             console.log('Approving token transfer.');
             await ethERC20Contract.methods.approve(RainbowConfig.getParam('eth-locker-address'),
                 Number(amount)).send({
-                from: ethSenderAccount,
-                gas: 5000000,
-                handleRevert: true,
-            });
+                    from: ethSenderAccount,
+                    gas: 5000000,
+                    handleRevert: true,
+                });
             console.log('Approved token transfer.');
         } catch (txRevertMessage) {
             console.log('Failure.');
@@ -77,6 +77,7 @@ class TransferETHERC20ToNear {
         }
 
         const nearMasterAccountId = RainbowConfig.getParam('near-master-account');
+        console.log(nearMasterAccountId)
         const keyStore = new nearlib.keyStores.InMemoryKeyStore();
         await keyStore.setKey(RainbowConfig.getParam('near-network-id'), nearMasterAccountId,
             nearlib.KeyPair.fromString(RainbowConfig.getParam('near-master-sk')));

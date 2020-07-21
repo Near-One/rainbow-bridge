@@ -7,12 +7,12 @@ const bs58 = require('bs58');
 const { toBuffer } = require('eth-util-lite');
 const { RainbowConfig } = require('./config');
 const { BN } = require('ethereumjs-util');
-const { sleep, web3GetBlock, normalizeEthKey } = require('../lib/robust');
+const { sleep, RobustWeb3, normalizeEthKey } = require('../lib/robust');
 
 /// Maximum number of retries a Web3 method call will perform.
 const MAX_WEB3_RETRIES = 1000;
 
-function borshify (block) {
+function borshify(block) {
     return Buffer.concat([
         bs58.decode(block.prev_block_hash),
         bs58.decode(block.next_block_inner_hash),
@@ -62,9 +62,10 @@ function borshify (block) {
 }
 
 class Near2EthRelay {
-    async initialize () {
+    async initialize() {
         // @ts-ignore
-        this.web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
+        this.robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'));
+        this.web3 = this.robustWeb3.web3;
         this.ethMasterAccount =
             this.web3.eth.accounts.privateKeyToAccount(normalizeEthKey(RainbowConfig.getParam('eth-master-sk')));
         this.web3.eth.accounts.wallet.add(this.ethMasterAccount);
@@ -85,9 +86,9 @@ class Near2EthRelay {
             // @ts-ignore
             JSON.parse(fs.readFileSync(RainbowConfig.getParam('near2eth-client-abi-path'))),
             RainbowConfig.getParam('near2eth-client-address'), {
-                from: this.ethMasterAccount,
-                handleRevert: true,
-            },
+            from: this.ethMasterAccount,
+            handleRevert: true,
+        },
         );
 
         // Check if initialization is needed.
@@ -129,7 +130,7 @@ class Near2EthRelay {
         }
     }
 
-    async run () {
+    async run() {
         // process.send('ready');
         const clientContract = this.clientContract;
         const web3 = this.web3;
@@ -145,7 +146,7 @@ class Near2EthRelay {
                 const clientBlockHashHex = await clientContract.methods.blockHashes(clientBlockHeight).call();
                 clientBlockHash = bs58.encode(toBuffer(clientBlockHashHex));
                 console.log(`Current light client head is: hash=${clientBlockHash}, height=${clientBlockHeight}`);
-                const latestBlock = await web3GetBlock(web3, 'latest');
+                const latestBlock = await this.robustWeb3.getBlock('latest');
                 if (latestBlock.timestamp >= lastClientBlock.validAfter) {
                     console.log('Block is valid.');
                     break;
@@ -225,7 +226,7 @@ class Near2EthRelay {
             let sleepTime = (new BN(RainbowConfig.getParam('near2eth-relay-delay'))).toNumber();
             if (sleepTime > 0) {
                 console.log(`Sleeping for ${sleepTime} seconds.`);
-                await  sleep(sleepTime * 1000);
+                await sleep(sleepTime * 1000);
             }
             await step();
         };
