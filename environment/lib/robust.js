@@ -21,12 +21,12 @@ class RobustWeb3 {
 
     async getBlockNumber() {
         let self = this;
-        await backoff(RETRY, async () => {
+        return await backoff(RETRY, async () => {
             try {
                 return await self.web3.eth.getBlockNumber();
             } catch (e) {
                 if (e && e.toString() === 'Error: connection not open') {
-                    self.web3 = new Web3(self.ethNodeUrl);
+                    self.web3.setProvider(self.ethNodeUrl);
                 }
             }
         });
@@ -34,12 +34,12 @@ class RobustWeb3 {
 
     async getBlock(b) {
         let self = this;
-        await backoff(RETRY, async () => {
+        return await backoff(RETRY, async () => {
             try {
                 return await self.web3.eth.getBlock(b);
             } catch (e) {
                 if (e && e.toString() === 'Error: connection not open') {
-                    self.web3 = new Web3(self.ethNodeUrl);
+                    self.web3.setProvider(self.ethNodeUrl);
                 }
             }
         });
@@ -47,12 +47,12 @@ class RobustWeb3 {
 
     async getTransactionReceipt(t) {
         let self = this;
-        await backoff(RETRY, async () => {
+        return await backoff(RETRY, async () => {
             try {
                 return await self.web3.eth.getTransactionReceipt(t);
             } catch (e) {
                 if (e && e.toString() === 'Error: connection not open') {
-                    self.web3 = new Web3(self.ethNodeUrl);
+                    self.web3.setProvider(self.ethNodeUrl);
                 }
             }
         });
