@@ -8,11 +8,11 @@ const { verifyAccount } = require('../lib/near-helpers');
 const { NearMintableToken } = require('../lib/near-mintable-token');
 const { RainbowConfig } = require('../lib/config');
 const { borshifyOutcomeProof } = require('../lib/borsh');
-const { sleep, web3GetBlock } = require('../lib/robust');
+const { sleep, RobustWeb3 } = require('../lib/robust');
 const { normalizeEthKey } = require('../lib/robust');
 
 class TransferEthERC20FromNear {
-    static async execute (command) {
+    static async execute(command) {
         const nearSenderAccountId = command.nearSenderAccount;
         const keyStore = new nearlib.keyStores.InMemoryKeyStore();
         await keyStore.setKey(RainbowConfig.getParam('near-network-id'), nearSenderAccountId,
@@ -83,7 +83,8 @@ class TransferEthERC20FromNear {
         const outcomeBlockHeight = new BN(outcomeBlock.header.height);
 
         // Wait for the block with the given receipt/transaction in Near2EthClient.
-        const web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
+        let robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'));
+        const web3 = robustWeb3.web3;
         let ethMasterAccount = web3.eth.accounts.privateKeyToAccount(normalizeEthKey(RainbowConfig.getParam('eth-master-sk')));
         web3.eth.accounts.wallet.add(ethMasterAccount);
         web3.eth.defaultAccount = ethMasterAccount.address;
@@ -92,9 +93,9 @@ class TransferEthERC20FromNear {
             // @ts-ignore
             JSON.parse(fs.readFileSync(RainbowConfig.getParam('near2eth-client-abi-path'))),
             RainbowConfig.getParam('near2eth-client-address'), {
-                from: ethMasterAccount,
-                handleRevert: true,
-            },
+            from: ethMasterAccount,
+            handleRevert: true,
+        },
         );
 
         let clientBlock;
@@ -110,7 +111,7 @@ class TransferEthERC20FromNear {
             clientBlockHashB58 = bs58.encode(toBuffer(clientBlockHashHex));
             console.log(`Current light client head is: hash=${clientBlockHashB58}, height=${clientBlockHeight.toString()}`);
 
-            const chainBlock = await web3GetBlock(web3, 'latest');
+            const chainBlock = await robustWeb3.getBlock('latest');
             const chainBlockTimestamp = new BN(chainBlock.timestamp);
             if (clientBlockHeight.gt(outcomeBlockHeight)) {
                 console.log(`Near2EthClient block is at ${clientBlockHeight.toString()} which is further than the needed block ${outcomeBlockHeight.toString()}`);
@@ -125,7 +126,7 @@ class TransferEthERC20FromNear {
             } else {
                 const sleepSec = 10;
                 console.log(`Block ${outcomeBlockHeight.toString()} is not available on the light client yet. Current `
-                + `height of light client is ${clientBlockHeight.toString()}. Sleeping ${sleepSec} seconds.`);
+                    + `height of light client is ${clientBlockHeight.toString()}. Sleeping ${sleepSec} seconds.`);
                 await sleep(sleepSec * 1000);
             }
         }
@@ -164,9 +165,9 @@ class TransferEthERC20FromNear {
             // @ts-ignore
             JSON.parse(fs.readFileSync(RainbowConfig.getParam('near2eth-prover-abi-path'))),
             RainbowConfig.getParam('near2eth-prover-address'), {
-                from: ethMasterAccount,
-                handleRevert: true,
-            },
+            from: ethMasterAccount,
+            handleRevert: true,
+        },
         );
         const borshProofRes = borshifyOutcomeProof(proofRes);
         // Debugging output, uncomment for debugging.
@@ -179,18 +180,18 @@ class TransferEthERC20FromNear {
             // @ts-ignore
             JSON.parse(fs.readFileSync(RainbowConfig.getParam('eth-locker-abi-path'))),
             RainbowConfig.getParam('eth-locker-address'), {
-                from: ethMasterAccount,
-                handleRevert: true,
-            },
+            from: ethMasterAccount,
+            handleRevert: true,
+        },
         );
 
         const ethERC20Contract = new web3.eth.Contract(
             // @ts-ignore
             JSON.parse(fs.readFileSync(RainbowConfig.getParam('eth-erc20-abi-path'))),
             RainbowConfig.getParam('eth-erc20-address'), {
-                from: ethMasterAccount,
-                handleRevert: true,
-            },
+            from: ethMasterAccount,
+            handleRevert: true,
+        },
         );
 
         const oldBalance = await ethERC20Contract.methods.balanceOf(command.ethReceiverAddress).call();
