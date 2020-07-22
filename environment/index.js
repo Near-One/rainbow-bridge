@@ -95,6 +95,11 @@ RainbowConfig.declareOption('daemon', 'Whether the process should be launched as
 RainbowConfig.declareOption('bridge-src', 'Path to the rainbow-bridge source. Will use current repo if not provided.', path.join(__dirname, '../'));
 RainbowConfig.declareOption('core-src', 'Path to the nearcore source. It will be downloaded if not provided.', '');
 RainbowConfig.declareOption('nearup-src', 'Path to the nearup source. It will be downloaded if not provided.', '');
+RainbowConfig.declareOption(
+    'eth-gas-multiplier',
+    'How many times more in Ethereum gas are we willing to overpay.',
+    '1',
+);
 
 // User-specific arguments.
 RainbowConfig.declareOption(
@@ -312,6 +317,7 @@ RainbowConfig.addOptions(
         'eth-master-sk',
         'eth-ed25519-abi-path',
         'eth-ed25519-bin-path',
+        'eth-gas-multiplier',
     ]);
 
 RainbowConfig.addOptions(
@@ -326,6 +332,7 @@ RainbowConfig.addOptions(
         'eth-ed25519-address',
         'near2eth-client-lock-eth-amount',
         'near2eth-client-lock-duration',
+        'eth-gas-multiplier',
     ]);
 
 RainbowConfig.addOptions(
@@ -338,6 +345,7 @@ RainbowConfig.addOptions(
         'near2eth-prover-abi-path',
         'near2eth-prover-bin-path',
         'near2eth-client-address',
+        'eth-gas-multiplier',
     ]);
 
 // User commands.
@@ -367,6 +375,7 @@ RainbowConfig.addOptions(
         'eth-erc20-address',
         'near-fun-token-account',
         'near2eth-prover-address',
+        'eth-gas-multiplier',
     ],
 );
 
@@ -379,6 +388,7 @@ RainbowConfig.addOptions(
         'eth-master-sk',
         'eth-erc20-abi-path',
         'eth-erc20-bin-path',
+        'eth-gas-multiplier',
     ],
 );
 
@@ -400,6 +410,7 @@ RainbowConfig.addOptions(
         'eth2near-client-account',
         'near-master-account',
         'near-master-sk',
+        'eth-gas-multiplier',
     ],
 );
 
@@ -424,6 +435,7 @@ RainbowConfig.addOptions(
         'eth-master-sk',
         'near2eth-prover-abi-path',
         'near2eth-prover-address',
+        'eth-gas-multiplier',
     ],
 );
 

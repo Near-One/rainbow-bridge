@@ -1,4 +1,5 @@
 const Web3 = require('web3');
+const BN = require('bn.js');
 const fs = require('fs');
 const { RainbowConfig } = require('../lib/config');
 const { normalizeEthKey } = require('../lib/robust');
@@ -26,6 +27,7 @@ class InitEthEd25519 {
                 .send({
                     from: ethMasterAccount,
                     gas: 5000000,
+                    gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
                 });
         console.log('Deployed ED25519 contract to:');
         console.log(`${tx.options.address}`);

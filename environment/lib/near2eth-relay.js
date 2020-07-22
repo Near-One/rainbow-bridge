@@ -151,11 +151,13 @@ class Near2EthRelay {
                     from: this.ethMasterAccount,
                     gas: 2000000,
                     handleRevert: true,
+                    gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
                 });
                 await this.clientContract.methods.initWithBlock(borshBlock).send({
                     from: this.ethMasterAccount,
                     gas: 2000000,
                     handleRevert: true,
+                    gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
                 });
             }
             console.log('Client is initialized.');
@@ -211,6 +213,7 @@ class Near2EthRelay {
                             gas: 2000000,
                             handleRevert: true,
                             value: (new BN(lockEthAmount)),
+                            gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
                         });
                         break;
                     } catch (err) {
@@ -251,6 +254,7 @@ class Near2EthRelay {
                         from: ethMasterAccount,
                         gas: 2000000,
                         handleRevert: true,
+                        gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
                     });
                     break;
                 } catch (err) {
