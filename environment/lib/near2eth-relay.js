@@ -176,6 +176,7 @@ class Near2EthRelay {
         const robustWeb3 = this.robustWeb3;
         const near = this.near;
         const ethMasterAccount = this.ethMasterAccount;
+        const web3 = this.web3;
         const step = async function () {
             // Sleep until the last Near block becomes valid.
             let lastClientBlock;
@@ -215,7 +216,7 @@ class Near2EthRelay {
                             gas: 1000000,
                             handleRevert: true,
                             value: (new BN(lockEthAmount)),
-                            gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
+                            gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
                         });
                         break;
                     } catch (err) {
@@ -256,7 +257,7 @@ class Near2EthRelay {
                         from: ethMasterAccount,
                         gas: 4000000,
                         handleRevert: true,
-                        gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
+                        gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
                     });
                     break;
                 } catch (err) {
