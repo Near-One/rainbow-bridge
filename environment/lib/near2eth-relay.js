@@ -24,7 +24,7 @@ function borshify(block) {
             bs58.decode(block.inner_lite.prev_state_root),
             bs58.decode(block.inner_lite.outcome_root),
             // @ts-ignore
-            Web3.utils.toBN(block.inner_lite.timestamp).toBuffer('le', 8),
+            Web3.utils.toBN(block.inner_lite.timestamp_nanosec).toBuffer('le', 8),
             bs58.decode(block.inner_lite.next_bp_hash),
             bs58.decode(block.inner_lite.block_merkle_root),
         ]),
