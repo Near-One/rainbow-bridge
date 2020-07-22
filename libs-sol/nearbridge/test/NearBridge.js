@@ -87,7 +87,8 @@ contract('NearBridge', function ([_, addr1]) {
 
         // http post http://127.0.0.1:3030/ jsonrpc=2.0 method=next_light_client_block params:='["E8K1A51oMR5PkotxNGNkDnVQ9knD4WLn8oDcettqiZbn"]' id="dontcare"
         // We should use previous epoch's next_bps to initWithBlock with block_120998, but they happens to be same
-        await this.bridge.initWithBlock(block120998, borshifyInitialValidators(require('./block_120998.json').next_bps));
+        await this.bridge.initWithValidators(borshifyInitialValidators(require('./block_120998.json').next_bps));
+        await this.bridge.initWithBlock(block120998);
         await this.bridge.blockHashes(120998);
         expect(await this.bridge.blockHashes(120998)).to.be.equal(
             '0x1a7a07b5eee1f4d8d7e47864d533143972f858464bacdc698774d167fb1b40e6',
@@ -129,7 +130,8 @@ contract('NearBridge', function ([_, addr1]) {
             const firstBlock = require(process.env.NEAR_HEADERS_DIR + '/' + blockFiles[0]);
             const firstBlockBorsh = borshify(firstBlock);
             // current bps happens to equal to next_bps 
-            await this.bridge.initWithBlock(firstBlockBorsh, borshifyInitialValidators(firstBlock.next_bps));
+            await this.bridge.initWithValidators(borshifyInitialValidators(firstBlock.next_bps));
+            await this.bridge.initWithBlock(firstBlockBorsh);
             await this.bridge.blockHashes(firstBlock.inner_lite.height);
             expect(await this.bridge.blockHashes(firstBlock.inner_lite.height)).to.be.a('string');
 

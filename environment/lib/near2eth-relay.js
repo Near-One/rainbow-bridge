@@ -147,7 +147,12 @@ class Near2EthRelay {
                 const borshBlock = borshify(lightClientBlock);
                 const borshInitialValidators = borshifyInitialValidators(currentValidators.current_validators);
                 // @ts-ignore
-                const _tx = await this.clientContract.methods.initWithBlock(borshBlock, borshInitialValidators).send({
+                await this.clientContract.methods.initWithValidators(borshInitialValidators).send({
+                    from: this.ethMasterAccount,
+                    gas: 2000000,
+                    handleRevert: true,
+                });
+                await this.clientContract.methods.initWithBlock(borshBlock).send({
                     from: this.ethMasterAccount,
                     gas: 2000000,
                     handleRevert: true,
