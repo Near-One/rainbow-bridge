@@ -1,4 +1,5 @@
 const Web3 = require('web3');
+const BN = require('bn.js');
 const fs = require('fs');
 const { RainbowConfig } = require('../lib/config');
 const { normalizeEthKey } = require('../lib/robust');
@@ -26,6 +27,7 @@ class InitETHERC20 {
             .send({
                 from: ethMasterAccount,
                 gas: 3000000,
+                gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
             });
         console.log('Deployed ERC20 contract to:');
         console.log(`${txERC20.options.address}`);

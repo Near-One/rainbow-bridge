@@ -19,7 +19,8 @@ interface INearBridge {
     function deposit() external payable;
     function withdraw() external;
 
-    function initWithBlock(bytes calldata data, bytes calldata initialValidators) external;
+    function initWithValidators(bytes calldata initialValidators) external;
+    function initWithBlock(bytes calldata data) external;
     function addLightClientBlock(bytes calldata data) external payable;
     function challenge(address payable receiver, uint256 signatureIndex) external;
     function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex) external view returns(bool);

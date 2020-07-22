@@ -1,4 +1,5 @@
 const Web3 = require('web3');
+const BN = require('bn.js');
 const fs = require('fs');
 const { RainbowConfig } = require('./config');
 const { sleep, RobustWeb3, normalizeEthKey } = require('../lib/robust');
@@ -48,6 +49,7 @@ class Near2EthWatchdog {
                         await this.clientContract.methods.challenge(this.ethMasterAccount, i).send({
                             from: this.ethMasterAccount,
                             gas: 5000000,
+                            gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
                         },
                         );
                     } catch (err) {
