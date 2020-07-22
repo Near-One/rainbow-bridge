@@ -7,14 +7,14 @@ const { borshifyOutcomeProof } = require('./nearProof');
 const { sleep, backoff } = require('../robust');
 
 class BorshError extends Error {
-    constructor (message) {
+    constructor(message) {
         super(message);
 
         this.name = this.constructor.name;
     }
 }
 
-function serializeField (schema, value, fieldType, writer) {
+function serializeField(schema, value, fieldType, writer) {
     if (fieldType === 'u8') {
         writer.write_u8(value);
     } else if (fieldType === 'u64') {
@@ -60,7 +60,7 @@ function serializeField (schema, value, fieldType, writer) {
     }
 }
 
-function deserializeField (schema, fieldType, reader) {
+function deserializeField(schema, fieldType, reader) {
     if (fieldType === 'u8') {
         return reader.read_u8();
     } else if (fieldType === 'u64') {
@@ -107,7 +107,7 @@ function deserializeField (schema, fieldType, reader) {
 
 /// Serialize given object using schema of the form:
 /// { class_name -> [ [field_name, field_type], .. ], .. }
-function serialize (schema, fieldType, obj) {
+function serialize(schema, fieldType, obj) {
     if (fieldType === null) {
         return new Uint8Array();
     }
@@ -117,34 +117,34 @@ function serialize (schema, fieldType, obj) {
 }
 
 class BinaryReader {
-    constructor (buf) {
+    constructor(buf) {
         this.buf = buf;
         this.offset = 0;
     }
 
-    read_u8 () {
+    read_u8() {
         const value = this.buf.readUInt8(this.offset);
         this.offset += 1;
         return value;
     }
 
-    read_u32 () {
+    read_u32() {
         const value = this.buf.readUInt32LE(this.offset);
         this.offset += 4;
         return value;
     }
 
-    read_u64 () {
+    read_u64() {
         const buf = this.read_buffer(8);
         return new BN(buf, 'le');
     }
 
-    read_u128 () {
+    read_u128() {
         const buf = this.read_buffer(16);
         return new BN(buf, 'le');
     }
 
-    read_buffer (len) {
+    read_buffer(len) {
         if ((this.offset + len) > this.buf.length) {
             throw new BorshError(`Expected buffer length ${len} isn't within bounds`);
         }
@@ -153,24 +153,24 @@ class BinaryReader {
         return result;
     }
 
-    read_string () {
+    read_string() {
         const len = this.read_u32();
         const buf = this.read_buffer(len);
         // @ts-ignore
         const textDecoder = TextDecoder();
         try {
-        // NOTE: Using TextDecoder to fail on invalid UTF-8
+            // NOTE: Using TextDecoder to fail on invalid UTF-8
             return textDecoder.decode(buf);
         } catch (e) {
             throw new BorshError(`Error decoding UTF-8 string: ${e}`);
         }
     }
 
-    read_fixed_array (len) {
+    read_fixed_array(len) {
         return new Uint8Array(this.read_buffer(len));
     }
 
-    read_array (fn) {
+    read_array(fn) {
         const len = this.read_u32();
         const result = [];
         for (let i = 0; i < len; ++i) {
@@ -180,7 +180,7 @@ class BinaryReader {
     }
 }
 
-function deserialize (schema, fieldType, buffer) {
+function deserialize(schema, fieldType, buffer) {
     if (fieldType === null) {
         return null;
     }
@@ -200,11 +200,11 @@ const RETRY_TX_STATUS = 10;
 const signAndSendTransaction = async (accessKey, account, receiverId, actions) => {
     // TODO: Find matching access key based on transaction
     let errorMsg;
-    for (let i = 0; i < RETRY_SEND_TX; i++) {
-        let sendTxnAsync;
-        let txHash;
-        let resendLast = false;
+    let resendLast = false;
+    let sendTxnAsync;
+    let txHash;
 
+    for (let i = 0; i < RETRY_SEND_TX; i++) {
         try {
             if (resendLast) {
                 console.log('resend txn');
@@ -237,7 +237,7 @@ const signAndSendTransaction = async (accessKey, account, receiverId, actions) =
                     break;
                 }
             } catch (e) {
-                await sleep((j+1)*500);
+                await sleep((j + 1) * 500);
             }
         }
 
@@ -246,11 +246,11 @@ const signAndSendTransaction = async (accessKey, account, receiverId, actions) =
             if (flatLogs) {
                 console.log(flatLogs);
             }
-    
+
             if (result.status.SuccessValue !== undefined) {
                 return result;
             }
-    
+
             errorMsg = JSON.stringify(result.status.Failure);
             if (errorMsg.includes('Transaction nonce')) {
                 // nonce incorrect, re-fetch nonce and retry
@@ -269,12 +269,12 @@ const signAndSendTransaction = async (accessKey, account, receiverId, actions) =
     throw new Error(errorMsg);
 };
 
-function getBorshTransactionLastResult (txResult) {
+function getBorshTransactionLastResult(txResult) {
     return txResult && Buffer.from(txResult.status.SuccessValue, 'base64');
 }
 
 class BorshContract {
-    constructor (borshSchema, account, contractId, options) {
+    constructor(borshSchema, account, contractId, options) {
         this.account = account;
         this.contractId = contractId;
         options.viewMethods.forEach((d) => {
@@ -315,7 +315,7 @@ class BorshContract {
         });
     }
 
-    async accessKeyInit () {
+    async accessKeyInit() {
         await this.account.ready;
 
         this.accessKey = await this.account.findAccessKey();
