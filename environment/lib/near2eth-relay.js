@@ -142,9 +142,8 @@ class Near2EthRelay {
                         continue;
                     }
                 }
-                console.log('Initializing with block');
-                console.log(`${JSON.stringify(lightClientBlock)}`);
-                const borshBlock = borshify(lightClientBlock);
+                console.log('Initializing with validators');
+                console.log(`${JSON.stringify(currentValidators.current_validators)}`);
                 const borshInitialValidators = borshifyInitialValidators(currentValidators.current_validators);
                 // @ts-ignore
                 await this.clientContract.methods.initWithValidators(borshInitialValidators).send({
@@ -153,6 +152,9 @@ class Near2EthRelay {
                     handleRevert: true,
                     gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
                 });
+                console.log('Initializing with block');
+                console.log(`${JSON.stringify(lightClientBlock)}`);
+                const borshBlock = borshify(lightClientBlock);
                 await this.clientContract.methods.initWithBlock(borshBlock).send({
                     from: this.ethMasterAccount,
                     gas: 4000000,
