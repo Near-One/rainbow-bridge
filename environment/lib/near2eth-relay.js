@@ -149,13 +149,13 @@ class Near2EthRelay {
                 // @ts-ignore
                 await this.clientContract.methods.initWithValidators(borshInitialValidators).send({
                     from: this.ethMasterAccount,
-                    gas: 2000000,
+                    gas: 4000000,
                     handleRevert: true,
                     gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
                 });
                 await this.clientContract.methods.initWithBlock(borshBlock).send({
                     from: this.ethMasterAccount,
-                    gas: 2000000,
+                    gas: 4000000,
                     handleRevert: true,
                     gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
                 });
@@ -210,7 +210,7 @@ class Near2EthRelay {
                     try {
                         _depositTx = await clientContract.methods.deposit().send({
                             from: ethMasterAccount,
-                            gas: 2000000,
+                            gas: 1000000,
                             handleRevert: true,
                             value: (new BN(lockEthAmount)),
                             gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
@@ -252,7 +252,7 @@ class Near2EthRelay {
                 try {
                     await clientContract.methods.addLightClientBlock(borshBlock).send({
                         from: ethMasterAccount,
-                        gas: 2000000,
+                        gas: 4000000,
                         handleRevert: true,
                         gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
                     });

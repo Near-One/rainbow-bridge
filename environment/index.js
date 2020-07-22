@@ -258,6 +258,7 @@ RainbowConfig.addOptions(
         'near2eth-client-abi-path',
         'near2eth-client-address',
         'near2eth-relay-delay',
+        'eth-gas-multiplier',
         'daemon',
     ],
 );
