@@ -172,7 +172,7 @@ class Near2EthRelay {
 
     async run() {
         // process.send('ready');
-        const clientContract = this.clientContract;
+        let clientContract = this.clientContract;
         const robustWeb3 = this.robustWeb3;
         const near = this.near;
         const ethMasterAccount = this.ethMasterAccount;
@@ -237,22 +237,10 @@ class Near2EthRelay {
                 }
                 try {
                     lightClientBlock = await near.connection.provider.sendJsonRpc('next_light_client_block', [clientBlockHash]);
-                    break;
-                } catch (err) {
-                    console.log(`Encountered error while requesting light client block ${err}`);
-                    await sleep(1000);
-                }
-            }
-            console.log('Adding block');
-            console.log(`${JSON.stringify(lightClientBlock)}`);
 
-            const borshBlock = borshify(lightClientBlock);
-            for (let i = 0; i <= MAX_WEB3_RETRIES; i++) {
-                if (i === MAX_WEB3_RETRIES) {
-                    console.error(`Failed ${MAX_WEB3_RETRIES} times`);
-                    process.exit(1);
-                }
-                try {
+                    console.log('Adding block');
+                    console.log(`${JSON.stringify(lightClientBlock)}`);
+                    const borshBlock = borshify(lightClientBlock);
                     await clientContract.methods.addLightClientBlock(borshBlock).send({
                         from: ethMasterAccount,
                         gas: 4000000,
