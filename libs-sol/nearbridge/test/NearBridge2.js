@@ -82,7 +82,8 @@ contract('NearBridge2', function ([_, addr1]) {
         const block9610 = borshify(require('./block_9610.json'));
 
         // We don't know block producers that produce block_9605, assume it's same as block_9605.next_bps
-        await this.bridge.initWithBlock(block9605, borshifyInitialValidators(require('./block_9605.json').next_bps));
+        await this.bridge.initWithValidators(borshifyInitialValidators(require('./block_9605.json').next_bps));
+        await this.bridge.initWithBlock(block9605);
         await this.bridge.blockHashes(9605);
         expect(await this.bridge.blockHashes(9605)).to.be.equal(
             '0xc4770276d5e782d847ea3ce0674894a572df3ea75b960ff57d66395df0eb2a34',
@@ -112,7 +113,8 @@ contract('Add second block in first epoch should be verifiable', function ([_, a
         const block304 = require('./304.json');
         const block308 = require('./308.json');
 
-        await this.bridge.initWithBlock(borshify(block304), borshifyInitialValidators(initialValidators));
+        await this.bridge.initWithValidators(borshifyInitialValidators(initialValidators));
+        await this.bridge.initWithBlock(borshify(block304));
         await this.bridge.blockHashes(304);
 
         let now = await time.latest();
@@ -146,7 +148,8 @@ contract('Test adding blocks in new epoch when bps change', function ([_, addr1]
         const block368 = require('./368.json');
         const block369 = require('./369.json');
 
-        await this.bridge.initWithBlock(borshify(block244), borshifyInitialValidators(block181.next_bps));
+        await this.bridge.initWithValidators(borshifyInitialValidators(block181.next_bps));
+        await this.bridge.initWithBlock(borshify(block244));
         await this.bridge.blockHashes(244);
 
         let now = await time.latest();

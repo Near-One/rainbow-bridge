@@ -44,6 +44,7 @@ class TransferETHERC20ToNear {
                     from: ethSenderAccount,
                     gas: 5000000,
                     handleRevert: true,
+                    gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
                 });
             console.log('Approved token transfer.');
         } catch (txRevertMessage) {
@@ -67,6 +68,7 @@ class TransferETHERC20ToNear {
                     from: ethSenderAccount,
                     gas: 5000000,
                     handleRevert: true,
+                    gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
                 });
             lockedEvent = transaction.events.Locked;
             console.log('Success.');

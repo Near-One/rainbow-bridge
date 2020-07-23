@@ -202,6 +202,7 @@ class TransferEthERC20FromNear {
             from: ethMasterAccount,
             gas: 5000000,
             handleRevert: true,
+            gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
         });
         const newBalance = await ethERC20Contract.methods.balanceOf(command.ethReceiverAddress).call();
         console.log(`ERC20 balance of ${command.ethReceiverAddress} after the transfer: ${newBalance}`);

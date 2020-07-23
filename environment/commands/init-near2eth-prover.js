@@ -1,4 +1,5 @@
 const Web3 = require('web3');
+const BN = require('bn.js');
 const fs = require('fs');
 const { RainbowConfig } = require('../lib/config');
 const { normalizeEthKey } = require('../lib/robust');
@@ -27,6 +28,7 @@ class InitNear2EthProver {
                 .send({
                     from: ethMasterAccount,
                     gas: 3000000,
+                    gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
                 });
         console.log('Deployed Near2EthProver contract to:');
         console.log(`${tx.options.address}`);
