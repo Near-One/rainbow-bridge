@@ -3,6 +3,13 @@
 # If run locally, you need a manually `node index.js clean`, `npm i -g ganache-cli`
 
 set -exuo pipefail
+function finish {
+  cat "LOG DUMP"
+  find ~/.rainbow/logs -name "*.log" -print0 | xargs -0 cat
+}
+
+trap finish ERR
+trap finish EXIT
 
 CI_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/tmp/ganache.out 2>&1 && pwd )"
 ROOT_DIR=$CI_DIR/..

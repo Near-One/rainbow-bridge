@@ -96,26 +96,6 @@ contract('Regular 2 blocks in a row. Taken from local node', function ([_, addr1
     });
 });
 
-// contract('Regular 2 blocks in a row. Taken from testnet node', function ([_, addr1]) {
-//     beforeEach(async function () {
-//         this.decoder = await NearDecoder.new();
-//         this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(10));
-//         await this.bridge.deposit({ value: web3.utils.toWei('1') });
-//     });
-//
-//     it('should be ok', async function () {
-//         const block10337395 = borshify(require('./block_10337395.json'));
-//         const block10337422 = borshify(require('./block_10337422.json'));
-//
-//         // We don't know block producers that produce block_9605, assume it's same as block_9605.next_bps
-//         // TODO: Get the validators that were used for this epoch. It can be retrieved from the testnet.
-//         // await this.bridge.initWithValidators(borshifyInitialValidators(???));
-//         await this.bridge.initWithBlock(block10337395);
-//         await this.bridge.blockHashes(10337395);
-//         await this.bridge.addLightClientBlock(block10337422);
-//     });
-// });
-
 contract('Add second block in first epoch should be verifiable', function ([_, addr1]) {
     beforeEach(async function () {
 
