@@ -4,7 +4,7 @@
 
 set -exuo pipefail
 function finish {
-  cat "LOG DUMP"
+  echo "LOG DUMP"
   find ~/.rainbow/logs -name "*.log" -print0 | xargs -0 cat
 }
 
