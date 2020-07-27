@@ -18,16 +18,12 @@ async function maybeCreateAccount(near, masterAccountId, accountId, accountPK, i
                 accountCreated = true;
                 break;
             } catch (e) {
-                if (e.message.includes('Transaction nonce')) {
-                    continue;
-                }
                 if (e.type && e.type === 'AccountAlreadyExists') {
                     // Last createAccount can timeout, but actually success later
                     accountCreated = true;
                     break;
                 }
-                console.log('Failed to create account %s. ERROR: %s', accountId, e);
-                process.exit(1);
+                // retry on timeout, nonce error, and socket hangout
             }
         }
         if (!accountCreated) {
