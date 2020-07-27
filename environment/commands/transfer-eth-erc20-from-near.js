@@ -116,9 +116,6 @@ class TransferEthERC20FromNear {
             if (clientBlockHeight.gt(outcomeBlockHeight)) {
                 console.log(`Near2EthClient block is at ${clientBlockHeight.toString()} which is further than the needed block ${outcomeBlockHeight.toString()}`);
                 break;
-            } else if (chainBlockTimestamp.gte(clientBlockValidAfter) && clientBlockHeight.eq(outcomeBlockHeight)) {
-                console.log(`Near2EthClient block is at ${clientBlockHeight.toString()} which is the block of the outcome. And the light client block is valid.`);
-                break;
             } else if (chainBlockTimestamp.lt(clientBlockValidAfter) && clientBlockHeight.eq(outcomeBlockHeight)) {
                 const sleepSec = clientBlockValidAfter.sub(chainBlockTimestamp).toNumber();
                 console.log(`Block ${clientBlockHeight.toString()} is not valid yet. Sleeping ${sleepSec} seconds.`);
@@ -155,6 +152,20 @@ class TransferEthERC20FromNear {
                 receiver_id: command.nearSenderAccount,
                 light_client_head: clientBlockHashB58,
             });
+                    break;
+                } catch (e) {
+                    if (e.message.includes('ahead of head block')) {
+                        console.log('Wait light client head proceed')
+                        await sleep(10000);
+                    } else {
+                        await sleep(1000);
+                    }
+                }
+            }
+            if (!proofRes) {
+                console.log('Unable to get receipt proof')
+                process.exit(1)
+            }
         } else {
             console.error('Unreachable');
             process.exit(1);
