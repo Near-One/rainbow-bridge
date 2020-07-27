@@ -171,9 +171,8 @@ class TransferEthERC20FromNear {
         );
         const borshProofRes = borshifyOutcomeProof(proofRes);
         // Debugging output, uncomment for debugging.
-        // console.log(`proof: ${JSON.stringify(proofRes)}`);
-        // console.log(`client height: ${clientBlockHeight.toString()}`);
-        // console.log(`root: ${clientBlockMerkleRoot}`);
+        console.log(`========= proof: \n${JSON.stringify(proofRes)}`);
+        console.log(`========= client height: ${clientBlockHeight.toString()}`);
         await proverContract.methods.proveOutcome(borshProofRes, clientBlockHeight).call();
 
         const ethTokenLockerContract = new web3.eth.Contract(
