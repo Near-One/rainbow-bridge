@@ -152,20 +152,6 @@ class TransferEthERC20FromNear {
                 receiver_id: command.nearSenderAccount,
                 light_client_head: clientBlockHashB58,
             });
-                    break;
-                } catch (e) {
-                    if (e.message.includes('ahead of head block')) {
-                        console.log('Wait light client head proceed')
-                        await sleep(10000);
-                    } else {
-                        await sleep(1000);
-                    }
-                }
-            }
-            if (!proofRes) {
-                console.log('Unable to get receipt proof')
-                process.exit(1)
-            }
         } else {
             console.error('Unreachable');
             process.exit(1);
