@@ -21,7 +21,7 @@ async function maybeCreateAccount(near, masterAccountId, accountId, accountPK, i
                 if (e.message.includes('Transaction nonce')) {
                     continue;
                 }
-                if (e.message.includes('AccountAlreadyExists')) {
+                if (e.type && e.type === 'AccountAlreadyExists') {
                     // Last createAccount can timeout, but actually success later
                     accountCreated = true;
                     break;

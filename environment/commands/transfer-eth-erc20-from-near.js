@@ -116,9 +116,6 @@ class TransferEthERC20FromNear {
             if (clientBlockHeight.gt(outcomeBlockHeight)) {
                 console.log(`Near2EthClient block is at ${clientBlockHeight.toString()} which is further than the needed block ${outcomeBlockHeight.toString()}`);
                 break;
-            } else if (chainBlockTimestamp.gte(clientBlockValidAfter) && clientBlockHeight.eq(outcomeBlockHeight)) {
-                console.log(`Near2EthClient block is at ${clientBlockHeight.toString()} which is the block of the outcome. And the light client block is valid.`);
-                break;
             } else if (chainBlockTimestamp.lt(clientBlockValidAfter) && clientBlockHeight.eq(outcomeBlockHeight)) {
                 const sleepSec = clientBlockValidAfter.sub(chainBlockTimestamp).toNumber();
                 console.log(`Block ${clientBlockHeight.toString()} is not valid yet. Sleeping ${sleepSec} seconds.`);
@@ -202,6 +199,7 @@ class TransferEthERC20FromNear {
             from: ethMasterAccount,
             gas: 5000000,
             handleRevert: true,
+            gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
         });
         const newBalance = await ethERC20Contract.methods.balanceOf(command.ethReceiverAddress).call();
         console.log(`ERC20 balance of ${command.ethReceiverAddress} after the transfer: ${newBalance}`);
