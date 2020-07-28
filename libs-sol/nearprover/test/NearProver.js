@@ -25,13 +25,11 @@ contract('NearProver', function ([_, addr1]) {
     //     expect(await this.prover.proveOutcome(proof4, 5563)).to.be.true;
     // });
 
-    // it('should be ok 2', async function () {
-    //     const proof5 = require('./proof5.json');
-    //     console.log(proof5)
-    //     let height = proof5.block_header_lite.inner_lite.height;
-    //     await this.bridge.setBlockMerkleRoot(height, '0x' + bs58.decode(proof5.block_header_lite.inner_lite.block_merkle_root).toString('hex'));
-    //     expect(await this.prover.proveOutcome(borshifyOutcomeProof(proof5), 406)).to.be.true;
-    // });
+    it('should be ok 2', async function () {
+        const proof5 = require('./proof5.json');
+        await this.bridge.setBlockMerkleRoot(384, '0xa9cd8eb4dd92ba5f2fef47d68e1d73ac8c57047959f6f8a2dcc664419e74e4b8');
+        expect(await this.prover.proveOutcome(borshifyOutcomeProof(proof5), 384)).to.be.true;
+    });
 
     it('should be ok 3', async function () {
         const proof6 = require('./proof6.json');
