@@ -39,6 +39,7 @@ contract('NearProver', function ([_, addr1]) {
 
     if (process.env['NEAR_PROOFS_DIR']) {
         it('should able to verify proofs from dump', async function () {
+            this.timeout(0);
             let proofFiles = await fs.readdir(process.env['NEAR_PROOFS_DIR']);
 
             for (let i = 1; i < proofFiles.length; i++) {
