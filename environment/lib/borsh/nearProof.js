@@ -61,7 +61,8 @@ function borshifyOutcomeProof(proof) {
             bs58.decode(proof.block_header_lite.inner_lite.next_epoch_id),
             bs58.decode(proof.block_header_lite.inner_lite.prev_state_root),
             bs58.decode(proof.block_header_lite.inner_lite.outcome_root),
-            Web3.utils.toBN(proof.block_header_lite.inner_lite.timestamp_nanosec).toBuffer('le', 8),
+            // for backward compatible in tests with old dumps
+            Web3.utils.toBN(proof.block_header_lite.inner_lite.timestamp_nanosec || proof.block_header_lite.inner_lite.timestamp).toBuffer('le', 8),
             bs58.decode(proof.block_header_lite.inner_lite.next_bp_hash),
             bs58.decode(proof.block_header_lite.inner_lite.block_merkle_root),
 
