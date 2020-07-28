@@ -116,9 +116,6 @@ class TransferEthERC20FromNear {
             if (clientBlockHeight.gt(outcomeBlockHeight)) {
                 console.log(`Near2EthClient block is at ${clientBlockHeight.toString()} which is further than the needed block ${outcomeBlockHeight.toString()}`);
                 break;
-            } else if (chainBlockTimestamp.gte(clientBlockValidAfter) && clientBlockHeight.eq(outcomeBlockHeight)) {
-                console.log(`Near2EthClient block is at ${clientBlockHeight.toString()} which is the block of the outcome. And the light client block is valid.`);
-                break;
             } else if (chainBlockTimestamp.lt(clientBlockValidAfter) && clientBlockHeight.eq(outcomeBlockHeight)) {
                 const sleepSec = clientBlockValidAfter.sub(chainBlockTimestamp).toNumber();
                 console.log(`Block ${clientBlockHeight.toString()} is not valid yet. Sleeping ${sleepSec} seconds.`);

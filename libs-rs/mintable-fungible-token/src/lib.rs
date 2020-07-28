@@ -399,11 +399,11 @@ impl MintableFungibleToken {
         } = proof;
         let event = EthEventData::from_log_entry_data(&log_entry_data);
         assert_eq!(
-            self.locker_address,
             event.locker_address,
+            self.locker_address,
             "Event's address {} does not match locker address of this token {}",
+            hex::encode(&event.locker_address),
             hex::encode(&self.locker_address),
-            hex::encode(&event.locker_address)
         );
         env::log(format!("{}", event).as_bytes());
         let EthEventData {
