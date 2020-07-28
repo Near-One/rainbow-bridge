@@ -20,9 +20,6 @@ then
 echo "near-core home not specified..."
 git clone "https://github.com/nearprotocol/nearcore" $CORE_SRC
 eval CURR_DIR=$(pwd)
-cd $CORE_SRC
-# Freeze nearcore version to avoid RPC changes breaking tests.
-git checkout df431768f95bc4117dc7c4d954e38f1b96fd3b9f
 cd $CURR_DIR
 else
 echo "Linking the specified local repo from ${LOCAL_CORE_SRC} to ${CORE_SRC}"
@@ -75,4 +72,4 @@ cd $BRIDGE_SRC/environment/vendor/ethashproof
 echo 'Compiled ethashproof module'
 
 # Start the pm2 daemon if it is currently not running.
-pm2 ping
+yarn pm2 ping

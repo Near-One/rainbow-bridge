@@ -456,6 +456,17 @@ library NearDecoder {
         bytes32 next_hash;
     }
 
+    struct InitialValidators {
+        ValidatorStake[] validator_stakes;
+    }
+
+    function decodeInitialValidators(Borsh.Data memory data) internal view returns(InitialValidators memory validators) {
+        validators.validator_stakes = new ValidatorStake[](data.decodeU32());
+        for (uint i = 0; i < validators.validator_stakes.length; i++) {
+            validators.validator_stakes[i] = data.decodeValidatorStake();
+        }
+    }
+
     function decodeLightClientBlock(Borsh.Data memory data) internal view returns(LightClientBlock memory header) {
         header.prev_block_hash = data.decodeBytes32();
         header.next_block_inner_hash = data.decodeBytes32();

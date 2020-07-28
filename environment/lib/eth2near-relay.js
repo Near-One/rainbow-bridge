@@ -3,9 +3,9 @@ const exec = require('child_process').exec;
 const utils = require('ethereumjs-util');
 const BN = require('bn.js');
 const blockFromRpc = require('ethereumjs-block/from-rpc');
-const { web3GetBlockNumber, web3GetBlock, sleep } = require('../lib/robust');
+const { RobustWeb3, sleep } = require('../lib/robust');
 
-function execute (command, _callback) {
+function execute(command, _callback) {
     return new Promise(resolve => exec(command, (error, stdout, _stderr) => {
         if (error) {
             console.log(error);
@@ -14,7 +14,7 @@ function execute (command, _callback) {
     }));
 }
 
-function web3BlockToRlp (blockData) {
+function web3BlockToRlp(blockData) {
     blockData.difficulty = parseInt(blockData.difficulty, 10);
     blockData.totalDifficulty = parseInt(blockData.totalDifficulty, 10);
     blockData.uncleHash = blockData.sha3Uncles;
@@ -27,13 +27,15 @@ function web3BlockToRlp (blockData) {
 }
 
 class Eth2NearRelay {
-    initialize (ethClientContract, ethNodeURL) {
+    initialize(ethClientContract, ethNodeURL) {
         this.ethClientContract = ethClientContract;
         // @ts-ignore
-        this.web3 = new Web3(ethNodeURL);
+        this.robustWeb3 = new RobustWeb3(ethNodeURL);
+        this.web3 = this.robustWeb3.web3;
     }
 
-    async run () {
+    async run() {
+        const robustWeb3 = this.robustWeb3;
         while (true) {
             let clientBlockNumber;
             let chainBlockNumber;
@@ -42,8 +44,7 @@ class Eth2NearRelay {
                 // Return back to loop to avoid crash eth-relay.
                 clientBlockNumber = (await this.ethClientContract.last_block_number()).toNumber();
                 console.log('Client block number is ' + clientBlockNumber);
-                // web3 retry 10 times always success, but just in case
-                chainBlockNumber = await web3GetBlockNumber(this.web3);
+                chainBlockNumber = await robustWeb3.getBlockNumber();
                 console.log('Chain block number is ' + chainBlockNumber);
             } catch (e) {
                 console.log(e);
@@ -53,7 +54,7 @@ class Eth2NearRelay {
             // Backtrack if chain switched the fork.
             while (true) {
                 try {
-                    const chainBlock = await web3GetBlock(this.web3, clientBlockNumber);
+                    const chainBlock = await robustWeb3.getBlock(clientBlockNumber);
                     const chainBlockHash = chainBlock.hash;
                     const clientHashes = await this.ethClientContract.known_hashes(clientBlockNumber);
                     if (clientHashes.find(x => x === chainBlockHash)) {
@@ -70,7 +71,7 @@ class Eth2NearRelay {
 
             if (clientBlockNumber < chainBlockNumber) {
                 try {
-                    const blockRlp = this.web3.utils.bytesToHex(web3BlockToRlp(await web3GetBlock(this.web3, clientBlockNumber + 1)));
+                    const blockRlp = this.web3.utils.bytesToHex(web3BlockToRlp(await this.robustWeb3.getBlock(clientBlockNumber + 1)));
                     const unparsedBlock = await execute(`./vendor/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`);
                     const block = JSON.parse(unparsedBlock);
                     await this.submitBlock(block, clientBlockNumber + 1);
@@ -83,7 +84,7 @@ class Eth2NearRelay {
         }
     }
 
-    async submitBlock (block, blockNumber) {
+    async submitBlock(block, blockNumber) {
         const h512s = block.elements
             .filter((_, index) => index % 2 === 0)
             .map((element, index) => {
