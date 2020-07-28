@@ -25,12 +25,18 @@ contract('NearProver', function ([_, addr1]) {
     //     expect(await this.prover.proveOutcome(proof4, 5563)).to.be.true;
     // });
 
-    it('should be ok 2', async function () {
-        const proof5 = require('./proof5.json');
-        console.log(proof5)
-        let height = proof5.block_header_lite.inner_lite.height;
-        await this.bridge.setBlockMerkleRoot(height, '0x' + bs58.decode(proof5.block_header_lite.inner_lite.block_merkle_root).toString('hex'));
-        expect(await this.prover.proveOutcome(borshifyOutcomeProof(proof5), 406)).to.be.true;
+    // it('should be ok 2', async function () {
+    //     const proof5 = require('./proof5.json');
+    //     console.log(proof5)
+    //     let height = proof5.block_header_lite.inner_lite.height;
+    //     await this.bridge.setBlockMerkleRoot(height, '0x' + bs58.decode(proof5.block_header_lite.inner_lite.block_merkle_root).toString('hex'));
+    //     expect(await this.prover.proveOutcome(borshifyOutcomeProof(proof5), 406)).to.be.true;
+    // });
+
+    it('should be ok 3', async function () {
+        const proof6 = require('./proof6.json');
+        await this.bridge.setBlockMerkleRoot(377, '0xcc3954a51b7c1a86861df8809f79c2bf839741e3e380e28360b8b3970a5d90bd');
+        expect(await this.prover.proveOutcome(borshifyOutcomeProof(proof6), 377)).to.be.true;
     });
 
     if (process.env['NEAR_PROOFS_DIR']) {

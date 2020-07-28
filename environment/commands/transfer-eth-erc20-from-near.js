@@ -103,9 +103,11 @@ class TransferEthERC20FromNear {
         let clientBlockValidAfter;
         let clientBlockHashB58;
         let clientBlockHashHex;
+        let clientBlockMerkleRoot;
         while (true) {
             clientBlock = await clientContract.methods.last().call();
             clientBlockHeight = new BN(clientBlock.height);
+            clientBlockMerkleRoot = await clientContract.methods.blockMerkleRoots(clientBlockHeight).call();
             clientBlockValidAfter = new BN(clientBlock.validAfter);
             clientBlockHashHex = await clientContract.methods.blockHashes(clientBlockHeight).call();
             clientBlockHashB58 = bs58.encode(toBuffer(clientBlockHashHex));
@@ -170,6 +172,7 @@ class TransferEthERC20FromNear {
         // Debugging output, uncomment for debugging.
         console.log(`========= proof: \n${JSON.stringify(proofRes)}`);
         console.log(`========= client height: ${clientBlockHeight.toString()}`);
+        console.log(`========= client block merkle root: ${clientBlockMerkleRoot}`);
         await proverContract.methods.proveOutcome(borshProofRes, clientBlockHeight).call();
 
         const ethTokenLockerContract = new web3.eth.Contract(
