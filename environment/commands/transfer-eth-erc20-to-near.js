@@ -26,7 +26,7 @@ class TransferETHERC20ToNear {
         process.exit(1);
     }
 
-    static async approve({ ethERC20Contract, amount, ethSenderAccount }) {
+    static async approve({ web3, ethERC20Contract, amount, ethSenderAccount }) {
         // Approve tokens for transfer.
         try {
             console.log('Approving token transfer.');
@@ -35,6 +35,7 @@ class TransferETHERC20ToNear {
                     from: ethSenderAccount,
                     gas: 5000000,
                     handleRevert: true,
+                    gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
                 });
             console.log('Approved token transfer.');
             TransferETHERC20ToNear.recordTransferLog({ finished: 'approve' })
@@ -45,7 +46,7 @@ class TransferETHERC20ToNear {
         }
     }
 
-    static async lock({ ethTokenLockerContract, amount, nearReceiverAccount, ethSenderAccount }) {
+    static async lock({ web3, ethTokenLockerContract, amount, nearReceiverAccount, ethSenderAccount }) {
         try {
             console.log('Transferring tokens from the ERC20 account to the token locker account.');
             const transaction = await ethTokenLockerContract.methods.lockToken(Number(amount),
@@ -54,6 +55,7 @@ class TransferETHERC20ToNear {
                     from: ethSenderAccount,
                     gas: 5000000,
                     handleRevert: true,
+                    gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
                 });
             const lockedEvent = transaction.events.Locked;
             console.log('Success tranfer to locker');
@@ -216,6 +218,7 @@ class TransferETHERC20ToNear {
         );
 
         const nearMasterAccountId = RainbowConfig.getParam('near-master-account');
+        console.log(nearMasterAccountId);
         // @ts-ignore
         const keyStore = new nearlib.keyStores.InMemoryKeyStore();
         await keyStore.setKey(RainbowConfig.getParam('near-network-id'), nearMasterAccountId,
@@ -249,11 +252,11 @@ class TransferETHERC20ToNear {
         const ethClientContract = new Eth2NearClientContract(nearMasterAccount, clientAccount);
 
         if (transferLog.finished === undefined) {
-            await TransferETHERC20ToNear.approve({ ethERC20Contract, amount, ethSenderAccount });
+            await TransferETHERC20ToNear.approve({ web3, ethERC20Contract, amount, ethSenderAccount });
             transferLog = TransferETHERC20ToNear.loadTransferLog();
         }
         if (transferLog.finished === 'approve') {
-            await TransferETHERC20ToNear.lock({ ethTokenLockerContract, amount, nearReceiverAccount, ethSenderAccount });
+            await TransferETHERC20ToNear.lock({ web3, ethTokenLockerContract, amount, nearReceiverAccount, ethSenderAccount });
             transferLog = TransferETHERC20ToNear.loadTransferLog();
         }
         if (transferLog.finished === 'lock') {

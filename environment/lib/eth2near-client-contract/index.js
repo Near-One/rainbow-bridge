@@ -7,7 +7,7 @@ const {
     hexToBuffer,
     readerToHex,
 } = require('../borsh');
-const { web3GetBlockNumber, web3GetBlock } = require('../robust');
+const { RobustWeb3 } = require('../robust');
 // @ts-ignore
 const roots = require('./dag_merkle_roots.json');
 
@@ -72,7 +72,7 @@ const borshSchema = {
 };
 
 class Eth2NearClientContract extends BorshContract {
-    constructor (account, contractId) {
+    constructor(account, contractId) {
         super(borshSchema, account, contractId, {
             viewMethods: [{
                 methodName: 'initialized',
@@ -114,7 +114,7 @@ class Eth2NearClientContract extends BorshContract {
 
     // Call initialization methods on the contract.
     // If validate_ethash is true will do ethash validation otherwise it won't.
-    async maybeInitialize (validate_ethash, web3) {
+    async maybeInitialize(validate_ethash, robustWeb3) {
         await this.accessKeyInit();
         let initialized = false;
         try {
@@ -124,8 +124,8 @@ class Eth2NearClientContract extends BorshContract {
         }
         if (!initialized) {
             console.log('EthClient is not initialized, initializing...');
-            const last_block_number = await web3GetBlockNumber(web3);
-            const blockRlp = web3BlockToRlp(await web3GetBlock(web3, last_block_number));
+            const last_block_number = await robustWeb3.getBlockNumber();
+            const blockRlp = web3BlockToRlp(await robustWeb3.getBlock(last_block_number));
             // @ts-ignore
             await this.init({
                 validate_ethash: validate_ethash,
@@ -149,7 +149,7 @@ class Eth2NearClientContract extends BorshContract {
             epoch: 511,
         });
         if (!(first_root === '0x55b891e842e58f58956a847cbbf67821' &&
-                last_root === '0x4aa6ca6ebef942d8766065b2e590fd32')) {
+            last_root === '0x4aa6ca6ebef942d8766065b2e590fd32')) {
             console.log(`EthClient initialization error! The first and last roots are ${first_root} and ${last_root}`);
             process.exit(1);
         }

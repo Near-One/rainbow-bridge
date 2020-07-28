@@ -45,7 +45,7 @@ sleep 5
 yarn run pm2 list
 node index.js transfer-eth-erc20-to-near --amount 1000 \
 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 \
---near-receiver-account eth2nearprover --near-master-account nearfuntoken \
+--near-receiver-account eth2nearprover --near-master-account eth2nearprover \
 2>&1 | tee -a /tmp/eth2neartransfer.out
 grep "Balance of eth2nearprover after the transfer is 1000" /tmp/eth2neartransfer.out
 node index.js transfer-eth-erc20-from-near --amount 1 --near-sender-account eth2nearprover \
@@ -53,5 +53,3 @@ node index.js transfer-eth-erc20-from-near --amount 1 --near-sender-account eth2
 --eth-receiver-address 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8 \
 2>&1 | tee -a /tmp/near2ethtransfer.out
 grep "after the transfer: 1" /tmp/near2ethtransfer.out
-
-node index.js stop ganache

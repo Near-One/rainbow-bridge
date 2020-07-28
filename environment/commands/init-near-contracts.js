@@ -7,10 +7,13 @@ const {
 const {
     EthProverContract,
 } = require('../lib/eth-prover-contract');
+const {
+    RobustWeb3
+} = require('../lib/robust');
 const { RainbowConfig } = require('../lib/config');
 
 class InitNEARContracts {
-    static async execute () {
+    static async execute() {
         const masterAccount = RainbowConfig.getParam('near-master-account');
         const masterSk = RainbowConfig.getParam('near-master-sk');
         const clientAccount = RainbowConfig.getParam('eth2near-client-account');
@@ -62,8 +65,8 @@ class InitNEARContracts {
 
         console.log('Initializing client and prover contracts.');
         const clientContract = new Eth2NearClientContract(new nearlib.Account(near.connection, clientAccount), clientAccount);
-        const web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
-        await clientContract.maybeInitialize(validateEthash === 'true', web3);
+        const robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'));
+        await clientContract.maybeInitialize(validateEthash === 'true', robustWeb3);
         const proverContract = new EthProverContract(new nearlib.Account(near.connection, proverAccount), proverAccount);
         await proverContract.maybeInitialize(clientAccount);
         RainbowConfig.saveConfig();
