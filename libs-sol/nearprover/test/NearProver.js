@@ -27,17 +27,18 @@ contract('NearProver', function ([_, addr1]) {
 
     if (process.env['NEAR_PROOFS_DIR']) {
         it('should able to verify proofs from dump', async function () {
+            this.timeout(0);
             let proofFiles = await fs.readdir(process.env['NEAR_PROOFS_DIR']);
-            
+
             for (let i = 1; i < proofFiles.length; i++) {
-                let proof = require(process.env['NEAR_PROOFS_DIR'] +'/' + proofFiles[i]);
+                let proof = require(process.env['NEAR_PROOFS_DIR'] + '/' + proofFiles[i]);
                 let height = proof.block_header_lite.inner_lite.height;
-                await this.bridge.setBlockMerkleRoot(height, '0x'+bs58.decode(proof.block_header_lite.inner_lite.block_merkle_root).toString('hex'));
+                await this.bridge.setBlockMerkleRoot(height, '0x' + bs58.decode(proof.block_header_lite.inner_lite.block_merkle_root).toString('hex'));
                 proof = borshifyOutcomeProof(proof);
                 expect(await this.prover.proveOutcome(proof, height)).to.be.true;
                 console.log('proved proof ' + proofFiles[i]);
             }
-        }) 
+        })
     }
 
 });
