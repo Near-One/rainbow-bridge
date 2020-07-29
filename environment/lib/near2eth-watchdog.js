@@ -3,6 +3,7 @@ const BN = require('bn.js');
 const fs = require('fs');
 const { RainbowConfig } = require('./config');
 const { sleep, RobustWeb3, normalizeEthKey, promiseWithTimeout } = require('../lib/robust');
+const Tx = require('ethereumjs-tx').Transaction;
 
 const SLOW_TX_ERROR_MSG = 'transaction not executed within 5 minutes';
 
@@ -30,6 +31,11 @@ class Near2EthWatchdog {
     }
 
     async run() {
+        let privateKey = RainbowConfig.getParam('eth-master-sk');
+        if (privateKey.startsWith('0x')) {
+            privateKey = privateKey.slice(2);
+        }
+        privateKey = Buffer.from(privateKey, 'hex')
         while (true) {
             const lastClientBlock = await this.clientContract.methods.last().call();
             const latestBlock = await this.robustWeb3.getBlock('latest');
@@ -53,13 +59,19 @@ class Near2EthWatchdog {
                         while (gasPrice < 10000 * 1e9) {
                             try {
                                 // Keep sending with same nonce but higher gasPrice to override same txn
-                                await promiseWithTimeout(5 * 60 * 1000, this.web3.eth.sendTransaction({
+                                let tx = new Tx({
                                     from: this.ethMasterAccount.address,
-                                    gasLimit: 5000000,
-                                    gasPrice,
-                                    nonce,
+                                    gasLimit: Web3.utils.toHex(10000000),
+                                    gasPrice: Web3.utils.toHex(gasPrice),
+                                    nonce: Web3.utils.toHex(nonce),
                                     data: this.clientContract.methods.challenge(this.ethMasterAccount, i).encodeABI()
-                                }), SLOW_TX_ERROR_MSG);
+                                });
+
+                                tx.sign(privateKey);
+
+                                tx = '0x' + tx.serialize().toString('hex');
+
+                                await promiseWithTimeout(5 * 60 * 1000, this.web3.eth.sendSignedTransaction(tx), SLOW_TX_ERROR_MSG);
                                 break;
                             } catch (e) {
                                 if (e.message === SLOW_TX_ERROR_MSG) {
@@ -72,7 +84,6 @@ class Near2EthWatchdog {
                             }
                         }
                     } catch (err) {
-                        console.log(err)
                         console.log(`Challenge failed. Maybe the block was already reverted? ${err}`);
                     }
                     break;

@@ -24,6 +24,7 @@
         "eth-object": "near/eth-object#54e03b8aac8208cf724e206d49ffb8bdd30451d7",
         "eth-util-lite": "near/eth-util-lite#master",
         "ethereumjs-block": "^2.2.2",
+        "ethereumjs-tx": "^2.1.2",
         "ethereumjs-util": "^6.2.0",
         "merkle-patricia-tree": "^3.0.0",
         "near-api-js": "^0.26.0",
