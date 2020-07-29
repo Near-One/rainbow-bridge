@@ -2,7 +2,9 @@ const Web3 = require('web3');
 const BN = require('bn.js');
 const fs = require('fs');
 const { RainbowConfig } = require('./config');
-const { sleep, RobustWeb3, normalizeEthKey } = require('../lib/robust');
+const { sleep, RobustWeb3, normalizeEthKey, promiseWithTimeout } = require('../lib/robust');
+
+const SLOW_TX_ERROR_MSG = 'transaction not executed within 5 minutes';
 
 class Near2EthWatchdog {
     async initialize() {
@@ -43,16 +45,34 @@ class Near2EthWatchdog {
             for (let i = 0; i < lastClientBlock.approvals_after_next_length; i++) {
                 console.log(`Checking ${i} signature.`);
                 const result = await this.clientContract.methods.checkBlockProducerSignatureInLastBlock(i).call();
-                if (!result) {
+                if (result) {
                     console.log(`Challenging ${i} signature.`);
                     try {
-                        await this.clientContract.methods.challenge(this.ethMasterAccount, i).send({
-                            from: this.ethMasterAccount,
-                            gas: 5000000,
-                            gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
-                        },
-                        );
+                        let gasPrice = await this.web3.eth.getGasPrice();
+                        let nonce = await this.web3.eth.getTransactionCount(this.ethMasterAccount);
+                        while (gasPrice < 10000 * 1e9) {
+                            try {
+                                // Keep sending with same nonce but higher gasPrice to override same txn
+                                await promiseWithTimeout(5 * 60 * 1000, this.web3.eth.sendTransaction({
+                                    from: this.ethMasterAccount.address,
+                                    gasLimit: 5000000,
+                                    gasPrice,
+                                    nonce,
+                                    data: this.clientContract.methods.challenge(this.ethMasterAccount, i).encodeABI()
+                                }), SLOW_TX_ERROR_MSG);
+                                break;
+                            } catch (e) {
+                                if (e.message === SLOW_TX_ERROR_MSG) {
+                                    console.log(SLOW_TX_ERROR_MSG);
+                                    console.log(`current gasPrice: ${gasPrice}. rechallenge with double gasPrice`)
+                                    gasPrice *= 2;
+                                } else {
+                                    throw e;
+                                }
+                            }
+                        }
                     } catch (err) {
+                        console.log(err)
                         console.log(`Challenge failed. Maybe the block was already reverted? ${err}`);
                     }
                     break;
