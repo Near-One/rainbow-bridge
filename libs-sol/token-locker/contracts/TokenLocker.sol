@@ -59,7 +59,6 @@ contract TokenLocker {
         require(borshData.finished(), "Argument should be exact borsh serialization");
 
         bytes32 blockHash = fullOutcomeProof.outcome_proof.block_hash;
-        require(fullOutcomeProof.outcome_proof.outcome_with_id.outcome.receipt_ids.length == 1, "Proof outcome receipt is not of burn txn");
         bytes32 receiptId = fullOutcomeProof.outcome_proof.outcome_with_id.outcome.receipt_ids[0];
         require(!usedEvents_[blockHash][receiptId], "The burn event cannot be reused");
         usedEvents_[blockHash][receiptId] = true;
