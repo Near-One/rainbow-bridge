@@ -51,7 +51,7 @@ class Near2EthWatchdog {
             for (let i = 0; i < lastClientBlock.approvals_after_next_length; i++) {
                 console.log(`Checking ${i} signature.`);
                 const result = await this.clientContract.methods.checkBlockProducerSignatureInLastBlock(i).call();
-                if (result) {
+                if (!result) {
                     console.log(`Challenging ${i} signature.`);
                     try {
                         let gasPrice = await this.web3.eth.getGasPrice();
@@ -61,14 +61,14 @@ class Near2EthWatchdog {
                                 // Keep sending with same nonce but higher gasPrice to override same txn
                                 let tx = new Tx({
                                     from: this.ethMasterAccount.address,
-                                    gasLimit: Web3.utils.toHex(10000000),
+                                    // this is required otherwise gas is infinite
+                                    to: RainbowConfig.getParam('near2eth-client-address'),
+                                    gasLimit: Web3.utils.toHex(5000000),
                                     gasPrice: Web3.utils.toHex(gasPrice),
                                     nonce: Web3.utils.toHex(nonce),
                                     data: this.clientContract.methods.challenge(this.ethMasterAccount, i).encodeABI()
                                 });
-
                                 tx.sign(privateKey);
-
                                 tx = '0x' + tx.serialize().toString('hex');
 
                                 await promiseWithTimeout(5 * 60 * 1000, this.web3.eth.sendSignedTransaction(tx), SLOW_TX_ERROR_MSG);
