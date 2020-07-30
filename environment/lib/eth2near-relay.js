@@ -4,9 +4,8 @@ const utils = require('ethereumjs-util');
 const BN = require('bn.js');
 const blockFromRpc = require('ethereumjs-block/from-rpc');
 const { RobustWeb3, sleep } = require('../lib/robust');
-const pThrottle = require('p-throttle');
 
-const TPS = 100;
+const MAX_SUBMIT_BLOCK = 10;
 
 function execute(command, _callback) {
     return new Promise(resolve => exec(command, (error, stdout, _stderr) => {
@@ -39,7 +38,6 @@ class Eth2NearRelay {
 
     async run() {
         const robustWeb3 = this.robustWeb3;
-        const submitBlock = pThrottle(this.submitBlock, TPS, 1000);
         while (true) {
             let clientBlockNumber;
             let chainBlockNumber;
@@ -75,17 +73,32 @@ class Eth2NearRelay {
 
             if (clientBlockNumber < chainBlockNumber) {
                 try {
-                    const blockRlp = this.web3.utils.bytesToHex(web3BlockToRlp(await this.robustWeb3.getBlock(clientBlockNumber + 1)));
-                    const unparsedBlock = await execute(`./vendor/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`);
-                    const block = JSON.parse(unparsedBlock);
-                    await this.submitBlock(block, clientBlockNumber + 1);
+                    let blockPromises = [];
+                    let endBlock = Math.min(clientBlockNumber + MAX_SUBMIT_BLOCK, chainBlockNumber);
+                    for (let i = clientBlockNumber + 1; i <= endBlock; i++) {
+                        blockPromises.push(this.getParseSubmitBlock(i))
+                    }
+                    await Promise.all(blockPromises);
+                    console.log(`Submitted block ${clientBlockNumber + 1} to block ${endBlock}`)
                 } catch (e) {
-                    console.log(`Failed to submit a block ${e}`);
+                    console.log(e);
                 }
             } else {
                 await sleep(10000);
             }
         }
+    }
+
+    async getParseSubmitBlock(blockNumber) {
+        try {
+            const blockRlp = this.web3.utils.bytesToHex(web3BlockToRlp(await this.robustWeb3.getBlock(blockNumber)));
+            const unparsedBlock = await execute(`./vendor/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`);
+            const block = JSON.parse(unparsedBlock);
+            return await this.submitBlock(block, blockNumber);
+        } catch (e) {
+            console.log(`Failed to submit block ${blockNumber}: ${e}`);
+        }
+
     }
 
     async submitBlock(block, blockNumber) {
