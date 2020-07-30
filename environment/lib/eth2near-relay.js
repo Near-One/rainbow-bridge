@@ -4,6 +4,9 @@ const utils = require('ethereumjs-util');
 const BN = require('bn.js');
 const blockFromRpc = require('ethereumjs-block/from-rpc');
 const { RobustWeb3, sleep } = require('../lib/robust');
+const pThrottle = require('p-throttle');
+
+const TPS = 100;
 
 function execute(command, _callback) {
     return new Promise(resolve => exec(command, (error, stdout, _stderr) => {
@@ -36,6 +39,7 @@ class Eth2NearRelay {
 
     async run() {
         const robustWeb3 = this.robustWeb3;
+        const submitBlock = pThrottle(this.submitBlock, TPS, 1000);
         while (true) {
             let clientBlockNumber;
             let chainBlockNumber;
