@@ -288,6 +288,9 @@ stopCommand.command('eth-relay')
 stopCommand.command('near-relay')
     .action(StopManagedProcessCommand.execute);
 
+stopCommand.command('near-watchdog')
+    .action(StopManagedProcessCommand.execute);
+
 RainbowConfig.addOptions(
     program.command('init-near-contracts')
         .description('Deploys and initializes Eth2NearClient and Eth2NearProver contracts to NEAR blockchain.')
