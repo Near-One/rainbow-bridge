@@ -2,7 +2,10 @@ const Web3 = require('web3');
 const BN = require('bn.js');
 const fs = require('fs');
 const { RainbowConfig } = require('./config');
-const { sleep, RobustWeb3, normalizeEthKey } = require('../lib/robust');
+const { sleep, RobustWeb3, normalizeEthKey, promiseWithTimeout } = require('../lib/robust');
+const Tx = require('ethereumjs-tx').Transaction;
+
+const SLOW_TX_ERROR_MSG = 'transaction not executed within 5 minutes';
 
 class Near2EthWatchdog {
     async initialize() {
@@ -28,6 +31,11 @@ class Near2EthWatchdog {
     }
 
     async run() {
+        let privateKey = RainbowConfig.getParam('eth-master-sk');
+        if (privateKey.startsWith('0x')) {
+            privateKey = privateKey.slice(2);
+        }
+        privateKey = Buffer.from(privateKey, 'hex')
         while (true) {
             const lastClientBlock = await this.clientContract.methods.last().call();
             const latestBlock = await this.robustWeb3.getBlock('latest');
@@ -46,12 +54,35 @@ class Near2EthWatchdog {
                 if (!result) {
                     console.log(`Challenging ${i} signature.`);
                     try {
-                        await this.clientContract.methods.challenge(this.ethMasterAccount, i).send({
-                            from: this.ethMasterAccount,
-                            gas: 5000000,
-                            gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
-                        },
-                        );
+                        let gasPrice = await this.web3.eth.getGasPrice();
+                        let nonce = await this.web3.eth.getTransactionCount(this.ethMasterAccount);
+                        while (gasPrice < 10000 * 1e9) {
+                            try {
+                                // Keep sending with same nonce but higher gasPrice to override same txn
+                                let tx = new Tx({
+                                    from: this.ethMasterAccount.address,
+                                    // this is required otherwise gas is infinite
+                                    to: RainbowConfig.getParam('near2eth-client-address'),
+                                    gasLimit: Web3.utils.toHex(2000000),
+                                    gasPrice: Web3.utils.toHex(gasPrice),
+                                    nonce: Web3.utils.toHex(nonce),
+                                    data: this.clientContract.methods.challenge(this.ethMasterAccount, i).encodeABI()
+                                });
+                                tx.sign(privateKey);
+                                tx = '0x' + tx.serialize().toString('hex');
+
+                                await promiseWithTimeout(5 * 60 * 1000, this.web3.eth.sendSignedTransaction(tx), SLOW_TX_ERROR_MSG);
+                                break;
+                            } catch (e) {
+                                if (e.message === SLOW_TX_ERROR_MSG) {
+                                    console.log(SLOW_TX_ERROR_MSG);
+                                    console.log(`current gasPrice: ${gasPrice}. rechallenge with double gasPrice`)
+                                    gasPrice *= 2;
+                                } else {
+                                    throw e;
+                                }
+                            }
+                        }
                     } catch (err) {
                         console.log(`Challenge failed. Maybe the block was already reverted? ${err}`);
                     }
