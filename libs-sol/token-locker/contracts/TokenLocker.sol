@@ -17,8 +17,8 @@ contract TokenLocker {
     bytes public nearToken_;
     INearProver public prover_;
 
-    // blockHash -> OutcomeReciptId -> Used
-    mapping(bytes32 => mapping(bytes32 => bool)) public usedEvents_;
+    // OutcomeReciptId -> Used
+    mapping(bytes32 => bool) public usedEvents_;
 
     event Locked(
         address indexed token,
@@ -58,10 +58,9 @@ contract TokenLocker {
         ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borshData.decodeFullOutcomeProof();
         require(borshData.finished(), "Argument should be exact borsh serialization");
 
-        bytes32 blockHash = fullOutcomeProof.outcome_proof.block_hash;
         bytes32 receiptId = fullOutcomeProof.outcome_proof.outcome_with_id.outcome.receipt_ids[0];
-        require(!usedEvents_[blockHash][receiptId], "The burn event cannot be reused");
-        usedEvents_[blockHash][receiptId] = true;
+        require(!usedEvents_[receiptId], "The burn event cannot be reused");
+        usedEvents_[receiptId] = true;
 
         require(keccak256(fullOutcomeProof.outcome_proof.outcome_with_id.outcome.executor_id) == keccak256(nearToken_),
         "Can only unlock tokens from the linked mintable fungible token on Near blockchain.");
