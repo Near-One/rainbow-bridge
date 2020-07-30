@@ -63,7 +63,7 @@ class Near2EthWatchdog {
                                     from: this.ethMasterAccount.address,
                                     // this is required otherwise gas is infinite
                                     to: RainbowConfig.getParam('near2eth-client-address'),
-                                    gasLimit: Web3.utils.toHex(5000000),
+                                    gasLimit: Web3.utils.toHex(2000000),
                                     gasPrice: Web3.utils.toHex(gasPrice),
                                     nonce: Web3.utils.toHex(nonce),
                                     data: this.clientContract.methods.challenge(this.ethMasterAccount, i).encodeABI()
