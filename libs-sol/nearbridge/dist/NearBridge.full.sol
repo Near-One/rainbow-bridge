@@ -1847,6 +1847,7 @@ contract NearBridge is INearBridge {
     }
 
     bool public initialized;
+    address payable owner;
     uint256 public lock_eth_amount;
     uint256 public lock_duration;
     Ed25519 edwards;
@@ -1871,6 +1872,7 @@ contract NearBridge is INearBridge {
         edwards = ed;
         lock_eth_amount = l_eth;
         lock_duration = l_dur;
+        owner = msg.sender;
     }
 
     function deposit() public payable {
@@ -1910,7 +1912,8 @@ contract NearBridge is INearBridge {
     function _payRewardAndRollBack(address payable receiver) internal {
         // Pay reward
         balanceOf[last.submitter] = balanceOf[last.submitter].sub(lock_eth_amount);
-        receiver.transfer(lock_eth_amount);
+        owner.transfer(lock_eth_amount / 2);
+        receiver.transfer(lock_eth_amount - lock_eth_amount / 2);
 
         // Restore last state from backup
         delete blockHashes[last.height];
