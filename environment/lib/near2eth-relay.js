@@ -166,8 +166,9 @@ class Near2EthRelay {
                     break;
                 }
                 if (err) {
+                    console.log('Failure');
                     console.log(err);
-                    process.exit(1)
+                    process.exit(1);
                 }
 
                 console.log('Initializing with block');
@@ -189,6 +190,11 @@ class Near2EthRelay {
                         err = e;
                     }
                     break;
+                }
+                if (err) {
+                    console.log('Failure');
+                    console.log(err);
+                    process.exit(1);
                 }
             }
             console.log('Client is initialized.');
