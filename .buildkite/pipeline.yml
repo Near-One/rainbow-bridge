@@ -51,6 +51,7 @@ steps:
     - command: |
         source ~/.cargo/env
         source ~/.nvm/nvm.sh
+        source ~/.yarn/yarn.sh
         cd libs-sol
         ./build_all.sh
     
@@ -62,6 +63,7 @@ steps:
       command: |
         source ~/.cargo/env
         source ~/.nvm/nvm.sh
+        source ~/.yarn/yarn.sh
         cd environment
         yarn
         yarn run lint
@@ -76,6 +78,7 @@ steps:
   
     - command: |
         source ~/.nvm/nvm.sh
+        source ~/.yarn/yarn.sh
         cd libs-sol/nearbridge
         yarn
         yarn test
@@ -96,6 +99,7 @@ steps:
   
     - command: | 
         source ~/.nvm/nvm.sh
+        source ~/.yarn/yarn.sh
         cd environment
         yarn
         cd ../libs-sol/nearprover
@@ -110,6 +114,7 @@ steps:
       command: |
         source ~/.nvm/nvm.sh
         source ~/.cargo/env
+        source ~/.yarn/yarn.sh
   
         export GOROOT=~/.go
         export GOPATH=~/go
@@ -146,10 +151,11 @@ steps:
       timeout: 40
     
       agents:
-      - "queue=expensive"
+      - "queue=default"
   
     - command: |
         source ~/.nvm/nvm.sh
+        source ~/.yarn/yarn.sh
         ci/test_verify_near_headers.sh
     
       label: "verify near headers"
@@ -158,6 +164,7 @@ steps:
   
     - command: |
         source ~/.nvm/nvm.sh
+        source ~/.yarn/yarn.sh
         cd environment
         yarn
         cd ../libs-sol/nearprover
