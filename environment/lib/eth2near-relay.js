@@ -76,6 +76,10 @@ class Eth2NearRelay {
                     // Submit add_block txns
                     let blockPromises = [];
                     let endBlock = Math.min(clientBlockNumber + MAX_SUBMIT_BLOCK, chainBlockNumber);
+                    if (clientBlockNumber < 5) {
+                        // Initially, do not add block concurrently
+                        endBlock = clientBlockNumber + 1;
+                    }
                     for (let i = clientBlockNumber + 1; i <= endBlock; i++) {
                         blockPromises.push(this.getParseBlock(i))
                     }
