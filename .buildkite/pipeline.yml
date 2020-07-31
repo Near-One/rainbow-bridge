@@ -6,7 +6,7 @@ steps:
     
       label: "verify eth headers"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
   
     - command: | 
         source ~/.cargo/env
@@ -15,7 +15,7 @@ steps:
     
       label: "verify eth proofs"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
   
     - command: |
         source ~/.cargo/env
@@ -25,7 +25,7 @@ steps:
     
       label: "eth-client tests"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
   
     - command: |
         source ~/.cargo/env
@@ -35,7 +35,7 @@ steps:
     
       label: "eth-prover tests"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
   
     - command: |
         source ~/.cargo/env
@@ -46,7 +46,7 @@ steps:
     
       label: "build all rust contracts"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
   
     - command: |
         source ~/.cargo/env
@@ -56,7 +56,7 @@ steps:
     
       label: "build all solidity contracts"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
   
     - label: "lint" 
       command: |
@@ -69,7 +69,7 @@ steps:
         yarn
         yarn lint
       agents:
-      - "queue=bridge"
+      - "queue=medium"
       soft_fail:
       - exit_status: 1
       - exit_status: 2
@@ -83,7 +83,7 @@ steps:
     
       label: "nearbridge test"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
   
     - command: |
         source ~/.cargo/env
@@ -92,7 +92,7 @@ steps:
     
       label: "rust contracts test"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
   
     - command: | 
         source ~/.nvm/nvm.sh
@@ -104,7 +104,7 @@ steps:
     
       label: "nearprover test"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
     
     - label: "e2e test"
       command: |
@@ -146,7 +146,7 @@ steps:
       timeout: 40
     
       agents:
-      - "queue=bridge-expensive"
+      - "queue=expensive"
   
     - command: |
         source ~/.nvm/nvm.sh
@@ -154,7 +154,7 @@ steps:
     
       label: "verify near headers"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
   
     - command: |
         source ~/.nvm/nvm.sh
@@ -167,4 +167,4 @@ steps:
     
       label: "verify near proofs"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
