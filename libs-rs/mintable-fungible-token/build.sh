@@ -3,6 +3,14 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-RUSTFLAGS='-C link-arg=-s' cargo +stable build --target wasm32-unknown-unknown --release
+docker run \
+     --mount type=bind,source=$DIR/..,target=/host \
+     --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
+     -u $UID:$UID \
+     -w /host/mintable-fungible-token \
+     -e RUSTFLAGS='-C link-arg=-s' \
+     nearprotocol/contract-builder \
+     cargo +stable build --target wasm32-unknown-unknown --release
+
 cp $DIR/../target/wasm32-unknown-unknown/release/mintable_fungible_token.wasm $DIR/../res/
 
