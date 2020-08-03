@@ -76,7 +76,9 @@ steps:
   
     - command: |
         source ~/.nvm/nvm.sh
-        cd libs-sol/nearbridge
+        cd libs-sol/
+        ./build_all.sh
+        cd nearbridge
         yarn
         yarn test
         node test/ed25519-test.js
