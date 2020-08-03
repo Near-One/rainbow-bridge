@@ -151,6 +151,7 @@ steps:
         rustup default stable
         rustup target add wasm32-unknown-unknown
         cd environment
+        yarn
         node index.js clean
         cd ..
         ci/e2e.sh
