@@ -41,7 +41,10 @@ steps:
         cd libs-rs
         ./build_all.sh
         changed_files=$$(git status --porcelain --untracked-files=no | wc -l)
-        [ $$changed_files -gt 0 ] && echo 'contract changed, please rebuild contract' && exit 1
+        if [ $$changed_files -gt 0 ];
+          echo 'contract changed, please rebuild contract'
+          exit 1
+        fi
     
       label: "build all rust contracts"
       agents:
