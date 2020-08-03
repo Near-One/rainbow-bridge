@@ -28,6 +28,7 @@ class CleanCommand {
                 }
                 console.log('Cleaning ~/.rainbow and ~/.near/localnet directory...');
                 execSync('rm -rf ~/.rainbow ~/.near/localnet');
+                execSync('rm -f /tmp/near2ethtransfer.out /tmp/eth2neartransfer.out');
                 console.log('Cleaning done...');
                 process.exit(0);
             });
