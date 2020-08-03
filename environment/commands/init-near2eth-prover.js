@@ -15,7 +15,7 @@ class InitNear2EthProver {
         ethMasterAccount = ethMasterAccount.address;
 
         // Initialize client contract.
-        console.log('Deploying Near2EthClient contract.');
+        console.log('Deploying Near2EthProver contract.');
         const nearProver = new web3.eth.Contract(JSON.parse(
             // @ts-ignore
             fs.readFileSync(RainbowConfig.getParam('near2eth-prover-abi-path'))));

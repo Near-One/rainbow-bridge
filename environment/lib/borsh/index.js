@@ -197,6 +197,45 @@ const DEFAULT_FUNC_CALL_AMOUNT = new BN('300000000000000');
 const RETRY_SEND_TX = 10;
 const RETRY_TX_STATUS = 10;
 
+const signAndSendTransactionAsync = async (accessKey, account, receiverId, actions) => {
+    const status = await account.connection.provider.status();
+    let [txHash, signedTx] = await nearlib.transactions.signTransaction(
+        receiverId, ++accessKey.nonce, actions, nearlib.utils.serialize.base_decode(status.sync_info.latest_block_hash), account.connection.signer, account.accountId, account.connection.networkId,
+    );
+    const bytes = signedTx.encode();
+    await account.connection.provider.sendJsonRpc('broadcast_tx_async', [Buffer.from(bytes).toString('base64')]);
+    console.log('TxHash', nearlib.utils.serialize.base_encode(txHash));
+    return txHash
+}
+
+const txnStatus = async (account, txHash, retries = RETRY_TX_STATUS, wait = 1000) => {
+    let result;
+    for (let i = 0; i < retries; i++) {
+        try {
+            result = await account.connection.provider.txStatus(txHash, account.accountId);
+            if (result.status.SuccessValue !== undefined || result.status.Failure !== undefined) {
+                break;
+            }
+        } catch (e) {
+            await sleep(wait);
+        }
+    }
+    if (!result) {
+        throw new Error(`Transaction ${txHash} didn't finish after ${retries * wait / 1000} seconds`);
+    }
+
+    const flatLogs = [result.transaction_outcome, ...result.receipts_outcome].reduce((acc, it) => acc.concat(it.outcome.logs), []);
+    if (flatLogs && flatLogs != []) {
+        console.log(flatLogs);
+    }
+
+    if (result.status.SuccessValue !== undefined) {
+        return result;
+    }
+
+    throw new Error(JSON.stringify(result.status.Failure));
+}
+
 const signAndSendTransaction = async (accessKey, account, receiverId, actions) => {
     // TODO: Find matching access key based on transaction
     let errorMsg;
@@ -243,7 +282,7 @@ const signAndSendTransaction = async (accessKey, account, receiverId, actions) =
 
         if (result) {
             const flatLogs = [result.transaction_outcome, ...result.receipts_outcome].reduce((acc, it) => acc.concat(it.outcome.logs), []);
-            if (flatLogs) {
+            if (flatLogs && flatLogs != []) {
                 console.log(flatLogs);
             }
 
@@ -297,22 +336,35 @@ class BorshContract {
                 enumerable: true,
                 value: async (args, gas, amount) => {
                     args = serialize(borshSchema, d.inputFieldType, args);
-                    try {
-                        const rawResult = await signAndSendTransaction(this.accessKey, this.account, this.contractId, [nearlib.transactions.functionCall(
-                            d.methodName,
-                            Buffer.from(args),
-                            gas || DEFAULT_FUNC_CALL_AMOUNT,
-                            amount,
-                        )]);
 
-                        const result = getBorshTransactionLastResult(rawResult);
-                        return result && deserialize(borshSchema, d.outputFieldType, result);
-                    } catch (e) {
-                        throw e;
-                    }
+                    const rawResult = await signAndSendTransaction(this.accessKey, this.account, this.contractId, [nearlib.transactions.functionCall(
+                        d.methodName,
+                        Buffer.from(args),
+                        gas || DEFAULT_FUNC_CALL_AMOUNT,
+                        amount,
+                    )]);
+
+                    const result = getBorshTransactionLastResult(rawResult);
+                    return result && deserialize(borshSchema, d.outputFieldType, result);
                 },
             });
         });
+
+        options.changeMethods.forEach((d) => {
+            Object.defineProperty(this, d.methodName + '_async', {
+                writable: false,
+                enumerable: true,
+                value: async (args, gas, amount) => {
+                    args = serialize(borshSchema, d.inputFieldType, args);
+                    return await signAndSendTransactionAsync(this.accessKey, this.account, this.contractId, [nearlib.transactions.functionCall(
+                        d.methodName,
+                        Buffer.from(args),
+                        gas || DEFAULT_FUNC_CALL_AMOUNT,
+                        amount,
+                    )]);
+                }
+            })
+        })
     }
 
     async accessKeyInit() {
@@ -335,6 +387,7 @@ exports.BorshContract = BorshContract;
 exports.hexToBuffer = hexToBuffer;
 exports.readerToHex = readerToHex;
 exports.borshifyOutcomeProof = borshifyOutcomeProof;
+exports.txnStatus = txnStatus;
 
 // For debugging only.
 exports.serialize = serialize;

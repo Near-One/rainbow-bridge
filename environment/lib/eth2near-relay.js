@@ -4,6 +4,8 @@ const utils = require('ethereumjs-util');
 const BN = require('bn.js');
 const blockFromRpc = require('ethereumjs-block/from-rpc');
 const { RobustWeb3, sleep } = require('../lib/robust');
+const { txnStatus } = require('../lib/borsh');
+const MAX_SUBMIT_BLOCK = 10;
 
 function execute(command, _callback) {
     return new Promise(resolve => exec(command, (error, stdout, _stderr) => {
@@ -71,16 +73,45 @@ class Eth2NearRelay {
 
             if (clientBlockNumber < chainBlockNumber) {
                 try {
-                    const blockRlp = this.web3.utils.bytesToHex(web3BlockToRlp(await this.robustWeb3.getBlock(clientBlockNumber + 1)));
-                    const unparsedBlock = await execute(`./vendor/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`);
-                    const block = JSON.parse(unparsedBlock);
-                    await this.submitBlock(block, clientBlockNumber + 1);
+                    // Submit add_block txns
+                    let blockPromises = [];
+                    let endBlock = Math.min(clientBlockNumber + MAX_SUBMIT_BLOCK, chainBlockNumber);
+                    if (clientBlockNumber < 5) {
+                        // Initially, do not add block concurrently
+                        endBlock = clientBlockNumber + 1;
+                    }
+                    for (let i = clientBlockNumber + 1; i <= endBlock; i++) {
+                        blockPromises.push(this.getParseBlock(i))
+                    }
+                    let blocks = await Promise.all(blockPromises);
+                    console.log(`Got and parsed block ${clientBlockNumber + 1} to block ${endBlock}`);
+
+                    let txHashes = [];
+                    for (let i = clientBlockNumber + 1, j = 0; i <= endBlock; i++ , j++) {
+                        txHashes.push(await this.submitBlock(blocks[j], i));
+                    }
+
+                    console.log(`Submit txn to add block ${clientBlockNumber + 1} to block ${endBlock}`);
+
+                    // Wait add_block txns commit
+                    await Promise.all(txHashes.map((txHash) => txnStatus(this.ethClientContract.account, txHash, 10, 2000)));
+                    console.log(`Success added block ${clientBlockNumber + 1} to block ${endBlock}`);
                 } catch (e) {
-                    console.log(`Failed to submit a block ${e}`);
+                    console.log(e);
                 }
             } else {
                 await sleep(10000);
             }
+        }
+    }
+
+    async getParseBlock(blockNumber) {
+        try {
+            const blockRlp = this.web3.utils.bytesToHex(web3BlockToRlp(await this.robustWeb3.getBlock(blockNumber)));
+            const unparsedBlock = await execute(`./vendor/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`);
+            return JSON.parse(unparsedBlock);
+        } catch (e) {
+            console.log(`Failed to get or parse block ${blockNumber}: ${e}`);
         }
     }
 
@@ -107,8 +138,7 @@ class Eth2NearRelay {
         };
 
         console.log(`Submitting block ${blockNumber} to EthClient`);
-        await this.ethClientContract.add_block_header(args, new BN('300000000000000'));
-        console.log(`Successfully submitted block ${blockNumber} to EthClient`);
+        return await this.ethClientContract.add_block_header_async(args, new BN('300000000000000'));
     }
 }
 
