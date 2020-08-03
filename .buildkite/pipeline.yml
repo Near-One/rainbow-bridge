@@ -116,7 +116,10 @@ steps:
         source ~/.cargo/env
         source ~/.yarn/yarn.sh
 
-        wget -q -O - https://raw.githubusercontent.com/canha/golang-tools-install-script/master/goinstall.sh | bash
+        if [[ ! -d ~/go ]]; then
+          wget -q -O - https://raw.githubusercontent.com/canha/golang-tools-install-script/master/goinstall.sh | bash
+        fi
+
         export GOROOT=~/.go
         export GOPATH=~/go
         export PATH=$$GOPATH/bin:$$GOROOT/bin:$$PATH
@@ -133,18 +136,23 @@ steps:
         touch near-relay-err.log
         touch ganache-out.log
         touch ganache-err.log
-        ln eth-relay-out.log ~/.rainbow/logs/eth-relay/out.log
-        ln eth-relay-err.log ~/.rainbow/logs/eth-relay/err.log
-        ln near-relay-out.log ~/.rainbow/logs/near-relay/out.log
-        ln near-relay-err.log ~/.rainbow/logs/near-relay/err.log
-        ln ganache-out.log ~/.rainbow/logs/ganache/out.log
-        ln ganache-err.log ~/.rainbow/logs/ganache/err.log
+        if [[ ! -f ~/.rainbow/logs/eth-relay/out.log ]]; then
+          ln eth-relay-out.log ~/.rainbow/logs/eth-relay/out.log
+          ln eth-relay-err.log ~/.rainbow/logs/eth-relay/err.log
+          ln near-relay-out.log ~/.rainbow/logs/near-relay/out.log
+          ln near-relay-err.log ~/.rainbow/logs/near-relay/err.log
+          ln ganache-out.log ~/.rainbow/logs/ganache/out.log
+          ln ganache-err.log ~/.rainbow/logs/ganache/err.log
+        fi
         
         cd environment/vendor/ethashproof
         ./build.sh
         cd -
         rustup default stable
         rustup target add wasm32-unknown-unknown
+        cd environment
+        node index.js clean
+        cd ..
         ci/e2e.sh
     
       artifact_paths:
