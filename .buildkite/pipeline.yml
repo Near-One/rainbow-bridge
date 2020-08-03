@@ -162,7 +162,9 @@ steps:
         source ~/.nvm/nvm.sh
         cd environment
         yarn
-        cd ../libs-sol/nearprover
+        cd ../libs-sol
+        ./build_all.sh
+        cd nearprover
         yarn
         cd ../..
         ci/test_verify_near_proofs.sh
