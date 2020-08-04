@@ -1,5 +1,5 @@
 #!/bin/bash
-# This test launch all commands and tranfer tokens
+# This test launch all commands, but postpone start eth-relay late to test it catch fast
 
 set -exuo pipefail
 
@@ -15,6 +15,7 @@ else
   node index.js prepare
 fi
 node index.js start near-node
+export GANACHE_BLOCK_TIME=3
 node index.js start ganache
 # Wait for the local node to start
 while ! curl localhost:3030; do
@@ -40,6 +41,7 @@ yarn run pm2 list
 node index.js start near-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
 sleep 5
 yarn run pm2 list
+sleep 100
 node index.js start eth-relay
 sleep 5
 yarn run pm2 list
