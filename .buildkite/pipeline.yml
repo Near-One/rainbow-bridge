@@ -38,11 +38,13 @@ steps:
       - "queue=bridge"
   
     - command: |
-        source ~/.cargo/env
-        rustup default stable
-        rustup target add wasm32-unknown-unknown
         cd libs-rs
         ./build_all.sh
+        changed_files=$$(git status --porcelain --untracked-files=no | wc -l)
+        if [ $$changed_files -gt 0 ]; then
+          echo 'contract changed, please rebuild contract'
+          exit 1
+        fi
     
       label: "build all rust contracts"
       agents:
