@@ -48,7 +48,7 @@ steps:
     
       label: "build all rust contracts"
       agents:
-      - "queue=medium"
+      - "queue=bridge"
   
     - command: |
         source ~/.cargo/env
