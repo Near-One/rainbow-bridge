@@ -6,7 +6,7 @@ steps:
     
       label: "verify eth headers"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
   
     - command: | 
         source ~/.cargo/env
@@ -15,7 +15,7 @@ steps:
     
       label: "verify eth proofs"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
   
     - command: |
         source ~/.cargo/env
@@ -25,7 +25,7 @@ steps:
     
       label: "eth-client tests"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
   
     - command: |
         source ~/.cargo/env
@@ -35,7 +35,7 @@ steps:
     
       label: "eth-prover tests"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
   
     - command: |
         cd libs-rs
@@ -53,17 +53,19 @@ steps:
     - command: |
         source ~/.cargo/env
         source ~/.nvm/nvm.sh
+        source ~/.yarn/yarn.sh
         cd libs-sol
         ./build_all.sh
     
       label: "build all solidity contracts"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
   
     - label: "lint" 
       command: |
         source ~/.cargo/env
         source ~/.nvm/nvm.sh
+        source ~/.yarn/yarn.sh
         cd environment
         yarn
         yarn run lint
@@ -71,13 +73,14 @@ steps:
         yarn
         yarn lint
       agents:
-      - "queue=bridge"
+      - "queue=medium"
       soft_fail:
       - exit_status: 1
       - exit_status: 2
   
     - command: |
         source ~/.nvm/nvm.sh
+        source ~/.yarn/yarn.sh
         cd libs-sol/nearbridge
         yarn
         yarn test
@@ -85,7 +88,7 @@ steps:
     
       label: "nearbridge test"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
   
     - command: |
         source ~/.cargo/env
@@ -94,10 +97,11 @@ steps:
     
       label: "rust contracts test"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
   
     - command: | 
         source ~/.nvm/nvm.sh
+        source ~/.yarn/yarn.sh
         cd environment
         yarn
         cd ../libs-sol/nearprover
@@ -106,13 +110,18 @@ steps:
     
       label: "nearprover test"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
     
     - label: "e2e test"
       command: |
         source ~/.nvm/nvm.sh
         source ~/.cargo/env
-  
+        source ~/.yarn/yarn.sh
+
+        if [[ ! -d ~/go ]]; then
+          wget -q -O - https://raw.githubusercontent.com/canha/golang-tools-install-script/master/goinstall.sh | bash
+        fi
+
         export GOROOT=~/.go
         export GOPATH=~/go
         export PATH=$$GOPATH/bin:$$GOROOT/bin:$$PATH
@@ -129,18 +138,24 @@ steps:
         touch near-relay-err.log
         touch ganache-out.log
         touch ganache-err.log
-        ln eth-relay-out.log ~/.rainbow/logs/eth-relay/out.log
-        ln eth-relay-err.log ~/.rainbow/logs/eth-relay/err.log
-        ln near-relay-out.log ~/.rainbow/logs/near-relay/out.log
-        ln near-relay-err.log ~/.rainbow/logs/near-relay/err.log
-        ln ganache-out.log ~/.rainbow/logs/ganache/out.log
-        ln ganache-err.log ~/.rainbow/logs/ganache/err.log
+        if [[ ! -f ~/.rainbow/logs/eth-relay/out.log ]]; then
+          ln eth-relay-out.log ~/.rainbow/logs/eth-relay/out.log
+          ln eth-relay-err.log ~/.rainbow/logs/eth-relay/err.log
+          ln near-relay-out.log ~/.rainbow/logs/near-relay/out.log
+          ln near-relay-err.log ~/.rainbow/logs/near-relay/err.log
+          ln ganache-out.log ~/.rainbow/logs/ganache/out.log
+          ln ganache-err.log ~/.rainbow/logs/ganache/err.log
+        fi
         
         cd environment/vendor/ethashproof
         ./build.sh
         cd -
         rustup default stable
         rustup target add wasm32-unknown-unknown
+        cd environment
+        yarn
+        node index.js clean
+        cd ..
         ci/e2e.sh
     
       artifact_paths:
@@ -148,18 +163,20 @@ steps:
       timeout: 40
     
       agents:
-      - "queue=bridge-expensive"
+      - "queue=default"
   
     - command: |
         source ~/.nvm/nvm.sh
+        source ~/.yarn/yarn.sh
         ci/test_verify_near_headers.sh
     
       label: "verify near headers"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
   
     - command: |
         source ~/.nvm/nvm.sh
+        source ~/.yarn/yarn.sh
         cd environment
         yarn
         cd ../libs-sol/nearprover
@@ -169,4 +186,4 @@ steps:
     
       label: "verify near proofs"
       agents:
-      - "queue=bridge"
+      - "queue=medium"
