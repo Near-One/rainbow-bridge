@@ -8,6 +8,7 @@ const { StartNearRelayCommand } = require('./commands/start/near-relay.js');
 const { StartNearWatchdogCommand } = require('./commands/start/near-watchdog.js');
 const { StartGanacheNodeCommand } = require('./commands/start/ganache.js');
 const { StartLocalNearNodeCommand } = require('./commands/start/near.js');
+const { StopAllCommands } = require('./commands/stop/all.js');
 const { StopLocalNearNodeCommand } = require('./commands/stop/near.js');
 const { StopManagedProcessCommand } = require('./commands/stop/process.js');
 const { TransferETHERC20ToNear } = require('./commands/transfer-eth-erc20-to-near');
@@ -275,6 +276,9 @@ RainbowConfig.addOptions(
 );
 
 const stopCommand = program.command('stop');
+
+stopCommand.command('all')
+    .action(StopAllCommands.execute);
 
 stopCommand.command('near-node')
     .action(StopLocalNearNodeCommand.execute);
