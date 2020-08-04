@@ -5,9 +5,6 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-ls -al $DIR
-docker run -u $UID:$UID bash whoami
-
 cd $DIR/eth-client
 ./build.sh
 cd $DIR/eth-prover
