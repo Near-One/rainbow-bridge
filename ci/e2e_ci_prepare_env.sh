@@ -9,4 +9,4 @@ fi
 
 export GOROOT=~/.go
 export GOPATH=~/go
-export PATH=$GOPATH/bin:$GOROOT/bin:$$PATH
+export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
