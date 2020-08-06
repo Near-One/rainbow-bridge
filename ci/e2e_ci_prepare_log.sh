@@ -13,13 +13,11 @@ touch ganache-out.log
 touch ganache-err.log
 touch near-watchdog-out.log
 touch near-watchdog-err.log
-if [[ ! -f ~/.rainbow/logs/eth-relay/out.log ]]; then
-    ln eth-relay-out.log ~/.rainbow/logs/eth-relay/out.log
-    ln eth-relay-err.log ~/.rainbow/logs/eth-relay/err.log
-    ln near-relay-out.log ~/.rainbow/logs/near-relay/out.log
-    ln near-relay-err.log ~/.rainbow/logs/near-relay/err.log
-    ln ganache-out.log ~/.rainbow/logs/ganache/out.log
-    ln ganache-err.log ~/.rainbow/logs/ganache/err.log
-    ln near-watchdog-out.log ~/.rainbow/logs/near-watchdog/out.log
-    ln near-watchdog-err.log ~/.rainbow/logs/near-watchdog/err.log
-fi
+ln eth-relay-out.log ~/.rainbow/logs/eth-relay/out.log || true
+ln eth-relay-err.log ~/.rainbow/logs/eth-relay/err.log || true
+ln near-relay-out.log ~/.rainbow/logs/near-relay/out.log || true
+ln near-relay-err.log ~/.rainbow/logs/near-relay/err.log || true
+ln ganache-out.log ~/.rainbow/logs/ganache/out.log || true
+ln ganache-err.log ~/.rainbow/logs/ganache/err.log || true
+ln near-watchdog-out.log ~/.rainbow/logs/near-watchdog/out.log || true
+ln near-watchdog-err.log ~/.rainbow/logs/near-watchdog/err.log || true
