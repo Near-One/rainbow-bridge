@@ -14,7 +14,7 @@ const { RainbowConfig } = require('../lib/config');
 const {
     Eth2NearClientContract,
 } = require('../lib/eth2near-client-contract');
-const { sleep } = require('../lib/robust');
+const { sleep, RobustWeb3 } = require('../lib/robust');
 const { normalizeEthKey } = require('../lib/robust');
 
 let initialCmd;
@@ -26,17 +26,15 @@ class TransferETHERC20ToNear {
         process.exit(1);
     }
 
-    static async approve({ web3, ethERC20Contract, amount, ethSenderAccount }) {
+    static async approve({ robustWeb3, ethERC20Contract, amount, ethSenderAccount }) {
         // Approve tokens for transfer.
         try {
             console.log('Approving token transfer.');
-            await ethERC20Contract.methods.approve(RainbowConfig.getParam('eth-locker-address'),
-                Number(amount)).send({
-                    from: ethSenderAccount,
-                    gas: 5000000,
-                    handleRevert: true,
-                    gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
-                });
+            await robustWeb3.callContract(ethERC20Contract, 'approve', [RainbowConfig.getParam('eth-locker-address'),
+            Number(amount)], {
+                from: ethSenderAccount,
+                gas: 5000000,
+            });
             console.log('Approved token transfer.');
             TransferETHERC20ToNear.recordTransferLog({ finished: 'approve' })
         } catch (txRevertMessage) {
@@ -204,8 +202,8 @@ class TransferETHERC20ToNear {
         const nearReceiverAccount = command.nearReceiverAccount;
 
         // @ts-ignore
-        const web3 = new Web3(RainbowConfig.getParam('eth-node-url'));
-
+        let robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'));
+        let web3 = robustWeb3.web3;
         let ethSenderAccount = web3.eth.accounts.privateKeyToAccount(normalizeEthKey(ethSenderSk));
         web3.eth.accounts.wallet.add(ethSenderAccount);
         web3.eth.defaultAccount = ethSenderAccount.address;
@@ -252,7 +250,7 @@ class TransferETHERC20ToNear {
         const ethClientContract = new Eth2NearClientContract(nearMasterAccount, clientAccount);
 
         if (transferLog.finished === undefined) {
-            await TransferETHERC20ToNear.approve({ web3, ethERC20Contract, amount, ethSenderAccount });
+            await TransferETHERC20ToNear.approve({ robustWeb3, ethERC20Contract, amount, ethSenderAccount });
             transferLog = TransferETHERC20ToNear.loadTransferLog();
         }
         if (transferLog.finished === 'approve') {
