@@ -125,6 +125,19 @@ steps:
       agents:
       - "queue=default"
 
+    - label: "test challege with near watchdog"
+      command: |
+        source ci/e2e_ci_prepare_env.sh
+        ci/e2e_ci_prepare_log.sh
+        ci/test_challenge.sh
+    
+      artifact_paths:
+      - "*.log"
+      timeout: 40
+    
+      agents:
+      - "queue=default"
+
     - label: "test ethrelay catchup"
       command: |
         source ci/e2e_ci_prepare_env.sh

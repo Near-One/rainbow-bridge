@@ -22,6 +22,7 @@ const { RainbowConfig } = require('./lib/config');
 const { InitEthEd25519 } = require('./commands/init-eth-ed25519');
 const { InitNear2EthClient } = require('./commands/init-near2eth-client');
 const { InitNear2EthProver } = require('./commands/init-near2eth-prover');
+const { DangerSubmitInvalidNearBlock } = require('./commands/danger-submit-invalid-near-block');
 
 RainbowConfig.declareOption(
     'near-network-id',
@@ -439,6 +440,24 @@ RainbowConfig.addOptions(
         'eth-master-sk',
         'near2eth-prover-abi-path',
         'near2eth-prover-address',
+        'eth-gas-multiplier',
+    ],
+);
+
+// Testing command
+const dangerCommand = program.command('DANGER');
+
+RainbowConfig.addOptions(
+    dangerCommand.command('submit_invalid_near_block')
+        .action(DangerSubmitInvalidNearBlock.execute),
+    [
+        'eth-node-url',
+        'eth-master-sk',
+        'near-node-url',
+        'near-network-id',
+        'near2eth-client-abi-path',
+        'near2eth-client-address',
+        'near2eth-relay-delay',
         'eth-gas-multiplier',
     ],
 );

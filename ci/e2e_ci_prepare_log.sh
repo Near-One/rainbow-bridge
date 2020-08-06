@@ -11,10 +11,14 @@ if [[ ! -f ~/.rainbow/logs/eth-relay/out.log ]]; then
     touch near-relay-err.log
     touch ganache-out.log
     touch ganache-err.log
+    touch near-watchdog-out.log
+    touch near-watchdog-err.log
     ln eth-relay-out.log ~/.rainbow/logs/eth-relay/out.log
     ln eth-relay-err.log ~/.rainbow/logs/eth-relay/err.log
     ln near-relay-out.log ~/.rainbow/logs/near-relay/out.log
     ln near-relay-err.log ~/.rainbow/logs/near-relay/err.log
     ln ganache-out.log ~/.rainbow/logs/ganache/out.log
     ln ganache-err.log ~/.rainbow/logs/ganache/err.log
+    ln near-watchdog-out.log ~/.rainbow/logs/near-watchdog/out.log
+    ln near-watchdog-err.log ~/.rainbow/logs/near-watchdog/err.log
 fi

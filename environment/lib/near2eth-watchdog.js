@@ -49,10 +49,10 @@ class Near2EthWatchdog {
 
             // We cannot memorize processed blocks because they might have been re-submitted with different data.
             for (let i = 0; i < lastClientBlock.approvals_after_next_length; i++) {
-                console.log(`Checking ${i} signature.`);
+                console.log(`Checking signature ${i}.`);
                 const result = await this.clientContract.methods.checkBlockProducerSignatureInLastBlock(i).call();
                 if (!result) {
-                    console.log(`Challenging ${i} signature.`);
+                    console.log(`Challenging signature ${i}.`);
                     try {
                         let gasPrice = await this.web3.eth.getGasPrice();
                         let nonce = await this.web3.eth.getTransactionCount(this.ethMasterAccount);

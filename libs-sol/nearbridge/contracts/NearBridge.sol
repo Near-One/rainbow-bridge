@@ -60,6 +60,7 @@ contract NearBridge is INearBridge {
         edwards = ed;
         lock_eth_amount = l_eth;
         lock_duration = l_dur;
+        burner = address(0);
     }
 
     function deposit() public payable {
