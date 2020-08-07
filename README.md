@@ -28,7 +28,7 @@ need CLI only for the token transfer you need to install all testing dependencie
 
 
 * Install golang, [see](https://golang.org/dl/).
-* Make sure you are using Node with version <=12. We recommend using [nvm](https://github.com/nvm-sh/nvm) for installing node and npm, if you already don't have one. This constraint will be removed soon;
+* Make sure you are using Node with version <=13. We recommend using [nvm](https://github.com/nvm-sh/nvm) for installing node and npm, if you already don't have one. This constraint will be removed soon;
 * You would also need to install resources needed to compile nearcore (in the future this will only be required for the testing CLI):
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
