@@ -44,17 +44,13 @@ class TransferETHERC20ToNear {
         }
     }
 
-    static async lock({ web3, ethTokenLockerContract, amount, nearReceiverAccount, ethSenderAccount }) {
+    static async lock({ robustWeb3, ethTokenLockerContract, amount, nearReceiverAccount, ethSenderAccount }) {
         try {
             console.log('Transferring tokens from the ERC20 account to the token locker account.');
-            const transaction = await ethTokenLockerContract.methods.lockToken(Number(amount),
-                nearReceiverAccount)
-                .send({
-                    from: ethSenderAccount,
-                    gas: 5000000,
-                    handleRevert: true,
-                    gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
-                });
+            const transaction = await robustWeb3.callContract(ethTokenLockerContract, 'lockToken', [Number(amount), nearReceiverAccount], {
+                from: ethSenderAccount,
+                gas: 5000000
+            });
             const lockedEvent = transaction.events.Locked;
             console.log('Success tranfer to locker');
             TransferETHERC20ToNear.recordTransferLog({ finished: 'lock', lockedEvent })
@@ -254,7 +250,7 @@ class TransferETHERC20ToNear {
             transferLog = TransferETHERC20ToNear.loadTransferLog();
         }
         if (transferLog.finished === 'approve') {
-            await TransferETHERC20ToNear.lock({ web3, ethTokenLockerContract, amount, nearReceiverAccount, ethSenderAccount });
+            await TransferETHERC20ToNear.lock({ robustWeb3, ethTokenLockerContract, amount, nearReceiverAccount, ethSenderAccount });
             transferLog = TransferETHERC20ToNear.loadTransferLog();
         }
         if (transferLog.finished === 'lock') {
