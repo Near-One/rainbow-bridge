@@ -93,9 +93,24 @@ async function verifyAccount(near, accountId) {
         console.log('Account %s does not have the access key that can be used to operate with it.', accountId);
         process.exit(1);
     }
+    return true;
+}
+
+// Used in Status
+async function verifyAccountGently(near, accountId) {
+    if (!await accountExists(near, accountId)) {
+        return false;
+    }
+
+    if (!await accountHasTheKey(near, accountId)) {
+        return false;
+    }
+    // All checks have passed
+    return true;
 }
 
 exports.maybeCreateAccount = maybeCreateAccount;
 exports.accountExists = accountExists;
 exports.accountHasTheKey = accountHasTheKey;
 exports.verifyAccount = verifyAccount;
+exports.verifyAccountGently = verifyAccountGently;
