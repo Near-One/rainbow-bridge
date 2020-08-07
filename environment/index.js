@@ -445,10 +445,12 @@ RainbowConfig.addOptions(
 );
 
 // Testing command
-const dangerCommand = program.command('DANGER');
+const dangerCommand = program.command('DANGER')
+    .description("Dangerous commands that should only be used for testing purpose.");
 
 RainbowConfig.addOptions(
     dangerCommand.command('submit_invalid_near_block')
+        .description('Fetch latest near block, randomly mutate one byte and submit to NearBridge')
         .action(DangerSubmitInvalidNearBlock.execute),
     [
         'eth-node-url',
