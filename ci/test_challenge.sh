@@ -28,7 +28,7 @@ done
 node index.js init-near-contracts
 node index.js init-eth-ed25519
 # Use short lockup time for tests
-node index.js init-near2eth-client --near2eth-client-lock-eth-amount 1e18 --near2eth-client-lock-duration 120
+node index.js init-near2eth-client --near2eth-client-lock-eth-amount 1e18 --near2eth-client-lock-duration 60
 node index.js init-near2eth-prover
 node index.js init-eth-erc20
 node index.js init-eth-locker
@@ -50,8 +50,7 @@ yarn run pm2 list
 sleep 30
 node index.js stop near-relay
 node index.js DANGER submit_invalid_near_block
-
-sleep 60
+sleep 30
 node index.js start near-relay
 
 node index.js transfer-eth-erc20-to-near --amount 1000 \

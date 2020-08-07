@@ -80,7 +80,7 @@ class RobustWeb3 {
                     gasPrice *= 2;
                 } else if (e.message.indexOf("the tx doesn't have the correct nonce") >= 0) {
                     console.log('nonce error, retrying with new nonce');
-                    nonce = await this.web3.eth.getTransactionCount(options.from, 'pending');
+                    nonce++;
                 } else if (e.toString() === 'Error: connection not open') {
                     console.log('web3 disconnected, reconnecting');
                     this.web3.setProvider(this.ethNodeUrl);
