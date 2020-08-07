@@ -115,11 +115,11 @@ steps:
     - label: "e2e test"
       command: |
         source ci/e2e_ci_prepare_env.sh
-        ci/e2e_ci_prepare_log.sh
+        source ci/e2e_ci_prepare_log.sh
         ci/e2e.sh
     
       artifact_paths:
-      - "*.log"
+      - "logs/**/*.log"
       timeout: 40
     
       agents:
@@ -128,11 +128,11 @@ steps:
     - label: "test challege with near watchdog"
       command: |
         source ci/e2e_ci_prepare_env.sh
-        ci/e2e_ci_prepare_log.sh
+        source ci/e2e_ci_prepare_log.sh
         ci/test_challenge.sh
     
       artifact_paths:
-      - "*.log"
+      - "logs/**/*.log"
       timeout: 40
     
       agents:
@@ -141,11 +141,11 @@ steps:
     - label: "test ethrelay catchup"
       command: |
         source ci/e2e_ci_prepare_env.sh
-        ci/e2e_ci_prepare_log.sh
+        source ci/e2e_ci_prepare_log.sh
         ci/test_ethrelay_catchup.sh
     
       artifact_paths:
-      - "*.log"
+      - "logs/**/*.log"
       timeout: 40
     
       agents:
