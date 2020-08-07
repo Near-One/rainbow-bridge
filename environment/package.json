@@ -26,6 +26,7 @@
         "ethereumjs-block": "^2.2.2",
         "ethereumjs-tx": "^2.1.2",
         "ethereumjs-util": "^6.2.0",
+        "lodash": "^4.17.19",
         "merkle-patricia-tree": "^3.0.0",
         "near-api-js": "^0.26.0",
         "pm2": "^4.4.0",

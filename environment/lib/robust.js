@@ -1,6 +1,7 @@
 /// This module gives a few utils for robust error handling, 
 /// and wrap web3 with error handling and retry
 const Web3 = require('web3');
+const _ = require('lodash')
 
 const RETRY = 10;
 const DELAY = 500;
@@ -72,7 +73,39 @@ class RobustWeb3 {
                     data: contract.methods[method](...args).encodeABI()
                 };
 
-                return await promiseWithTimeout(5 * 60 * 1000, this.web3.eth.sendTransaction(tx), SLOW_TX_ERROR_MSG);
+                let receipt = await promiseWithTimeout(5 * 60 * 1000, this.web3.eth.sendTransaction(tx), SLOW_TX_ERROR_MSG);
+                if (_.isArray(receipt.logs)) {
+                    // decode logs
+                    var events = _.map(receipt.logs, function (log) {
+                        return contract._decodeEventABI.call({
+                            name: 'ALLEVENTS',
+                            jsonInterface: contract.options.jsonInterface
+                        }, log);
+                    });
+
+                    // make log names keys
+                    receipt.events = {};
+                    var count = 0;
+                    events.forEach(function (ev) {
+                        if (ev.event) {
+                            // if > 1 of the same event, don't overwrite any existing events
+                            if (receipt.events[ev.event]) {
+                                if (Array.isArray(receipt.events[ev.event])) {
+                                    receipt.events[ev.event].push(ev);
+                                } else {
+                                    receipt.events[ev.event] = [receipt.events[ev.event], ev];
+                                }
+                            } else {
+                                receipt.events[ev.event] = ev;
+                            }
+                        } else {
+                            receipt.events[count] = ev;
+                            count++;
+                        }
+                    });
+                    delete receipt.logs;
+                }
+                return receipt;
             } catch (e) {
                 if (e.message === SLOW_TX_ERROR_MSG) {
                     console.log(SLOW_TX_ERROR_MSG);
