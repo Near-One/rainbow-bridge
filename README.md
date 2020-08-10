@@ -22,24 +22,22 @@
 </div>
 
 ## Pre-requisites
+
 The current version of CLI is all-in-one package -- it is used both for production and testing. As a result, even if you
 need CLI only for the token transfer you need to install all testing dependencies. This will be changed in the future.
 
-If you want to run local Ethereum network you would need to install [ganache-cli](https://www.npmjs.com/package/ganache-cli) globally.
 
-You would also need to install resources needed to compile nearcore (in the future this will only be required for the testing CLI):
+* Install golang, [see](https://golang.org/dl/).
+* Make sure you are using Node with version <=13. We recommend using [nvm](https://github.com/nvm-sh/nvm) for installing node and npm, if you already don't have one. This constraint will be removed soon;
+* You would also need to install resources needed to compile nearcore (in the future this will only be required for the testing CLI):
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
 rustup default stable
 rustup target add wasm32-unknown-unknown
 ```
+* Then install dependencies needed for the compilation of nearcore, [see](https://docs.near.org/docs/local-setup/running-testnet#compiling-and-running-official-node-without-docker).
 
-Then install dependencies needed for the compilation of nearcore, [see](https://docs.near.org/docs/local-setup/running-testnet#compiling-and-running-official-node-without-docker).
-
-Then install golang, [see](https://golang.org/dl/).
-
-We recommend using [nvm](https://github.com/nvm-sh/nvm) for installing node and npm, if you already don't have one.
 
 ## Usage
 You can either install `rainbow-bridge-cli` from npm or clone it and use locally.
