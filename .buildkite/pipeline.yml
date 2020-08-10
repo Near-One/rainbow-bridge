@@ -78,6 +78,9 @@ steps:
   
     - command: |
         source ~/.nvm/nvm.sh
+        cd environment
+        yarn
+        cd ..
         cd libs-sol/nearbridge
         yarn
         yarn test
@@ -152,6 +155,9 @@ steps:
   
     - command: |
         source ~/.nvm/nvm.sh
+        cd environment
+        yarn
+        cd ..
         ci/test_verify_near_headers.sh
     
       label: "verify near headers"
