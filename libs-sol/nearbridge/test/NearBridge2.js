@@ -119,3 +119,50 @@ contract('Test adding blocks in new epoch when bps change', function ([_, addr1]
         await this.bridge.blockHashes(369);
     });
 });
+
+contract('After challenge prev should be revert to prev epoch of latest valid block', function ([_, addr1]) {
+    beforeEach(async function () {
+
+    });
+
+    it('should be ok', async function () {
+        this.decoder = await NearDecoder.new();
+        this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(3600));
+        await this.bridge.deposit({ value: web3.utils.toWei('1') });
+
+        const block181 = require('./181.json');
+        const block244 = require('./244.json');
+        const block304 = require('./304.json');
+        const block308 = require('./308.json');
+        const block368 = require('./368.json');
+        const block369 = require('./369.json');
+
+        await this.bridge.initWithValidators(borshifyInitialValidators(block181.next_bps));
+        await this.bridge.initWithBlock(borshify(block244));
+        await this.bridge.blockHashes(244);
+
+        let now = await time.latest();
+        await timeIncreaseTo(now.add(time.duration.seconds(3600)));
+
+        await this.bridge.addLightClientBlock(borshify(block304));
+        await this.bridge.blockHashes(304);
+
+        let oldEpochId = (await this.bridge.prev()).epochId;
+
+        now = await time.latest();
+        await timeIncreaseTo(now.add(time.duration.seconds(3600)));
+
+        await this.bridge.addLightClientBlock(borshify(block308));
+        await this.bridge.blockHashes(308);
+
+        now = await time.latest();
+        await timeIncreaseTo(now.add(time.duration.seconds(3600)));
+
+        block368.approvals_after_next[0] = block368.approvals_after_next[1];
+        await this.bridge.addLightClientBlock(borshify(block368));
+        await this.bridge.blockHashes(368);
+        assert((await this.bridge.prev()).epochId != oldEpochId)
+        await this.bridge.challenge(addr1, 0);
+        assert((await this.bridge.prev()).epochId == oldEpochId)
+    });
+});
