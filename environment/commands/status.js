@@ -79,10 +79,25 @@ class NearContracts {
       return new Status(Unknown, Error, ContractNotFound)
     }
     try {
-      const contract = new nearlib.Contract(masterAccount, contractAccount, {})
-      // TODO #257 check contract validity here
-      //console.log(contract);
-      return new Status(Unknown, Info, NotVerified)
+      const nearAccount = new nearlib.Account(near.connection, masterAccount)
+      const contract = new nearlib.Contract(nearAccount, contractAccount, {
+        changeMethods: ['boo'],
+        viewMethods: [],
+      })
+      // TODO #270 implement `initialized` method to NEAR contracts
+      // TODO #257 check the code deployed if possible
+      try {
+        await contract.boo()
+      } catch (err) {
+        if (
+          err.message &&
+          err.message.indexOf('Contract method is not found') >= 0
+        ) {
+          return new Status(contract.contractId, Ok, Deployed)
+        } else {
+          return new Status(Unknown, Info, NotVerified)
+        }
+      }
     } catch (err) {
       return new Status(Unknown, Error, InternalError)
     }
