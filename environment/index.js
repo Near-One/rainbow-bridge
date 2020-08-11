@@ -3,6 +3,7 @@ const { program } = require('commander');
 
 const { CleanCommand } = require('./commands/clean');
 const { PrepareCommand } = require('./commands/prepare');
+const { StatusCommand } = require('./commands/status');
 const { StartEthRelayCommand } = require('./commands/start/eth-relay.js');
 const { StartNearRelayCommand } = require('./commands/start/near-relay.js');
 const { StartNearWatchdogCommand } = require('./commands/start/near-watchdog.js');
@@ -220,6 +221,8 @@ RainbowConfig.addOptions(
         'core-src',
         'nearup-src',
     ]);
+
+program.command('status').action(StatusCommand.execute);
 
 // Maintainer commands.
 

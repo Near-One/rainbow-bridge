@@ -83,21 +83,56 @@ class Near2EthRelay {
                 console.log(`${JSON.stringify(currentValidators.current_validators)}`);
                 const borshInitialValidators = borshifyInitialValidators(currentValidators.current_validators);
                 // @ts-ignore
-                await this.clientContract.methods.initWithValidators(borshInitialValidators).send({
-                    from: this.ethMasterAccount,
-                    gas: 4000000,
-                    handleRevert: true,
-                    gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
-                });
+                let gasPrice = new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier')));
+                let err;
+                for (let i = 0; i < 10; i++) {
+                    try {
+                        await this.clientContract.methods.initWithValidators(borshInitialValidators).send({
+                            from: this.ethMasterAccount,
+                            gas: 4000000,
+                            handleRevert: true,
+                            gasPrice,
+                        });
+                    } catch (e) {
+                        if (e.message.includes('replacement transaction underpriced')) {
+                            gasPrice = gasPrice.mul(new BN(11)).div(new BN(10));
+                            continue;
+                        }
+                        err = e;
+                    }
+                    break;
+                }
+                if (err) {
+                    console.log('Failure');
+                    console.log(err);
+                    process.exit(1);
+                }
+
                 console.log('Initializing with block');
                 console.log(`${JSON.stringify(lightClientBlock)}`);
                 const borshBlock = borshify(lightClientBlock);
-                await this.clientContract.methods.initWithBlock(borshBlock).send({
-                    from: this.ethMasterAccount,
-                    gas: 4000000,
-                    handleRevert: true,
-                    gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
-                });
+                for (let i = 0; i < 10; i++) {
+                    try {
+                        await this.clientContract.methods.initWithBlock(borshBlock).send({
+                            from: this.ethMasterAccount,
+                            gas: 4000000,
+                            handleRevert: true,
+                            gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
+                        });
+                    } catch (e) {
+                        if (e.message.includes('replacement transaction underpriced')) {
+                            gasPrice = gasPrice.mul(new BN(11)).div(new BN(10));
+                            continue;
+                        }
+                        err = e;
+                    }
+                    break;
+                }
+                if (err) {
+                    console.log('Failure');
+                    console.log(err);
+                    process.exit(1);
+                }
             }
             console.log('Client is initialized.');
         } catch (txRevertMessage) {
