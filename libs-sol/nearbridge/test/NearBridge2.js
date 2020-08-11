@@ -1,6 +1,6 @@
 
 const { time } = require('@openzeppelin/test-helpers');
-const bs58 = require('bs58');
+const { borshify, borshifyInitialValidators } = require('../../../environment/lib/borsh')
 
 const Ed25519 = artifacts.require('Ed25519');
 const NearBridge = artifacts.require('NearBridge');
@@ -10,64 +10,6 @@ async function timeIncreaseTo(seconds) {
     const delay = 1000 - new Date().getMilliseconds();
     await new Promise(resolve => setTimeout(resolve, delay));
     await time.increaseTo(seconds);
-}
-
-function borshifyInitialValidators(initialValidators) {
-    return Buffer.concat([
-        web3.utils.toBN(initialValidators.length).toBuffer('le', 4),
-        Buffer.concat(
-            initialValidators.map(nextBp => Buffer.concat([
-                web3.utils.toBN(nextBp.account_id.length).toBuffer('le', 4),
-                Buffer.from(nextBp.account_id),
-                nextBp.public_key.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
-                bs58.decode(nextBp.public_key.substr(8)),
-                web3.utils.toBN(nextBp.stake).toBuffer('le', 16),
-            ])),
-        ),
-    ]);
-}
-
-function borshify(block) {
-    return Buffer.concat([
-        bs58.decode(block.prev_block_hash),
-        bs58.decode(block.next_block_inner_hash),
-        Buffer.concat([
-            web3.utils.toBN(block.inner_lite.height).toBuffer('le', 8),
-            bs58.decode(block.inner_lite.epoch_id),
-            bs58.decode(block.inner_lite.next_epoch_id),
-            bs58.decode(block.inner_lite.prev_state_root),
-            bs58.decode(block.inner_lite.outcome_root),
-            web3.utils.toBN(block.inner_lite.timestamp).toBuffer('le', 8),
-            bs58.decode(block.inner_lite.next_bp_hash),
-            bs58.decode(block.inner_lite.block_merkle_root),
-        ]),
-        bs58.decode(block.inner_rest_hash),
-
-        Buffer.from([1]),
-        web3.utils.toBN(block.next_bps.length).toBuffer('le', 4),
-        Buffer.concat(
-            block.next_bps.map(nextBp => Buffer.concat([
-                web3.utils.toBN(nextBp.account_id.length).toBuffer('le', 4),
-                Buffer.from(nextBp.account_id),
-                nextBp.public_key.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
-                bs58.decode(nextBp.public_key.substr(8)),
-                web3.utils.toBN(nextBp.stake).toBuffer('le', 16),
-            ])),
-        ),
-
-        web3.utils.toBN(block.approvals_after_next.length).toBuffer('le', 4),
-        Buffer.concat(
-            block.approvals_after_next.map(
-                signature => signature === null
-                    ? Buffer.from([0])
-                    : Buffer.concat([
-                        Buffer.from([1]),
-                        signature.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
-                        bs58.decode(signature.substr(8)),
-                    ]),
-            ),
-        ),
-    ]);
 }
 
 contract('NearBridge2', function ([_, addr1]) {
@@ -175,5 +117,52 @@ contract('Test adding blocks in new epoch when bps change', function ([_, addr1]
 
         await this.bridge.addLightClientBlock(borshify(block369));
         await this.bridge.blockHashes(369);
+    });
+});
+
+contract('After challenge prev should be revert to prev epoch of latest valid block', function ([_, addr1]) {
+    beforeEach(async function () {
+
+    });
+
+    it('should be ok', async function () {
+        this.decoder = await NearDecoder.new();
+        this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(3600));
+        await this.bridge.deposit({ value: web3.utils.toWei('1') });
+
+        const block181 = require('./181.json');
+        const block244 = require('./244.json');
+        const block304 = require('./304.json');
+        const block308 = require('./308.json');
+        const block368 = require('./368.json');
+        const block369 = require('./369.json');
+
+        await this.bridge.initWithValidators(borshifyInitialValidators(block181.next_bps));
+        await this.bridge.initWithBlock(borshify(block244));
+        await this.bridge.blockHashes(244);
+
+        let now = await time.latest();
+        await timeIncreaseTo(now.add(time.duration.seconds(3600)));
+
+        await this.bridge.addLightClientBlock(borshify(block304));
+        await this.bridge.blockHashes(304);
+
+        let oldEpochId = (await this.bridge.prev()).epochId;
+
+        now = await time.latest();
+        await timeIncreaseTo(now.add(time.duration.seconds(3600)));
+
+        await this.bridge.addLightClientBlock(borshify(block308));
+        await this.bridge.blockHashes(308);
+
+        now = await time.latest();
+        await timeIncreaseTo(now.add(time.duration.seconds(3600)));
+
+        block368.approvals_after_next[0] = block368.approvals_after_next[1];
+        await this.bridge.addLightClientBlock(borshify(block368));
+        await this.bridge.blockHashes(368);
+        assert((await this.bridge.prev()).epochId != oldEpochId)
+        await this.bridge.challenge(addr1, 0);
+        assert((await this.bridge.prev()).epochId == oldEpochId)
     });
 });
