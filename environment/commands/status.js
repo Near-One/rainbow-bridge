@@ -215,13 +215,13 @@ class EthContracts {
     );
     this.client = await this.checkContract(
       web3,
-      RainbowConfig.getParam("near2eth-client-abi-path"),
-      RainbowConfig.getParam("near2eth-client-address")
+      RainbowConfig.getParam("eth-client-abi-path"),
+      RainbowConfig.getParam("eth-client-address")
     );
     this.prover = await this.checkContract(
       web3,
-      RainbowConfig.getParam("near2eth-prover-abi-path"),
-      RainbowConfig.getParam("near2eth-prover-address")
+      RainbowConfig.getParam("eth-prover-abi-path"),
+      RainbowConfig.getParam("eth-prover-address")
     );
   }
 
