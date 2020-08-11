@@ -22,8 +22,8 @@ class Near2EthWatchdog {
         console.log('Deploying Near2EthClient contract.');
         this.clientContract = new this.web3.eth.Contract(
             // @ts-ignore
-            JSON.parse(fs.readFileSync(RainbowConfig.getParam('near2eth-client-abi-path'))),
-            RainbowConfig.getParam('near2eth-client-address'), {
+            JSON.parse(fs.readFileSync(RainbowConfig.getParam('eth-client-abi-path'))),
+            RainbowConfig.getParam('eth-client-address'), {
             from: this.ethMasterAccount,
             handleRevert: true,
         },
@@ -62,7 +62,7 @@ class Near2EthWatchdog {
                                 let tx = new Tx({
                                     from: this.ethMasterAccount.address,
                                     // this is required otherwise gas is infinite
-                                    to: RainbowConfig.getParam('near2eth-client-address'),
+                                    to: RainbowConfig.getParam('eth-client-address'),
                                     gasLimit: Web3.utils.toHex(2000000),
                                     gasPrice: Web3.utils.toHex(gasPrice),
                                     nonce: Web3.utils.toHex(nonce),

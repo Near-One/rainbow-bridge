@@ -28,8 +28,8 @@ done
 node index.js init-near-contracts
 node index.js init-eth-ed25519
 # Use short lockup time for tests
-node index.js init-near2eth-client --near2eth-client-lock-eth-amount 1e18 --near2eth-client-lock-duration 10
-node index.js init-near2eth-prover
+node index.js init-eth-client --eth-client-lock-eth-amount 1e18 --eth-client-lock-duration 10
+node index.js init-eth-prover
 node index.js init-eth-erc20
 node index.js init-eth-locker
 node index.js init-near-fun-token

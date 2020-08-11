@@ -91,8 +91,8 @@ class TransferEthERC20FromNear {
         ethMasterAccount = ethMasterAccount.address;
         const clientContract = new web3.eth.Contract(
             // @ts-ignore
-            JSON.parse(fs.readFileSync(RainbowConfig.getParam('near2eth-client-abi-path'))),
-            RainbowConfig.getParam('near2eth-client-address'), {
+            JSON.parse(fs.readFileSync(RainbowConfig.getParam('eth-client-abi-path'))),
+            RainbowConfig.getParam('eth-client-address'), {
             from: ethMasterAccount,
             handleRevert: true,
         },
@@ -160,8 +160,8 @@ class TransferEthERC20FromNear {
         // Check that the proof is correct.
         const proverContract = new web3.eth.Contract(
             // @ts-ignore
-            JSON.parse(fs.readFileSync(RainbowConfig.getParam('near2eth-prover-abi-path'))),
-            RainbowConfig.getParam('near2eth-prover-address'), {
+            JSON.parse(fs.readFileSync(RainbowConfig.getParam('eth-prover-abi-path'))),
+            RainbowConfig.getParam('eth-prover-address'), {
             from: ethMasterAccount,
             handleRevert: true,
         },
