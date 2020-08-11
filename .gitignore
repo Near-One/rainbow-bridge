@@ -9,3 +9,5 @@ ethrelay/testdir
 /testdata
 
 venv
+
+**/transfer-eth-erc20-to-near.log.json
