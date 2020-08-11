@@ -60,12 +60,12 @@ class NearContracts {
     this.client = await this.checkContract(
       near,
       masterAccount,
-      RainbowConfig.getParam("eth2near-client-account")
+      RainbowConfig.getParam("near-client-account")
     );
     this.prover = await this.checkContract(
       near,
       masterAccount,
-      RainbowConfig.getParam("eth2near-prover-account")
+      RainbowConfig.getParam("near-prover-account")
     );
     this.funToken = await this.checkContract(
       near,
@@ -99,10 +99,10 @@ class NearStatus {
 
     const masterAccount = RainbowConfig.getParam("near-master-account");
     const masterKey = RainbowConfig.getParam("near-master-sk");
-    const clientAccount = RainbowConfig.getParam("eth2near-client-account");
-    const clientKey = RainbowConfig.getParam("eth2near-client-sk");
-    const proverAccount = RainbowConfig.getParam("eth2near-prover-account");
-    const proverKey = RainbowConfig.getParam("eth2near-prover-sk");
+    const clientAccount = RainbowConfig.getParam("near-client-account");
+    const clientKey = RainbowConfig.getParam("near-client-sk");
+    const proverAccount = RainbowConfig.getParam("near-prover-account");
+    const proverKey = RainbowConfig.getParam("near-prover-sk");
 
     // Init with basic data
     this.masterAccount = masterAccount

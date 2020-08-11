@@ -19,8 +19,8 @@ const {
 const {
   TransferEthERC20FromNear,
 } = require("./commands/transfer-eth-erc20-from-near");
-const { InitNEARContracts } = require("./commands/init-near-contracts");
-const { InitNEARFunToken } = require("./commands/init-near-fun-token");
+const { InitNearContracts } = require("./commands/init-near-contracts");
+const { InitNearFunToken } = require("./commands/init-near-fun-token");
 const { ETHDump } = require("./commands/eth-dump");
 const { NearDump } = require("./commands/near-dump");
 const { RainbowConfig } = require("./lib/config");
@@ -52,46 +52,46 @@ RainbowConfig.declareOption(
   "The secret key of the master account on Ethereum blockchain."
 );
 RainbowConfig.declareOption(
-  "eth2near-client-account",
-  "The account of the Eth2NearClient contract that can be used to accept ETH headers.",
-  "eth2nearclient"
+  "near-client-account",
+  "The account of the Near Client contract that can be used to accept ETH headers.",
+  "rainbow_bridge_eth_on_near_client"
 );
 RainbowConfig.declareOption(
-  "eth2near-client-sk",
-  "The secret key of the Eth2NearClient account. If not specified will use master SK."
+  "near-client-sk",
+  "The secret key of the Near Client account. If not specified will use master SK."
 );
 RainbowConfig.declareOption(
-  "eth2near-client-contract-path",
-  "The path to the Wasm file containing the Eth2NearClient contract.",
+  "near-client-contract-path",
+  "The path to the Wasm file containing the Near Client contract.",
   path.join(__dirname, "../libs-rs/res/eth_client.wasm")
 );
 RainbowConfig.declareOption(
-  "eth2near-client-init-balance",
-  "The initial balance of Eth2NearClient contract in femtoNEAR.",
+  "near-client-init-balance",
+  "The initial balance of Near Client contract in femtoNEAR.",
   "100000000000000000000000000"
 );
 RainbowConfig.declareOption(
-  "eth2near-client-validate-ethash",
-  "The initial balance of Eth2NearClient contract in femtoNEAR.",
+  "near-client-validate-ethash",
+  "The initial balance of Near Client contract in femtoNEAR.",
   "true"
 );
 RainbowConfig.declareOption(
-  "eth2near-prover-account",
-  "The account of the Eth2NearProver contract that can be used to accept ETH headers.",
-  "eth2nearprover"
+  "near-prover-account",
+  "The account of the Near Prover contract that can be used to accept ETH headers.",
+  "rainbow_bridge_eth_on_near_prover"
 );
 RainbowConfig.declareOption(
-  "eth2near-prover-sk",
-  "The secret key of the Eth2NearProver account. If not specified will use master SK."
+  "near-prover-sk",
+  "The secret key of the Near Prover account. If not specified will use master SK."
 );
 RainbowConfig.declareOption(
-  "eth2near-prover-contract-path",
-  "The path to the Wasm file containing the Eth2NearProver contract.",
+  "near-prover-contract-path",
+  "The path to the Wasm file containing the Near Prover contract.",
   path.join(__dirname, "../libs-rs/res/eth_prover.wasm")
 );
 RainbowConfig.declareOption(
-  "eth2near-prover-init-balance",
-  "The initial balance of Eth2NearProver contract in femtoNEAR.",
+  "near-prover-init-balance",
+  "The initial balance of Near Prover contract in femtoNEAR.",
   "100000000000000000000000000"
 );
 RainbowConfig.declareOption(
@@ -255,7 +255,7 @@ RainbowConfig.addOptions(
   [
     "near-master-account",
     "near-master-sk",
-    "eth2near-client-account",
+    "near-client-account",
     "near-network-id",
     "near-node-url",
     "daemon",
@@ -300,24 +300,24 @@ RainbowConfig.addOptions(
   program
     .command("init-near-contracts")
     .description(
-      "Deploys and initializes Eth2NearClient and Eth2NearProver contracts to NEAR blockchain."
+      "Deploys and initializes Near Client and Near Prover contracts to NEAR blockchain."
     )
-    .action(InitNEARContracts.execute),
+    .action(InitNearContracts.execute),
   [
     "near-network-id",
     "near-node-url",
     "eth-node-url",
     "near-master-account",
     "near-master-sk",
-    "eth2near-client-account",
-    "eth2near-client-sk",
-    "eth2near-client-contract-path",
-    "eth2near-client-init-balance",
-    "eth2near-client-validate-ethash",
-    "eth2near-prover-account",
-    "eth2near-prover-sk",
-    "eth2near-prover-contract-path",
-    "eth2near-prover-init-balance",
+    "near-client-account",
+    "near-client-sk",
+    "near-client-contract-path",
+    "near-client-init-balance",
+    "near-client-validate-ethash",
+    "near-prover-account",
+    "near-prover-sk",
+    "near-prover-contract-path",
+    "near-prover-init-balance",
   ]
 );
 
@@ -377,7 +377,7 @@ RainbowConfig.addOptions(
     .description(
       "Deploys and initializes mintable fungible token to NEAR blockchain. Requires locker on Ethereum side."
     )
-    .action(InitNEARFunToken.execute),
+    .action(InitNearFunToken.execute),
   [
     "near-fun-token-account",
     "near-fun-token-sk",
@@ -444,7 +444,7 @@ RainbowConfig.addOptions(
     "near-node-url",
     "near-network-id",
     "near-fun-token-account",
-    "eth2near-client-account",
+    "near-client-account",
     "near-master-account",
     "near-master-sk",
     "eth-gas-multiplier",
