@@ -8,73 +8,10 @@ const { toBuffer } = require('eth-util-lite');
 const { RainbowConfig } = require('./config');
 const { BN } = require('ethereumjs-util');
 const { sleep, RobustWeb3, normalizeEthKey } = require('../lib/robust');
+const { borshify, borshifyInitialValidators } = require('../lib/borsh')
 
 /// Maximum number of retries a Web3 method call will perform.
 const MAX_WEB3_RETRIES = 1000;
-
-function borshify(block) {
-    return Buffer.concat([
-        bs58.decode(block.prev_block_hash),
-        bs58.decode(block.next_block_inner_hash),
-        Buffer.concat([
-            // @ts-ignore
-            Web3.utils.toBN(block.inner_lite.height).toBuffer('le', 8),
-            bs58.decode(block.inner_lite.epoch_id),
-            bs58.decode(block.inner_lite.next_epoch_id),
-            bs58.decode(block.inner_lite.prev_state_root),
-            bs58.decode(block.inner_lite.outcome_root),
-            // @ts-ignore
-            Web3.utils.toBN(block.inner_lite.timestamp_nanosec).toBuffer('le', 8),
-            bs58.decode(block.inner_lite.next_bp_hash),
-            bs58.decode(block.inner_lite.block_merkle_root),
-        ]),
-        bs58.decode(block.inner_rest_hash),
-
-        Buffer.from([1]),
-        // @ts-ignore
-        Web3.utils.toBN(block.next_bps.length).toBuffer('le', 4),
-        Buffer.concat(
-            block.next_bps.map(nextBp => Buffer.concat([
-                // @ts-ignore
-                Web3.utils.toBN(nextBp.account_id.length).toBuffer('le', 4),
-                Buffer.from(nextBp.account_id),
-                nextBp.public_key.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
-                bs58.decode(nextBp.public_key.substr(8)),
-                // @ts-ignore
-                Web3.utils.toBN(nextBp.stake).toBuffer('le', 16),
-            ])),
-        ),
-
-        // @ts-ignore
-        Web3.utils.toBN(block.approvals_after_next.length).toBuffer('le', 4),
-        Buffer.concat(
-            block.approvals_after_next.map(
-                signature => signature === null
-                    ? Buffer.from([0])
-                    : Buffer.concat([
-                        Buffer.from([1]),
-                        signature.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
-                        bs58.decode(signature.substr(8)),
-                    ]),
-            ),
-        ),
-    ]);
-}
-
-function borshifyInitialValidators(initialValidators) {
-    return Buffer.concat([
-        Web3.utils.toBN(initialValidators.length).toBuffer('le', 4),
-        Buffer.concat(
-            initialValidators.map(nextBp => Buffer.concat([
-                Web3.utils.toBN(nextBp.account_id.length).toBuffer('le', 4),
-                Buffer.from(nextBp.account_id),
-                nextBp.public_key.substr(0, 8) === 'ed25519:' ? Buffer.from([0]) : Buffer.from([1]),
-                bs58.decode(nextBp.public_key.substr(8)),
-                Web3.utils.toBN(nextBp.stake).toBuffer('le', 16),
-            ])),
-        ),
-    ]);
-}
 
 class Near2EthRelay {
     async initialize() {
@@ -146,21 +83,56 @@ class Near2EthRelay {
                 console.log(`${JSON.stringify(currentValidators.current_validators)}`);
                 const borshInitialValidators = borshifyInitialValidators(currentValidators.current_validators);
                 // @ts-ignore
-                await this.clientContract.methods.initWithValidators(borshInitialValidators).send({
-                    from: this.ethMasterAccount,
-                    gas: 4000000,
-                    handleRevert: true,
-                    gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
-                });
+                let gasPrice = new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier')));
+                let err;
+                for (let i = 0; i < 10; i++) {
+                    try {
+                        await this.clientContract.methods.initWithValidators(borshInitialValidators).send({
+                            from: this.ethMasterAccount,
+                            gas: 4000000,
+                            handleRevert: true,
+                            gasPrice,
+                        });
+                    } catch (e) {
+                        if (e.message.includes('replacement transaction underpriced')) {
+                            gasPrice = gasPrice.mul(new BN(11)).div(new BN(10));
+                            continue;
+                        }
+                        err = e;
+                    }
+                    break;
+                }
+                if (err) {
+                    console.log('Failure');
+                    console.log(err);
+                    process.exit(1);
+                }
+
                 console.log('Initializing with block');
                 console.log(`${JSON.stringify(lightClientBlock)}`);
                 const borshBlock = borshify(lightClientBlock);
-                await this.clientContract.methods.initWithBlock(borshBlock).send({
-                    from: this.ethMasterAccount,
-                    gas: 4000000,
-                    handleRevert: true,
-                    gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
-                });
+                for (let i = 0; i < 10; i++) {
+                    try {
+                        await this.clientContract.methods.initWithBlock(borshBlock).send({
+                            from: this.ethMasterAccount,
+                            gas: 4000000,
+                            handleRevert: true,
+                            gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(RainbowConfig.getParam('eth-gas-multiplier'))),
+                        });
+                    } catch (e) {
+                        if (e.message.includes('replacement transaction underpriced')) {
+                            gasPrice = gasPrice.mul(new BN(11)).div(new BN(10));
+                            continue;
+                        }
+                        err = e;
+                    }
+                    break;
+                }
+                if (err) {
+                    console.log('Failure');
+                    console.log(err);
+                    process.exit(1);
+                }
             }
             console.log('Client is initialized.');
         } catch (txRevertMessage) {
