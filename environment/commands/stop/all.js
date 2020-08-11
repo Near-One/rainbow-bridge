@@ -2,16 +2,17 @@ const ProcessManager = require('pm2-promise');
 
 const { StopLocalNearNodeCommand } = require('./near.js');
 
-function stop(serviceName) {
-    ProcessManager.delete(serviceName).then(() => {
+async function stop(serviceName) {
+    try {
+        await ProcessManager.delete(serviceName);
         console.log(serviceName, 'successfully stopped...');
-    }).catch((err) => {
+    } catch (err) {
         if (!err.message.includes('process or namespace not found')) {
             console.log(serviceName, 'error stopping the process due to:', err);
         } else {
             console.log(serviceName, 'already stopped');
         }
-    });
+    };
 }
 
 class StopAllCommands {
@@ -24,6 +25,7 @@ class StopAllCommands {
         }
 
         console.log('Stopping all processes done');
+        await ProcessManager.disconnect();
     }
 }
 
