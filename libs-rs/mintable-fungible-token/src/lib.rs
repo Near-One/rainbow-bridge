@@ -215,7 +215,7 @@ pub trait ExtFungibleToken {
 #[near_bindgen]
 impl MintableFungibleToken {
     /// Initializes the contract without total supply.
-    /// `prover_account`: NEAR account of the Eth2NearProver contract;
+    /// `prover_account`: NEAR account of the Near Prover contract;
     /// `locker_address`: Ethereum address of the locker contract, in hex.
     #[init]
     pub fn new(prover_account: AccountId, locker_address: String) -> Self {
