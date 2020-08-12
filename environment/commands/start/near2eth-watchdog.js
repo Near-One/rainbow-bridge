@@ -3,7 +3,7 @@ const { spawnProcess } = require('./helpers')
 const { Near2EthWatchdog } = require('../../lib/near2eth-watchdog')
 const { RainbowConfig } = require('../../lib/config')
 
-class StartNearWatchdogCommand {
+class StartNear2EthWatchdogCommand {
   static async execute() {
     if (RainbowConfig.getParam('daemon') === 'true') {
       ProcessManager.connect(err => {
@@ -31,4 +31,4 @@ class StartNearWatchdogCommand {
   }
 }
 
-exports.StartNearWatchdogCommand = StartNearWatchdogCommand
+exports.StartNear2EthWatchdogCommand = StartNear2EthWatchdogCommand

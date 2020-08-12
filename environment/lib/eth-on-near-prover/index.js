@@ -31,7 +31,7 @@ const borshSchema = {
   },
 }
 
-class EthProverContract extends BorshContract {
+class EthOnNearProverContract extends BorshContract {
   constructor(account, contractId) {
     super(borshSchema, account, contractId, {
       viewMethods: [],
@@ -77,6 +77,6 @@ class EthProverContract extends BorshContract {
   }
 }
 
-exports.EthProverContract = EthProverContract
+exports.EthOnNearProverContract = EthOnNearProverContract
 // For debugging;
 exports.borshSchema = borshSchema

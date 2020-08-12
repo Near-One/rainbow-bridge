@@ -3,8 +3,6 @@ const { web3BlockToRlp } = require('../eth2near-relay')
 const Web3 = require('web3')
 const BN = require('bn.js')
 const { BorshContract, hexToBuffer, readerToHex } = require('../borsh')
-const { RobustWeb3 } = require('../robust')
-// @ts-ignore
 const roots = require('./dag_merkle_roots.json')
 
 const borshSchema = {
@@ -65,7 +63,7 @@ const borshSchema = {
   },
 }
 
-class NearClientContract extends BorshContract {
+class EthOnNearClientContract extends BorshContract {
   constructor(account, contractId) {
     super(borshSchema, account, contractId, {
       viewMethods: [
@@ -170,4 +168,4 @@ class NearClientContract extends BorshContract {
   }
 }
 
-exports.NearClientContract = NearClientContract
+exports.EthOnNearClientContract = EthOnNearClientContract

@@ -1,23 +1,66 @@
-const ProcessManager = require('pm2')
+const ProcessManager = require('pm2-promise')
+const { execSync } = require('child_process')
+
+async function stopLocalNearNode() {
+  console.log('Stopping near node')
+  const command = 'python3 ~/.rainbow/nearup/main.py stop'
+  try {
+    execSync(command)
+    console.log('near node successfully stopped')
+  } catch (err) {
+    console.log('Error stopping local near node', err)
+  }
+}
+
+async function stop(serviceName) {
+  try {
+    console.log('Stopping', serviceName)
+    await ProcessManager.delete(serviceName)
+    console.log(serviceName, 'successfully stopped')
+  } catch (err) {
+    if (
+      err.message &&
+      err.message.indexOf('process or namespace not found') >= 0
+    ) {
+      console.log(serviceName, 'already stopped')
+    } else {
+      console.log(
+        serviceName,
+        'error stopping the process due to:',
+        err.message
+      )
+    }
+  }
+}
 
 class StopManagedProcessCommand {
-  static execute(command) {
+  static async execute(command) {
     const serviceName = command._name
-    console.log('Stopping process:', serviceName)
-    ProcessManager.delete(serviceName, err => {
-      if (err) {
-        if (!err.message.includes('process or namespace not found')) {
-          console.log('Error stopping the process due to:', err)
-          process.exit(1)
-        } else {
-          console.log(serviceName, 'already stopped')
-        }
-      } else {
-        console.log(serviceName, 'successfully stopped...')
+
+    const consoleError = console.error
+    // A cool hack to avoid annoying pm2 printing to stderr
+    console.error = function() {}
+
+    if (serviceName === 'near-node') {
+      await stopLocalNearNode()
+    } else if (serviceName === 'all') {
+      await stopLocalNearNode()
+      for (const serviceName of [
+        'ganache',
+        'eth2near-relay',
+        'near2eth-relay',
+        'near2eth-watchdog',
+      ]) {
+        await stop(serviceName)
+        await ProcessManager.disconnect()
       }
-      // @ts-ignore
-      ProcessManager.disconnect()
-    })
+    } else {
+      await stop(serviceName)
+      await ProcessManager.disconnect()
+    }
+
+    // Return console.error back
+    console.error = consoleError
   }
 }
 

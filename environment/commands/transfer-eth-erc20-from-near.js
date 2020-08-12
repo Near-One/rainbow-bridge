@@ -1,4 +1,3 @@
-const Web3 = require('web3')
 const nearlib = require('near-api-js')
 const BN = require('bn.js')
 const fs = require('fs')

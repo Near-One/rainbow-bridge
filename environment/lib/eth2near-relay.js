@@ -1,4 +1,3 @@
-const Web3 = require('web3')
 const exec = require('child_process').exec
 const utils = require('ethereumjs-util')
 const BN = require('bn.js')
@@ -45,7 +44,7 @@ class Eth2NearRelay {
       let chainBlockNumber
       try {
         // Even retry 10 times ethClientContract.last_block_number could still fail
-        // Return back to loop to avoid crash eth-relay.
+        // Return back to loop to avoid crash eth2near-relay.
         clientBlockNumber = (
           await this.ethClientContract.last_block_number()
         ).toNumber()
