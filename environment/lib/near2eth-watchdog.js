@@ -60,13 +60,17 @@ class Near2EthWatchdog {
 
       // We cannot memorize processed blocks because they might have been re-submitted with different data.
       for (let i = 0; i < lastClientBlock.approvals_after_next_length; i++) {
-        console.log(`Checking signature ${i}.`);
-        const result = await this.clientContract.methods.checkBlockProducerSignatureInLastBlock(i).call();
+        console.log(`Checking signature ${i}.`)
+        const result = await this.clientContract.methods
+          .checkBlockProducerSignatureInLastBlock(i)
+          .call()
         if (!result) {
-          console.log(`Challenging signature ${i}.`);
+          console.log(`Challenging signature ${i}.`)
           try {
-            let gasPrice = await this.web3.eth.getGasPrice();
-            let nonce = await this.web3.eth.getTransactionCount(this.ethMasterAccount);
+            let gasPrice = await this.web3.eth.getGasPrice()
+            let nonce = await this.web3.eth.getTransactionCount(
+              this.ethMasterAccount
+            )
             while (gasPrice < 10000 * 1e9) {
               try {
                 // Keep sending with same nonce but higher gasPrice to override same txn
@@ -77,10 +81,12 @@ class Near2EthWatchdog {
                   gasLimit: Web3.utils.toHex(2000000),
                   gasPrice: Web3.utils.toHex(gasPrice),
                   nonce: Web3.utils.toHex(nonce),
-                  data: this.clientContract.methods.challenge(this.ethMasterAccount, i).encodeABI()
-                });
-                tx.sign(privateKey);
-                tx = '0x' + tx.serialize().toString('hex');
+                  data: this.clientContract.methods
+                    .challenge(this.ethMasterAccount, i)
+                    .encodeABI(),
+                })
+                tx.sign(privateKey)
+                tx = '0x' + tx.serialize().toString('hex')
 
                 await promiseWithTimeout(
                   5 * 60 * 1000,

@@ -14,7 +14,9 @@ const { StartLocalNearNodeCommand } = require('./commands/start/near.js')
 const { StopLocalNearNodeCommand } = require('./commands/stop/near.js')
 const { StopAllCommands } = require('./commands/stop/all.js')
 const { StopManagedProcessCommand } = require('./commands/stop/process.js')
-const { DangerSubmitInvalidNearBlock } = require('./commands/danger-submit-invalid-near-block');
+const {
+  DangerSubmitInvalidNearBlock,
+} = require('./commands/danger-submit-invalid-near-block')
 const {
   TransferETHERC20ToNear,
 } = require('./commands/transfer-eth-erc20-to-near')
@@ -43,7 +45,7 @@ RainbowConfig.declareOption('eth-node-url', 'The URL of the Ethereum node.')
 RainbowConfig.declareOption(
   'near-master-account',
   'The account of the master account on NEAR blockchain that can be used to deploy and initialize the test contracts.' +
-  ' This account will also own the initial supply of the fungible tokens.'
+    ' This account will also own the initial supply of the fungible tokens.'
 )
 RainbowConfig.declareOption(
   'near-master-sk',
@@ -491,12 +493,18 @@ RainbowConfig.addOptions(
 )
 
 // Testing command
-const dangerCommand = program.command('DANGER')
-  .description("Dangerous commands that should only be used for testing purpose.");
+const dangerCommand = program
+  .command('DANGER')
+  .description(
+    'Dangerous commands that should only be used for testing purpose.'
+  )
 
 RainbowConfig.addOptions(
-  dangerCommand.command('submit_invalid_near_block')
-    .description('Fetch latest near block, randomly mutate one byte and submit to NearBridge')
+  dangerCommand
+    .command('submit_invalid_near_block')
+    .description(
+      'Fetch latest near block, randomly mutate one byte and submit to NearBridge'
+    )
     .action(DangerSubmitInvalidNearBlock.execute),
   [
     'eth-node-url',
@@ -507,7 +515,7 @@ RainbowConfig.addOptions(
     'eth-client-address',
     'near2eth-relay-delay',
     'eth-gas-multiplier',
-  ],
+  ]
 )
 
 program
@@ -535,6 +543,6 @@ RainbowConfig.addOptions(
     .action(NearDump.execute),
   ['near-node-url']
 )
-  ; (async () => {
-    await program.parseAsync(process.argv)
-  })()
+;(async () => {
+  await program.parseAsync(process.argv)
+})()

@@ -198,7 +198,7 @@ function deserialize(schema, fieldType, buffer) {
   if (reader.offset < buffer.length) {
     throw new Error(
       `Unexpected ${buffer.length -
-      reader.offset} bytes after deserialized data`
+        reader.offset} bytes after deserialized data`
     )
   }
   return result
@@ -259,7 +259,7 @@ const txnStatus = async (
   if (!result) {
     throw new Error(
       `Transaction ${txHash} didn't finish after ${(retries * wait) /
-      1000} seconds`
+        1000} seconds`
     )
   }
 
@@ -299,17 +299,17 @@ const signAndSendTransaction = async (
       } else {
         const status = await account.connection.provider.status()
         let signedTx
-          ;[txHash, signedTx] = await nearlib.transactions.signTransaction(
-            receiverId,
-            ++accessKey.nonce,
-            actions,
-            nearlib.utils.serialize.base_decode(
-              status.sync_info.latest_block_hash
-            ),
-            account.connection.signer,
-            account.accountId,
-            account.connection.networkId
-          )
+        ;[txHash, signedTx] = await nearlib.transactions.signTransaction(
+          receiverId,
+          ++accessKey.nonce,
+          actions,
+          nearlib.utils.serialize.base_decode(
+            status.sync_info.latest_block_hash
+          ),
+          account.connection.signer,
+          account.accountId,
+          account.connection.networkId
+        )
         const bytes = signedTx.encode()
         sendTxnAsync = async () => {
           await account.connection.provider.sendJsonRpc('broadcast_tx_async', [
@@ -380,66 +380,96 @@ function getBorshTransactionLastResult(txResult) {
 
 class BorshContract {
   constructor(borshSchema, account, contractId, options) {
-    this.account = account;
-    this.contractId = contractId;
-    options.viewMethods.forEach((d) => {
+    this.account = account
+    this.contractId = contractId
+    options.viewMethods.forEach(d => {
       Object.defineProperty(this, d.methodName, {
         writable: false,
         enumerable: true,
-        value: async (args) => {
-          args = serialize(borshSchema, d.inputFieldType, args);
-          const result = await backoff(10, () => this.account.connection.provider.query(`call/${this.contractId}/${d.methodName}`, nearlib.utils.serialize.base_encode(args)));
+        value: async args => {
+          args = serialize(borshSchema, d.inputFieldType, args)
+          const result = await backoff(10, () =>
+            this.account.connection.provider.query(
+              `call/${this.contractId}/${d.methodName}`,
+              nearlib.utils.serialize.base_encode(args)
+            )
+          )
           if (result.logs) {
-            this.account.printLogs(this.contractId, result.logs);
+            this.account.printLogs(this.contractId, result.logs)
           }
-          return result.result && result.result.length > 0 && deserialize(borshSchema, d.outputFieldType, Buffer.from(result.result));
+          return (
+            result.result &&
+            result.result.length > 0 &&
+            deserialize(
+              borshSchema,
+              d.outputFieldType,
+              Buffer.from(result.result)
+            )
+          )
         },
-      });
-    });
-    options.changeMethods.forEach((d) => {
+      })
+    })
+    options.changeMethods.forEach(d => {
       Object.defineProperty(this, d.methodName, {
         writable: false,
         enumerable: true,
         value: async (args, gas, amount) => {
-          args = serialize(borshSchema, d.inputFieldType, args);
+          args = serialize(borshSchema, d.inputFieldType, args)
 
-          const rawResult = await signAndSendTransaction(this.accessKey, this.account, this.contractId, [nearlib.transactions.functionCall(
-            d.methodName,
-            Buffer.from(args),
-            gas || DEFAULT_FUNC_CALL_AMOUNT,
-            amount,
-          )]);
+          const rawResult = await signAndSendTransaction(
+            this.accessKey,
+            this.account,
+            this.contractId,
+            [
+              nearlib.transactions.functionCall(
+                d.methodName,
+                Buffer.from(args),
+                gas || DEFAULT_FUNC_CALL_AMOUNT,
+                amount
+              ),
+            ]
+          )
 
-          const result = getBorshTransactionLastResult(rawResult);
-          return result && deserialize(borshSchema, d.outputFieldType, result);
+          const result = getBorshTransactionLastResult(rawResult)
+          return result && deserialize(borshSchema, d.outputFieldType, result)
         },
-      });
-    });
+      })
+    })
 
-    options.changeMethods.forEach((d) => {
+    options.changeMethods.forEach(d => {
       Object.defineProperty(this, d.methodName + '_async', {
         writable: false,
         enumerable: true,
         value: async (args, gas, amount) => {
-          args = serialize(borshSchema, d.inputFieldType, args);
-          return await signAndSendTransactionAsync(this.accessKey, this.account, this.contractId, [nearlib.transactions.functionCall(
-            d.methodName,
-            Buffer.from(args),
-            gas || DEFAULT_FUNC_CALL_AMOUNT,
-            amount,
-          )]);
-        }
+          args = serialize(borshSchema, d.inputFieldType, args)
+          return await signAndSendTransactionAsync(
+            this.accessKey,
+            this.account,
+            this.contractId,
+            [
+              nearlib.transactions.functionCall(
+                d.methodName,
+                Buffer.from(args),
+                gas || DEFAULT_FUNC_CALL_AMOUNT,
+                amount
+              ),
+            ]
+          )
+        },
       })
     })
   }
 
   async accessKeyInit() {
-    await this.account.ready;
+    await this.account.ready
 
-    this.accessKey = await this.account.findAccessKey();
+    this.accessKey = await this.account.findAccessKey()
     if (!this.accessKey) {
       // @ts-ignore
-      throw new Error(`Can not sign transactions for account ${this.account.accountId}, no matching key pair found in Signer.`, 'KeyNotFound');
+      throw new Error(
+        `Can not sign transactions for account ${this.account.accountId}, no matching key pair found in Signer.`,
+        'KeyNotFound'
+      )
     }
   }
 }
@@ -490,12 +520,12 @@ function borshify(block) {
         signature === null
           ? Buffer.from([0])
           : Buffer.concat([
-            Buffer.from([1]),
-            signature.substr(0, 8) === 'ed25519:'
-              ? Buffer.from([0])
-              : Buffer.from([1]),
-            bs58.decode(signature.substr(8)),
-          ])
+              Buffer.from([1]),
+              signature.substr(0, 8) === 'ed25519:'
+                ? Buffer.from([0])
+                : Buffer.from([1]),
+              bs58.decode(signature.substr(8)),
+            ])
       )
     ),
   ])
