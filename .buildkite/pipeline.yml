@@ -1,194 +1,194 @@
 steps:
-    - command: |
-        source ~/.cargo/env
-        rustup default stable
-        ci/test_verify_eth_headers.sh
-    
-      label: "verify eth headers"
-      agents:
-      - "queue=medium"
-  
-    - command: | 
-        source ~/.cargo/env
-        rustup default stable
-        ci/test_verify_eth_proofs.sh
-    
-      label: "verify eth proofs"
-      agents:
-      - "queue=medium"
-  
-    - command: |
-        source ~/.cargo/env
-        rustup default stable
-        cd libs-rs
-        eth-client/test.sh
-    
-      label: "eth-client tests"
-      agents:
-      - "queue=medium"
-  
-    - command: |
-        source ~/.cargo/env
-        rustup default stable
-        cd libs-rs
-        eth-prover/test.sh
-    
-      label: "eth-prover tests"
-      agents:
-      - "queue=medium"
-  
-    - command: |
-        cd libs-rs
-        ./build_all.sh
-        changed_files=$$(git status --porcelain --untracked-files=no | wc -l)
-        if [ $$changed_files -gt 0 ]; then
-          echo 'contract changed, please rebuild contract'
-          exit 1
-        fi
-    
-      label: "build all rust contracts"
-      agents:
-      - "queue=medium"
-  
-    - command: |
-        source ~/.cargo/env
-        source ~/.nvm/nvm.sh
-        source ~/.yarn/yarn.sh
-        cd libs-sol
-        ./build_all.sh
-    
-      label: "build all solidity contracts"
-      agents:
-      - "queue=medium"
-  
-    - label: "lint" 
-      command: |
-        source ~/.cargo/env
-        source ~/.nvm/nvm.sh
-        source ~/.yarn/yarn.sh
-        cd environment
-        yarn
-        yarn run lint
-        cd ../libs-sol/nearbridge
-        yarn
-        yarn lint
-      agents:
-      - "queue=medium"
-      soft_fail:
+  - command: |
+      source ~/.cargo/env
+      rustup default stable
+      ci/test_verify_eth_headers.sh
+
+    label: 'verify eth headers'
+    agents:
+      - 'queue=medium'
+
+  - command: |
+      source ~/.cargo/env
+      rustup default stable
+      ci/test_verify_eth_proofs.sh
+
+    label: 'verify eth proofs'
+    agents:
+      - 'queue=medium'
+
+  - command: |
+      source ~/.cargo/env
+      rustup default stable
+      cd libs-rs
+      eth-client/test.sh
+
+    label: 'eth-client tests'
+    agents:
+      - 'queue=medium'
+
+  - command: |
+      source ~/.cargo/env
+      rustup default stable
+      cd libs-rs
+      eth-prover/test.sh
+
+    label: 'eth-prover tests'
+    agents:
+      - 'queue=medium'
+
+  - command: |
+      cd libs-rs
+      ./build_all.sh
+      changed_files=$$(git status --porcelain --untracked-files=no | wc -l)
+      if [ $$changed_files -gt 0 ]; then
+        echo 'contract changed, please rebuild contract'
+        exit 1
+      fi
+
+    label: 'build all rust contracts'
+    agents:
+      - 'queue=medium'
+
+  - command: |
+      source ~/.cargo/env
+      source ~/.nvm/nvm.sh
+      source ~/.yarn/yarn.sh
+      cd libs-sol
+      ./build_all.sh
+
+    label: 'build all solidity contracts'
+    agents:
+      - 'queue=medium'
+
+  - label: 'lint'
+    command: |
+      source ~/.cargo/env
+      source ~/.nvm/nvm.sh
+      source ~/.yarn/yarn.sh
+      cd environment
+      yarn
+      yarn run lint
+      cd ../libs-sol/nearbridge
+      yarn
+      yarn lint
+    agents:
+      - 'queue=medium'
+    soft_fail:
       - exit_status: 1
       - exit_status: 2
-  
-    - command: |
-        source ~/.nvm/nvm.sh
-        source ~/.yarn/yarn.sh
-        cd environment
-        yarn
-        cd ..
-        cd libs-sol/nearbridge
-        yarn
-        yarn test
-        node test/ed25519-test.js
-    
-      label: "nearbridge test"
-      agents:
-      - "queue=medium"
-  
-    - command: |
-        source ~/.cargo/env
-        cd libs-rs
-        cargo test
-    
-      label: "rust contracts test"
-      agents:
-      - "queue=medium"
-  
-    - command: | 
-        source ~/.nvm/nvm.sh
-        source ~/.yarn/yarn.sh
-        cd environment
-        yarn
-        cd ../libs-sol/nearprover
-        yarn
-        yarn test
-    
-      label: "nearprover test"
-      agents:
-      - "queue=medium"
-    
-    - label: "e2e test"
-      command: |
-        source ci/e2e_ci_prepare_env.sh
-        source ci/e2e_ci_prepare_log.sh
-        ci/e2e.sh
-    
-      artifact_paths:
-      - "logs/**/*.log"
-      timeout: 40
-    
-      agents:
-      - "queue=default"
 
-    - label: "test challenge with near watchdog"
-      command: |
-        source ci/e2e_ci_prepare_env.sh
-        source ci/e2e_ci_prepare_log.sh
-        ci/test_challenge.sh
-    
-      artifact_paths:
-      - "logs/**/*.log"
-      timeout: 40
-    
-      agents:
-      - "queue=default"
+  - command: |
+      source ~/.nvm/nvm.sh
+      source ~/.yarn/yarn.sh
+      cd environment
+      yarn
+      cd ..
+      cd libs-sol/nearbridge
+      yarn
+      yarn test
+      node test/ed25519-test.js
 
-    - label: "test ethrelay catchup"
-      command: |
-        source ci/e2e_ci_prepare_env.sh
-        source ci/e2e_ci_prepare_log.sh
-        ci/test_ethrelay_catchup.sh
-    
-      artifact_paths:
-      - "logs/**/*.log"
-      timeout: 40
-    
-      agents:
-      - "queue=default"
+    label: 'nearbridge test'
+    agents:
+      - 'queue=medium'
 
-    - label: "test command as installed from npm"
-      command: |
-        source ci/e2e_ci_prepare_env.sh
-        source ci/e2e_ci_prepare_log.sh
-        ci/test_npm_package.sh
-    
-      artifact_paths:
-      - "logs/**/*.log"
-      timeout: 40
-    
-      agents:
-      - "queue=default"
+  - command: |
+      source ~/.cargo/env
+      cd libs-rs
+      cargo test
 
-    - command: |
-        source ~/.nvm/nvm.sh
-        source ~/.yarn/yarn.sh
-        cd environment
-        yarn
-        cd ..
-        ci/test_verify_near_headers.sh
-    
-      label: "verify near headers"
-      agents:
-      - "queue=medium"
-  
-    - command: |
-        source ~/.nvm/nvm.sh
-        source ~/.yarn/yarn.sh
-        cd environment
-        yarn
-        cd ../libs-sol/nearprover
-        yarn
-        cd ../..
-        ci/test_verify_near_proofs.sh
-    
-      label: "verify near proofs"
-      agents:
-      - "queue=medium"
+    label: 'rust contracts test'
+    agents:
+      - 'queue=medium'
+
+  - command: |
+      source ~/.nvm/nvm.sh
+      source ~/.yarn/yarn.sh
+      cd environment
+      yarn
+      cd ../libs-sol/nearprover
+      yarn
+      yarn test
+
+    label: 'nearprover test'
+    agents:
+      - 'queue=medium'
+
+  - label: 'e2e test'
+    command: |
+      source ci/e2e_ci_prepare_env.sh
+      source ci/e2e_ci_prepare_log.sh
+      ci/e2e.sh
+
+    artifact_paths:
+      - 'logs/**/*.log'
+    timeout: 40
+
+    agents:
+      - 'queue=default'
+
+  - label: 'test challenge with rainbow bridge watchdog'
+    command: |
+      source ci/e2e_ci_prepare_env.sh
+      source ci/e2e_ci_prepare_log.sh
+      ci/test_challenge.sh
+
+    artifact_paths:
+      - 'logs/**/*.log'
+    timeout: 40
+
+    agents:
+      - 'queue=default'
+
+  - label: 'test ethrelay catchup'
+    command: |
+      source ci/e2e_ci_prepare_env.sh
+      source ci/e2e_ci_prepare_log.sh
+      ci/test_ethrelay_catchup.sh
+
+    artifact_paths:
+      - 'logs/**/*.log'
+    timeout: 40
+
+    agents:
+      - 'queue=default'
+
+  - label: 'test command as installed from npm'
+    command: |
+      source ci/e2e_ci_prepare_env.sh
+      source ci/e2e_ci_prepare_log.sh
+      ci/test_npm_package.sh
+
+    artifact_paths:
+      - 'logs/**/*.log'
+    timeout: 40
+
+    agents:
+      - 'queue=default'
+
+  - command: |
+      source ~/.nvm/nvm.sh
+      source ~/.yarn/yarn.sh
+      cd environment
+      yarn
+      cd ..
+      ci/test_verify_near_headers.sh
+
+    label: 'verify near headers'
+    agents:
+      - 'queue=medium'
+
+  - command: |
+      source ~/.nvm/nvm.sh
+      source ~/.yarn/yarn.sh
+      cd environment
+      yarn
+      cd ../libs-sol/nearprover
+      yarn
+      cd ../..
+      ci/test_verify_near_proofs.sh
+
+    label: 'verify near proofs'
+    agents:
+      - 'queue=medium'

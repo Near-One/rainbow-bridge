@@ -1,11 +1,11 @@
 const ProcessManager = require('pm2')
 const { spawnProcess } = require('./helpers')
-const { Near2EthRelay } = require('../../lib/near2eth-relay')
+const { Near2EthWatchdog } = require('../../lib/near2eth-watchdog')
 const { RainbowConfig } = require('../../lib/config')
 const path = require('path')
 const os = require('os')
 
-class StartNearRelayCommand {
+class StartNear2EthWatchdogCommand {
   static async execute() {
     if (RainbowConfig.getParam('daemon') === 'true') {
       ProcessManager.connect(err => {
@@ -15,24 +15,22 @@ class StartNearRelayCommand {
           )
           return
         }
-        spawnProcess('near-relay', {
-          name: 'near-relay',
+        spawnProcess('near-watchdog', {
+          name: 'near-watchdog',
           script: path.join(__dirname, '../../index.js'),
           interpreter: 'node',
-          error_file: '~/.rainbow/logs/near-relay/err.log',
-          out_file: '~/.rainbow/logs/near-relay/out.log',
-          args: ['start', 'near-relay', ...RainbowConfig.getArgsNoDaemon()],
-          wait_ready: true,
-          kill_timeout: 60000,
+          error_file: '~/.rainbow/logs/near-watchdog/err.log',
+          out_file: '~/.rainbow/logs/near-watchdog/out.log',
+          args: ['start', 'near-watchdog', ...RainbowConfig.getArgsNoDaemon()],
           logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS',
         })
       })
     } else {
-      const relay = new Near2EthRelay()
-      await relay.initialize()
-      await relay.run()
+      const watchdog = new Near2EthWatchdog()
+      await watchdog.initialize()
+      await watchdog.run()
     }
   }
 }
 
-exports.StartNearRelayCommand = StartNearRelayCommand
+exports.StartNear2EthWatchdogCommand = StartNear2EthWatchdogCommand

@@ -4,8 +4,8 @@ const bs58 = require('bs58')
 
 const BN = require('bn.js')
 const { TextDecoder } = require('util')
-const { borshifyOutcomeProof } = require('./nearProof')
-const { sleep, backoff, signAndSendTransaction } = require('../robust')
+const { borshifyOutcomeProof } = require('./near-proof')
+const { sleep } = require('../robust')
 
 class BorshError extends Error {
   constructor(message) {

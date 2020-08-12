@@ -3,4 +3,4 @@ services:
   near-node:
     build: .
     network_mode: host
-    command: bash -c "node index.js start eth-relay --daemon false"
+    command: bash -c "node index.js start eth2near-relay --daemon false"
