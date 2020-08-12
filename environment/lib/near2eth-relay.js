@@ -36,8 +36,8 @@ class Near2EthRelay {
         // Declare Near2EthClient contract.
         this.clientContract = new this.web3.eth.Contract(
             // @ts-ignore
-            JSON.parse(fs.readFileSync(RainbowConfig.getParam('near2eth-client-abi-path'))),
-            RainbowConfig.getParam('near2eth-client-address'), {
+            JSON.parse(fs.readFileSync(RainbowConfig.getParam('eth-client-abi-path'))),
+            RainbowConfig.getParam('eth-client-address'), {
             from: this.ethMasterAccount,
             handleRevert: true,
         },

@@ -113,12 +113,12 @@ Then edit `~/.rainbow/config.json` to be:
         "ethNodeUrl": "wss://ropsten.infura.io/ws/v3/<project_id>",
         "nearMasterAccount": "<your_near_account_id>",
         "nearMasterSk": "<your_near_sk>",
-        "eth2nearClientAccount": "eth2nearclient10",
-        "eth2nearProverAccount": "eth2nearprover10",
+        "nearClientAccount": "eth_on_near_client_10",
+        "nearProverAccount": "eth_on_near_prover_10",
         "ethMasterSk": "<your_eth_private_key>",
         "ethEd25519Address": "0x40b2d1334B7Fbbe2D4E1eb0Df689Af3D2a3903D2",
-        "near2ethClientAddress": "0x276D4d74Dc14251c8D75Ff4aE9175142E1C2254d",
-        "near2ethProverAddress": "0x69e75769a1D228f1c660869FB69455190fe9a80b",
+        "ethClientAddress": "0x276D4d74Dc14251c8D75Ff4aE9175142E1C2254d",
+        "ethProverAddress": "0x69e75769a1D228f1c660869FB69455190fe9a80b",
         "ethErc20Address": "0x88f975D5A1153Ea92AF66e7c4292576a329c04B6",
         "nearFunTokenAccount": "funtoken10",
         "ethLockerAddress": "0xAfa909a33241d0271B7fd73b57C34439e9fBC84a",
@@ -217,8 +217,8 @@ First let's initialize the contracts that bridge needs to function:
 ```bash
 node index.js init-near-contracts
 node index.js init-eth-ed25519
-node index.js init-near2eth-client --near2eth-client-lock-eth-amount 1000 --near2eth-client-lock-duration 10
-node index.js init-near2eth-prover
+node index.js init-eth-client --eth-client-lock-eth-amount 1000 --eth-client-lock-duration 10
+node index.js init-eth-prover
 ```
 
 Now, let's set up token on Ethereum blockchain that we can transfer to NEAR blockchain (this can be your own token).
@@ -247,7 +247,7 @@ pm2 logs
 ### Transferring tokens 
 Finally, let's transfer some tokens 
 ```bash
-node index.js transfer-eth-erc20-to-near --amount 1000 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account eth2nearprover --near-master-account nearfuntoken
+node index.js transfer-eth-erc20-to-near --amount 1000 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account rainbow_bridge_eth_on_near_prover --near-master-account nearfuntoken
 ```
 Note, when we deployed ERC20 to the Ethereum blockchain we have minted a large number of tokens to the default master
 key of Ganache, so we have transferred ERC20 tokens from it to `alice.test.near`.
@@ -256,7 +256,7 @@ You must observe blocks being submitted.
 
 Now let's try to transfer one token back to Ethereum
 ```bash
-node index.js transfer-eth-erc20-from-near --amount 1 --near-sender-account eth2nearprover --near-sender-sk ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP --eth-receiver-address 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8
+node index.js transfer-eth-erc20-from-near --amount 1 --near-sender-account rainbow_bridge_eth_on_near_prover --near-sender-sk ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP --eth-receiver-address 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8
 ```
 You should observe the change of the ERC20 balance as reported by the CLI. 
 
