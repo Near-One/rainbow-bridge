@@ -1,4 +1,4 @@
-version: "3.3"
+version: '3.3'
 services:
   near-node:
     build: .
@@ -17,7 +17,7 @@ services:
   eth-relay:
     build: .
     network_mode: host
-    depends_on: 
+    depends_on:
       - ganache
     command: >
       bash -c "

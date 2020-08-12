@@ -1,76 +1,74 @@
-const Web3 = require('web3');
-const Tree = require('merkle-patricia-tree');
-const utils = require('ethereumjs-util');
-const {
-    Header,
-    Proof,
-    Receipt,
-    Log,
-} = require('eth-object');
-const {
-    encode,
-    toBuffer,
-} = require('eth-util-lite');
-const {
-    promisfy,
-} = require('promisfy');
-const { RobustWeb3 } = require('../robust');
+const Web3 = require('web3')
+const Tree = require('merkle-patricia-tree')
+const utils = require('ethereumjs-util')
+const { Header, Proof, Receipt, Log } = require('eth-object')
+const { encode, toBuffer } = require('eth-util-lite')
+const { promisfy } = require('promisfy')
+const { RobustWeb3 } = require('../robust')
 
 function receiptFromWeb3(result) {
-    return Receipt.fromWeb3(result);
+  return Receipt.fromWeb3(result)
 }
 
 function logFromWeb3(result) {
-    return Log.fromWeb3(result);
+  return Log.fromWeb3(result)
 }
 
 class EthProofExtractor {
-    initialize(ethNodeURL) {
-        // @ts-ignore
-        this.robustWeb3 = new RobustWeb3(ethNodeURL);
-        this.web3 = this.robustWeb3.web3;
-    }
+  initialize(ethNodeURL) {
+    // @ts-ignore
+    this.robustWeb3 = new RobustWeb3(ethNodeURL)
+    this.web3 = this.robustWeb3.web3
+  }
 
-    async extractReceipt(txHash) {
-        return await this.robustWeb3.getTransactionReceipt(txHash);
-    }
+  async extractReceipt(txHash) {
+    return await this.robustWeb3.getTransactionReceipt(txHash)
+  }
 
-    async extractBlock(blockNumber) {
-        return await this.robustWeb3.getBlock(blockNumber);
-    }
+  async extractBlock(blockNumber) {
+    return await this.robustWeb3.getBlock(blockNumber)
+  }
 
-    async buildTrie(block) {
-        const blockReceipts = await Promise.all(block.transactions.map(t => this.robustWeb3.getTransactionReceipt(t)));
-        // Build a Patricia Merkle Trie
-        const tree = new Tree();
-        await Promise.all(blockReceipts.map(receipt => {
-            const path = encode(receipt.transactionIndex);
-            const serializedReceipt = receiptFromWeb3(receipt).serialize();
-            return promisfy(tree.put, tree)(path, serializedReceipt);
-        }));
-        return tree;
-    }
+  async buildTrie(block) {
+    const blockReceipts = await Promise.all(
+      block.transactions.map(t => this.robustWeb3.getTransactionReceipt(t))
+    )
+    // Build a Patricia Merkle Trie
+    const tree = new Tree()
+    await Promise.all(
+      blockReceipts.map(receipt => {
+        const path = encode(receipt.transactionIndex)
+        const serializedReceipt = receiptFromWeb3(receipt).serialize()
+        return promisfy(tree.put, tree)(path, serializedReceipt)
+      })
+    )
+    return tree
+  }
 
-    async extractProof(web3, block, tree, transactionIndex) {
-        const [, , stack] = await promisfy(tree.findPath, tree)(encode(transactionIndex));
+  async extractProof(web3, block, tree, transactionIndex) {
+    const [, , stack] = await promisfy(
+      tree.findPath,
+      tree
+    )(encode(transactionIndex))
 
-        const blockData = await web3.eth.getBlock(block.number);
-        // Correctly compose and encode the header.
-        const header = Header.fromWeb3(blockData);
-        return {
-            header_rlp: header.serialize(),
-            receiptProof: Proof.fromStack(stack),
-            txIndex: transactionIndex,
-        };
+    const blockData = await web3.eth.getBlock(block.number)
+    // Correctly compose and encode the header.
+    const header = Header.fromWeb3(blockData)
+    return {
+      header_rlp: header.serialize(),
+      receiptProof: Proof.fromStack(stack),
+      txIndex: transactionIndex,
     }
+  }
 
-    destroy() {
-        if (this.web3.currentProvider.connection.close) { // Only WebSocket provider has close, HTTPS don't
-            this.web3.currentProvider.connection.close();
-        }
+  destroy() {
+    if (this.web3.currentProvider.connection.close) {
+      // Only WebSocket provider has close, HTTPS don't
+      this.web3.currentProvider.connection.close()
     }
+  }
 }
 
-exports.EthProofExtractor = EthProofExtractor;
-exports.receiptFromWeb3 = receiptFromWeb3;
-exports.logFromWeb3 = logFromWeb3;
+exports.EthProofExtractor = EthProofExtractor
+exports.receiptFromWeb3 = receiptFromWeb3
+exports.logFromWeb3 = logFromWeb3
