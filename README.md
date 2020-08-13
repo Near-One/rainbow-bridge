@@ -40,15 +40,18 @@ rustup target add wasm32-unknown-unknown
 
 
 ## Usage
-You can either install `rainbow-bridge-cli` from npm or clone it and use locally.
-```bash
-npm i -g rainbow-bridge-cli
-```
+
+You can install `rainbow-bridge-cli` from npm
+
+    npm i -g rainbow-bridge-cli
 
 To learn the commands that you can use with the rainbow bridge run
-```bash
-node index.js --help
-```
+
+    rainbow-bridge --help
+
+Alternatively, clone this repo, `cd environment && yarn install && cd ..`, then you can see what commands you can use with:
+
+    ./index.js --help
 
 Parameters of each command can be specified through environment variables, command line arguments, entries in the `~/.rainbow/config.json` config file, or the default value will be used -- in that priority.
 If argument is not provided and there is no default value the program will not execute.
@@ -61,7 +64,7 @@ Note, you can use environment variables to pass sensitive data which will not le
 
 ## Security
 
-Bridge is as long as majority (1/2) of Etherem mining power is honest and supermajority (2/3) of NEAR stake is honest.
+Bridge is secure as long as majority (1/2) of Etherem mining power is honest and supermajority (2/3) of NEAR stake is honest.
 There are no additional security requirements, except that Ethereum should be able to accept 1 transaction within 4 hour period even in the worst congestion scenario.
 
 ## Gas costs
