@@ -15,6 +15,9 @@ const { StopLocalNearNodeCommand } = require('./commands/stop/near.js')
 const { StopAllCommands } = require('./commands/stop/all.js')
 const { StopManagedProcessCommand } = require('./commands/stop/process.js')
 const {
+  DangerSubmitInvalidNearBlock,
+} = require('./commands/danger-submit-invalid-near-block')
+const {
   TransferETHERC20ToNear,
 } = require('./commands/transfer-eth-erc20-to-near')
 const {
@@ -485,6 +488,32 @@ RainbowConfig.addOptions(
     'eth-master-sk',
     'eth-prover-abi-path',
     'eth-prover-address',
+    'eth-gas-multiplier',
+  ]
+)
+
+// Testing command
+const dangerCommand = program
+  .command('DANGER')
+  .description(
+    'Dangerous commands that should only be used for testing purpose.'
+  )
+
+RainbowConfig.addOptions(
+  dangerCommand
+    .command('submit_invalid_near_block')
+    .description(
+      'Fetch latest near block, randomly mutate one byte and submit to NearBridge'
+    )
+    .action(DangerSubmitInvalidNearBlock.execute),
+  [
+    'eth-node-url',
+    'eth-master-sk',
+    'near-node-url',
+    'near-network-id',
+    'eth-client-abi-path',
+    'eth-client-address',
+    'near2eth-relay-delay',
     'eth-gas-multiplier',
   ]
 )

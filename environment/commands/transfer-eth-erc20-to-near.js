@@ -12,7 +12,7 @@ const { verifyAccount } = require('../lib/near-helpers')
 const { NearMintableToken } = require('../lib/near-mintable-token')
 const { RainbowConfig } = require('../lib/config')
 const { NearClientContract } = require('../lib/near-client-contract')
-const { sleep } = require('../lib/robust')
+const { sleep, RobustWeb3 } = require('../lib/robust')
 const { normalizeEthKey } = require('../lib/robust')
 
 let initialCmd
@@ -24,20 +24,24 @@ class TransferETHERC20ToNear {
     process.exit(1)
   }
 
-  static async approve({ web3, ethERC20Contract, amount, ethSenderAccount }) {
+  static async approve({
+    robustWeb3,
+    ethERC20Contract,
+    amount,
+    ethSenderAccount,
+  }) {
     // Approve tokens for transfer.
     try {
       console.log('Approving token transfer.')
-      await ethERC20Contract.methods
-        .approve(RainbowConfig.getParam('eth-locker-address'), Number(amount))
-        .send({
+      await robustWeb3.callContract(
+        ethERC20Contract,
+        'approve',
+        [RainbowConfig.getParam('eth-locker-address'), Number(amount)],
+        {
           from: ethSenderAccount,
           gas: 5000000,
-          handleRevert: true,
-          gasPrice: new BN(await web3.eth.getGasPrice()).mul(
-            new BN(RainbowConfig.getParam('eth-gas-multiplier'))
-          ),
-        })
+        }
+      )
       console.log('Approved token transfer.')
       TransferETHERC20ToNear.recordTransferLog({ finished: 'approve' })
     } catch (txRevertMessage) {
@@ -48,7 +52,7 @@ class TransferETHERC20ToNear {
   }
 
   static async lock({
-    web3,
+    robustWeb3,
     ethTokenLockerContract,
     amount,
     nearReceiverAccount,
@@ -58,16 +62,15 @@ class TransferETHERC20ToNear {
       console.log(
         'Transferring tokens from the ERC20 account to the token locker account.'
       )
-      const transaction = await ethTokenLockerContract.methods
-        .lockToken(Number(amount), nearReceiverAccount)
-        .send({
+      const transaction = await robustWeb3.callContract(
+        ethTokenLockerContract,
+        'lockToken',
+        [Number(amount), nearReceiverAccount],
+        {
           from: ethSenderAccount,
           gas: 5000000,
-          handleRevert: true,
-          gasPrice: new BN(await web3.eth.getGasPrice()).mul(
-            new BN(RainbowConfig.getParam('eth-gas-multiplier'))
-          ),
-        })
+        }
+      )
       const lockedEvent = transaction.events.Locked
       console.log('Success tranfer to locker')
       TransferETHERC20ToNear.recordTransferLog({
@@ -164,7 +167,7 @@ class TransferETHERC20ToNear {
       if (!is_safe) {
         const delay = 10
         console.log(
-          `Near Client is currently at block ${last_block_number}. Waiting for block ${blockNumber} to be confirmed. Sleeping for ${delay} sec.`
+          `Near Client contract is currently at block ${last_block_number}. Waiting for block ${blockNumber} to be confirmed. Sleeping for ${delay} sec.`
         )
         await sleep(delay * 1000)
       } else {
@@ -261,8 +264,8 @@ class TransferETHERC20ToNear {
     const nearReceiverAccount = command.nearReceiverAccount
 
     // @ts-ignore
-    const web3 = new Web3(RainbowConfig.getParam('eth-node-url'))
-
+    let robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'))
+    let web3 = robustWeb3.web3
     let ethSenderAccount = web3.eth.accounts.privateKeyToAccount(
       normalizeEthKey(ethSenderSk)
     )
@@ -330,7 +333,7 @@ class TransferETHERC20ToNear {
 
     if (transferLog.finished === undefined) {
       await TransferETHERC20ToNear.approve({
-        web3,
+        robustWeb3,
         ethERC20Contract,
         amount,
         ethSenderAccount,
@@ -339,7 +342,7 @@ class TransferETHERC20ToNear {
     }
     if (transferLog.finished === 'approve') {
       await TransferETHERC20ToNear.lock({
-        web3,
+        robustWeb3,
         ethTokenLockerContract,
         amount,
         nearReceiverAccount,

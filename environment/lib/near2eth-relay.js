@@ -169,6 +169,119 @@ class Near2EthRelay {
     }
   }
 
+  async DANGER_submitInvalidNearBlock() {
+    const clientContract = this.clientContract
+    const robustWeb3 = this.robustWeb3
+    const near = this.near
+    const ethMasterAccount = this.ethMasterAccount
+    const web3 = this.web3
+
+    let lastClientBlock
+    let clientBlockHash
+    while (true) {
+      lastClientBlock = await clientContract.methods.last().call()
+      const clientBlockHeight = lastClientBlock.height
+      const clientBlockHashHex = await clientContract.methods
+        .blockHashes(clientBlockHeight)
+        .call()
+      clientBlockHash = bs58.encode(toBuffer(clientBlockHashHex))
+      console.log(
+        `Current light client head is: hash=${clientBlockHash}, height=${clientBlockHeight}`
+      )
+      const latestBlock = await robustWeb3.getBlock('latest')
+      if (latestBlock.timestamp >= lastClientBlock.validAfter) {
+        console.log('Block is valid.')
+        break
+      } else {
+        const sleepSec = lastClientBlock.validAfter - latestBlock.timestamp
+        console.log(`Block is not valid yet. Sleeping ${sleepSec} seconds.`)
+        await sleep(sleepSec * 1000)
+      }
+    }
+    // Check whether master account has enough balance at stake.
+    const lockEthAmount = await clientContract.methods.lock_eth_amount().call()
+    const balance = await clientContract.methods
+      .balanceOf(ethMasterAccount)
+      .call()
+    if (balance === '0') {
+      console.log(
+        `The sender account does not have enough stake. Transferring ${lockEthAmount} wei.`
+      )
+      // @ts-ignore
+      let _depositTx
+      for (let i = 0; i <= MAX_WEB3_RETRIES; i++) {
+        if (i === MAX_WEB3_RETRIES) {
+          console.error(`Failed ${MAX_WEB3_RETRIES} times`)
+          process.exit(1)
+        }
+        try {
+          _depositTx = await clientContract.methods.deposit().send({
+            from: ethMasterAccount,
+            gas: 1000000,
+            handleRevert: true,
+            value: new BN(lockEthAmount),
+            gasPrice: new BN(await web3.eth.getGasPrice()).mul(
+              new BN(RainbowConfig.getParam('eth-gas-multiplier'))
+            ),
+          })
+          break
+        } catch (err) {
+          console.log(`Encountered Web3 error while depositing stake ${err}`)
+          await sleep(1000)
+        }
+      }
+      console.log('Transferred.')
+    }
+    let lightClientBlock
+    for (let i = 0; i <= MAX_WEB3_RETRIES; i++) {
+      if (i === MAX_WEB3_RETRIES) {
+        console.error(`Failed ${MAX_WEB3_RETRIES} times`)
+        process.exit(1)
+      }
+      try {
+        lightClientBlock = await near.connection.provider.sendJsonRpc(
+          'next_light_client_block',
+          [clientBlockHash]
+        )
+        break
+      } catch (err) {
+        console.log(
+          `Encountered error while requesting light client block ${err}`
+        )
+        await sleep(1000)
+      }
+    }
+    console.log(`${JSON.stringify(lightClientBlock)}`)
+    while (true) {
+      let borshBlock = borshify(lightClientBlock)
+      console.log('Mutate block by one byte')
+      console.log(borshBlock)
+      borshBlock[Math.floor(borshBlock.length * Math.random())] += 1
+      console.log('Adding block')
+
+      try {
+        await clientContract.methods.addLightClientBlock(borshBlock).send({
+          from: ethMasterAccount,
+          gas: 4000000,
+          handleRevert: true,
+          gasPrice: new BN(await web3.eth.getGasPrice()).mul(
+            new BN(RainbowConfig.getParam('eth-gas-multiplier'))
+          ),
+        })
+        break
+      } catch (err) {
+        console.log(
+          `Encountered Web3 error while submitting light client block ${err}`
+        )
+        await sleep(1000)
+        continue
+      }
+    }
+
+    console.log('Successfully submit invalid block')
+    process.exit(0)
+  }
+
   async run() {
     // process.send('ready');
     const clientContract = this.clientContract
