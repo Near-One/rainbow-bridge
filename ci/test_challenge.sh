@@ -15,6 +15,8 @@ else
   node index.js prepare
 fi
 node index.js start near-node
+# First start pm2 daemon
+yarn run pm2 ping
 node index.js start ganache
 # Wait for the local node to start
 while ! curl localhost:3030; do
@@ -33,8 +35,7 @@ node index.js init-eth-prover
 node index.js init-eth-erc20
 node index.js init-eth-locker
 node index.js init-near-fun-token
-# First start pm2 daemon
-yarn run pm2 ping
+
 sleep 5
 yarn run pm2 list
 node index.js start near-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
