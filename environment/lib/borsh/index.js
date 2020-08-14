@@ -216,7 +216,7 @@ const signAndSendTransactionAsync = async (
   actions
 ) => {
   const status = await account.connection.provider.status()
-  let [txHash, signedTx] = await nearlib.transactions.signTransaction(
+  const [txHash, signedTx] = await nearlib.transactions.signTransaction(
     receiverId,
     ++accessKey.nonce,
     actions,
@@ -267,7 +267,7 @@ const txnStatus = async (
     result.transaction_outcome,
     ...result.receipts_outcome,
   ].reduce((acc, it) => acc.concat(it.outcome.logs), [])
-  if (flatLogs && flatLogs != []) {
+  if (flatLogs && flatLogs !== []) {
     console.log(flatLogs)
   }
 
@@ -348,7 +348,7 @@ const signAndSendTransaction = async (
         result.transaction_outcome,
         ...result.receipts_outcome,
       ].reduce((acc, it) => acc.concat(it.outcome.logs), [])
-      if (flatLogs && flatLogs != []) {
+      if (flatLogs && flatLogs.length) {
         console.log(flatLogs)
       }
 
@@ -520,12 +520,12 @@ function borshify(block) {
         signature === null
           ? Buffer.from([0])
           : Buffer.concat([
-              Buffer.from([1]),
-              signature.substr(0, 8) === 'ed25519:'
-                ? Buffer.from([0])
-                : Buffer.from([1]),
-              bs58.decode(signature.substr(8)),
-            ])
+            Buffer.from([1]),
+            signature.substr(0, 8) === 'ed25519:'
+              ? Buffer.from([0])
+              : Buffer.from([1]),
+            bs58.decode(signature.substr(8)),
+          ])
       )
     ),
   ])

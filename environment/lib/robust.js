@@ -11,11 +11,11 @@ const retry = (retries, fn) =>
   fn().catch(err =>
     retries > 1 ? retry(retries - 1, fn) : Promise.reject(err)
   )
-const sleep = duration => new Promise(res => setTimeout(res, duration))
+const sleep = duration => new Promise(resolve => setTimeout(resolve, duration))
 const backoff = (retries, fn, delay = DELAY, wait = BACKOFF) =>
   fn().catch(err =>
     retries > 1
-      ? sleep(delay).then(() => backoff(retries - 1, fn, delay * wait))
+      ? sleep(delay).then(() => backoff(retries - 1, fn, delay * wait)) // eslint-disable-line promise/no-nesting
       : Promise.reject(err)
   )
 
@@ -57,7 +57,7 @@ class RobustWeb3 {
     while (gasPrice < 10000 * 1e9) {
       try {
         // Keep sending with same nonce but higher gasPrice to override same txn
-        let tx = {
+        const tx = {
           from: options.from,
           to: contract.options.address,
           gas: Web3.utils.toHex(options.gas),
@@ -66,7 +66,7 @@ class RobustWeb3 {
           data: contract.methods[method](...args).encodeABI(),
         }
 
-        let receipt = await promiseWithTimeout(
+        const receipt = await promiseWithTimeout(
           5 * 60 * 1000,
           this.web3.eth.sendTransaction(tx),
           SLOW_TX_ERROR_MSG
@@ -114,7 +114,7 @@ class RobustWeb3 {
           )
           gasPrice *= 2
         } else if (
-          e.message.indexOf("the tx doesn't have the correct nonce") >= 0
+          e.message.indexOf('the tx doesn\'t have the correct nonce') >= 0
         ) {
           console.log('nonce error, retrying with new nonce')
           nonce++

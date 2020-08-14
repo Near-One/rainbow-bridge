@@ -1,4 +1,3 @@
-const ProcessManager = require('pm2')
 const { Near2EthRelay } = require('../lib/near2eth-relay')
 
 class DangerSubmitInvalidNearBlock {

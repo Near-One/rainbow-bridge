@@ -35,7 +35,7 @@ const request = async url => {
     return [
       Ok,
       JSON.stringify(json.version),
-      JSON.stringify(json.sync_info['latest_block_height']),
+      JSON.stringify(json.sync_info.latest_block_height),
     ]
   } catch (err) {
     return [Error, Unreachable, Unknown]
@@ -79,9 +79,9 @@ class NearContracts {
       return new Status(Unknown, Error, ContractNotFound)
     }
     try {
-      const contract = new nearlib.Contract(masterAccount, contractAccount, {})
+      // const contract = new nearlib.Contract(masterAccount, contractAccount, {})
       // TODO #257 check contract validity here
-      //console.log(contract);
+      // console.log(contract);
       return new Status(Unknown, Info, NotVerified)
     } catch (err) {
       return new Status(Unknown, Error, InternalError)
@@ -235,7 +235,7 @@ class EthContracts {
     try {
       const abi = JSON.parse(fs.readFileSync(abiPath))
       const contract = await new web3.eth.Contract(abi, address)
-      if (contract.options.address == address) {
+      if (contract.options.address === address) {
         // TODO #257 check deployed code equality if possible
         return new Status(contract.options.address, Ok, Deployed)
       } else {
@@ -323,18 +323,18 @@ function printLine(field, status = null) {
   }
   var color = '\x1B[35m'
   switch (status.verdict) {
-    case Ok:
-      var color = '\x1B[32m'
-      break
-    case Info:
-      var color = '\x1B[39m'
-      break
-    case Warn:
-      var color = '\x1B[33m'
-      break
-    case Error:
-      var color = '\x1B[35m'
-      break
+  case Ok:
+    color = '\x1B[32m'
+    break
+  case Info:
+    color = '\x1B[39m'
+    break
+  case Warn:
+    color = '\x1B[33m'
+    break
+  case Error:
+    color = '\x1B[35m'
+    break
   }
   const explanation = status.explanation ? '(' + status.explanation + ')' : ''
   var line = field + ':'

@@ -21,7 +21,7 @@ async function getLatestBlock(nearNodeUrl) {
 }
 
 async function getBlockChunk(nearNodeUrl, block) {
-  let resp = await fetch(nearNodeUrl, {
+  const resp = await fetch(nearNodeUrl, {
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -31,33 +31,33 @@ async function getBlockChunk(nearNodeUrl, block) {
       params: [block.chunks[0].chunk_hash],
     }),
   })
-  let data = await resp.json()
+  const data = await resp.json()
   return data.result
 }
 
-async function getTxProof(nearNodeUrl, futureBlock, txn) {
-  let resp = await fetch(nearNodeUrl, {
-    method: 'post',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      id: 'dontcare',
-      method: 'light_client_proof',
-      params: {
-        type: 'transaction',
-        transaction_hash: txn.hash,
-        receiver_id: txn.receiver_id,
-        sender_id: txn.signer_id,
-        light_client_head: futureBlock.header.hash,
-      },
-    }),
-  })
-  let data = await resp.json()
-  return data.result
-}
+// async function getTxProof(nearNodeUrl, futureBlock, txn) {
+//   const resp = await fetch(nearNodeUrl, {
+//     method: 'post',
+//     headers: { 'Content-Type': 'application/json' },
+//     body: JSON.stringify({
+//       jsonrpc: '2.0',
+//       id: 'dontcare',
+//       method: 'light_client_proof',
+//       params: {
+//         type: 'transaction',
+//         transaction_hash: txn.hash,
+//         receiver_id: txn.receiver_id,
+//         sender_id: txn.signer_id,
+//         light_client_head: futureBlock.header.hash,
+//       },
+//     }),
+//   })
+//   const data = await resp.json()
+//   return data.result
+// }
 
 async function getReceiptProof(nearNodeUrl, futureBlock, receipt) {
-  let resp = await fetch(nearNodeUrl, {
+  const resp = await fetch(nearNodeUrl, {
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -72,7 +72,7 @@ async function getReceiptProof(nearNodeUrl, futureBlock, receipt) {
       },
     }),
   })
-  let data = await resp.json()
+  const data = await resp.json()
   return data.result
 }
 
@@ -105,11 +105,11 @@ class NearDump {
     }
     const nearNodeUrl = RainbowConfig.getParam('near-node-url')
 
-    let latestBlock = await getLatestBlock(nearNodeUrl)
+    const latestBlock = await getLatestBlock(nearNodeUrl)
 
-    if (kindOfData == 'headers') {
+    if (kindOfData === 'headers') {
       await NearDump.dumpHeaders(nearNodeUrl, path, latestBlock, numBlocks)
-    } else if (kindOfData == 'proofs') {
+    } else if (kindOfData === 'proofs') {
       await NearDump.dumpProofs(nearNodeUrl, path, latestBlock, numBlocks)
     }
   }
@@ -153,19 +153,19 @@ class NearDump {
       newLatestBlock = await getLatestBlock(nearNodeUrl)
       if (newLatestBlock.header.height > latestBlock.header.height) {
         console.log(`Got new block at height ${newLatestBlock.header.height}`)
-        let chunk = await getBlockChunk(nearNodeUrl, latestBlock)
+        const chunk = await getBlockChunk(nearNodeUrl, latestBlock)
         console.log(
           `There are ${chunk.transactions.length} txns in block ${latestBlock.header.height}'s chunk`
         )
         console.log(
           `There are ${chunk.receipts.length} receipts in block  ${latestBlock.header.height}'s chunk`
         )
-        for (let i in chunk.transactions) {
-          //let proof = await getTxProof(nearNodeUrl, newLatestBlock, chunk.transactions[i]);
-          //await NearDump.saveProof(latestBlock.header.height, 'txn', i, proof, path)
-        }
-        for (let i in chunk.receipts) {
-          let proof = await getReceiptProof(
+        // for (const i in chunk.transactions) {
+        //   let proof = await getTxProof(nearNodeUrl, newLatestBlock, chunk.transactions[i]);
+        //   await NearDump.saveProof(latestBlock.header.height, 'txn', i, proof, path)
+        // }
+        for (const i in chunk.receipts) {
+          const proof = await getReceiptProof(
             nearNodeUrl,
             newLatestBlock,
             chunk.receipts[i]

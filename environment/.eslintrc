@@ -24,10 +24,10 @@
     "strict": [2, "global"],
 
     // Code style
-    "indent": [2, 4],
+    "indent": [2, 2],
     "quotes": [2, "single"],
-    "semi": ["error", "always"],
-    "space-before-function-paren": ["error", "always"],
+    "semi": ["warn", "never"],
+    "space-before-function-paren": 0,
     "no-use-before-define": 0,
     "no-unused-expressions": "off",
     "eqeqeq": [2, "smart"],
@@ -38,7 +38,7 @@
     "comma-spacing": [2, {"before": false, "after": true}],
     "camelcase": "off",
     "no-mixed-spaces-and-tabs": [2, "smart-tabs"],
-    "comma-dangle": [1, "always-multiline"],
+    "comma-dangle": [1, "only-multiline"],
     "no-dupe-args": 2,
     "no-dupe-keys": 2,
     "no-debugger": 0,

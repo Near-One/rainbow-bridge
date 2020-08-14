@@ -1,5 +1,4 @@
 const Web3 = require('web3')
-const BN = require('bn.js')
 const fs = require('fs')
 const { RainbowConfig } = require('./config')
 const {
@@ -68,7 +67,7 @@ class Near2EthWatchdog {
           console.log(`Challenging signature ${i}.`)
           try {
             let gasPrice = await this.web3.eth.getGasPrice()
-            let nonce = await this.web3.eth.getTransactionCount(
+            const nonce = await this.web3.eth.getTransactionCount(
               this.ethMasterAccount
             )
             while (gasPrice < 10000 * 1e9) {

@@ -1,4 +1,3 @@
-const Web3 = require('web3')
 const exec = require('child_process').exec
 const utils = require('ethereumjs-util')
 const BN = require('bn.js')
@@ -82,7 +81,7 @@ class Eth2NearRelay {
       if (clientBlockNumber < chainBlockNumber) {
         try {
           // Submit add_block txns
-          let blockPromises = []
+          const blockPromises = []
           let endBlock = Math.min(
             clientBlockNumber + MAX_SUBMIT_BLOCK,
             chainBlockNumber
@@ -94,12 +93,12 @@ class Eth2NearRelay {
           for (let i = clientBlockNumber + 1; i <= endBlock; i++) {
             blockPromises.push(this.getParseBlock(i))
           }
-          let blocks = await Promise.all(blockPromises)
+          const blocks = await Promise.all(blockPromises)
           console.log(
             `Got and parsed block ${clientBlockNumber + 1} to block ${endBlock}`
           )
 
-          let txHashes = []
+          const txHashes = []
           for (let i = clientBlockNumber + 1, j = 0; i <= endBlock; i++, j++) {
             txHashes.push(await this.submitBlock(blocks[j], i))
           }

@@ -68,8 +68,8 @@ class InitEthEd25519 {
       5000000
     )
     if (!success) {
-      console.log("Can't deploy", contractName)
-      throw 1
+      console.log('Can\'t deploy', contractName)
+      process.exit(1)
     }
   }
 }
@@ -84,8 +84,8 @@ class InitEthErc20 {
       3000000
     )
     if (!success) {
-      console.log("Can't deploy", contractName)
-      throw 1
+      console.log('Can\'t deploy', contractName)
+      process.exit(1)
     }
   }
 }
@@ -104,8 +104,8 @@ class InitEthLocker {
       3000000
     )
     if (!success) {
-      console.log("Can't deploy", contractName)
-      throw 1
+      console.log('Can\'t deploy', contractName)
+      process.exit(1)
     }
   }
 }
@@ -135,8 +135,8 @@ class InitEthClient {
       3000000
     )
     if (!success) {
-      console.log("Can't deploy", contractName)
-      throw 1
+      console.log('Can\'t deploy', contractName)
+      process.exit(1)
     }
   }
 }
@@ -151,8 +151,8 @@ class InitEthProver {
       3000000
     )
     if (!success) {
-      console.log("Can't deploy", contractName)
-      throw 1
+      console.log('Can\'t deploy', contractName)
+      process.exit(1)
     }
   }
 }

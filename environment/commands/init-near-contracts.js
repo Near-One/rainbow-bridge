@@ -1,4 +1,3 @@
-const Web3 = require('web3')
 const nearlib = require('near-api-js')
 const { maybeCreateAccount, verifyAccount } = require('../lib/near-helpers')
 const { NearClientContract } = require('../lib/near-client-contract')

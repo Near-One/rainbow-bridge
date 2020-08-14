@@ -1,8 +1,6 @@
-const Web3 = require('web3')
 const Tree = require('merkle-patricia-tree')
-const utils = require('ethereumjs-util')
 const { Header, Proof, Receipt, Log } = require('eth-object')
-const { encode, toBuffer } = require('eth-util-lite')
+const { encode } = require('eth-util-lite')
 const { promisfy } = require('promisfy')
 const { RobustWeb3 } = require('../robust')
 

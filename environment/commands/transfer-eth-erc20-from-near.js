@@ -1,4 +1,3 @@
-const Web3 = require('web3')
 const nearlib = require('near-api-js')
 const BN = require('bn.js')
 const fs = require('fs')
@@ -94,7 +93,7 @@ class TransferEthERC20FromNear {
         if (receipts.length === 1) {
           txReceiptId = receipts[0]
           txReceiptBlockHash = txBurn.receipts_outcome.find(
-            el => el.id == txReceiptId
+            el => el.id === txReceiptId
           ).block_hash
           idType = 'receipt'
         } else {
@@ -121,7 +120,7 @@ class TransferEthERC20FromNear {
     const outcomeBlockHeight = new BN(outcomeBlock.header.height)
 
     // Wait for the block with the given receipt/transaction in Near2EthClient.
-    let robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'))
+    const robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'))
     const web3 = robustWeb3.web3
     let ethMasterAccount = web3.eth.accounts.privateKeyToAccount(
       normalizeEthKey(RainbowConfig.getParam('eth-master-sk'))

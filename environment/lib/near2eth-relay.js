@@ -1,4 +1,3 @@
-const Web3 = require('web3')
 const nearlib = require('near-api-js')
 const fs = require('fs')
 // @ts-ignore
@@ -86,12 +85,12 @@ class Near2EthRelay {
           // Because fetch currentValidators and lightClientBlock isn't atomic, it's possible we happen to
           // fetch lightClentBlock cross epoch boundary. Fetch another time to ensure that's not the case.
           // @ts-ignore
-          let currentValidatorsNow = await this.near.connection.provider.validators(
+          const currentValidatorsNow = await this.near.connection.provider.validators(
             null
           )
           if (
             !currentValidatorsNow ||
-            currentValidatorsNow.epoch_start_height !=
+            currentValidatorsNow.epoch_start_height !==
               currentValidators.epoch_start_height
           ) {
             await sleep(300)
@@ -253,7 +252,7 @@ class Near2EthRelay {
     }
     console.log(`${JSON.stringify(lightClientBlock)}`)
     while (true) {
-      let borshBlock = borshify(lightClientBlock)
+      const borshBlock = borshify(lightClientBlock)
       console.log('Mutate block by one byte')
       console.log(borshBlock)
       borshBlock[Math.floor(borshBlock.length * Math.random())] += 1
@@ -399,7 +398,7 @@ class Near2EthRelay {
         }
       }
 
-      let sleepTime = new BN(
+      const sleepTime = new BN(
         RainbowConfig.getParam('near2eth-relay-delay')
       ).toNumber()
       if (sleepTime > 0) {

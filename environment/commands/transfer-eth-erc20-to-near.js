@@ -1,6 +1,5 @@
 const utils = require('ethereumjs-util')
 const BN = require('bn.js')
-const Web3 = require('web3')
 const fs = require('fs')
 const nearlib = require('near-api-js')
 const {
@@ -98,7 +97,7 @@ class TransferETHERC20ToNear {
 
     let logFound = false
     let log
-    for (let receiptLog of receipt.logs) {
+    for (const receiptLog of receipt.logs) {
       txLogIndex++
       const blockLogIndex = receiptLog.logIndex
       if (blockLogIndex === lockedEvent.logIndex) {
@@ -226,7 +225,7 @@ class TransferETHERC20ToNear {
   }
 
   static parseBuffer(obj) {
-    for (let i in obj) {
+    for (const i in obj) {
       if (obj[i] && obj[i].type === 'Buffer') {
         obj[i] = Buffer.from(obj[i].data)
       } else if (obj[i] && typeof obj[i] === 'object') {
@@ -238,7 +237,7 @@ class TransferETHERC20ToNear {
 
   static loadTransferLog() {
     try {
-      let log =
+      const log =
         JSON.parse(
           fs.readFileSync('transfer-eth-erc20-to-near.log.json').toString()
         ) || {}
@@ -264,8 +263,8 @@ class TransferETHERC20ToNear {
     const nearReceiverAccount = command.nearReceiverAccount
 
     // @ts-ignore
-    let robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'))
-    let web3 = robustWeb3.web3
+    const robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'))
+    const web3 = robustWeb3.web3
     let ethSenderAccount = web3.eth.accounts.privateKeyToAccount(
       normalizeEthKey(ethSenderSk)
     )
