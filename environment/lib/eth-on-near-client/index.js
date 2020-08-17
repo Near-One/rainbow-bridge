@@ -124,7 +124,7 @@ class EthOnNearClientContract extends BorshContract {
       initialized = await this.initialized()
     } catch (e) {}
     if (!initialized) {
-      console.log('EthClient is not initialized, initializing...')
+      console.log('EthOnNearClient is not initialized, initializing...')
       const last_block_number = await robustWeb3.getBlockNumber()
       const blockRlp = web3BlockToRlp(
         await robustWeb3.getBlock(last_block_number)
@@ -142,10 +142,10 @@ class EthOnNearClientContract extends BorshContract {
         },
         new BN('300000000000000')
       )
-      console.log('EthClient initialized')
+      console.log('EthOnNearClient initialized')
     }
 
-    console.log('Checking EthClient initialization.')
+    console.log('Checking EthOnNearClient initialization.')
     // @ts-ignore
     const first_root = await this.dag_merkle_root({
       epoch: 0,
@@ -161,7 +161,7 @@ class EthOnNearClientContract extends BorshContract {
       )
     ) {
       console.log(
-        `EthClient initialization error! The first and last roots are ${first_root} and ${last_root}`
+        `EthOnNearClient initialization error! The first and last roots are ${first_root} and ${last_root}`
       )
       process.exit(1)
     }

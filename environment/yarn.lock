@@ -4926,9 +4926,10 @@ pm2-multimeter@^0.1.2:
   dependencies:
     charm "~0.1.1"
 
-pm2-promise@near/pm2-promise#13e6e691d8069392981439ad0d19d222c010b010:
+pm2-promise@^2.0.1:
   version "2.0.1"
-  resolved "https://codeload.github.com/near/pm2-promise/tar.gz/13e6e691d8069392981439ad0d19d222c010b010"
+  resolved "https://registry.yarnpkg.com/pm2-promise/-/pm2-promise-2.0.1.tgz#582b7faad84babe311e46c3130b61a6a0695ed5f"
+  integrity sha512-7QWgJFeB9JsTy78ZonqnhdtJ3W9QjVTDZ7G0EC99WXv/fEfmywKxjboN8F9VL+OqB70Dm3DQ0riUqTMhPgiMIw==
   dependencies:
     pm2 "^4.4.0"
 
