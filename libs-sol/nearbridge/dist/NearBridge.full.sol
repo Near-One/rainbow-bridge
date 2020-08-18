@@ -1854,6 +1854,7 @@ contract NearBridge is INearBridge {
     State public last;
     State public prev;
     State public backup;
+    State public backup_prev;
     mapping(uint64 => bytes32) public blockHashes;
     mapping(uint64 => bytes32) public blockMerkleRoots;
     mapping(address => uint256) public balanceOf;
@@ -1872,6 +1873,7 @@ contract NearBridge is INearBridge {
         edwards = ed;
         lock_eth_amount = l_eth;
         lock_duration = l_dur;
+        burner = address(0);
     }
 
     function deposit() public payable {
@@ -1922,6 +1924,14 @@ contract NearBridge is INearBridge {
             last.height,
             blockHashes[last.height]
         );
+
+        if (backup.epochId != last.epochId) {
+            // Revert first block in epoch, should also revert prev
+            prev = backup_prev;
+            for (uint i = 0; i < prev.next_bps_length; i++) {
+                prev.next_bps[i] = backup_prev.next_bps[i];
+            }
+        }
 
         last = backup;
         for (uint i = 0; i < last.next_bps_length; i++) {
@@ -2035,6 +2045,11 @@ contract NearBridge is INearBridge {
 
         // If next epoch
         if (nearBlock.inner_lite.epoch_id == last.nextEpochId) {
+            backup_prev = prev;
+            for (uint i = 0; i < backup_prev.next_bps_length; i++) {
+                backup_prev.next_bps[i] = prev.next_bps[i];
+            }
+            
             prev = last;
             for (uint i = 0; i < prev.next_bps_length; i++) {
                 prev.next_bps[i] = last.next_bps[i];
