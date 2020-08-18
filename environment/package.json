@@ -1,6 +1,6 @@
 {
   "name": "rainbow-bridge-cli",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "CLI to set up the environment needed for the bridge to work.",
   "main": "index.js",
   "bin": {
