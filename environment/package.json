@@ -1,10 +1,11 @@
 {
   "name": "rainbow-bridge-cli",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "CLI to set up the environment needed for the bridge to work.",
   "main": "index.js",
   "bin": {
-    "rainbow-bridge": "./index.js"
+    "rainbow-bridge": "./index.js",
+    "rbbr": "./index.js"
   },
   "author": "Near Inc.",
   "repository": {
