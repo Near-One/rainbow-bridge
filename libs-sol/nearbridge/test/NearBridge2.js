@@ -38,23 +38,23 @@ contract('NearBridge2', function ([_, addr1]) {
     });
 });
 
-contract('2020-08-18 Example', function ([_, addr1]) {
-    beforeEach(async function () {
-        this.decoder = await NearDecoder.new();
-        this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(10));
-        await this.bridge.deposit({ value: web3.utils.toWei('1') });
-    });
-
-    it('should be ok', async function () {
-        const block_12640118 = borshify(require('./block_12640118.json'));
-        const block_12640218 = borshify(require('./block_12640218.json'));
-
-        await this.bridge.initWithValidators(borshifyInitialValidators(require('./init_validators_12640118.json').next_bps));
-        await this.bridge.initWithBlock(block_12640118);
-        await this.bridge.blockHashes(12640118);
-        await this.bridge.addLightClientBlock(block_12640218);
-    });
-});
+//contract('2020-08-18 Example', function ([_, addr1]) {
+//    beforeEach(async function () {
+//        this.decoder = await NearDecoder.new();
+//        this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(10));
+//        await this.bridge.deposit({ value: web3.utils.toWei('1') });
+//    });
+//
+//    it('should be ok', async function () {
+//        const block_12640118 = borshify(require('./block_12640118.json'));
+//        const block_12640218 = borshify(require('./block_12640218.json'));
+//
+//        await this.bridge.initWithValidators(borshifyInitialValidators(require('./init_validators_12640118.json').next_bps));
+//        await this.bridge.initWithBlock(block_12640118);
+//        await this.bridge.blockHashes(12640118);
+//        await this.bridge.addLightClientBlock(block_12640218);
+//    });
+//});
 
 contract('Add second block in first epoch should be verifiable', function ([_, addr1]) {
     beforeEach(async function () {
