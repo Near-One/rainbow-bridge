@@ -104,11 +104,22 @@ RainbowConfig.declareOption(
   'true',
   true
 )
-RainbowConfig.declareOption(
-  'bridge-src',
-  'Path to the rainbow-bridge source. Will use current repo if not provided.',
-  path.join(__dirname, '../')
-)
+if (process.arv[1].endsWith('index.js')) {
+  // Local development index.js
+  RainbowConfig.declareOption(
+    'bridge-src',
+    'Path to the rainbow-bridge source. It will use current repo if not provided.',
+    path.join(__dirname, '../')
+  )
+} else {
+  // Installed from npm
+  RainbowConfig.declareOption(
+    'bridge-src',
+    'Path to the rainbow-bridge source. It will be downloaded if not provided.',
+    ''
+  )
+}
+
 RainbowConfig.declareOption(
   'core-src',
   'Path to the nearcore source. It will be downloaded if not provided.',
