@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const path = require('path')
 const { program } = require('commander')
 
@@ -104,7 +105,7 @@ RainbowConfig.declareOption(
   'true',
   true
 )
-if (process.arv[1].endsWith('index.js')) {
+if (process.argv[1].endsWith('index.js')) {
   // Local development index.js
   RainbowConfig.declareOption(
     'bridge-src',
