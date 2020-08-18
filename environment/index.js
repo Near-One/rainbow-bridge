@@ -305,7 +305,7 @@ RainbowConfig.addOptions(
 
 RainbowConfig.addOptions(
   startCommand
-    .command('near-watchdog')
+    .command('near2eth-watchdog')
     .action(StartNear2EthWatchdogCommand.execute),
   ['eth-node-url', 'eth-master-sk', 'eth-client-abi-path', 'daemon']
 )
@@ -322,7 +322,9 @@ stopCommand.command('eth2near-relay').action(StopManagedProcessCommand.execute)
 
 stopCommand.command('near2eth-relay').action(StopManagedProcessCommand.execute)
 
-stopCommand.command('near-watchdog').action(StopManagedProcessCommand.execute)
+stopCommand
+  .command('near2eth-watchdog')
+  .action(StopManagedProcessCommand.execute)
 
 RainbowConfig.addOptions(
   program

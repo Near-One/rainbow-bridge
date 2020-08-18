@@ -15,13 +15,17 @@ class StartNear2EthWatchdogCommand {
           )
           return
         }
-        spawnProcess('near-watchdog', {
-          name: 'near-watchdog',
+        spawnProcess('near2eth-watchdog', {
+          name: 'near2eth-watchdog',
           script: path.join(__dirname, '../../index.js'),
           interpreter: 'node',
-          error_file: '~/.rainbow/logs/near-watchdog/err.log',
-          out_file: '~/.rainbow/logs/near-watchdog/out.log',
-          args: ['start', 'near-watchdog', ...RainbowConfig.getArgsNoDaemon()],
+          error_file: '~/.rainbow/logs/near2eth-watchdog/err.log',
+          out_file: '~/.rainbow/logs/near2eth-watchdog/out.log',
+          args: [
+            'start',
+            'near2eth-watchdog',
+            ...RainbowConfig.getArgsNoDaemon(),
+          ],
           logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS',
         })
       })
