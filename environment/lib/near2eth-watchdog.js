@@ -46,7 +46,7 @@ class Near2EthWatchdog {
     }
     privateKey = Buffer.from(privateKey, 'hex')
     while (true) {
-      const lastClientBlock = await this.clientContract.methods.last().call()
+      const lastClientBlock = await this.clientContract.methods.head().call()
       const latestBlock = await this.robustWeb3.getBlock('latest')
       console.log(
         `Examining block ${lastClientBlock.hash} height: ${lastClientBlock.height}`
@@ -62,7 +62,7 @@ class Near2EthWatchdog {
       for (let i = 0; i < lastClientBlock.approvals_after_next_length; i++) {
         console.log(`Checking signature ${i}.`)
         const result = await this.clientContract.methods
-          .checkBlockProducerSignatureInLastBlock(i)
+          .checkBlockProducerSignatureInHead(i)
           .call()
         if (!result) {
           console.log(`Challenging signature ${i}.`)

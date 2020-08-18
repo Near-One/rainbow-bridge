@@ -293,7 +293,7 @@ interface INearBridge {
     function initWithBlock(bytes calldata data) external;
     function addLightClientBlock(bytes calldata data) external payable;
     function challenge(address payable receiver, uint256 signatureIndex) external;
-    function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex) external view returns(bool);
+    function checkBlockProducerSignatureInHead(uint256 signatureIndex) external view returns(bool);
 }
 
 // File: ../nearbridge/contracts/Borsh.sol

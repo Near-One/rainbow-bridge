@@ -179,7 +179,7 @@ class Near2EthRelay {
     let lastClientBlock
     let clientBlockHash
     while (true) {
-      lastClientBlock = await clientContract.methods.last().call()
+      lastClientBlock = await clientContract.methods.head().call()
       const clientBlockHeight = lastClientBlock.height
       const clientBlockHashHex = await clientContract.methods
         .blockHashes(clientBlockHeight)
@@ -199,7 +199,7 @@ class Near2EthRelay {
       }
     }
     // Check whether master account has enough balance at stake.
-    const lockEthAmount = await clientContract.methods.lock_eth_amount().call()
+    const lockEthAmount = await clientContract.methods.lockEthAmount().call()
     const balance = await clientContract.methods
       .balanceOf(ethMasterAccount)
       .call()
@@ -294,7 +294,7 @@ class Near2EthRelay {
       let lastClientBlock
       let clientBlockHash
       while (true) {
-        lastClientBlock = await clientContract.methods.last().call()
+        lastClientBlock = await clientContract.methods.head().call()
         const clientBlockHeight = lastClientBlock.height
         const clientBlockHashHex = await clientContract.methods
           .blockHashes(clientBlockHeight)
@@ -316,7 +316,7 @@ class Near2EthRelay {
 
       // Check whether master account has enough balance at stake.
       const lockEthAmount = await clientContract.methods
-        .lock_eth_amount()
+        .lockEthAmount()
         .call()
       const balance = await clientContract.methods
         .balanceOf(ethMasterAccount)

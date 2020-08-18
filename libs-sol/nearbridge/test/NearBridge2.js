@@ -67,7 +67,7 @@ contract('Add second block in first epoch should be verifiable', function ([_, a
 
         for (let i = 0; i < block308.approvals_after_next.length; i++) {
             if (block308.approvals_after_next[i]) {
-                assert(this.bridge.checkBlockProducerSignatureInLastBlock(i));
+                assert(this.bridge.checkBlockProducerSignatureInHead(i));
             }
         }
     });
@@ -147,7 +147,7 @@ contract('After challenge prev should be revert to prev epoch of latest valid bl
         await this.bridge.addLightClientBlock(borshify(block304));
         await this.bridge.blockHashes(304);
 
-        let oldEpochId = (await this.bridge.prev()).epochId;
+        let oldEpochId = (await this.bridge.head()).epochId;
 
         now = await time.latest();
         await timeIncreaseTo(now.add(time.duration.seconds(3600)));
@@ -161,8 +161,8 @@ contract('After challenge prev should be revert to prev epoch of latest valid bl
         block368.approvals_after_next[0] = block368.approvals_after_next[1];
         await this.bridge.addLightClientBlock(borshify(block368));
         await this.bridge.blockHashes(368);
-        assert((await this.bridge.prev()).epochId != oldEpochId)
+        assert((await this.bridge.head()).epochId != oldEpochId)
         await this.bridge.challenge(addr1, 0);
-        assert((await this.bridge.prev()).epochId == oldEpochId)
+        assert((await this.bridge.head()).epochId == oldEpochId)
     });
 });
