@@ -59,9 +59,7 @@ class TransferEthERC20FromNear {
     console.log(
       `Burning ${command.amount} tokens on NEAR blockchain in favor of ${ethReceiverAddress}.`
     )
-    const txBurn = await nearSenderAccount.functionCall(
-      RainbowConfig.getParam('near-fun-token-account'),
-      'burn',
+    const txBurn = await nearTokenContractBorsh.burn(
       { amount: command.amount, recipient: ethReceiverAddress },
       new BN('300000000000000'),
       new BN(0)
