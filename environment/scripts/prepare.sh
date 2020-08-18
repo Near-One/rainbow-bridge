@@ -12,8 +12,19 @@ eval CORE_SRC=~/.rainbow/core
 eval NEARUP_SRC=~/.rainbow/nearup
 eval NEARUP_LOGS=~/.nearup/localnet-logs
 
-
 mkdir -p $RAINBOW_DIR
+mkdir -p $RAINBOW_DIR/logs/ganache
+mkdir -p $RAINBOW_DIR/logs/near-relay
+mkdir -p $RAINBOW_DIR/logs/eth-relay
+mkdir -p $RAINBOW_DIR/logs/near-watchdog
+touch $RAINBOW_DIR/logs/ganache/out.log
+touch $RAINBOW_DIR/logs/ganache/err.log
+touch $RAINBOW_DIR/logs/near-relay/out.log
+touch $RAINBOW_DIR/logs/near-relay/err.log
+touch $RAINBOW_DIR/logs/eth-relay/out.log
+touch $RAINBOW_DIR/logs/eth-relay/err.log
+touch $RAINBOW_DIR/logs/near-watchdog/out.log
+touch $RAINBOW_DIR/logs/near-watchdog/err.log
 
 if test -z "$LOCAL_CORE_SRC"
 then
