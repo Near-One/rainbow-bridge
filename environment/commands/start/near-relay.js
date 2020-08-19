@@ -2,6 +2,8 @@ const ProcessManager = require('pm2')
 const { spawnProcess } = require('./helpers')
 const { Near2EthRelay } = require('../../lib/near2eth-relay')
 const { RainbowConfig } = require('../../lib/config')
+const path = require('path')
+const os = require('os')
 
 class StartNearRelayCommand {
   static async execute() {
@@ -15,7 +17,10 @@ class StartNearRelayCommand {
         }
         spawnProcess('near-relay', {
           name: 'near-relay',
-          script: 'index.js',
+          script: path.join(
+            os.homedir(),
+            '.rainbow/bridge/environment/index.js'
+          ),
           interpreter: 'node',
           error_file: '~/.rainbow/logs/near-relay/err.log',
           out_file: '~/.rainbow/logs/near-relay/out.log',

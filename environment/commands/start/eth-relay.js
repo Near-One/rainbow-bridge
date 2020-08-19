@@ -4,6 +4,8 @@ const { spawnProcess } = require('./helpers')
 const { Eth2NearRelay } = require('../../lib/eth2near-relay')
 const { NearClientContract } = require('../../lib/near-client-contract')
 const { RainbowConfig } = require('../../lib/config')
+const path = require('path')
+const os = require('os')
 
 class StartEthRelayCommand {
   static async execute() {
@@ -17,7 +19,10 @@ class StartEthRelayCommand {
         }
         spawnProcess('eth-relay', {
           name: 'eth-relay',
-          script: 'index.js',
+          script: path.join(
+            os.homedir(),
+            '.rainbow/bridge/environment/index.js'
+          ),
           interpreter: 'node',
           error_file: '~/.rainbow/logs/eth-relay/err.log',
           out_file: '~/.rainbow/logs/eth-relay/out.log',

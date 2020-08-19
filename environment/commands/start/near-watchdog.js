@@ -2,6 +2,8 @@ const ProcessManager = require('pm2')
 const { spawnProcess } = require('./helpers')
 const { Near2EthWatchdog } = require('../../lib/near2eth-watchdog')
 const { RainbowConfig } = require('../../lib/config')
+const path = require('path')
+const os = require('os')
 
 class StartNearWatchdogCommand {
   static async execute() {
@@ -15,7 +17,10 @@ class StartNearWatchdogCommand {
         }
         spawnProcess('near-watchdog', {
           name: 'near-watchdog',
-          script: 'index.js',
+          script: path.join(
+            os.homedir(),
+            '.rainbow/bridge/environment/index.js'
+          ),
           interpreter: 'node',
           error_file: '~/.rainbow/logs/near-watchdog/err.log',
           out_file: '~/.rainbow/logs/near-watchdog/out.log',

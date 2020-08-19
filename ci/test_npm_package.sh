@@ -14,6 +14,7 @@ mkdir testenv
 cd testenv
 npm init -y > /dev/null
 npm i ${ROOT_DIR}/environment
+npm i pm2
 export PATH=${ROOT_DIR}/testenv/node_modules/.bin:$PATH
 cd ..
 
@@ -44,16 +45,15 @@ rbbr init-eth-locker
 rbbr init-near-fun-token
 # First start pm2 daemon
 cd ${ROOT_DIR}/testenv/
-yarn add pm2
-yarn run pm2 ping
+pm2 ping
 sleep 5
-yarn run pm2 list
+pm2 list
 rbbr start near-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
 sleep 5
-yarn run pm2 list
+pm2 list
 rbbr start eth-relay
 sleep 5
-yarn run pm2 list
+pm2 list
 rbbr transfer-eth-erc20-to-near --amount 1000 \
 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 \
 --near-receiver-account rainbow_bridge_eth_on_near_prover --near-master-account rainbow_bridge_eth_on_near_prover \
