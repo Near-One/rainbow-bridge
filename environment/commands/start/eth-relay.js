@@ -19,10 +19,7 @@ class StartEthRelayCommand {
         }
         spawnProcess('eth-relay', {
           name: 'eth-relay',
-          script: path.join(
-            os.homedir(),
-            '.rainbow/bridge/environment/index.js'
-          ),
+          script: path.join(__dirname, '../../index.js'),
           interpreter: 'node',
           error_file: '~/.rainbow/logs/eth-relay/err.log',
           out_file: '~/.rainbow/logs/eth-relay/out.log',

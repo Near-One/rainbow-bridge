@@ -17,10 +17,7 @@ class StartNearWatchdogCommand {
         }
         spawnProcess('near-watchdog', {
           name: 'near-watchdog',
-          script: path.join(
-            os.homedir(),
-            '.rainbow/bridge/environment/index.js'
-          ),
+          script: path.join(__dirname, '../../index.js'),
           interpreter: 'node',
           error_file: '~/.rainbow/logs/near-watchdog/err.log',
           out_file: '~/.rainbow/logs/near-watchdog/out.log',
