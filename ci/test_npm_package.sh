@@ -12,9 +12,10 @@ cd ${ROOT_DIR}
 rm -rf testenv
 mkdir testenv
 cd testenv
-npm init -y
-npm i ${ROOT_DIR}/environment > /dev/null
+npm init -y > /dev/null
+npm i ${ROOT_DIR}/environment
 export PATH=${ROOT_DIR}/testenv/node_modules/.bin:$PATH
+cd ..
 
 rbbr clean
 if [ -n "${LOCAL_CORE_SRC+x}" ]; then
@@ -42,6 +43,8 @@ rbbr init-eth-erc20
 rbbr init-eth-locker
 rbbr init-near-fun-token
 # First start pm2 daemon
+cd ${ROOT_DIR}/testenv/
+yarn add pm2
 yarn run pm2 ping
 sleep 5
 yarn run pm2 list

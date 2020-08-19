@@ -563,6 +563,7 @@ exports.borshifyOutcomeProof = borshifyOutcomeProof
 exports.txnStatus = txnStatus
 exports.borshify = borshify
 exports.borshifyInitialValidators = borshifyInitialValidators
+exports.signAndSendTransaction = signAndSendTransaction
 
 // For debugging only.
 exports.serialize = serialize
