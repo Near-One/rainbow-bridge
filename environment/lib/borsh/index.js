@@ -388,7 +388,7 @@ class BorshContract {
         enumerable: true,
         value: async args => {
           args = serialize(borshSchema, d.inputFieldType, args)
-          const result = await backoff(10, () =>
+          const result = await backoff(20, () =>
             this.account.connection.provider.query(
               `call/${this.contractId}/${d.methodName}`,
               nearlib.utils.serialize.base_encode(args)
