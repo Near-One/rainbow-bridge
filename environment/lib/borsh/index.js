@@ -460,6 +460,23 @@ class BorshContract {
     })
   }
 
+  async functionCall(sender, method, args, gas, amount) {
+    // A robust version of near-api-js account.functionCall. We can't simply retry account.functionCall because
+    // we don't know whether txn successfully submitted when timeout, so there's a risk of double sending
+    // We can't use borshContract.contractMethodName because sometimes we also want full outcome with receipt ids.
+
+    await sender.ready
+    let accessKey = await sender.findAccessKey()
+    return await signAndSendTransaction(accessKey, sender, this.contractId, [
+      nearlib.transactions.functionCall(
+        method,
+        Buffer.from(JSON.stringify(args)),
+        gas,
+        amount
+      ),
+    ])
+  }
+
   async accessKeyInit() {
     await this.account.ready
 

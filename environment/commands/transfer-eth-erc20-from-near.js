@@ -59,13 +59,14 @@ class TransferEthERC20FromNear {
     console.log(
       `Burning ${command.amount} tokens on NEAR blockchain in favor of ${ethReceiverAddress}.`
     )
-    const txBurn = await nearSenderAccount.functionCall(
-      RainbowConfig.getParam('near-fun-token-account'),
+    const txBurn = await nearTokenContractBorsh.functionCall(
+      nearSenderAccount,
       'burn',
       { amount: command.amount, recipient: ethReceiverAddress },
       new BN('300000000000000'),
       new BN(0)
     )
+    console.log(txBurn)
     // Either hash of the transaction or the receipt. When transaction singe is the same as the fun token address it is
     // the hash of the transaction, since Near runtime executes contract immediately. Otherwise hash of the receipt
     // that was executed on another shard.
