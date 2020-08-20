@@ -5,7 +5,7 @@ const bs58 = require('bs58')
 const BN = require('bn.js')
 const { TextDecoder } = require('util')
 const { borshifyOutcomeProof } = require('./nearProof')
-const { sleep, backoff } = require('../robust')
+const { sleep, backoff, signAndSendTransaction } = require('../robust')
 
 class BorshError extends Error {
   constructor(message) {
@@ -206,7 +206,6 @@ function deserialize(schema, fieldType, buffer) {
 
 const DEFAULT_FUNC_CALL_AMOUNT = new BN('300000000000000')
 
-const RETRY_SEND_TX = 10
 const RETRY_TX_STATUS = 10
 
 const signAndSendTransactionAsync = async (
@@ -278,102 +277,6 @@ const txnStatus = async (
   throw new Error(JSON.stringify(result.status.Failure))
 }
 
-const signAndSendTransaction = async (
-  accessKey,
-  account,
-  receiverId,
-  actions
-) => {
-  // TODO: Find matching access key based on transaction
-  let errorMsg
-  let resendLast = false
-  let sendTxnAsync
-  let txHash
-
-  for (let i = 0; i < RETRY_SEND_TX; i++) {
-    try {
-      if (resendLast) {
-        console.log('resend txn')
-        await sendTxnAsync()
-        resendLast = false
-      } else {
-        const status = await account.connection.provider.status()
-        let signedTx
-        ;[txHash, signedTx] = await nearlib.transactions.signTransaction(
-          receiverId,
-          ++accessKey.nonce,
-          actions,
-          nearlib.utils.serialize.base_decode(
-            status.sync_info.latest_block_hash
-          ),
-          account.connection.signer,
-          account.accountId,
-          account.connection.networkId
-        )
-        const bytes = signedTx.encode()
-        sendTxnAsync = async () => {
-          await account.connection.provider.sendJsonRpc('broadcast_tx_async', [
-            Buffer.from(bytes).toString('base64'),
-          ])
-          console.log('TxHash', nearlib.utils.serialize.base_encode(txHash))
-        }
-        await sendTxnAsync()
-      }
-    } catch (e) {
-      // sleep to avoid socket hangout on retry too soon
-      await sleep(500)
-      continue
-    }
-
-    let result
-    for (let j = 0; j < RETRY_TX_STATUS; j++) {
-      try {
-        result = await account.connection.provider.txStatus(
-          txHash,
-          account.accountId
-        )
-        if (
-          result.status.SuccessValue !== undefined ||
-          result.status.Failure !== undefined
-        ) {
-          break
-        }
-      } catch (e) {
-        await sleep((j + 1) * 500)
-      }
-    }
-
-    if (result) {
-      const flatLogs = [
-        result.transaction_outcome,
-        ...result.receipts_outcome,
-      ].reduce((acc, it) => acc.concat(it.outcome.logs), [])
-      if (flatLogs && flatLogs != []) {
-        console.log(flatLogs)
-      }
-
-      if (result.status.SuccessValue !== undefined) {
-        return result
-      }
-
-      errorMsg = JSON.stringify(result.status.Failure)
-      if (errorMsg.includes('Transaction nonce')) {
-        // nonce incorrect, re-fetch nonce and retry
-        continue
-      } else {
-        // Indeed txn error, retry doesn't help
-        break
-      }
-    } else {
-      // Still no result after a long time, resubmit txn
-      resendLast = true
-      continue
-    }
-  }
-
-  throw new Error(errorMsg)
-}
-
 function getBorshTransactionLastResult(txResult) {
   return txResult && Buffer.from(txResult.status.SuccessValue, 'base64')
 }
@@ -388,7 +291,7 @@ class BorshContract {
         enumerable: true,
         value: async args => {
           args = serialize(borshSchema, d.inputFieldType, args)
-          const result = await backoff(20, () =>
+          const result = await backoff(10, () =>
             this.account.connection.provider.query(
               `call/${this.contractId}/${d.methodName}`,
               nearlib.utils.serialize.base_encode(args)
@@ -458,23 +361,6 @@ class BorshContract {
         },
       })
     })
-  }
-
-  async functionCall(sender, method, args, gas, amount) {
-    // A robust version of near-api-js account.functionCall. We can't simply retry account.functionCall because
-    // we don't know whether txn successfully submitted when timeout, so there's a risk of double sending
-    // We can't use borshContract.contractMethodName because sometimes we also want full outcome with receipt ids.
-
-    await sender.ready
-    let accessKey = await sender.findAccessKey()
-    return await signAndSendTransaction(accessKey, sender, this.contractId, [
-      nearlib.transactions.functionCall(
-        method,
-        Buffer.from(JSON.stringify(args)),
-        gas,
-        amount
-      ),
-    ])
   }
 
   async accessKeyInit() {

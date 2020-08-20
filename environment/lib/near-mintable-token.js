@@ -19,13 +19,6 @@ const borshSchema = {
       ['proof', [['u8']]],
     ],
   },
-  BurnInput: {
-    kind: 'struct',
-    fields: [
-      ['amount', 'u128'],
-      ['recipient', ['u8']],
-    ],
-  },
 }
 
 class NearMintableToken extends BorshContract {
@@ -36,11 +29,6 @@ class NearMintableToken extends BorshContract {
         {
           methodName: 'mint',
           inputFieldType: 'Proof',
-          outputFieldType: null,
-        },
-        {
-          methodName: 'burn',
-          inputFieldType: 'BurnInput',
           outputFieldType: null,
         },
       ],
