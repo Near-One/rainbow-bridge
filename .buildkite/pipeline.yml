@@ -128,7 +128,7 @@ steps:
       agents:
       - "queue=default"
 
-    - label: "test challege with near watchdog"
+    - label: "test challenge with near watchdog"
       command: |
         source ci/e2e_ci_prepare_env.sh
         source ci/e2e_ci_prepare_log.sh
@@ -146,6 +146,19 @@ steps:
         source ci/e2e_ci_prepare_env.sh
         source ci/e2e_ci_prepare_log.sh
         ci/test_ethrelay_catchup.sh
+    
+      artifact_paths:
+      - "logs/**/*.log"
+      timeout: 40
+    
+      agents:
+      - "queue=default"
+
+    - label: "test command as installed from npm"
+      command: |
+        source ci/e2e_ci_prepare_env.sh
+        source ci/e2e_ci_prepare_log.sh
+        ci/test_npm_package.sh
     
       artifact_paths:
       - "logs/**/*.log"

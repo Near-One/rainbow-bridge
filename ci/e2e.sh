@@ -8,12 +8,14 @@ ROOT_DIR=$CI_DIR/..
 
 cd $ROOT_DIR/environment
 yarn
+cd -
 node index.js clean
 if [ -n "${LOCAL_CORE_SRC+x}" ]; then
   node index.js prepare --core-src "$LOCAL_CORE_SRC"
 else
   node index.js prepare
 fi
+cd $ROOT_DIR/environment
 node index.js start near-node
 node index.js start ganache
 # Wait for the local node to start
