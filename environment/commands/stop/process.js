@@ -49,7 +49,7 @@ class StopManagedProcessCommand {
         'ganache',
         'eth2near-relay',
         'near2eth-relay',
-        'near2eth-watchdog',
+        'bridge-watchdog',
       ]) {
         await stop(serviceName)
         await ProcessManager.disconnect()

@@ -6,7 +6,7 @@ const ProcessManager = require('pm2-promise')
 
 const { verifyAccountGently } = require('../lib/near-helpers')
 const { RainbowConfig } = require('../lib/config')
-const { normalizeEthKey, sleep } = require('../lib/robust')
+const { normalizeEthKey } = require('../lib/robust')
 
 // Verdicts
 const Ok = 'ok'
@@ -333,7 +333,7 @@ class ServicesStatus {
   async init() {
     this.eth2nearRelay = await this.running('eth2near-relay')
     this.near2ethRelay = await this.running('near2eth-relay')
-    this.near2ethWatchdog = await this.running('near2eth-watchdog')
+    this.watchdog = await this.running('bridge-watchdog')
   }
 
   processArgs(args) {
@@ -471,7 +471,7 @@ class StatusCommand {
     printHeader('Services')
     printLine('ETH-2-NEAR relay', servicesStatus.eth2nearRelay)
     printLine('NEAR-2-ETH relay', servicesStatus.near2ethRelay)
-    printLine('NEAR-2-ETH watchdog', servicesStatus.near2ethWatchdog)
+    printLine('Bridge Watchdog', servicesStatus.watchdog)
 
     ProcessManager.disconnect()
   }

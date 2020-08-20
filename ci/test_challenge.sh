@@ -44,7 +44,7 @@ yarn run pm2 list
 node index.js start eth2near-relay
 sleep 5
 yarn run pm2 list
-node index.js start near2eth-watchdog
+node index.js start bridge-watchdog
 sleep 5
 yarn run pm2 list
 

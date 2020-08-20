@@ -275,7 +275,7 @@ Now start the services that will relay the information between the chains:
 ```bash
 node index.js start eth2near-relay
 node index.js start near2eth-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
-node index.js start near2eth-watchdog --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501202
+node index.js start bridge-watchdog --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501202
 ```
 
 Note, you can observe the logs of the relays by running:

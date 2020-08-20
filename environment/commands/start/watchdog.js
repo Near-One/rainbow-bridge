@@ -1,11 +1,11 @@
 const ProcessManager = require('pm2')
 const { spawnProcess } = require('./helpers')
-const { Near2EthWatchdog } = require('../../lib/near2eth-watchdog')
+const { Watchdog } = require('../../lib/watchdog')
 const { RainbowConfig } = require('../../lib/config')
 const path = require('path')
 const os = require('os')
 
-class StartNear2EthWatchdogCommand {
+class StartWatchdogCommand {
   static async execute() {
     if (RainbowConfig.getParam('daemon') === 'true') {
       ProcessManager.connect(err => {
@@ -15,26 +15,26 @@ class StartNear2EthWatchdogCommand {
           )
           return
         }
-        spawnProcess('near2eth-watchdog', {
-          name: 'near2eth-watchdog',
+        spawnProcess('bridge-watchdog', {
+          name: 'bridge-watchdog',
           script: path.join(__dirname, '../../index.js'),
           interpreter: 'node',
-          error_file: '~/.rainbow/logs/near2eth-watchdog/err.log',
-          out_file: '~/.rainbow/logs/near2eth-watchdog/out.log',
+          error_file: '~/.rainbow/logs/bridge-watchdog/err.log',
+          out_file: '~/.rainbow/logs/bridge-watchdog/out.log',
           args: [
             'start',
-            'near2eth-watchdog',
+            'bridge-watchdog',
             ...RainbowConfig.getArgsNoDaemon(),
           ],
           logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS',
         })
       })
     } else {
-      const watchdog = new Near2EthWatchdog()
+      const watchdog = new Watchdog()
       await watchdog.initialize()
       await watchdog.run()
     }
   }
 }
 
-exports.StartNear2EthWatchdogCommand = StartNear2EthWatchdogCommand
+exports.StartWatchdogCommand = StartWatchdogCommand

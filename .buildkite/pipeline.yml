@@ -128,7 +128,7 @@ steps:
     agents:
       - 'queue=default'
 
-  - label: 'test challenge with rainbow bridge watchdog'
+  - label: 'test challenge with Rainbow Bridge Watchdog'
     command: |
       source ci/e2e_ci_prepare_env.sh
       source ci/e2e_ci_prepare_log.sh

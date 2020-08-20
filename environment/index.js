@@ -12,9 +12,7 @@ const {
 const {
   StartNear2EthRelayCommand,
 } = require('./commands/start/near2eth-relay.js')
-const {
-  StartNear2EthWatchdogCommand,
-} = require('./commands/start/near2eth-watchdog.js')
+const { StartWatchdogCommand } = require('./commands/start/watchdog.js')
 const { StartGanacheNodeCommand } = require('./commands/start/ganache.js')
 const { StartLocalNearNodeCommand } = require('./commands/start/near.js')
 const { StopManagedProcessCommand } = require('./commands/stop/process.js')
@@ -304,9 +302,7 @@ RainbowConfig.addOptions(
 )
 
 RainbowConfig.addOptions(
-  startCommand
-    .command('near2eth-watchdog')
-    .action(StartNear2EthWatchdogCommand.execute),
+  startCommand.command('bridge-watchdog').action(StartWatchdogCommand.execute),
   ['eth-node-url', 'eth-master-sk', 'eth-client-abi-path', 'daemon']
 )
 
@@ -322,9 +318,7 @@ stopCommand.command('eth2near-relay').action(StopManagedProcessCommand.execute)
 
 stopCommand.command('near2eth-relay').action(StopManagedProcessCommand.execute)
 
-stopCommand
-  .command('near2eth-watchdog')
-  .action(StopManagedProcessCommand.execute)
+stopCommand.command('bridge-watchdog').action(StopManagedProcessCommand.execute)
 
 RainbowConfig.addOptions(
   program
