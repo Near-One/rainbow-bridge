@@ -12,5 +12,6 @@ ethrelay/testdir
 venv
 
 **/transfer-eth-erc20-to-near.log.json
+**/transfer-eth-erc20-from-near.log.json
 **/package-lock.json
 **/*.swp
