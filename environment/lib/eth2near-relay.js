@@ -1,4 +1,5 @@
-const Web3 = require('web3')
+const path = require('path')
+const os = require('os')
 const exec = require('child_process').exec
 const utils = require('ethereumjs-util')
 const BN = require('bn.js')
@@ -6,6 +7,7 @@ const blockFromRpc = require('ethereumjs-block/from-rpc')
 const { RobustWeb3, sleep } = require('../lib/robust')
 const { txnStatus } = require('../lib/borsh')
 const MAX_SUBMIT_BLOCK = 10
+const BRIDGE_SRC_DIR = path.join(os.homedir(), '.rainbow/bridge')
 
 function execute(command, _callback) {
   return new Promise(resolve =>
@@ -45,7 +47,7 @@ class Eth2NearRelay {
       let chainBlockNumber
       try {
         // Even retry 10 times ethClientContract.last_block_number could still fail
-        // Return back to loop to avoid crash eth-relay.
+        // Return back to loop to avoid crash eth2near-relay.
         clientBlockNumber = (
           await this.ethClientContract.last_block_number()
         ).toNumber()
@@ -133,8 +135,10 @@ class Eth2NearRelay {
         web3BlockToRlp(await this.robustWeb3.getBlock(blockNumber))
       )
       const unparsedBlock = await execute(
-        `./vendor/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`
+        `${BRIDGE_SRC_DIR}/environment/vendor/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`
       )
+      console.log('---')
+      console.log(unparsedBlock)
       return JSON.parse(unparsedBlock)
     } catch (e) {
       console.log(`Failed to get or parse block ${blockNumber}: ${e}`)

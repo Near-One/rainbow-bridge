@@ -1,5 +1,4 @@
 const Web3 = require('web3')
-const BN = require('bn.js')
 const fs = require('fs')
 const { RainbowConfig } = require('./config')
 const {
@@ -12,7 +11,7 @@ const Tx = require('ethereumjs-tx').Transaction
 
 const SLOW_TX_ERROR_MSG = 'transaction not executed within 5 minutes'
 
-class Near2EthWatchdog {
+class Watchdog {
   async initialize() {
     // @ts-ignore
     this.robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'))
@@ -121,4 +120,4 @@ class Near2EthWatchdog {
   }
 }
 
-exports.Near2EthWatchdog = Near2EthWatchdog
+exports.Watchdog = Watchdog

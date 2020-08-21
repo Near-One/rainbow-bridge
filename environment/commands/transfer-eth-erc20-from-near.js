@@ -1,4 +1,3 @@
-const Web3 = require('web3')
 const nearlib = require('near-api-js')
 const BN = require('bn.js')
 const fs = require('fs')
@@ -9,7 +8,11 @@ const { NearMintableToken } = require('../lib/near-mintable-token')
 const { RainbowConfig } = require('../lib/config')
 const { borshifyOutcomeProof } = require('../lib/borsh')
 const { sleep, RobustWeb3 } = require('../lib/robust')
-const { normalizeEthKey } = require('../lib/robust')
+const {
+  normalizeEthKey,
+  backoff,
+  nearJsonContractFunctionCall,
+} = require('../lib/robust')
 
 class TransferEthERC20FromNear {
   static async execute(command) {
@@ -47,9 +50,11 @@ class TransferEthERC20FromNear {
     await nearTokenContractBorsh.accessKeyInit()
 
     // Burn the token on Near side.
-    const old_balance = await nearTokenContract.get_balance({
-      owner_id: command.nearSenderAccount,
-    })
+    const old_balance = await backoff(10, () =>
+      nearTokenContract.get_balance({
+        owner_id: command.nearSenderAccount,
+      })
+    )
     console.log(
       `Balance of ${command.nearSenderAccount} before burning: ${old_balance}`
     )
@@ -59,13 +64,15 @@ class TransferEthERC20FromNear {
     console.log(
       `Burning ${command.amount} tokens on NEAR blockchain in favor of ${ethReceiverAddress}.`
     )
-    const txBurn = await nearSenderAccount.functionCall(
+    const txBurn = await nearJsonContractFunctionCall(
       RainbowConfig.getParam('near-fun-token-account'),
+      nearSenderAccount,
       'burn',
       { amount: command.amount, recipient: ethReceiverAddress },
       new BN('300000000000000'),
       new BN(0)
     )
+    console.log(txBurn)
     // Either hash of the transaction or the receipt. When transaction singe is the same as the fun token address it is
     // the hash of the transaction, since Near runtime executes contract immediately. Otherwise hash of the receipt
     // that was executed on another shard.
@@ -187,9 +194,11 @@ class TransferEthERC20FromNear {
     }
 
     console.log(`Burnt ${JSON.stringify(command.amount)}`)
-    const new_balance = await nearTokenContract.get_balance({
-      owner_id: command.nearSenderAccount,
-    })
+    const new_balance = await backoff(10, () =>
+      nearTokenContract.get_balance({
+        owner_id: command.nearSenderAccount,
+      })
+    )
     console.log(
       `Balance of ${command.nearSenderAccount} after burning: ${new_balance}`
     )

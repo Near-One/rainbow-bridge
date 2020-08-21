@@ -1,5 +1,5 @@
 #!/bin/bash
-# This test launch all commands, but postpone start eth-relay late to test it catch fast
+# This test launch all commands, but postpone start eth2near-relay late to test it catch fast
 
 set -exuo pipefail
 
@@ -38,11 +38,11 @@ node index.js init-near-fun-token
 yarn run pm2 ping
 sleep 5
 yarn run pm2 list
-node index.js start near-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
+node index.js start near2eth-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
 sleep 5
 yarn run pm2 list
 sleep 100
-node index.js start eth-relay
+node index.js start eth2near-relay
 sleep 5
 yarn run pm2 list
 node index.js transfer-eth-erc20-to-near --amount 1000 \

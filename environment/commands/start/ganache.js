@@ -1,6 +1,8 @@
 const ProcessManager = require('pm2')
 const { spawnProcess } = require('./helpers')
 const { RainbowConfig } = require('../../lib/config')
+const path = require('path')
+const os = require('os')
 
 class StartGanacheNodeCommand {
   static async execute() {
@@ -13,7 +15,10 @@ class StartGanacheNodeCommand {
       }
       spawnProcess('ganache', {
         name: 'ganache',
-        script: './scripts/start_ganache.sh',
+        script: path.join(
+          os.homedir(),
+          '.rainbow/bridge/environment/scripts/start_ganache.sh'
+        ),
         error_file: '~/.rainbow/logs/ganache/err.log',
         out_file: '~/.rainbow/logs/ganache/out.log',
         args: [],

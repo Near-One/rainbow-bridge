@@ -22,6 +22,8 @@ function spawnProcess(name, config) {
         console.log('%s started...', name)
         if (!err) {
           console.log('Disconnecting from daemon')
+        } else {
+          console.log(err)
         }
         ProcessManager.disconnect()
       })
