@@ -2,6 +2,7 @@ const Web3 = require('web3')
 const nearlib = require('near-api-js')
 const fetch = require('node-fetch')
 const fs = require('fs')
+const ProcessManager = require('pm2-promise')
 
 const { verifyAccountGently } = require('../lib/near-helpers')
 const { RainbowConfig } = require('../lib/config')
@@ -13,6 +14,7 @@ const Info = 'info'
 const Warn = 'warn'
 const Error = 'error'
 
+const Running = 'running'
 const Valid = 'valid'
 const Deployed = 'deployed'
 const Unknown = 'unknown'
@@ -79,10 +81,25 @@ class NearContracts {
       return new Status(Unknown, Error, ContractNotFound)
     }
     try {
-      const contract = new nearlib.Contract(masterAccount, contractAccount, {})
-      // TODO #257 check contract validity here
-      //console.log(contract);
-      return new Status(Unknown, Info, NotVerified)
+      const nearAccount = new nearlib.Account(near.connection, masterAccount)
+      const contract = new nearlib.Contract(nearAccount, contractAccount, {
+        changeMethods: ['boo'],
+        viewMethods: [],
+      })
+      // TODO #270 implement `initialized` method to NEAR contracts
+      // TODO #257 check the code deployed if possible
+      try {
+        await contract.boo()
+      } catch (err) {
+        if (
+          err.message &&
+          err.message.indexOf('Contract method is not found') >= 0
+        ) {
+          return new Status(contract.contractId, Ok, Deployed)
+        } else {
+          return new Status(Unknown, Info, NotVerified)
+        }
+      }
     } catch (err) {
       return new Status(Unknown, Error, InternalError)
     }
@@ -312,6 +329,43 @@ class EthStatus {
   }
 }
 
+class ServicesStatus {
+  async init() {
+    this.eth2nearRelay = await this.running('eth2near-relay')
+    this.near2ethRelay = await this.running('near2eth-relay')
+    this.watchdog = await this.running('bridge-watchdog')
+  }
+
+  processArgs(args) {
+    var res = []
+    for (var i = 0; i + 1 < args.length; i++) {
+      if (args[i].startsWith('--')) {
+        res.push(args[i].substring(2, args[i].length) + '=' + args[i + 1])
+      }
+    }
+    return res.join(', ')
+  }
+
+  async running(serviceName) {
+    let status
+    try {
+      const process = await ProcessManager.describe(serviceName)
+      if (process.length) {
+        status = new Status(
+          Running,
+          Ok,
+          this.processArgs(process[0].pm2_env.args)
+        )
+      } else {
+        status = new Status(Unknown, Error, Unreachable)
+      }
+    } catch (err) {
+      status = new Status(Unknown, Error, InternalError)
+    }
+    return status
+  }
+}
+
 // TODO put it into StatusCommand class if possible
 function printHeader(text) {
   console.log('\x1B[33m' + text + NoColor)
@@ -359,6 +413,9 @@ class StatusCommand {
 
     const ethStatus = new EthStatus()
     await ethStatus.init()
+
+    const servicesStatus = new ServicesStatus()
+    await servicesStatus.init()
 
     // Return console.error back
     console.error = consoleError
@@ -409,6 +466,14 @@ class StatusCommand {
     } else {
       printLine('Contracts')
     }
+    printFooter()
+
+    printHeader('Services')
+    printLine('ETH-2-NEAR relay', servicesStatus.eth2nearRelay)
+    printLine('NEAR-2-ETH relay', servicesStatus.near2ethRelay)
+    printLine('Bridge Watchdog', servicesStatus.watchdog)
+
+    ProcessManager.disconnect()
   }
 }
 

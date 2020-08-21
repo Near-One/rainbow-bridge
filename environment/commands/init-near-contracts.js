@@ -1,8 +1,8 @@
 const Web3 = require('web3')
 const nearlib = require('near-api-js')
 const { maybeCreateAccount, verifyAccount } = require('../lib/near-helpers')
-const { NearClientContract } = require('../lib/near-client-contract')
-const { EthProverContract } = require('../lib/eth-prover-contract')
+const { EthOnNearClientContract } = require('../lib/eth-on-near-client')
+const { EthOnNearProverContract } = require('../lib/eth-on-near-prover')
 const { RobustWeb3 } = require('../lib/robust')
 const { RainbowConfig } = require('../lib/config')
 
@@ -92,13 +92,13 @@ class InitNearContracts {
     await verifyAccount(near, proverAccount)
 
     console.log('Initializing client and prover contracts.')
-    const clientContract = new NearClientContract(
+    const clientContract = new EthOnNearClientContract(
       new nearlib.Account(near.connection, clientAccount),
       clientAccount
     )
     const robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'))
     await clientContract.maybeInitialize(validateEthash === 'true', robustWeb3)
-    const proverContract = new EthProverContract(
+    const proverContract = new EthOnNearProverContract(
       new nearlib.Account(near.connection, proverAccount),
       proverAccount
     )

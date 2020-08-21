@@ -3,8 +3,6 @@ const { web3BlockToRlp } = require('../eth2near-relay')
 const Web3 = require('web3')
 const BN = require('bn.js')
 const { BorshContract, hexToBuffer, readerToHex } = require('../borsh')
-const { RobustWeb3 } = require('../robust')
-// @ts-ignore
 const roots = require('./dag_merkle_roots.json')
 
 const borshSchema = {
@@ -65,7 +63,7 @@ const borshSchema = {
   },
 }
 
-class NearClientContract extends BorshContract {
+class EthOnNearClientContract extends BorshContract {
   constructor(account, contractId) {
     super(borshSchema, account, contractId, {
       viewMethods: [
@@ -126,7 +124,7 @@ class NearClientContract extends BorshContract {
       initialized = await this.initialized()
     } catch (e) {}
     if (!initialized) {
-      console.log('EthClient is not initialized, initializing...')
+      console.log('EthOnNearClient is not initialized, initializing...')
       const last_block_number = await robustWeb3.getBlockNumber()
       const blockRlp = web3BlockToRlp(
         await robustWeb3.getBlock(last_block_number)
@@ -144,10 +142,10 @@ class NearClientContract extends BorshContract {
         },
         new BN('300000000000000')
       )
-      console.log('EthClient initialized')
+      console.log('EthOnNearClient initialized')
     }
 
-    console.log('Checking EthClient initialization.')
+    console.log('Checking EthOnNearClient initialization.')
     // @ts-ignore
     const first_root = await this.dag_merkle_root({
       epoch: 0,
@@ -163,11 +161,11 @@ class NearClientContract extends BorshContract {
       )
     ) {
       console.log(
-        `EthClient initialization error! The first and last roots are ${first_root} and ${last_root}`
+        `EthOnNearClient initialization error! The first and last roots are ${first_root} and ${last_root}`
       )
       process.exit(1)
     }
   }
 }
 
-exports.NearClientContract = NearClientContract
+exports.EthOnNearClientContract = EthOnNearClientContract

@@ -6,15 +6,15 @@ const { program } = require('commander')
 const { CleanCommand } = require('./commands/clean')
 const { PrepareCommand } = require('./commands/prepare')
 const { StatusCommand } = require('./commands/status')
-const { StartEthRelayCommand } = require('./commands/start/eth-relay.js')
-const { StartNearRelayCommand } = require('./commands/start/near-relay.js')
 const {
-  StartNearWatchdogCommand,
-} = require('./commands/start/near-watchdog.js')
+  StartEth2NearRelayCommand,
+} = require('./commands/start/eth2near-relay.js')
+const {
+  StartNear2EthRelayCommand,
+} = require('./commands/start/near2eth-relay.js')
+const { StartWatchdogCommand } = require('./commands/start/watchdog.js')
 const { StartGanacheNodeCommand } = require('./commands/start/ganache.js')
 const { StartLocalNearNodeCommand } = require('./commands/start/near.js')
-const { StopLocalNearNodeCommand } = require('./commands/stop/near.js')
-const { StopAllCommands } = require('./commands/stop/all.js')
 const { StopManagedProcessCommand } = require('./commands/stop/process.js')
 const {
   DangerSubmitInvalidNearBlock,
@@ -271,7 +271,9 @@ RainbowConfig.addOptions(
 )
 
 RainbowConfig.addOptions(
-  startCommand.command('eth-relay').action(StartEthRelayCommand.execute),
+  startCommand
+    .command('eth2near-relay')
+    .action(StartEth2NearRelayCommand.execute),
   [
     'near-master-account',
     'near-master-sk',
@@ -283,7 +285,9 @@ RainbowConfig.addOptions(
 )
 
 RainbowConfig.addOptions(
-  startCommand.command('near-relay').action(StartNearRelayCommand.execute),
+  startCommand
+    .command('near2eth-relay')
+    .action(StartNear2EthRelayCommand.execute),
   [
     'eth-node-url',
     'eth-master-sk',
@@ -298,25 +302,23 @@ RainbowConfig.addOptions(
 )
 
 RainbowConfig.addOptions(
-  startCommand
-    .command('near-watchdog')
-    .action(StartNearWatchdogCommand.execute),
+  startCommand.command('bridge-watchdog').action(StartWatchdogCommand.execute),
   ['eth-node-url', 'eth-master-sk', 'eth-client-abi-path', 'daemon']
 )
 
 const stopCommand = program.command('stop')
 
-stopCommand.command('all').action(StopAllCommands.execute)
+stopCommand.command('all').action(StopManagedProcessCommand.execute)
 
-stopCommand.command('near-node').action(StopLocalNearNodeCommand.execute)
+stopCommand.command('near-node').action(StopManagedProcessCommand.execute)
 
 stopCommand.command('ganache').action(StopManagedProcessCommand.execute)
 
-stopCommand.command('eth-relay').action(StopManagedProcessCommand.execute)
+stopCommand.command('eth2near-relay').action(StopManagedProcessCommand.execute)
 
-stopCommand.command('near-relay').action(StopManagedProcessCommand.execute)
+stopCommand.command('near2eth-relay').action(StopManagedProcessCommand.execute)
 
-stopCommand.command('near-watchdog').action(StopManagedProcessCommand.execute)
+stopCommand.command('bridge-watchdog').action(StopManagedProcessCommand.execute)
 
 RainbowConfig.addOptions(
   program

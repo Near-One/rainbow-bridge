@@ -1,6 +1,5 @@
 const utils = require('ethereumjs-util')
 const BN = require('bn.js')
-const Web3 = require('web3')
 const fs = require('fs')
 const nearlib = require('near-api-js')
 const {
@@ -11,7 +10,7 @@ const {
 const { verifyAccount } = require('../lib/near-helpers')
 const { NearMintableToken } = require('../lib/near-mintable-token')
 const { RainbowConfig } = require('../lib/config')
-const { NearClientContract } = require('../lib/near-client-contract')
+const { EthOnNearClientContract } = require('../lib/eth-on-near-client')
 const { sleep, RobustWeb3 } = require('../lib/robust')
 const { normalizeEthKey } = require('../lib/robust')
 
@@ -130,7 +129,7 @@ class TransferETHERC20ToNear {
     txLogIndex,
     lockedEvent,
     block,
-    ethClientContract,
+    ethOnNearClientContract,
   }) {
     const log_entry_data = logFromWeb3(log).serialize()
     const receipt_index = proof.txIndex
@@ -161,9 +160,9 @@ class TransferETHERC20ToNear {
     while (true) {
       // @ts-ignore
       const last_block_number = (
-        await ethClientContract.last_block_number()
+        await ethOnNearClientContract.last_block_number()
       ).toNumber()
-      const is_safe = await ethClientContract.block_hash_safe(blockNumber)
+      const is_safe = await ethOnNearClientContract.block_hash_safe(blockNumber)
       if (!is_safe) {
         const delay = 10
         console.log(
@@ -326,7 +325,7 @@ class TransferETHERC20ToNear {
     )
 
     const clientAccount = RainbowConfig.getParam('near-client-account')
-    const ethClientContract = new NearClientContract(
+    const ethOnNearClientContract = new EthOnNearClientContract(
       nearMasterAccount,
       clientAccount
     )
@@ -360,7 +359,7 @@ class TransferETHERC20ToNear {
     }
     if (transferLog.finished === 'find-proof') {
       await TransferETHERC20ToNear.waitBlockSafe({
-        ethClientContract,
+        ethOnNearClientContract,
         ...transferLog,
       })
       transferLog = TransferETHERC20ToNear.loadTransferLog()
