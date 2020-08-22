@@ -1,15 +1,15 @@
 {
-  "name": "rainbow-bridge-sol",
-  "version": "0.1",
+  "name": "@rainbow-bridge-cli/sol",
+  "version": "1.0.0",
   "description": "Solidity contracts for NEAR Rainbow Bridge",
-  "files": {
+  "files": [
     "/nearbridge/dist/*.abi",
     "/nearbridge/dist/*.bin",
     "/nearprover/dist/*.abi",
     "/nearprover/dist/*.bin",
     "/token-locker/dist/*.abi",
     "/token-locker/dist/*.bin"
-  },
+  ],
   "author": "Near Inc.",
   "repository": {
     "type": "git",
