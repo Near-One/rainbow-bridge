@@ -1,4 +1,3 @@
-const Web3 = require('web3')
 const nearlib = require('near-api-js')
 const fs = require('fs')
 // @ts-ignore
@@ -68,8 +67,9 @@ class Near2EthRelay {
         let currentValidators = null
         while (!lightClientBlock) {
           // @ts-ignore
-          currentValidators = await this.near.connection.provider.validators(
-            null
+          currentValidators = await this.near.connection.provider.sendJsonRpc(
+            'EXPERIMENTAL_validators_ordered',
+            [lastFinalBlockHash]
           )
           if (!currentValidators) {
             await sleep(300)
@@ -83,25 +83,11 @@ class Near2EthRelay {
             await sleep(300)
             continue
           }
-          // Because fetch currentValidators and lightClientBlock isn't atomic, it's possible we happen to
-          // fetch lightClentBlock cross epoch boundary. Fetch another time to ensure that's not the case.
-          // @ts-ignore
-          let currentValidatorsNow = await this.near.connection.provider.validators(
-            null
-          )
-          if (
-            !currentValidatorsNow ||
-            currentValidatorsNow.epoch_start_height !=
-              currentValidators.epoch_start_height
-          ) {
-            await sleep(300)
-            continue
-          }
         }
         console.log('Initializing with validators')
-        console.log(`${JSON.stringify(currentValidators.current_validators)}`)
+        console.log(`${JSON.stringify(currentValidators)}`)
         const borshInitialValidators = borshifyInitialValidators(
-          currentValidators.current_validators
+          currentValidators
         )
         // @ts-ignore
         let gasPrice = new BN(await this.web3.eth.getGasPrice()).mul(
