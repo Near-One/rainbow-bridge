@@ -195,6 +195,9 @@ class TransferETHERC20ToNear {
     )
     // @ts-ignore
     try {
+      console.log('=== proof locker')
+      console.log(JSON.stringify(proof_locker))
+      console.log('===')
       await nearTokenContractBorsh.mint(
         proof_locker,
         new BN('300000000000000'),

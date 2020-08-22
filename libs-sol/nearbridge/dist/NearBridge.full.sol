@@ -1964,17 +1964,7 @@ contract NearBridge is INearBridge {
         }
     }
 
-    function initWithBlock(bytes memory data) public {
-        require(currentBlockProducers.totalStake > 0, "NearBridge: validators need to be initialized first");
-        require(!initialized, "NearBridge: already initialized");
-        initialized = true;
-
-        Borsh.Data memory borsh = Borsh.from(data);
-        NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
-        require(borsh.finished(), "NearBridge: only light client block should be passed as first argument");
-        _setHead(nearBlock, data, true);
-    }
-
+    // The first part of initialization -- setting the validators of the current epoch.
     function initWithValidators(bytes memory _initialValidators) public {
         require(!initialized, "NearBridge: already initialized");
         Borsh.Data memory initialValidatorsBorsh = Borsh.from(_initialValidators);
@@ -1993,6 +1983,18 @@ contract NearBridge is INearBridge {
             totalStake = totalStake.add(initialValidators.validator_stakes[i].stake);
         }
         currentBlockProducers.totalStake = totalStake;
+    }
+
+    // The second part of the initialization -- setting the current head.
+    function initWithBlock(bytes memory data) public {
+        require(currentBlockProducers.totalStake > 0, "NearBridge: validators need to be initialized first");
+        require(!initialized, "NearBridge: already initialized");
+        initialized = true;
+
+        Borsh.Data memory borsh = Borsh.from(data);
+        NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
+        require(borsh.finished(), "NearBridge: only light client block should be passed as first argument");
+        _setHead(nearBlock, data, true);
     }
 
     function _checkBp(NearDecoder.LightClientBlock memory nearBlock, BlockProducerInfo storage bpInfo) internal {
@@ -2060,19 +2062,22 @@ contract NearBridge is INearBridge {
     }
 
     function _setHead(NearDecoder.LightClientBlock memory nearBlock, bytes memory data, bool init) internal {
-        // If block is from the next epoch then update block producers and backup.
-        if (nearBlock.inner_lite.epoch_id == head.nextEpochId) {
+        // If block is from the next epoch or it is initialization then update block producers.
+        if (init || nearBlock.inner_lite.epoch_id == head.nextEpochId) {
             // If block from the next epoch then it should contain next_bps.
             require(!nearBlock.next_bps.none, "NearBridge: The first block of the epoch should contain next_bps.");
-            // backupCurrentBlockProducers <- currentBlockProducers
-            backupCurrentBlockProducers = currentBlockProducers;
-            for (uint i = 0; i < backupCurrentBlockProducers.bpsLength; i++) {
-                backupCurrentBlockProducers.bps[i] = currentBlockProducers.bps[i];
-            }
-            // currentBlockProducers <- nextBlockProducers
-            currentBlockProducers = nextBlockProducers;
-            for (uint i = 0; i < currentBlockProducers.bpsLength; i++) {
-                currentBlockProducers.bps[i] = nextBlockProducers.bps[i];
+            // If this is initialization then no need for the backup.
+            if (!init) {
+                // backupCurrentBlockProducers <- currentBlockProducers
+                backupCurrentBlockProducers = currentBlockProducers;
+                for (uint i = 0; i < backupCurrentBlockProducers.bpsLength; i++) {
+                    backupCurrentBlockProducers.bps[i] = currentBlockProducers.bps[i];
+                }
+                // currentBlockProducers <- nextBlockProducers
+                currentBlockProducers = nextBlockProducers;
+                for (uint i = 0; i < currentBlockProducers.bpsLength; i++) {
+                    currentBlockProducers.bps[i] = nextBlockProducers.bps[i];
+                }
             }
             // nextBlockProducers <- new block producers
             nextBlockProducers.bpsLength = nearBlock.next_bps.validatorStakes.length;
@@ -2087,8 +2092,15 @@ contract NearBridge is INearBridge {
             nextBlockProducers.totalStake = totalStake;
         }
 
-        // Update the head
-        backupHead = head;
+        if (!init) {
+            // Backup the head. No need to backup if it is initialization.
+            backupHead = head;
+            for (uint i = 0; i < head.approvals_after_next_length; i++) {
+                backupHead.approvals_after_next[i] = head.approvals_after_next[i];
+            }
+        }
+
+        // Update the head.
         head = BlockInfo({
             height: nearBlock.inner_lite.height,
             epochId: nearBlock.inner_lite.epoch_id,
@@ -2099,6 +2111,9 @@ contract NearBridge is INearBridge {
             next_hash: nearBlock.next_hash,
             approvals_after_next_length: nearBlock.approvals_after_next.length
         });
+        for (uint i = 0; i < nearBlock.approvals_after_next.length; i++) {
+            head.approvals_after_next[i] = nearBlock.approvals_after_next[i];
+        }
 
         blockHashes[nearBlock.inner_lite.height] = nearBlock.hash;
         blockMerkleRoots[nearBlock.inner_lite.height] = nearBlock.inner_lite.block_merkle_root;

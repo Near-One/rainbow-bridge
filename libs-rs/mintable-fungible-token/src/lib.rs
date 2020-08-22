@@ -27,7 +27,10 @@ Properties inherited from the standard Fungible Token:
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{UnorderedMap, UnorderedSet};
 use near_sdk::json_types::U128;
-use near_sdk::{env, ext_contract, near_bindgen, AccountId, Balance, Promise, StorageUsage};
+use near_sdk::{
+    env, ext_contract, near_bindgen, AccountId, Balance, Promise, PromiseOrValue, StorageUsage,
+};
+use serde::Deserialize;
 
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
@@ -109,7 +112,7 @@ pub trait Prover {
     ) -> bool;
 }
 
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, Deserialize, Clone)]
 pub struct Proof {
     log_index: u64,
     log_entry_data: Vec<u8>,
@@ -381,7 +384,7 @@ impl MintableFungibleToken {
     /// Mint the token, increasing the total supply given the proof that the mirror token was locked
     /// on the Ethereum blockchain.
     #[payable]
-    pub fn mint(&mut self, #[serializer(borsh)] proof: Proof) -> Promise {
+    pub fn mint(&mut self, #[serializer(borsh)] proof: Proof) -> PromiseOrValue<()> {
         let initial_storage = env::storage_usage();
         self.record_proof(&proof);
         let current_storage = env::storage_usage();
@@ -409,25 +412,33 @@ impl MintableFungibleToken {
         let EthEventData {
             recipient, amount, ..
         } = event;
-        prover::verify_log_entry(
-            log_index,
-            log_entry_data,
-            receipt_index,
-            receipt_data,
-            header_data,
-            proof,
-            false, // Do not skip bridge call. This is only used for development and diagnostics.
-            &self.prover_account,
-            0,
-            env::prepaid_gas() / 3,
-        )
-        .then(ext_fungible_token::finish_mint(
-            recipient,
-            amount.into(),
-            &env::current_account_id(),
-            leftover_deposit,
-            env::prepaid_gas() / 3,
-        ))
+        if cfg!(test) {
+            // In unit test we don't do cross contract call into prover contract
+            self.finish_mint(true, recipient, amount.into());
+            PromiseOrValue::Value(())
+        } else {
+            PromiseOrValue::Promise(
+                prover::verify_log_entry(
+                    log_index,
+                    log_entry_data,
+                    receipt_index,
+                    receipt_data,
+                    header_data,
+                    proof,
+                    false, // Do not skip bridge call. This is only used for development and diagnostics.
+                    &self.prover_account,
+                    0,
+                    env::prepaid_gas() / 3,
+                )
+                .then(ext_fungible_token::finish_mint(
+                    recipient,
+                    amount.into(),
+                    &env::current_account_id(),
+                    leftover_deposit,
+                    env::prepaid_gas() / 3,
+                )),
+            )
+        }
     }
 
     /// Finish minting once the proof was successfully validated. Can only be called by the contract
@@ -589,6 +600,9 @@ mod tests {
     }
     fn carol() -> AccountId {
         "carol.near".to_string()
+    }
+    fn rainbow_bridge_eth_on_near_prover() -> AccountId {
+        "rainbow_bridge_eth_on_near_prover".to_string()
     }
 
     fn get_context(predecessor_account_id: AccountId) -> VMContext {
@@ -877,5 +891,105 @@ mod tests {
             initial_balance
                 - Balance::from(initial_storage - context.storage_usage) * STORAGE_PRICE_PER_BYTE
         );
+    }
+
+    #[test]
+    fn test_mint() {
+        let mut context = get_context(alice());
+        testing_env!(context.clone());
+        let total_supply = 1_000_000_000_000_000u128;
+        let mut contract = MintableFungibleToken::new_with_supply(alice(), total_supply.into());
+        contract.locker_address = [
+            196, 199, 73, 127, 190, 26, 136, 104, 65, 161, 149, 165, 214, 34, 205, 96, 5, 60, 19,
+            118,
+        ];
+        context.storage_usage = env::storage_usage();
+
+        context.attached_deposit = 1000 * STORAGE_PRICE_PER_BYTE;
+        testing_env!(context.clone());
+
+        let proof: Proof = serde_json::from_reader(
+            std::fs::File::open(std::path::Path::new("data/proof.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            contract.get_balance(rainbow_bridge_eth_on_near_prover()).0,
+            0
+        );
+        contract.mint(proof);
+        assert_eq!(
+            contract.get_balance(rainbow_bridge_eth_on_near_prover()).0,
+            1000
+        );
+        assert_eq!(contract.get_total_supply().0, total_supply + 1000);
+    }
+
+    #[test]
+    #[should_panic(expected = "Event cannot be reused for minting.")]
+    fn test_mint_no_double_mint() {
+        let mut context = get_context(alice());
+        testing_env!(context.clone());
+        let total_supply = 1_000_000_000_000_000u128;
+        let mut contract = MintableFungibleToken::new_with_supply(alice(), total_supply.into());
+        contract.locker_address = [
+            196, 199, 73, 127, 190, 26, 136, 104, 65, 161, 149, 165, 214, 34, 205, 96, 5, 60, 19,
+            118,
+        ];
+        context.storage_usage = env::storage_usage();
+
+        context.attached_deposit = 1000 * STORAGE_PRICE_PER_BYTE;
+        testing_env!(context.clone());
+
+        let proof: Proof = serde_json::from_reader(
+            std::fs::File::open(std::path::Path::new("data/proof.json")).unwrap(),
+        )
+        .unwrap();
+
+        contract.mint(proof.clone());
+        contract.mint(proof);
+    }
+
+    #[test]
+    #[should_panic(expected = "does not match locker address of this token")]
+    fn test_mint_wrong_locker_address() {
+        let mut context = get_context(alice());
+        testing_env!(context.clone());
+        let total_supply = 1_000_000_000_000_000u128;
+        let mut contract = MintableFungibleToken::new_with_supply(carol(), total_supply.into());
+        context.storage_usage = env::storage_usage();
+
+        context.attached_deposit = 1000 * STORAGE_PRICE_PER_BYTE;
+        testing_env!(context.clone());
+
+        let proof: Proof = serde_json::from_reader(
+            std::fs::File::open(std::path::Path::new("data/proof.json")).unwrap(),
+        )
+        .unwrap();
+        contract.mint(proof);
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "Finish transfer is only allowed to be called by the contract itself"
+    )]
+    fn test_mint_wrong_sender() {
+        let mut context = get_context(carol());
+        testing_env!(context.clone());
+        let total_supply = 1_000_000_000_000_000u128;
+        let mut contract = MintableFungibleToken::new_with_supply(carol(), total_supply.into());
+        contract.locker_address = [
+            196, 199, 73, 127, 190, 26, 136, 104, 65, 161, 149, 165, 214, 34, 205, 96, 5, 60, 19,
+            118,
+        ];
+        context.storage_usage = env::storage_usage();
+
+        context.attached_deposit = 1000 * STORAGE_PRICE_PER_BYTE;
+        testing_env!(context.clone());
+
+        let proof: Proof = serde_json::from_reader(
+            std::fs::File::open(std::path::Path::new("data/proof.json")).unwrap(),
+        )
+        .unwrap();
+        contract.mint(proof);
     }
 }
