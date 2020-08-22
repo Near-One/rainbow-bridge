@@ -42,7 +42,7 @@ contract('NearBridge', function ([_, addr1]) {
             '0x508307e7af9bdbb297afa7af0541130eb32f0f028151319f5a4f7ae68b0ecc56',
         );
 
-        expect(await this.bridge.checkBlockProducerSignatureInLastBlock(0)).to.be.true;
+        expect(await this.bridge.checkBlockProducerSignatureInHead(0)).to.be.true;
 
         await expectRevert(
             this.bridge.addLightClientBlock(block121998),
@@ -58,7 +58,7 @@ contract('NearBridge', function ([_, addr1]) {
             '0x2358c4881bbd111d2e4352b6a7e6c7595fb39d3c9897d3c624006be1ef809abf',
         );
 
-        expect(await this.bridge.checkBlockProducerSignatureInLastBlock(0)).to.be.true;
+        expect(await this.bridge.checkBlockProducerSignatureInHead(0)).to.be.true;
     });
 
     if (process.env.NEAR_HEADERS_DIR) {
@@ -93,7 +93,7 @@ contract('NearBridge', function ([_, addr1]) {
                         console.log('checking approval ' + j);
                         if (block.approvals_after_next[j]) {
                             console.log('approval ' + j + ' is not null');
-                            expect(await this.bridge.checkBlockProducerSignatureInLastBlock(j)).to.be.true;
+                            expect(await this.bridge.checkBlockProducerSignatureInHead(j)).to.be.true;
                         }
                     }
                 }
