@@ -1,6 +1,6 @@
 {
   "name": "rainbow-bridge-sol",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Solidity contracts for NEAR Rainbow Bridge",
   "files": [
     "/nearbridge/dist/*.abi",
@@ -43,5 +43,11 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "check": "tsc"
+  },
+  "prettier": {
+    "trailingComma": "es5",
+    "tabWidth": 2,
+    "semi": false,
+    "singleQuote": true
   }
 }
