@@ -1,5 +1,5 @@
 {
-  "name": "@rainbow-bridge-cli/sol",
+  "name": "rainbow-bridge-sol",
   "version": "1.0.0",
   "description": "Solidity contracts for NEAR Rainbow Bridge",
   "files": [
