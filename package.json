@@ -1,8 +1,9 @@
 {
   "name": "rainbow-bridge-sol",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Solidity contracts for NEAR Rainbow Bridge",
   "files": [
+    "index.js",
     "/nearbridge/dist/*.abi",
     "/nearbridge/dist/*.bin",
     "/nearbridge/dist/*.sol",
