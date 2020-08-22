@@ -1,3 +1,6 @@
 1. set reasonable version
-2. remove useless dependencies in package.json
+2. (done? used npm-check and npm audit fix) remove useless dependencies in package.json
 3. set proper name
+4. put into @rainbow-bridge
+5. add README
+6. find out why token-locker contracts are not added
