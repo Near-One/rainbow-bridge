@@ -894,6 +894,73 @@ mod tests {
     }
 
     #[test]
+    fn test_burn() {
+        let mut context = get_context(alice());
+        testing_env!(context.clone());
+        let total_supply = 1_000_000_000_000_000u128;
+        let mut contract = MintableFungibleToken::new_with_supply(alice(), total_supply.into());
+        contract.locker_address = [
+            196, 199, 73, 127, 190, 26, 136, 104, 65, 161, 149, 165, 214, 34, 205, 96, 5, 60, 19,
+            118,
+        ];
+        context.storage_usage = env::storage_usage();
+
+        context.attached_deposit = 1000 * STORAGE_PRICE_PER_BYTE;
+        testing_env!(context.clone());
+
+        contract.burn(
+            1000.into(),
+            "0123456789abcdef0123456789abcdef01234567".into(),
+        );
+        assert_eq!(contract.get_balance(alice()).0, total_supply - 1000);
+        assert_eq!(contract.get_total_supply().0, total_supply - 1000);
+    }
+
+    #[test]
+    #[should_panic(expected = "recipient should be a hex: OddLength")]
+    fn test_burn_invalid_recepient() {
+        let mut context = get_context(alice());
+        testing_env!(context.clone());
+        let total_supply = 1_000_000_000_000_000u128;
+        let mut contract = MintableFungibleToken::new_with_supply(alice(), total_supply.into());
+        contract.locker_address = [
+            196, 199, 73, 127, 190, 26, 136, 104, 65, 161, 149, 165, 214, 34, 205, 96, 5, 60, 19,
+            118,
+        ];
+        context.storage_usage = env::storage_usage();
+
+        context.attached_deposit = 1000 * STORAGE_PRICE_PER_BYTE;
+        testing_env!(context.clone());
+
+        contract.burn(
+            1000.into(),
+            "0123456789abcdef0123456789abcdef0123456".into(),
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Not enough balance")]
+    fn test_burn_insufficient_balance() {
+        let mut context = get_context(alice());
+        testing_env!(context.clone());
+        let total_supply = 1_000_000_000_000_000u128;
+        let mut contract = MintableFungibleToken::new_with_supply(bob(), total_supply.into());
+        contract.locker_address = [
+            196, 199, 73, 127, 190, 26, 136, 104, 65, 161, 149, 165, 214, 34, 205, 96, 5, 60, 19,
+            118,
+        ];
+        context.storage_usage = env::storage_usage();
+
+        context.attached_deposit = 1000 * STORAGE_PRICE_PER_BYTE;
+        testing_env!(context.clone());
+
+        contract.burn(
+            1000.into(),
+            "0123456789abcdef0123456789abcdef01234567".into(),
+        );
+    }
+
+    #[test]
     fn test_mint() {
         let mut context = get_context(alice());
         testing_env!(context.clone());
