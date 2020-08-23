@@ -9,6 +9,9 @@ cd $ROOT_DIR/testdata
 curl https://s3-us-west-1.amazonaws.com/rainbow-bridge.nearprotocol.com/test-data/near-headers.tar.gz -o near-headers.tar.gz
 tar zxf near-headers.tar.gz
 
-cd $ROOT_DIR/libs-sol/nearbridge
+cd $ROOT_DIR
+yarn
+
+cd $ROOT_DIR/environment/node_modules/rainbow-bridge-sol/nearbridge
 yarn
 NEAR_HEADERS_DIR=$ROOT_DIR/testdata/near-headers yarn test

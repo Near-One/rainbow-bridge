@@ -9,6 +9,7 @@ export LOCAL_NEARUP_SRC
 
 eval BRIDGE_SRC=~/.rainbow/bridge
 eval CORE_SRC=~/.rainbow/core
+eval LIBS_SOL_SRC=~/.rainbow/bridge/environment/node_modules/rainbow-bridge-sol
 eval NEARUP_SRC=~/.rainbow/nearup
 eval NEARUP_LOGS=~/.nearup/localnet-logs
 
@@ -67,13 +68,13 @@ cd $BRIDGE_SRC/libs-rs
 ./build_all.sh
 echo "Compiled Rust contracts"
 
-cd $BRIDGE_SRC/libs-sol
-./build_all.sh
-echo "Built Solidity contracts"
-
 # Install environment dependencies
 cd $BRIDGE_SRC/environment
 yarn
+
+cd $LIBS_SOL_SRC
+./build_all.sh
+echo "Built Solidity contracts"
 
 cd $BRIDGE_SRC/environment/vendor/ganache
 yarn
