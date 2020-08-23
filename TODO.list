@@ -9,3 +9,4 @@
 9. use TToken instead MyERC20
 10. fix tests, blocked by borsh
 11. unify borsh
+12. add CI with tests from the bridge
