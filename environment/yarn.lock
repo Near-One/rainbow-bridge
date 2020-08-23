@@ -5138,10 +5138,10 @@ rainbow-bridge-rs@1.0.0:
   resolved "https://registry.yarnpkg.com/rainbow-bridge-rs/-/rainbow-bridge-rs-1.0.0.tgz#34294969bf3de1225a0dca703de7ff4daa58bcb8"
   integrity sha512-HiX7YdxAZRxaxFsXJQKJc/h9KWWhgZOmP3GQlFxL/eyEV1krU5NqOyZOqBNUB1MPIh3qtiZEXsovsbLDzBm6Nw==
 
-rainbow-bridge-sol@1.0.8:
-  version "1.0.8"
-  resolved "https://registry.yarnpkg.com/rainbow-bridge-sol/-/rainbow-bridge-sol-1.0.8.tgz#784d2dc72c8453ae558967d171043be9647faac2"
-  integrity sha512-5SCJ2Ety8liBwPL+LmVbb9Y7464fWvKgLF2C+I59LH2bsIiNdcYePMFr2aMfOUBF0afZ3aJUVjIuGIexox3rrw==
+rainbow-bridge-sol@1.0.9:
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/rainbow-bridge-sol/-/rainbow-bridge-sol-1.0.9.tgz#a9127a226fc04eabe0805f268891ef444c400e03"
+  integrity sha512-KEisXYzNwS575suSGjwkJkkebvdYHXLJO2zLwlGKzGIzv8AEKin4Pm4V+C8AW1wy18QqzwGXLoyp9VD5Td1Faw==
 
 randombytes@^2.0.0, randombytes@^2.0.1, randombytes@^2.0.5, randombytes@^2.1.0:
   version "2.1.0"
