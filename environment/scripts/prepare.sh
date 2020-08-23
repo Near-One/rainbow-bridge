@@ -7,9 +7,10 @@ export LOCAL_BRIDGE_SRC
 export LOCAL_CORE_SRC
 export LOCAL_NEARUP_SRC
 
-eval BRIDGE_SRC=~/.rainbow/bridge
+eval BRIDGE_SRC=~/.rainbow/bridge # This is the path to environment
 eval CORE_SRC=~/.rainbow/core
-eval LIBS_SOL_SRC=~/.rainbow/bridge/environment/node_modules/rainbow-bridge-sol
+eval LIBS_SOL_SRC=~/.rainbow/bridge/node_modules/rainbow-bridge-sol
+eval LIBS_RS_SRC=~/.rainbow/bridge/node_modules/rainbow-bridge-rs
 eval NEARUP_SRC=~/.rainbow/nearup
 eval NEARUP_LOGS=~/.nearup/localnet-logs
 

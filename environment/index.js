@@ -118,7 +118,7 @@ if (process.argv[1].endsWith('index.js')) {
   RainbowConfig.declareOption(
     'bridge-src',
     'Path to the rainbow-bridge source. It will use current repo if not provided.',
-    path.join(__dirname, '../')
+    __dirname
   )
 } else {
   // Installed from npm

@@ -5133,7 +5133,12 @@ query-string@^5.0.1:
     object-assign "^4.1.0"
     strict-uri-encode "^1.0.0"
 
-rainbow-bridge-sol@^1.0.7:
+rainbow-bridge-rs@1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/rainbow-bridge-rs/-/rainbow-bridge-rs-1.0.0.tgz#34294969bf3de1225a0dca703de7ff4daa58bcb8"
+  integrity sha512-HiX7YdxAZRxaxFsXJQKJc/h9KWWhgZOmP3GQlFxL/eyEV1krU5NqOyZOqBNUB1MPIh3qtiZEXsovsbLDzBm6Nw==
+
+rainbow-bridge-sol@1.0.7:
   version "1.0.7"
   resolved "https://registry.yarnpkg.com/rainbow-bridge-sol/-/rainbow-bridge-sol-1.0.7.tgz#c28d0a1382e43d138cea1ef9d2ac5d293c93e4ae"
   integrity sha512-EijnOjMe7D/EVxPVMPcYkJuKpuNLQbAS/B9lZfXmlRn3mJAUPZ4A+r98nWZBE1xuaD2cVtnnhJl58+kTVOrwbA==
