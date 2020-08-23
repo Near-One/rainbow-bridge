@@ -20,7 +20,7 @@ npm init -y > /dev/null
 npm i ${ROOT_DIR}/environment/rainbow-bridge-cli-*.tgz
 export PATH=${ROOT_DIR}/testenv/node_modules/.bin:$PATH
 cd ..
-exit
+
 rainbow clean
 if [ -n "${LOCAL_CORE_SRC+x}" ]; then
   rainbow prepare --core-src "$LOCAL_CORE_SRC"
