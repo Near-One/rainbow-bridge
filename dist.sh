@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# THIS SCRIPT IS NOT DEVELOPED TO RUN MANUALLY
+
 # Exit script as soon as a command fails.
 set -e
 
@@ -9,6 +11,7 @@ pushd "$1"
 rm -rf dist
 mkdir dist
 
+# Collect dependencies
 yarn
 
 # shellcheck disable=SC2045

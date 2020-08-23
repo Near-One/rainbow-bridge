@@ -4,4 +4,8 @@
 4. put into @rainbow-bridge
 5. add README
 6. (fixed) find out why token-locker contracts are not added
-7. refactor or remove index.js
+7. (done) refactor or remove index.js
+8. replace token-locker with generic one
+9. use TToken instead MyERC20
+10. fix tests, blocked by borsh
+11. unify borsh
