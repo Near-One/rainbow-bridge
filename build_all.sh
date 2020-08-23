@@ -3,23 +3,11 @@
 # Exit script as soon as a command fails.
 set -e
 
-# Build NearOnEthClient contract
 echo "Building NearOnEthClient and ED25519 contracts"
-pushd "nearbridge"
-yarn
-./dist.sh
-popd
+./dist.sh nearbridge
 
 echo "Building NearOnEthProver contract"
-pushd "nearprover"
-yarn
-./dist.sh
-popd
+./dist.sh nearprover
 
 echo "Building token locker"
-# Build contracts for locking token.
-pushd "token-locker"
-yarn
-./dist.sh
-popd
-
+./dist.sh token-locker

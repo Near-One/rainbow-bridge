@@ -3,8 +3,13 @@
 # Exit script as soon as a command fails.
 set -e
 
+pushd "$1"
+
 # Remove existing files.
-rm -f dist/*.sol
+rm -rf dist
+mkdir dist
+
+yarn
 
 # shellcheck disable=SC2045
 for contract_path in $(ls ./contracts/*.sol)
@@ -18,3 +23,5 @@ do
   mv "dist/dist_${contract_name}_full_sol_${contract_name}.bin" "dist/${contract_name}.full.bin"
   rm -f dist/*_sol_*
 done
+
+popd
