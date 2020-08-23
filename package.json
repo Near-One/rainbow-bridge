@@ -1,6 +1,6 @@
 {
   "name": "rainbow-bridge-sol",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Solidity contracts for NEAR Rainbow Bridge",
   "files": [
     "**/*.sh",

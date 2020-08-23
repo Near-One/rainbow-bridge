@@ -1,4 +1,4 @@
-const { borshifyOutcomeProof } = require('./borshify-proof');
+const { borshifyOutcomeProof } = require('../../../environment/lib/borsh');
 
 const TokenLocker = artifacts.require('TokenLocker');
 const NearProverMock = artifacts.require('NearProverMock');

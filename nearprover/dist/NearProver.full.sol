@@ -210,9 +210,8 @@ contract Ownable is Context {
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
     constructor () internal {
-        address msgSender = _msgSender();
-        _owner = msgSender;
-        emit OwnershipTransferred(address(0), msgSender);
+        _owner = _msgSender();
+        emit OwnershipTransferred(address(0), _owner);
     }
 
     /**
@@ -294,7 +293,7 @@ interface INearBridge {
     function initWithBlock(bytes calldata data) external;
     function addLightClientBlock(bytes calldata data) external payable;
     function challenge(address payable receiver, uint256 signatureIndex) external;
-    function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex) external view returns(bool);
+    function checkBlockProducerSignatureInHead(uint256 signatureIndex) external view returns(bool);
 }
 
 // File: ../nearbridge/contracts/Borsh.sol

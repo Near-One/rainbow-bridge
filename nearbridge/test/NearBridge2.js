@@ -38,6 +38,24 @@ contract('NearBridge2', function ([_, addr1]) {
     });
 });
 
+//contract('2020-08-18 Example', function ([_, addr1]) {
+//    beforeEach(async function () {
+//        this.decoder = await NearDecoder.new();
+//        this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(10));
+//        await this.bridge.deposit({ value: web3.utils.toWei('1') });
+//    });
+//
+//    it('should be ok', async function () {
+//        const block_12640118 = borshify(require('./block_12640118.json'));
+//        const block_12640218 = borshify(require('./block_12640218.json'));
+//
+//        await this.bridge.initWithValidators(borshifyInitialValidators(require('./init_validators_12640118.json').next_bps));
+//        await this.bridge.initWithBlock(block_12640118);
+//        await this.bridge.blockHashes(12640118);
+//        await this.bridge.addLightClientBlock(block_12640218);
+//    });
+//});
+
 contract('Add second block in first epoch should be verifiable', function ([_, addr1]) {
     beforeEach(async function () {
 
@@ -67,7 +85,7 @@ contract('Add second block in first epoch should be verifiable', function ([_, a
 
         for (let i = 0; i < block308.approvals_after_next.length; i++) {
             if (block308.approvals_after_next[i]) {
-                assert(this.bridge.checkBlockProducerSignatureInLastBlock(i));
+                assert(this.bridge.checkBlockProducerSignatureInHead(i));
             }
         }
     });
@@ -147,7 +165,7 @@ contract('After challenge prev should be revert to prev epoch of latest valid bl
         await this.bridge.addLightClientBlock(borshify(block304));
         await this.bridge.blockHashes(304);
 
-        let oldEpochId = (await this.bridge.prev()).epochId;
+        let oldEpochId = (await this.bridge.head()).epochId;
 
         now = await time.latest();
         await timeIncreaseTo(now.add(time.duration.seconds(3600)));
@@ -161,8 +179,8 @@ contract('After challenge prev should be revert to prev epoch of latest valid bl
         block368.approvals_after_next[0] = block368.approvals_after_next[1];
         await this.bridge.addLightClientBlock(borshify(block368));
         await this.bridge.blockHashes(368);
-        assert((await this.bridge.prev()).epochId != oldEpochId)
+        assert((await this.bridge.head()).epochId != oldEpochId)
         await this.bridge.challenge(addr1, 0);
-        assert((await this.bridge.prev()).epochId == oldEpochId)
+        assert((await this.bridge.head()).epochId == oldEpochId)
     });
 });

@@ -37,7 +37,7 @@ contract NearBridgeMock is INearBridge {
     function challenge(address payable receiver, uint256 signatureIndex) external {
     }
 
-    function checkBlockProducerSignatureInLastBlock(uint256 signatureIndex) external view returns(bool) {
+    function checkBlockProducerSignatureInHead(uint256 signatureIndex) external view returns(bool) {
         return true;
     }
 }
