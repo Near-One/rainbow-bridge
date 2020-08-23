@@ -2,4 +2,3 @@ node_modules
 coverage
 coverage.json
 build
-dist
