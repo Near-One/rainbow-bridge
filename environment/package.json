@@ -36,7 +36,7 @@
     "pm2-promise": "^2.0.1",
     "promisfy": "^1.2.0",
     "rainbow-bridge-rs": "1.0.0",
-    "rainbow-bridge-sol": "1.0.9",
+    "rainbow-bridge-sol": "1.0.10",
     "web3": "=1.2.6"
   },
   "devDependencies": {
