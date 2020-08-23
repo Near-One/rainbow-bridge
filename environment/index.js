@@ -38,11 +38,15 @@ const {
   InitEthProver,
 } = require('./commands/init-eth-contracts')
 
-// This is always bridge dir. If non default bridge dir is specified, it's ln to there in prepare.
-const BRIDGE_SRC_DIR = path.join(os.homedir(), '.rainbow/bridge')
+// source dir of environment dir or where rainbow is installed (when install with npm)
+const BRIDGE_SRC_DIR = __dirname
 const LIBS_SOL_SRC_DIR = path.join(
   BRIDGE_SRC_DIR,
-  'environment/node_modules/rainbow-bridge-sol'
+  'node_modules/rainbow-bridge-sol'
+)
+const LIBS_RS_SRC_DIR = path.join(
+  BRIDGE_SRC_DIR,
+  'node_modules/rainbow-bridge-rs'
 )
 
 RainbowConfig.declareOption(
@@ -76,7 +80,7 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'near-client-contract-path',
   'The path to the Wasm file containing the Near Client contract.',
-  path.join(BRIDGE_SRC_DIR, 'libs-rs/res/eth_client.wasm')
+  path.join(LIBS_RS_SRC_DIR, 'res/eth_client.wasm')
 )
 RainbowConfig.declareOption(
   'near-client-init-balance',
@@ -100,7 +104,7 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'near-prover-contract-path',
   'The path to the Wasm file containing the Near Prover contract.',
-  path.join(BRIDGE_SRC_DIR, 'libs-rs/res/eth_prover.wasm')
+  path.join(LIBS_RS_SRC_DIR, 'res/eth_prover.wasm')
 )
 RainbowConfig.declareOption(
   'near-prover-init-balance',
@@ -113,22 +117,6 @@ RainbowConfig.declareOption(
   'true',
   true
 )
-if (process.argv[1].endsWith('index.js')) {
-  // Local development index.js
-  RainbowConfig.declareOption(
-    'bridge-src',
-    'Path to the rainbow-bridge source. It will use current repo if not provided.',
-    __dirname
-  )
-} else {
-  // Installed from npm
-  RainbowConfig.declareOption(
-    'bridge-src',
-    'Path to the rainbow-bridge source. It will be downloaded if not provided.',
-    ''
-  )
-}
-
 RainbowConfig.declareOption(
   'core-src',
   'Path to the nearcore source. It will be downloaded if not provided.',
@@ -158,7 +146,7 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'near-fun-token-contract-path',
   'The path to the Wasm file containing the fungible contract. Note, this version of fungible contract should support minting.',
-  path.join(BRIDGE_SRC_DIR, 'libs-rs/res/mintable_fungible_token.wasm')
+  path.join(LIBS_RS_SRC_DIR, 'res/mintable_fungible_token.wasm')
 )
 RainbowConfig.declareOption(
   'near-fun-token-init-balance',
@@ -258,7 +246,7 @@ program.command('clean').action(CleanCommand.execute)
 
 RainbowConfig.addOptions(
   program.command('prepare').action(PrepareCommand.execute),
-  ['bridge-src', 'core-src', 'nearup-src']
+  ['core-src', 'nearup-src']
 )
 
 program.command('status').action(StatusCommand.execute)

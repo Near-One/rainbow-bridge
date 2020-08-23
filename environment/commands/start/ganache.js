@@ -15,10 +15,7 @@ class StartGanacheNodeCommand {
       }
       spawnProcess('ganache', {
         name: 'ganache',
-        script: path.join(
-          os.homedir(),
-          '.rainbow/bridge/environment/scripts/start_ganache.sh'
-        ),
+        script: path.join(__dirname, '../../scripts/start_ganache.sh'),
         error_file: '~/.rainbow/logs/ganache/err.log',
         out_file: '~/.rainbow/logs/ganache/out.log',
         args: [],

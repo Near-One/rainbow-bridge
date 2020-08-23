@@ -7,7 +7,7 @@ const blockFromRpc = require('ethereumjs-block/from-rpc')
 const { RobustWeb3, sleep } = require('../lib/robust')
 const { txnStatus } = require('../lib/borsh')
 const MAX_SUBMIT_BLOCK = 10
-const BRIDGE_SRC_DIR = path.join(os.homedir(), '.rainbow/bridge')
+const BRIDGE_SRC_DIR = path.join(__dirname, '..')
 
 function execute(command, _callback) {
   return new Promise(resolve =>
@@ -135,7 +135,7 @@ class Eth2NearRelay {
         web3BlockToRlp(await this.robustWeb3.getBlock(blockNumber))
       )
       const unparsedBlock = await execute(
-        `${BRIDGE_SRC_DIR}/environment/vendor/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`
+        `${BRIDGE_SRC_DIR}/vendor/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`
       )
       console.log('---')
       console.log(unparsedBlock)
