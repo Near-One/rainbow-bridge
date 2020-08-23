@@ -54,11 +54,10 @@ cargo build --package neard --bin neard
 echo "Compiled source of nearcore"
 
 cd $BRIDGE_SRC
-echo $NODE_ENV
-echo 'asdfsafas'
+# In local development, this update ethashproof repo
+# In npm package, this is safely ignored and ethashproof src is packaged
 git submodule update --init --recursive
 
-cd $BRIDGE_SRC
 yarn
 echo "Installed environment dependencies"
 
