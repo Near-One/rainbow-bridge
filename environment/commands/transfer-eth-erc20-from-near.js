@@ -154,7 +154,7 @@ class TransferEthERC20FromNear {
     let clientBlockHashB58
     let clientBlockHashHex
     while (true) {
-      clientBlock = await clientContract.methods.last().call()
+      clientBlock = await clientContract.methods.head().call()
       clientBlockHeight = new BN(clientBlock.height)
       clientBlockValidAfter = new BN(clientBlock.validAfter)
       clientBlockHashHex = await clientContract.methods
