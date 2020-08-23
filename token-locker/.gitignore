@@ -3,4 +3,3 @@ coverage.json
 .openzeppelin
 node_modules
 build
-dist/*full*
