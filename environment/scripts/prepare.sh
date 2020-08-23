@@ -54,6 +54,8 @@ cargo build --package neard --bin neard
 echo "Compiled source of nearcore"
 
 cd $BRIDGE_SRC
+echo $NODE_ENV
+echo 'asdfsafas'
 git submodule update --init --recursive
 
 cd $BRIDGE_SRC
