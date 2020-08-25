@@ -28,6 +28,11 @@ need CLI only for the token transfer you need to install all testing dependencie
 
 - Install golang, [see](https://golang.org/dl/).
 - Make sure you are using Node with version <=13. We recommend using [nvm](https://github.com/nvm-sh/nvm) for installing node and npm, if you already don't have one. This constraint will be removed soon;
+- yarn
+- docker, for deterministic compile rust contracts
+
+### If you want to test with a local near node:
+
 - You would also need to install resources needed to compile nearcore (in the future this will only be required for the testing CLI):
 
 ```bash
@@ -38,34 +43,27 @@ rustup target add wasm32-unknown-unknown
 ```
 
 - Then install dependencies needed for the compilation of nearcore, [see](https://docs.near.org/docs/local-setup/running-testnet#compiling-and-running-official-node-without-docker).
-
-## Prerequisite
-
-- linux or mac
-- nodejs 12 or 13
-- npm
-- yarn
-- golang 1.13 or above (For ethashproof util)
-- docker (For deterministic compile rust contracts)
-
-If you want to test with a local near node:
-
-- rust, and necessary library to build nearcore (For compile and run a local near node)
-- python 3.6 or above (For nearup)
+- python3, for nearup
 
 ## Usage
 
 You can install `rainbow-bridge-cli` from npm
 
+```
     npm i -g rainbow-bridge-cli
+```
 
 To learn the commands that you can use with the rainbow bridge run
 
-    rainbow-bridge --help
+```
+    rainbow --help
+```
 
 Alternatively, clone this repo, `cd environment && yarn install && cd ..`, then you can see what commands you can use with:
 
+```
     ./index.js --help
+```
 
 Parameters of each command can be specified through environment variables, command line arguments, entries in the `~/.rainbow/config.json` config file, or the default value will be used -- in that priority.
 If argument is not provided and there is no default value the program will not execute.
@@ -304,6 +302,17 @@ node index.js transfer-eth-erc20-from-near --amount 1 --near-sender-account rain
 ```
 
 You should observe the change of the ERC20 balance as reported by the CLI.
+
+## Contract Development Workflow
+
+Above steps are ways to run a local bridge and development workflows you need if make any changes to rainbow-bridge-cli. If you want to update any of solidity or rust contracts, they're not in this repo now and workflow is as following.
+
+- Install dependencies, doing `index.js clean`, `prepare`, `start near-node` `start ganache`
+- If you want to modify solidity contracts, cd to `environment/node_modules/rainbow-bridge-sol`, doing changes there and run `../build_all.sh` to recompile solidity contracts.
+- If you want to modify rust contracts, cd to `environment/node_modules/ranbow-bridge-rs`, doing changes there and run `./build_all.sh` to recompile rust contracts.
+- Follow instructions above to init eth contracts and near contracts, start services and start testing with bridge
+- After you're done with solidity contract updates, doing the same update and create a pull request in https://github.com/near/rainbow-bridge-sol. After you're done with rust contract updates, create PR in https://github.com/near/rainbow-bridge-rs.
+- After PR merged in contract repos, we will periodically publish them as new version of npm packages. And rainbow-bridge-cli will adopt new version of contracts.
 
 # Docker:
 
