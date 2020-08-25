@@ -3,8 +3,8 @@
   "eth2nearClientValidateEthash": "false",
   "eth2nearProverContractPath": "~/.rainbow/bridge/libs-rs/res/eth_prover.wasm",
   "nearFunTokenContractPath": "~/.rainbow/bridge/libs-rs/res/mintable_fungible_token.wasm",
-  "ethLockerAbiPath": "~/.rainbow/bridge/libs-sol/token-locker/dist/TokenLocker.full.abi",
-  "ethLockerBinPath": "~/.rainbow/bridge/libs-sol/token-locker/dist/TokenLocker.full.bin",
-  "ethErc20AbiPath": "~/.rainbow/bridge/libs-sol/token-locker/dist/MyERC20.full.abi",
-  "ethErc20BinPath": "~/.rainbow/bridge/libs-sol/token-locker/dist/MyERC20.full.bin"
+  "ethLockerAbiPath": "~/.rainbow/bridge/environment/node_modules/rainbow-bridge-sol/token-locker/dist/TokenLocker.full.abi",
+  "ethLockerBinPath": "~/.rainbow/bridge/environment/node_modules/rainbow-bridge-sol/token-locker/dist/TokenLocker.full.bin",
+  "ethErc20AbiPath": "~/.rainbow/bridge/environment/node_modules/rainbow-bridge-sol/token-locker/dist/MyERC20.full.abi",
+  "ethErc20BinPath": "~/.rainbow/bridge/environment/node_modules/rainbow-bridge-sol/token-locker/dist/MyERC20.full.bin"
 }

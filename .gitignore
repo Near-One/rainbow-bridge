@@ -14,3 +14,4 @@ venv
 **/transfer-eth-erc20-to-near.log.json
 **/package-lock.json
 **/*.swp
+environment/rainbow-bridge-cli-*.tgz
