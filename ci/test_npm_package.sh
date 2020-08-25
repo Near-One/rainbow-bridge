@@ -9,12 +9,15 @@ CI_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/tmp/ganache.out 2>&1 && pwd )
 ROOT_DIR=$CI_DIR/..
 
 cd ${ROOT_DIR}
+cd environment
+rm -f environment/rainbow-bridge-cli-*.tgz
+npm pack
+cd ..
 rm -rf testenv
 mkdir testenv
 cd testenv
 npm init -y > /dev/null
-npm i ${ROOT_DIR}/environment
-npm i pm2
+npm i ${ROOT_DIR}/environment/rainbow-bridge-cli-*.tgz
 export PATH=${ROOT_DIR}/testenv/node_modules/.bin:$PATH
 cd ..
 
@@ -24,8 +27,10 @@ if [ -n "${LOCAL_CORE_SRC+x}" ]; then
 else
   rainbow prepare
 fi
+
 rainbow start near-node
 rainbow start ganache
+
 # Wait for the local node to start
 while ! curl localhost:3030; do
   sleep 1
@@ -45,15 +50,15 @@ rainbow init-eth-locker
 rainbow init-near-fun-token
 # First start pm2 daemon
 cd ${ROOT_DIR}/testenv/
-pm2 ping
+yarn pm2 ping
 sleep 5
-pm2 list
+yarn pm2 list
 rainbow start near2eth-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
 sleep 5
-pm2 list
+yarn pm2 list
 rainbow start eth2near-relay
 sleep 5
-pm2 list
+yarn pm2 list
 rainbow transfer-eth-erc20-to-near --amount 1000 \
 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 \
 --near-receiver-account rainbow_bridge_eth_on_near_prover --near-master-account rainbow_bridge_eth_on_near_prover \

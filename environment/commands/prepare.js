@@ -12,9 +12,7 @@ class PrepareCommand {
     for (const e in process.env) {
       env[e] = process.env[e]
     }
-    env.LOCAL_BRIDGE_SRC =
-      RainbowConfig.getParam('bridge-src') &&
-      path.resolve(RainbowConfig.getParam('bridge-src'))
+
     env.LOCAL_CORE_SRC =
       RainbowConfig.getParam('core-src') &&
       path.resolve(RainbowConfig.getParam('core-src'))

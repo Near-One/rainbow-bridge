@@ -38,8 +38,16 @@ const {
   InitEthProver,
 } = require('./commands/init-eth-contracts')
 
-// This is always bridge dir. If non default bridge dir is specified, it's ln to there in prepare.
-const BRIDGE_SRC_DIR = path.join(os.homedir(), '.rainbow/bridge')
+// source dir of environment dir or where rainbow is installed (when install with npm)
+const BRIDGE_SRC_DIR = __dirname
+const LIBS_SOL_SRC_DIR = path.join(
+  BRIDGE_SRC_DIR,
+  'node_modules/rainbow-bridge-sol'
+)
+const LIBS_RS_SRC_DIR = path.join(
+  BRIDGE_SRC_DIR,
+  'node_modules/rainbow-bridge-rs'
+)
 
 RainbowConfig.declareOption(
   'near-network-id',
@@ -72,7 +80,7 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'near-client-contract-path',
   'The path to the Wasm file containing the Near Client contract.',
-  path.join(BRIDGE_SRC_DIR, 'libs-rs/res/eth_client.wasm')
+  path.join(LIBS_RS_SRC_DIR, 'res/eth_client.wasm')
 )
 RainbowConfig.declareOption(
   'near-client-init-balance',
@@ -96,7 +104,7 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'near-prover-contract-path',
   'The path to the Wasm file containing the Near Prover contract.',
-  path.join(BRIDGE_SRC_DIR, 'libs-rs/res/eth_prover.wasm')
+  path.join(LIBS_RS_SRC_DIR, 'res/eth_prover.wasm')
 )
 RainbowConfig.declareOption(
   'near-prover-init-balance',
@@ -109,22 +117,6 @@ RainbowConfig.declareOption(
   'true',
   true
 )
-if (process.argv[1].endsWith('index.js')) {
-  // Local development index.js
-  RainbowConfig.declareOption(
-    'bridge-src',
-    'Path to the rainbow-bridge source. It will use current repo if not provided.',
-    path.join(__dirname, '../')
-  )
-} else {
-  // Installed from npm
-  RainbowConfig.declareOption(
-    'bridge-src',
-    'Path to the rainbow-bridge source. It will be downloaded if not provided.',
-    ''
-  )
-}
-
 RainbowConfig.declareOption(
   'core-src',
   'Path to the nearcore source. It will be downloaded if not provided.',
@@ -154,7 +146,7 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'near-fun-token-contract-path',
   'The path to the Wasm file containing the fungible contract. Note, this version of fungible contract should support minting.',
-  path.join(BRIDGE_SRC_DIR, 'libs-rs/res/mintable_fungible_token.wasm')
+  path.join(LIBS_RS_SRC_DIR, 'res/mintable_fungible_token.wasm')
 )
 RainbowConfig.declareOption(
   'near-fun-token-init-balance',
@@ -168,12 +160,12 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'eth-locker-abi-path',
   'Path to the .abi file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
-  path.join(BRIDGE_SRC_DIR, 'libs-sol/token-locker/dist/TokenLocker.full.abi')
+  path.join(LIBS_SOL_SRC_DIR, 'token-locker/dist/TokenLocker.full.abi')
 )
 RainbowConfig.declareOption(
   'eth-locker-bin-path',
   'Path to the .bin file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
-  path.join(BRIDGE_SRC_DIR, 'libs-sol/token-locker/dist/TokenLocker.full.bin')
+  path.join(LIBS_SOL_SRC_DIR, 'token-locker/dist/TokenLocker.full.bin')
 )
 RainbowConfig.declareOption(
   'eth-erc20-address',
@@ -182,12 +174,12 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'eth-erc20-abi-path',
   'Path to the .abi file defining Ethereum ERC20 contract.',
-  path.join(BRIDGE_SRC_DIR, 'libs-sol/token-locker/dist/MyERC20.full.abi')
+  path.join(LIBS_SOL_SRC_DIR, 'token-locker/dist/MyERC20.full.abi')
 )
 RainbowConfig.declareOption(
   'eth-erc20-bin-path',
   'Path to the .bin file defining Ethereum ERC20 contract.',
-  path.join(BRIDGE_SRC_DIR, 'libs-sol/token-locker/dist/MyERC20.full.bin')
+  path.join(LIBS_SOL_SRC_DIR, 'token-locker/dist/MyERC20.full.bin')
 )
 RainbowConfig.declareOption(
   'eth-ed25519-address',
@@ -196,12 +188,12 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'eth-ed25519-abi-path',
   'Path to the .abi file defining Ethereum ED25519 contract.',
-  path.join(BRIDGE_SRC_DIR, 'libs-sol/nearbridge/dist/Ed25519.full.abi')
+  path.join(LIBS_SOL_SRC_DIR, 'nearbridge/dist/Ed25519.full.abi')
 )
 RainbowConfig.declareOption(
   'eth-ed25519-bin-path',
   'Path to the .bin file defining Ethereum ED25519 contract.',
-  path.join(BRIDGE_SRC_DIR, 'libs-sol/nearbridge/dist/Ed25519.full.bin')
+  path.join(LIBS_SOL_SRC_DIR, 'nearbridge/dist/Ed25519.full.bin')
 )
 RainbowConfig.declareOption(
   'eth-client-lock-eth-amount',
@@ -220,12 +212,12 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'eth-client-abi-path',
   'Path to the .abi file defining Ethereum Client contract.',
-  path.join(BRIDGE_SRC_DIR, 'libs-sol/nearbridge/dist/NearBridge.full.abi')
+  path.join(LIBS_SOL_SRC_DIR, 'nearbridge/dist/NearBridge.full.abi')
 )
 RainbowConfig.declareOption(
   'eth-client-bin-path',
   'Path to the .bin file defining Ethereum Client contract.',
-  path.join(BRIDGE_SRC_DIR, 'libs-sol/nearbridge/dist/NearBridge.full.bin')
+  path.join(LIBS_SOL_SRC_DIR, 'nearbridge/dist/NearBridge.full.bin')
 )
 RainbowConfig.declareOption(
   'eth-prover-address',
@@ -234,12 +226,12 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'eth-prover-abi-path',
   'Path to the .abi file defining Ethereum Prover contract.',
-  path.join(BRIDGE_SRC_DIR, 'libs-sol/nearprover/dist/NearProver.full.abi')
+  path.join(LIBS_SOL_SRC_DIR, 'nearprover/dist/NearProver.full.abi')
 )
 RainbowConfig.declareOption(
   'eth-prover-bin-path',
   'Path to the .bin file defining Ethereum Prover contract.',
-  path.join(BRIDGE_SRC_DIR, 'libs-sol/nearprover/dist/NearProver.full.bin')
+  path.join(LIBS_SOL_SRC_DIR, 'nearprover/dist/NearProver.full.bin')
 )
 RainbowConfig.declareOption(
   'near2eth-relay-delay',
@@ -254,7 +246,7 @@ program.command('clean').action(CleanCommand.execute)
 
 RainbowConfig.addOptions(
   program.command('prepare').action(PrepareCommand.execute),
-  ['bridge-src', 'core-src', 'nearup-src']
+  ['core-src', 'nearup-src']
 )
 
 program.command('status').action(StatusCommand.execute)
