@@ -59,4 +59,4 @@ steps:
     label: "rainbow bridge cli tests"
     build:
       env:
-        PATCH_RAINBOW_BRIDGE_RS: ${BUILDKITE_COMMIT}
+        PATCH_RAINBOW_BRIDGE_RS: "${BUILDKITE_COMMIT}"
