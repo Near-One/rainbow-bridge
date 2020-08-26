@@ -19,8 +19,8 @@ class StartWatchdogCommand {
           name: 'bridge-watchdog',
           script: path.join(__dirname, '../../index.js'),
           interpreter: 'node',
-          error_file: '~/.rainbow/logs/bridge-watchdog/err.log',
-          out_file: '~/.rainbow/logs/bridge-watchdog/out.log',
+          error_file: '~/.rainbow/logs/watchdog/err.log',
+          out_file: '~/.rainbow/logs/watchdog/out.log',
           args: [
             'start',
             'bridge-watchdog',
