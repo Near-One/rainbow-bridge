@@ -12,6 +12,6 @@ tar zxf near-proofs.tar.gz
 cd $ROOT_DIR
 yarn
 
-cd $ROOT_DIR/environment/node_modules/rainbow-bridge-sol/nearprover
+cd $ROOT_DIR/nearprover
 yarn
 NEAR_PROOFS_DIR=$ROOT_DIR/testdata/near-proofs yarn test
