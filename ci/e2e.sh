@@ -6,16 +6,15 @@ set -exuo pipefail
 CI_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/tmp/ganache.out 2>&1 && pwd )"
 ROOT_DIR=$CI_DIR/..
 
-cd $ROOT_DIR/environment
+cd $ROOT_DIR
 yarn
-cd -
+
 node index.js clean
 if [ -n "${LOCAL_CORE_SRC+x}" ]; then
   node index.js prepare --core-src "$LOCAL_CORE_SRC"
 else
   node index.js prepare
 fi
-cd $ROOT_DIR/environment
 node index.js start near-node
 node index.js start ganache
 # Wait for the local node to start
@@ -39,10 +38,10 @@ node index.js init-near-fun-token
 yarn run pm2 ping
 sleep 5
 yarn run pm2 list
-node index.js start near-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
+node index.js start near2eth-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
 sleep 5
 yarn run pm2 list
-node index.js start eth-relay
+node index.js start eth2near-relay
 sleep 5
 yarn run pm2 list
 node index.js transfer-eth-erc20-to-near --amount 1000 \
