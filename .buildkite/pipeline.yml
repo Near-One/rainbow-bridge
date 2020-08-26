@@ -1,0 +1,6 @@
+steps:
+  - trigger: "rainbow-bridge"
+    label: "rainbow bridge cli tests"
+    build:
+      env:
+        PATCH_RAINBOW_BRIDGE_LIB: "${BUILDKITE_COMMIT}"
