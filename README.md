@@ -311,7 +311,7 @@ Above steps are ways to run a local bridge and development workflows you need if
 - If you want to modify rust contracts, cd to `node_modules/ranbow-bridge-rs`, doing changes there and run `./build_all.sh` to recompile rust contracts.
 - If you want to modify rainbow bridge lib,, cd to `node_modules/rainbow-bridge-lib`, doing changes there and CLI will depends on the updated `rainbow-bridge-lib`
 - Follow instructions above to init eth contracts and near contracts, start services and start testing with bridge
-- After you're done with solidity contract updates, doing the same update and create a pull request in https://github.com/near/rainbow-bridge-sol. After you're done with rust contract updates, create PR in https://github.com/near/rainbow-bridge-rs. After you're done with rainbow bridge lib updates, create PR in https://github.com/near/rainbow-bridge-lib.
+- For changes to Solidity contract, Rust contract, and rainbow-bridge-lib, please submit PRs to: https://github.com/near/rainbow-bridge-sol , https://github.com/near/rainbow-bridge-rs , and https://github.com/near/rainbow-bridge-lib respectively.
 - After PR merged in contract repos and rainbow-bridge-lib repo, we will periodically publish them as new version of npm packages. And rainbow-bridge-cli will adopt new version of them.
 
 # Docker:
