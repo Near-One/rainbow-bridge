@@ -1,0 +1,62 @@
+steps:
+  - command: |
+      source ~/.cargo/env
+      rustup default stable
+      ci/test_verify_eth_headers.sh
+
+    label: "verify eth headers"
+    agents:
+      - "queue=medium"
+
+  - command: |
+      source ~/.cargo/env
+      rustup default stable
+      ci/test_verify_eth_proofs.sh
+
+    label: "verify eth proofs"
+    agents:
+      - "queue=medium"
+
+  - command: |
+      source ~/.cargo/env
+      rustup default stable
+      eth-client/test.sh
+
+    label: "eth-client tests"
+    agents:
+      - "queue=medium"
+
+  - command: |
+      source ~/.cargo/env
+      rustup default stable
+      eth-prover/test.sh
+
+    label: "eth-prover tests"
+    agents:
+      - "queue=medium"
+
+  - command: |
+      ./build_all.sh
+      changed_files=$$(git status --porcelain --untracked-files=no | wc -l)
+      if [ $$changed_files -gt 0 ]; then
+        echo 'contract changed, please rebuild contract'
+        exit 1
+      fi
+
+    label: "build all rust contracts"
+    agents:
+      - "queue=medium"
+
+  - command: |
+      source ~/.cargo/env
+      cargo test
+
+    label: "rust contracts test"
+    agents:
+      - "queue=medium"
+
+  - trigger: "rainbow-bridge"
+    label: "rainbow bridge cli tests"
+    build:
+      env:
+        PATCH_RAINBOW_BRIDGE_RS: "${BUILDKITE_COMMIT}"
