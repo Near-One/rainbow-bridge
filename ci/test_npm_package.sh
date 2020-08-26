@@ -9,15 +9,13 @@ CI_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/tmp/ganache.out 2>&1 && pwd )
 ROOT_DIR=$CI_DIR/..
 
 cd ${ROOT_DIR}
-cd environment
-rm -f environment/rainbow-bridge-cli-*.tgz
+rm -f ./rainbow-bridge-cli-*.tgz
 npm pack
-cd ..
 rm -rf testenv
 mkdir testenv
 cd testenv
 npm init -y > /dev/null
-npm i ${ROOT_DIR}/environment/rainbow-bridge-cli-*.tgz
+npm i ${ROOT_DIR}/rainbow-bridge-cli-*.tgz
 export PATH=${ROOT_DIR}/testenv/node_modules/.bin:$PATH
 cd ..
 

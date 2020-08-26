@@ -6,16 +6,15 @@ set -exuo pipefail
 CI_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/tmp/ganache.out 2>&1 && pwd )"
 ROOT_DIR=$CI_DIR/..
 
-cd $ROOT_DIR/environment
+cd $ROOT_DIR
 yarn
-cd -
+
 node index.js clean
 if [ -n "${LOCAL_CORE_SRC+x}" ]; then
   node index.js prepare --core-src "$LOCAL_CORE_SRC"
 else
   node index.js prepare
 fi
-cd $ROOT_DIR/environment
 node index.js start near-node
 node index.js start ganache
 # Wait for the local node to start

@@ -1,4 +1,0 @@
-vendor/ethashproof/cmd/cache/cache
-vendor/ethashproof/cmd/epoch/epoch
-vendor/ethashproof/cmd/relayer/relayer
-vendor/ganache/node_modules

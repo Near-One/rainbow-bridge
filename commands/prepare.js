@@ -1,6 +1,6 @@
 const { exec } = require('child_process')
 const path = require('path')
-const { RainbowConfig } = require('../lib/config')
+const { RainbowConfig } = require('rainbow-bridge-lib/config')
 
 class PrepareCommand {
   static execute() {
@@ -23,11 +23,11 @@ class PrepareCommand {
     // @ts-ignore
     var prepareScript = exec(shell, { env: env })
     // @ts-ignore
-    prepareScript.stdout.on('data', function(data) {
+    prepareScript.stdout.on('data', function (data) {
       console.log(data.toString())
     })
     // @ts-ignore
-    prepareScript.stderr.on('data', function(data) {
+    prepareScript.stderr.on('data', function (data) {
       console.log(data.toString())
     })
   }

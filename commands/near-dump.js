@@ -1,6 +1,6 @@
 const fs = require('fs').promises
 const Path = require('path')
-const { RainbowConfig } = require('../lib/config')
+const { RainbowConfig } = require('rainbow-bridge-lib/config')
 const fetch = require('node-fetch')
 
 async function getLatestBlock(nearNodeUrl) {
