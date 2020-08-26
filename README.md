@@ -306,7 +306,16 @@ You should observe the change of the ERC20 balance as reported by the CLI.
 
 Above steps are ways to run a local bridge and development workflows you need if make any changes to rainbow-bridge-cli. If you want to update any of solidity or rust contracts, they're not in this repo now and workflow is as following.
 
-- Install dependencies, doing `index.js clean`, `prepare`, `start near-node` `start ganache`
+- Install dependencies:
+```bash
+node index.js clean
+node index.js prepare
+```
+- Start local NEAR network and Ganache
+```bash
+node start near-node
+node start ganache
+```
 - If you want to modify solidity contracts, go to `node_modules/rainbow-bridge-sol`, make changes there and run `./build_all.sh` to recompile solidity contracts.
 - If you want to modify rust contracts, go to `node_modules/ranbow-bridge-rs`, make changes there and run `./build_all.sh` to recompile rust contracts.
 - If you want to modify rainbow bridge lib, go to `node_modules/rainbow-bridge-lib` and make changes there
