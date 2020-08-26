@@ -1,12 +1,13 @@
 const Web3 = require('web3')
 const Path = require('path')
 const fs = require('fs').promises
-const { web3BlockToRlp, execute } = require('../lib/eth2near-relay')
+const { web3BlockToRlp } = require('rainbow-bridge-lib/eth2near-relay')
+const { execute } = require('../lib/eth2near-relay')
 const {
   EthProofExtractor,
   receiptFromWeb3,
   logFromWeb3,
-} = require('../lib/eth-proof-extractor')
+} = require('rainbow-bridge-lib/eth-proof-extractor')
 const utils = require('ethereumjs-util')
 
 class ETHDump {
@@ -35,9 +36,9 @@ class ETHDump {
       startBlock = Number(startBlock)
     }
     console.log(
-      `Downloading block ${endBlock} down to ${startBlock} to ${path}. ${endBlock -
-        startBlock +
-        1} blocks in total.`
+      `Downloading block ${endBlock} down to ${startBlock} to ${path}. ${
+        endBlock - startBlock + 1
+      } blocks in total.`
     )
 
     for (let b = endBlock; b >= startBlock; b--) {
@@ -113,7 +114,7 @@ class ETHDump {
           receipt_index: receipt_index,
           receipt_data: receipt_data.toString('hex'),
           header_data: header_data.toString('hex'),
-          proof: _proof.map(p => p.toString('hex')),
+          proof: _proof.map((p) => p.toString('hex')),
           skip_bridge_call: skip_bridge_call,
         }
 

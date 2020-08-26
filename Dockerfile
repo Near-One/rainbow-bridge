@@ -30,5 +30,5 @@ RUN curl https://sh.rustup.rs -sSf | \
 COPY . /usr/src/
 COPY config* ~/.rainbow
 
-WORKDIR /usr/src/environment
+WORKDIR /usr/src
 RUN node index.js prepare

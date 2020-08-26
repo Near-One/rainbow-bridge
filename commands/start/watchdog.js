@@ -1,14 +1,14 @@
 const ProcessManager = require('pm2')
 const { spawnProcess } = require('./helpers')
-const { Watchdog } = require('../../lib/watchdog')
-const { RainbowConfig } = require('../../lib/config')
+const { Watchdog } = require('rainbow-bridge-lib/watchdog')
+const { RainbowConfig } = require('rainbow-bridge-lib/config')
 const path = require('path')
 const os = require('os')
 
 class StartWatchdogCommand {
   static async execute() {
     if (RainbowConfig.getParam('daemon') === 'true') {
-      ProcessManager.connect(err => {
+      ProcessManager.connect((err) => {
         if (err) {
           console.log(
             'Unable to connect to the ProcessManager daemon! Please retry.'
