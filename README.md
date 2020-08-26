@@ -1,9 +1,9 @@
 <div align="center">
 
-  <h1><code>Rainbow Bridge</code></h1>
+  <h1><code>Rainbow Bridge CLI</code></h1>
 
   <p>
-    <strong>Ethereum to Near trustless, fully decentralized, bidirectional bridge</strong>
+    <strong>OPS tool to Rainbow Bridge, an Ethereum to Near trustless, fully decentralized, bidirectional bridge</strong>
   </p>
 
   <p>
@@ -11,13 +11,13 @@
     <a href="https://npmjs.com/rainbow-bridge-cli"><img alt="npm" src="https://img.shields.io/npm/v/rainbow-bridge-cli.svg?style=flat-square"></a>
   </p>
   <h3>
-        <a href="https://github.com/near/rainbow-bridge#installation">Installation</a>
+        <a href="https://github.com/near/rainbow-bridge-cli#installation">Installation</a>
         <span> | </span>
-        <a href="https://github.com/near/rainbow-bridge#usage">Usage</a>
+        <a href="https://github.com/near/rainbow-bridge-cli#usage">Usage</a>
         <span> | </span>
-        <a href="https://github.com/near/rainbow-bridge/tree/master/docs#documentation">Documentation</a>
+        <a href="https://github.com/near/rainbow-bridge-cli/tree/master/docs#documentation">Documentation</a>
         <span> | </span>
-        <a href="https://github.com/near/rainbow-bridge#examples">Examples</a>
+        <a href="https://github.com/near/rainbow-bridge-cli#examples">Examples</a>
   </h3>
 </div>
 
@@ -59,7 +59,7 @@ To learn the commands that you can use with the rainbow bridge run
     rainbow --help
 ```
 
-Alternatively, clone this repo, `cd environment && yarn install && cd ..`, then you can see what commands you can use with:
+Alternatively, clone this repo, `yarn install`, then you can see what commands you can use with:
 
 ```
     ./index.js --help
@@ -118,8 +118,7 @@ Let's set them up:
 Prepare CLI:
 
 ```bash
-git clone https://github.com/near/rainbow-bridge/
-cd rainbow-bridge/environment
+git clone https://github.com/near/rainbow-bridge-cli/
 yarn
 node index.js clean
 node index.js prepare
@@ -308,11 +307,12 @@ You should observe the change of the ERC20 balance as reported by the CLI.
 Above steps are ways to run a local bridge and development workflows you need if make any changes to rainbow-bridge-cli. If you want to update any of solidity or rust contracts, they're not in this repo now and workflow is as following.
 
 - Install dependencies, doing `index.js clean`, `prepare`, `start near-node` `start ganache`
-- If you want to modify solidity contracts, cd to `environment/node_modules/rainbow-bridge-sol`, doing changes there and run `../build_all.sh` to recompile solidity contracts.
-- If you want to modify rust contracts, cd to `environment/node_modules/ranbow-bridge-rs`, doing changes there and run `./build_all.sh` to recompile rust contracts.
+- If you want to modify solidity contracts, cd to `node_modules/rainbow-bridge-sol`, doing changes there and run `../build_all.sh` to recompile solidity contracts.
+- If you want to modify rust contracts, cd to `node_modules/ranbow-bridge-rs`, doing changes there and run `./build_all.sh` to recompile rust contracts.
+- If you want to modify rainbow bridge lib,, cd to `node_modules/rainbow-bridge-lib`, doing changes there and CLI will depends on the updated `rainbow-bridge-lib`
 - Follow instructions above to init eth contracts and near contracts, start services and start testing with bridge
-- After you're done with solidity contract updates, doing the same update and create a pull request in https://github.com/near/rainbow-bridge-sol. After you're done with rust contract updates, create PR in https://github.com/near/rainbow-bridge-rs.
-- After PR merged in contract repos, we will periodically publish them as new version of npm packages. And rainbow-bridge-cli will adopt new version of contracts.
+- After you're done with solidity contract updates, doing the same update and create a pull request in https://github.com/near/rainbow-bridge-sol. After you're done with rust contract updates, create PR in https://github.com/near/rainbow-bridge-rs. After you're done with rainbow bridge lib updates, create PR in https://github.com/near/rainbow-bridge-lib.
+- After PR merged in contract repos and rainbow-bridge-lib repo, we will periodically publish them as new version of npm packages. And rainbow-bridge-cli will adopt new version of them.
 
 # Docker:
 
