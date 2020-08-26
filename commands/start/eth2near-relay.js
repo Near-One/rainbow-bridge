@@ -2,15 +2,17 @@ const ProcessManager = require('pm2')
 const nearlib = require('near-api-js')
 const { spawnProcess } = require('./helpers')
 const { Eth2NearRelay } = require('../../lib/eth2near-relay')
-const { EthOnNearClientContract } = require('../../lib/eth-on-near-client')
-const { RainbowConfig } = require('../../lib/config')
+const {
+  EthOnNearClientContract,
+} = require('rainbow-bridge-lib/eth-on-near-client')
+const { RainbowConfig } = require('rainbow-bridge-lib/config')
 const path = require('path')
 const os = require('os')
 
 class StartEth2NearRelayCommand {
   static async execute() {
     if (RainbowConfig.getParam('daemon') === 'true') {
-      ProcessManager.connect(err => {
+      ProcessManager.connect((err) => {
         if (err) {
           console.log(
             'Unable to connect to the ProcessManager daemon! Please retry.'

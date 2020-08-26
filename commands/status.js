@@ -4,9 +4,9 @@ const fetch = require('node-fetch')
 const fs = require('fs')
 const ProcessManager = require('pm2-promise')
 
-const { verifyAccountGently } = require('../lib/near-helpers')
-const { RainbowConfig } = require('../lib/config')
-const { normalizeEthKey } = require('../lib/robust')
+const { verifyAccountGently } = require('rainbow-bridge-lib/rainbow/helpers')
+const { RainbowConfig } = require('rainbow-bridge-lib/config')
+const { normalizeEthKey } = require('rainbow-bridge-lib/rainbow/robust')
 
 // Verdicts
 const Ok = 'ok'
@@ -30,7 +30,7 @@ const InternalError = 'internal error'
 const NoColor = '\x1B[39m'
 
 // TODO please refactor to avoid async/await
-const request = async url => {
+const request = async (url) => {
   try {
     const response = await fetch(url)
     const json = await response.json()
@@ -406,7 +406,7 @@ class StatusCommand {
   static async execute() {
     const consoleError = console.error
     // A cool hack to avoid annoying Web3 printing to stderr
-    console.error = function() {}
+    console.error = function () {}
 
     const nearStatus = new NearStatus()
     await nearStatus.init()

@@ -21,22 +21,19 @@
     "bridge"
   ],
   "dependencies": {
-    "@openzeppelin/cli": "^2.8.1",
-    "change-case": "^4.1.1",
+    "bn.js": "^5.1.3",
     "commander": "^5.1.0",
-    "configstore": "^5.0.1",
     "eth-object": "near/eth-object#54e03b8aac8208cf724e206d49ffb8bdd30451d7",
     "eth-util-lite": "near/eth-util-lite#master",
-    "ethereumjs-block": "^2.2.2",
-    "ethereumjs-tx": "^2.1.2",
     "ethereumjs-util": "^6.2.0",
-    "merkle-patricia-tree": "^3.0.0",
     "near-api-js": "^0.26.0",
+    "node-fetch": "^2.6.0",
     "pm2": "^4.4.0",
     "pm2-promise": "^2.0.1",
-    "promisfy": "^1.2.0",
-    "rainbow-bridge-rs": "1.0.0",
-    "rainbow-bridge-sol": "1.0.10",
+    "rainbow-bridge-lib": "^1.0.0",
+    "rainbow-bridge-rs": "^1.0.0",
+    "rainbow-bridge-sol": "^1.0.10",
+    "request": "^2.88.2",
     "web3": "=1.2.6"
   },
   "devDependencies": {
@@ -46,7 +43,6 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.0.1",
     "eslint-plugin-standard": "^4.0.0",
-    "husky": "^4.2.5",
     "typescript": "^3.9.5"
   },
   "scripts": {
