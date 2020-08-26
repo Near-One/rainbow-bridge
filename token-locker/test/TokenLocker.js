@@ -1,4 +1,4 @@
-const { borshifyOutcomeProof } = require('../../../environment/lib/borsh');
+const { borshifyOutcomeProof } = require('rainbow-bridge-lib/rainbow/borsh');
 
 const TokenLocker = artifacts.require('TokenLocker');
 const NearProverMock = artifacts.require('NearProverMock');
