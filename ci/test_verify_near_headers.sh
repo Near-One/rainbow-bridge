@@ -12,6 +12,6 @@ tar zxf near-headers.tar.gz
 cd $ROOT_DIR
 yarn
 
-cd $ROOT_DIR/environment/node_modules/rainbow-bridge-sol/nearbridge
+cd $ROOT_DIR/node_modules/rainbow-bridge-sol/nearbridge
 yarn
 NEAR_HEADERS_DIR=$ROOT_DIR/testdata/near-headers yarn test

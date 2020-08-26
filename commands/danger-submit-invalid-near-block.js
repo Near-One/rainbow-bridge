@@ -1,5 +1,5 @@
 const ProcessManager = require('pm2')
-const { Near2EthRelay } = require('../lib/near2eth-relay')
+const { Near2EthRelay } = require('rainbow-bridge-lib/near2eth-relay')
 
 class DangerSubmitInvalidNearBlock {
   static async execute() {
