@@ -4,16 +4,16 @@ const BN = require('bn.js')
 const fs = require('fs')
 const bs58 = require('bs58')
 const { toBuffer } = require('eth-util-lite')
-const { verifyAccount } = require('../lib/near-helpers')
-const { NearMintableToken } = require('../lib/near-mintable-token')
-const { RainbowConfig } = require('../lib/config')
-const { borshifyOutcomeProof } = require('../lib/borsh')
-const { sleep, RobustWeb3 } = require('../lib/robust')
+const { verifyAccount } = require('rainbow-bridge-lib/near-helpers')
+const { NearMintableToken } = require('rainbow-bridge-lib/near-mintable-token')
+const { RainbowConfig } = require('rainbow-bridge-lib/config')
+const { borshifyOutcomeProof } = require('rainbow-bridge-lib/borsh')
+const { sleep, RobustWeb3 } = require('rainbow-bridge-lib/robust')
 const {
   normalizeEthKey,
   backoff,
   nearJsonContractFunctionCall,
-} = require('../lib/robust')
+} = require('rainbow-bridge-lib/robust')
 
 let initialCmd
 
