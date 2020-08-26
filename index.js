@@ -36,7 +36,7 @@ const {
   InitEthProver,
 } = require('rainbow-bridge-lib/init')
 
-// source dir of environment dir or where rainbow is installed (when install with npm)
+// source dir or where rainbow cli is installed (when install with npm)
 const BRIDGE_SRC_DIR = __dirname
 const LIBS_SOL_SRC_DIR = path.join(
   BRIDGE_SRC_DIR,

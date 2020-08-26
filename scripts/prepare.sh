@@ -59,7 +59,7 @@ cd $BRIDGE_SRC
 git submodule update --init --recursive
 
 yarn
-echo "Installed environment dependencies"
+echo "Installed CLI dependencies"
 
 cd $BRIDGE_SRC/vendor/ganache
 yarn
