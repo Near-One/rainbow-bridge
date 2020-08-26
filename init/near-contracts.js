@@ -4,7 +4,7 @@ const { maybeCreateAccount, verifyAccount } = require('../rainbow/helpers')
 const { EthOnNearClientContract } = require('../eth-on-near-client')
 const { EthOnNearProverContract } = require('../eth-on-near-prover')
 const { RobustWeb3 } = require('../rainbow/robust')
-const { RainbowConfig } = require('../rainbow/config')
+const { RainbowConfig } = require('../config')
 
 class InitNearContracts {
   static async execute() {

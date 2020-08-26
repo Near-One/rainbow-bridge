@@ -5,7 +5,7 @@ const bs58 = require('bs58')
 // @ts-ignore
 const { toBuffer } = require('eth-util-lite')
 const { BN } = require('ethereumjs-util')
-const { RainbowConfig } = require('../rainbow/config')
+const { RainbowConfig } = require('../config')
 const { sleep, RobustWeb3, normalizeEthKey } = require('../rainbow/robust')
 const { borshify, borshifyInitialValidators } = require('../rainbow/borsh')
 

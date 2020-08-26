@@ -1,6 +1,6 @@
 const nearlib = require('near-api-js')
 const { maybeCreateAccount, verifyAccount } = require('../rainbow/helpers')
-const { RainbowConfig } = require('../rainbow/config')
+const { RainbowConfig } = require('../config')
 const { BN } = require('ethereumjs-util')
 
 class InitNearFunToken {

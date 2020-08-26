@@ -9,7 +9,7 @@ const {
 } = require('../eth-proof-extractor')
 const { verifyAccount } = require('../rainbow/helpers')
 const { NearMintableToken } = require('../near-mintable-token')
-const { RainbowConfig } = require('../rainbow/config')
+const { RainbowConfig } = require('../config')
 const { EthOnNearClientContract } = require('../eth-on-near-client')
 const { sleep, RobustWeb3, normalizeEthKey } = require('../rainbow/robust')
 

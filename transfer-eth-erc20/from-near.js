@@ -5,7 +5,7 @@ const bs58 = require('bs58')
 const { toBuffer } = require('eth-util-lite')
 const { verifyAccount } = require('../rainbow/helpers')
 const { NearMintableToken } = require('../near-mintable-token')
-const { RainbowConfig } = require('../rainbow/config')
+const { RainbowConfig } = require('../config')
 const { borshifyOutcomeProof } = require('../rainbow/borsh')
 const {
   sleep,

@@ -1,7 +1,7 @@
 const Web3 = require('web3')
 const BN = require('bn.js')
 const fs = require('fs')
-const { RainbowConfig } = require('../rainbow/config')
+const { RainbowConfig } = require('../config')
 const { normalizeEthKey } = require('../rainbow/robust')
 
 class EthContractInitializer {

@@ -2,15 +2,15 @@ const { web3BlockToRlp } = require('../eth2near-relay')
 
 const Web3 = require('web3')
 const BN = require('bn.js')
-const { BorshContract, hexToBuffer, readerToHex } = require('../borsh')
+const { BorshContract, hexToBuffer, readerToHex } = require('../rainbow/borsh')
 const roots = require('./dag_merkle_roots.json')
 
 const borshSchema = {
   bool: {
     kind: 'function',
     // @ts-ignore
-    ser: b => Buffer.from(Web3.utils.hexToBytes(b ? '0x01' : '0x00')),
-    deser: z => readerToHex(1)(z) === '0x01',
+    ser: (b) => Buffer.from(Web3.utils.hexToBytes(b ? '0x01' : '0x00')),
+    deser: (z) => readerToHex(1)(z) === '0x01',
   },
   initInput: {
     kind: 'struct',

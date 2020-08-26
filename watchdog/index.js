@@ -1,12 +1,12 @@
 const Web3 = require('web3')
 const fs = require('fs')
-const { RainbowConfig } = require('./config')
+const { RainbowConfig } = require('../config')
 const {
   sleep,
   RobustWeb3,
   normalizeEthKey,
   promiseWithTimeout,
-} = require('../lib/robust')
+} = require('../rainbow/robust')
 const Tx = require('ethereumjs-tx').Transaction
 
 const SLOW_TX_ERROR_MSG = 'transaction not executed within 5 minutes'
