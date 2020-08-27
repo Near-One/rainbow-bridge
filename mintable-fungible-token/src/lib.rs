@@ -908,146 +908,96 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_burn() {
-        let mut context = get_context(alice());
+    fn burn_common(owner: AccountId, sender: AccountId, total_supply: u128, burn_amount: u128, eth_recipient: &str) {
+        let mut context = get_context(owner.clone());
         testing_env!(context.clone());
-        let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = MintableFungibleToken::new_with_supply(alice(), total_supply.into());
-        contract.locker_address = [
-            196, 199, 73, 127, 190, 26, 136, 104, 65, 161, 149, 165, 214, 34, 205, 96, 5, 60, 19,
-            118,
-        ];
+        let mut contract = MintableFungibleToken::new_with_supply(owner.clone(), total_supply.into());
+        
         context.storage_usage = env::storage_usage();
-
         context.attached_deposit = 1000 * STORAGE_PRICE_PER_BYTE;
+        context.predecessor_account_id = sender;
         testing_env!(context.clone());
 
         contract.burn(
-            BURN_AMOUNT.into(),
-            "0123456789abcdef0123456789abcdef01234567".into(),
+            burn_amount.into(),
+            eth_recipient.into(),
         );
         assert_eq!(contract.get_balance(alice()).0, total_supply - 1000);
         assert_eq!(contract.get_total_supply().0, total_supply - 1000);
     }
 
     #[test]
+    fn test_burn() {
+        burn_common(alice(), alice(), 1_000_000_000_000_000u128, BURN_AMOUNT, "0123456789abcdef0123456789abcdef01234567")
+    }
+
+    #[test]
     #[should_panic(expected = "recipient should be a hex: OddLength")]
     fn test_burn_invalid_recepient() {
-        let mut context = get_context(alice());
-        testing_env!(context.clone());
-        let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = MintableFungibleToken::new_with_supply(alice(), total_supply.into());
-        contract.locker_address = [
-            196, 199, 73, 127, 190, 26, 136, 104, 65, 161, 149, 165, 214, 34, 205, 96, 5, 60, 19,
-            118,
-        ];
-        context.storage_usage = env::storage_usage();
-
-        context.attached_deposit = 1000 * STORAGE_PRICE_PER_BYTE;
-        testing_env!(context.clone());
-
-        contract.burn(
-            BURN_AMOUNT.into(),
-            "0123456789abcdef0123456789abcdef0123456".into(),
-        );
+        burn_common(alice(), alice(), 1_000_000_000_000_000u128, BURN_AMOUNT, "0123456789abcdef0123456789abcdef0123456")
     }
 
     #[test]
     #[should_panic(expected = "Not enough balance")]
     fn test_burn_insufficient_balance() {
-        let mut context = get_context(alice());
-        testing_env!(context.clone());
-        let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = MintableFungibleToken::new_with_supply(bob(), total_supply.into());
-        contract.locker_address = [
-            196, 199, 73, 127, 190, 26, 136, 104, 65, 161, 149, 165, 214, 34, 205, 96, 5, 60, 19,
-            118,
-        ];
-        context.storage_usage = env::storage_usage();
-
-        context.attached_deposit = 1000 * STORAGE_PRICE_PER_BYTE;
-        testing_env!(context.clone());
-
-        contract.burn(
-            BURN_AMOUNT.into(),
-            "0123456789abcdef0123456789abcdef01234567".into(),
-        );
+        burn_common(alice(), carol(), 1_000_000_000_000_000u128, BURN_AMOUNT, "0123456789abcdef0123456789abcdef01234567")
     }
 
-    #[test]
-    fn test_mint() {
-        let mut context = get_context(alice());
+    fn mint_common(owner: AccountId, sender: AccountId, receiver: AccountId, total_supply: u128, locker_address: [u8; 20], proof: Proof, double_mint: bool) {
+        let mut context = get_context(owner.clone());
         testing_env!(context.clone());
-        let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = MintableFungibleToken::new_with_supply(alice(), total_supply.into());
-        contract.locker_address = [
-            196, 199, 73, 127, 190, 26, 136, 104, 65, 161, 149, 165, 214, 34, 205, 96, 5, 60, 19,
-            118,
-        ];
+        let mut contract = MintableFungibleToken::new_with_supply(owner, total_supply.into());
+        contract.locker_address = locker_address;
+
         context.storage_usage = env::storage_usage();
-
         context.attached_deposit = 1000 * STORAGE_PRICE_PER_BYTE;
+        context.predecessor_account_id = sender.clone();
         testing_env!(context.clone());
 
-        let proof: Proof = serde_json::from_reader(
-            std::fs::File::open(std::path::Path::new("data/proof.json")).unwrap(),
-        )
-        .unwrap();
         assert_eq!(
-            contract.get_balance(rainbow_bridge_eth_on_near_prover()).0,
+            contract.get_balance(receiver.clone()).0,
             0
         );
-        contract.mint(proof);
+        contract.mint(proof.clone());
+        if double_mint {
+            contract.mint(proof);
+        }
         assert_eq!(
-            contract.get_balance(rainbow_bridge_eth_on_near_prover()).0,
+            contract.get_balance(receiver.clone()).0,
             1000
         );
         assert_eq!(contract.get_total_supply().0, total_supply + 1000);
     }
 
+    fn proof_from_file(path: &str) -> Proof {
+        serde_json::from_reader(
+            std::fs::File::open(std::path::Path::new(path)).unwrap(),
+        ).unwrap()
+    }
+
+    #[test]
+    fn test_mint() {
+        mint_common(alice(), alice(), rainbow_bridge_eth_on_near_prover(), 1_000_000_000_000_000u128, [
+            196, 199, 73, 127, 190, 26, 136, 104, 65, 161, 149, 165, 214, 34, 205, 96, 5, 60, 19,
+            118,
+        ], proof_from_file("data/proof.json"), false);
+    }
+
     #[test]
     #[should_panic(expected = "Event cannot be reused for minting.")]
     fn test_mint_no_double_mint() {
-        let mut context = get_context(alice());
-        testing_env!(context.clone());
-        let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = MintableFungibleToken::new_with_supply(alice(), total_supply.into());
-        contract.locker_address = [
+        mint_common(alice(), alice(), rainbow_bridge_eth_on_near_prover(), 1_000_000_000_000_000u128, [
             196, 199, 73, 127, 190, 26, 136, 104, 65, 161, 149, 165, 214, 34, 205, 96, 5, 60, 19,
             118,
-        ];
-        context.storage_usage = env::storage_usage();
-
-        context.attached_deposit = 1000 * STORAGE_PRICE_PER_BYTE;
-        testing_env!(context.clone());
-
-        let proof: Proof = serde_json::from_reader(
-            std::fs::File::open(std::path::Path::new("data/proof.json")).unwrap(),
-        )
-        .unwrap();
-
-        contract.mint(proof.clone());
-        contract.mint(proof);
+        ], proof_from_file("data/proof.json"), true);
     }
 
     #[test]
     #[should_panic(expected = "does not match locker address of this token")]
     fn test_mint_wrong_locker_address() {
-        let mut context = get_context(alice());
-        testing_env!(context.clone());
-        let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = MintableFungibleToken::new_with_supply(carol(), total_supply.into());
-        context.storage_usage = env::storage_usage();
-
-        context.attached_deposit = 1000 * STORAGE_PRICE_PER_BYTE;
-        testing_env!(context.clone());
-
-        let proof: Proof = serde_json::from_reader(
-            std::fs::File::open(std::path::Path::new("data/proof.json")).unwrap(),
-        )
-        .unwrap();
-        contract.mint(proof);
+        mint_common(alice(), alice(), rainbow_bridge_eth_on_near_prover(), 1_000_000_000_000_000u128, [
+            100; 20
+        ], proof_from_file("data/proof.json"), false);
     }
 
     #[test]
@@ -1055,23 +1005,9 @@ mod tests {
         expected = "Finish transfer is only allowed to be called by the contract itself"
     )]
     fn test_mint_wrong_sender() {
-        let mut context = get_context(carol());
-        testing_env!(context.clone());
-        let total_supply = 1_000_000_000_000_000u128;
-        let mut contract = MintableFungibleToken::new_with_supply(carol(), total_supply.into());
-        contract.locker_address = [
+        mint_common(carol(), carol(), rainbow_bridge_eth_on_near_prover(), 1_000_000_000_000_000u128, [
             196, 199, 73, 127, 190, 26, 136, 104, 65, 161, 149, 165, 214, 34, 205, 96, 5, 60, 19,
             118,
-        ];
-        context.storage_usage = env::storage_usage();
-
-        context.attached_deposit = 1000 * STORAGE_PRICE_PER_BYTE;
-        testing_env!(context.clone());
-
-        let proof: Proof = serde_json::from_reader(
-            std::fs::File::open(std::path::Path::new("data/proof.json")).unwrap(),
-        )
-        .unwrap();
-        contract.mint(proof);
+        ], proof_from_file("data/proof.json"), false);
     }
 }
