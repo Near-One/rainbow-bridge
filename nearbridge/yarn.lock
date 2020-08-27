@@ -335,6 +335,11 @@
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
   integrity sha512-9NET910DNaIPngYnLLPeg+Ogzqsi9uM4mSboU5y6p8S5DzMTVEsJZrawi+BoDNUVBa2DhJqQYUFvMDfgU062LQ==
 
+"@solidity-parser/parser@^0.6.0":
+  version "0.6.2"
+  resolved "https://registry.yarnpkg.com/@solidity-parser/parser/-/parser-0.6.2.tgz#49707fc4e06649d39d6b25bdab2e9093d372ce50"
+  integrity sha512-kUVUvrqttndeprLoXjI5arWHeiP3uh4XODAKbG+ZaWHCVQeelxCbnXBeWxZ2BPHdXgH0xR9dU1b916JhDhbgAA==
+
 "@szmarczak/http-timer@^1.1.2":
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/@szmarczak/http-timer/-/http-timer-1.1.2.tgz#b1665e2c461a2cd92f4c1bbf50d5454de0d4b421"
@@ -2560,7 +2565,7 @@ eth-lib@^0.2.8:
     elliptic "^6.4.0"
     xhr-request-promise "^0.1.2"
 
-"eth-object@github:near/eth-object#54e03b8aac8208cf724e206d49ffb8bdd30451d7":
+eth-object@near/eth-object#54e03b8aac8208cf724e206d49ffb8bdd30451d7:
   version "1.0.3"
   resolved "https://codeload.github.com/near/eth-object/tar.gz/54e03b8aac8208cf724e206d49ffb8bdd30451d7"
   dependencies:
@@ -2568,7 +2573,7 @@ eth-lib@^0.2.8:
     ethereumjs-util "^7.0.3"
     web3 "^1.2.9"
 
-"eth-util-lite@github:near/eth-util-lite#master", eth-util-lite@near/eth-util-lite#master:
+eth-util-lite@near/eth-util-lite#master:
   version "1.0.1"
   resolved "https://codeload.github.com/near/eth-util-lite/tar.gz/ae0210cbe127b4d43ba01fd7cd4898d1a3f6c96a"
   dependencies:
@@ -5068,6 +5073,11 @@ mkdirp@*, mkdirp@0.5.1, mkdirp@0.5.x, mkdirp@^0.5.0, mkdirp@^0.5.1:
   dependencies:
     minimist "0.0.8"
 
+mkdirp@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-1.0.4.tgz#3eb5ed62622756d79a5f0e2a221dfebad75c2f7e"
+  integrity sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==
+
 mocha@5.2.0, mocha@^5.2.0:
   version "5.2.0"
   resolved "https://registry.yarnpkg.com/mocha/-/mocha-5.2.0.tgz#6d8ae508f59167f940f2b5b3c4a612ae50c90ae6"
@@ -6975,11 +6985,6 @@ solidity-parser-antlr@0.4.7:
   dependencies:
     npm-check-updates "^3.1.11"
 
-solidity-parser-antlr@^0.4.11:
-  version "0.4.11"
-  resolved "https://registry.yarnpkg.com/solidity-parser-antlr/-/solidity-parser-antlr-0.4.11.tgz#af43e1f13b3b88309a875455f5d6e565b05ee5f1"
-  integrity sha512-4jtxasNGmyC0midtjH/lTFPZYvTTUMy6agYcF+HoMnzW8+cqo3piFrINb4ZCzpPW+7tTVFCGa5ubP34zOzeuMg==
-
 solium-plugin-security@0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/solium-plugin-security/-/solium-plugin-security-0.1.1.tgz#2a87bcf8f8c3abf7d198e292e4ac080284e3f3f6"
@@ -7545,15 +7550,15 @@ tough-cookie@~2.4.3:
     psl "^1.1.24"
     punycode "^1.4.1"
 
-truffle-flattener@^1.3.0:
-  version "1.4.2"
-  resolved "https://registry.yarnpkg.com/truffle-flattener/-/truffle-flattener-1.4.2.tgz#7460d0eec88ac67b150e8de3476f55d4420a4ba0"
-  integrity sha512-7qUIzaW8a4vI4nui14wsytht2oaqvqnZ1Iet2wRq2T0bCJ0wb6HByMKQhZKpU46R+n5BMTY4K5n+0ITyeNlmuQ==
+truffle-flattener@^1.4.4:
+  version "1.4.4"
+  resolved "https://registry.yarnpkg.com/truffle-flattener/-/truffle-flattener-1.4.4.tgz#747a99204001f7d6dce43ea92771e1ff6ac3eafb"
+  integrity sha512-S/WmvubzlUj1mn56wEI6yo1bmPpKDNdEe5rtyVC1C5iNfZWobD/V69pAYI15IBDJrDqUyh+iXgpTkzov50zpQw==
   dependencies:
     "@resolver-engine/imports-fs" "^0.2.2"
+    "@solidity-parser/parser" "^0.6.0"
     find-up "^2.1.0"
-    mkdirp "^0.5.1"
-    solidity-parser-antlr "^0.4.11"
+    mkdirp "^1.0.4"
     tsort "0.0.1"
 
 truffle@^5.0.7:

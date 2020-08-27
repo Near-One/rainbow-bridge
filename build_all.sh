@@ -1,13 +1,19 @@
 #!/usr/bin/env bash
 
 # Exit script as soon as a command fails.
-set -e
+set -ex
 
 echo "Building NearOnEthClient and ED25519 contracts"
-./dist.sh nearbridge
+cd nearbridge
+yarn
+./dist.sh
 
 echo "Building NearOnEthProver contract"
-./dist.sh nearprover
+cd ../nearprover
+yarn
+./dist.sh
 
 echo "Building token locker"
-./dist.sh token-locker
+cd ../token-locker
+yarn
+./dist.sh
