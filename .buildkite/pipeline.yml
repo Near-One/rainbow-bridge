@@ -54,3 +54,9 @@ steps:
     label: "rust contracts test"
     agents:
       - "queue=medium"
+
+  - trigger: "rainbow-bridge"
+    label: "rainbow bridge cli tests"
+    build:
+      env:
+        PATCH_RAINBOW_BRIDGE_RS: "${BUILDKITE_COMMIT}"
