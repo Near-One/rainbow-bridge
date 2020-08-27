@@ -2565,7 +2565,7 @@ eth-lib@^0.2.8:
     elliptic "^6.4.0"
     xhr-request-promise "^0.1.2"
 
-eth-object@near/eth-object#54e03b8aac8208cf724e206d49ffb8bdd30451d7:
+"eth-object@github:near/eth-object#54e03b8aac8208cf724e206d49ffb8bdd30451d7":
   version "1.0.3"
   resolved "https://codeload.github.com/near/eth-object/tar.gz/54e03b8aac8208cf724e206d49ffb8bdd30451d7"
   dependencies:
@@ -2573,7 +2573,7 @@ eth-object@near/eth-object#54e03b8aac8208cf724e206d49ffb8bdd30451d7:
     ethereumjs-util "^7.0.3"
     web3 "^1.2.9"
 
-eth-util-lite@near/eth-util-lite#master:
+"eth-util-lite@github:near/eth-util-lite#master", eth-util-lite@near/eth-util-lite#master:
   version "1.0.1"
   resolved "https://codeload.github.com/near/eth-util-lite/tar.gz/ae0210cbe127b4d43ba01fd7cd4898d1a3f6c96a"
   dependencies:
@@ -6137,7 +6137,7 @@ query-string@^5.0.1:
     object-assign "^4.1.0"
     strict-uri-encode "^1.0.0"
 
-rainbow-bridge-lib@1.0.0:
+rainbow-bridge-lib@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/rainbow-bridge-lib/-/rainbow-bridge-lib-1.0.0.tgz#d798957817917a44295db1198e2fcadb8619213f"
   integrity sha512-A3wQSpMQMXXz+mwHXnsT/UCstsYPJgyFDittPd9bodz30vTbL8/Wq8WMdBg1pnp9ZQ71mbrTN2exxqs4dwWL6Q==

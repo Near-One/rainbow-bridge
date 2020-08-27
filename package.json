@@ -1,13 +1,7 @@
 {
   "name": "rainbow-bridge-sol",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Solidity contracts for NEAR Rainbow Bridge",
-  "files": [
-    "**/*.sh",
-    "nearbridge",
-    "nearprover",
-    "token-locker"
-  ],
   "author": "Near Inc.",
   "repository": {
     "type": "git",

@@ -3,6 +3,8 @@
 # Exit script as soon as a command fails.
 set -e
 
+yarn
+
 # Remove existing files.
 rm -f dist/*.sol
 
