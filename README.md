@@ -10,16 +10,16 @@
     <a href="https://buildkite.com/nearprotocol/rainbow-bridge"><img src="https://badge.buildkite.com/a3dcd9711ef855a7ea6dc80453828ad73d7a669b9a925889ad.svg?branch=master" alt="Buildkite Build" /></a>
     <a href="https://npmjs.com/rainbow-bridge-cli"><img alt="npm" src="https://img.shields.io/npm/v/rainbow-bridge-cli.svg?style=flat-square"></a>
   </p>
-  <h3>
-        <a href="https://github.com/near/rainbow-bridge-cli#installation">Installation</a>
-        <span> | </span>
-        <a href="https://github.com/near/rainbow-bridge-cli#usage">Usage</a>
-        <span> | </span>
-        <a href="https://github.com/near/rainbow-bridge-cli/tree/master/docs#documentation">Documentation</a>
-        <span> | </span>
-        <a href="https://github.com/near/rainbow-bridge-cli#examples">Examples</a>
-  </h3>
 </div>
+
+## Table of Contents
+- [Pre-requisites](#pre-requisites)
+- [Usage](#usage)
+- [Security](#security)
+- [Gas costs](#gas-costs)
+- [Deploying Bridge on Testnet](#deploying-bridge-on-testnet)
+- [Deploying and Using Locally](#deploying-and-using-locally)
+- [Contract Development Workflow](#contract-development-workflow)
 
 ## Pre-requisites
 
@@ -91,144 +91,64 @@ Ethereum fees are the following:
 
 As of 2020-07-14 (gas price is 40 gwei) the cost of running bridge on NEAR mainnnet and Ethereum mainnet is approx 42 USD/day. The cost of ETH->NEAR transfer of ERC20 token is 1 USD. The cost of NEAR->ETH transfer of ERC20 token is 2 USD.
 
-## Using existing Testnet bridge
+## Deploying Bridge on Testnet
+This section describes how to deploy your own bridge to NEAR testnet and Ethereum Ropsten. Please keep in mind, that Ethereum Ropsten sometimes undergoes huge reorgs of more than [16k blocks](https://github.com/near/rainbow-bridge-cli/issues/329). Unfortunately, we don't want to wait for 16k confirmations during transfers, which would take several days. So instead we keep number of confirmations as low and just re-create the bridge when it gets broken by the re-orgs. Overall, Ropsten has the following unfortunate specifics that does not exist with Ethereum Mainnet:
+* Extremely long re-orgs;
+* Gas price volatility -- Ropsten blocks might have orders of magnitude different median gas price;
+* Slow block production -- sometimes Ropsten blocks are produced once per several minutes.
 
-We are currently running bridge between NEAR Testnet and Ethereum Ropsten. The latency on it sped up to allow rapid experimentation.
-Specifically, ETH->NEAR direction is 10 blocks which corresponds to 2-3 minutes latency, and NEAR->ETH direction is ~80 seconds.
-The version of the bridge that will connect NEAR Mainnet to Ethereum Mainnet will use 25 blocks for ETH->NEAR direction and 4 hours for NEAR->ETH direction.
+### Preparation
+First, we need to prepare several accounts on NEAR Testnet and Ropsten with tokens.
 
-To try cross-blockchain transfer of an existing ERC20 token you would need:
+To create accounts on NEAR Testnet navigate to https://wallet.testnet.near.org/ and create an account. If you need more than 500 tokens on that account, create several temporary accounts and send their tokens to one account. To obtain a secret key for that account install [near-cli](https://github.com/near/near-shell), run `near login`, and follow the process. You will find secret key in `~/.near-credentials` on your machine.
 
-- Account on Ropsten that owns certain amount of some ERC20 token, in this example we will be using `0x88f975D5A1153Ea92AF66e7c4292576a329c04B6`.
-  Ask max@near.org to transfer you some (if you want to transfer your own token you would have to setup your own locker and minting contracts);
-- Account on https://wallet.testnet.near.org/;
+To create accounts on Ropsten use https://faucet.ropsten.be/. If you are a member of NEAR organization and you need more Ropsten tokens contact max@near.org .
 
-Let's set them up:
+We need to create the following accounts:
+* One account on NEAR testnet with >=2000 NEAR to be used as master account, we will call it `<near_master_account>` with `<near_master_sk>` secret key;
+* One account on NEAR testnet with >=500 NEAR to be used for eth2nearrelay, we will call it `<eth2nearrelay_account>` with `<eth2nearrelay_sk>` secret key;
+* One account on Ropsten with 10 ETH to be used as master account, we will denote its private key as `<eth_master_sk>`;
+* One account on Ropsten with 10 ETH to be used for near2ethrelay, we will denote its private key as `<near2ethrelay_sk>`;
+* One account on Ropsten with 1 ETH to be used for watchdog, we will denote its private key as `<watchdog_sk>`.
 
-1. Install [metamask](https://metamask.io/) and switch to Ropsten. Then create an account;
-2. Go to https://faucet.ropsten.be/ and send some tokens to this account;
-3. Add `0x88f975D5A1153Ea92AF66e7c4292576a329c04B6` as a custom token in Metamask (use `0` as precision);
-4. Ask max@near.org to deposit you some ERC20 tokens. After the deposit you should be able to observe non-zero balance in Metamask;
-5. Export private key from this account;
-6. Go to https://wallet.testnet.near.org/ and create an account;
-7. Install https://github.com/near/near-shell and run `near login`. In the opened browser tab/window allow new access key;
-8. Record secret key that you have just added from `~/.near-credentials/default/<account name>.json`, include `ed25519:` prefix;
-9. If you don't have access to an Ethereum node, go to http://infura.io/ and create a free account. Locate and record websocket URL to ropsten: `wss://ropsten.infura.io/ws/v3/<project_id>`;
+### Setup 
 
-Prepare CLI:
-
+Go to a cloud instance and install dependencies from [Pre-requisites](#pre-requisites).
+Then run:
 ```bash
-git clone https://github.com/near/rainbow-bridge-cli/
+git clone https://github.com/near/rainbow-bridge-cli
+cd rainbow-bridge-cli
 yarn
 node index.js clean
 node index.js prepare
 ```
 
-Then edit `~/.rainbow/config.json` to be:
-
-```json
-{
-  "nearNetworkId": "testnet",
-  "nearNodeUrl": "https://rpc.testnet.internal.near.org/",
-  "ethNodeUrl": "wss://ropsten.infura.io/ws/v3/<project_id>",
-  "nearMasterAccount": "<your_near_account_id>",
-  "nearMasterSk": "<your_near_sk>",
-  "nearClientAccount": "eth_on_near_client_10",
-  "nearProverAccount": "eth_on_near_prover_10",
-  "ethMasterSk": "<your_eth_private_key>",
-  "ethEd25519Address": "0x40b2d1334B7Fbbe2D4E1eb0Df689Af3D2a3903D2",
-  "ethClientAddress": "0x276D4d74Dc14251c8D75Ff4aE9175142E1C2254d",
-  "ethProverAddress": "0x69e75769a1D228f1c660869FB69455190fe9a80b",
-  "ethErc20Address": "0x88f975D5A1153Ea92AF66e7c4292576a329c04B6",
-  "nearFunTokenAccount": "funtoken10",
-  "ethLockerAddress": "0xAfa909a33241d0271B7fd73b57C34439e9fBC84a"
-}
-```
-
-Now let's run the transfer from ETH to NEAR:
-
+Then initialize `EthOnNearClient` and `EthOnNearProver`:
 ```bash
-node index.js transfer-eth-erc20-to-near --amount 100 --eth-sender-sk <you_eth_private_key> --near-receiver-account <your_near_account_id> --near-master-account <your_near_account_id> --near-master-sk <your_near_sk>
+node index.js init-near-contracts --near-network-id testnet --near-node-url <testnet_nodes_url> --eth-node-url https://ropsten.infura.io/v3/<infura_project_id> --near-master-account <near_master_account> --near-master-sk <near_master_sk> --near-client-account ethonnearclient01 --near-client-init-balance 2000000000000000000000000000 --near-prover-account ethonnearprover01
 ```
+* Make sure `ethonnearclient01` and `ethonnearprover01` do not exist yet. You can check it by going to https://explorer.testnet.near.org/accounts/ethonnearclient01 and https://explorer.testnet.near.org/accounts/ethonnearprover01 . If they exist, pick different names;
+* You can get `<infura_project_id>` by creating a free [infura](http://infura.io/) account. If you are working in NEAR organization please ask max@near.org;
+* For `<testnet_nodes_url>` you can use `http://rpc.testnet.near.org/`. If you are working in NEAR organization please ask max@near.org;
 
-Wait until the command finishes. You should see something like:
-
-```
-P3oQ5ohqrayePpKy26RXdXPgUAD8DByeC5jhYA6kLJxTmXPd6gVHuP
-Approving token transfer.
-Approved token transfer.
-Transferring tokens from the ERC20 account to the token locker account.
-Success.
-Transferring 100 tokens from 0x88f975D5A1153Ea92AF66e7c4292576a329c04B6 ERC20. From 0xe3628e6AB18A6B0F60Ed8540690d18b6d9C88a46 sender to flow10.testnet recipient
-Eth2NearClient is currently at block 8292239. Waiting for block 8292241 to be confirmed. Sleeping for 10 sec.
-Eth2NearClient is currently at block 8292241. Waiting for block 8292241 to be confirmed. Sleeping for 10 sec.
-Eth2NearClient is currently at block 8292242. Waiting for block 8292241 to be confirmed. Sleeping for 10 sec.
-Eth2NearClient is currently at block 8292243. Waiting for block 8292241 to be confirmed. Sleeping for 10 sec.
-Eth2NearClient is currently at block 8292244. Waiting for block 8292241 to be confirmed. Sleeping for 10 sec.
-Eth2NearClient is currently at block 8292246. Waiting for block 8292241 to be confirmed. Sleeping for 10 sec.
-Eth2NearClient is currently at block 8292247. Waiting for block 8292241 to be confirmed. Sleeping for 10 sec.
-Eth2NearClient is currently at block 8292248. Waiting for block 8292241 to be confirmed. Sleeping for 10 sec.
-Eth2NearClient is currently at block 8292249. Waiting for block 8292241 to be confirmed. Sleeping for 10 sec.
-Balance of flow10.testnet before the transfer is 0
-TxHash Hm6eRyMCoLKRAkg7DMQuN4e25kLU4GUPLVFjD6PaWXPi
-[ 'token: 88f975d5a1153ea92af66e7c4292576a329c04b6; sender: e3628e6ab18a6b0f60ed8540690d18b6d9c88a46; amount: 100; recipient: flow10.testnet',
-  'Refunding 6300000000000000000000 tokens for storage' ]
-Transferred
-Balance of flow10.testnet after the transfer is 100
-```
-
-Currently, NEAR wallet does not display balances of the fungible token, but fortunately the CLI tool queries the balance before and after the transfer.
-
-Now let's run the transfer from NEAR to ETH:
-
+Then start `eth2near-relay`:
 ```bash
-node index.js transfer-eth-erc20-from-near --amount 1 --near-sender-account <your_near_account_id> --near-sender-sk <your_near_sk> --eth-receiver-address <your_eth_address> --eth-master-sk <your_eth_private_key>
+node index.js start eth2near-relay --near-master-account <eth2nearrelay_account> --near-master-sk <eth2nearrelay_sk>
 ```
 
-Wait until the command finishes. You should observe something like:
-
+Now initialize `NearOnEthClient` and `NearOnEthProver`:
+```bash
+node index.js init-eth-ed25519 --eth-master-sk <eth_master_sk>
+node index.js init-eth-client --eth-client-lock-eth-amount 100000000000000000 --eth-client-lock-duration 600
+node index.js init-eth-prover
 ```
-Balance of flow10.testnet before burning: 100
-Burning 1 tokens on NEAR blockchain in favor of e3628e6AB18A6B0F60Ed8540690d18b6d9C88a46.
-Current light client head is: hash=F2fkvdda1bwZiM5oMW1e5RLa5nLEGbrNQbFKJyCr63V6, height=9593826
-Block 9593969 is not available on the light client yet. Current height of light client is 9593826. Sleeping 10 seconds.
-Current light client head is: hash=GEqJfWRnNyvC6T7yJtzLrNxKqohVWX34La4xWZMeuHXy, height=9593959
-Block 9593969 is not available on the light client yet. Current height of light client is 9593959. Sleeping 10 seconds.
-Current light client head is: hash=GEqJfWRnNyvC6T7yJtzLrNxKqohVWX34La4xWZMeuHXy, height=9593959
-Block 9593969 is not available on the light client yet. Current height of light client is 9593959. Sleeping 10 seconds.
-Current light client head is: hash=GEqJfWRnNyvC6T7yJtzLrNxKqohVWX34La4xWZMeuHXy, height=9593959
-Block 9593969 is not available on the light client yet. Current height of light client is 9593959. Sleeping 10 seconds.
-Current light client head is: hash=GEqJfWRnNyvC6T7yJtzLrNxKqohVWX34La4xWZMeuHXy, height=9593959
-Block 9593969 is not available on the light client yet. Current height of light client is 9593959. Sleeping 10 seconds.
-Current light client head is: hash=GEqJfWRnNyvC6T7yJtzLrNxKqohVWX34La4xWZMeuHXy, height=9593959
-Block 9593969 is not available on the light client yet. Current height of light client is 9593959. Sleeping 10 seconds.
-Current light client head is: hash=GEqJfWRnNyvC6T7yJtzLrNxKqohVWX34La4xWZMeuHXy, height=9593959
-Block 9593969 is not available on the light client yet. Current height of light client is 9593959. Sleeping 10 seconds.
-Current light client head is: hash=GEqJfWRnNyvC6T7yJtzLrNxKqohVWX34La4xWZMeuHXy, height=9593959
-Block 9593969 is not available on the light client yet. Current height of light client is 9593959. Sleeping 10 seconds.
-Current light client head is: hash=GEqJfWRnNyvC6T7yJtzLrNxKqohVWX34La4xWZMeuHXy, height=9593959
-Block 9593969 is not available on the light client yet. Current height of light client is 9593959. Sleeping 10 seconds.
-Current light client head is: hash=GEqJfWRnNyvC6T7yJtzLrNxKqohVWX34La4xWZMeuHXy, height=9593959
-Block 9593969 is not available on the light client yet. Current height of light client is 9593959. Sleeping 10 seconds.
-Current light client head is: hash=GEqJfWRnNyvC6T7yJtzLrNxKqohVWX34La4xWZMeuHXy, height=9593959
-Block 9593969 is not available on the light client yet. Current height of light client is 9593959. Sleeping 10 seconds.
-Current light client head is: hash=GEqJfWRnNyvC6T7yJtzLrNxKqohVWX34La4xWZMeuHXy, height=9593959
-Block 9593969 is not available on the light client yet. Current height of light client is 9593959. Sleeping 10 seconds.
-Current light client head is: hash=GEqJfWRnNyvC6T7yJtzLrNxKqohVWX34La4xWZMeuHXy, height=9593959
-Block 9593969 is not available on the light client yet. Current height of light client is 9593959. Sleeping 10 seconds.
-Current light client head is: hash=GEqJfWRnNyvC6T7yJtzLrNxKqohVWX34La4xWZMeuHXy, height=9593959
-Block 9593969 is not available on the light client yet. Current height of light client is 9593959. Sleeping 10 seconds.
-Current light client head is: hash=GEqJfWRnNyvC6T7yJtzLrNxKqohVWX34La4xWZMeuHXy, height=9593959
-Block 9593969 is not available on the light client yet. Current height of light client is 9593959. Sleeping 10 seconds.
-Current light client head is: hash=72TJ5LrvpNyagTWPvEEiGHG84fyAWZCGwUjSXEe8mgLV, height=9594083
-Near2EthClient block is at 9594083 which is further than the needed block 9593969
-Burnt "1"
-Balance of flow10.testnet after burning: 99
-ERC20 balance of 0xe3628e6AB18A6B0F60Ed8540690d18b6d9C88a46 before the transfer: 99800
-ERC20 balance of 0xe3628e6AB18A6B0F60Ed8540690d18b6d9C88a46 after the transfer: 99801
-```
+This will set the bond to 0.1 ETH and challenge period to 10 minutes. **Do not use these settings on Mainnet!** Mainnet should be using 20ETH bond and 4 hour challenge period.
 
-Congrats, you have completed a roundtrip of ERC20 tokens from ETH to NEAR and back to ETH!
+Then start the `near2eth-relay` and watchdog:
+```bash
+node index.js start near2eth-relay --eth-master-sk <near2ethrelay_sk>
+node index.js start bride-watchdog --eth-master-sk <watchdog_sk>
+```
 
 ## Deploying and Using Locally
 
@@ -323,6 +243,9 @@ node start ganache
 - For changes to Solidity contract, Rust contract, and rainbow-bridge-lib, please submit PRs to: https://github.com/near/rainbow-bridge-sol , https://github.com/near/rainbow-bridge-rs , and https://github.com/near/rainbow-bridge-lib respectively.
 - After PR merged in contract repos and rainbow-bridge-lib repo, we will periodically publish them as new version of npm packages. And rainbow-bridge-cli will adopt new version of them.
 
+
+<!---
+The following is outdated.
 # Docker:
 
 ## Currently we have the following docker options:
@@ -358,3 +281,4 @@ docker-compose -f docker-compose-dev.yml up -e MASTER_SK=<key> -e ...
 # Running the production env just use:
 docker-compose -f docker-compose-prod.yml instead
 ```
+-->
