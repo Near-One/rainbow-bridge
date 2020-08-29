@@ -230,7 +230,7 @@ ERC20 balance of 0xe3628e6AB18A6B0F60Ed8540690d18b6d9C88a46 after the transfer: 
 
 Congrats, you have completed a roundtrip of ERC20 tokens from ETH to NEAR and back to ETH!
 
-## Local test run
+## Deploying and Using Locally
 
 To locally test the bridge run:
 
