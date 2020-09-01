@@ -37,7 +37,7 @@ class ETHDump {
     }
     console.log(
       `Downloading block ${endBlock} down to ${startBlock} to ${path}. ${
-        endBlock - startBlock + 1
+      endBlock - startBlock + 1
       } blocks in total.`
     )
 
@@ -52,7 +52,7 @@ class ETHDump {
     try {
       // Only WebSocket provider can close.
       web3.currentProvider.connection.close()
-    } catch (e) {}
+    } catch (e) { }
     extractor.destroy()
   }
 
@@ -106,8 +106,6 @@ class ETHDump {
           _proof.push(utils.rlp.encode(node))
         }
 
-        const skip_bridge_call = false
-
         const args = {
           log_index: log_index,
           log_entry_data: log_entry_data.toString('hex'),
@@ -115,7 +113,6 @@ class ETHDump {
           receipt_data: receipt_data.toString('hex'),
           header_data: header_data.toString('hex'),
           proof: _proof.map((p) => p.toString('hex')),
-          skip_bridge_call: skip_bridge_call,
         }
 
         const file = Path.join(path, `${b}_${receipt_index}_${log_index}.json`)
