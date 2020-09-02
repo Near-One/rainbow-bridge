@@ -222,7 +222,7 @@ node index.js transfer-eth-erc20-from-near --amount 1 --near-sender-account rain
 
 You should observe the change of the ERC20 balance as reported by the CLI.
 
-## Contract Development Workflow
+## Contract and rainbow-bridge-lib Development Workflow
 
 Above steps are ways to run a local bridge and development workflows you need if make any changes to rainbow-bridge-cli. If you want to update any of solidity or rust contracts, they're not in this repo now and workflow is as following.
 
@@ -242,7 +242,13 @@ node start ganache
 - Follow instructions above to init eth contracts and near contracts, start services and start testing with bridge
 - For changes to Solidity contract, Rust contract, and rainbow-bridge-lib, please submit PRs to: https://github.com/near/rainbow-bridge-sol , https://github.com/near/rainbow-bridge-rs , and https://github.com/near/rainbow-bridge-lib respectively.
 - After PR merged in contract repos and rainbow-bridge-lib repo, we will periodically publish them as new version of npm packages. And rainbow-bridge-cli will adopt new version of them.
-
+- If there is a change need to change one or more of rainbow-bridge-sol/rs/lib and also rainbow-bridge-cli to pass CI
+  - To test it locally, you can modify package.json to use local path of rainbow-bridge-sol/rs/lib, `yarn` and run e2e tests.
+  - Create one PR in rainbow-bridge-sol/rs/lib and one PR in rainbow-bridge-lib
+  - In rainbow-bridge-sol/rs/lib PR remember to increase version in package.json
+  - rainbow-bridge-sol/rs/lib PR has to pass unit tests. Tests in rainbow-bridge-cli is expected to fail
+  - Merge rainbow-bridge-sol/rs/lib PR, npm publish, and use new version of that in rainbow-bridge-cli's package.json
+  - PR in rainbow-bridge-cli CI must pass to prove the bridge still works after change in both repos 
 
 <!---
 The following is outdated.
