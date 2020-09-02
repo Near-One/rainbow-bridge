@@ -51,7 +51,7 @@ cd ${ROOT_DIR}/testenv/
 yarn pm2 ping
 sleep 5
 yarn pm2 list
-rainbow start near2eth-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
+rainbow start near2eth-relay
 sleep 5
 yarn pm2 list
 rainbow start eth2near-relay
