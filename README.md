@@ -242,9 +242,9 @@ node start ganache
 - Follow instructions above to init eth contracts and near contracts, start services and start testing with bridge
 - For changes to Solidity contract, Rust contract, and rainbow-bridge-lib, please submit PRs to: https://github.com/near/rainbow-bridge-sol , https://github.com/near/rainbow-bridge-rs , and https://github.com/near/rainbow-bridge-lib respectively.
 - After PR merged in contract repos and rainbow-bridge-lib repo, we will periodically publish them as new version of npm packages. And rainbow-bridge-cli will adopt new version of them.
-- If there is a change need to change one or more of rainbow-bridge-sol/rs/lib and also rainbow-bridge-cli to pass CI
+- If there is a need to change rainbow-bridge-sol/rs/lib and also rainbow-bridge-cli to pass CI
   - To test it locally, you can modify package.json to use local path of rainbow-bridge-sol/rs/lib, `yarn` and run e2e tests.
-  - Create one PR in rainbow-bridge-sol/rs/lib and one PR in rainbow-bridge-lib
+  - Create one PR in rainbow-bridge-sol/rs/lib and one PR in rainbow-bridge-cli
   - In rainbow-bridge-sol/rs/lib PR remember to increase version in package.json
   - rainbow-bridge-sol/rs/lib PR has to pass unit tests. Tests in rainbow-bridge-cli is expected to fail
   - Merge rainbow-bridge-sol/rs/lib PR, npm publish, and use new version of that in rainbow-bridge-cli's package.json
