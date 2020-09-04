@@ -241,6 +241,7 @@ fn add_dags_merkle_roots() {
         30,
         10,
         10,
+        None,
     );
 
     assert_eq!(dmr.dag_merkle_roots[0], contract.dag_merkle_root(0));
@@ -272,6 +273,7 @@ fn add_blocks_2_and_3() {
         30,
         10,
         10,
+        None,
     );
 
     for (block, proof) in blocks
@@ -307,6 +309,7 @@ fn add_400000_block_only() {
         30,
         10,
         10,
+        None,
     );
     assert_eq!((hashes[0].0).0, (contract.block_hash(400_000).unwrap().0).0);
 }
@@ -333,6 +336,7 @@ fn add_two_blocks_from_8996776() {
         30,
         10,
         10,
+        None,
     );
 
     for (block, proof) in blocks
@@ -380,6 +384,7 @@ fn add_2_blocks_from_400000() {
         30,
         10,
         10,
+        None,
     );
 
     for (block, proof) in blocks
@@ -434,6 +439,7 @@ fn predumped_block_can_be_added() {
         30,
         10,
         10,
+        None,
     );
 
     let bar = ProgressBar::new(blocks_with_proofs.len() as _);

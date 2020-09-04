@@ -47,6 +47,7 @@ struct EthClientInitArgs {
     hashes_gc_threshold: u64,
     finalized_gc_threshold: u64,
     num_confirmations: u64,
+    trusted_signer: Option<AccountId>,
 }
 
 #[derive(BorshSerialize)]
@@ -180,6 +181,7 @@ impl ExternalUser {
             hashes_gc_threshold: 400000,
             finalized_gc_threshold: 500,
             num_confirmations: 10,
+            trusted_signer: None,
         };
         let tx = self
             .new_tx(runtime, eth_client_account_id)

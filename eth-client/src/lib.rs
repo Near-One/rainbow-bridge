@@ -2,6 +2,7 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
 use near_sdk::collections::UnorderedMap;
 use near_sdk::{env, near_bindgen};
+use near_sdk::AccountId;
 
 #[cfg(target_arch = "wasm32")]
 #[global_allocator]
@@ -94,6 +95,9 @@ pub struct EthClient {
     /// Minimal information about the headers, like cumulative difficulty. Stores up to
     /// `finalized_gc_threshold`.
     infos: UnorderedMap<H256, HeaderInfo>,
+    /// If set, block header added by trusted signer will skip validation and added by
+    /// others will be immediately rejected, used in PoA testnets
+    trusted_signer: Option<AccountId>,
 }
 
 impl Default for EthClient {
@@ -113,6 +117,7 @@ impl EthClient {
         #[serializer(borsh)] hashes_gc_threshold: u64,
         #[serializer(borsh)] finalized_gc_threshold: u64,
         #[serializer(borsh)] num_confirmations: u64,
+        #[serializer(borsh)] trusted_signer: Option<AccountId>,
     ) -> Self {
         assert!(!Self::initialized(), "Already initialized");
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
@@ -130,6 +135,7 @@ impl EthClient {
             all_header_hashes: UnorderedMap::new(b"a".to_vec()),
             headers: UnorderedMap::new(b"h".to_vec()),
             infos: UnorderedMap::new(b"i".to_vec()),
+            trusted_signer,
         };
         res.canonical_header_hashes
             .insert(&header_number, &header_hash);
@@ -199,16 +205,23 @@ impl EthClient {
         #[serializer(borsh)] dag_nodes: Vec<DoubleNodeWithMerkleProof>,
     ) {
         let header: BlockHeader = rlp::decode(block_header.as_slice()).unwrap();
-
-        let prev = self
-            .headers
-            .get(&header.parent_hash)
-            .expect("Parent header should be present to add a new header");
-        assert!(
-            self.verify_header(&header, &prev, &dag_nodes),
-            "The new header {} should be valid",
-            header.number
-        );
+        
+        if let Some(trusted_signer) = &self.trusted_signer {
+            assert!(
+                &env::signer_account_id() == trusted_signer, 
+                "Eth-client is deployed as trust mode, only trusted_signer can add a new header"
+            );
+        } else {
+            let prev = self
+                .headers
+                .get(&header.parent_hash)
+                .expect("Parent header should be present to add a new header");
+            assert!(
+                self.verify_header(&header, &prev, &dag_nodes),
+                "The new header {} should be valid",
+                header.number
+            );
+        }
 
         self.record_header(header);
     }
@@ -351,6 +364,7 @@ impl EthClient {
         // 1. Simplified difficulty check to conform adjusting difficulty bomb
         // 2. Added condition: header.parent_hash() == prev.hash()
         //
+        // TODO: in PoA network extra_data needs verification
         (!self.validate_ethash
             || (header.difficulty < header.difficulty * 101 / 100
                 && header.difficulty > header.difficulty * 99 / 100)
