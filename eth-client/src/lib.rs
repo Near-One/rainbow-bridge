@@ -61,7 +61,7 @@ pub struct HeaderInfo {
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct EthClient {
     /// Whether client validates the PoW when accepting the header. Should only be set to `false`
-    /// for debugging, testing, diagnostic purposes when used with Ganache.
+    /// for debugging, testing, diagnostic purposes when used with Ganache or in PoA testnets
     validate_ethash: bool,
     /// The epoch from which the DAG merkle roots start.
     dags_start_epoch: u64,
@@ -351,10 +351,13 @@ impl EthClient {
         // 1. Simplified difficulty check to conform adjusting difficulty bomb
         // 2. Added condition: header.parent_hash() == prev.hash()
         //
-        U256((result.0).0.into()) < U256(ethash::cross_boundary(header.difficulty.0))
-            && (!self.validate_ethash
-                || (header.difficulty < header.difficulty * 101 / 100
-                    && header.difficulty > header.difficulty * 99 / 100))
+        (!self.validate_ethash
+            || (header.difficulty < header.difficulty * 101 / 100
+                && header.difficulty > header.difficulty * 99 / 100)
+                // in PoA network difficulty is unreliable
+                && U256((result.0).0.into()) < U256(ethash::cross_boundary(header.difficulty.0))
+                // in PoA network extra_data is longer
+                && header.extra_data.len() <= 32)
             && header.gas_used <= header.gas_limit
             && header.gas_limit < prev.gas_limit * 1025 / 1024
             && header.gas_limit > prev.gas_limit * 1023 / 1024
@@ -362,7 +365,6 @@ impl EthClient {
             && header.timestamp > prev.timestamp
             && header.number == prev.number + 1
             && header.parent_hash == prev.hash.unwrap()
-            && header.extra_data.len() <= 32
     }
 
     /// Verify merkle paths to the DAG nodes.
