@@ -22,6 +22,7 @@ const borshSchema = {
       ['hashes_gc_threshold', 'u64'],
       ['finalized_gc_threshold', 'u64'],
       ['num_confirmations', 'u64'],
+      ['trusted_signer', '?AccountId']
     ],
   },
   dagMerkleRootInput: {
@@ -61,6 +62,10 @@ const borshSchema = {
     kind: 'option',
     type: 'H256',
   },
+  '?AccountId': {
+    kind: 'option',
+    type: 'string',
+  }
 }
 
 class EthOnNearClientContract extends BorshContract {
@@ -116,13 +121,13 @@ class EthOnNearClientContract extends BorshContract {
 
   // Call initialization methods on the contract.
   // If validate_ethash is true will do ethash validation otherwise it won't.
-  async maybeInitialize(validate_ethash, robustWeb3) {
+  async maybeInitialize(validate_ethash, trusted_signer, robustWeb3) {
     await this.accessKeyInit()
     let initialized = false
     try {
       // @ts-ignore
       initialized = await this.initialized()
-    } catch (e) {}
+    } catch (e) { }
     if (!initialized) {
       console.log('EthOnNearClient is not initialized, initializing...')
       const last_block_number = await robustWeb3.getBlockNumber()
@@ -139,6 +144,7 @@ class EthOnNearClientContract extends BorshContract {
           hashes_gc_threshold: 40000,
           finalized_gc_threshold: 500,
           num_confirmations: 10,
+          trusted_signer,
         },
         new BN('300000000000000')
       )
