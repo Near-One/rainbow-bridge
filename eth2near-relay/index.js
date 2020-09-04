@@ -21,7 +21,7 @@ function execute(command, _callback) {
 }
 
 function web3BlockToRlp(blockData) {
-  blockData.difficulty = parseInt(blockData.difficulty, 10)
+  blockData.difficulty = parseInt(blockData.difficulty || '0', 10)
   blockData.totalDifficulty = parseInt(blockData.totalDifficulty, 10)
   blockData.uncleHash = blockData.sha3Uncles
   blockData.coinbase = blockData.miner
