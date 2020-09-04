@@ -56,7 +56,7 @@ RainbowConfig.declareOption('eth-node-url', 'The URL of the Ethereum node.')
 RainbowConfig.declareOption(
   'near-master-account',
   'The account of the master account on NEAR blockchain that can be used to deploy and initialize the test contracts.' +
-    ' This account will also own the initial supply of the fungible tokens.'
+  ' This account will also own the initial supply of the fungible tokens.'
 )
 RainbowConfig.declareOption(
   'near-master-sk',
@@ -87,8 +87,13 @@ RainbowConfig.declareOption(
 )
 RainbowConfig.declareOption(
   'near-client-validate-ethash',
-  'The initial balance of Near Client contract in femtoNEAR.',
+  'Whether validate ethash of submitted eth block, should set to true on mainnet and false on PoA testnets',
   'true'
+)
+RainbowConfig.declareOption(
+  'near-client-trusted-signer',
+  'When non empty, deploy as trusted-signer mode where only tursted signer can submit blocks to client',
+  ''
 )
 RainbowConfig.declareOption(
   'near-prover-account',
@@ -328,6 +333,7 @@ RainbowConfig.addOptions(
     'near-client-contract-path',
     'near-client-init-balance',
     'near-client-validate-ethash',
+    'near-client-trusted-signer',
     'near-prover-account',
     'near-prover-sk',
     'near-prover-contract-path',
@@ -551,6 +557,6 @@ RainbowConfig.addOptions(
     .action(NearDump.execute),
   ['near-node-url']
 )
-;(async () => {
-  await program.parseAsync(process.argv)
-})()
+  ; (async () => {
+    await program.parseAsync(process.argv)
+  })()
