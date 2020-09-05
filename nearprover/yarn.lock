@@ -6159,7 +6159,7 @@ query-string@^5.0.1:
     object-assign "^4.1.0"
     strict-uri-encode "^1.0.0"
 
-rainbow-bridge-lib@1.0.0:
+rainbow-bridge-lib@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/rainbow-bridge-lib/-/rainbow-bridge-lib-1.0.0.tgz#d798957817917a44295db1198e2fcadb8619213f"
   integrity sha512-A3wQSpMQMXXz+mwHXnsT/UCstsYPJgyFDittPd9bodz30vTbL8/Wq8WMdBg1pnp9ZQ71mbrTN2exxqs4dwWL6Q==

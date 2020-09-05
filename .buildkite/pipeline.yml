@@ -3,10 +3,13 @@ steps:
       source ~/.cargo/env
       source ~/.nvm/nvm.sh
       source ~/.yarn/yarn.sh
-      ./build_all.sh
+      yarn
+      yarn build
       git status
       changed_files=$$(git status --porcelain --untracked-files=no | wc -l)
       if [ $$changed_files -gt 0 ]; then
+        yarn --version
+        git diff
         echo 'contract changed, please rebuild contract'
         exit 1
       fi
