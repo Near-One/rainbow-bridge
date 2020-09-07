@@ -1,8 +1,8 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
 use near_sdk::collections::UnorderedMap;
-use near_sdk::{env, near_bindgen};
 use near_sdk::AccountId;
+use near_sdk::{env, near_bindgen};
 
 #[cfg(target_arch = "wasm32")]
 #[global_allocator]
@@ -205,10 +205,10 @@ impl EthClient {
         #[serializer(borsh)] dag_nodes: Vec<DoubleNodeWithMerkleProof>,
     ) {
         let header: BlockHeader = rlp::decode(block_header.as_slice()).unwrap();
-        
+
         if let Some(trusted_signer) = &self.trusted_signer {
             assert!(
-                &env::signer_account_id() == trusted_signer, 
+                &env::signer_account_id() == trusted_signer,
                 "Eth-client is deployed as trust mode, only trusted_signer can add a new header"
             );
         } else {
@@ -364,14 +364,10 @@ impl EthClient {
         // 1. Simplified difficulty check to conform adjusting difficulty bomb
         // 2. Added condition: header.parent_hash() == prev.hash()
         //
-        // TODO: in PoA network extra_data needs verification
-        (!self.validate_ethash
-            || (header.difficulty < header.difficulty * 101 / 100
-                && header.difficulty > header.difficulty * 99 / 100)
-                // in PoA network difficulty is unreliable
-                && U256((result.0).0.into()) < U256(ethash::cross_boundary(header.difficulty.0))
-                // in PoA network extra_data is longer
-                && header.extra_data.len() <= 32)
+        U256((result.0).0.into()) < U256(ethash::cross_boundary(header.difficulty.0))
+            && (!self.validate_ethash
+                || (header.difficulty < header.difficulty * 101 / 100
+                    && header.difficulty > header.difficulty * 99 / 100))
             && header.gas_used <= header.gas_limit
             && header.gas_limit < prev.gas_limit * 1025 / 1024
             && header.gas_limit > prev.gas_limit * 1023 / 1024
@@ -379,6 +375,7 @@ impl EthClient {
             && header.timestamp > prev.timestamp
             && header.number == prev.number + 1
             && header.parent_hash == prev.hash.unwrap()
+            && header.extra_data.len() <= 32
     }
 
     /// Verify merkle paths to the DAG nodes.
