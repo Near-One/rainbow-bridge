@@ -4027,10 +4027,10 @@ query-string@^5.0.1:
     object-assign "^4.1.0"
     strict-uri-encode "^1.0.0"
 
-rainbow-bridge-lib@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/rainbow-bridge-lib/-/rainbow-bridge-lib-1.0.0.tgz#d798957817917a44295db1198e2fcadb8619213f"
-  integrity sha512-A3wQSpMQMXXz+mwHXnsT/UCstsYPJgyFDittPd9bodz30vTbL8/Wq8WMdBg1pnp9ZQ71mbrTN2exxqs4dwWL6Q==
+rainbow-bridge-lib@1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/rainbow-bridge-lib/-/rainbow-bridge-lib-1.0.2.tgz#9e8fea884d5266f8f0c120a2c022c1a89af43e00"
+  integrity sha512-w3zuZbREGEC753Y/u7tPbnFMynPlXgYTHV1iTuRiL8CqNHpCeKSkcxWjUaYdgCd+FovpgbbyoRT4rw+1RH9CYQ==
   dependencies:
     bn.js "^5.1.3"
     bs58 "^4.0.1"
@@ -4048,15 +4048,15 @@ rainbow-bridge-lib@^1.0.0:
     promisfy "^1.2.0"
     web3 "=1.2.6"
 
-rainbow-bridge-rs@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/rainbow-bridge-rs/-/rainbow-bridge-rs-1.0.0.tgz#34294969bf3de1225a0dca703de7ff4daa58bcb8"
-  integrity sha512-HiX7YdxAZRxaxFsXJQKJc/h9KWWhgZOmP3GQlFxL/eyEV1krU5NqOyZOqBNUB1MPIh3qtiZEXsovsbLDzBm6Nw==
+rainbow-bridge-rs@1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/rainbow-bridge-rs/-/rainbow-bridge-rs-1.0.2.tgz#824a9f3cb00f083cbf737d5dc7bc11b0682de27c"
+  integrity sha512-8HHPwsDmTIvROzJPvbw6RJDKnge8xDAi9MBdCVuC1JdU51t6aFRHZBsORvdGd89yYQaz3hLm8jWzTZtYV2XOdA==
 
-rainbow-bridge-sol@^1.0.10:
-  version "1.0.10"
-  resolved "https://registry.yarnpkg.com/rainbow-bridge-sol/-/rainbow-bridge-sol-1.0.10.tgz#3cf1f45068d53e04490517d38667c53a740e13fe"
-  integrity sha512-JVuPB1oe43piVew0VIDZp1q3nm/Dz/i91FZzj0Cqc7pC3Ko5YlYMGRIrRcgPRCDyDD/m0OPDsIBhavQ54efoyg==
+rainbow-bridge-sol@1.0.11:
+  version "1.0.11"
+  resolved "https://registry.yarnpkg.com/rainbow-bridge-sol/-/rainbow-bridge-sol-1.0.11.tgz#67654455ae17f6604f314eed2d6e77edf8da9b41"
+  integrity sha512-31TBeg1b16/Y/s64B89AW1uCiqkOgT64p9/2T6MKlcOJ46ky2qHhntfKpgU9Ymjsg0aYeDZzIbeZ+hY3qCHJ+Q==
 
 randombytes@^2.0.0, randombytes@^2.0.1, randombytes@^2.0.5, randombytes@^2.1.0:
   version "2.1.0"
