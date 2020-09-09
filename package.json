@@ -32,7 +32,7 @@
     "pm2-promise": "^2.0.1",
     "rainbow-bridge-lib": "^1.0.0",
     "rainbow-bridge-rs": "^1.0.0",
-    "rainbow-bridge-sol": "^1.0.10",
+    "rainbow-bridge-sol": "^1.0.11",
     "request": "^2.88.2",
     "web3": "=1.2.6"
   },
