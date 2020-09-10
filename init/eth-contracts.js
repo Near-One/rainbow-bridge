@@ -97,6 +97,7 @@ class InitEthLocker {
     const success = await ethContractInitializer.execute(
       contractName,
       [
+        RainbowConfig.getParam('eth-erc20-address'),
         Buffer.from(RainbowConfig.getParam('near-fun-token-account'), 'utf8'),
         RainbowConfig.getParam('eth-prover-address'),
       ],
