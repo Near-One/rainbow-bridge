@@ -53,8 +53,14 @@ contract('2020-09-09 Example', function ([_, addr1]) {
 
        await this.bridge.initWithValidators(borshifyInitialValidators(require('./init_validators_15178713.json')));
        await this.bridge.initWithBlock(block_15178713);
+       let now = await time.latest();
+       await timeIncreaseTo(now.add(time.duration.seconds(3600)));
        await this.bridge.addLightClientBlock(block_15178760);
+       now = await time.latest();
+       await timeIncreaseTo(now.add(time.duration.seconds(3600)));
        await this.bridge.addLightClientBlock(block_15204402);
+       now = await time.latest();
+       await timeIncreaseTo(now.add(time.duration.seconds(3600)));
        await this.bridge.addLightClientBlock(block_15248583);
    });
 });
