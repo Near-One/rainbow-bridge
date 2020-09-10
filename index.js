@@ -46,6 +46,10 @@ const LIBS_RS_SRC_DIR = path.join(
   BRIDGE_SRC_DIR,
   'node_modules/rainbow-bridge-rs'
 )
+const LIBS_TC_SRC_DIR = path.join(
+  BRIDGE_SRC_DIR,
+  'node_modules/rainbow-token-connector'
+)
 
 RainbowConfig.declareOption(
   'near-network-id',
@@ -56,7 +60,7 @@ RainbowConfig.declareOption('eth-node-url', 'The URL of the Ethereum node.')
 RainbowConfig.declareOption(
   'near-master-account',
   'The account of the master account on NEAR blockchain that can be used to deploy and initialize the test contracts.' +
-  ' This account will also own the initial supply of the fungible tokens.'
+    ' This account will also own the initial supply of the fungible tokens.'
 )
 RainbowConfig.declareOption(
   'near-master-sk',
@@ -163,12 +167,12 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'eth-locker-abi-path',
   'Path to the .abi file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
-  path.join(LIBS_SOL_SRC_DIR, 'token-locker/dist/TokenLocker.full.abi')
+  path.join(LIBS_TC_SRC_DIR, 'res/ERC20Locker.full.abi')
 )
 RainbowConfig.declareOption(
   'eth-locker-bin-path',
   'Path to the .bin file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
-  path.join(LIBS_SOL_SRC_DIR, 'token-locker/dist/TokenLocker.full.bin')
+  path.join(LIBS_TC_SRC_DIR, 'res/ERC20Locker.full.bin')
 )
 RainbowConfig.declareOption(
   'eth-erc20-address',
@@ -177,12 +181,12 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'eth-erc20-abi-path',
   'Path to the .abi file defining Ethereum ERC20 contract.',
-  path.join(LIBS_SOL_SRC_DIR, 'token-locker/dist/MyERC20.full.abi')
+  path.join(LIBS_TC_SRC_DIR, 'res/TToken.full.abi')
 )
 RainbowConfig.declareOption(
   'eth-erc20-bin-path',
   'Path to the .bin file defining Ethereum ERC20 contract.',
-  path.join(LIBS_SOL_SRC_DIR, 'token-locker/dist/MyERC20.full.bin')
+  path.join(LIBS_TC_SRC_DIR, 'res/TToken.full.bin')
 )
 RainbowConfig.declareOption(
   'eth-ed25519-address',
@@ -557,6 +561,6 @@ RainbowConfig.addOptions(
     .action(NearDump.execute),
   ['near-node-url']
 )
-  ; (async () => {
-    await program.parseAsync(process.argv)
-  })()
+;(async () => {
+  await program.parseAsync(process.argv)
+})()
