@@ -2,9 +2,9 @@
   "eth2nearClientContractPath": "~/.rainbow/bridge/libs-rs/res/eth_client.wasm",
   "eth2nearClientValidateEthash": "false",
   "eth2nearProverContractPath": "~/.rainbow/bridge/libs-rs/res/eth_prover.wasm",
-  "nearFunTokenContractPath": "~/.rainbow/bridge/libs-rs/res/mintable_fungible_token.wasm",
-  "ethLockerAbiPath": "~/.rainbow/bridge/node_modules/rainbow-token-connector/res/ERC20Locker.full.abi",
-  "ethLockerBinPath": "~/.rainbow/bridge/node_modules/rainbow-token-connector/res/ERC20Locker.full.bin",
+  "nearFunTokenContractPath": "~/.rainbow/bridge/node_modules/rainbow-token-connector/res/bridge_token.wasm",
+  "ethLockerAbiPath": "~/.rainbow/bridge/node_modules/rainbow-token-connector/res/BridgeTokenFactory.full.abi",
+  "ethLockerBinPath": "~/.rainbow/bridge/node_modules/rainbow-token-connector/res/BridgeTokenFactory.full.bin",
   "ethErc20AbiPath": "~/.rainbow/bridge/node_modules/rainbow-token-connector/res/TToken.full.abi",
   "ethErc20BinPath": "~/.rainbow/bridge/node_modules/rainbow-token-connector/res/TToken.full.abi"
 }

@@ -153,7 +153,7 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'near-fun-token-contract-path',
   'The path to the Wasm file containing the fungible contract. Note, this version of fungible contract should support minting.',
-  path.join(LIBS_RS_SRC_DIR, 'res/mintable_fungible_token.wasm')
+  path.join(LIBS_TC_SRC_DIR, 'res/bridge_token.wasm')
 )
 RainbowConfig.declareOption(
   'near-fun-token-init-balance',
@@ -167,12 +167,12 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'eth-locker-abi-path',
   'Path to the .abi file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
-  path.join(LIBS_TC_SRC_DIR, 'res/ERC20Locker.full.abi')
+  path.join(LIBS_TC_SRC_DIR, 'res/BridgeTokenFactory.full.abi')
 )
 RainbowConfig.declareOption(
   'eth-locker-bin-path',
   'Path to the .bin file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
-  path.join(LIBS_TC_SRC_DIR, 'res/ERC20Locker.full.bin')
+  path.join(LIBS_TC_SRC_DIR, 'res/BridgeTokenFactory.full.bin')
 )
 RainbowConfig.declareOption(
   'eth-erc20-address',
