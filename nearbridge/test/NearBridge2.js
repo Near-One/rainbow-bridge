@@ -49,13 +49,13 @@ contract('2020-09-09 Example', function ([_, addr1]) {
        const block_15178713 = borshify(require('./block_15178713.json'));
        const block_15178760 = borshify(require('./block_15178760.json'));
        const block_15204402 = borshify(require('./block_15204402.json'));
-       const block_15205393 = borshify(require('./block_15205393.json'));
+       const block_15248583 = borshify(require('./block_15248583.json'));
 
-       await this.bridge.initWithValidators(borshifyInitialValidators(require('./init_validators_15178713.json').next_bps));
+       await this.bridge.initWithValidators(borshifyInitialValidators(require('./init_validators_15178713.json')));
        await this.bridge.initWithBlock(block_15178713);
        await this.bridge.addLightClientBlock(block_15178760);
        await this.bridge.addLightClientBlock(block_15204402);
-       await this.bridge.addLightClientBlock(block_15205393);
+       await this.bridge.addLightClientBlock(block_15248583);
    });
 });
 
