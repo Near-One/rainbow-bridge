@@ -27,7 +27,7 @@ class NearMintableToken extends BorshContract {
       viewMethods: [],
       changeMethods: [
         {
-          methodName: 'mint',
+          methodName: 'deposit',
           inputFieldType: 'Proof',
           outputFieldType: null,
         },

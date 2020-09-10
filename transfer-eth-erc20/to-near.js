@@ -63,7 +63,11 @@ class TransferETHERC20ToNear {
       const transaction = await robustWeb3.callContract(
         ethTokenLockerContract,
         'lockToken',
-        [Number(amount), nearReceiverAccount],
+        [
+          RainbowConfig.getParam('eth-erc20-address'),
+          Number(amount),
+          nearReceiverAccount,
+        ],
         {
           from: ethSenderAccount,
           gas: 5000000,
@@ -179,7 +183,7 @@ class TransferETHERC20ToNear {
     })
   }
 
-  static async mint({
+  static async deposit({
     proof_locker,
     nearTokenContract,
     nearTokenContractBorsh,
@@ -194,17 +198,17 @@ class TransferETHERC20ToNear {
     )
     // @ts-ignore
     try {
-      await nearTokenContractBorsh.mint(
+      await nearTokenContractBorsh.deposit(
         proof_locker,
         new BN('300000000000000'),
-        // We need to attach tokens because minting increases the contract state, by <600 bytes, which
+        // We need to attach tokens because minting (deposit) increases the contract state, by <600 bytes, which
         // requires an additional 0.06 NEAR to be deposited to the account for state staking.
         // Note technically 0.0537 NEAR should be enough, but we round it up to stay on the safe side.
         new BN('100000000000000000000').mul(new BN('600'))
       )
       console.log('Transferred')
     } catch (e) {
-      console.log('Mint failed with error:')
+      console.log('Deposit failed with error:')
       console.log(e)
       TransferETHERC20ToNear.showRetryAndExit()
     }
@@ -364,7 +368,7 @@ class TransferETHERC20ToNear {
       transferLog = TransferETHERC20ToNear.loadTransferLog()
     }
     if (transferLog.finished === 'block-safe') {
-      await TransferETHERC20ToNear.mint({
+      await TransferETHERC20ToNear.deposit({
         nearTokenContract,
         nearTokenContractBorsh,
         ...transferLog,
