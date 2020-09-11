@@ -1,4 +1,3 @@
-//const nearlib = require('near-api-js')
 const { nearlib } = require('rainbow-bridge-lib')
 const {
   InitNearContracts,
@@ -176,14 +175,21 @@ async function testInitTokenFactory() {
           ? lockerAddress.substr(2)
           : lockerAddress,
       },
+<<<<<<< HEAD
       new BN('300000000000000')
+=======
+      new BN('70000000000000000000000000')
+>>>>>>> WIP
     )
   } catch (err) {
     console.log(`Failed to initialize the token factory ${err}`)
     process.exit(1)
   }
   const erc20Address = RainbowConfig.getParam('eth-erc20-address')
+<<<<<<< HEAD
   console.log(erc20Address)
+=======
+>>>>>>> WIP
   try {
     // Try initializing the contract.
     await tokenFactoryContract.deploy_bridge_token(
@@ -192,7 +198,10 @@ async function testInitTokenFactory() {
           ? erc20Address.substr(2)
           : erc20Address,
       },
+<<<<<<< HEAD
       new BN('300000000000000'),
+=======
+>>>>>>> WIP
       new BN('150000000000000000000000000')
     )
   } catch (err) {
@@ -200,6 +209,7 @@ async function testInitTokenFactory() {
     process.exit(1)
   }
   console.log('Fungible token deployed')
+<<<<<<< HEAD
   RainbowConfig.setParam(
     'near-erc20-account',
     (erc20Address.startsWith('0x') ? erc20Address.substr(2) : erc20Address) +
@@ -219,6 +229,8 @@ async function testInitTokenFactory() {
   const balance = await erc20Contract.get_balance({
     owner_id: erc20Account,
   })
+=======
+>>>>>>> WIP
 }
 
 testInitTokenFactory()

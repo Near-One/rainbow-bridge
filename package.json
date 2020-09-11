@@ -35,7 +35,7 @@
     "rainbow-bridge-sol": "1.1.0",
     "request": "^2.88.2",
     "web3": "=1.2.6",
-    "rainbow-token-connector": "near/rainbow-token-connector#620ad3e45f9f722d77f88a7a39b252d5a4ead9ef"
+    "rainbow-token-connector": "near/rainbow-token-connector#0f874679dc534bfe9cbe8092584a5594a299fda1"
   },
   "devDependencies": {
     "eslint": "^6.8.0",
