@@ -87,7 +87,10 @@ class RainbowConfig {
         return this.configFile.get(camelCase)
       } else {
         const decl = this.paramDeclarations[name]
-        if (typeof decl.defaultValue !== 'undefined') {
+        if (
+          typeof decl !== 'undefined' &&
+          typeof decl.defaultValue !== 'undefined'
+        ) {
           return decl.defaultValue
         } else {
           return null
@@ -122,7 +125,10 @@ class RainbowConfig {
   static saveConfig() {
     for (const name in this.paramValues) {
       const value = this.paramValues[name]
-      if (this.paramDeclarations[name].noConfig) {
+      if (
+        typeof this.paramDeclarations[name] === 'undefined' ||
+        this.paramDeclarations[name].noConfig
+      ) {
         continue
       }
       if (
