@@ -186,7 +186,7 @@ contract NearBridge is INearBridge {
     }
 
     function _checkBp(NearDecoder.LightClientBlock memory nearBlock, BlockProducerInfo storage bpInfo) internal {
-        require(nearBlock.approvals_after_next.length == bpInfo.bpsLength, "NearBridge: number of BPs should match number of approvals");
+        require(nearBlock.approvals_after_next.length >= bpInfo.bpsLength, "NearBridge: number of approvals should be at least as large as number of BPs");
 
         uint256 votedFor = 0;
         for (uint i = 0; i < bpInfo.bpsLength; i++) {
@@ -195,6 +195,7 @@ contract NearBridge is INearBridge {
                 votedFor = votedFor.add(bpInfo.bps[i].stake);
             }
         }
+        // Last block in the epoch might contain extra approvals that light client can ignore.
 
         require(votedFor > bpInfo.totalStake.mul(2).div(3), "NearBridge: Less than 2/3 voted by the block after next");
     }
