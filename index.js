@@ -158,7 +158,7 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'near-fun-token-init-balance',
   'The initial balance of fungible token contract in femtoNEAR.',
-  '100000000000000000000000000'
+  '1000000000000000000000000000'
 )
 RainbowConfig.declareOption(
   'eth-locker-address',
@@ -245,6 +245,7 @@ RainbowConfig.declareOption(
   'How many seconds should we wait after the NEAR header becomes valid before we submit the next one.',
   '0'
 )
+RainbowConfig.declareOption('near-erc20-account', 'Must be declared before set')
 
 program.version('0.1.0')
 
