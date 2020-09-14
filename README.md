@@ -231,10 +231,10 @@ rainbow init-eth-erc20
 rainbow init-eth-locker
 ```
 
-Now, let's initialize token on NEAR blockchain that will mirror the token on Ethereum side.
+Now, let's initialize token factory on NEAR blockchain.
 
 ```bash
-rainbow init-near-fun-token
+rainbow init-near-token-factory
 ```
 
 ### Starting the services
@@ -258,12 +258,12 @@ pm2 logs
 Finally, let's transfer some tokens
 
 ```bash
-rainbow transfer-eth-erc20-to-near --amount 1000 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account rainbow_bridge_eth_on_near_prover --near-master-account nearfuntoken
+rainbow transfer-eth-erc20-to-near --amount 1000 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account rainbow_bridge_eth_on_near_prover --near-master-account neartokenfactory
 ```
 
 Note, when we deployed ERC20 to the Ethereum blockchain we have minted a large number of tokens to the default master
 key of Ganache, so we have transferred ERC20 tokens from it to `alice.test.near`.
-Notice that we are using `nearfuntoken` account here to pay for the NEAR gas fees, any account for which we know a secret key would've worked too.
+Notice that we are using `neartokenfactory` account here to pay for the NEAR gas fees, any account for which we know a secret key would've worked too.
 You must observe blocks being submitted.
 
 Now let's try to transfer one token back to Ethereum
