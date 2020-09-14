@@ -1869,7 +1869,7 @@ eth-lib@^0.2.8:
     elliptic "^6.4.0"
     xhr-request-promise "^0.1.2"
 
-"eth-object@github:near/eth-object#54e03b8aac8208cf724e206d49ffb8bdd30451d7", eth-object@near/eth-object#54e03b8aac8208cf724e206d49ffb8bdd30451d7:
+eth-object@near/eth-object#54e03b8aac8208cf724e206d49ffb8bdd30451d7:
   version "1.0.3"
   resolved "https://codeload.github.com/near/eth-object/tar.gz/54e03b8aac8208cf724e206d49ffb8bdd30451d7"
   dependencies:
@@ -1877,7 +1877,7 @@ eth-lib@^0.2.8:
     ethereumjs-util "^7.0.3"
     web3 "^1.2.9"
 
-"eth-util-lite@github:near/eth-util-lite#master", eth-util-lite@near/eth-util-lite#master:
+eth-util-lite@near/eth-util-lite#master:
   version "1.0.1"
   resolved "https://codeload.github.com/near/eth-util-lite/tar.gz/ae0210cbe127b4d43ba01fd7cd4898d1a3f6c96a"
   dependencies:
@@ -4053,10 +4053,10 @@ rainbow-bridge-rs@1.0.2:
   resolved "https://registry.yarnpkg.com/rainbow-bridge-rs/-/rainbow-bridge-rs-1.0.2.tgz#824a9f3cb00f083cbf737d5dc7bc11b0682de27c"
   integrity sha512-8HHPwsDmTIvROzJPvbw6RJDKnge8xDAi9MBdCVuC1JdU51t6aFRHZBsORvdGd89yYQaz3hLm8jWzTZtYV2XOdA==
 
-rainbow-bridge-sol@1.0.11:
-  version "1.0.11"
-  resolved "https://registry.yarnpkg.com/rainbow-bridge-sol/-/rainbow-bridge-sol-1.0.11.tgz#67654455ae17f6604f314eed2d6e77edf8da9b41"
-  integrity sha512-31TBeg1b16/Y/s64B89AW1uCiqkOgT64p9/2T6MKlcOJ46ky2qHhntfKpgU9Ymjsg0aYeDZzIbeZ+hY3qCHJ+Q==
+rainbow-bridge-sol@1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/rainbow-bridge-sol/-/rainbow-bridge-sol-1.1.0.tgz#5a6f8405391924a833560c3ab1fc2f8b86e716fa"
+  integrity sha512-r2eu6pwi837BjGUfWD+bnsmW+PKV+Ku1GVo9PT/puaQY6/Hx+N6h5thTaZSqILj2gguRubDbLQgTmw7H/LJeaw==
 
 randombytes@^2.0.0, randombytes@^2.0.1, randombytes@^2.0.5, randombytes@^2.1.0:
   version "2.1.0"
