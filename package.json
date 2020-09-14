@@ -1,6 +1,6 @@
 {
   "name": "rainbow-bridge-cli",
-  "version": "1.0.11",
+  "version": "1.1.0",
   "description": "CLI to set up the environment needed for the bridge to work.",
   "main": "index.js",
   "bin": {
@@ -32,7 +32,7 @@
     "pm2-promise": "^2.0.1",
     "rainbow-bridge-lib": "1.0.2",
     "rainbow-bridge-rs": "1.0.2",
-    "rainbow-bridge-sol": "1.0.11",
+    "rainbow-bridge-sol": "1.1.0",
     "request": "^2.88.2",
     "web3": "=1.2.6"
   },
