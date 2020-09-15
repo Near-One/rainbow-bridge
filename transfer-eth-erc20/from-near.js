@@ -2,6 +2,7 @@ const Web3 = require('web3')
 const nearlib = require('near-api-js')
 const BN = require('bn.js')
 const fs = require('fs')
+//const assert = require('bsert')
 const bs58 = require('bs58')
 const { toBuffer } = require('eth-util-lite')
 const { verifyAccount } = require('../rainbow/helpers')
@@ -62,14 +63,14 @@ class TransferEthERC20FromNear {
     )
   }
 
-  static async burn({
+  static async withdraw({
     nearTokenContract,
     nearSenderAccountId,
     amount,
     ethReceiverAddress,
     nearSenderAccount,
   }) {
-    // Burn the token on Near side.
+    // Withdraw the token on Near side.
     try {
       const old_balance = await backoff(10, () =>
         nearTokenContract.get_balance({
@@ -77,75 +78,67 @@ class TransferEthERC20FromNear {
         })
       )
       console.log(
-        `Balance of ${nearSenderAccountId} before burning: ${old_balance}`
+        `Balance of ${nearSenderAccountId} before withdrawing: ${old_balance}`
       )
 
       console.log(
-        `Burning ${amount} tokens on NEAR blockchain in favor of ${ethReceiverAddress}.`
+        `Withdrawing ${amount} tokens on NEAR blockchain in favor of ${ethReceiverAddress}.`
       )
-      const txBurn = await nearJsonContractFunctionCall(
-        RainbowConfig.getParam('near-fun-token-account'),
+      const txWithdraw = await nearJsonContractFunctionCall(
+        RainbowConfig.getParam('near-erc20-account'),
         nearSenderAccount,
-        'burn',
+        'withdraw',
         { amount: amount, recipient: ethReceiverAddress },
         new BN('300000000000000'),
         new BN(0)
       )
+      console.log(`tx withdraw: ${JSON.stringify(txWithdraw)}`)
 
-      TransferEthERC20FromNear.recordTransferLog({ finished: 'burn', txBurn })
+      TransferEthERC20FromNear.recordTransferLog({
+        finished: 'withdraw',
+        txWithdraw,
+      })
     } catch (txRevertMessage) {
-      console.log('Failed to burn.')
+      console.log('Failed to withdraw.')
       console.log(txRevertMessage.toString())
       TransferEthERC20FromNear.showRetryAndExit()
     }
   }
 
-  static async findBurnInBlock({ txBurn, nearSenderAccountId, near }) {
-    // Either hash of the transaction or the receipt. When transaction singe is the same as the fun token address it is
-    // the hash of the transaction, since Near runtime executes contract immediately. Otherwise hash of the receipt
-    // that was executed on another shard.
+  static async findWithdrawInBlock({ txWithdraw, nearSenderAccountId, near }) {
     try {
       let txReceiptId
       let txReceiptBlockHash
       let idType
-      if (
-        RainbowConfig.getParam('near-fun-token-account') === nearSenderAccountId
-      ) {
-        if (txBurn.receipts_outcome.length <= 1) {
-          txReceiptId = txBurn.transaction.hash
-          txReceiptBlockHash = txBurn.transaction_outcome.block_hash
-          idType = 'transaction'
-        } else {
-          throw new Error(
-            `Expected exactly one receipt when signer and fun token account are the same, but received: ${JSON.stringify(
-              txBurn
-            )}`
-          )
-        }
+      /*assert(
+        RainbowConfig.getParam('near-fun-token-account') !== nearSenderAccountId
+      )*/
+
+      // Getting 1st tx
+      const receipts = txWithdraw.transaction_outcome.outcome.receipt_ids
+      if (receipts.length === 1) {
+        txReceiptId = receipts[0]
+        idType = 'receipt'
       } else {
-        if (txBurn.receipts_outcome.length <= 2) {
-          const receipts = txBurn.transaction_outcome.outcome.receipt_ids
-          if (receipts.length === 1) {
-            txReceiptId = receipts[0]
-            txReceiptBlockHash = txBurn.receipts_outcome.find(
-              el => el.id == txReceiptId
-            ).block_hash
-            idType = 'receipt'
-          } else {
-            throw new Error(
-              `Fungible token transaction call is expected to produce only one receipt, but produced: ${JSON.stringify(
-                txBurn
-              )}`
-            )
-          }
-        } else {
-          throw new Error(
-            `Fungible token is not expected to perform cross contract calls: ${JSON.stringify(
-              txBurn
-            )}`
-          )
-        }
+        throw new Error(
+          `Fungible token transaction call is expected to produce only one receipt, but produced: ${JSON.stringify(
+            txWithdraw
+          )}`
+        )
       }
+
+      // Getting 2nd tx
+      try {
+        txReceiptId = txWithdraw.receipts_outcome.find(
+          (el) => el.id == txReceiptId
+        ).outcome.status.SuccessReceiptId
+        txReceiptBlockHash = txWithdraw.receipts_outcome.find(
+          (el) => el.id == txReceiptId
+        ).block_hash
+      } catch (e) {
+        throw new Error(`Invalid tx withdraw: ${JSON.stringify(txWithdraw)}`, e)
+      }
+
       // Get block in which the outcome was processed.
       const outcomeBlock = await backoff(10, () =>
         near.connection.provider.block({
@@ -153,14 +146,14 @@ class TransferEthERC20FromNear {
         })
       )
       TransferEthERC20FromNear.recordTransferLog({
-        finished: 'find-burn',
+        finished: 'find-withdraw',
         txReceiptBlockHash,
         txReceiptId,
         outcomeBlock,
         idType,
       })
     } catch (txRevertMessage) {
-      console.log('Failed to find burn in block.')
+      console.log('Failed to find withdraw in block.')
       console.log(txRevertMessage.toString())
       TransferEthERC20FromNear.showRetryAndExit()
     }
@@ -223,14 +216,14 @@ class TransferEthERC20FromNear {
           await sleep(sleepSec * 1000)
         }
       }
-      console.log(`Burnt ${JSON.stringify(amount)}`)
+      console.log(`Withdrawn ${JSON.stringify(amount)}`)
       const new_balance = await backoff(10, () =>
         nearTokenContract.get_balance({
           owner_id: nearSenderAccountId,
         })
       )
       console.log(
-        `Balance of ${nearSenderAccountId} after burning: ${new_balance}`
+        `Balance of ${nearSenderAccountId} after withdrawing: ${new_balance}`
       )
       TransferEthERC20FromNear.recordTransferLog({
         finished: 'wait-block',
@@ -302,7 +295,7 @@ class TransferEthERC20FromNear {
     ethReceiverAddress,
     ethTokenLockerContract,
     ethMasterAccount,
-    web3,
+    robustWeb3,
   }) {
     try {
       // Check that the proof is correct.
@@ -322,16 +315,29 @@ class TransferEthERC20FromNear {
       console.log(
         `ERC20 balance of ${ethReceiverAddress} before the transfer: ${oldBalance}`
       )
-      await ethTokenLockerContract.methods
+      await robustWeb3.callContract(
+        ethTokenLockerContract,
+        'unlockToken',
+        [borshProofRes, clientBlockHeight],
+        {
+          from: ethMasterAccount,
+          gas: 5000000,
+          handleRevert: true,
+          gasPrice: new BN(await robustWeb3.web3.eth.getGasPrice()).mul(
+            new BN(RainbowConfig.getParam('eth-gas-multiplier'))
+          ),
+        }
+      )
+      /*await ethTokenLockerContract.methods
         .unlockToken(borshProofRes, clientBlockHeight)
         .send({
           from: ethMasterAccount,
           gas: 5000000,
           handleRevert: true,
-          gasPrice: new BN(await web3.eth.getGasPrice()).mul(
+          gasPrice: new BN(await robustWeb3.web3.eth.getGasPrice()).mul(
             new BN(RainbowConfig.getParam('eth-gas-multiplier'))
           ),
-        })
+        })*/
       const newBalance = await ethERC20Contract.methods
         .balanceOf(ethReceiverAddress)
         .call()
@@ -374,15 +380,15 @@ class TransferEthERC20FromNear {
 
     const nearTokenContract = new nearlib.Contract(
       nearSenderAccount,
-      RainbowConfig.getParam('near-fun-token-account'),
+      RainbowConfig.getParam('near-erc20-account'),
       {
-        changeMethods: ['new', 'burn'],
+        changeMethods: ['new', 'withdraw'],
         viewMethods: ['get_balance'],
       }
     )
     const nearTokenContractBorsh = new NearMintableToken(
       nearSenderAccount,
-      RainbowConfig.getParam('near-fun-token-account')
+      RainbowConfig.getParam('near-erc20-account')
     )
     await nearTokenContractBorsh.accessKeyInit()
 
@@ -439,7 +445,7 @@ class TransferEthERC20FromNear {
 
     let transferLog = TransferEthERC20FromNear.loadTransferLog()
     if (transferLog.finished === undefined) {
-      await TransferEthERC20FromNear.burn({
+      await TransferEthERC20FromNear.withdraw({
         nearTokenContract,
         nearSenderAccountId,
         amount,
@@ -448,15 +454,15 @@ class TransferEthERC20FromNear {
       })
       transferLog = TransferEthERC20FromNear.loadTransferLog()
     }
-    if (transferLog.finished === 'burn') {
-      await TransferEthERC20FromNear.findBurnInBlock({
-        txBurn: transferLog.txBurn,
+    if (transferLog.finished === 'withdraw') {
+      await TransferEthERC20FromNear.findWithdrawInBlock({
+        txWithdraw: transferLog.txWithdraw,
         nearSenderAccountId,
         near,
       })
       transferLog = TransferEthERC20FromNear.loadTransferLog()
     }
-    if (transferLog.finished === 'find-burn') {
+    if (transferLog.finished === 'find-withdraw') {
       await TransferEthERC20FromNear.waitBlock({
         clientContract,
         robustWeb3,
@@ -489,7 +495,7 @@ class TransferEthERC20FromNear {
         ethReceiverAddress,
         ethTokenLockerContract,
         ethMasterAccount,
-        web3,
+        robustWeb3,
       })
     }
 

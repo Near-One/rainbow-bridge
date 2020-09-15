@@ -67,6 +67,13 @@ class EthProofExtractor {
   }
 }
 
+EthProofExtractor.fromWeb3 = (web3) => {
+    let extractor = new EthProofExtractor();
+    extractor.robustWeb3 = new RobustWeb3(web3.currentProvider.host);
+    extractor.web3 = web3;
+    return extractor;
+}
+
 exports.EthProofExtractor = EthProofExtractor
 exports.receiptFromWeb3 = receiptFromWeb3
 exports.logFromWeb3 = logFromWeb3

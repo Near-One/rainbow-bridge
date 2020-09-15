@@ -75,7 +75,8 @@ class RainbowConfig {
     const res = this.maybeGetParam(name)
     if (res === null) {
       console.error(`Parameter ${name} must be specified.`)
-      process.exit(1)
+      throw new Error('error')
+      //process.exit(1)
     }
     return res
   }

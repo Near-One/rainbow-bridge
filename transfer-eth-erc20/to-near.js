@@ -29,12 +29,15 @@ class TransferETHERC20ToNear {
     ethSenderAccount,
   }) {
     // Approve tokens for transfer.
+    const lockerAddress = RainbowConfig.getParam('eth-locker-address')
     try {
-      console.log('Approving token transfer.')
+      console.log(
+        `Approving token transfer to ${lockerAddress} ${Number(amount)}.`
+      )
       await robustWeb3.callContract(
         ethERC20Contract,
         'approve',
-        [RainbowConfig.getParam('eth-locker-address'), Number(amount)],
+        [lockerAddress, Number(amount)],
         {
           from: ethSenderAccount,
           gas: 5000000,
@@ -58,17 +61,24 @@ class TransferETHERC20ToNear {
   }) {
     try {
       console.log(
-        'Transferring tokens from the ERC20 account to the token locker account.'
+        `Transferring tokens from the ERC20 account to the token locker account ${Number(
+          amount
+        )}.`
       )
       const transaction = await robustWeb3.callContract(
         ethTokenLockerContract,
         'lockToken',
-        [Number(amount), nearReceiverAccount],
+        [
+          RainbowConfig.getParam('eth-erc20-address'),
+          Number(amount),
+          nearReceiverAccount,
+        ],
         {
           from: ethSenderAccount,
           gas: 5000000,
         }
       )
+      console.log(transaction)
       const lockedEvent = transaction.events.Locked
       console.log('Success tranfer to locker')
       TransferETHERC20ToNear.recordTransferLog({
@@ -179,10 +189,11 @@ class TransferETHERC20ToNear {
     })
   }
 
-  static async mint({
+  static async deposit({
     proof_locker,
+    nearFactoryContract,
+    nearFactoryContractBorsh,
     nearTokenContract,
-    nearTokenContractBorsh,
     new_owner_id,
   }) {
     // @ts-ignore
@@ -194,7 +205,7 @@ class TransferETHERC20ToNear {
     )
     // @ts-ignore
     try {
-      await nearTokenContractBorsh.mint(
+      await nearFactoryContractBorsh.deposit(
         proof_locker,
         new BN('300000000000000'),
         // We need to attach tokens because minting increases the contract state, by <600 bytes, which
@@ -204,7 +215,7 @@ class TransferETHERC20ToNear {
       )
       console.log('Transferred')
     } catch (e) {
-      console.log('Mint failed with error:')
+      console.log('Deposit failed with error:')
       console.log(e)
       TransferETHERC20ToNear.showRetryAndExit()
     }
@@ -298,19 +309,27 @@ class TransferETHERC20ToNear {
     )
     await verifyAccount(near, nearMasterAccountId)
 
-    const nearTokenContract = new nearlib.Contract(
+    const nearFactoryContract = new nearlib.Contract(
       nearMasterAccount,
       RainbowConfig.getParam('near-fun-token-account'),
       {
-        changeMethods: ['new'],
+        changeMethods: ['deposit'],
+        viewMethods: [],
+      }
+    )
+    const nearTokenContract = new nearlib.Contract(
+      nearMasterAccount,
+      RainbowConfig.getParam('near-erc20-account'),
+      {
+        changeMethods: [],
         viewMethods: ['get_balance'],
       }
     )
-    const nearTokenContractBorsh = new NearMintableToken(
+    const nearFactoryContractBorsh = new NearMintableToken(
       nearMasterAccount,
       RainbowConfig.getParam('near-fun-token-account')
     )
-    await nearTokenContractBorsh.accessKeyInit()
+    await nearFactoryContractBorsh.accessKeyInit()
 
     const extractor = new EthProofExtractor()
     extractor.initialize(RainbowConfig.getParam('eth-node-url'))
@@ -330,6 +349,15 @@ class TransferETHERC20ToNear {
     )
 
     if (transferLog.finished === undefined) {
+      // TODO fix before using
+      // Mint tokens first???
+      /*await ethERC20Contract.methods
+        .mint(ethSenderAccount, Number(amount))
+        .send({ from: ethSenderAccount, gas: 5000000 })*/
+      console.log(
+        'Balance: ',
+        await ethERC20Contract.methods.balanceOf(ethSenderAccount).call()
+      )
       await TransferETHERC20ToNear.approve({
         robustWeb3,
         ethERC20Contract,
@@ -364,9 +392,10 @@ class TransferETHERC20ToNear {
       transferLog = TransferETHERC20ToNear.loadTransferLog()
     }
     if (transferLog.finished === 'block-safe') {
-      await TransferETHERC20ToNear.mint({
+      await TransferETHERC20ToNear.deposit({
+        nearFactoryContract,
+        nearFactoryContractBorsh,
         nearTokenContract,
-        nearTokenContractBorsh,
         ...transferLog,
       })
     }

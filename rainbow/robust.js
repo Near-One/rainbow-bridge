@@ -62,10 +62,20 @@ class RobustWeb3 {
         let tx = {
           from: options.from,
           to: contract.options.address,
+          handleRevert: options.handleRevert,
           gas: Web3.utils.toHex(options.gas),
-          gasPrice: Web3.utils.toHex(gasPrice),
+          gasPrice: options.gasPrice
+            ? options.gasPrice
+            : Web3.utils.toHex(gasPrice),
           nonce: Web3.utils.toHex(nonce),
           data: contract.methods[method](...args).encodeABI(),
+        }
+        // Call transaction via view method to check if there is specific error.
+        try {
+          await this.web3.eth.call(tx)
+        } catch (error) {
+          console.log(tx.from)
+          console.warn(error)
         }
 
         let receipt = await promiseWithTimeout(
@@ -242,6 +252,7 @@ const signAndSendTransaction = async (
         await sendTxnAsync()
       }
     } catch (e) {
+      errorMsg = e.message;
       // sleep to avoid socket hangout on retry too soon
       await sleep(500)
       continue
@@ -261,6 +272,7 @@ const signAndSendTransaction = async (
           break
         }
       } catch (e) {
+        errorMsg = e.message;
         await sleep((j + 1) * 500)
       }
     }
@@ -292,7 +304,6 @@ const signAndSendTransaction = async (
       continue
     }
   }
-
   throw new Error(errorMsg)
 }
 

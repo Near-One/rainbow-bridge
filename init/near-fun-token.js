@@ -57,19 +57,18 @@ class InitNearFunToken {
       tokenInitBalance,
       tokenContractPath
     )
-    const tokenContract = new nearlib.Contract(
+    const tokenFactoryContract = new nearlib.Contract(
       new nearlib.Account(near.connection, tokenAccount),
       tokenAccount,
       {
-        changeMethods: ['new'],
-        viewMethods: ['get_balance'],
+        changeMethods: ['new', 'deploy_bridge_token'],
+        viewMethods: ['get_bridge_token_account_id'],
       }
     )
+    const lockerAddress = RainbowConfig.getParam('eth-locker-address')
     try {
-      // Try initializing the contract.
-      // @ts-ignore
-      const lockerAddress = RainbowConfig.getParam('eth-locker-address')
-      await tokenContract.new(
+      // Try initializing the factory.
+      await tokenFactoryContract.new(
         {
           prover_account: proverAccount,
           locker_address: lockerAddress.startsWith('0x')
@@ -79,11 +78,38 @@ class InitNearFunToken {
         new BN('300000000000000')
       )
     } catch (err) {
+      console.log(`Failed to initialize the token factory ${err}`)
+      process.exit(1)
+    }
+    const erc20Address = RainbowConfig.getParam('eth-erc20-address')
+    console.log(erc20Address)
+    try {
+      // Try initializing the contract.
+      await tokenFactoryContract.deploy_bridge_token(
+        {
+          address: erc20Address.startsWith('0x')
+            ? erc20Address.substr(2)
+            : erc20Address,
+        },
+        new BN('300000000000000'),
+        new BN('150000000000000000000000000')
+      )
+    } catch (err) {
       console.log(`Failed to initialize the token contract ${err}`)
       process.exit(1)
     }
     console.log('Fungible token deployed')
+    RainbowConfig.setParam(
+      'near-erc20-account',
+      (erc20Address.startsWith('0x') ? erc20Address.substr(2) : erc20Address) +
+        '.' +
+        tokenAccount
+    )
     RainbowConfig.saveConfig()
+    console.log(
+      'near-erc20-account set to ' +
+        RainbowConfig.getParam('near-erc20-account')
+    )
   }
 }
 

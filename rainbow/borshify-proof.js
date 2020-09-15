@@ -3,7 +3,7 @@ const bs58 = require('bs58')
 
 function borshifyOutcomeProof(proof) {
   const statusToBuffer = (status) => {
-    console.log(status.SuccessValue)
+    console.log(status)
     if ('SuccessValue' in status) {
       const data = Buffer.from(status.SuccessValue, 'base64')
       return Buffer.concat([
