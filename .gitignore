@@ -14,3 +14,5 @@ venv
 **/transfer-eth-erc20-to-near.log.json
 **/*.swp
 **/*.tgz
+
+**/.yarn*
