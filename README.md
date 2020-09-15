@@ -17,7 +17,7 @@
 - [Usage](#usage)
 - [Security](#security)
 - [Gas costs](#gas-costs)
-- [Deploying Bridge on Testnet](#deploying-bridge-on-testnet)
+- [Using Bridge on Testnet](#using-bridge-on-testnet)
 - [Deploying and Using Locally](#deploying-and-using-locally)
 - [Contract Development Workflow](#contract-development-workflow)
 
@@ -91,41 +91,92 @@ Ethereum fees are the following:
 
 As of 2020-07-14 (gas price is 40 gwei) the cost of running bridge on NEAR mainnnet and Ethereum mainnet is approx 42 USD/day. The cost of ETH->NEAR transfer of ERC20 token is 1 USD. The cost of NEAR->ETH transfer of ERC20 token is 2 USD.
 
-## Deploying Bridge on Testnet
-This section describes how to deploy your own bridge to NEAR testnet and Ethereum Ropsten. Please keep in mind, that Ethereum Ropsten sometimes undergoes huge reorgs of more than [16k blocks](https://github.com/near/rainbow-bridge-cli/issues/329). Unfortunately, we don't want to wait for 16k confirmations during transfers, which would take several days. So instead we keep number of confirmations as low and just re-create the bridge when it gets broken by the re-orgs. Overall, Ropsten has the following unfortunate specifics that does not exist with Ethereum Mainnet:
+## Using Bridge on Testnet
+
+### PoA vs PoW Ethereum networks
+
+Rainbow bridge can be deployed either on PoW or PoA networks. However, the main use case of the bridge is Ethereum Mainnet, which makes its design very PoW-centric and it is only trustless and decentralized for PoW networks. Unfortunately, the only popular PoW testnet is Ropsten, which frequently undergoes huge reorgs of more than [16k blocks](https://github.com/near/rainbow-bridge-cli/issues/329), because people test 51% attacks on it. 16k reorgs can wipe out entire contracts and revert days of computations. Overall, Ropsten has the following unfortunate specifics that does not exist with Ethereum Mainnet:
 * Extremely long re-orgs;
 * Gas price volatility -- Ropsten blocks might have orders of magnitude different median gas price;
-* Slow block production -- sometimes Ropsten blocks are produced once per several minutes.
+* Slow block production -- sometimes Ropsten blocks are produced once per several minutes;
+* [Infura is unreliable on Ropsten](https://github.com/near/rainbow-bridge-cli/issues/330)
 
-### Preparation
-First, we need to prepare several accounts on NEAR Testnet and Ropsten with tokens.
+Therefore we advise users to not use Ropsten for bridge testing. Instead, we recommend using one of Ethereum's PoA testnet. Unfortunately, PoA networks have a differen header format and are also centralized by nature. Therefore when deploying bridge on PoA network please use `--near-client-trusted-signer` parameter. This will force `EthOnNearClient` to not validate Ethereum headers (since PoA headers are not valid PoW headers) and accept them only from the provided authority.
 
-To create accounts on NEAR Testnet navigate to https://wallet.testnet.near.org/ and create an account. If you need more than 500 tokens on that account, create several temporary accounts and send their tokens to one account. To obtain a secret key for that account install [near-cli](https://github.com/near/near-shell), run `near login`, and follow the process. You will find secret key in `~/.near-credentials` on your machine.
+The documenation below assumes Rinkeby testnet.
 
-To create accounts on Ropsten use https://faucet.ropsten.be/. If you are a member of NEAR organization and you need more Ropsten tokens contact max@near.org .
+### Using existing bridge on Rinkeby
 
-We need to create the following accounts:
-* One account on NEAR testnet with >=2000 NEAR to be used as master account, we will call it `<near_master_account>` with `<near_master_sk>` secret key;
-* One account on NEAR testnet with >=500 NEAR to be used for eth2nearrelay, we will call it `<eth2nearrelay_account>` with `<eth2nearrelay_sk>` secret key;
-* One account on Ropsten with 10 ETH to be used as master account, we will denote its private key as `<eth_master_sk>`;
-* One account on Ropsten with 10 ETH to be used for near2ethrelay, we will denote its private key as `<near2ethrelay_sk>`;
-* One account on Ropsten with 1 ETH to be used for watchdog, we will denote its private key as `<watchdog_sk>`.
+This section explains how to use existing bridge with mock ERC20 token that was already deployed. You would need to have some amount of this token on Rinkeby, so reach out to max@near.org if you want to give it a try.
 
-### Setup 
+We assume you have two accounts:
+* One NEAR account on NEAR testnet with at least 1 NEAR token. We denote it as `<near_token_holder_account>` and its secret key as `<near_token_holder_sk>`;
+* One Ethereum account on Rinkeby testnet with at least 1 ETH and 100 ERC20 tokens (this example uses ERC20 deployed to `0x8151a8F90267bFf183E06921841C5dE774499388` as an example. If you want some of these ERC20 tokens please contact max@near.org). We denote it as `<eth_token_holder_address>` and its private key as `<eth_token_holder_sk>`;
 
-Go to a cloud instance and install dependencies from [Pre-requisites](#pre-requisites).
+Make sure you have rainbow cli installed:
+```bash
+npm i -g rainbow-bridge-cli
+```
+If you have already used the bridge on this machine run a cleanup:
+```bash
+rainbow clean
+```
+Then create `~/.rainbow/config.json` file with the following content:
+```json
+{
+        "nearNetworkId": "testnet",
+        "nearNodeUrl": "https://rpc.testnet.near.org/",
+        "ethNodeUrl": "https://rinkeby.infura.io/v3/<project_id>",
+        "nearMasterAccount": "<near_token_holder_account>",
+        "nearMasterSk": "<near_token_holder_sk>",
+        "nearClientAccount": "ethonnearclient10",
+        "nearProverAccount": "ethonnearprover10",
+        "nearClientTrustedSigner": "eth2nearrelay10.testnet",
+        "ethMasterSk": "<eth_token_holder_sk>",
+        "ethEd25519Address": "0x9003342d15B21b4C42e1702447fE2f39FfAF55C2",
+        "ethClientAddress": "0xF721c979db97413AA9D0F91ad531FaBF769bb09C",
+        "ethProverAddress": "0xc5D62d66B8650E6242D9936c7e50E959BA0F9E37",
+        "ethErc20Address": "0x8151a8F90267bFf183E06921841C5dE774499388",
+        "ethLockerAddress": "0x5f7Cc23F90b5264a083dcB3b171c7111Dc32dD00",
+        "nearFunTokenAccount": "mintablefuntoken11"
+}
+```
+You can get infura project id, by registering at [infura.io](http://infura.io/).
+
+To transfer ERC20 from ETH to NEAR run:
+```bash
+rainbow transfer-eth-erc20-to-near --amount 10 --eth-sender-sk <eth_token_holder_address> --near-receiver-account <near_token_holder_account>
+```
+(If the command interrupts in the middle re-run it and it will resume the transfer. PoA RPC sometimes has issues)
+Wait for the transfer to finish. You should see:
+```
+Transferred
+Balance of <near_token_holder_account> after the transfer is 10
+```
+
+To transfer ERC20 back from NEAR to ETH run:
+```bash
+rainbow transfer-eth-erc20-from-near --amount 1 --near-sender-account <near_token_holder_account> --near-sender-sk <near_token_holder_sk> --eth-receiver-address <eth_token_holder_address>
+```
+
+You should see:
+```
+ERC20 balance of <eth_token_holder_address> after the transfer: 91
+```
+Congratulations, you have achieved a roundtrip of ERC20 token through the bridge!
+<!---
+### Deploying new bridge
+
+If you used bridge before from your machine, then clean up the setup. We recommend using cloud instance for deploying and running the bridge. Go to a cloud instance and install dependencies from [Pre-requisites](#pre-requisites).
 Then run:
 ```bash
-git clone https://github.com/near/rainbow-bridge-cli
-cd rainbow-bridge-cli
-yarn
-node index.js clean
-node index.js prepare
+rainbow clean
+rainbow prepare
 ```
 
 Then initialize `EthOnNearClient` and `EthOnNearProver`:
 ```bash
-node index.js init-near-contracts --near-network-id testnet --near-node-url <testnet_nodes_url> --eth-node-url https://ropsten.infura.io/v3/<infura_project_id> --near-master-account <near_master_account> --near-master-sk <near_master_sk> --near-client-account ethonnearclient01 --near-client-init-balance 2000000000000000000000000000 --near-prover-account ethonnearprover01
+rainbow init-near-contracts --near-network-id testnet --near-node-url <testnet_nodes_url> --eth-node-url https://ropsten.infura.io/v3/<infura_project_id> --near-master-account <near_master_account> --near-master-sk <near_master_sk> --near-client-account ethonnearclient01 --near-client-init-balance 2000000000000000000000000000 --near-prover-account ethonnearprover01
 ```
 * Make sure `ethonnearclient01` and `ethonnearprover01` do not exist yet. You can check it by going to https://explorer.testnet.near.org/accounts/ethonnearclient01 and https://explorer.testnet.near.org/accounts/ethonnearprover01 . If they exist, pick different names;
 * You can get `<infura_project_id>` by creating a free [infura](http://infura.io/) account. If you are working in NEAR organization please ask max@near.org;
@@ -149,16 +200,17 @@ Then start the `near2eth-relay` and watchdog:
 node index.js start near2eth-relay --eth-master-sk <near2ethrelay_sk>
 node index.js start bride-watchdog --eth-master-sk <watchdog_sk>
 ```
+-->
 
 ## Deploying and Using Locally
 
 To locally test the bridge run:
 
 ```bash
-node index.js clean
-node index.js prepare
-node index.js start near-node
-node index.js start ganache
+rainbow clean
+rainbow prepare
+rainbow start near-node
+rainbow start ganache
 ```
 
 ### Initializing the contracts
@@ -166,23 +218,23 @@ node index.js start ganache
 First let's initialize the contracts that bridge needs to function:
 
 ```bash
-node index.js init-near-contracts
-node index.js init-eth-ed25519
-node index.js init-eth-client --eth-client-lock-eth-amount 1000 --eth-client-lock-duration 10
-node index.js init-eth-prover
+rainbow init-near-contracts
+rainbow init-eth-ed25519
+rainbow init-eth-client --eth-client-lock-eth-amount 1000 --eth-client-lock-duration 10
+rainbow init-eth-prover
 ```
 
 Now, let's set up token on Ethereum blockchain that we can transfer to NEAR blockchain (this can be your own token).
 
 ```bash
-node index.js init-eth-erc20
-node index.js init-eth-locker
+rainbow init-eth-erc20
+rainbow init-eth-locker
 ```
 
 Now, let's initialize token on NEAR blockchain that will mirror the token on Ethereum side.
 
 ```bash
-node index.js init-near-fun-token
+rainbow init-near-fun-token
 ```
 
 ### Starting the services
@@ -190,9 +242,9 @@ node index.js init-near-fun-token
 Now start the services that will relay the information between the chains:
 
 ```bash
-node index.js start eth2near-relay
-node index.js start near2eth-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
-node index.js start bridge-watchdog --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501202
+rainbow start eth2near-relay
+rainbow start near2eth-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
+rainbow start bridge-watchdog --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501202
 ```
 
 Note, you can observe the logs of the relays by running:
@@ -206,7 +258,7 @@ pm2 logs
 Finally, let's transfer some tokens
 
 ```bash
-node index.js transfer-eth-erc20-to-near --amount 1000 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account rainbow_bridge_eth_on_near_prover --near-master-account nearfuntoken
+rainbow transfer-eth-erc20-to-near --amount 1000 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account rainbow_bridge_eth_on_near_prover --near-master-account nearfuntoken
 ```
 
 Note, when we deployed ERC20 to the Ethereum blockchain we have minted a large number of tokens to the default master
@@ -217,7 +269,7 @@ You must observe blocks being submitted.
 Now let's try to transfer one token back to Ethereum
 
 ```bash
-node index.js transfer-eth-erc20-from-near --amount 1 --near-sender-account rainbow_bridge_eth_on_near_prover --near-sender-sk ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP --eth-receiver-address 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8
+rainbow transfer-eth-erc20-from-near --amount 1 --near-sender-account rainbow_bridge_eth_on_near_prover --near-sender-sk ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP --eth-receiver-address 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8
 ```
 
 You should observe the change of the ERC20 balance as reported by the CLI.
@@ -228,13 +280,13 @@ Above steps are ways to run a local bridge and development workflows you need if
 
 - Install dependencies:
 ```bash
-node index.js clean
-node index.js prepare
+rainbow clean
+rainbow prepare
 ```
 - Start local NEAR network and Ganache
 ```bash
-node start near-node
-node start ganache
+rainbow near-node
+rainbow ganache
 ```
 - If you want to modify solidity contracts, go to `node_modules/rainbow-bridge-sol`, make changes there and run `./build_all.sh` to recompile solidity contracts.
 - If you want to modify rust contracts, go to `node_modules/ranbow-bridge-rs`, make changes there and run `./build_all.sh` to recompile rust contracts.
