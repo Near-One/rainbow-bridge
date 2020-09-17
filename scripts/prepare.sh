@@ -55,8 +55,10 @@ echo "Compiled source of nearcore"
 
 cd $BRIDGE_SRC
 # In local development, this update ethashproof repo
-# In npm package, this is safely ignored and ethashproof src is packaged
-git submodule update --init --recursive
+# In npm package, ethashproof src is packaged so this is skipped.
+if [ -d .git ]; then
+    git submodule update --init --recursive
+fi
 
 yarn
 echo "Installed CLI dependencies"
