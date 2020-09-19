@@ -33,7 +33,7 @@ node index.js init-eth-client --eth-client-lock-eth-amount 1e18 --eth-client-loc
 node index.js init-eth-prover
 node index.js init-eth-erc20
 node index.js init-eth-locker
-node index.js init-near-fun-token
+node index.js init-near-token-factory
 # First start pm2 daemon
 yarn run pm2 ping
 sleep 5
