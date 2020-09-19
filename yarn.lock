@@ -4048,7 +4048,7 @@ rainbow-bridge-sol@1.1.0:
   resolved "https://registry.yarnpkg.com/rainbow-bridge-sol/-/rainbow-bridge-sol-1.1.0.tgz#5a6f8405391924a833560c3ab1fc2f8b86e716fa"
   integrity sha512-r2eu6pwi837BjGUfWD+bnsmW+PKV+Ku1GVo9PT/puaQY6/Hx+N6h5thTaZSqILj2gguRubDbLQgTmw7H/LJeaw==
 
-rainbow-token-connector@near/rainbow-token-connector#0f874679dc534bfe9cbe8092584a5594a299fda1:
+rainbow-token-connector@near/rainbow-token-connector:
   version "0.0.0"
   resolved "https://codeload.github.com/near/rainbow-token-connector/tar.gz/0f874679dc534bfe9cbe8092584a5594a299fda1"
 
