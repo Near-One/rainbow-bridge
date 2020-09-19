@@ -5,6 +5,7 @@ const fs = require('fs')
 //const assert = require('bsert')
 const bs58 = require('bs58')
 const { toBuffer } = require('eth-util-lite')
+const { tokenAddressParam, tokenAccountParam } = require('./deploy-token')
 const { verifyAccount } = require('../rainbow/helpers')
 const { NearMintableToken } = require('../near-mintable-token')
 const { RainbowConfig } = require('../config')
@@ -66,6 +67,7 @@ class TransferEthERC20FromNear {
   static async withdraw({
     nearTokenContract,
     nearSenderAccountId,
+    tokenAccount,
     amount,
     ethReceiverAddress,
     nearSenderAccount,
@@ -85,7 +87,7 @@ class TransferEthERC20FromNear {
         `Withdrawing ${amount} tokens on NEAR blockchain in favor of ${ethReceiverAddress}.`
       )
       const txWithdraw = await nearJsonContractFunctionCall(
-        RainbowConfig.getParam('near-erc20-account'),
+        tokenAccount,
         nearSenderAccount,
         'withdraw',
         { amount: amount, recipient: ethReceiverAddress },
@@ -111,7 +113,7 @@ class TransferEthERC20FromNear {
       let txReceiptBlockHash
       let idType
       /*assert(
-        RainbowConfig.getParam('near-fun-token-account') !== nearSenderAccountId
+        RainbowConfig.getParam('near-token-factory-account') !== nearSenderAccountId
       )*/
 
       // Getting 1st tx
@@ -360,6 +362,13 @@ class TransferEthERC20FromNear {
     const ethReceiverAddress = command.ethReceiverAddress.startsWith('0x')
       ? command.ethReceiverAddress.substr(2)
       : command.ethReceiverAddress
+    const tokenAddress = command.tokenName
+      ? RainbowConfig.getParam(tokenAddressParam(command.tokenName))
+      : RainbowConfig.getParam('eth-erc20-address')
+    const tokenAccount = command.tokenName
+      ? RainbowConfig.getParam(tokenAccountParam(command.tokenName))
+      : RainbowConfig.getParam('near-erc20-account')
+
     const keyStore = new nearlib.keyStores.InMemoryKeyStore()
     await keyStore.setKey(
       RainbowConfig.getParam('near-network-id'),
@@ -380,7 +389,7 @@ class TransferEthERC20FromNear {
 
     const nearTokenContract = new nearlib.Contract(
       nearSenderAccount,
-      RainbowConfig.getParam('near-erc20-account'),
+      tokenAccount,
       {
         changeMethods: ['new', 'withdraw'],
         viewMethods: ['get_balance'],
@@ -388,7 +397,7 @@ class TransferEthERC20FromNear {
     )
     const nearTokenContractBorsh = new NearMintableToken(
       nearSenderAccount,
-      RainbowConfig.getParam('near-erc20-account')
+      tokenAccount
     )
     await nearTokenContractBorsh.accessKeyInit()
 
@@ -436,7 +445,7 @@ class TransferEthERC20FromNear {
     const ethERC20Contract = new web3.eth.Contract(
       // @ts-ignore
       JSON.parse(fs.readFileSync(RainbowConfig.getParam('eth-erc20-abi-path'))),
-      RainbowConfig.getParam('eth-erc20-address'),
+      tokenAddress,
       {
         from: ethMasterAccount,
         handleRevert: true,
@@ -448,6 +457,7 @@ class TransferEthERC20FromNear {
       await TransferEthERC20FromNear.withdraw({
         nearTokenContract,
         nearSenderAccountId,
+        tokenAccount,
         amount,
         ethReceiverAddress,
         nearSenderAccount,

@@ -74,9 +74,7 @@ class RainbowConfig {
   static getParam(name) {
     const res = this.maybeGetParam(name)
     if (res === null) {
-      console.error(`Parameter ${name} must be specified.`)
-      throw new Error('error')
-      //process.exit(1)
+      throw new Error(`Parameter ${name} must be specified.`)
     }
     return res
   }
@@ -126,7 +124,7 @@ class RainbowConfig {
   static saveConfig() {
     for (const name in this.paramValues) {
       const value = this.paramValues[name]
-      if (
+      /*if (
         typeof this.paramDeclarations[name] === 'undefined' ||
         this.paramDeclarations[name].noConfig
       ) {
@@ -136,10 +134,10 @@ class RainbowConfig {
         value.paramType === 'arg' ||
         value.paramType === 'default' ||
         value.paramType === 'config'
-      ) {
-        const camelCase = changeCase.camelCase(name)
-        this.configFile.set(camelCase, value.value)
-      }
+      ) {*/
+      const camelCase = changeCase.camelCase(name)
+      this.configFile.set(camelCase, value.value)
+      //}
     }
   }
 }

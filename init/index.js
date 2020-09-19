@@ -6,7 +6,7 @@ const {
   InitEthProver,
 } = require('./eth-contracts')
 const { InitNearContracts } = require('./near-contracts')
-const { InitNearFunToken } = require('./near-fun-token')
+const { InitNearTokenFactory } = require('./near-token-factory')
 
 exports.InitEthEd25519 = InitEthEd25519
 exports.InitEthErc20 = InitEthErc20
@@ -14,4 +14,4 @@ exports.InitEthLocker = InitEthLocker
 exports.InitEthClient = InitEthClient
 exports.InitEthProver = InitEthProver
 exports.InitNearContracts = InitNearContracts
-exports.InitNearFunToken = InitNearFunToken
+exports.InitNearTokenFactory = InitNearTokenFactory

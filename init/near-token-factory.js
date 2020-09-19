@@ -2,25 +2,28 @@ const nearlib = require('near-api-js')
 const { maybeCreateAccount, verifyAccount } = require('../rainbow/helpers')
 const { RainbowConfig } = require('../config')
 const { BN } = require('ethereumjs-util')
+const { DeployToken } = require('../transfer-eth-erc20/deploy-token')
 
-class InitNearFunToken {
+class InitNearTokenFactory {
   static async execute() {
     const masterAccount = RainbowConfig.getParam('near-master-account')
     const masterSk = RainbowConfig.getParam('near-master-sk')
-    const tokenAccount = RainbowConfig.getParam('near-fun-token-account')
-    let tokenSk = RainbowConfig.maybeGetParam('near-fun-token-sk')
+    const tokenFactoryAccount = RainbowConfig.getParam(
+      'near-token-factory-account'
+    )
+    let tokenSk = RainbowConfig.maybeGetParam('near-token-factory-sk')
     if (!tokenSk) {
       console.log(
         'Secret key for fungible token is not specified. Reusing master secret key.'
       )
       tokenSk = masterSk
-      RainbowConfig.setParam('near-fun-token-sk', tokenSk)
+      RainbowConfig.setParam('near-token-factory-sk', tokenSk)
     }
     const tokenContractPath = RainbowConfig.getParam(
-      'near-fun-token-contract-path'
+      'near-token-factory-contract-path'
     )
     const tokenInitBalance = RainbowConfig.getParam(
-      'near-fun-token-init-balance'
+      'near-token-factory-init-balance'
     )
     const proverAccount = RainbowConfig.getParam('near-prover-account')
 
@@ -37,7 +40,7 @@ class InitNearFunToken {
     )
     await keyStore.setKey(
       nearNetworkId,
-      tokenAccount,
+      tokenFactoryAccount,
       nearlib.KeyPair.fromString(tokenSk)
     )
     const near = await nearlib.connect({
@@ -52,14 +55,14 @@ class InitNearFunToken {
     await maybeCreateAccount(
       near,
       masterAccount,
-      tokenAccount,
+      tokenFactoryAccount,
       tokenPk,
       tokenInitBalance,
       tokenContractPath
     )
     const tokenFactoryContract = new nearlib.Contract(
-      new nearlib.Account(near.connection, tokenAccount),
-      tokenAccount,
+      new nearlib.Account(near.connection, tokenFactoryAccount),
+      tokenFactoryAccount,
       {
         changeMethods: ['new', 'deploy_bridge_token'],
         viewMethods: ['get_bridge_token_account_id'],
@@ -81,36 +84,9 @@ class InitNearFunToken {
       console.log(`Failed to initialize the token factory ${err}`)
       process.exit(1)
     }
-    const erc20Address = RainbowConfig.getParam('eth-erc20-address')
-    console.log(erc20Address)
-    try {
-      // Try initializing the contract.
-      await tokenFactoryContract.deploy_bridge_token(
-        {
-          address: erc20Address.startsWith('0x')
-            ? erc20Address.substr(2)
-            : erc20Address,
-        },
-        new BN('300000000000000'),
-        new BN('150000000000000000000000000')
-      )
-    } catch (err) {
-      console.log(`Failed to initialize the token contract ${err}`)
-      process.exit(1)
-    }
-    console.log('Fungible token deployed')
-    RainbowConfig.setParam(
-      'near-erc20-account',
-      (erc20Address.startsWith('0x') ? erc20Address.substr(2) : erc20Address) +
-        '.' +
-        tokenAccount
-    )
-    RainbowConfig.saveConfig()
-    console.log(
-      'near-erc20-account set to ' +
-        RainbowConfig.getParam('near-erc20-account')
-    )
+
+    DeployToken.execute('erc20', RainbowConfig.getParam('eth-erc20-address'))
   }
 }
 
-exports.InitNearFunToken = InitNearFunToken
+exports.InitNearTokenFactory = InitNearTokenFactory
