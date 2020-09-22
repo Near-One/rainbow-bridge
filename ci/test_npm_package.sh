@@ -14,6 +14,9 @@ npm pack
 rm -rf testenv
 mkdir testenv
 cd testenv
+#mkdir -p /var/lib/buildkite-agent/.rainbow/logs
+#mkdir -p /var/lib/buildkite-agent/.pm2
+#touch /var/lib/buildkite-agent/.pm2/pm2.log
 npm init -y > /dev/null
 npm i ${ROOT_DIR}/rainbow-bridge-cli-*.tgz
 export PATH=${ROOT_DIR}/testenv/node_modules/.bin:$PATH
