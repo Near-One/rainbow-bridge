@@ -1,6 +1,6 @@
 {
   "name": "rainbow-bridge-cli",
-  "version": "1.1.2",
+  "version": "2.0.0",
   "description": "CLI to set up the environment needed for the bridge to work.",
   "main": "index.js",
   "bin": {
@@ -30,9 +30,9 @@
     "node-fetch": "^2.6.0",
     "pm2": "^4.4.0",
     "pm2-promise": "^2.0.1",
-    "rainbow-bridge-lib": "1.0.6",
+    "rainbow-bridge-lib": "2.0.0",
     "rainbow-bridge-rs": "1.0.2",
-    "rainbow-bridge-sol": "1.1.1",
+    "rainbow-bridge-sol": "2.0.0",
     "request": "^2.88.2",
     "web3": "=1.2.6",
     "rainbow-token-connector": "near/rainbow-token-connector#87ba0a1a8268f26ff58b67a6139ddb74f8eecce6"
