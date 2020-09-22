@@ -30,12 +30,12 @@
     "node-fetch": "^2.6.0",
     "pm2": "^4.4.0",
     "pm2-promise": "^2.0.1",
-    "rainbow-bridge-lib": "near/rainbow-bridge-lib#373e9f787e51703f186e83e8036dc35131742c1b",
+    "rainbow-bridge-lib": "1.0.6",
     "rainbow-bridge-rs": "1.0.2",
-    "rainbow-bridge-sol": "1.1.0",
+    "rainbow-bridge-sol": "1.1.1",
     "request": "^2.88.2",
     "web3": "=1.2.6",
-    "rainbow-token-connector": "near/rainbow-token-connector"
+    "rainbow-token-connector": "near/rainbow-token-connector#87ba0a1a8268f26ff58b67a6139ddb74f8eecce6"
   },
   "devDependencies": {
     "eslint": "^6.8.0",
