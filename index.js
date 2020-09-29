@@ -479,24 +479,24 @@ RainbowConfig.addOptions(
   ]
 )
 
-// RainbowConfig.addOptions(
-//     program
-//         .command('init-eth-721-locker')
-//         .description(
-//             'Deploys and initializes locker contract on Ethereum blockchain for 721 tokens. Requires mintable non-fungible token on Near side.'
-//         )
-//         .action(InitEthERC721Locker.execute),
-//     [
-//         'eth-node-url',
-//         'eth-master-sk',
-//         'eth-locker-abi-path',
-//         'eth-locker-bin-path',
-//         'eth-erc721-address',
-//         'near-token-factory-account',
-//         'eth-prover-address',
-//         'eth-gas-multiplier',
-//     ]
-// )
+RainbowConfig.addOptions(
+    program
+        .command('init-eth-721-locker')
+        .description(
+            'Deploys and initializes locker contract on Ethereum blockchain for 721 tokens. Requires mintable non-fungible token on Near side.'
+        )
+        .action(InitEthERC721Locker.execute),
+    [
+        'eth-node-url',
+        'eth-master-sk',
+        'eth-locker-abi-path',
+        'eth-locker-bin-path',
+        'eth-erc721-address',
+        'near-non-fun-token-account',
+        'eth-prover-address',
+        'eth-gas-multiplier',
+    ]
+)
 
 //     InitEthERC721Locker,
 //     InitNearNonFunToken,
