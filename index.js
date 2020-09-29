@@ -208,6 +208,16 @@ RainbowConfig.declareOption(
   path.join(LIBS_SOL_SRC_DIR, 'nearbridge/dist/Ed25519.full.bin')
 )
 RainbowConfig.declareOption(
+    'eth-erc721-abi-path',
+  'Path to the .abi file defining Mock Ethereum ERC721 contract.',
+  path.join(LIBS_SOL_SRC_DIR, 'token-locker/dist/MockERC721.full.abi')
+)
+RainbowConfig.declareOption(
+    'eth-erc721-bin-path',
+  'Path to the .bin file defining Mock Ethereum ERC721 contract.',
+  path.join(LIBS_SOL_SRC_DIR, 'token-locker/dist/MockERC721.full.bin')
+)
+RainbowConfig.declareOption(
   'eth-client-lock-eth-amount',
   'Amount of Ether that should be temporarily locked when submitting a new header to EthClient, in wei.',
   1e20
@@ -479,8 +489,6 @@ RainbowConfig.addOptions(
     'eth-gas-multiplier',
   ]
 )
-
-
 
 RainbowConfig.addOptions(
   program
