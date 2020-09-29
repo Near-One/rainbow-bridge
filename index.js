@@ -57,6 +57,11 @@ const LIBS_TC_SRC_DIR = path.join(
 )
 
 RainbowConfig.declareOption(
+    'near-non-fun-token-account',
+    'The account of the non-fungible token contract that will be used to mint tokens locked on Ethereum.',
+    'nearnonfuntoken'
+)
+RainbowConfig.declareOption(
   'near-network-id',
   'The identifier of the NEAR network that the given NEAR node is expected to represent.'
 )
@@ -182,6 +187,10 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'eth-erc20-address',
   'ETH address of the ERC20 contract.'
+)
+RainbowConfig.declareOption(
+    'eth-erc721-address',
+    'ETH address of the ERC721 contract.'
 )
 RainbowConfig.declareOption(
   'eth-erc20-abi-path',
@@ -470,7 +479,25 @@ RainbowConfig.addOptions(
   ]
 )
 
-// InitEthErc721,
+// RainbowConfig.addOptions(
+//     program
+//         .command('init-eth-721-locker')
+//         .description(
+//             'Deploys and initializes locker contract on Ethereum blockchain for 721 tokens. Requires mintable non-fungible token on Near side.'
+//         )
+//         .action(InitEthERC721Locker.execute),
+//     [
+//         'eth-node-url',
+//         'eth-master-sk',
+//         'eth-locker-abi-path',
+//         'eth-locker-bin-path',
+//         'eth-erc721-address',
+//         'near-token-factory-account',
+//         'eth-prover-address',
+//         'eth-gas-multiplier',
+//     ]
+// )
+
 //     InitEthERC721Locker,
 //     InitNearNonFunToken,
 
