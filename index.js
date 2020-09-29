@@ -34,6 +34,9 @@ const {
   InitEthEd25519,
   InitEthErc20,
   InitEthLocker,
+  InitEthErc721,
+  InitEthERC721Locker,
+  InitNearNonFunToken,
   InitEthClient,
   InitEthProver,
 } = require('rainbow-bridge-lib/init')
@@ -456,6 +459,28 @@ RainbowConfig.addOptions(
     'eth-gas-multiplier',
   ]
 )
+
+// InitEthErc721,
+//     InitEthERC721Locker,
+//     InitNearNonFunToken,
+
+RainbowConfig.addOptions(
+  program
+    .command('init-eth-erc721')
+    .description(
+      'Deploys and initializes an example ERC721 contract on the Ethereum blockchain.'
+    )
+    .action(InitEthErc721.execute),
+  [
+    'eth-node-url',
+    'eth-master-sk',
+    'eth-erc721-abi-path',
+    'eth-erc721-bin-path',
+    'eth-gas-multiplier',
+  ]
+)
+
+
 
 RainbowConfig.addOptions(
   program

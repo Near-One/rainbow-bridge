@@ -6,5 +6,10 @@
   "ethLockerAbiPath": "~/.rainbow/bridge/node_modules/rainbow-token-connector/res/BridgeTokenFactory.full.abi",
   "ethLockerBinPath": "~/.rainbow/bridge/node_modules/rainbow-token-connector/res/BridgeTokenFactory.full.bin",
   "ethErc20AbiPath": "~/.rainbow/bridge/node_modules/rainbow-token-connector/res/TToken.full.abi",
-  "ethErc20BinPath": "~/.rainbow/bridge/node_modules/rainbow-token-connector/res/TToken.full.bin"
+  "ethErc20BinPath": "~/.rainbow/bridge/node_modules/rainbow-token-connector/res/TToken.full.bin",
+  "nearNonFunTokenContractPath": "./node_modules/rainbow-bridge-rs/res/mintable_non_fungible_token.wasm",
+  "ethErc721LockerAbiPath": "./node_modules/rainbow-bridge-sol/token-locker/dist/ERC721TokenLocker.full.abi",
+  "ethErc721LockerBinPath": "./node_modules/rainbow-bridge-sol/token-locker/dist/ERC721TokenLocker.full.bin",
+  "ethErc721AbiPath": "./node_modules/rainbow-bridge-sol/token-locker/dist/MockERC721.full.abi",
+  "ethErc721BinPath": "./node_modules/rainbow-bridge-sol/token-locker/dist/MockERC721.full.bin"
 }
