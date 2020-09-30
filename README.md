@@ -110,7 +110,7 @@ The documenation below assumes Rinkeby testnet.
 This section explains how to use existing bridge with mock ERC20 token that was already deployed. You would need to have some amount of this token on Rinkeby, so reach out to max@near.org if you want to give it a try.
 
 We assume you have two accounts:
-* One NEAR account on NEAR testnet with at least 1 NEAR token. We denote it as `<near_token_holder_account>` and its secret key as `<near_token_holder_sk>` (you can find your secret key in `~/.~/.near-credentials/testnet/`);
+* One NEAR account on NEAR testnet with at least 1 NEAR token. We denote it as `<near_token_holder_account>` and its secret key as `<near_token_holder_sk>` (you can find your secret key in `~/.near-credentials/testnet/`);
 * One Ethereum account on Rinkeby testnet with at least 1 ETH and 100 ERC20 tokens (this example uses ERC20 deployed to `0x8151a8F90267bFf183E06921841C5dE774499388` as an example. If you want some of these ERC20 tokens please contact max@near.org). We denote it as `<eth_token_holder_address>` and its private key as `<eth_token_holder_sk>`;
 
 Make sure you have rainbow cli installed:
