@@ -185,6 +185,16 @@ RainbowConfig.declareOption(
   path.join(LIBS_TC_SRC_DIR, 'res/BridgeTokenFactory.full.bin')
 )
 RainbowConfig.declareOption(
+    'eth-erc721Locker-abi-path',
+    'Path to the .abi file defining Ethereum 721 locker contract. This contract works in pair with mintable non fungible token on NEAR blockchain.',
+    path.join(LIBS_SOL_SRC_DIR, 'token-locker/dist/ERC721TokenLocker.full.abi')
+)
+RainbowConfig.declareOption(
+    'eth-erc721Locker-bin-path',
+    'Path to the .bin file defining Ethereum 721 locker contract. This contract works in pair with mintable non fungible token on NEAR blockchain.',
+    path.join(LIBS_SOL_SRC_DIR, 'token-locker/dist/ERC721TokenLocker.full.bin')
+)
+RainbowConfig.declareOption(
   'eth-erc20-address',
   'ETH address of the ERC20 contract.'
 )
@@ -454,8 +464,8 @@ RainbowConfig.addOptions(
   [
     'eth-node-url',
     'eth-master-sk',
-    'eth-locker-abi-path',
-    'eth-locker-bin-path',
+    'eth-erc721Locker-abi-path',
+    'eth-erc721Locker-bin-path',
     'eth-erc20-address',
     'near-token-factory-account',
     'eth-prover-address',
@@ -489,8 +499,8 @@ RainbowConfig.addOptions(
     [
         'eth-node-url',
         'eth-master-sk',
-        'eth-locker-abi-path',
-        'eth-locker-bin-path',
+        'eth-erc721Locker-abi-path',
+        'eth-erc721Locker-bin-path',
         'eth-erc721-address',
         'near-non-fun-token-account',
         'eth-prover-address',
@@ -498,7 +508,6 @@ RainbowConfig.addOptions(
     ]
 )
 
-//     InitEthERC721Locker,
 //     InitNearNonFunToken,
 
 RainbowConfig.addOptions(
