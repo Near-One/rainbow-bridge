@@ -121,7 +121,7 @@ If you have already used the bridge on this machine run a cleanup:
 ```bash
 rainbow clean
 ```
-Then create `~/.rainbow/config.json` file with the following content:
+If you're using rainbow-bridge-cli 1.x, create `~/.rainbow/config.json` file with the following content:
 ```json
 {
         "nearNetworkId": "testnet",
@@ -139,6 +139,27 @@ Then create `~/.rainbow/config.json` file with the following content:
         "ethErc20Address": "0x8151a8F90267bFf183E06921841C5dE774499388",
         "ethLockerAddress": "0x5f7Cc23F90b5264a083dcB3b171c7111Dc32dD00",
         "nearFunTokenAccount": "mintablefuntoken11"
+}
+```
+If you are using rainbow-bridge-cli 2.x, create `~/.rainbow/config.json` file with the following content:
+```json
+{
+        "nearNetworkId": "testnet",
+        "nearNodeUrl": "https://rpc.testnet.near.org/",
+        "ethNodeUrl": "https://rinkeby.infura.io/v3/<project_id>",
+        "nearMasterAccount": "<near_token_holder_account>",
+        "nearMasterSk": "<near_token_holder_sk>",
+        "nearClientAccount": "ethonnearclient10",
+        "nearProverAccount": "ethonnearprover10",
+        "nearClientTrustedSigner": "eth2nearrelay10.testnet",
+        "ethMasterSk": "<eth_token_holder_sk>",
+        "ethEd25519Address": "0x9003342d15B21b4C42e1702447fE2f39FfAF55C2",
+        "ethClientAddress": "0xF721c979db97413AA9D0F91ad531FaBF769bb09C",
+        "ethProverAddress": "0xc5D62d66B8650E6242D9936c7e50E959BA0F9E37",
+        "ethErc20Address": "0xae0818d1678a8eb74496730ab1363221f61936d6",
+        "nearTokenFactoryAccount": "ntf2.bridge2.testnet",
+        "ethLockerAddress": "0x1a38a36f09d1cc082c52c1f55f603ec72f34a97b",
+        "nearErc20Account": "ae0818d1678a8eb74496730ab1363221f61936d6.ntf2.bridge2.testnet"
 }
 ```
 You can get infura project id, by registering at [infura.io](http://infura.io/).
