@@ -7,7 +7,7 @@
   </p>
 
   <p>
-    <a href="https://buildkite.com/nearprotocol/rainbow-bridge"><img src="https://badge.buildkite.com/a3dcd9711ef855a7ea6dc80453828ad73d7a669b9a925889ad.svg?branch=master" alt="Buildkite Build" /></a>
+    <a href="https://buildkite.com/nearprotocol/rainbow-bridge-cli"><img src=" https://badge.buildkite.com/93478642b0ddf8e3548c16d2e60c4adbca4fd853520b6a5bca.svg?branch=master" alt="Buildkite Build" /></a>
     <a href="https://npmjs.com/rainbow-bridge-cli"><img alt="npm" src="https://img.shields.io/npm/v/rainbow-bridge-cli.svg?style=flat-square"></a>
   </p>
 </div>
