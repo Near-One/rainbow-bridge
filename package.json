@@ -30,7 +30,7 @@
     "node-fetch": "^2.6.0",
     "pm2": "^4.4.0",
     "pm2-promise": "^2.0.1",
-    "rainbow-bridge-lib": "1.0.6",
+    "rainbow-bridge-lib": "^2.0.0",
     "rainbow-bridge-rs": "1.0.2",
     "rainbow-bridge-sol": "1.1.1",
     "request": "^2.88.2",
