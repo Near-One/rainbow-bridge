@@ -37,6 +37,7 @@ class RobustWeb3 {
         if (e && e.toString() === 'Error: connection not open') {
           this.web3.setProvider(this.ethNodeUrl)
         }
+        throw e
       }
     })
   }
@@ -44,11 +45,18 @@ class RobustWeb3 {
   async getBlock(b) {
     return await backoff(RETRY, async () => {
       try {
-        return await this.web3.eth.getBlock(b)
+        let block = await this.web3.eth.getBlock(b)
+        // sometimes infura gives null on the very new block, but retry works
+        if (block === null) {
+          // throw so backoff will do retry
+          throw new Error('web3.eth.getBlock returns null')
+        }
+        return block
       } catch (e) {
         if (e && e.toString() === 'Error: connection not open') {
           this.web3.setProvider(this.ethNodeUrl)
         }
+        throw e
       }
     })
   }
@@ -149,6 +157,7 @@ class RobustWeb3 {
         if (e && e.toString() === 'Error: connection not open') {
           this.web3.setProvider(this.ethNodeUrl)
         }
+        throw e
       }
     })
   }
@@ -252,7 +261,7 @@ const signAndSendTransaction = async (
         await sendTxnAsync()
       }
     } catch (e) {
-      errorMsg = e.message;
+      errorMsg = e.message
       // sleep to avoid socket hangout on retry too soon
       await sleep(500)
       continue
@@ -272,7 +281,7 @@ const signAndSendTransaction = async (
           break
         }
       } catch (e) {
-        errorMsg = e.message;
+        errorMsg = e.message
         await sleep((j + 1) * 500)
       }
     }
