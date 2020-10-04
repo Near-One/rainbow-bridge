@@ -25,6 +25,7 @@ const {
   TransferEthERC20FromNear,
   DeployToken,
 } = require('rainbow-bridge-lib/transfer-eth-erc20')
+const {TransferExampleERC721ToNear} = require('rainbow-bridge-lib/transfer-erc721/to-near');
 const { ETHDump } = require('./commands/eth-dump')
 const { NearDump } = require('rainbow-bridge-lib/rainbow/near-dump')
 const { RainbowConfig } = require('rainbow-bridge-lib/config')
@@ -589,6 +590,39 @@ RainbowConfig.addOptions(
     'near-master-sk',
     'eth-gas-multiplier',
   ]
+)
+
+RainbowConfig.addOptions(
+    program
+        .command('transfer-example-nft-to-near')
+        .action(TransferExampleERC721ToNear.execute)
+        .option('--amount <amount>', 'Token ID to transfer')
+        .option(
+            '--eth-sender-sk <eth_sender_sk>',
+            'The secret key of the Ethereum account that will be sending ERC721 token.'
+        )
+        .option(
+            '--near-receiver-account <near_receiver_account>',
+            'The account on NEAR blockchain that will be receiving the minted token.'
+        )
+        .option(
+            '--token-name <token_name>',
+            'Specific ERC721 token that is already bound by `deploy-token`.'
+        ),
+    [
+        'eth-node-url',
+        'eth-erc721-address',
+        'eth-erc721-abi-path',
+        'eth-erc721Locker-address',
+        'eth-erc721Locker-abi-path',
+        'near-node-url',
+        'near-network-id',
+        'near-non-fun-token-account',
+        'near-client-account',
+        'near-master-account',
+        'near-master-sk',
+        'eth-gas-multiplier',
+    ]
 )
 
 RainbowConfig.addOptions(

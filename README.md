@@ -253,7 +253,7 @@ Note, you can observe the logs of the relays by running:
 pm2 logs
 ```
 
-### Transferring tokens
+### Transferring ERC20 tokens
 
 Finally, let's transfer some tokens
 
@@ -273,6 +273,12 @@ rainbow transfer-eth-erc20-from-near --amount 1 --near-sender-account rainbow_br
 ```
 
 You should observe the change of the ERC20 balance as reported by the CLI.
+
+### Transferring ERC721 tokens
+
+```
+rainbow transfer-example-nft-to-near --amount 1000 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account rainbow_bridge_eth_on_near_prover --near-master-account nearnonfuntoken
+```
 
 ## Contract Development Workflow
 
