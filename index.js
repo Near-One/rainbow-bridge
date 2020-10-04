@@ -57,6 +57,24 @@ const LIBS_TC_SRC_DIR = path.join(
 )
 
 RainbowConfig.declareOption(
+    'near-non-fun-token-contract-path',
+    'The path to the Wasm file containing the non fungible contract. Note, this version of fungible contract should support minting.',
+    path.join(LIBS_RS_SRC_DIR, 'res/mintable_non_fungible_token.wasm')
+)
+RainbowConfig.declareOption(
+    'eth-erc721Locker-address',
+    'Address of the locker contract on the Ethereum'
+)
+RainbowConfig.declareOption(
+    'near-non-fun-token-sk',
+    'The secret key of the non fungible token account. If not specified will use master SK.'
+)
+RainbowConfig.declareOption(
+    'near-non-fun-token-init-balance',
+    'The initial balance of fungible token contract in femtoNEAR.',
+    '100000000000000000000000000'
+)
+RainbowConfig.declareOption(
     'near-non-fun-token-account',
     'The account of the non-fungible token contract that will be used to mint tokens locked on Ethereum.',
     'nearnonfuntoken'
@@ -305,6 +323,22 @@ RainbowConfig.addOptions(
 )
 
 RainbowConfig.addOptions(
+    program
+        .command('init-near-non-fun-token')
+        .description(
+            'Deploys and initializes mintable non fungible token to NEAR blockchain. Requires 721 locker on Ethereum side.'
+        )
+        .action(InitNearNonFunToken.execute),
+    [
+        'near-non-fun-token-account',
+        'near-non-fun-token-sk',
+        'near-non-fun-token-contract-path',
+        'near-non-fun-token-init-balance',
+        'eth-erc721Locker-address',
+    ]
+)
+
+RainbowConfig.addOptions(
   startCommand
     .command('eth2near-relay')
     .action(StartEth2NearRelayCommand.execute),
@@ -507,8 +541,6 @@ RainbowConfig.addOptions(
         'eth-gas-multiplier',
     ]
 )
-
-//     InitNearNonFunToken,
 
 RainbowConfig.addOptions(
   program
