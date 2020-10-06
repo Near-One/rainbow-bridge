@@ -3,7 +3,6 @@ const { RainbowConfig } = require('rainbow-bridge-lib/config')
 const { BN } = require('ethereumjs-util')
 const fs = require('fs')
 const { normalizeEthKey } = require('rainbow-bridge-lib/rainbow/robust')
-const { DeployToken } = require('rainbow-bridge-lib/transfer-eth-erc20')
 
 class DangerDeployMyERC20 {
   static async execute() {

@@ -207,12 +207,17 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'eth-client-lock-eth-amount',
   'Amount of Ether that should be temporarily locked when submitting a new header to EthClient, in wei.',
-  1e20
+  '100000000000000000000'
 )
 RainbowConfig.declareOption(
   'eth-client-lock-duration',
   'The challenge window during which anyone can challenge an incorrect ED25519 signature of the Near block, in EthClient, in seconds.',
   14400
+)
+RainbowConfig.declareOption(
+  'eth-client-replace-duration',
+  'Minimum time difference required to replace a block during challenge period, in EthClient, in seconds.',
+  18000
 )
 RainbowConfig.declareOption(
   'eth-client-address',
@@ -243,9 +248,29 @@ RainbowConfig.declareOption(
   path.join(LIBS_SOL_SRC_DIR, 'nearprover/dist/NearProver.full.bin')
 )
 RainbowConfig.declareOption(
-  'near2eth-relay-delay',
-  'How many seconds should we wait after the NEAR header becomes valid before we submit the next one.',
-  '0'
+  'near2eth-relay-min-delay',
+  'Minimum number of seconds to wait if the relay can\'t submit a block right away.',
+  '1'
+)
+RainbowConfig.declareOption(
+  'near2eth-relay-max-delay',
+  'Maximum number of seconds to wait if the relay can\'t submit a block right away.',
+  '600'
+)
+RainbowConfig.declareOption(
+  'near2eth-relay-error-delay',
+  'Number of seconds to wait before retrying if there is an error.',
+  '1'
+)
+RainbowConfig.declareOption(
+  'watchdog-delay',
+  'Number of seconds to wait after validating all signatures.',
+  '300'
+)
+RainbowConfig.declareOption(
+  'watchdog-error-delay',
+  'Number of seconds to wait before retrying if there is an error.',
+  '1'
 )
 RainbowConfig.declareOption('near-erc20-account', 'Must be declared before set')
 
@@ -297,7 +322,9 @@ RainbowConfig.addOptions(
     'near-network-id',
     'eth-client-abi-path',
     'eth-client-address',
-    'near2eth-relay-delay',
+    'near2eth-relay-min-delay',
+    'near2eth-relay-max-delay',
+    'near2eth-relay-error-delay',
     'eth-gas-multiplier',
     'daemon',
   ]
@@ -305,7 +332,14 @@ RainbowConfig.addOptions(
 
 RainbowConfig.addOptions(
   startCommand.command('bridge-watchdog').action(StartWatchdogCommand.execute),
-  ['eth-node-url', 'eth-master-sk', 'eth-client-abi-path', 'daemon']
+  [
+    'eth-node-url',
+    'eth-master-sk',
+    'eth-client-abi-path',
+    'daemon',
+    'watchdog-delay',
+    'watchdog-error-delay',
+  ]
 )
 
 const stopCommand = program.command('stop')
@@ -377,6 +411,7 @@ RainbowConfig.addOptions(
     'eth-ed25519-address',
     'eth-client-lock-eth-amount',
     'eth-client-lock-duration',
+    'eth-client-replace-duration',
     'eth-gas-multiplier',
   ]
 )
@@ -550,7 +585,9 @@ RainbowConfig.addOptions(
     'near-network-id',
     'eth-client-abi-path',
     'eth-client-address',
-    'near2eth-relay-delay',
+    'near2eth-relay-min-delay',
+    'near2eth-relay-max-delay',
+    'near2eth-relay-error-delay',
     'eth-gas-multiplier',
   ]
 )
@@ -563,11 +600,7 @@ RainbowConfig.addOptions(
   [
     'eth-node-url',
     'eth-master-sk',
-    'near-node-url',
-    'near-network-id',
-    'eth-client-abi-path',
-    'eth-client-address',
-    'near2eth-relay-delay',
+    'eth-erc20-abi-path',
     'eth-gas-multiplier',
   ]
 )
