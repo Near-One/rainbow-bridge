@@ -44,78 +44,80 @@ class Watchdog {
       privateKey = privateKey.slice(2)
     }
     privateKey = Buffer.from(privateKey, 'hex')
+    const delay = RainbowConfig.getParam('watchdog-delay')
+    const errorDelay = RainbowConfig.getParam('watchdog-error-delay')
     while (true) {
-      const lastClientBlock = await this.clientContract.methods.head().call()
-      const latestBlock = await this.robustWeb3.getBlock('latest')
-      console.log(
-        `Examining block ${lastClientBlock.hash} height: ${lastClientBlock.height}`
-      )
-      if (latestBlock.timestamp >= lastClientBlock.valid) {
-        const timeDelta = 10
-        console.log(`Block is valid. Sleeping for ${timeDelta} seconds.`)
-        await sleep(timeDelta * 1000)
-        continue
-      }
-
-      // We cannot memorize processed blocks because they might have been re-submitted with different data.
-      for (let i = 0; i < lastClientBlock.approvals_after_next_length; i++) {
-        console.log(`Checking signature ${i}.`)
-        const result = await this.clientContract.methods
-          .checkBlockProducerSignatureInHead(i)
-          .call()
-        if (!result) {
-          console.log(`Challenging signature ${i}.`)
-          try {
-            let gasPrice = await this.web3.eth.getGasPrice()
-            let nonce = await this.web3.eth.getTransactionCount(
-              this.ethMasterAccount
-            )
-            while (gasPrice < 10000 * 1e9) {
-              try {
-                // Keep sending with same nonce but higher gasPrice to override same txn
-                let tx = new Tx({
-                  from: this.ethMasterAccount.address,
-                  // this is required otherwise gas is infinite
-                  to: RainbowConfig.getParam('eth-client-address'),
-                  gasLimit: Web3.utils.toHex(2000000),
-                  gasPrice: Web3.utils.toHex(gasPrice),
-                  nonce: Web3.utils.toHex(nonce),
-                  data: this.clientContract.methods
-                    .challenge(this.ethMasterAccount, i)
-                    .encodeABI(),
-                })
-                tx.sign(privateKey)
-                tx = '0x' + tx.serialize().toString('hex')
-
-                await promiseWithTimeout(
-                  5 * 60 * 1000,
-                  this.web3.eth.sendSignedTransaction(tx),
-                  SLOW_TX_ERROR_MSG
-                )
-                break
-              } catch (e) {
-                if (e.message === SLOW_TX_ERROR_MSG) {
-                  console.log(SLOW_TX_ERROR_MSG)
-                  console.log(
-                    `current gasPrice: ${gasPrice}. rechallenge with double gasPrice`
-                  )
-                  gasPrice *= 2
-                } else {
-                  throw e
-                }
+      try {
+        const bridgeState = await this.clientContract.methods.bridgeState().call()
+        if (Number(bridgeState.nextValidAt) == 0) {
+          console.log('No block to check.')
+        } else {
+          console.log('Checking block.')
+          // We cannot memorize processed blocks because they might have been re-submitted with different data.
+          for (let i = 0; i < Number(bridgeState.numBlockProducers); i++) {
+            console.log(`Checking signature ${i}.`)
+            let result
+            try {
+              result = await this.clientContract.methods.checkBlockProducerSignatureInHead(i).call()
+            } catch (e) {
+              if (!e.reason || !e.signature) {
+                throw e
               }
+              continue
             }
-          } catch (err) {
-            console.log(
-              `Challenge failed. Maybe the block was already reverted? ${err}`
-            )
+            if (!result) {
+              console.log(`Challenging signature ${i}.`)
+              try {
+                let gasPrice = await this.web3.eth.getGasPrice()
+                let nonce = await this.web3.eth.getTransactionCount(
+                  this.ethMasterAccount
+                )
+                while (gasPrice < 10000 * 1e9) {
+                  try {
+                    // Keep sending with same nonce but higher gasPrice to override same txn
+                    let tx = new Tx({
+                      from: this.ethMasterAccount.address,
+                      // this is required otherwise gas is infinite
+                      to: RainbowConfig.getParam('eth-client-address'),
+                      gasLimit: Web3.utils.toHex(2000000),
+                      gasPrice: Web3.utils.toHex(gasPrice),
+                      nonce: Web3.utils.toHex(nonce),
+                      data: this.clientContract.methods
+                        .challenge(this.ethMasterAccount, i)
+                        .encodeABI(),
+                    })
+                    tx.sign(privateKey)
+                    tx = '0x' + tx.serialize().toString('hex')
+
+                    await promiseWithTimeout(
+                      5 * 60 * 1000,
+                      this.web3.eth.sendSignedTransaction(tx),
+                      SLOW_TX_ERROR_MSG
+                    )
+                    break
+                  } catch (e) {
+                    if (e.message === SLOW_TX_ERROR_MSG) {
+                      console.log(SLOW_TX_ERROR_MSG)
+                      console.log(`current gasPrice: ${gasPrice}. rechallenge with double gasPrice`)
+                      gasPrice *= 2
+                    } else {
+                      throw e
+                    }
+                  }
+                }
+              } catch (err) {
+                console.log(`Challenge failed. Maybe the block was already reverted? ${err}`)
+              }
+              break
+            }
           }
-          break
         }
+        console.log(`Sleeping for ${delay} seconds.`)
+        await sleep(delay * 1000)
+      } catch (e) {
+        console.log('Error', e)
+        await sleep(errorDelay * 1000)
       }
-      const timeDelta = 10
-      console.log(`Sleeping for ${timeDelta} seconds`)
-      await sleep(timeDelta * 1000)
     }
   }
 }

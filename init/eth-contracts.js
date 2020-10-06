@@ -120,12 +120,15 @@ class InitEthClient {
     const ethContractInitializer = new EthContractInitializer()
     const contractName = 'client'
     const web3 = new Web3(RainbowConfig.getParam('eth-node-url'))
-    const lockEthAmount = await web3.utils.toBN(
+    const lockEthAmount = web3.utils.toBN(
       RainbowConfig.getParam('eth-client-lock-eth-amount')
     )
-    const lockDuration = await web3.utils.toBN(
+    const lockDuration = web3.utils.toBN(
       RainbowConfig.getParam('eth-client-lock-duration')
     )
+    const replaceDuration = web3.utils.toBN(
+      RainbowConfig.getParam('eth-client-replace-duration')
+    ).mul(new web3.utils.BN(1e9))
     try {
       // Only WebSocket provider can close.
       web3.currentProvider.connection.close()
@@ -136,6 +139,7 @@ class InitEthClient {
         RainbowConfig.getParam('eth-ed25519-address'),
         lockEthAmount,
         lockDuration,
+        replaceDuration,
       ],
       5000000
     )

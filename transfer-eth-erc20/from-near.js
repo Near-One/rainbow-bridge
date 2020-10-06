@@ -141,12 +141,25 @@ class TransferEthERC20FromNear {
         throw new Error(`Invalid tx withdraw: ${JSON.stringify(txWithdraw)}`, e)
       }
 
-      // Get block in which the outcome was processed.
-      const outcomeBlock = await backoff(10, () =>
+      // Get block in which the receipt was processed.
+      const receiptBlock = await backoff(10, () =>
         near.connection.provider.block({
           blockId: txReceiptBlockHash,
         })
       )
+      // Now wait for a final block with a strictly greater height. This block (or one of its ancestors) should hold the outcome, although this is not guaranteed if there are multiple shards.
+      const outcomeBlock = await backoff(10, async () => {
+        while (true) {
+          let block = await near.connection.provider.block({
+            finality: "final"
+          })
+          if (Number(block.header.height) <= Number(receiptBlock.header.height)) {
+            await sleep(1000)
+            continue
+          }
+          return block
+        }
+      })
       TransferEthERC20FromNear.recordTransferLog({
         finished: 'find-withdraw',
         txReceiptBlockHash,
@@ -173,49 +186,27 @@ class TransferEthERC20FromNear {
   }) {
     // Wait for the block with the given receipt/transaction in Near2EthClient.
     try {
-      const outcomeBlockHeight = new BN(outcomeBlock.header.height)
-      let clientBlock
+      const outcomeBlockHeight = Number(outcomeBlock.header.height)
       let clientBlockHeight
-      let clientBlockValidAfter
-      let clientBlockHashB58
-      let clientBlockHashHex
+      let clientBlockHash
       while (true) {
-        clientBlock = await clientContract.methods.head().call()
-        clientBlockHeight = new BN(clientBlock.height)
-        clientBlockValidAfter = new BN(clientBlock.validAfter)
-        clientBlockHashHex = await clientContract.methods
-          .blockHashes(clientBlockHeight)
-          .call()
-        clientBlockHashB58 = bs58.encode(toBuffer(clientBlockHashHex))
-        console.log(
-          `Current light client head is: hash=${clientBlockHashB58}, height=${clientBlockHeight.toString()}`
-        )
+        let clientState = await clientContract.methods.bridgeState().call()
+        clientBlockHeight = Number(clientState.currentHeight)
+        let clientBlockValidAfter = Number(clientState.nextValidAt)
+        clientBlockHash = bs58.encode(toBuffer(await clientContract.methods.blockHashes(clientBlockHeight).call()))
 
-        const chainBlock = await robustWeb3.getBlock('latest')
-        const chainBlockTimestamp = new BN(chainBlock.timestamp)
-        if (clientBlockHeight.gt(outcomeBlockHeight)) {
-          console.log(
-            `Near2EthClient block is at ${clientBlockHeight.toString()} which is further than the needed block ${outcomeBlockHeight.toString()}`
-          )
+        console.log(`Current light client head is: hash=${clientBlockHash}, height=${clientBlockHeight}`)
+
+        if (clientBlockHeight > outcomeBlockHeight) {
+          console.log(`The block at height ${outcomeBlockHeight} is already available to the client.`)
           break
-        } else if (
-          chainBlockTimestamp.lt(clientBlockValidAfter) &&
-          clientBlockHeight.eq(outcomeBlockHeight)
-        ) {
-          const sleepSec = clientBlockValidAfter
-            .sub(chainBlockTimestamp)
-            .toNumber()
-          console.log(
-            `Block ${clientBlockHeight.toString()} is not valid yet. Sleeping ${sleepSec} seconds.`
-          )
-          await sleep(sleepSec * 1000)
         } else {
-          const sleepSec = 10
-          console.log(
-            `Block ${outcomeBlockHeight.toString()} is not available on the light client yet. Current ` +
-              `height of light client is ${clientBlockHeight.toString()}. Sleeping ${sleepSec} seconds.`
-          )
-          await sleep(sleepSec * 1000)
+          let delay = clientBlockValidAfter == 0
+            ? await clientContract.methods.lockDuration().call()
+            : clientBlockValidAfter - (await robustWeb3.getBlock('latest')).timestamp
+          delay = Math.max(delay, 1)
+          console.log(`Block ${outcomeBlockHeight} is not yet available. Sleeping for ${delay} seconds.`)
+          await sleep(delay * 1000)
         }
       }
       console.log(`Withdrawn ${JSON.stringify(amount)}`)
@@ -229,10 +220,10 @@ class TransferEthERC20FromNear {
       )
       TransferEthERC20FromNear.recordTransferLog({
         finished: 'wait-block',
-        clientBlockHashB58,
+        clientBlockHashB58: clientBlockHash,
         idType,
         txReceiptId,
-        clientBlockHeight: clientBlock.height,
+        clientBlockHeight,
       })
     } catch (txRevertMessage) {
       console.log('Failed to wait for block occur in near on eth contract')
