@@ -1,7 +1,6 @@
-
 // File: contracts/Ed25519.sol
 
-pragma solidity ^0.5.0;
+pragma solidity ^0.6;
 
 
 // https://gist.github.com/abacabadabacaba/cb927b5ebe6db63f00b98902503ffc76

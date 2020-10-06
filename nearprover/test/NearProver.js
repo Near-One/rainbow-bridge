@@ -20,9 +20,9 @@ contract('NearProver', function ([_, addr1]) {
         const proof3 = borshifyOutcomeProof(require('./proof3.json'));
         expect(await this.prover.proveOutcome(proof3, 1705)).to.be.true;
 
-        await this.bridge.setBlockMerkleRoot(5563, '0x82415d76338be5e5a45524042595f1d9e95f1836c59921bc3fab3201a1519581');
+        /*await this.bridge.setBlockMerkleRoot(5563, '0x82415d76338be5e5a45524042595f1d9e95f1836c59921bc3fab3201a1519581');
         const proof4 = borshifyOutcomeProof(require('./proof4.json'));
-        expect(await this.prover.proveOutcome(proof4, 5563)).to.be.true;
+        expect(await this.prover.proveOutcome(proof4, 5563)).to.be.true;*/
     });
 
     it('should be ok 2', async function () {

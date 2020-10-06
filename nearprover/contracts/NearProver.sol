@@ -1,8 +1,6 @@
-pragma solidity ^0.5.0;
-pragma experimental ABIEncoderV2; // solium-disable-line no-experimental
+pragma solidity ^0.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "../../nearbridge/contracts/INearBridge.sol";
 import "../../nearbridge/contracts/NearDecoder.sol";
 import "./ProofDecoder.sol";
@@ -21,7 +19,7 @@ contract NearProver is INearProver {
         bridge = _bridge;
     }
 
-    function proveOutcome(bytes memory proofData, uint64 blockHeight) public view returns(bool) {
+    function proveOutcome(bytes memory proofData, uint64 blockHeight) override public view returns(bool) {
         Borsh.Data memory borshData = Borsh.from(proofData);
         ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borshData.decodeFullOutcomeProof();
         require(borshData.finished(), "NearProver: argument should be exact borsh serialization");
@@ -45,11 +43,9 @@ contract NearProver is INearProver {
 
         bytes32 expectedBlockMerkleRoot = bridge.blockMerkleRoots(blockHeight);
 
-        if (expectedBlockMerkleRoot != fullOutcomeProof.block_header_lite.inner_lite.block_merkle_root) {
-            require(
-                _computeRoot(fullOutcomeProof.block_header_lite.hash, fullOutcomeProof.block_proof) == expectedBlockMerkleRoot, "NearProver: block proof is not valid"
-            );
-        }
+        require(
+            _computeRoot(fullOutcomeProof.block_header_lite.hash, fullOutcomeProof.block_proof) == expectedBlockMerkleRoot, "NearProver: block proof is not valid"
+        );
 
         return true;
     }

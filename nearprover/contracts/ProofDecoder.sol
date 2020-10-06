@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.6;
 
 import "../../nearbridge/contracts/Borsh.sol";
 import "../../nearbridge/contracts/NearDecoder.sol";

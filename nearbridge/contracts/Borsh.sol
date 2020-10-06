@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
@@ -48,7 +48,7 @@ library Borsh {
         bytes32[1] memory result;
         // solium-disable-next-line security/no-inline-assembly
         assembly {
-            pop(staticcall(gas, 0x02, add(add(ptr, 32), offset), length, result, 32))
+            pop(staticcall(gas(), 0x02, add(add(ptr, 32), offset), length, result, 32))
         }
         return result[0];
     }

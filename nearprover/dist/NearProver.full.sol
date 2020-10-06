@@ -1,7 +1,7 @@
-
 // File: @openzeppelin/contracts/math/SafeMath.sol
 
-pragma solidity ^0.5.0;
+
+pragma solidity ^0.6.0;
 
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
@@ -24,6 +24,7 @@ library SafeMath {
      * Counterpart to Solidity's `+` operator.
      *
      * Requirements:
+     *
      * - Addition cannot overflow.
      */
     function add(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -40,6 +41,7 @@ library SafeMath {
      * Counterpart to Solidity's `-` operator.
      *
      * Requirements:
+     *
      * - Subtraction cannot overflow.
      */
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -53,9 +55,8 @@ library SafeMath {
      * Counterpart to Solidity's `-` operator.
      *
      * Requirements:
-     * - Subtraction cannot overflow.
      *
-     * _Available since v2.4.0._
+     * - Subtraction cannot overflow.
      */
     function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
         require(b <= a, errorMessage);
@@ -71,6 +72,7 @@ library SafeMath {
      * Counterpart to Solidity's `*` operator.
      *
      * Requirements:
+     *
      * - Multiplication cannot overflow.
      */
     function mul(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -96,6 +98,7 @@ library SafeMath {
      * uses an invalid opcode to revert (consuming all remaining gas).
      *
      * Requirements:
+     *
      * - The divisor cannot be zero.
      */
     function div(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -111,12 +114,10 @@ library SafeMath {
      * uses an invalid opcode to revert (consuming all remaining gas).
      *
      * Requirements:
-     * - The divisor cannot be zero.
      *
-     * _Available since v2.4.0._
+     * - The divisor cannot be zero.
      */
     function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        // Solidity only automatically asserts when dividing by 0
         require(b > 0, errorMessage);
         uint256 c = a / b;
         // assert(a == b * c + a % b); // There is no case in which this doesn't hold
@@ -133,6 +134,7 @@ library SafeMath {
      * invalid opcode to revert (consuming all remaining gas).
      *
      * Requirements:
+     *
      * - The divisor cannot be zero.
      */
     function mod(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -148,9 +150,8 @@ library SafeMath {
      * invalid opcode to revert (consuming all remaining gas).
      *
      * Requirements:
-     * - The divisor cannot be zero.
      *
-     * _Available since v2.4.0._
+     * - The divisor cannot be zero.
      */
     function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
         require(b != 0, errorMessage);
@@ -158,117 +159,9 @@ library SafeMath {
     }
 }
 
-// File: @openzeppelin/contracts/GSN/Context.sol
-
-pragma solidity ^0.5.0;
-
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-contract Context {
-    // Empty internal constructor, to prevent people from mistakenly deploying
-    // an instance of this contract, which should be used via inheritance.
-    constructor () internal { }
-    // solhint-disable-previous-line no-empty-blocks
-
-    function _msgSender() internal view returns (address payable) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
-}
-
-// File: @openzeppelin/contracts/ownership/Ownable.sol
-
-pragma solidity ^0.5.0;
-
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
-contract Ownable is Context {
-    address private _owner;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    constructor () internal {
-        _owner = _msgSender();
-        emit OwnershipTransferred(address(0), _owner);
-    }
-
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(isOwner(), "Ownable: caller is not the owner");
-        _;
-    }
-
-    /**
-     * @dev Returns true if the caller is the current owner.
-     */
-    function isOwner() public view returns (bool) {
-        return _msgSender() == _owner;
-    }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public onlyOwner {
-        emit OwnershipTransferred(_owner, address(0));
-        _owner = address(0);
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public onlyOwner {
-        _transferOwnership(newOwner);
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     */
-    function _transferOwnership(address newOwner) internal {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        emit OwnershipTransferred(_owner, newOwner);
-        _owner = newOwner;
-    }
-}
-
 // File: ../nearbridge/contracts/INearBridge.sol
 
-pragma solidity ^0.5.0;
+pragma solidity ^0.6;
 
 
 interface INearBridge {
@@ -291,14 +184,14 @@ interface INearBridge {
 
     function initWithValidators(bytes calldata initialValidators) external;
     function initWithBlock(bytes calldata data) external;
-    function addLightClientBlock(bytes calldata data) external payable;
+    function addLightClientBlock(bytes calldata data) external;
     function challenge(address payable receiver, uint256 signatureIndex) external;
     function checkBlockProducerSignatureInHead(uint256 signatureIndex) external view returns(bool);
 }
 
 // File: ../nearbridge/contracts/Borsh.sol
 
-pragma solidity ^0.5.0;
+pragma solidity ^0.6;
 
 
 
@@ -347,7 +240,7 @@ library Borsh {
         bytes32[1] memory result;
         // solium-disable-next-line security/no-inline-assembly
         assembly {
-            pop(staticcall(gas, 0x02, add(add(ptr, 32), offset), length, result, 32))
+            pop(staticcall(gas(), 0x02, add(add(ptr, 32), offset), length, result, 32))
         }
         return result[0];
     }
@@ -482,7 +375,7 @@ library Borsh {
 
 // File: ../nearbridge/contracts/NearDecoder.sol
 
-pragma solidity ^0.5.0;
+pragma solidity ^0.6;
 
 
 
@@ -659,7 +552,7 @@ library NearDecoder {
 
 // File: contracts/ProofDecoder.sol
 
-pragma solidity ^0.5.0;
+pragma solidity ^0.6;
 
 
 
@@ -836,7 +729,7 @@ library ProofDecoder {
 
 // File: contracts/INearProver.sol
 
-pragma solidity ^0.5.0;
+pragma solidity ^0.6;
 
 interface INearProver {
     function proveOutcome(bytes calldata proofData, uint64 blockHeight) external view returns(bool);
@@ -844,9 +737,7 @@ interface INearProver {
 
 // File: contracts/NearProver.sol
 
-pragma solidity ^0.5.0;
-pragma experimental ABIEncoderV2; // solium-disable-line no-experimental
-
+pragma solidity ^0.6;
 
 
 
@@ -866,7 +757,7 @@ contract NearProver is INearProver {
         bridge = _bridge;
     }
 
-    function proveOutcome(bytes memory proofData, uint64 blockHeight) public view returns(bool) {
+    function proveOutcome(bytes memory proofData, uint64 blockHeight) override public view returns(bool) {
         Borsh.Data memory borshData = Borsh.from(proofData);
         ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borshData.decodeFullOutcomeProof();
         require(borshData.finished(), "NearProver: argument should be exact borsh serialization");
@@ -890,11 +781,9 @@ contract NearProver is INearProver {
 
         bytes32 expectedBlockMerkleRoot = bridge.blockMerkleRoots(blockHeight);
 
-        if (expectedBlockMerkleRoot != fullOutcomeProof.block_header_lite.inner_lite.block_merkle_root) {
-            require(
-                _computeRoot(fullOutcomeProof.block_header_lite.hash, fullOutcomeProof.block_proof) == expectedBlockMerkleRoot, "NearProver: block proof is not valid"
-            );
-        }
+        require(
+            _computeRoot(fullOutcomeProof.block_header_lite.hash, fullOutcomeProof.block_proof) == expectedBlockMerkleRoot, "NearProver: block proof is not valid"
+        );
 
         return true;
     }

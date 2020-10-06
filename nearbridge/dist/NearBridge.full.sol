@@ -1,7 +1,7 @@
-
 // File: @openzeppelin/contracts/math/SafeMath.sol
 
-pragma solidity ^0.5.0;
+
+pragma solidity ^0.6.0;
 
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
@@ -24,6 +24,7 @@ library SafeMath {
      * Counterpart to Solidity's `+` operator.
      *
      * Requirements:
+     *
      * - Addition cannot overflow.
      */
     function add(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -40,6 +41,7 @@ library SafeMath {
      * Counterpart to Solidity's `-` operator.
      *
      * Requirements:
+     *
      * - Subtraction cannot overflow.
      */
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -53,9 +55,8 @@ library SafeMath {
      * Counterpart to Solidity's `-` operator.
      *
      * Requirements:
-     * - Subtraction cannot overflow.
      *
-     * _Available since v2.4.0._
+     * - Subtraction cannot overflow.
      */
     function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
         require(b <= a, errorMessage);
@@ -71,6 +72,7 @@ library SafeMath {
      * Counterpart to Solidity's `*` operator.
      *
      * Requirements:
+     *
      * - Multiplication cannot overflow.
      */
     function mul(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -96,6 +98,7 @@ library SafeMath {
      * uses an invalid opcode to revert (consuming all remaining gas).
      *
      * Requirements:
+     *
      * - The divisor cannot be zero.
      */
     function div(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -111,12 +114,10 @@ library SafeMath {
      * uses an invalid opcode to revert (consuming all remaining gas).
      *
      * Requirements:
-     * - The divisor cannot be zero.
      *
-     * _Available since v2.4.0._
+     * - The divisor cannot be zero.
      */
     function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        // Solidity only automatically asserts when dividing by 0
         require(b > 0, errorMessage);
         uint256 c = a / b;
         // assert(a == b * c + a % b); // There is no case in which this doesn't hold
@@ -133,6 +134,7 @@ library SafeMath {
      * invalid opcode to revert (consuming all remaining gas).
      *
      * Requirements:
+     *
      * - The divisor cannot be zero.
      */
     function mod(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -148,9 +150,8 @@ library SafeMath {
      * invalid opcode to revert (consuming all remaining gas).
      *
      * Requirements:
-     * - The divisor cannot be zero.
      *
-     * _Available since v2.4.0._
+     * - The divisor cannot be zero.
      */
     function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
         require(b != 0, errorMessage);
@@ -158,117 +159,9 @@ library SafeMath {
     }
 }
 
-// File: @openzeppelin/contracts/GSN/Context.sol
-
-pragma solidity ^0.5.0;
-
-/*
- * @dev Provides information about the current execution context, including the
- * sender of the transaction and its data. While these are generally available
- * via msg.sender and msg.data, they should not be accessed in such a direct
- * manner, since when dealing with GSN meta-transactions the account sending and
- * paying for execution may not be the actual sender (as far as an application
- * is concerned).
- *
- * This contract is only required for intermediate, library-like contracts.
- */
-contract Context {
-    // Empty internal constructor, to prevent people from mistakenly deploying
-    // an instance of this contract, which should be used via inheritance.
-    constructor () internal { }
-    // solhint-disable-previous-line no-empty-blocks
-
-    function _msgSender() internal view returns (address payable) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
-}
-
-// File: @openzeppelin/contracts/ownership/Ownable.sol
-
-pragma solidity ^0.5.0;
-
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
-contract Ownable is Context {
-    address private _owner;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    constructor () internal {
-        _owner = _msgSender();
-        emit OwnershipTransferred(address(0), _owner);
-    }
-
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(isOwner(), "Ownable: caller is not the owner");
-        _;
-    }
-
-    /**
-     * @dev Returns true if the caller is the current owner.
-     */
-    function isOwner() public view returns (bool) {
-        return _msgSender() == _owner;
-    }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public onlyOwner {
-        emit OwnershipTransferred(_owner, address(0));
-        _owner = address(0);
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public onlyOwner {
-        _transferOwnership(newOwner);
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     */
-    function _transferOwnership(address newOwner) internal {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        emit OwnershipTransferred(_owner, newOwner);
-        _owner = newOwner;
-    }
-}
-
 // File: contracts/INearBridge.sol
 
-pragma solidity ^0.5.0;
+pragma solidity ^0.6;
 
 
 interface INearBridge {
@@ -291,14 +184,14 @@ interface INearBridge {
 
     function initWithValidators(bytes calldata initialValidators) external;
     function initWithBlock(bytes calldata data) external;
-    function addLightClientBlock(bytes calldata data) external payable;
+    function addLightClientBlock(bytes calldata data) external;
     function challenge(address payable receiver, uint256 signatureIndex) external;
     function checkBlockProducerSignatureInHead(uint256 signatureIndex) external view returns(bool);
 }
 
 // File: contracts/Borsh.sol
 
-pragma solidity ^0.5.0;
+pragma solidity ^0.6;
 
 
 
@@ -347,7 +240,7 @@ library Borsh {
         bytes32[1] memory result;
         // solium-disable-next-line security/no-inline-assembly
         assembly {
-            pop(staticcall(gas, 0x02, add(add(ptr, 32), offset), length, result, 32))
+            pop(staticcall(gas(), 0x02, add(add(ptr, 32), offset), length, result, 32))
         }
         return result[0];
     }
@@ -482,7 +375,7 @@ library Borsh {
 
 // File: contracts/NearDecoder.sol
 
-pragma solidity ^0.5.0;
+pragma solidity ^0.6;
 
 
 
@@ -659,7 +552,7 @@ library NearDecoder {
 
 // File: contracts/Ed25519.sol
 
-pragma solidity ^0.5.0;
+pragma solidity ^0.6;
 
 
 // https://gist.github.com/abacabadabacaba/cb927b5ebe6db63f00b98902503ffc76
@@ -1811,9 +1704,8 @@ contract Ed25519 {
 
 // File: contracts/NearBridge.sol
 
-pragma solidity ^0.5.0;
-pragma experimental ABIEncoderV2; // solium-disable-line no-experimental
-
+pragma solidity ^0.6;
+pragma experimental ABIEncoderV2;
 
 
 
@@ -1840,14 +1732,12 @@ contract NearBridge is INearBridge {
     // Minimal information about the submitted block.
     struct BlockInfo {
         uint64 height;
+        uint256 timestamp;
         bytes32 epochId;
         bytes32 nextEpochId;
-        address submitter;
-        uint256 validAfter;
         bytes32 hash;
+        bytes32 merkleRoot;
         bytes32 next_hash;
-        uint256 approvals_after_next_length;
-        mapping(uint256 => NearDecoder.OptionalSignature) approvals_after_next;
     }
 
     // Whether the contract was initialized.
@@ -1856,26 +1746,36 @@ contract NearBridge is INearBridge {
     address payable burner;
     uint256 public lockEthAmount;
     uint256 public lockDuration;
+    // replaceDuration is in nanoseconds, because it is a difference between NEAR timestamps.
+    uint256 public replaceDuration;
     Ed25519 edwards;
 
     // Block producers of the current epoch.
-    BlockProducerInfo public currentBlockProducers;
+    BlockProducerInfo currentBlockProducers;
     // Block producers of the next epoch.
-    BlockProducerInfo public nextBlockProducers;
-    // Backup current block producers. When candidate block is submitted and it comes from the next epoch, we backup
-    // current block producers. Then if it gets successfully challenged, we recover it the following way:
-    // nextBlockProducers <- currentBlockProducers
-    // currentBlockProducers <- backupCurrentBlockProducers
-    BlockProducerInfo public backupCurrentBlockProducers;
+    BlockProducerInfo nextBlockProducers;
 
-    // The most recent block.
-    BlockInfo public head;
-    // The backup of the previous most recent block, in case it was challenged.
-    BlockInfo public backupHead;
+    // The most recent head that is guaranteed to be valid.
+    BlockInfo head;
 
-    mapping(uint64 => bytes32) public blockHashes;
-    mapping(uint64 => bytes32) public blockMerkleRoots;
-    mapping(address => uint256) public balanceOf;
+    // The most recently added block. May still be in its challenge period, so should not be trusted.
+    BlockInfo untrustedHead;
+    // Approvals on the block following untrustedHead.
+    uint untrustedApprovalCount;
+    mapping (uint => NearDecoder.OptionalSignature) untrustedApprovals;
+    // True if untrustedHead is from the following epoch of currentHead.
+    // False if it is from the same epoch.
+    bool untrustedHeadIsFromNextEpoch;
+    // Next block producers from untrustedHead. This variable is meaningful if untrustedHeadIsFromNextEpoch is true.
+    BlockProducerInfo untrustedNextBlockProducers;
+    // Address of the account which submitted the last block.
+    address lastSubmitter;
+    // End of challenge period. If zero, untrusted* fields and lastSubmitter are not meaningful.
+    uint lastValidAt;
+
+    mapping(uint64 => bytes32) blockHashes_;
+    mapping(uint64 => bytes32) blockMerkleRoots_;
+    mapping(address => uint256) override public balanceOf;
 
     event BlockHashAdded(
         uint64 indexed height,
@@ -1887,26 +1787,27 @@ contract NearBridge is INearBridge {
         bytes32 blockHash
     );
 
-    constructor(Ed25519 ed, uint256 _lockEthAmount, uint256 _lockDuration) public {
+    constructor(Ed25519 ed, uint256 lockEthAmount_, uint256 lockDuration_, uint256 replaceDuration_) public {
         edwards = ed;
-        lockEthAmount = _lockEthAmount;
-        lockDuration = _lockDuration;
+        lockEthAmount = lockEthAmount_;
+        lockDuration = lockDuration_;
+        replaceDuration = replaceDuration_;
         burner = address(0);
     }
 
-    function deposit() public payable {
+    function deposit() override public payable {
         require(msg.value == lockEthAmount && balanceOf[msg.sender] == 0);
         balanceOf[msg.sender] = balanceOf[msg.sender].add(msg.value);
     }
 
-    function withdraw() public {
-        require(msg.sender != head.submitter || block.timestamp > head.validAfter);
+    function withdraw() override public {
+        require(msg.sender != lastSubmitter || block.timestamp >= lastValidAt);
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(lockEthAmount);
         msg.sender.transfer(lockEthAmount);
     }
 
-    function challenge(address payable receiver, uint256 signatureIndex) public {
-        require(block.timestamp < head.validAfter, "Lock period already passed");
+    function challenge(address payable receiver, uint256 signatureIndex) override public {
+        require(block.timestamp < lastValidAt, "No block can be challenged at this time");
 
         require(
             !checkBlockProducerSignatureInHead(signatureIndex),
@@ -1916,77 +1817,47 @@ contract NearBridge is INearBridge {
         _payRewardAndRollBack(receiver);
     }
 
-    function checkBlockProducerSignatureInHead(uint256 signatureIndex) public view returns(bool) {
-        if (head.approvals_after_next[signatureIndex].none) {
-            return true;
-        }
+    function checkBlockProducerSignatureInHead(uint256 signatureIndex) override public view returns(bool) {
+        BlockProducerInfo storage untrustedBlockProducers
+            = untrustedHeadIsFromNextEpoch
+            ? nextBlockProducers : currentBlockProducers;
+        require(signatureIndex < untrustedBlockProducers.bpsLength, "Signature index out of range");
+        require(!untrustedApprovals[signatureIndex].none, "This signature was skipped");
         return _checkValidatorSignature(
-            head.height,
-            head.next_hash,
-            head.approvals_after_next[signatureIndex].signature,
-            currentBlockProducers.bps[signatureIndex].publicKey
+            untrustedHead.height,
+            untrustedHead.next_hash,
+            untrustedApprovals[signatureIndex].signature,
+            untrustedBlockProducers.bps[signatureIndex].publicKey
         );
     }
 
     function _payRewardAndRollBack(address payable receiver) internal {
         // Pay reward
-        balanceOf[head.submitter] = balanceOf[head.submitter].sub(lockEthAmount);
+        balanceOf[lastSubmitter] = balanceOf[lastSubmitter].sub(lockEthAmount);
         receiver.transfer(lockEthAmount / 2);
         burner.transfer(lockEthAmount - lockEthAmount / 2);
 
         emit BlockHashReverted(
-            head.height,
-            blockHashes[head.height]
+            untrustedHead.height,
+            untrustedHead.hash
         );
 
-        // Restore last state from backup
-        delete blockHashes[head.height];
-        delete blockMerkleRoots[head.height];
-
-        if (head.epochId != backupHead.epochId) {
-            // When epoch id is different we need to modify the backed up block producers.
-            // nextBlockProducers <- currentBlockProducers
-            nextBlockProducers = currentBlockProducers;
-            for (uint i = 0; i < nextBlockProducers.bpsLength; i++) {
-                nextBlockProducers.bps[i] = currentBlockProducers.bps[i];
-            }
-            // currentBlockProducers <- backupCurrentBlockProducers
-            currentBlockProducers = backupCurrentBlockProducers;
-            for (uint i = 0; i < currentBlockProducers.bpsLength; i++) {
-                currentBlockProducers.bps[i] = backupCurrentBlockProducers.bps[i];
-            }
-        }
-
-        // Finally we restore the head.
-        head = backupHead;
-        for (uint i = 0; i < head.approvals_after_next_length; i++) {
-            head.approvals_after_next[i] = backupHead.approvals_after_next[i];
-        }
+        lastValidAt = 0;
     }
 
     // The first part of initialization -- setting the validators of the current epoch.
-    function initWithValidators(bytes memory _initialValidators) public {
+    function initWithValidators(bytes memory initialValidators_) override public {
         require(!initialized, "NearBridge: already initialized");
-        Borsh.Data memory initialValidatorsBorsh = Borsh.from(_initialValidators);
+
+        Borsh.Data memory initialValidatorsBorsh = Borsh.from(initialValidators_);
         NearDecoder.InitialValidators memory initialValidators = initialValidatorsBorsh.decodeInitialValidators();
         require(initialValidatorsBorsh.finished(), "NearBridge: only initial validators should be passed as second argument");
 
-        // Set current block producers.
-        currentBlockProducers.bpsLength = initialValidators.validator_stakes.length;
-        uint256 totalStake = 0;
-        for (uint i = 0; i < initialValidators.validator_stakes.length; i++) {
-            currentBlockProducers.bps[i] = BlockProducer({
-                publicKey: initialValidators.validator_stakes[i].public_key,
-                stake: initialValidators.validator_stakes[i].stake
-                });
-            // Compute total stake
-            totalStake = totalStake.add(initialValidators.validator_stakes[i].stake);
-        }
-        currentBlockProducers.totalStake = totalStake;
+        setBlockProducers(initialValidators.validator_stakes, currentBlockProducers);
     }
 
     // The second part of the initialization -- setting the current head.
-    function initWithBlock(bytes memory data) public {
+    function initWithBlock(bytes memory data) override public {
         require(currentBlockProducers.totalStake > 0, "NearBridge: validators need to be initialized first");
         require(!initialized, "NearBridge: already initialized");
         initialized = true;
@@ -1994,7 +1865,12 @@ contract NearBridge is INearBridge {
         Borsh.Data memory borsh = Borsh.from(data);
         NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
         require(borsh.finished(), "NearBridge: only light client block should be passed as first argument");
-        _setHead(nearBlock, data, true);
+
+        require(!nearBlock.next_bps.none, "NearBridge: Initialization block should contain next_bps.");
+        setBlock(nearBlock, head);
+        setBlockProducers(nearBlock.next_bps.validatorStakes, nextBlockProducers);
+        blockHashes_[head.height] = head.hash;
+        blockMerkleRoots_[head.height] = head.merkleRoot;
     }
 
     function _checkBp(NearDecoder.LightClientBlock memory nearBlock, BlockProducerInfo storage bpInfo) internal {
@@ -2012,117 +1888,138 @@ contract NearBridge is INearBridge {
         require(votedFor > bpInfo.totalStake.mul(2).div(3), "NearBridge: Less than 2/3 voted by the block after next");
     }
 
-    function addLightClientBlock(bytes memory data) public payable {
+    struct BridgeState {
+        uint currentHeight; // Height of the current confirmed block
+        // If there is currently no unconfirmed block, the last three fields are zero.
+        uint nextTimestamp; // Timestamp of the current unconfirmed block
+        uint nextValidAt; // Timestamp when the current unconfirmed block will be confirmed
+        uint numBlockProducers; // Number of block producers for the current unconfirmed block
+    }
+
+    function bridgeState() public view returns (BridgeState memory res) {
+        if (block.timestamp < lastValidAt) {
+            res.currentHeight = head.height;
+            res.nextTimestamp = untrustedHead.timestamp;
+            res.nextValidAt = lastValidAt;
+            res.numBlockProducers =
+                (untrustedHeadIsFromNextEpoch ? nextBlockProducers : currentBlockProducers)
+                .bpsLength;
+        } else {
+            res.currentHeight = (lastValidAt == 0 ? head : untrustedHead).height;
+        }
+    }
+
+    function addLightClientBlock(bytes memory data) override public {
         require(initialized, "NearBridge: Contract is not initialized.");
         require(balanceOf[msg.sender] >= lockEthAmount, "Balance is not enough");
-        require(block.timestamp >= head.validAfter, "Wait until last block become valid");
 
         Borsh.Data memory borsh = Borsh.from(data);
         NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
         require(borsh.finished(), "NearBridge: only light client block should be passed");
 
-        // 1. The height of the block is higher than the height of the current head
+        // Commit the previous block, or make sure that it is OK to replace it.
+        if (block.timestamp >= lastValidAt) {
+            if (lastValidAt != 0) {
+                commitBlock();
+            }
+        } else {
+            require(nearBlock.inner_lite.timestamp >= untrustedHead.timestamp.add(replaceDuration), "NearBridge: can only replace with a sufficiently newer block");
+        }
+
+        // Check that the new block's height is greater than the current one's.
         require(
             nearBlock.inner_lite.height > head.height,
             "NearBridge: Height of the block is not valid"
         );
 
-        // 2. The epoch of the block is equal to the epoch_id or next_epoch_id known for the current head
-        require(
-            nearBlock.inner_lite.epoch_id == head.epochId || nearBlock.inner_lite.epoch_id == head.nextEpochId,
-            "NearBridge: Epoch id of the block is not valid"
-        );
+        // Check that the new block is from the same epoch as the current one, or from the next one.
+        bool nearBlockIsFromNextEpoch;
+        if (nearBlock.inner_lite.epoch_id == head.epochId) {
+            nearBlockIsFromNextEpoch = false;
+        } else if (nearBlock.inner_lite.epoch_id == head.nextEpochId) {
+            nearBlockIsFromNextEpoch = true;
+        } else {
+            revert("NearBridge: Epoch id of the block is not valid");
+        }
 
-        // 3. If the epoch of the block is equal to the next_epoch_id of the head, then next_bps is not None
-        if (nearBlock.inner_lite.epoch_id == head.nextEpochId) {
+        // Check that the new block is signed by more than 2/3 of the validators.
+        _checkBp(nearBlock, nearBlockIsFromNextEpoch ? nextBlockProducers : currentBlockProducers);
+
+        // If the block is from the next epoch, make sure that next_bps is supplied and has a correct hash.
+        if (nearBlockIsFromNextEpoch) {
             require(
                 !nearBlock.next_bps.none,
-                "NearBridge: Next next_bps should no be None"
+                "NearBridge: Next next_bps should not be None"
             );
-        }
-
-        // 4. approvals_after_next contain signatures that check out against the block producers for the epoch of the block
-        // 5. The signatures present in approvals_after_next correspond to more than 2/3 of the total stake
-        if (nearBlock.inner_lite.epoch_id == head.epochId) {
-            // The new block is from the current epoch.
-            _checkBp(nearBlock, currentBlockProducers);
-        } else {
-            // The new block is from the next epoch.
-            _checkBp(nearBlock, nextBlockProducers);
-        }
-
-        // 6. If next_bps is not none, sha256(borsh(next_bps)) corresponds to the next_bp_hash in inner_lite.
-        if (!nearBlock.next_bps.none) {
             require(
                 nearBlock.next_bps.hash == nearBlock.inner_lite.next_bp_hash,
-                "NearBridge: Hash of block producers do not match"
+                "NearBridge: Hash of block producers does not match"
             );
         }
 
-        _setHead(nearBlock, data, false);
+        setBlock(nearBlock, untrustedHead);
+        untrustedApprovalCount = nearBlock.approvals_after_next.length;
+        for (uint i = 0; i < nearBlock.approvals_after_next.length; i++) {
+            untrustedApprovals[i] = nearBlock.approvals_after_next[i];
+        }
+        untrustedHeadIsFromNextEpoch = nearBlockIsFromNextEpoch;
+        if (nearBlockIsFromNextEpoch) {
+            setBlockProducers(nearBlock.next_bps.validatorStakes, untrustedNextBlockProducers);
+        }
+        lastSubmitter = msg.sender;
+        lastValidAt = block.timestamp.add(lockDuration);
     }
 
-    function _setHead(NearDecoder.LightClientBlock memory nearBlock, bytes memory data, bool init) internal {
-        // If block is from the next epoch or it is initialization then update block producers.
-        if (init || nearBlock.inner_lite.epoch_id == head.nextEpochId) {
-            // If block from the next epoch then it should contain next_bps.
-            require(!nearBlock.next_bps.none, "NearBridge: The first block of the epoch should contain next_bps.");
-            // If this is initialization then no need for the backup.
-            if (!init) {
-                // backupCurrentBlockProducers <- currentBlockProducers
-                backupCurrentBlockProducers = currentBlockProducers;
-                for (uint i = 0; i < backupCurrentBlockProducers.bpsLength; i++) {
-                    backupCurrentBlockProducers.bps[i] = currentBlockProducers.bps[i];
-                }
-                // currentBlockProducers <- nextBlockProducers
-                currentBlockProducers = nextBlockProducers;
-                for (uint i = 0; i < currentBlockProducers.bpsLength; i++) {
-                    currentBlockProducers.bps[i] = nextBlockProducers.bps[i];
-                }
-            }
-            // nextBlockProducers <- new block producers
-            nextBlockProducers.bpsLength = nearBlock.next_bps.validatorStakes.length;
-            uint256 totalStake = 0;
-            for (uint i = 0; i < nextBlockProducers.bpsLength; i++) {
-                nextBlockProducers.bps[i] = BlockProducer({
-                    publicKey: nearBlock.next_bps.validatorStakes[i].public_key,
-                    stake: nearBlock.next_bps.validatorStakes[i].stake
-                    });
-                totalStake = totalStake.add(nearBlock.next_bps.validatorStakes[i].stake);
-            }
-            nextBlockProducers.totalStake = totalStake;
-        }
-
-        if (!init) {
-            // Backup the head. No need to backup if it is initialization.
-            backupHead = head;
-            for (uint i = 0; i < head.approvals_after_next_length; i++) {
-                backupHead.approvals_after_next[i] = head.approvals_after_next[i];
-            }
-        }
-
-        // Update the head.
-        head = BlockInfo({
-            height: nearBlock.inner_lite.height,
-            epochId: nearBlock.inner_lite.epoch_id,
-            nextEpochId: nearBlock.inner_lite.next_epoch_id,
-            submitter: msg.sender,
-            validAfter: init ? 0 : block.timestamp.add(lockDuration),
-            hash: keccak256(data),
-            next_hash: nearBlock.next_hash,
-            approvals_after_next_length: nearBlock.approvals_after_next.length
-        });
-        for (uint i = 0; i < nearBlock.approvals_after_next.length; i++) {
-            head.approvals_after_next[i] = nearBlock.approvals_after_next[i];
-        }
-
-        blockHashes[nearBlock.inner_lite.height] = nearBlock.hash;
-        blockMerkleRoots[nearBlock.inner_lite.height] = nearBlock.inner_lite.block_merkle_root;
+    function setBlock(NearDecoder.LightClientBlock memory src, BlockInfo storage dest) internal {
+        dest.height = src.inner_lite.height;
+        dest.timestamp = src.inner_lite.timestamp;
+        dest.epochId = src.inner_lite.epoch_id;
+        dest.nextEpochId = src.inner_lite.next_epoch_id;
+        dest.hash = src.hash;
+        dest.merkleRoot = src.inner_lite.block_merkle_root;
+        dest.next_hash = src.next_hash;
 
         emit BlockHashAdded(
-            nearBlock.inner_lite.height,
-            blockHashes[nearBlock.inner_lite.height]
+            src.inner_lite.height,
+            src.hash
         );
+    }
+
+    function setBlockProducers(NearDecoder.ValidatorStake[] memory src, BlockProducerInfo storage dest) internal {
+        dest.bpsLength = src.length;
+        uint256 totalStake = 0;
+        for (uint i = 0; i < src.length; i++) {
+            dest.bps[i] = BlockProducer({
+                publicKey: src[i].public_key,
+                stake: src[i].stake
+            });
+            totalStake = totalStake.add(src[i].stake);
+        }
+        dest.totalStake = totalStake;
+    }
+
+
+    function commitBlock() internal {
+        require(lastValidAt != 0 && block.timestamp >= lastValidAt, "Nothing to commit");
+
+        head = untrustedHead;
+        if (untrustedHeadIsFromNextEpoch) {
+            // Switch to the next epoch. It is guaranteed that untrustedNextBlockProducers is set.
+            copyBlockProducers(nextBlockProducers, currentBlockProducers);
+            copyBlockProducers(untrustedNextBlockProducers, nextBlockProducers);
+        }
+        lastValidAt = 0;
+
+        blockHashes_[head.height] = head.hash;
+        blockMerkleRoots_[head.height] = head.merkleRoot;
+    }
+
+    function copyBlockProducers(BlockProducerInfo storage src, BlockProducerInfo storage dest) internal {
+        dest.bpsLength = src.bpsLength;
+        dest.totalStake = src.totalStake;
+        for (uint i = 0; i < src.bpsLength; i++) {
+            dest.bps[i] = src.bps[i];
+        }
     }
 
     function _checkValidatorSignature(
@@ -2164,5 +2061,19 @@ contract NearBridge is INearBridge {
             ((r & 0xFFFF0000FFFF0000) >> 16);
         r = ((r & 0x00FF00FF00FF00FF) << 8) |
             ((r & 0xFF00FF00FF00FF00) >> 8);
+    }
+
+    function blockHashes(uint64 height) override public view returns (bytes32 res) {
+        res = blockHashes_[height];
+        if (res == 0 && block.timestamp >= lastValidAt && lastValidAt != 0 && height == untrustedHead.height) {
+            res = untrustedHead.hash;
+        }
+    }
+
+    function blockMerkleRoots(uint64 height) override public view returns (bytes32 res) {
+        res = blockMerkleRoots_[height];
+        if (res == 0 && block.timestamp >= lastValidAt && lastValidAt != 0 && height == untrustedHead.height) {
+            res = untrustedHead.merkleRoot;
+        }
     }
 }
