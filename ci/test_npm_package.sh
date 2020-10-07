@@ -14,6 +14,9 @@ npm pack
 rm -rf testenv
 mkdir testenv
 cd testenv
+#mkdir -p /var/lib/buildkite-agent/.rainbow/logs
+#mkdir -p /var/lib/buildkite-agent/.pm2
+#touch /var/lib/buildkite-agent/.pm2/pm2.log
 npm init -y > /dev/null
 npm i ${ROOT_DIR}/rainbow-bridge-cli-*.tgz
 export PATH=${ROOT_DIR}/testenv/node_modules/.bin:$PATH
@@ -45,7 +48,7 @@ rainbow init-eth-client --eth-client-lock-eth-amount 1e18 --eth-client-lock-dura
 rainbow init-eth-prover
 rainbow init-eth-erc20
 rainbow init-eth-locker
-rainbow init-near-fun-token
+rainbow init-near-token-factory
 # First start pm2 daemon
 cd ${ROOT_DIR}/testenv/
 yarn pm2 ping

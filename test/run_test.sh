@@ -10,7 +10,7 @@ ROOT_DIR=$TEST_DIR/..
 trap cleanup EXIT
 cleanup() {
     cd $ROOT_DIR
-    node index.js stop all
+    #node index.js stop all
 }
 
 cd $ROOT_DIR

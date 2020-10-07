@@ -48,6 +48,7 @@ echo "Linking the specified local repo from ${LOCAL_NEARUP_SRC} to ${NEARUP_SRC}
 ln -s $LOCAL_NEARUP_SRC $NEARUP_SRC
 fi
 mkdir -p $NEARUP_LOGS
+cd $NEARUP_SRC && git checkout 0.1.2
 
 cd $CORE_SRC
 cargo build --package neard --bin neard

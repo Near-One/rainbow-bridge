@@ -1,19 +1,11 @@
+const Web3 = require('web3')
 const { nearlib } = require('rainbow-bridge-lib')
-const {
-  InitEthEd25519,
-  InitEthErc20,
-  InitEthLocker,
-  InitEthClient,
-  InitEthProver,
-  InitNearContracts,
-} = require('rainbow-bridge-lib/init')
 const { RainbowConfig } = require('rainbow-bridge-lib/config')
-const {
-  maybeCreateAccount,
-  verifyAccount,
-} = require('rainbow-bridge-lib/rainbow/helpers')
 const { BN } = require('ethereumjs-util')
+const fs = require('fs')
 const path = require('path')
+const { normalizeEthKey } = require('rainbow-bridge-lib/rainbow/robust')
+const { DeployToken } = require('rainbow-bridge-lib/transfer-eth-erc20')
 
 const TEST_DIR = __dirname
 const BRIDGE_SRC_DIR = path.join(TEST_DIR, '..')
@@ -48,7 +40,6 @@ async function init() {
     'Path to the .bin file defining Ethereum ERC20 contract.',
     path.join(LIBS_TC_SRC_DIR, 'res/TToken.full.bin')
   )
-  await InitEthErc20.execute()
   RainbowConfig.declareOption(
     'eth-ed25519-abi-path',
     '',
@@ -59,7 +50,6 @@ async function init() {
     '',
     path.join(LIBS_SOL_SRC_DIR, 'nearbridge/dist/Ed25519.full.bin')
   )
-  await InitEthEd25519.execute()
   RainbowConfig.declareOption('eth-client-lock-eth-amount', '', '1e18')
   RainbowConfig.declareOption('eth-client-lock-duration', '', '30')
   RainbowConfig.declareOption(
@@ -72,7 +62,6 @@ async function init() {
     'Path to the .bin file defining Ethereum Client contract.',
     path.join(LIBS_SOL_SRC_DIR, 'nearbridge/dist/NearBridge.full.bin')
   )
-  await InitEthClient.execute()
   RainbowConfig.declareOption(
     'eth-prover-abi-path',
     'Path to the .abi file defining Ethereum Prover contract.',
@@ -83,7 +72,6 @@ async function init() {
     'Path to the .bin file defining Ethereum Prover contract.',
     path.join(LIBS_SOL_SRC_DIR, 'nearprover/dist/NearProver.full.bin')
   )
-  await InitEthProver.execute()
   RainbowConfig.declareOption(
     'near-token-factory-account',
     '',
@@ -99,98 +87,59 @@ async function init() {
     'Path to the .bin file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
     path.join(LIBS_TC_SRC_DIR, 'res/BridgeTokenFactory.full.bin')
   )
-  await InitEthLocker.execute()
   RainbowConfig.declareOption(
     'near-prover-account',
     'The account of the Near Prover contract that can be used to accept ETH headers.',
     'rainbow_bridge_eth_on_near_prover'
   )
-  await InitNearContracts.execute()
   RainbowConfig.saveConfig()
 }
 
-async function testInitTokenFactory() {
+async function testDeployToken() {
   await init()
-  const masterAccount = RainbowConfig.getParam('near-master-account')
-  const masterSk = RainbowConfig.getParam('near-master-sk')
-  const tokenFactoryAccount = RainbowConfig.getParam(
-    'near-token-factory-account'
-  )
-  let tokenSk = RainbowConfig.maybeGetParam('near-token-factory-sk')
-  if (!tokenSk) {
-    console.log(
-      'Secret key for fungible token is not specified. Reusing master secret key.'
-    )
-    tokenSk = masterSk
-    RainbowConfig.setParam('near-token-factory-sk', tokenSk)
-  }
-  const tokenContractPath = RainbowConfig.getParam(
-    'near-token-factory-contract-path'
-  )
-  const tokenInitBalance = RainbowConfig.getParam(
-    'near-token-factory-init-balance'
-  )
-  const proverAccount = RainbowConfig.getParam('near-prover-account')
 
-  const nearNodeUrl = RainbowConfig.getParam('near-node-url')
-  const nearNetworkId = RainbowConfig.getParam('near-network-id')
+  const web3 = new Web3(RainbowConfig.getParam('eth-node-url'))
+  let ethMasterAccount = web3.eth.accounts.privateKeyToAccount(
+    normalizeEthKey(RainbowConfig.getParam('eth-master-sk'))
+  )
+  web3.eth.accounts.wallet.add(ethMasterAccount)
+  web3.eth.defaultAccount = ethMasterAccount.address
+  ethMasterAccount = ethMasterAccount.address
 
-  const tokenPk = nearlib.KeyPair.fromString(tokenSk).getPublicKey()
+  // use default ERC20 ABI
+  const abiPath = RainbowConfig.getParam('eth-erc20-abi-path')
+  const binPath = './MyERC20.full.bin'
 
-  const keyStore = new nearlib.keyStores.InMemoryKeyStore()
-  await keyStore.setKey(
-    nearNetworkId,
-    masterAccount,
-    nearlib.KeyPair.fromString(masterSk)
+  const tokenContract = new web3.eth.Contract(
+    JSON.parse(fs.readFileSync(abiPath))
   )
-  await keyStore.setKey(
-    nearNetworkId,
-    tokenFactoryAccount,
-    nearlib.KeyPair.fromString(tokenSk)
-  )
-  const near = await nearlib.connect({
-    nodeUrl: nearNodeUrl,
-    networkId: nearNetworkId,
-    masterAccount: masterAccount,
-    deps: { keyStore: keyStore },
-  })
+  const txContract = await tokenContract
+    .deploy({
+      data: '0x' + fs.readFileSync(binPath),
+      arguments: [],
+    })
+    .send({
+      from: ethMasterAccount,
+      gas: 3000000,
+      gasPrice: new BN(await web3.eth.getGasPrice()).mul(
+        new BN(RainbowConfig.getParam('eth-gas-multiplier'))
+      ),
+    })
 
-  await verifyAccount(near, masterAccount)
-  console.log('Deploying token contract.')
-  await maybeCreateAccount(
-    near,
-    masterAccount,
-    tokenFactoryAccount,
-    tokenPk,
-    tokenInitBalance,
-    tokenContractPath
+  tokenAddress = normalizeEthKey(txContract.options.address)
+  console.log('token address is', tokenAddress)
+  web3.currentProvider.connection.close()
+
+  await DeployToken.execute('myerc20', tokenAddress)
+
+  console.log(
+    'near-myerc20-account set to ' +
+      RainbowConfig.getParam('near-myerc20-account')
   )
-  const tokenFactoryContract = new nearlib.Contract(
-    new nearlib.Account(near.connection, tokenFactoryAccount),
-    tokenFactoryAccount,
-    {
-      changeMethods: ['new', 'deploy_bridge_token'],
-      viewMethods: ['get_bridge_token_account_id'],
-    }
+  console.log(
+    'eth-myerc20-address set to ' +
+      RainbowConfig.getParam('eth-myerc20-address')
   )
-  const lockerAddress = RainbowConfig.getParam('eth-locker-address')
-  try {
-    // Try initializing the factory.
-    await tokenFactoryContract.new(
-      {
-        prover_account: proverAccount,
-        locker_address: lockerAddress.startsWith('0x')
-          ? lockerAddress.substr(2)
-          : lockerAddress,
-      },
-      new BN('300000000000000')
-    )
-  } catch (err) {
-    console.log(`Failed to initialize the token factory ${err}`)
-    process.exit(1)
-  }
-  RainbowConfig.saveConfig()
-  console.log('EPIC')
 }
 
-testInitTokenFactory()
+testDeployToken()

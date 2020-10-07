@@ -19,16 +19,18 @@ const { StopManagedProcessCommand } = require('./commands/stop/process.js')
 const {
   DangerSubmitInvalidNearBlock,
 } = require('./commands/danger-submit-invalid-near-block')
+const { DangerDeployMyERC20 } = require('./commands/danger-deploy-myerc20')
 const {
   TransferETHERC20ToNear,
   TransferEthERC20FromNear,
+  DeployToken,
 } = require('rainbow-bridge-lib/transfer-eth-erc20')
 const { ETHDump } = require('./commands/eth-dump')
 const { NearDump } = require('rainbow-bridge-lib/rainbow/near-dump')
 const { RainbowConfig } = require('rainbow-bridge-lib/config')
 const {
   InitNearContracts,
-  InitNearFunToken,
+  InitNearTokenFactory,
   InitEthEd25519,
   InitEthErc20,
   InitEthLocker,
@@ -142,22 +144,22 @@ RainbowConfig.declareOption(
 
 // User-specific arguments.
 RainbowConfig.declareOption(
-  'near-fun-token-account',
-  'The account of the fungible token contract that will be used to mint tokens locked on Ethereum.',
-  'nearfuntoken'
+  'near-token-factory-account',
+  'The account of the token factory contract that will be used to mint tokens locked on Ethereum.',
+  'neartokenfactory'
 )
 RainbowConfig.declareOption(
-  'near-fun-token-sk',
-  'The secret key of the fungible token account. If not specified will use master SK.'
+  'near-token-factory-sk',
+  'The secret key of the token factory account. If not specified will use master SK.'
 )
 RainbowConfig.declareOption(
-  'near-fun-token-contract-path',
-  'The path to the Wasm file containing the fungible contract. Note, this version of fungible contract should support minting.',
+  'near-token-factory-contract-path',
+  'The path to the Wasm file containing the token factory contract.',
   path.join(LIBS_TC_SRC_DIR, 'res/bridge_token_factory.wasm')
 )
 RainbowConfig.declareOption(
-  'near-fun-token-init-balance',
-  'The initial balance of fungible token contract in femtoNEAR.',
+  'near-token-factory-init-balance',
+  'The initial balance of token factory contract in yoctoNEAR.',
   '1000000000000000000000000000'
 )
 RainbowConfig.declareOption(
@@ -205,12 +207,17 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'eth-client-lock-eth-amount',
   'Amount of Ether that should be temporarily locked when submitting a new header to EthClient, in wei.',
-  1e20
+  '100000000000000000000'
 )
 RainbowConfig.declareOption(
   'eth-client-lock-duration',
   'The challenge window during which anyone can challenge an incorrect ED25519 signature of the Near block, in EthClient, in seconds.',
   14400
+)
+RainbowConfig.declareOption(
+  'eth-client-replace-duration',
+  'Minimum time difference required to replace a block during challenge period, in EthClient, in seconds.',
+  18000
 )
 RainbowConfig.declareOption(
   'eth-client-address',
@@ -241,9 +248,29 @@ RainbowConfig.declareOption(
   path.join(LIBS_SOL_SRC_DIR, 'nearprover/dist/NearProver.full.bin')
 )
 RainbowConfig.declareOption(
-  'near2eth-relay-delay',
-  'How many seconds should we wait after the NEAR header becomes valid before we submit the next one.',
-  '0'
+  'near2eth-relay-min-delay',
+  'Minimum number of seconds to wait if the relay can\'t submit a block right away.',
+  '1'
+)
+RainbowConfig.declareOption(
+  'near2eth-relay-max-delay',
+  'Maximum number of seconds to wait if the relay can\'t submit a block right away.',
+  '600'
+)
+RainbowConfig.declareOption(
+  'near2eth-relay-error-delay',
+  'Number of seconds to wait before retrying if there is an error.',
+  '1'
+)
+RainbowConfig.declareOption(
+  'watchdog-delay',
+  'Number of seconds to wait after validating all signatures.',
+  '300'
+)
+RainbowConfig.declareOption(
+  'watchdog-error-delay',
+  'Number of seconds to wait before retrying if there is an error.',
+  '1'
 )
 RainbowConfig.declareOption('near-erc20-account', 'Must be declared before set')
 
@@ -295,7 +322,9 @@ RainbowConfig.addOptions(
     'near-network-id',
     'eth-client-abi-path',
     'eth-client-address',
-    'near2eth-relay-delay',
+    'near2eth-relay-min-delay',
+    'near2eth-relay-max-delay',
+    'near2eth-relay-error-delay',
     'eth-gas-multiplier',
     'daemon',
   ]
@@ -303,7 +332,14 @@ RainbowConfig.addOptions(
 
 RainbowConfig.addOptions(
   startCommand.command('bridge-watchdog').action(StartWatchdogCommand.execute),
-  ['eth-node-url', 'eth-master-sk', 'eth-client-abi-path', 'daemon']
+  [
+    'eth-node-url',
+    'eth-master-sk',
+    'eth-client-abi-path',
+    'daemon',
+    'watchdog-delay',
+    'watchdog-error-delay',
+  ]
 )
 
 const stopCommand = program.command('stop')
@@ -375,6 +411,7 @@ RainbowConfig.addOptions(
     'eth-ed25519-address',
     'eth-client-lock-eth-amount',
     'eth-client-lock-duration',
+    'eth-client-replace-duration',
     'eth-gas-multiplier',
   ]
 )
@@ -398,18 +435,26 @@ RainbowConfig.addOptions(
 
 RainbowConfig.addOptions(
   program
-    .command('init-near-fun-token')
+    .command('init-near-token-factory')
     .description(
-      'Deploys and initializes mintable fungible token to NEAR blockchain. Requires locker on Ethereum side.'
+      'Deploys and initializes token factory to NEAR blockchain. Requires locker on Ethereum side.'
     )
-    .action(InitNearFunToken.execute),
+    .action(InitNearTokenFactory.execute),
   [
-    'near-fun-token-account',
-    'near-fun-token-sk',
-    'near-fun-token-contract-path',
-    'near-fun-token-init-balance',
+    'near-token-factory-account',
+    'near-token-factory-sk',
+    'near-token-factory-contract-path',
+    'near-token-factory-init-balance',
     'eth-locker-address',
   ]
+)
+
+RainbowConfig.addOptions(
+  program
+    .command('deploy-token <token_name> <token_address>')
+    .description('Deploys and initializes token on NEAR.')
+    .action(DeployToken.execute),
+  ['near-token-factory-account']
 )
 
 RainbowConfig.addOptions(
@@ -425,7 +470,7 @@ RainbowConfig.addOptions(
     'eth-locker-abi-path',
     'eth-locker-bin-path',
     'eth-erc20-address',
-    'near-fun-token-account',
+    'near-token-factory-account',
     'eth-prover-address',
     'eth-gas-multiplier',
   ]
@@ -459,6 +504,10 @@ RainbowConfig.addOptions(
     .option(
       '--near-receiver-account <near_receiver_account>',
       'The account on NEAR blockchain that will be receiving the minted token.'
+    )
+    .option(
+      '--token-name <token_name>',
+      'Specific ERC20 token that is already bound by `deploy-token`.'
     ),
   [
     'eth-node-url',
@@ -468,7 +517,7 @@ RainbowConfig.addOptions(
     'eth-locker-abi-path',
     'near-node-url',
     'near-network-id',
-    'near-fun-token-account',
+    'near-token-factory-account',
     'near-client-account',
     'near-master-account',
     'near-master-sk',
@@ -492,11 +541,15 @@ RainbowConfig.addOptions(
     .option(
       '--eth-receiver-address <eth_receiver_address>',
       'The account that will be receiving the token on Ethereum side.'
+    )
+    .option(
+      '--token-name <token_name>',
+      'Specific ERC20 token that is already bound by `deploy-token`.'
     ),
   [
     'near-node-url',
     'near-network-id',
-    'near-fun-token-account',
+    'near-token-factory-account',
     'eth-node-url',
     'eth-erc20-address',
     'eth-erc20-abi-path',
@@ -532,7 +585,22 @@ RainbowConfig.addOptions(
     'near-network-id',
     'eth-client-abi-path',
     'eth-client-address',
-    'near2eth-relay-delay',
+    'near2eth-relay-min-delay',
+    'near2eth-relay-max-delay',
+    'near2eth-relay-error-delay',
+    'eth-gas-multiplier',
+  ]
+)
+
+RainbowConfig.addOptions(
+  dangerCommand
+    .command('deploy_test_erc20')
+    .description('Deploys MyERC20')
+    .action(DangerDeployMyERC20.execute),
+  [
+    'eth-node-url',
+    'eth-master-sk',
+    'eth-erc20-abi-path',
     'eth-gas-multiplier',
   ]
 )

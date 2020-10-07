@@ -7,7 +7,7 @@
   </p>
 
   <p>
-    <a href="https://buildkite.com/nearprotocol/rainbow-bridge"><img src="https://badge.buildkite.com/a3dcd9711ef855a7ea6dc80453828ad73d7a669b9a925889ad.svg?branch=master" alt="Buildkite Build" /></a>
+    <a href="https://buildkite.com/nearprotocol/rainbow-bridge-cli"><img src=" https://badge.buildkite.com/93478642b0ddf8e3548c16d2e60c4adbca4fd853520b6a5bca.svg?branch=master" alt="Buildkite Build" /></a>
     <a href="https://npmjs.com/rainbow-bridge-cli"><img alt="npm" src="https://img.shields.io/npm/v/rainbow-bridge-cli.svg?style=flat-square"></a>
   </p>
 </div>
@@ -121,7 +121,7 @@ If you have already used the bridge on this machine run a cleanup:
 ```bash
 rainbow clean
 ```
-Then create `~/.rainbow/config.json` file with the following content:
+If you're using rainbow-bridge-cli 1.x, create `~/.rainbow/config.json` file with the following content:
 ```json
 {
         "nearNetworkId": "testnet",
@@ -139,6 +139,27 @@ Then create `~/.rainbow/config.json` file with the following content:
         "ethErc20Address": "0x8151a8F90267bFf183E06921841C5dE774499388",
         "ethLockerAddress": "0x5f7Cc23F90b5264a083dcB3b171c7111Dc32dD00",
         "nearFunTokenAccount": "mintablefuntoken11"
+}
+```
+If you are using rainbow-bridge-cli 2.x, create `~/.rainbow/config.json` file with the following content:
+```json
+{
+        "nearNetworkId": "testnet",
+        "nearNodeUrl": "https://rpc.testnet.near.org/",
+        "ethNodeUrl": "https://rinkeby.infura.io/v3/<project_id>",
+        "nearMasterAccount": "<near_token_holder_account>",
+        "nearMasterSk": "<near_token_holder_sk>",
+        "nearClientAccount": "ethonnearclient10",
+        "nearProverAccount": "ethonnearprover10",
+        "nearClientTrustedSigner": "eth2nearrelay10.testnet",
+        "ethMasterSk": "<eth_token_holder_sk>",
+        "ethEd25519Address": "0x9003342d15B21b4C42e1702447fE2f39FfAF55C2",
+        "ethClientAddress": "0xF721c979db97413AA9D0F91ad531FaBF769bb09C",
+        "ethProverAddress": "0xc5D62d66B8650E6242D9936c7e50E959BA0F9E37",
+        "nearTokenFactoryAccount": "ntf4.bridge2.testnet",
+        "ethErc20Address": "0x21e7381368baa3f3e9640fe19780c4271ad96f37",
+        "ethLockerAddress": "0x7f66c116a4f51e43e7c1c33d3714a4acfa9c40fb",
+        "nearErc20Account": "21e7381368baa3f3e9640fe19780c4271ad96f37.ntf4.bridge2.testnet"
 }
 ```
 You can get infura project id, by registering at [infura.io](http://infura.io/).
@@ -231,10 +252,10 @@ rainbow init-eth-erc20
 rainbow init-eth-locker
 ```
 
-Now, let's initialize token on NEAR blockchain that will mirror the token on Ethereum side.
+Now, let's initialize token factory on NEAR blockchain.
 
 ```bash
-rainbow init-near-fun-token
+rainbow init-near-token-factory
 ```
 
 ### Starting the services
@@ -258,12 +279,12 @@ pm2 logs
 Finally, let's transfer some tokens
 
 ```bash
-rainbow transfer-eth-erc20-to-near --amount 1000 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account rainbow_bridge_eth_on_near_prover --near-master-account nearfuntoken
+rainbow transfer-eth-erc20-to-near --amount 1000 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account rainbow_bridge_eth_on_near_prover --near-master-account neartokenfactory
 ```
 
 Note, when we deployed ERC20 to the Ethereum blockchain we have minted a large number of tokens to the default master
 key of Ganache, so we have transferred ERC20 tokens from it to `alice.test.near`.
-Notice that we are using `nearfuntoken` account here to pay for the NEAR gas fees, any account for which we know a secret key would've worked too.
+Notice that we are using `neartokenfactory` account here to pay for the NEAR gas fees, any account for which we know a secret key would've worked too.
 You must observe blocks being submitted.
 
 Now let's try to transfer one token back to Ethereum

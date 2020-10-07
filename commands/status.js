@@ -72,7 +72,7 @@ class NearContracts {
     this.funToken = await this.checkContract(
       near,
       masterAccount,
-      RainbowConfig.getParam('near-fun-token-account')
+      RainbowConfig.getParam('near-token-factory-account')
     )
   }
 

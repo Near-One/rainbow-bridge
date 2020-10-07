@@ -20,6 +20,11 @@ async function main() {
       'rainbow-bridge-lib'
     ] = `near/rainbow-bridge-lib#${process.env.PATCH_RAINBOW_BRIDGE_LIB}`
   }
+  if (process.env.PATCH_TOKEN_CONNECTOR) {
+    packageJson.dependencies[
+      'rainbow-token-connector'
+    ] = `near/rainbow-token-connector#${process.env.PATCH_TOKEN_CONNECTOR}`
+  }
   console.log('Contract versions:')
   console.log(
     `rainbow-bridge-sol: ${packageJson.dependencies['rainbow-bridge-sol']}`
@@ -30,10 +35,14 @@ async function main() {
   console.log(
     `rainbow-bridge-lib: ${packageJson.dependencies['rainbow-bridge-lib']}`
   )
+  console.log(
+    `rainbow-token-connector: ${packageJson.dependencies['rainbow-token-connector']}`
+  )
   if (
     !process.env.PATCH_RAINBOW_BRIDGE_SOL &&
     !process.env.PATCH_RAINBOW_BRIDGE_RS &&
-    !process.env.PATCH_RAINBOW_BRIDGE_LIB
+    !process.env.PATCH_RAINBOW_BRIDGE_LIB &&
+    !process.env.PATCH_TOKEN_CONNECTOR
   ) {
     process.exit()
   }
