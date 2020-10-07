@@ -274,7 +274,7 @@ RainbowConfig.declareOption(
 )
 RainbowConfig.declareOption('near-erc20-account', 'Must be declared before set')
 
-program.version('0.1.0')
+program.version(require('./package.json').version)
 
 // General-purpose commands.
 program.command('clean').action(CleanCommand.execute)
