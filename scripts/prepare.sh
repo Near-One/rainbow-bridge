@@ -48,6 +48,7 @@ echo "Linking the specified local repo from ${LOCAL_NEARUP_SRC} to ${NEARUP_SRC}
 ln -s $LOCAL_NEARUP_SRC $NEARUP_SRC
 fi
 mkdir -p $NEARUP_LOGS
+cd $NEARUP_SRC && git checkout 0.1.2
 
 cd $CORE_SRC
 cargo build --package neard --bin neard
@@ -55,8 +56,10 @@ echo "Compiled source of nearcore"
 
 cd $BRIDGE_SRC
 # In local development, this update ethashproof repo
-# In npm package, this is safely ignored and ethashproof src is packaged
-git submodule update --init --recursive
+# In npm package, ethashproof src is packaged so this is skipped.
+if [ -d .git ]; then
+    git submodule update --init --recursive
+fi
 
 yarn
 echo "Installed CLI dependencies"
