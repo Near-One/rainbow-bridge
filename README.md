@@ -43,9 +43,14 @@ rustup target add wasm32-unknown-unknown
 ```
 
 - Then install dependencies needed for the compilation of nearcore, [see](https://docs.near.org/docs/local-setup/running-testnet#compiling-and-running-official-node-without-docker).
-- python3, for nearup
+- python3 and python3-pip, for nearup
 
 ## Usage
+
+Install nearup
+```bash
+pip3 install nearup --user  
+```
 
 You can install `rainbow-bridge-cli` from npm
 

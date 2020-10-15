@@ -409,12 +409,11 @@ class StatusCommand {
     console.error = function () {}
 
     const nearStatus = new NearStatus()
-    await nearStatus.init()
-
     const ethStatus = new EthStatus()
-    await ethStatus.init()
-
     const servicesStatus = new ServicesStatus()
+
+    await nearStatus.init()
+    await ethStatus.init()
     await servicesStatus.init()
 
     // Return console.error back
