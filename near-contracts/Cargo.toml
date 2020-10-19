@@ -1,0 +1,16 @@
+[workspace]
+members = [
+    "eth-client",
+    "eth-prover",
+    "eth-types",
+    "mintable-fungible-token"
+]
+
+[profile.release]
+codegen-units = 1
+# Tell `rustc` to optimize for small code size.
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true

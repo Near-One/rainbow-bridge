@@ -1,0 +1,46 @@
+{
+    "name": "NearBridge",
+    "version": "0.0.1",
+    "description": "",
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:nearprotocol/near-bridge.git"
+    },
+    "license": "MIT",
+    "dependencies": {
+        "@openzeppelin/contracts": "^3.2",
+        "borsh": "^0.2.6",
+        "bs58": "^4.0.1"
+    },
+    "devDependencies": {
+        "@codechecks/client": "^0.1.9",
+        "@openzeppelin/test-helpers": "^0.5.1",
+        "chai": "^4.2.0",
+        "coveralls": "^3.0.3",
+        "eslint": "^6.3.0",
+        "eslint-config-standard": "^14.1.0",
+        "eslint-plugin-import": "^2.14.0",
+        "eslint-plugin-node": "^11.0.0",
+        "eslint-plugin-promise": "^4.0.1",
+        "eslint-plugin-standard": "^4.0.0",
+        "eth-gas-reporter": "^0.2.11",
+        "ganache-cli": "^6.9.1",
+        "rainbow-bridge-lib": "^2.0.0",
+        "solc": "^0.6",
+        "solidity-coverage": "^0.7.0",
+        "solium": "^1.2.3",
+        "truffle": "^5.1 <5.1.8",
+        "truffle-flattener": "^1.5",
+        "web3": "^1.2.9"
+    },
+    "scripts": {
+        "test": "scripts/test.sh",
+        "coverage": "scripts/coverage.sh",
+        "lint:js": "eslint .",
+        "lint:js:fix": "eslint . --fix",
+        "lint:sol": "solium -d .",
+        "lint:sol:fix": "solium -d . --fix",
+        "lint": "yarn run lint:js && yarn run lint:sol",
+        "lint:fix": "yarn run lint:js:fix && yarn run lint:sol:fix"
+    }
+}

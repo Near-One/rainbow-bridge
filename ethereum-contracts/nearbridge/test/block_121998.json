@@ -1,0 +1,25 @@
+{
+    "approvals_after_next": [
+        "ed25519:5zD6wKAFe7tdw2zRb1tVfDNghsV6vyWKG54oEE8U5shGriM72LYjJUyB9GwceTpMXr8ssxPn7Bgza4scZEkcpCuJ"
+    ],
+    "inner_lite": {
+        "block_merkle_root": "MQFMkdQn25narJEE4SJJ9FCL3JxKVHk4La6UyNeaSj8",
+        "epoch_id": "556dMzVQusducJypg5Q4Kbq3bZ5mJigycBam6umgxvrv",
+        "height": 121998,
+        "next_bp_hash": "CfVtbv2j9fgyBbNphsP7yauepzpP34Z2N538CEMvDkje",
+        "next_epoch_id": "FXPmNESkHvV9BL5qDyH62asc2qPEWQjeW1YUpTvb5yiH",
+        "outcome_root": "7tkzFg8RHBmMw1ncRJZCCZAizgq4rwCftTKYLce8RU8t",
+        "prev_state_root": "HQsbzrwjACD5Nb2sWzoGzjKum7HNRhNd1hyoa3yYL53w",
+        "timestamp": "1590579192795262000"
+    },
+    "inner_rest_hash": "4Sb2jpFBfDrRu3NXCvUpqbKpdqE6AhD1FzBjbg8Z5rYe",
+    "next_block_inner_hash": "7dCBMzoAY2XK71EdBXsSmswzRf3bwpuP1gtUvXoFPDSq",
+    "next_bps": [
+        {
+            "account_id": "test.near",
+            "public_key": "ed25519:BnnC1A3aQpnVLuYcn6sxY6PpNdUSpMyzLR5J3pJRnVJL",
+            "stake": "50355254281876922456900594898053"
+        }
+    ],
+    "prev_block_hash": "AiPNRMxpFfgkfA4DxLQi3rhPk47JcLCgYcqNzbCeSNrp"
+}
