@@ -1,17 +1,12 @@
-node_modules
+**/node_modules
 .idea
 **/.idea
 **/.near
 **/.vscode
 *.pyc
-neardev/
-ethrelay/testdir
-/testdata
-/testenv
 
-venv
+eth2near/ethashproof
 
-**/transfer-eth-erc20-to-near.log.json
 **/*.swp
 **/*.tgz
 
