@@ -1,0 +1,70 @@
+steps:
+  - label: 'e2e test'
+    command: |
+      source ci/e2e_ci_prepare_env.sh
+      source ci/e2e_ci_prepare_log.sh
+      node ci/patch_contract_version.js
+      ci/e2e.sh
+
+    artifact_paths:
+      - 'logs/**/*.log'
+    timeout: 40
+
+    agents:
+      - 'queue=default'
+
+  - label: 'e2e test myerc20'
+    command: |
+      source ci/e2e_ci_prepare_env.sh
+      source ci/e2e_ci_prepare_log.sh
+      node ci/patch_contract_version.js
+      ci/e2e_deploy_contract.sh
+
+    artifact_paths:
+      - 'logs/**/*.log'
+    timeout: 40
+
+    agents:
+      - 'queue=default'
+
+  - label: 'test challenge with Rainbow Bridge Watchdog'
+    command: |
+      source ci/e2e_ci_prepare_env.sh
+      source ci/e2e_ci_prepare_log.sh
+      node ci/patch_contract_version.js
+      ci/test_challenge.sh
+
+    artifact_paths:
+      - 'logs/**/*.log'
+    timeout: 40
+
+    agents:
+      - 'queue=default'
+
+  - label: 'test ethrelay catchup'
+    command: |
+      source ci/e2e_ci_prepare_env.sh
+      source ci/e2e_ci_prepare_log.sh
+      node ci/patch_contract_version.js
+      ci/test_ethrelay_catchup.sh
+
+    artifact_paths:
+      - 'logs/**/*.log'
+    timeout: 40
+
+    agents:
+      - 'queue=default'
+
+  - label: 'test command as installed from npm'
+    command: |
+      source ci/e2e_ci_prepare_env.sh
+      source ci/e2e_ci_prepare_log.sh
+      node ci/patch_contract_version.js
+      ci/test_npm_package.sh
+
+    artifact_paths:
+      - 'logs/**/*.log'
+    timeout: 40
+
+    agents:
+      - 'queue=default'
