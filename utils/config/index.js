@@ -5,17 +5,17 @@ const changeCase = require('change-case')
 
 class RainbowConfig {
   // Remembers the description of the parameter.
-  static declareOption(name, description, defaultValue = '', noConfig = false) {
+  static declareOption (name, description, defaultValue = '', noConfig = false) {
     this.paramDeclarations[name] = {
       description: description,
       defaultValue: defaultValue,
-      noConfig: noConfig,
+      noConfig: noConfig
     }
   }
 
   // Adds a list of options to the given commander action.
   // options is a list of string representing parameter name.
-  static addOptions(action, options) {
+  static addOptions (action, options) {
     let prev = action
     for (const option of options) {
       const declaration = this.paramDeclarations[option]
@@ -43,7 +43,7 @@ class RainbowConfig {
   }
 
   // This function is called when argument is processed by the commander.
-  static _processArg(name, value, previous) {
+  static _processArg (name, value, previous) {
     const constantCase = changeCase.constantCase(name)
     const camelCase = changeCase.camelCase(name)
     if (this.paramValues[name]) {
@@ -53,14 +53,14 @@ class RainbowConfig {
     if (process.env[constantCase]) {
       this.paramValues[name] = {
         value: process.env[constantCase],
-        paramType: 'env',
+        paramType: 'env'
       }
     } else if (value) {
       this.paramValues[name] = { value: value, paramType: 'arg' }
     } else if (this.configFile.has(camelCase)) {
       this.paramValues[name] = {
         value: this.configFile.get(camelCase),
-        paramType: 'config',
+        paramType: 'config'
       }
     } else if (previous) {
       this.paramValues[name] = { value: previous, paramType: 'default' }
@@ -71,7 +71,7 @@ class RainbowConfig {
   }
 
   // This function should be used to retrieve the actual value of the argument.
-  static getParam(name) {
+  static getParam (name) {
     const res = this.maybeGetParam(name)
     if (res === null) {
       throw new Error(`Parameter ${name} must be specified.`)
@@ -79,7 +79,7 @@ class RainbowConfig {
     return res
   }
 
-  static maybeGetParam(name) {
+  static maybeGetParam (name) {
     if (typeof this.paramValues[name] === 'undefined') {
       const camelCase = changeCase.camelCase(name)
       if (this.configFile.has(camelCase)) {
@@ -100,12 +100,12 @@ class RainbowConfig {
     }
   }
 
-  static setParam(name, value) {
+  static setParam (name, value) {
     this.paramValues[name] = { value: value, paramType: 'config' }
   }
 
   // Get all args, but without daemon as array of strings.
-  static getArgsNoDaemon() {
+  static getArgsNoDaemon () {
     const result = []
     for (const name in this.paramValues) {
       const value = this.paramValues[name]
@@ -121,10 +121,10 @@ class RainbowConfig {
 
   // Iterates over the params and writes them into config if they were set through arguments
   // or default values.
-  static saveConfig() {
+  static saveConfig () {
     for (const name in this.paramValues) {
       const value = this.paramValues[name]
-      /*if (
+      /* if (
         typeof this.paramDeclarations[name] === 'undefined' ||
         this.paramDeclarations[name].noConfig
       ) {
@@ -134,10 +134,10 @@ class RainbowConfig {
         value.paramType === 'arg' ||
         value.paramType === 'default' ||
         value.paramType === 'config'
-      ) {*/
+      ) { */
       const camelCase = changeCase.camelCase(name)
       this.configFile.set(camelCase, value.value)
-      //}
+      // }
     }
   }
 }
@@ -157,7 +157,7 @@ RainbowConfig.configFile = new Configstore(
   '',
   {},
   {
-    configPath: path.join(homedir, '.rainbow', 'config.json'),
+    configPath: path.join(homedir, '.rainbow', 'config.json')
   }
 )
 

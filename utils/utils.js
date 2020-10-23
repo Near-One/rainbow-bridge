@@ -10,7 +10,7 @@ const PROJECT_KEY_DIR = './neardev'
 
 const DEFAULT_GAS = 1000000
 
-async function setupNear(config) {
+async function setupNear (config) {
   const deps = await createLocalKeyStore(config.networkId, config.keyPath)
   if (config.keyPath) {
     delete config.keyPath
@@ -18,11 +18,11 @@ async function setupNear(config) {
   return nearAPI.connect({
     networkId: config.networkId,
     nodeUrl: config.nearNodeUrl,
-    deps,
+    deps
   })
 }
 
-async function setupEth(config) {
+async function setupEth (config) {
   const web3 = await getWeb3(config)
   web3.eth.defaultAccount = addSecretKey(web3, config.ethFromSecretKey)
   config.ethFrom = web3.eth.defaultAccount
@@ -33,7 +33,7 @@ async function setupEth(config) {
  * Setup connection to NEAR and Ethereum from given configuration.
  * @param {Object} config Config object which defines nearNodeUrl/ethNodeUrl, networkId and more.
  */
-async function setupEthNear(config) {
+async function setupEthNear (config) {
   const near = await setupNear(config)
   const web3 = await setupEth(config)
   return { near, web3 }
@@ -44,7 +44,7 @@ async function setupEthNear(config) {
  * @param {String} input data
  * @return {String} string without 0x
  */
-function remove0x(value) {
+function remove0x (value) {
   assert(typeof value === 'string', 'remove0x: must pass in string')
 
   if (value.slice(0, 2) === '0x') {
@@ -54,7 +54,7 @@ function remove0x(value) {
   }
 }
 
-function normalizeHex(value) {
+function normalizeHex (value) {
   value = value.toLowerCase()
   if (!value.startsWith('0x')) {
     return `0x${value}`
@@ -62,7 +62,7 @@ function normalizeHex(value) {
   return value
 }
 
-async function accountExists(connection, accountId) {
+async function accountExists (connection, accountId) {
   try {
     const account = new nearAPI.Account(connection, accountId)
     await account.state()
@@ -75,12 +75,12 @@ async function accountExists(connection, accountId) {
   }
 }
 
-async function createLocalKeyStore(networkId, keyPath) {
+async function createLocalKeyStore (networkId, keyPath) {
   // TODO: this should live in near-api-js
   const credentialsPath = path.join(homedir, CREDENTIALS_DIR)
   const keyStores = [
     new nearAPI.keyStores.UnencryptedFileSystemKeyStore(credentialsPath),
-    new nearAPI.keyStores.UnencryptedFileSystemKeyStore(PROJECT_KEY_DIR),
+    new nearAPI.keyStores.UnencryptedFileSystemKeyStore(PROJECT_KEY_DIR)
   ]
   if (keyPath) {
     const account = JSON.parse(fs.readFileSync(keyPath).toString())
@@ -92,23 +92,23 @@ async function createLocalKeyStore(networkId, keyPath) {
   return { keyStore: new nearAPI.keyStores.MergeKeyStore(keyStores) }
 }
 
-function getWeb3(config) {
+function getWeb3 (config) {
   // TODO: add RobustWeb3 usage here.
   return new Web3(config.ethNodeUrl)
 }
 
-function getEthContract(web3, path, address) {
+function getEthContract (web3, path, address) {
   const bin = fs.readFileSync(`${path}.full.bin`)
   const abi = fs.readFileSync(`${path}.full.abi`)
   const contract = new web3.eth.Contract(JSON.parse(abi), address, {
-    from: web3.eth.defaultAccount,
+    from: web3.eth.defaultAccount
   })
   contract.bin = bin
   return contract
 }
 
-function addSecretKey(web3, secretKey) {
-  let account = web3.eth.accounts.privateKeyToAccount(normalizeHex(secretKey))
+function addSecretKey (web3, secretKey) {
+  const account = web3.eth.accounts.privateKeyToAccount(normalizeHex(secretKey))
   web3.eth.accounts.wallet.add(account)
   return account.address
 }
@@ -117,12 +117,12 @@ function addSecretKey(web3, secretKey) {
  * Wrap pure calls to Web3 contract to handle errors/reverts/gas usage.
  * TODO: should use RobustWeb3 code.
  */
-async function ethCallContract(contract, methodName, args) {
+async function ethCallContract (contract, methodName, args) {
   let dryRun
   try {
     dryRun = await contract.methods[methodName](...args).call()
     return contract.methods[methodName](...args).send({
-      gas: DEFAULT_GAS,
+      gas: DEFAULT_GAS
     })
   } catch (error) {
     if (error.message.includes('reverted by the EVM')) {
@@ -142,5 +142,5 @@ module.exports = {
   addSecretKey,
   fromWei: Web3.utils.fromWei,
   toWei: Web3.utils.toWei,
-  ethCallContract,
+  ethCallContract
 }

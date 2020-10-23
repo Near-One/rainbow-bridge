@@ -8,18 +8,18 @@ const {
   nearAPI,
   sleep,
   backoff,
-  signAndSendTransaction,
+  signAndSendTransaction
 } = require('./robust')
 
 class BorshError extends Error {
-  constructor(message) {
+  constructor (message) {
     super(message)
 
     this.name = this.constructor.name
   }
 }
 
-function serializeField(schema, value, fieldType, writer) {
+function serializeField (schema, value, fieldType, writer) {
   if (fieldType === 'u8') {
     writer.write_u8(value)
   } else if (fieldType === 'u64') {
@@ -69,22 +69,22 @@ function serializeField(schema, value, fieldType, writer) {
   }
 }
 
-function deserializeField(schema, fieldType, reader) {
+function deserializeField (schema, fieldType, reader) {
   if (fieldType === 'u8') {
-    return reader.read_u8()
+    return reader.readU8()
   } else if (fieldType === 'u64') {
-    return reader.read_u64()
+    return reader.readU64()
   } else if (fieldType === 'u128') {
-    return reader.read_u128()
+    return reader.readU128()
   } else if (fieldType === 'bool') {
-    return !!reader.read_u8()
+    return !!reader.readU8()
   } else if (fieldType === 'string') {
-    return reader.read_string()
+    return reader.readString()
   } else if (fieldType instanceof Array) {
     if (typeof fieldType[0] === 'number') {
-      return reader.read_fixed_array(fieldType[0])
+      return reader.readFixedArray(fieldType[0])
     } else {
-      return reader.read_array(() =>
+      return reader.readArray(() =>
         deserializeField(schema, fieldType[0], reader)
       )
     }
@@ -94,7 +94,7 @@ function deserializeField(schema, fieldType, reader) {
       throw new Error(`Schema type ${fieldType} is missing in schema`)
     }
     if (structSchema.kind === 'option') {
-      const optionRes = reader.read_u8()
+      const optionRes = reader.readU8()
       if (optionRes === 0) {
         return null
       } else if (optionRes === 1) {
@@ -120,7 +120,7 @@ function deserializeField(schema, fieldType, reader) {
 
 /// Serialize given object using schema of the form:
 /// { class_name -> [ [field_name, field_type], .. ], .. }
-function serialize(schema, fieldType, obj) {
+function serialize (schema, fieldType, obj) {
   if (fieldType === null) {
     return new Uint8Array()
   }
@@ -130,34 +130,34 @@ function serialize(schema, fieldType, obj) {
 }
 
 class BinaryReader {
-  constructor(buf) {
+  constructor (buf) {
     this.buf = buf
     this.offset = 0
   }
 
-  read_u8() {
+  readU8 () {
     const value = this.buf.readUInt8(this.offset)
     this.offset += 1
     return value
   }
 
-  read_u32() {
+  readU32 () {
     const value = this.buf.readUInt32LE(this.offset)
     this.offset += 4
     return value
   }
 
-  read_u64() {
-    const buf = this.read_buffer(8)
+  readU64 () {
+    const buf = this.readBuffer(8)
     return new BN(buf, 'le')
   }
 
-  read_u128() {
-    const buf = this.read_buffer(16)
+  readU128 () {
+    const buf = this.readBuffer(16)
     return new BN(buf, 'le')
   }
 
-  read_buffer(len) {
+  readBuffer (len) {
     if (this.offset + len > this.buf.length) {
       throw new BorshError(`Expected buffer length ${len} isn't within bounds`)
     }
@@ -166,9 +166,9 @@ class BinaryReader {
     return result
   }
 
-  read_string() {
-    const len = this.read_u32()
-    const buf = this.read_buffer(len)
+  readString () {
+    const len = this.readU32()
+    const buf = this.readBuffer(len)
     // @ts-ignore
     const textDecoder = TextDecoder()
     try {
@@ -179,12 +179,12 @@ class BinaryReader {
     }
   }
 
-  read_fixed_array(len) {
-    return new Uint8Array(this.read_buffer(len))
+  readFixedArray (len) {
+    return new Uint8Array(this.readBuffer(len))
   }
 
-  read_array(fn) {
-    const len = this.read_u32()
+  readArray (fn) {
+    const len = this.readU32()
     const result = []
     for (let i = 0; i < len; ++i) {
       result.push(fn())
@@ -193,7 +193,7 @@ class BinaryReader {
   }
 }
 
-function deserialize(schema, fieldType, buffer) {
+function deserialize (schema, fieldType, buffer) {
   if (fieldType === null) {
     return null
   }
@@ -220,7 +220,7 @@ const signAndSendTransactionAsync = async (
   actions
 ) => {
   const status = await account.connection.provider.status()
-  let [txHash, signedTx] = await nearAPI.transactions.signTransaction(
+  const [txHash, signedTx] = await nearAPI.transactions.signTransaction(
     receiverId,
     ++accessKey.nonce,
     actions,
@@ -231,7 +231,7 @@ const signAndSendTransactionAsync = async (
   )
   const bytes = signedTx.encode()
   await account.connection.provider.sendJsonRpc('broadcast_tx_async', [
-    Buffer.from(bytes).toString('base64'),
+    Buffer.from(bytes).toString('base64')
   ])
   console.log('TxHash', nearAPI.utils.serialize.base_encode(txHash))
   return txHash
@@ -270,9 +270,9 @@ const txnStatus = async (
 
   const flatLogs = [
     result.transaction_outcome,
-    ...result.receipts_outcome,
+    ...result.receipts_outcome
   ].reduce((acc, it) => acc.concat(it.outcome.logs), [])
-  if (flatLogs && flatLogs != []) {
+  if (flatLogs && flatLogs !== []) {
     console.log(flatLogs)
   }
 
@@ -283,12 +283,12 @@ const txnStatus = async (
   throw new Error(JSON.stringify(result.status.Failure))
 }
 
-function getBorshTransactionLastResult(txResult) {
+function getBorshTransactionLastResult (txResult) {
   return txResult && Buffer.from(txResult.status.SuccessValue, 'base64')
 }
 
 class BorshContract {
-  constructor(borshSchema, account, contractId, options) {
+  constructor (borshSchema, account, contractId, options) {
     this.account = account
     this.contractId = contractId
     options.viewMethods.forEach((d) => {
@@ -315,7 +315,7 @@ class BorshContract {
               Buffer.from(result.result)
             )
           )
-        },
+        }
       })
     })
     options.changeMethods.forEach((d) => {
@@ -335,13 +335,13 @@ class BorshContract {
                 Buffer.from(args),
                 gas || DEFAULT_FUNC_CALL_AMOUNT,
                 amount
-              ),
+              )
             ]
           )
 
           const result = getBorshTransactionLastResult(rawResult)
           return result && deserialize(borshSchema, d.outputFieldType, result)
-        },
+        }
       })
     })
 
@@ -361,15 +361,15 @@ class BorshContract {
                 Buffer.from(args),
                 gas || DEFAULT_FUNC_CALL_AMOUNT,
                 amount
-              ),
+              )
             ]
           )
-        },
+        }
       })
     })
   }
 
-  async accessKeyInit() {
+  async accessKeyInit () {
     await this.account.ready
 
     this.accessKey = await this.account.findAccessKey()
@@ -383,7 +383,7 @@ class BorshContract {
   }
 }
 
-function borshify(block) {
+function borshify (block) {
   return Buffer.concat([
     bs58.decode(block.prev_block_hash),
     bs58.decode(block.next_block_inner_hash),
@@ -399,7 +399,7 @@ function borshify(block) {
         .toBN(block.inner_lite.timestamp_nanosec || block.inner_lite.timestamp)
         .toBuffer('le', 8),
       bs58.decode(block.inner_lite.next_bp_hash),
-      bs58.decode(block.inner_lite.block_merkle_root),
+      bs58.decode(block.inner_lite.block_merkle_root)
     ]),
     bs58.decode(block.inner_rest_hash),
 
@@ -417,7 +417,7 @@ function borshify(block) {
             : Buffer.from([1]),
           bs58.decode(nextBp.public_key.substr(8)),
           // @ts-ignore
-          Web3.utils.toBN(nextBp.stake).toBuffer('le', 16),
+          Web3.utils.toBN(nextBp.stake).toBuffer('le', 16)
         ])
       )
     ),
@@ -429,18 +429,18 @@ function borshify(block) {
         signature === null
           ? Buffer.from([0])
           : Buffer.concat([
-              Buffer.from([1]),
-              signature.substr(0, 8) === 'ed25519:'
-                ? Buffer.from([0])
-                : Buffer.from([1]),
-              bs58.decode(signature.substr(8)),
-            ])
+            Buffer.from([1]),
+            signature.substr(0, 8) === 'ed25519:'
+              ? Buffer.from([0])
+              : Buffer.from([1]),
+            bs58.decode(signature.substr(8))
+          ])
       )
-    ),
+    )
   ])
 }
 
-function borshifyInitialValidators(initialValidators) {
+function borshifyInitialValidators (initialValidators) {
   return Buffer.concat([
     Web3.utils.toBN(initialValidators.length).toBuffer('le', 4),
     Buffer.concat(
@@ -452,10 +452,10 @@ function borshifyInitialValidators(initialValidators) {
             ? Buffer.from([0])
             : Buffer.from([1]),
           bs58.decode(nextBp.public_key.substr(8)),
-          Web3.utils.toBN(nextBp.stake).toBuffer('le', 16),
+          Web3.utils.toBN(nextBp.stake).toBuffer('le', 16)
         ])
       )
-    ),
+    )
   ])
 }
 
@@ -463,7 +463,7 @@ function borshifyInitialValidators(initialValidators) {
 const hexToBuffer = (hex) => Buffer.from(Web3.utils.hexToBytes(hex))
 // @ts-ignore
 const readerToHex = (len) => (reader) =>
-  Web3.utils.bytesToHex(reader.read_fixed_array(len))
+  Web3.utils.bytesToHex(reader.readFixedArray(len))
 
 exports.BorshContract = BorshContract
 exports.hexToBuffer = hexToBuffer

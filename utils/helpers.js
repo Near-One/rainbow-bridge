@@ -6,7 +6,7 @@ const RETRY_NONCE = 10
 
 // Check if account exists and if it does not creates it using master account. Also deploys the code and creates
 // an access key.
-async function maybeCreateAccount(
+async function maybeCreateAccount (
   near,
   masterAccountId,
   accountId,
@@ -76,7 +76,7 @@ async function maybeCreateAccount(
 }
 
 // Checks whether the account exists.
-async function accountExists(near, accountId) {
+async function accountExists (near, accountId) {
   const account = new nearAPI.Account(near.connection, accountId)
   try {
     await account.fetchState()
@@ -87,7 +87,7 @@ async function accountExists(near, accountId) {
 }
 
 // Checks whether the account has the key specified in the keyStore.
-async function accountHasTheKey(near, accountId) {
+async function accountHasTheKey (near, accountId) {
   const account = new nearAPI.Account(near.connection, accountId)
   const keyStoreKey = await near.config.deps.keyStore.getKey(
     near.config.networkId,
@@ -105,7 +105,7 @@ async function accountHasTheKey(near, accountId) {
 }
 
 // Verify that account exists and it has the key that we specified in the keyStore.
-async function verifyAccount(near, accountId) {
+async function verifyAccount (near, accountId) {
   if (!(await accountExists(near, accountId))) {
     console.log(
       'Failed to fetch state of the %s account. Is it initialized?',
@@ -125,7 +125,7 @@ async function verifyAccount(near, accountId) {
 }
 
 // Used in Status
-async function verifyAccountGently(near, accountId) {
+async function verifyAccountGently (near, accountId) {
   if (!(await accountExists(near, accountId))) {
     return false
   }

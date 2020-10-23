@@ -12,7 +12,7 @@ const retry = (retries, fn) =>
   fn().catch((err) =>
     retries > 1 ? retry(retries - 1, fn) : Promise.reject(err)
   )
-const sleep = (duration) => new Promise((res) => setTimeout(res, duration))
+const sleep = (duration) => new Promise((resolve, reject) => setTimeout(resolve, duration))
 
 const backoff = (retries, fn, delay = DELAY, wait = BACKOFF) =>
   fn().catch((err) =>
@@ -24,12 +24,12 @@ const backoff = (retries, fn, delay = DELAY, wait = BACKOFF) =>
 const SLOW_TX_ERROR_MSG = 'transaction not executed within 5 minutes'
 
 class RobustWeb3 {
-  constructor(ethNodeUrl) {
+  constructor (ethNodeUrl) {
     this.ethNodeUrl = ethNodeUrl
     this.web3 = new Web3(ethNodeUrl)
   }
 
-  async getBlockNumber() {
+  async getBlockNumber () {
     return await backoff(RETRY, async () => {
       try {
         return await this.web3.eth.getBlockNumber()
@@ -42,10 +42,10 @@ class RobustWeb3 {
     })
   }
 
-  async getBlock(b) {
+  async getBlock (b) {
     return await backoff(RETRY, async () => {
       try {
-        let block = await this.web3.eth.getBlock(b)
+        const block = await this.web3.eth.getBlock(b)
         // sometimes infura gives null on the very new block, but retry works
         if (block === null) {
           // throw so backoff will do retry
@@ -61,13 +61,13 @@ class RobustWeb3 {
     })
   }
 
-  async callContract(contract, method, args, options) {
+  async callContract (contract, method, args, options) {
     let gasPrice = await this.web3.eth.getGasPrice()
     let nonce = await this.web3.eth.getTransactionCount(options.from, 'pending')
     while (gasPrice < 10000 * 1e9) {
       try {
         // Keep sending with same nonce but higher gasPrice to override same txn
-        let tx = {
+        const tx = {
           from: options.from,
           to: contract.options.address,
           handleRevert: options.handleRevert,
@@ -76,7 +76,7 @@ class RobustWeb3 {
             ? options.gasPrice
             : Web3.utils.toHex(gasPrice),
           nonce: Web3.utils.toHex(nonce),
-          data: contract.methods[method](...args).encodeABI(),
+          data: contract.methods[method](...args).encodeABI()
         }
         // Call transaction via view method to check if there is specific error.
         try {
@@ -86,7 +86,7 @@ class RobustWeb3 {
           console.warn(error)
         }
 
-        let receipt = await promiseWithTimeout(
+        const receipt = await promiseWithTimeout(
           5 * 60 * 1000,
           this.web3.eth.sendTransaction(tx),
           SLOW_TX_ERROR_MSG
@@ -97,7 +97,7 @@ class RobustWeb3 {
             return contract._decodeEventABI.call(
               {
                 name: 'ALLEVENTS',
-                jsonInterface: contract.options.jsonInterface,
+                jsonInterface: contract.options.jsonInterface
               },
               log
             )
@@ -149,7 +149,7 @@ class RobustWeb3 {
     throw new Error('Cannot finish txn within 1e13 gas')
   }
 
-  async getTransactionReceipt(t) {
+  async getTransactionReceipt (t) {
     return await backoff(RETRY, async () => {
       try {
         return await this.web3.eth.getTransactionReceipt(t)
@@ -162,7 +162,7 @@ class RobustWeb3 {
     })
   }
 
-  destroy() {
+  destroy () {
     if (this.web3.currentProvider.connection.close) {
       // Only WebSocket provider has close, HTTPS don't
       this.web3.currentProvider.connection.close()
@@ -170,7 +170,7 @@ class RobustWeb3 {
   }
 }
 
-function normalizeEthKey(key) {
+function normalizeEthKey (key) {
   let result = key.toLowerCase()
   if (!result.startsWith('0x')) {
     result = '0x' + result
@@ -193,7 +193,7 @@ const promiseWithTimeout = (timeoutMs, promise, failureMessage) => {
   })
 }
 
-async function nearJsonContractFunctionCall(
+async function nearJsonContractFunctionCall (
   contractId,
   sender,
   method,
@@ -205,14 +205,14 @@ async function nearJsonContractFunctionCall(
   // we don't know whether txn successfully submitted when timeout, so there's a risk of double sending
 
   await sender.ready
-  let accessKey = await sender.findAccessKey()
+  const accessKey = await sender.findAccessKey()
   return await signAndSendTransaction(accessKey, sender, contractId, [
     nearAPI.transactions.functionCall(
       method,
       Buffer.from(JSON.stringify(args)),
       gas,
       amount
-    ),
+    )
   ])
 }
 
@@ -254,7 +254,7 @@ const signAndSendTransaction = async (
         const bytes = signedTx.encode()
         sendTxnAsync = async () => {
           await account.connection.provider.sendJsonRpc('broadcast_tx_async', [
-            Buffer.from(bytes).toString('base64'),
+            Buffer.from(bytes).toString('base64')
           ])
           console.log('TxHash', nearAPI.utils.serialize.base_encode(txHash))
         }
@@ -289,9 +289,9 @@ const signAndSendTransaction = async (
     if (result) {
       const flatLogs = [
         result.transaction_outcome,
-        ...result.receipts_outcome,
+        ...result.receipts_outcome
       ].reduce((acc, it) => acc.concat(it.outcome.logs), [])
-      if (flatLogs && flatLogs != []) {
+      if (flatLogs && flatLogs !== []) {
         console.log(flatLogs)
       }
 
@@ -326,5 +326,5 @@ module.exports = {
   promiseWithTimeout,
   nearJsonContractFunctionCall,
   signAndSendTransaction,
-  nearAPI,
+  nearAPI
 }
