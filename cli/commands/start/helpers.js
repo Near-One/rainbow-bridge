@@ -4,7 +4,7 @@ const util = require('util')
 const NEAR_PORT = 3030
 const GANACHE_PORT = 9545
 
-function spawnProcess(name, config) {
+function spawnProcess (name, config) {
   ProcessManager.describe(name, (err, process) => {
     if (err) {
       console.log(
@@ -31,11 +31,11 @@ function spawnProcess(name, config) {
   })
 }
 
-function getLocalNearNodeURL(port = NEAR_PORT) {
+function getLocalNearNodeURL (port = NEAR_PORT) {
   return util.format('http://localhost:%d', port)
 }
 
-function getLocalGanacheNodeURL(port = GANACHE_PORT) {
+function getLocalGanacheNodeURL (port = GANACHE_PORT) {
   return util.format('ws://localhost:%d', port)
 }
 

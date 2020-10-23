@@ -5,7 +5,7 @@ const { getLocalNearNodeURL } = require('./helpers')
 const { RainbowConfig } = require('rainbow-bridge-utils')
 
 class StartLocalNearNodeCommand {
-  static execute() {
+  static execute () {
     const command = util.format(
       'python3 ~/.rainbow/nearup/main.py localnet --num-nodes 1 --binary-path %s',
       '~/.rainbow/core/target/debug'

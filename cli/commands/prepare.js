@@ -3,7 +3,7 @@ const path = require('path')
 const { RainbowConfig } = require('rainbow-bridge-utils')
 
 class PrepareCommand {
-  static execute() {
+  static execute () {
     var scriptDir = path.resolve(__dirname, '../scripts/prepare.sh')
 
     const shell = ['bash', scriptDir].join(' ')

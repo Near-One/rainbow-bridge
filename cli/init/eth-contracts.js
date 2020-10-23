@@ -3,7 +3,7 @@ const fs = require('fs')
 const { Web3, RainbowConfig, normalizeEthKey } = require('rainbow-bridge-utils')
 
 class EthContractInitializer {
-  async execute(contractName, args, gas) {
+  async execute (contractName, args, gas) {
     const address = 'eth-' + contractName + '-address'
     const abiPath = RainbowConfig.getParam('eth-' + contractName + '-abi-path')
     const binPath = RainbowConfig.getParam('eth-' + contractName + '-bin-path')
@@ -27,14 +27,14 @@ class EthContractInitializer {
       const txContract = await tokenContract
         .deploy({
           data: '0x' + fs.readFileSync(binPath),
-          arguments: args,
+          arguments: args
         })
         .send({
           from: ethMasterAccount,
           gas: gas,
           gasPrice: new BN(await web3.eth.getGasPrice()).mul(
             new BN(RainbowConfig.getParam('eth-gas-multiplier'))
-          ),
+          )
         })
       console.log(
         'Deployed ETH contract',
@@ -60,7 +60,7 @@ class EthContractInitializer {
 }
 
 class InitEthEd25519 {
-  static async execute() {
+  static async execute () {
     const ethContractInitializer = new EthContractInitializer()
     const contractName = 'ed25519'
     const success = await ethContractInitializer.execute(
@@ -70,13 +70,13 @@ class InitEthEd25519 {
     )
     if (!success) {
       console.log("Can't deploy", contractName)
-      throw 1
+      process.exit(1)
     }
   }
 }
 
 class InitEthErc20 {
-  static async execute() {
+  static async execute () {
     const ethContractInitializer = new EthContractInitializer()
     const contractName = 'erc20'
     const success = await ethContractInitializer.execute(
@@ -86,13 +86,13 @@ class InitEthErc20 {
     )
     if (!success) {
       console.log("Can't deploy", contractName)
-      throw 1
+      process.exit(1)
     }
   }
 }
 
 class InitEthLocker {
-  static async execute() {
+  static async execute () {
     const ethContractInitializer = new EthContractInitializer()
     const contractName = 'locker'
     const success = await ethContractInitializer.execute(
@@ -102,19 +102,19 @@ class InitEthLocker {
           RainbowConfig.getParam('near-token-factory-account'),
           'utf8'
         ),
-        RainbowConfig.getParam('eth-prover-address'),
+        RainbowConfig.getParam('eth-prover-address')
       ],
       5000000
     )
     if (!success) {
       console.log("Can't deploy", contractName)
-      throw 1
+      process.exit(1)
     }
   }
 }
 
 class InitEthClient {
-  static async execute() {
+  static async execute () {
     const ethContractInitializer = new EthContractInitializer()
     const contractName = 'client'
     const web3 = new Web3(RainbowConfig.getParam('eth-node-url'))
@@ -137,19 +137,19 @@ class InitEthClient {
         RainbowConfig.getParam('eth-ed25519-address'),
         lockEthAmount,
         lockDuration,
-        replaceDuration,
+        replaceDuration
       ],
       5000000
     )
     if (!success) {
       console.log("Can't deploy", contractName)
-      throw 1
+      process.exit(1)
     }
   }
 }
 
 class InitEthProver {
-  static async execute() {
+  static async execute () {
     const ethContractInitializer = new EthContractInitializer()
     const contractName = 'prover'
     const success = await ethContractInitializer.execute(
@@ -159,7 +159,7 @@ class InitEthProver {
     )
     if (!success) {
       console.log("Can't deploy", contractName)
-      throw 1
+      process.exit(1)
     }
   }
 }

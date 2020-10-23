@@ -2,13 +2,13 @@ const {
   nearAPI,
   RainbowConfig,
   maybeCreateAccount,
-  verifyAccount,
+  verifyAccount
 } = require('rainbow-bridge-utils')
 const { BN } = require('ethereumjs-util')
 const { DeployToken } = require('rainbow-bridge-testing')
 
 class InitNearTokenFactory {
-  static async execute() {
+  static async execute () {
     const masterAccount = RainbowConfig.getParam('near-master-account')
     const masterSk = RainbowConfig.getParam('near-master-sk')
     const tokenFactoryAccount = RainbowConfig.getParam(
@@ -50,7 +50,7 @@ class InitNearTokenFactory {
       nodeUrl: nearNodeUrl,
       networkId: nearNetworkId,
       masterAccount: masterAccount,
-      deps: { keyStore: keyStore },
+      deps: { keyStore: keyStore }
     })
 
     await verifyAccount(near, masterAccount)
@@ -68,7 +68,7 @@ class InitNearTokenFactory {
       tokenFactoryAccount,
       {
         changeMethods: ['new', 'deploy_bridge_token'],
-        viewMethods: ['get_bridge_token_account_id'],
+        viewMethods: ['get_bridge_token_account_id']
       }
     )
     const lockerAddress = RainbowConfig.getParam('eth-locker-address')
@@ -79,7 +79,7 @@ class InitNearTokenFactory {
           prover_account: proverAccount,
           locker_address: lockerAddress.startsWith('0x')
             ? lockerAddress.substr(2)
-            : lockerAddress,
+            : lockerAddress
         },
         new BN('300000000000000')
       )

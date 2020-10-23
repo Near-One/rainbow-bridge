@@ -5,7 +5,7 @@ const { homedir } = require('os')
 const path = require('path')
 
 class CleanCommand {
-  static execute() {
+  static execute () {
     console.log('Stopping all the running processes...')
     ProcessManager.connect((err) => {
       if (err) {

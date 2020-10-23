@@ -1,7 +1,7 @@
 const ProcessManager = require('pm2-promise')
 const { execSync } = require('child_process')
 
-async function stopLocalNearNode() {
+async function stopLocalNearNode () {
   console.log('Stopping near node')
   const command = 'python3 ~/.rainbow/nearup/main.py stop'
   try {
@@ -12,7 +12,7 @@ async function stopLocalNearNode() {
   }
 }
 
-async function stop(serviceName) {
+async function stop (serviceName) {
   try {
     console.log('Stopping', serviceName)
     await ProcessManager.delete(serviceName)
@@ -34,12 +34,12 @@ async function stop(serviceName) {
 }
 
 class StopManagedProcessCommand {
-  static async execute(command) {
+  static async execute (command) {
     const serviceName = command._name
 
     const consoleError = console.error
     // A cool hack to avoid annoying pm2 printing to stderr
-    console.error = function() {}
+    console.error = function () {}
 
     if (serviceName === 'near-node') {
       await stopLocalNearNode()
@@ -49,7 +49,7 @@ class StopManagedProcessCommand {
         'ganache',
         'eth2near-relay',
         'near2eth-relay',
-        'bridge-watchdog',
+        'bridge-watchdog'
       ]) {
         await stop(serviceName)
         await ProcessManager.disconnect()

@@ -3,15 +3,15 @@ const {
   nearAPI,
   RainbowConfig,
   maybeCreateAccount,
-  verifyAccount,
+  verifyAccount
 } = require('rainbow-bridge-utils')
 const {
   EthOnNearClientContract,
-  EthOnNearProverContract,
+  EthOnNearProverContract
 } = require('rainbow-bridge-eth2near-block-relay')
 
 class InitNearContracts {
-  static async execute() {
+  static async execute () {
     const masterAccount = RainbowConfig.getParam('near-master-account')
     const masterSk = RainbowConfig.getParam('near-master-sk')
     const clientAccount = RainbowConfig.getParam('near-client-account')
@@ -71,8 +71,8 @@ class InitNearContracts {
       networkId: nearNetworkId,
       masterAccount: masterAccount,
       deps: {
-        keyStore: keyStore,
-      },
+        keyStore: keyStore
+      }
     })
 
     console.log('Creating accounts and deploying the contracts.')

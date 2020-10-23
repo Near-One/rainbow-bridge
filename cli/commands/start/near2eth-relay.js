@@ -3,10 +3,9 @@ const { spawnProcess } = require('./helpers')
 const { Near2EthRelay } = require('rainbow-bridge-near2eth-block-relay')
 const { RainbowConfig } = require('rainbow-bridge-utils')
 const path = require('path')
-const os = require('os')
 
 class StartNear2EthRelayCommand {
-  static async execute() {
+  static async execute () {
     if (RainbowConfig.getParam('daemon') === 'true') {
       ProcessManager.connect((err) => {
         if (err) {
@@ -24,7 +23,7 @@ class StartNear2EthRelayCommand {
           args: ['start', 'near2eth-relay', ...RainbowConfig.getArgsNoDaemon()],
           wait_ready: true,
           kill_timeout: 60000,
-          logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS',
+          logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS'
         })
       })
     } else {
