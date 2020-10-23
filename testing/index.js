@@ -1,7 +1,7 @@
 const {
   TransferETHERC20ToNear,
   TransferEthERC20FromNear,
-  DeployToken,
+  DeployToken
 } = require('./transfer-eth-erc20')
 
 exports.TransferETHERC20ToNear = TransferETHERC20ToNear

@@ -3,8 +3,8 @@
 const path = require('path')
 const fs = require('fs')
 
-async function main() {
-  let packageJson = require(path.join(__dirname, '../package.json'))
+async function main () {
+  const packageJson = require(path.join(__dirname, '../package.json'))
   if (process.env.PATCH_RAINBOW_BRIDGE_SOL) {
     packageJson.dependencies[
       'rainbow-bridge-sol'

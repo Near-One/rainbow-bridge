@@ -3,16 +3,23 @@
   "version": "1.0.0",
   "description": "Contract interfaces for NEAR Rainbow Bridge",
   "author": "Near Inc. <hello@near.org>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/near/rainbow-bridge.git"
+  },
   "license": "MIT",
   "keywords": [
     "nearprotocol",
-    "contracts",
     "decentralized",
     "blockchain",
     "ethereum",
     "bridge"
   ],
+  "dependencies": {},
+  "devDependencies": {
+    "standard": "*"
+  },
   "scripts": {
-    "build": "./build_all.sh"
+    "standard": "standard"
   }
 }

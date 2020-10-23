@@ -11,14 +11,11 @@ const {
   normalizeEthKey,
   borshify,
   borshifyInitialValidators,
-  nearAPI,
+  nearAPI
 } = require('rainbow-bridge-utils')
 
-/// Maximum number of retries a Web3 method call will perform.
-const MAX_WEB3_RETRIES = 1000
-
 class Near2EthRelay {
-  async initialize() {
+  async initialize () {
     // @ts-ignore
     this.robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'))
     this.web3 = this.robustWeb3.web3
@@ -34,8 +31,8 @@ class Near2EthRelay {
       nodeUrl: RainbowConfig.getParam('near-node-url'),
       networkId: RainbowConfig.getParam('near-network-id'),
       deps: {
-        keyStore: keyStore,
-      },
+        keyStore: keyStore
+      }
     })
 
     // Declare Near2EthClient contract.
@@ -47,7 +44,7 @@ class Near2EthRelay {
       RainbowConfig.getParam('eth-client-address'),
       {
         from: this.ethMasterAccount,
-        handleRevert: true,
+        handleRevert: true
       }
     )
 
@@ -63,7 +60,7 @@ class Near2EthRelay {
         const status = await this.near.connection.provider.status()
         // Get the block two blocks before that, to make sure it is final.
         const headBlock = await this.near.connection.provider.block({
-          blockId: status.sync_info.latest_block_height,
+          blockId: status.sync_info.latest_block_height
         })
         // @ts-ignore
         const lastFinalBlockHash = headBlock.header.last_final_block
@@ -107,7 +104,7 @@ class Near2EthRelay {
                 from: this.ethMasterAccount,
                 gas: 4000000,
                 handleRevert: true,
-                gasPrice,
+                gasPrice
               })
           } catch (e) {
             if (e.message.includes('replacement transaction underpriced')) {
@@ -135,7 +132,7 @@ class Near2EthRelay {
               handleRevert: true,
               gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(
                 new BN(RainbowConfig.getParam('eth-gas-multiplier'))
-              ),
+              )
             })
           } catch (e) {
             if (e.message.includes('replacement transaction underpriced')) {
@@ -160,7 +157,7 @@ class Near2EthRelay {
     }
   }
 
-  async runInternal(submitInvalidBlock) {
+  async runInternal (submitInvalidBlock) {
     const clientContract = this.clientContract
     const robustWeb3 = this.robustWeb3
     const near = this.near
@@ -176,20 +173,20 @@ class Near2EthRelay {
     while (true) {
       try {
         // Determine the next action: sleep or attempt an update.
-        let bridgeState = await clientContract.methods.bridgeState().call()
-        let currentBlockHash = toBuffer(
+        const bridgeState = await clientContract.methods.bridgeState().call()
+        const currentBlockHash = toBuffer(
           await clientContract.methods
             .blockHashes(bridgeState.currentHeight)
             .call()
         )
-        let lastBlock = await near.connection.provider.sendJsonRpc(
+        const lastBlock = await near.connection.provider.sendJsonRpc(
           'next_light_client_block',
           [bs58.encode(currentBlockHash)]
         )
-        let replaceDuration = web3.utils.toBN(
+        const replaceDuration = web3.utils.toBN(
           await clientContract.methods.replaceDuration().call()
         )
-        let nextValidAt = web3.utils.toBN(bridgeState.nextValidAt)
+        const nextValidAt = web3.utils.toBN(bridgeState.nextValidAt)
         let replaceDelay
         if (!nextValidAt.isZero()) {
           replaceDelay = web3.utils
@@ -205,10 +202,10 @@ class Near2EthRelay {
             )
 
             // Check whether master account has enough balance at stake.
-            let lockEthAmount = await clientContract.methods
+            const lockEthAmount = await clientContract.methods
               .lockEthAmount()
               .call()
-            let balance = await clientContract.methods
+            const balance = await clientContract.methods
               .balanceOf(ethMasterAccount)
               .call()
             if (balance === '0') {
@@ -222,12 +219,12 @@ class Near2EthRelay {
                 value: new BN(lockEthAmount),
                 gasPrice: new BN(await web3.eth.getGasPrice()).mul(
                   new BN(RainbowConfig.getParam('eth-gas-multiplier'))
-                ),
+                )
               })
               console.log('Transferred.')
             }
 
-            let borshBlock = borshify(lastBlock)
+            const borshBlock = borshify(lastBlock)
             if (submitInvalidBlock) {
               console.log('Mutate block by one byte')
               console.log(borshBlock)
@@ -239,7 +236,7 @@ class Near2EthRelay {
               handleRevert: true,
               gasPrice: new BN(await web3.eth.getGasPrice()).mul(
                 new BN(RainbowConfig.getParam('eth-gas-multiplier'))
-              ),
+              )
             })
 
             if (submitInvalidBlock) {
@@ -253,7 +250,7 @@ class Near2EthRelay {
         // Going to sleep, compute the delay.
         let delay = maxDelay
         if (!nextValidAt.isZero()) {
-          let latestBlock = await robustWeb3.getBlock('latest')
+          const latestBlock = await robustWeb3.getBlock('latest')
           delay = Math.min(
             delay,
             nextValidAt.toNumber() - latestBlock.timestamp
@@ -275,11 +272,11 @@ class Near2EthRelay {
     }
   }
 
-  DANGER_submitInvalidNearBlock() {
+  DANGERsubmitInvalidNearBlock () {
     return this.runInternal(true)
   }
 
-  run() {
+  run () {
     return this.runInternal(false)
   }
 }
