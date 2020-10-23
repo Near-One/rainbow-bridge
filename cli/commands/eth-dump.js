@@ -93,10 +93,10 @@ class ETHDump {
         console.log(
           '==========================================================================='
         )
-        console.log(`BLOCK NUMBER ${receipt.blockNumber}`)
-        console.log(`RECEIPTIndex ${receiptIndex}`)
+        console.log(`BLOCK_NUMBER ${receipt.blockNumber}`)
+        console.log(`RECEIPT_INDEX ${receiptIndex}`)
         console.log(`TX_HASH ${txHash}`)
-        console.log(`logIndex ${logIndex}`)
+        console.log(`LOG_INDEX ${logIndex}`)
 
         const logEntryData = logFromWeb3(log).serialize()
         const receiptData = receiptFromWeb3(receipt).serialize()
@@ -109,13 +109,13 @@ class ETHDump {
         const skipBridgeCall = false
 
         const args = {
-          logIndex: logIndex,
-          logEntryData: logEntryData.toString('hex'),
-          receiptIndex: receiptIndex,
-          receiptData: receiptData.toString('hex'),
-          headerData: headerData.toString('hex'),
+          log_index: logIndex,
+          log_entry_data: logEntryData.toString('hex'),
+          receipt_index: receiptIndex,
+          receipt_data: receiptData.toString('hex'),
+          header_data: headerData.toString('hex'),
           proof: _proof.map((p) => p.toString('hex')),
-          skipBridgeCall: skipBridgeCall
+          skip_bridge_call: skipBridgeCall
         }
 
         const file = Path.join(path, `${b}_${receiptIndex}_${logIndex}.json`)
