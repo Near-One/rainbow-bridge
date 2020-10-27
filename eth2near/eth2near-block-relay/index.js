@@ -1,7 +1,5 @@
 const path = require('path')
-const os = require('os')
 const exec = require('child_process').exec
-const utils = require('ethereumjs-util')
 const BN = require('bn.js')
 const { RobustWeb3, sleep, txnStatus } = require('rainbow-bridge-utils')
 const { web3BlockToRlp } = require('./eth-on-near-client')
@@ -9,7 +7,7 @@ const { EthProofExtractor } = require('./eth-proof-extractor')
 const MAX_SUBMIT_BLOCK = 10
 const BRIDGE_SRC_DIR = path.join(__dirname, '..')
 
-function ethashproof(command, _callback) {
+function ethashproof (command, _callback) {
   return new Promise((resolve) =>
     exec(command, (error, stdout, _stderr) => {
       if (error) {
@@ -21,14 +19,14 @@ function ethashproof(command, _callback) {
 }
 
 class Eth2NearRelay {
-  initialize(ethClientContract, ethNodeURL) {
+  initialize (ethClientContract, ethNodeURL) {
     this.ethClientContract = ethClientContract
     // @ts-ignore
     this.robustWeb3 = new RobustWeb3(ethNodeURL)
     this.web3 = this.robustWeb3.web3
   }
 
-  async run() {
+  async run () {
     const robustWeb3 = this.robustWeb3
     while (true) {
       let clientBlockNumber
@@ -72,7 +70,7 @@ class Eth2NearRelay {
       if (clientBlockNumber < chainBlockNumber) {
         try {
           // Submit add_block txns
-          let blockPromises = []
+          const blockPromises = []
           let endBlock = Math.min(
             clientBlockNumber + MAX_SUBMIT_BLOCK,
             chainBlockNumber
@@ -84,12 +82,12 @@ class Eth2NearRelay {
           for (let i = clientBlockNumber + 1; i <= endBlock; i++) {
             blockPromises.push(this.getParseBlock(i))
           }
-          let blocks = await Promise.all(blockPromises)
+          const blocks = await Promise.all(blockPromises)
           console.log(
             `Got and parsed block ${clientBlockNumber + 1} to block ${endBlock}`
           )
 
-          let txHashes = []
+          const txHashes = []
           for (let i = clientBlockNumber + 1, j = 0; i <= endBlock; i++, j++) {
             txHashes.push(await this.submitBlock(blocks[j], i))
           }
@@ -118,7 +116,7 @@ class Eth2NearRelay {
     }
   }
 
-  async getParseBlock(blockNumber) {
+  async getParseBlock (blockNumber) {
     try {
       const blockRlp = this.web3.utils.bytesToHex(
         web3BlockToRlp(await this.robustWeb3.getBlock(blockNumber))
@@ -134,7 +132,7 @@ class Eth2NearRelay {
     }
   }
 
-  async submitBlock(block, blockNumber) {
+  async submitBlock (block, blockNumber) {
     const h512s = block.elements
       .filter((_, index) => index % 2 === 0)
       .map((element, index) => {
@@ -156,9 +154,9 @@ class Eth2NearRelay {
                 index * block.proof_length,
                 (index + 1) * block.proof_length
               )
-              .map((leaf) => this.web3.utils.padLeft(leaf, 32)),
+              .map((leaf) => this.web3.utils.padLeft(leaf, 32))
           }
-        }),
+        })
     }
 
     console.log(`Submitting block ${blockNumber} to EthClient`)

@@ -1,6 +1,6 @@
 const BN = require('bn.js')
 const fs = require('fs')
-//const assert = require('bsert')
+// const assert = require('bsert')
 const bs58 = require('bs58')
 const { toBuffer } = require('eth-util-lite')
 const {
@@ -12,7 +12,7 @@ const {
   RobustWeb3,
   normalizeEthKey,
   backoff,
-  nearJsonContractFunctionCall,
+  nearJsonContractFunctionCall
 } = require('rainbow-bridge-utils')
 const { tokenAddressParam, tokenAccountParam } = require('./deploy-token')
 const { NearMintableToken } = require('./near-mintable-token')
@@ -20,14 +20,14 @@ const { NearMintableToken } = require('./near-mintable-token')
 let initialCmd
 
 class TransferEthERC20FromNear {
-  static showRetryAndExit() {
+  static showRetryAndExit () {
     console.log('Retry with command:')
     console.log(initialCmd)
     process.exit(1)
   }
 
-  static parseBuffer(obj) {
-    for (let i in obj) {
+  static parseBuffer (obj) {
+    for (const i in obj) {
       if (obj[i] && obj[i].type === 'Buffer') {
         obj[i] = Buffer.from(obj[i].data)
       } else if (obj[i] && typeof obj[i] === 'object') {
@@ -37,9 +37,9 @@ class TransferEthERC20FromNear {
     return obj
   }
 
-  static loadTransferLog() {
+  static loadTransferLog () {
     try {
-      let log =
+      const log =
         JSON.parse(
           fs.readFileSync('transfer-eth-erc20-from-near.log.json').toString()
         ) || {}
@@ -49,7 +49,7 @@ class TransferEthERC20FromNear {
     }
   }
 
-  static deleteTransferLog() {
+  static deleteTransferLog () {
     try {
       fs.unlinkSync('transfer-eth-erc20-from-near.log.json')
     } catch (e) {
@@ -57,30 +57,30 @@ class TransferEthERC20FromNear {
     }
   }
 
-  static recordTransferLog(obj) {
+  static recordTransferLog (obj) {
     fs.writeFileSync(
       'transfer-eth-erc20-from-near.log.json',
       JSON.stringify(obj)
     )
   }
 
-  static async withdraw({
+  static async withdraw ({
     nearTokenContract,
     nearSenderAccountId,
     tokenAccount,
     amount,
     ethReceiverAddress,
-    nearSenderAccount,
+    nearSenderAccount
   }) {
     // Withdraw the token on Near side.
     try {
-      const old_balance = await backoff(10, () =>
+      const oldBalance = await backoff(10, () =>
         nearTokenContract.get_balance({
-          owner_id: nearSenderAccountId,
+          owner_id: nearSenderAccountId
         })
       )
       console.log(
-        `Balance of ${nearSenderAccountId} before withdrawing: ${old_balance}`
+        `Balance of ${nearSenderAccountId} before withdrawing: ${oldBalance}`
       )
 
       console.log(
@@ -98,7 +98,7 @@ class TransferEthERC20FromNear {
 
       TransferEthERC20FromNear.recordTransferLog({
         finished: 'withdraw',
-        txWithdraw,
+        txWithdraw
       })
     } catch (txRevertMessage) {
       console.log('Failed to withdraw.')
@@ -107,14 +107,14 @@ class TransferEthERC20FromNear {
     }
   }
 
-  static async findWithdrawInBlock({ txWithdraw, nearSenderAccountId, near }) {
+  static async findWithdrawInBlock ({ txWithdraw, nearSenderAccountId, near }) {
     try {
       let txReceiptId
       let txReceiptBlockHash
       let idType
-      /*assert(
+      /* assert(
         RainbowConfig.getParam('near-token-factory-account') !== nearSenderAccountId
-      )*/
+      ) */
 
       // Getting 1st tx
       const receipts = txWithdraw.transaction_outcome.outcome.receipt_ids
@@ -132,10 +132,10 @@ class TransferEthERC20FromNear {
       // Getting 2nd tx
       try {
         txReceiptId = txWithdraw.receipts_outcome.find(
-          (el) => el.id == txReceiptId
+          (el) => el.id === txReceiptId
         ).outcome.status.SuccessReceiptId
         txReceiptBlockHash = txWithdraw.receipts_outcome.find(
-          (el) => el.id == txReceiptId
+          (el) => el.id === txReceiptId
         ).block_hash
       } catch (e) {
         throw new Error(`Invalid tx withdraw: ${JSON.stringify(txWithdraw)}`, e)
@@ -144,14 +144,14 @@ class TransferEthERC20FromNear {
       // Get block in which the receipt was processed.
       const receiptBlock = await backoff(10, () =>
         near.connection.provider.block({
-          blockId: txReceiptBlockHash,
+          blockId: txReceiptBlockHash
         })
       )
       // Now wait for a final block with a strictly greater height. This block (or one of its ancestors) should hold the outcome, although this is not guaranteed if there are multiple shards.
       const outcomeBlock = await backoff(10, async () => {
         while (true) {
-          let block = await near.connection.provider.block({
-            finality: 'final',
+          const block = await near.connection.provider.block({
+            finality: 'final'
           })
           if (
             Number(block.header.height) <= Number(receiptBlock.header.height)
@@ -167,7 +167,7 @@ class TransferEthERC20FromNear {
         txReceiptBlockHash,
         txReceiptId,
         outcomeBlock,
-        idType,
+        idType
       })
     } catch (txRevertMessage) {
       console.log('Failed to find withdraw in block.')
@@ -176,7 +176,7 @@ class TransferEthERC20FromNear {
     }
   }
 
-  static async waitBlock({
+  static async waitBlock ({
     clientContract,
     outcomeBlock,
     robustWeb3,
@@ -184,7 +184,7 @@ class TransferEthERC20FromNear {
     nearTokenContract,
     amount,
     idType,
-    txReceiptId,
+    txReceiptId
   }) {
     // Wait for the block with the given receipt/transaction in Near2EthClient.
     try {
@@ -192,9 +192,9 @@ class TransferEthERC20FromNear {
       let clientBlockHeight
       let clientBlockHash
       while (true) {
-        let clientState = await clientContract.methods.bridgeState().call()
+        const clientState = await clientContract.methods.bridgeState().call()
         clientBlockHeight = Number(clientState.currentHeight)
-        let clientBlockValidAfter = Number(clientState.nextValidAt)
+        const clientBlockValidAfter = Number(clientState.nextValidAt)
         clientBlockHash = bs58.encode(
           toBuffer(
             await clientContract.methods.blockHashes(clientBlockHeight).call()
@@ -212,7 +212,7 @@ class TransferEthERC20FromNear {
           break
         } else {
           let delay =
-            clientBlockValidAfter == 0
+            clientBlockValidAfter === 0
               ? await clientContract.methods.lockDuration().call()
               : clientBlockValidAfter -
                 (await robustWeb3.getBlock('latest')).timestamp
@@ -224,20 +224,20 @@ class TransferEthERC20FromNear {
         }
       }
       console.log(`Withdrawn ${JSON.stringify(amount)}`)
-      const new_balance = await backoff(10, () =>
+      const newBalance = await backoff(10, () =>
         nearTokenContract.get_balance({
-          owner_id: nearSenderAccountId,
+          owner_id: nearSenderAccountId
         })
       )
       console.log(
-        `Balance of ${nearSenderAccountId} after withdrawing: ${new_balance}`
+        `Balance of ${nearSenderAccountId} after withdrawing: ${newBalance}`
       )
       TransferEthERC20FromNear.recordTransferLog({
         finished: 'wait-block',
         clientBlockHashB58: clientBlockHash,
         idType,
         txReceiptId,
-        clientBlockHeight,
+        clientBlockHeight
       })
     } catch (txRevertMessage) {
       console.log('Failed to wait for block occur in near on eth contract')
@@ -246,13 +246,13 @@ class TransferEthERC20FromNear {
     }
   }
 
-  static async getProof({
+  static async getProof ({
     idType,
     near,
     txReceiptId,
     nearSenderAccountId,
     clientBlockHashB58,
-    clientBlockHeight,
+    clientBlockHeight
   }) {
     try {
       // Get the outcome proof only use block merkle root that we know is available on the Near2EthClient.
@@ -265,7 +265,7 @@ class TransferEthERC20FromNear {
             transaction_hash: txReceiptId,
             // TODO: Use proper sender.
             receiver_id: nearSenderAccountId,
-            light_client_head: clientBlockHashB58,
+            light_client_head: clientBlockHashB58
           }
         )
       } else if (idType === 'receipt') {
@@ -276,7 +276,7 @@ class TransferEthERC20FromNear {
             receipt_id: txReceiptId,
             // TODO: Use proper sender.
             receiver_id: nearSenderAccountId,
-            light_client_head: clientBlockHashB58,
+            light_client_head: clientBlockHashB58
           }
         )
       } else {
@@ -285,7 +285,7 @@ class TransferEthERC20FromNear {
       TransferEthERC20FromNear.recordTransferLog({
         finished: 'get-proof',
         proofRes,
-        clientBlockHeight,
+        clientBlockHeight
       })
     } catch (txRevertMessage) {
       console.log('Failed to get proof.')
@@ -294,7 +294,7 @@ class TransferEthERC20FromNear {
     }
   }
 
-  static async unlock({
+  static async unlock ({
     proverContract,
     proofRes,
     clientBlockHeight,
@@ -302,7 +302,7 @@ class TransferEthERC20FromNear {
     ethReceiverAddress,
     ethTokenLockerContract,
     ethMasterAccount,
-    robustWeb3,
+    robustWeb3
   }) {
     try {
       // Check that the proof is correct.
@@ -332,10 +332,10 @@ class TransferEthERC20FromNear {
           handleRevert: true,
           gasPrice: new BN(await robustWeb3.web3.eth.getGasPrice()).mul(
             new BN(RainbowConfig.getParam('eth-gas-multiplier'))
-          ),
+          )
         }
       )
-      /*await ethTokenLockerContract.methods
+      /* await ethTokenLockerContract.methods
         .unlockToken(borshProofRes, clientBlockHeight)
         .send({
           from: ethMasterAccount,
@@ -344,7 +344,7 @@ class TransferEthERC20FromNear {
           gasPrice: new BN(await robustWeb3.web3.eth.getGasPrice()).mul(
             new BN(RainbowConfig.getParam('eth-gas-multiplier'))
           ),
-        })*/
+        }) */
       const newBalance = await ethERC20Contract.methods
         .balanceOf(ethReceiverAddress)
         .call()
@@ -360,10 +360,10 @@ class TransferEthERC20FromNear {
     }
   }
 
-  static async execute(command) {
+  static async execute (command) {
     initialCmd = command.parent.rawArgs.join(' ')
     const nearSenderAccountId = command.nearSenderAccount
-    let amount = command.amount
+    const amount = command.amount
     const ethReceiverAddress = command.ethReceiverAddress.startsWith('0x')
       ? command.ethReceiverAddress.substr(2)
       : command.ethReceiverAddress
@@ -384,7 +384,7 @@ class TransferEthERC20FromNear {
       nodeUrl: RainbowConfig.getParam('near-node-url'),
       networkId: RainbowConfig.getParam('near-network-id'),
       masterAccount: nearSenderAccountId,
-      deps: { keyStore: keyStore },
+      deps: { keyStore: keyStore }
     })
     const nearSenderAccount = new nearAPI.Account(
       near.connection,
@@ -397,7 +397,7 @@ class TransferEthERC20FromNear {
       tokenAccount,
       {
         changeMethods: ['new', 'withdraw'],
-        viewMethods: ['get_balance'],
+        viewMethods: ['get_balance']
       }
     )
     const nearTokenContractBorsh = new NearMintableToken(
@@ -406,7 +406,7 @@ class TransferEthERC20FromNear {
     )
     await nearTokenContractBorsh.accessKeyInit()
 
-    let robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'))
+    const robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'))
     const web3 = robustWeb3.web3
     let ethMasterAccount = web3.eth.accounts.privateKeyToAccount(
       normalizeEthKey(RainbowConfig.getParam('eth-master-sk'))
@@ -422,7 +422,7 @@ class TransferEthERC20FromNear {
       RainbowConfig.getParam('eth-client-address'),
       {
         from: ethMasterAccount,
-        handleRevert: true,
+        handleRevert: true
       }
     )
     const proverContract = new web3.eth.Contract(
@@ -433,7 +433,7 @@ class TransferEthERC20FromNear {
       RainbowConfig.getParam('eth-prover-address'),
       {
         from: ethMasterAccount,
-        handleRevert: true,
+        handleRevert: true
       }
     )
     const ethTokenLockerContract = new web3.eth.Contract(
@@ -444,7 +444,7 @@ class TransferEthERC20FromNear {
       RainbowConfig.getParam('eth-locker-address'),
       {
         from: ethMasterAccount,
-        handleRevert: true,
+        handleRevert: true
       }
     )
     const ethERC20Contract = new web3.eth.Contract(
@@ -453,7 +453,7 @@ class TransferEthERC20FromNear {
       tokenAddress,
       {
         from: ethMasterAccount,
-        handleRevert: true,
+        handleRevert: true
       }
     )
 
@@ -465,7 +465,7 @@ class TransferEthERC20FromNear {
         tokenAccount,
         amount,
         ethReceiverAddress,
-        nearSenderAccount,
+        nearSenderAccount
       })
       transferLog = TransferEthERC20FromNear.loadTransferLog()
     }
@@ -473,7 +473,7 @@ class TransferEthERC20FromNear {
       await TransferEthERC20FromNear.findWithdrawInBlock({
         txWithdraw: transferLog.txWithdraw,
         nearSenderAccountId,
-        near,
+        near
       })
       transferLog = TransferEthERC20FromNear.loadTransferLog()
     }
@@ -486,7 +486,7 @@ class TransferEthERC20FromNear {
         nearTokenContract,
         amount,
         idType: transferLog.idType,
-        txReceiptId: transferLog.txReceiptId,
+        txReceiptId: transferLog.txReceiptId
       })
       transferLog = TransferEthERC20FromNear.loadTransferLog()
     }
@@ -497,7 +497,7 @@ class TransferEthERC20FromNear {
         txReceiptId: transferLog.txReceiptId,
         nearSenderAccountId,
         clientBlockHashB58: transferLog.clientBlockHashB58,
-        clientBlockHeight: transferLog.clientBlockHeight,
+        clientBlockHeight: transferLog.clientBlockHeight
       })
       transferLog = TransferEthERC20FromNear.loadTransferLog()
     }
@@ -510,7 +510,7 @@ class TransferEthERC20FromNear {
         ethReceiverAddress,
         ethTokenLockerContract,
         ethMasterAccount,
-        robustWeb3,
+        robustWeb3
       })
     }
 

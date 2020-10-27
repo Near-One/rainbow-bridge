@@ -1,4 +1,4 @@
-const Web3 = require('web3')
+const Web3 = require('rainbow-bridge-utils')
 const Path = require('path')
 const fs = require('fs').promises
 const {
@@ -6,12 +6,12 @@ const {
   ethashproof,
   web3BlockToRlp,
   receiptFromWeb3,
-  logFromWeb3,
+  logFromWeb3
 } = require('rainbow-bridge-eth2near-block-relay')
 const utils = require('ethereumjs-util')
 
 class ETHDump {
-  static async execute(kindOfData, { path, startBlock, endBlock, ethNodeUrl }) {
+  static async execute (kindOfData, { path, startBlock, endBlock, ethNodeUrl }) {
     // @ts-ignore
     const web3 = new Web3(ethNodeUrl)
     const extractor = new EthProofExtractor()
@@ -56,7 +56,7 @@ class ETHDump {
     extractor.destroy()
   }
 
-  static async dumpHeaders(web3, b, path) {
+  static async dumpHeaders (web3, b, path) {
     console.log(`Downloading block ${b}`)
     const blockRlp = web3.utils.bytesToHex(
       web3BlockToRlp(await web3.eth.getBlock(b))
@@ -70,7 +70,7 @@ class ETHDump {
     await ETHDump.saveBlock(b, block, path)
   }
 
-  static async dumpProofs(web3, extractor, b, path) {
+  static async dumpProofs (web3, extractor, b, path) {
     const block = await web3.eth.getBlock(b)
     for (const txHash of block.transactions) {
       const receipt = await extractor.extractReceipt(txHash)
@@ -85,46 +85,46 @@ class ETHDump {
         tree,
         receipt.transactionIndex
       )
-      let log_index = -1
+      let logIndex = -1
       for (const log of receipt.logs) {
-        log_index++
-        const receipt_index = proof.txIndex
+        logIndex++
+        const receiptIndex = proof.txIndex
 
         console.log(
           '==========================================================================='
         )
-        console.log(`BLOCK NUMBER ${receipt.blockNumber}`)
-        console.log(`RECEIPT_INDEX ${receipt_index}`)
+        console.log(`BLOCK_NUMBER ${receipt.blockNumber}`)
+        console.log(`RECEIPT_INDEX ${receiptIndex}`)
         console.log(`TX_HASH ${txHash}`)
-        console.log(`LOG_INDEX ${log_index}`)
+        console.log(`LOG_INDEX ${logIndex}`)
 
-        const log_entry_data = logFromWeb3(log).serialize()
-        const receipt_data = receiptFromWeb3(receipt).serialize()
-        const header_data = proof.header_rlp
+        const logEntryData = logFromWeb3(log).serialize()
+        const receiptData = receiptFromWeb3(receipt).serialize()
+        const headerData = proof.header_rlp
         const _proof = []
         for (const node of proof.receiptProof) {
           _proof.push(utils.rlp.encode(node))
         }
 
-        const skip_bridge_call = false
+        const skipBridgeCall = false
 
         const args = {
-          log_index: log_index,
-          log_entry_data: log_entry_data.toString('hex'),
-          receipt_index: receipt_index,
-          receipt_data: receipt_data.toString('hex'),
-          header_data: header_data.toString('hex'),
+          log_index: logIndex,
+          log_entry_data: logEntryData.toString('hex'),
+          receipt_index: receiptIndex,
+          receipt_data: receiptData.toString('hex'),
+          header_data: headerData.toString('hex'),
           proof: _proof.map((p) => p.toString('hex')),
-          skip_bridge_call: skip_bridge_call,
+          skip_bridge_call: skipBridgeCall
         }
 
-        const file = Path.join(path, `${b}_${receipt_index}_${log_index}.json`)
+        const file = Path.join(path, `${b}_${receiptIndex}_${logIndex}.json`)
         await fs.writeFile(file, JSON.stringify(args))
       }
     }
   }
 
-  static async saveBlock(i, block, path) {
+  static async saveBlock (i, block, path) {
     const file = Path.join(path, `${i}.json`)
     await fs.writeFile(file, JSON.stringify(block))
   }

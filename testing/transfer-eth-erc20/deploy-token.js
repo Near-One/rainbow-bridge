@@ -2,20 +2,20 @@ const {
   nearAPI,
   utils,
   RainbowConfig,
-  verifyAccount,
+  verifyAccount
 } = require('rainbow-bridge-utils')
 const { BN } = require('ethereumjs-util')
 
-function tokenAccountParam(tokenName) {
+function tokenAccountParam (tokenName) {
   return 'near-' + tokenName + '-account'
 }
 
-function tokenAddressParam(tokenName) {
+function tokenAddressParam (tokenName) {
   return 'eth-' + tokenName + '-address'
 }
 
 class DeployToken {
-  static async execute(tokenName, tokenAddress) {
+  static async execute (tokenName, tokenAddress) {
     console.log('execute', tokenName, tokenAddress)
     if (RainbowConfig.maybeGetParam(tokenAccountParam(tokenName))) {
       console.log(
@@ -56,7 +56,7 @@ class DeployToken {
       nodeUrl: nearNodeUrl,
       networkId: nearNetworkId,
       masterAccount: masterAccount,
-      deps: { keyStore: keyStore },
+      deps: { keyStore: keyStore }
     })
 
     await verifyAccount(near, masterAccount)
@@ -69,7 +69,7 @@ class DeployToken {
       tokenFactoryAccount,
       {
         changeMethods: ['deploy_bridge_token'],
-        viewMethods: ['get_bridge_token_account_id'],
+        viewMethods: ['get_bridge_token_account_id']
       }
     )
 
@@ -77,7 +77,7 @@ class DeployToken {
       // Try initializing the contract.
       await tokenFactoryContract.deploy_bridge_token(
         {
-          address: utils.remove0x(tokenAddress),
+          address: utils.remove0x(tokenAddress)
         },
         new BN('300000000000000'),
         new BN('150000000000000000000000000')

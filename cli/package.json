@@ -1,13 +1,13 @@
 {
   "name": "rainbow-bridge-cli",
   "version": "4.0.0",
-  "description": "CLI to set up the environment needed for the bridge to work.",
+  "description": "CLI to set up the environment needed for the Rainbow Bridge to work.",
   "main": "index.js",
   "bin": {
     "rainbow-bridge": "./index.js",
     "rainbow": "./index.js"
   },
-  "author": "Near Inc.",
+  "author": "Near Inc. <hello@near.org>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/near/rainbow-bridge.git"
@@ -26,7 +26,6 @@
     "eth-object": "near/eth-object#54e03b8aac8208cf724e206d49ffb8bdd30451d7",
     "eth-util-lite": "near/eth-util-lite#master",
     "ethereumjs-util": "^6.2.0",
-    "near-api-js": "^0.26.0",
     "node-fetch": "^2.6.0",
     "pm2": "^4.4.0",
     "pm2-promise": "^2.0.1",
@@ -36,27 +35,12 @@
     "rainbow-bridge-utils": "^1.0.0",
     "rainbow-bridge-watchdog": "^1.0.0",
     "rainbow-token-connector": "near/rainbow-token-connector#87ba0a1a8268f26ff58b67a6139ddb74f8eecce6",
-    "request": "^2.88.2",
-    "web3": "=1.2.6"
+    "request": "^2.88.2"
   },
   "devDependencies": {
-    "eslint": "^6.8.0",
-    "eslint-config-standard": "^14.1.1",
-    "eslint-plugin-import": "^2.20.2",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^4.0.1",
-    "eslint-plugin-standard": "^4.0.0",
-    "typescript": "^3.9.5"
+    "standard": "*"
   },
   "scripts": {
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "check": "tsc"
-  },
-  "prettier": {
-    "trailingComma": "es5",
-    "tabWidth": 2,
-    "semi": false,
-    "singleQuote": true
+    "standard": "standard"
   }
 }

@@ -3,10 +3,9 @@ const { spawnProcess } = require('./helpers')
 const { Watchdog } = require('rainbow-bridge-watchdog')
 const { RainbowConfig } = require('rainbow-bridge-utils')
 const path = require('path')
-const os = require('os')
 
 class StartWatchdogCommand {
-  static async execute() {
+  static async execute () {
     if (RainbowConfig.getParam('daemon') === 'true') {
       ProcessManager.connect((err) => {
         if (err) {
@@ -24,9 +23,9 @@ class StartWatchdogCommand {
           args: [
             'start',
             'bridge-watchdog',
-            ...RainbowConfig.getArgsNoDaemon(),
+            ...RainbowConfig.getArgsNoDaemon()
           ],
-          logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS',
+          logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS'
         })
       })
     } else {

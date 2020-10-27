@@ -4,7 +4,7 @@ const {
   txnStatus,
   BorshContract,
   hexToBuffer,
-  readerToHex,
+  readerToHex
 } = require('./borsh')
 const {
   setupEthNear,
@@ -16,7 +16,7 @@ const {
   addSecretKey,
   fromWei,
   toWei,
-  ethCallContract,
+  ethCallContract
 } = require('./utils')
 
 module.exports = {
@@ -37,5 +37,5 @@ module.exports = {
   BorshContract,
   hexToBuffer,
   readerToHex,
-  RainbowConfig,
+  RainbowConfig
 }

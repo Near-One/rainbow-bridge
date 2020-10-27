@@ -1,36 +1,32 @@
 {
   "name": "rainbow-bridge-near2eth-block-relay",
   "version": "1.0.0",
-  "description": "",
+  "description": "Rainbow Bridge NEAR to Eth Block Relay",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "author": "Near Inc. <hello@near.org>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/near/rainbow-bridge.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "nearprotocol",
+    "decentralized",
+    "blockchain",
+    "ethereum",
+    "bridge"
+  ],
   "dependencies": {
-    "bn.js": "^5.1.3",
-    "commander": "^5.1.0",
+    "bs58": "^4.0.1",
     "eth-object": "near/eth-object#54e03b8aac8208cf724e206d49ffb8bdd30451d7",
     "eth-util-lite": "near/eth-util-lite#master",
     "ethereumjs-util": "^6.2.0",
-    "merkle-patricia-tree": "^4.0.0",
-    "near-api-js": "^0.26.0",
-    "node-fetch": "^2.6.0",
-    "pm2": "^4.4.0",
-    "pm2-promise": "^2.0.1",
-    "promisfy": "^1.2.0",
-    "rainbow-bridge-utils": "^1.0.0",
-    "request": "^2.88.2",
-    "web3": "=1.2.6"
+    "rainbow-bridge-utils": "^1.0.0"
   },
   "devDependencies": {
-    "eslint": "^6.8.0",
-    "eslint-config-standard": "^14.1.1",
-    "eslint-plugin-import": "^2.20.2",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^4.0.1",
-    "eslint-plugin-standard": "^4.0.0",
-    "typescript": "^3.9.5"
+    "standard": "*"
   },
-  "license": "MIT"
+  "scripts": {
+    "standard": "standard"
+  }
 }

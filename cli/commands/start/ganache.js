@@ -2,10 +2,9 @@ const ProcessManager = require('pm2')
 const { spawnProcess } = require('./helpers')
 const { RainbowConfig } = require('rainbow-bridge-utils')
 const path = require('path')
-const os = require('os')
 
 class StartGanacheNodeCommand {
-  static async execute() {
+  static async execute () {
     ProcessManager.connect((err) => {
       if (err) {
         console.log(
@@ -20,7 +19,7 @@ class StartGanacheNodeCommand {
         out_file: '~/.rainbow/logs/ganache/out.log',
         args: [],
         env: process.env,
-        logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS',
+        logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS'
       })
     })
     RainbowConfig.setParam('eth-node-url', 'ws://localhost:9545')

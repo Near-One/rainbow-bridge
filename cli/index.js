@@ -1,29 +1,28 @@
 #!/usr/bin/env node
 const path = require('path')
-const os = require('os')
 const { program } = require('commander')
 
 const { CleanCommand } = require('./commands/clean')
 const { PrepareCommand } = require('./commands/prepare')
 const { StatusCommand } = require('./commands/status')
 const {
-  StartEth2NearRelayCommand,
+  StartEth2NearRelayCommand
 } = require('./commands/start/eth2near-relay.js')
 const {
-  StartNear2EthRelayCommand,
+  StartNear2EthRelayCommand
 } = require('./commands/start/near2eth-relay.js')
 const { StartWatchdogCommand } = require('./commands/start/watchdog.js')
 const { StartGanacheNodeCommand } = require('./commands/start/ganache.js')
 const { StartLocalNearNodeCommand } = require('./commands/start/near.js')
 const { StopManagedProcessCommand } = require('./commands/stop/process.js')
 const {
-  DangerSubmitInvalidNearBlock,
+  DangerSubmitInvalidNearBlock
 } = require('./commands/danger-submit-invalid-near-block')
 const { DangerDeployMyERC20 } = require('./commands/danger-deploy-myerc20')
 const {
   TransferETHERC20ToNear,
   TransferEthERC20FromNear,
-  DeployToken,
+  DeployToken
 } = require('rainbow-bridge-testing')
 const { ETHDump } = require('./commands/eth-dump')
 const { NearDump } = require('./commands/near-dump')
@@ -35,7 +34,7 @@ const {
   InitEthErc20,
   InitEthLocker,
   InitEthClient,
-  InitEthProver,
+  InitEthProver
 } = require('./init')
 
 // source dir or where rainbow cli is installed (when install with npm)
@@ -307,7 +306,7 @@ RainbowConfig.addOptions(
     'near-client-account',
     'near-network-id',
     'near-node-url',
-    'daemon',
+    'daemon'
   ]
 )
 
@@ -326,7 +325,7 @@ RainbowConfig.addOptions(
     'near2eth-relay-max-delay',
     'near2eth-relay-error-delay',
     'eth-gas-multiplier',
-    'daemon',
+    'daemon'
   ]
 )
 
@@ -338,7 +337,7 @@ RainbowConfig.addOptions(
     'eth-client-abi-path',
     'daemon',
     'watchdog-delay',
-    'watchdog-error-delay',
+    'watchdog-error-delay'
   ]
 )
 
@@ -378,7 +377,7 @@ RainbowConfig.addOptions(
     'near-prover-account',
     'near-prover-sk',
     'near-prover-contract-path',
-    'near-prover-init-balance',
+    'near-prover-init-balance'
   ]
 )
 
@@ -394,7 +393,7 @@ RainbowConfig.addOptions(
     'eth-master-sk',
     'eth-ed25519-abi-path',
     'eth-ed25519-bin-path',
-    'eth-gas-multiplier',
+    'eth-gas-multiplier'
   ]
 )
 
@@ -412,7 +411,7 @@ RainbowConfig.addOptions(
     'eth-client-lock-eth-amount',
     'eth-client-lock-duration',
     'eth-client-replace-duration',
-    'eth-gas-multiplier',
+    'eth-gas-multiplier'
   ]
 )
 
@@ -427,7 +426,7 @@ RainbowConfig.addOptions(
     'eth-prover-abi-path',
     'eth-prover-bin-path',
     'eth-client-address',
-    'eth-gas-multiplier',
+    'eth-gas-multiplier'
   ]
 )
 
@@ -445,7 +444,7 @@ RainbowConfig.addOptions(
     'near-token-factory-sk',
     'near-token-factory-contract-path',
     'near-token-factory-init-balance',
-    'eth-locker-address',
+    'eth-locker-address'
   ]
 )
 
@@ -472,7 +471,7 @@ RainbowConfig.addOptions(
     'eth-erc20-address',
     'near-token-factory-account',
     'eth-prover-address',
-    'eth-gas-multiplier',
+    'eth-gas-multiplier'
   ]
 )
 
@@ -488,7 +487,7 @@ RainbowConfig.addOptions(
     'eth-master-sk',
     'eth-erc20-abi-path',
     'eth-erc20-bin-path',
-    'eth-gas-multiplier',
+    'eth-gas-multiplier'
   ]
 )
 
@@ -521,7 +520,7 @@ RainbowConfig.addOptions(
     'near-client-account',
     'near-master-account',
     'near-master-sk',
-    'eth-gas-multiplier',
+    'eth-gas-multiplier'
   ]
 )
 
@@ -560,7 +559,7 @@ RainbowConfig.addOptions(
     'eth-master-sk',
     'eth-prover-abi-path',
     'eth-prover-address',
-    'eth-gas-multiplier',
+    'eth-gas-multiplier'
   ]
 )
 
@@ -588,7 +587,7 @@ RainbowConfig.addOptions(
     'near2eth-relay-min-delay',
     'near2eth-relay-max-delay',
     'near2eth-relay-error-delay',
-    'eth-gas-multiplier',
+    'eth-gas-multiplier'
   ]
 )
 

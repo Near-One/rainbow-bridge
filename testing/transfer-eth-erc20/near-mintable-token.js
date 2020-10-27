@@ -1,12 +1,11 @@
-const Web3 = require('web3')
-const { BorshContract, readerToHex } = require('rainbow-bridge-utils')
+const { Web3, BorshContract, readerToHex } = require('rainbow-bridge-utils')
 
 const borshSchema = {
   bool: {
     kind: 'function',
     // @ts-ignore
     ser: (b) => Buffer.from(Web3.utils.hexToBytes(b ? '0x01' : '0x00')),
-    deser: (z) => readerToHex(1)(z) === '0x01',
+    deser: (z) => readerToHex(1)(z) === '0x01'
   },
   Proof: {
     kind: 'struct',
@@ -16,22 +15,22 @@ const borshSchema = {
       ['receipt_index', 'u64'],
       ['receipt_data', ['u8']],
       ['header_data', ['u8']],
-      ['proof', [['u8']]],
-    ],
-  },
+      ['proof', [['u8']]]
+    ]
+  }
 }
 
 class NearMintableToken extends BorshContract {
-  constructor(account, contractId) {
+  constructor (account, contractId) {
     super(borshSchema, account, contractId, {
       viewMethods: [],
       changeMethods: [
         {
           methodName: 'deposit',
           inputFieldType: 'Proof',
-          outputFieldType: null,
-        },
-      ],
+          outputFieldType: null
+        }
+      ]
     })
   }
 }

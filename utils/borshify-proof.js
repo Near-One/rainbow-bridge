@@ -1,7 +1,7 @@
 const { Web3 } = require('./robust')
 const bs58 = require('bs58')
 
-function borshifyOutcomeProof(proof) {
+function borshifyOutcomeProof (proof) {
   const statusToBuffer = (status) => {
     console.log(status)
     if ('SuccessValue' in status) {
@@ -9,12 +9,12 @@ function borshifyOutcomeProof(proof) {
       return Buffer.concat([
         Buffer.from([2]),
         Web3.utils.toBN(data.length).toBuffer('le', 4),
-        data,
+        data
       ])
     } else if ('SuccessReceiptId' in status) {
       return Buffer.concat([
         Buffer.from([3]),
-        bs58.decode(status.SuccessReceiptId),
+        bs58.decode(status.SuccessReceiptId)
       ])
     } else {
       throw new Error('status not supported')
@@ -26,7 +26,7 @@ function borshifyOutcomeProof(proof) {
       proof.outcome_proof.proof.map((p) =>
         Buffer.concat([
           bs58.decode(p.hash),
-          Buffer.from([p.direction === 'Right' ? 1 : 0]),
+          Buffer.from([p.direction === 'Right' ? 1 : 0])
         ])
       )
     ),
@@ -84,11 +84,11 @@ function borshifyOutcomeProof(proof) {
         proof.block_proof.map((bp) =>
           Buffer.concat([
             bs58.decode(bp.hash),
-            Buffer.from([bp.direction === 'Right' ? 1 : 0]),
+            Buffer.from([bp.direction === 'Right' ? 1 : 0])
           ])
         )
-      ),
-    ]),
+      )
+    ])
   ])
 }
 

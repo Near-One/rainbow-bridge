@@ -1,18 +1,18 @@
-const Web3 = require('web3')
 const fs = require('fs')
 const {
   RainbowConfig,
   sleep,
+  Web3,
   RobustWeb3,
   normalizeEthKey,
-  promiseWithTimeout,
+  promiseWithTimeout
 } = require('rainbow-bridge-utils')
 const Tx = require('ethereumjs-tx').Transaction
 
 const SLOW_TX_ERROR_MSG = 'transaction not executed within 5 minutes'
 
 class Watchdog {
-  async initialize() {
+  async initialize () {
     // @ts-ignore
     this.robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'))
     this.web3 = this.robustWeb3.web3
@@ -33,12 +33,12 @@ class Watchdog {
       RainbowConfig.getParam('eth-client-address'),
       {
         from: this.ethMasterAccount,
-        handleRevert: true,
+        handleRevert: true
       }
     )
   }
 
-  async run() {
+  async run () {
     let privateKey = RainbowConfig.getParam('eth-master-sk')
     if (privateKey.startsWith('0x')) {
       privateKey = privateKey.slice(2)
@@ -51,7 +51,7 @@ class Watchdog {
         const bridgeState = await this.clientContract.methods
           .bridgeState()
           .call()
-        if (Number(bridgeState.nextValidAt) == 0) {
+        if (Number(bridgeState.nextValidAt) === 0) {
           console.log('No block to check.')
         } else {
           console.log('Checking block.')
@@ -73,7 +73,7 @@ class Watchdog {
               console.log(`Challenging signature ${i}.`)
               try {
                 let gasPrice = await this.web3.eth.getGasPrice()
-                let nonce = await this.web3.eth.getTransactionCount(
+                const nonce = await this.web3.eth.getTransactionCount(
                   this.ethMasterAccount
                 )
                 while (gasPrice < 10000 * 1e9) {
@@ -88,7 +88,7 @@ class Watchdog {
                       nonce: Web3.utils.toHex(nonce),
                       data: this.clientContract.methods
                         .challenge(this.ethMasterAccount, i)
-                        .encodeABI(),
+                        .encodeABI()
                     })
                     tx.sign(privateKey)
                     tx = '0x' + tx.serialize().toString('hex')

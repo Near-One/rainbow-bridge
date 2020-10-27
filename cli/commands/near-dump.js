@@ -3,7 +3,7 @@ const Path = require('path')
 const { RainbowConfig } = require('rainbow-bridge-utils')
 const fetch = require('node-fetch')
 
-async function getLatestBlock(nearNodeUrl) {
+async function getLatestBlock (nearNodeUrl) {
   const resp = await fetch(nearNodeUrl, {
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
@@ -12,31 +12,31 @@ async function getLatestBlock(nearNodeUrl) {
       id: 'dontcare',
       method: 'block',
       params: {
-        finality: 'final',
-      },
-    }),
+        finality: 'final'
+      }
+    })
   })
   const data = await resp.json()
   return data.result
 }
 
-async function getBlockChunk(nearNodeUrl, block) {
-  let resp = await fetch(nearNodeUrl, {
+async function getBlockChunk (nearNodeUrl, block) {
+  const resp = await fetch(nearNodeUrl, {
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       jsonrpc: '2.0',
       id: 'dontcare',
       method: 'chunk',
-      params: [block.chunks[0].chunk_hash],
-    }),
+      params: [block.chunks[0].chunk_hash]
+    })
   })
-  let data = await resp.json()
+  const data = await resp.json()
   return data.result
 }
 
-async function getTxProof(nearNodeUrl, futureBlock, txn) {
-  let resp = await fetch(nearNodeUrl, {
+/* async function getTxProof (nearNodeUrl, futureBlock, txn) {
+  const resp = await fetch(nearNodeUrl, {
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -48,16 +48,16 @@ async function getTxProof(nearNodeUrl, futureBlock, txn) {
         transaction_hash: txn.hash,
         receiver_id: txn.receiver_id,
         sender_id: txn.signer_id,
-        light_client_head: futureBlock.header.hash,
-      },
-    }),
+        light_client_head: futureBlock.header.hash
+      }
+    })
   })
-  let data = await resp.json()
+  const data = await resp.json()
   return data.result
-}
+} */
 
-async function getReceiptProof(nearNodeUrl, futureBlock, receipt) {
-  let resp = await fetch(nearNodeUrl, {
+async function getReceiptProof (nearNodeUrl, futureBlock, receipt) {
+  const resp = await fetch(nearNodeUrl, {
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -68,15 +68,15 @@ async function getReceiptProof(nearNodeUrl, futureBlock, receipt) {
         type: 'receipt',
         receipt_id: receipt.receipt_id,
         receiver_id: receipt.receiver_id,
-        light_client_head: futureBlock.header.hash,
-      },
-    }),
+        light_client_head: futureBlock.header.hash
+      }
+    })
   })
-  let data = await resp.json()
+  const data = await resp.json()
   return data.result
 }
 
-async function getNextLightClientBlock(nearNodeUrl, blockHash) {
+async function getNextLightClientBlock (nearNodeUrl, blockHash) {
   const resp = await fetch(nearNodeUrl, {
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
@@ -84,15 +84,15 @@ async function getNextLightClientBlock(nearNodeUrl, blockHash) {
       jsonrpc: '2.0',
       id: 'dontcare',
       method: 'next_light_client_block',
-      params: [blockHash],
-    }),
+      params: [blockHash]
+    })
   })
   const data = await resp.json()
   return data.result
 }
 
 class NearDump {
-  static async execute(kindOfData, { path, numBlocks }) {
+  static async execute (kindOfData, { path, numBlocks }) {
     if (kindOfData !== 'headers' && kindOfData !== 'proofs') {
       console.log(
         'Usage: node index.js near-dump headers\n       node index.js near-dump proofs'
@@ -105,16 +105,16 @@ class NearDump {
     }
     const nearNodeUrl = RainbowConfig.getParam('near-node-url')
 
-    let latestBlock = await getLatestBlock(nearNodeUrl)
+    const latestBlock = await getLatestBlock(nearNodeUrl)
 
-    if (kindOfData == 'headers') {
+    if (kindOfData === 'headers') {
       await NearDump.dumpHeaders(nearNodeUrl, path, latestBlock, numBlocks)
-    } else if (kindOfData == 'proofs') {
+    } else if (kindOfData === 'proofs') {
       await NearDump.dumpProofs(nearNodeUrl, path, latestBlock, numBlocks)
     }
   }
 
-  static async dumpHeaders(nearNodeUrl, path, latestBlock, numBlocks) {
+  static async dumpHeaders (nearNodeUrl, path, latestBlock, numBlocks) {
     console.log(
       `Downloading ${numBlocks} light client blocks start from ${latestBlock.header.height}`
     )
@@ -143,7 +143,7 @@ class NearDump {
     }
   }
 
-  static async dumpProofs(nearNodeUrl, path, latestBlock, numBlocks) {
+  static async dumpProofs (nearNodeUrl, path, latestBlock, numBlocks) {
     console.log(
       `Downloading ${numBlocks} light client proofs start from ${latestBlock.header.height}`
     )
@@ -153,19 +153,19 @@ class NearDump {
       newLatestBlock = await getLatestBlock(nearNodeUrl)
       if (newLatestBlock.header.height > latestBlock.header.height) {
         console.log(`Got new block at height ${newLatestBlock.header.height}`)
-        let chunk = await getBlockChunk(nearNodeUrl, latestBlock)
+        const chunk = await getBlockChunk(nearNodeUrl, latestBlock)
         console.log(
           `There are ${chunk.transactions.length} txns in block ${latestBlock.header.height}'s chunk`
         )
         console.log(
           `There are ${chunk.receipts.length} receipts in block  ${latestBlock.header.height}'s chunk`
         )
-        for (let i in chunk.transactions) {
-          //let proof = await getTxProof(nearNodeUrl, newLatestBlock, chunk.transactions[i]);
-          //await NearDump.saveProof(latestBlock.header.height, 'txn', i, proof, path)
-        }
-        for (let i in chunk.receipts) {
-          let proof = await getReceiptProof(
+        /* for (const i in chunk.transactions) {
+          const proof = await getTxProof(nearNodeUrl, newLatestBlock, chunk.transactions[i])
+          await NearDump.saveProof(latestBlock.header.height, 'txn', i, proof, path)
+        } */
+        for (const i in chunk.receipts) {
+          const proof = await getReceiptProof(
             nearNodeUrl,
             newLatestBlock,
             chunk.receipts[i]
@@ -186,13 +186,13 @@ class NearDump {
     }
   }
 
-  static async saveBlock(i, block, path) {
+  static async saveBlock (i, block, path) {
     const file = Path.join(path, `${i}.json`)
     await fs.writeFile(file, JSON.stringify(block))
   }
 
-  static async saveProof(block_i, type, i, proof, path) {
-    const file = Path.join(path, `${block_i}_${type}_${i}.json`)
+  static async saveProof (blockI, type, i, proof, path) {
+    const file = Path.join(path, `${blockI}_${type}_${i}.json`)
     await fs.writeFile(file, JSON.stringify(proof))
     console.log('Saved ' + file)
   }

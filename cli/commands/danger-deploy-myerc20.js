@@ -1,10 +1,9 @@
-const Web3 = require('web3')
-const { RainbowConfig, normalizeEthKey } = require('rainbow-bridge-utils')
+const { Web3, RainbowConfig, normalizeEthKey } = require('rainbow-bridge-utils')
 const { BN } = require('ethereumjs-util')
 const fs = require('fs')
 
 class DangerDeployMyERC20 {
-  static async execute() {
+  static async execute () {
     const web3 = new Web3(RainbowConfig.getParam('eth-node-url'))
     let ethMasterAccount = web3.eth.accounts.privateKeyToAccount(
       normalizeEthKey(RainbowConfig.getParam('eth-master-sk'))
@@ -23,14 +22,14 @@ class DangerDeployMyERC20 {
     const txContract = await tokenContract
       .deploy({
         data: '0x' + fs.readFileSync(binPath),
-        arguments: [],
+        arguments: []
       })
       .send({
         from: ethMasterAccount,
         gas: 3000000,
         gasPrice: new BN(await web3.eth.getGasPrice()).mul(
           new BN(RainbowConfig.getParam('eth-gas-multiplier'))
-        ),
+        )
       })
 
     const tokenAddress = normalizeEthKey(txContract.options.address)

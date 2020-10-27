@@ -2,14 +2,13 @@ const ProcessManager = require('pm2')
 const { spawnProcess } = require('./helpers')
 const {
   EthOnNearClientContract,
-  Eth2NearRelay,
+  Eth2NearRelay
 } = require('rainbow-bridge-eth2near-block-relay')
 const { nearAPI, RainbowConfig } = require('rainbow-bridge-utils')
 const path = require('path')
-const os = require('os')
 
 class StartEth2NearRelayCommand {
-  static async execute() {
+  static async execute () {
     if (RainbowConfig.getParam('daemon') === 'true') {
       ProcessManager.connect((err) => {
         if (err) {
@@ -27,7 +26,7 @@ class StartEth2NearRelayCommand {
           args: ['start', 'eth2near-relay', ...RainbowConfig.getArgsNoDaemon()],
           wait_ready: true,
           kill_timeout: 60000,
-          logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS',
+          logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS'
         })
       })
     } else {
@@ -44,8 +43,8 @@ class StartEth2NearRelayCommand {
         networkId: RainbowConfig.getParam('near-network-id'),
         masterAccount: masterAccount,
         deps: {
-          keyStore: keyStore,
-        },
+          keyStore: keyStore
+        }
       })
 
       const relay = new Eth2NearRelay()

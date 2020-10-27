@@ -1,13 +1,13 @@
-const Web3 = require('web3')
 const fetch = require('node-fetch')
 const fs = require('fs')
 const ProcessManager = require('pm2-promise')
 
 const {
+  Web3,
   nearAPI,
   verifyAccountGently,
   RainbowConfig,
-  normalizeEthKey,
+  normalizeEthKey
 } = require('rainbow-bridge-utils')
 
 // Verdicts
@@ -39,7 +39,7 @@ const request = async (url) => {
     return [
       Ok,
       JSON.stringify(json.version),
-      JSON.stringify(json.sync_info['latest_block_height']),
+      JSON.stringify(json.sync_info.latest_block_height)
     ]
   } catch (err) {
     return [Error, Unreachable, Unknown]
@@ -47,7 +47,7 @@ const request = async (url) => {
 }
 
 class Status {
-  constructor(value, verdict = Error, explanation = null) {
+  constructor (value, verdict = Error, explanation = null) {
     this.value = value
     this.verdict = verdict
     this.explanation = explanation
@@ -56,7 +56,7 @@ class Status {
 
 class NearContracts {
   // TODO put it into constructor if possible
-  async init(near) {
+  async init (near) {
     const masterAccount = RainbowConfig.getParam('near-master-account')
     if (!masterAccount) {
       return
@@ -78,7 +78,7 @@ class NearContracts {
     )
   }
 
-  async checkContract(near, masterAccount, contractAccount) {
+  async checkContract (near, masterAccount, contractAccount) {
     if (!contractAccount) {
       return new Status(Unknown, Error, ContractNotFound)
     }
@@ -86,7 +86,7 @@ class NearContracts {
       const nearAccount = new nearAPI.Account(near.connection, masterAccount)
       const contract = new nearAPI.Contract(nearAccount, contractAccount, {
         changeMethods: ['boo'],
-        viewMethods: [],
+        viewMethods: []
       })
       // TODO #270 implement `initialized` method to NEAR contracts
       // TODO #257 check the code deployed if possible
@@ -110,7 +110,7 @@ class NearContracts {
 
 class NearStatus {
   // TODO put it into constructor if possible
-  async init() {
+  async init () {
     const networkId = RainbowConfig.getParam('near-network-id')
     this.networkLocation = networkId
       ? new Status(networkId, Info)
@@ -176,8 +176,8 @@ class NearStatus {
             networkId,
             masterAccount: masterAccount,
             deps: {
-              keyStore: keyStore,
-            },
+              keyStore: keyStore
+            }
           })
           this.masterAccount = (await verifyAccountGently(near, masterAccount))
             ? new Status(masterAccount, Ok, Valid)
@@ -216,7 +216,7 @@ class NearStatus {
 
 class EthContracts {
   // TODO put it into constructor if possible
-  async init(web3) {
+  async init (web3) {
     this.ed25519 = await this.checkContract(
       web3,
       RainbowConfig.getParam('eth-ed25519-abi-path'),
@@ -244,7 +244,7 @@ class EthContracts {
     )
   }
 
-  async checkContract(web3, abiPath, address) {
+  async checkContract (web3, abiPath, address) {
     if (!abiPath) {
       return new Status(Unknown, Error, ABINotFound)
     }
@@ -254,7 +254,7 @@ class EthContracts {
     try {
       const abi = JSON.parse(fs.readFileSync(abiPath))
       const contract = await new web3.eth.Contract(abi, address)
-      if (contract.options.address == address) {
+      if (contract.options.address === address) {
         // TODO #257 check deployed code equality if possible
         return new Status(contract.options.address, Ok, Deployed)
       } else {
@@ -268,7 +268,7 @@ class EthContracts {
 
 class EthStatus {
   // TODO put it into constructor if possible
-  async init() {
+  async init () {
     const url = RainbowConfig.getParam('eth-node-url')
 
     const masterKey = RainbowConfig.getParam('eth-master-sk')
@@ -332,13 +332,13 @@ class EthStatus {
 }
 
 class ServicesStatus {
-  async init() {
+  async init () {
     this.eth2nearRelay = await this.running('eth2near-relay')
     this.near2ethRelay = await this.running('near2eth-relay')
     this.watchdog = await this.running('bridge-watchdog')
   }
 
-  processArgs(args) {
+  processArgs (args) {
     var res = []
     for (var i = 0; i + 1 < args.length; i++) {
       if (args[i].startsWith('--')) {
@@ -348,7 +348,7 @@ class ServicesStatus {
     return res.join(', ')
   }
 
-  async running(serviceName) {
+  async running (serviceName) {
     let status
     try {
       const process = await ProcessManager.describe(serviceName)
@@ -369,27 +369,27 @@ class ServicesStatus {
 }
 
 // TODO put it into StatusCommand class if possible
-function printHeader(text) {
+function printHeader (text) {
   console.log('\x1B[33m' + text + NoColor)
 }
 
-function printLine(field, status = null) {
+function printLine (field, status = null) {
   if (!status) {
     status = new Status(Unknown, Error, RecordNotFound)
   }
   var color = '\x1B[35m'
   switch (status.verdict) {
     case Ok:
-      var color = '\x1B[32m'
+      color = '\x1B[32m'
       break
     case Info:
-      var color = '\x1B[39m'
+      color = '\x1B[39m'
       break
     case Warn:
-      var color = '\x1B[33m'
+      color = '\x1B[33m'
       break
     case Error:
-      var color = '\x1B[35m'
+      color = '\x1B[35m'
       break
   }
   const explanation = status.explanation ? '(' + status.explanation + ')' : ''
@@ -400,12 +400,12 @@ function printLine(field, status = null) {
   console.log(line, color + status.value, explanation + NoColor)
 }
 
-function printFooter() {
+function printFooter () {
   console.log()
 }
 
 class StatusCommand {
-  static async execute() {
+  static async execute () {
     const consoleError = console.error
     // A cool hack to avoid annoying Web3 printing to stderr
     console.error = function () {}

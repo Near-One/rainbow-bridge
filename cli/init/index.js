@@ -3,7 +3,7 @@ const {
   InitEthEd25519,
   InitEthErc20,
   InitEthLocker,
-  InitEthProver,
+  InitEthProver
 } = require('./eth-contracts')
 const { InitNearContracts } = require('./near-contracts')
 const { InitNearTokenFactory } = require('./near-token-factory')
