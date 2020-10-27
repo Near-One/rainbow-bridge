@@ -1,6 +1,6 @@
 {
   "name": "rainbow-bridge-sol",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Solidity contracts for NEAR Rainbow Bridge",
   "author": "Near Inc.",
   "repository": {
@@ -18,5 +18,6 @@
   ],
   "scripts": {
     "build": "./build_all.sh"
-  }
+  },
+  "files": [ "nearbridge/contracts/*", "nearprover/contracts/*" ]
 }
