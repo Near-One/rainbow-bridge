@@ -24,7 +24,7 @@ class StartLocalNearNodeCommand {
       'near-master-sk',
       'ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP'
     )
-    RainbowConfig.saveConfig()
+    RainbowConfig.saveConfig();
   }
 }
 
