@@ -1,0 +1,30 @@
+{
+  "name": "rainbow-bridge",
+  "version": "1.0.0",
+  "description": "",
+  "author": "Near Inc. <hello@near.org>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/near/rainbow-bridge.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "nearprotocol",
+    "decentralized",
+    "blockchain",
+    "ethereum",
+    "bridge"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "standard": "*"
+  },
+  "scripts": {
+    "standard": "standard"
+  },
+  "standard": {
+    "ignore": [
+      "/contracts/**/*.js"
+    ]
+  }
+}

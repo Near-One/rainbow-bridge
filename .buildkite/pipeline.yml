@@ -1,3 +1,11 @@
 steps:
-  - label: "Example Test"
-    command: echo "Hello!"
+  - label: 'Linter'
+    command: |
+      source testing/ci/e2e_ci_prepare_env.sh
+      yarn
+      yarn standard
+
+    timeout: 5
+
+    agents:
+      - 'queue=default'
