@@ -24,7 +24,7 @@
   },
   "standard": {
     "ignore": [
-      "/contracts/**/*.js"
+      "/rainbow-bridge-sol/**/*.js"
     ]
   },
   "private": true,

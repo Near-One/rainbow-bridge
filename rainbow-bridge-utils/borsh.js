@@ -56,9 +56,9 @@ function serializeField (schema, value, fieldType, writer) {
         serializeField(schema, value, structSchema.type, writer)
       }
     } else if (structSchema.kind === 'struct') {
-      structSchema.fields.map(([fieldName, fieldType]) => {
+      structSchema.fields.map(([fieldName, fieldType]) =>
         serializeField(schema, value[fieldName], fieldType, writer)
-      })
+      )
     } else if (structSchema.kind === 'function') {
       writer.write_buffer(structSchema.ser(value))
     } else {
