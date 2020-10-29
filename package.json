@@ -26,5 +26,16 @@
     "ignore": [
       "/contracts/**/*.js"
     ]
-  }
+  },
+  "private": true,
+  "workspaces": [
+    "rainbow-bridge-cli",
+    "rainbow-bridge-eth2near-block-relay",
+    "rainbow-bridge-near2eth-block-relay",
+    "rainbow-bridge-rs",
+    "rainbow-bridge-sol",
+    "rainbow-bridge-testing",
+    "rainbow-bridge-utils",
+    "rainbow-bridge-watchdog"
+  ]
 }

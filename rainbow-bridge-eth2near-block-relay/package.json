@@ -23,7 +23,7 @@
     "ethereumjs-block": "^2.2.2",
     "merkle-patricia-tree": "^4.0.0",
     "promisfy": "^1.2.0",
-    "rainbow-bridge-utils": "^1.0.0"
+    "rainbow-bridge-utils": "1.0.0"
   },
   "devDependencies": {
     "standard": "*"
