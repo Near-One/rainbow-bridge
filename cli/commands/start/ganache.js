@@ -1,6 +1,7 @@
 const ProcessManager = require('pm2')
 const { spawnProcess } = require('./helpers')
 const { RainbowConfig } = require('rainbow-bridge-utils')
+const { getScript } = require('rainbow-bridge-testing')
 const path = require('path')
 
 class StartGanacheNodeCommand {
@@ -14,7 +15,7 @@ class StartGanacheNodeCommand {
       }
       spawnProcess('ganache', {
         name: 'ganache',
-        script: path.join(__dirname, '../../scripts/start_ganache.sh'),
+        script: getScript("start_ganache"),
         error_file: '~/.rainbow/logs/ganache/err.log',
         out_file: '~/.rainbow/logs/ganache/out.log',
         args: [],

@@ -1,10 +1,11 @@
 const { exec } = require('child_process')
 const path = require('path')
 const { RainbowConfig } = require('rainbow-bridge-utils')
+const { getScript } = require('rainbow-bridge-testing');
 
 class PrepareCommand {
   static execute () {
-    const scriptDir = path.resolve(__dirname, '../scripts/prepare.sh')
+    var scriptDir = getScript("prepare");
 
     const shell = ['bash', scriptDir].join(' ')
 
