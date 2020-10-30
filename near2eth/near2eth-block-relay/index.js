@@ -1,4 +1,5 @@
 const fs = require('fs')
+const path = require('path')
 // @ts-ignore
 const bs58 = require('bs58')
 // @ts-ignore
@@ -14,13 +15,251 @@ const {
   nearAPI
 } = require('rainbow-bridge-utils')
 
+// TODO @frol use config
+const BRIDGE_SRC_DIR = __dirname
+const LIBS_SOL_SRC_DIR = path.join(
+  BRIDGE_SRC_DIR,
+  '../../node_modules/rainbow-bridge-sol'
+)
+const LIBS_RS_SRC_DIR = path.join(
+  BRIDGE_SRC_DIR,
+  '../../node_modules/rainbow-bridge-rs'
+)
+const LIBS_TC_SRC_DIR = path.join(
+  BRIDGE_SRC_DIR,
+  '../../node_modules/rainbow-token-connector'
+)
+
+RainbowConfig.declareOption(
+  'near-network-id',
+  'The identifier of the NEAR network that the given NEAR node is expected to represent.'
+)
+RainbowConfig.declareOption('near-node-url', 'The URL of the NEAR node.')
+RainbowConfig.declareOption('eth-node-url', 'The URL of the Ethereum node.')
+RainbowConfig.declareOption(
+  'near-master-account',
+  'The account of the master account on NEAR blockchain that can be used to deploy and initialize the test contracts.' +
+    ' This account will also own the initial supply of the fungible tokens.'
+)
+RainbowConfig.declareOption(
+  'near-master-sk',
+  'The secret key of the master account on NEAR blockchain.'
+)
+RainbowConfig.declareOption(
+  'eth-master-sk',
+  'The secret key of the master account on Ethereum blockchain.'
+)
+RainbowConfig.declareOption(
+  'near-client-account',
+  'The account of the Near Client contract that can be used to accept ETH headers.',
+  'rainbow_bridge_eth_on_near_client'
+)
+RainbowConfig.declareOption(
+  'near-client-sk',
+  'The secret key of the Near Client account. If not specified will use master SK.'
+)
+RainbowConfig.declareOption(
+  'near-client-contract-path',
+  'The path to the Wasm file containing the Near Client contract.',
+  path.join(LIBS_RS_SRC_DIR, 'res/eth_client.wasm')
+)
+RainbowConfig.declareOption(
+  'near-client-init-balance',
+  'The initial balance of Near Client contract in femtoNEAR.',
+  '100000000000000000000000000'
+)
+RainbowConfig.declareOption(
+  'near-client-validate-ethash',
+  'Whether validate ethash of submitted eth block, should set to true on mainnet and false on PoA testnets',
+  'true'
+)
+RainbowConfig.declareOption(
+  'near-client-trusted-signer',
+  'When non empty, deploy as trusted-signer mode where only tursted signer can submit blocks to client',
+  ''
+)
+RainbowConfig.declareOption(
+  'near-prover-account',
+  'The account of the Near Prover contract that can be used to accept ETH headers.',
+  'rainbow_bridge_eth_on_near_prover'
+)
+RainbowConfig.declareOption(
+  'near-prover-sk',
+  'The secret key of the Near Prover account. If not specified will use master SK.'
+)
+RainbowConfig.declareOption(
+  'near-prover-contract-path',
+  'The path to the Wasm file containing the Near Prover contract.',
+  path.join(LIBS_RS_SRC_DIR, 'res/eth_prover.wasm')
+)
+RainbowConfig.declareOption(
+  'near-prover-init-balance',
+  'The initial balance of Near Prover contract in femtoNEAR.',
+  '100000000000000000000000000'
+)
+RainbowConfig.declareOption(
+  'daemon',
+  'Whether the process should be launched as a daemon.',
+  'true',
+  true
+)
+RainbowConfig.declareOption(
+  'core-src',
+  'Path to the nearcore source. It will be downloaded if not provided.',
+  ''
+)
+RainbowConfig.declareOption(
+  'nearup-src',
+  'Path to the nearup source. It will be downloaded if not provided.',
+  ''
+)
+RainbowConfig.declareOption(
+  'eth-gas-multiplier',
+  'How many times more in Ethereum gas are we willing to overpay.',
+  '1'
+)
+
+// User-specific arguments.
+RainbowConfig.declareOption(
+  'near-token-factory-account',
+  'The account of the token factory contract that will be used to mint tokens locked on Ethereum.',
+  'neartokenfactory'
+)
+RainbowConfig.declareOption(
+  'near-token-factory-sk',
+  'The secret key of the token factory account. If not specified will use master SK.'
+)
+RainbowConfig.declareOption(
+  'near-token-factory-contract-path',
+  'The path to the Wasm file containing the token factory contract.',
+  path.join(LIBS_TC_SRC_DIR, 'res/bridge_token_factory.wasm')
+)
+RainbowConfig.declareOption(
+  'near-token-factory-init-balance',
+  'The initial balance of token factory contract in yoctoNEAR.',
+  '1000000000000000000000000000'
+)
+RainbowConfig.declareOption(
+  'eth-locker-address',
+  'ETH address of the locker contract.'
+)
+RainbowConfig.declareOption(
+  'eth-locker-abi-path',
+  'Path to the .abi file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
+  path.join(LIBS_TC_SRC_DIR, 'res/BridgeTokenFactory.full.abi')
+)
+RainbowConfig.declareOption(
+  'eth-locker-bin-path',
+  'Path to the .bin file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
+  path.join(LIBS_TC_SRC_DIR, 'res/BridgeTokenFactory.full.bin')
+)
+RainbowConfig.declareOption(
+  'eth-erc20-address',
+  'ETH address of the ERC20 contract.'
+)
+RainbowConfig.declareOption(
+  'eth-erc20-abi-path',
+  'Path to the .abi file defining Ethereum ERC20 contract.',
+  path.join(LIBS_TC_SRC_DIR, 'res/TToken.full.abi')
+)
+RainbowConfig.declareOption(
+  'eth-erc20-bin-path',
+  'Path to the .bin file defining Ethereum ERC20 contract.',
+  path.join(LIBS_TC_SRC_DIR, 'res/TToken.full.bin')
+)
+RainbowConfig.declareOption(
+  'eth-ed25519-address',
+  'ETH address of the ED25519 contract.'
+)
+RainbowConfig.declareOption(
+  'eth-ed25519-abi-path',
+  'Path to the .abi file defining Ethereum ED25519 contract.',
+  path.join(LIBS_SOL_SRC_DIR, 'nearbridge/dist/Ed25519.full.abi')
+)
+RainbowConfig.declareOption(
+  'eth-ed25519-bin-path',
+  'Path to the .bin file defining Ethereum ED25519 contract.',
+  path.join(LIBS_SOL_SRC_DIR, 'nearbridge/dist/Ed25519.full.bin')
+)
+RainbowConfig.declareOption(
+  'eth-client-lock-eth-amount',
+  'Amount of Ether that should be temporarily locked when submitting a new header to EthClient, in wei.',
+  '100000000000000000000'
+)
+RainbowConfig.declareOption(
+  'eth-client-lock-duration',
+  'The challenge window during which anyone can challenge an incorrect ED25519 signature of the Near block, in EthClient, in seconds.',
+  14400
+)
+RainbowConfig.declareOption(
+  'eth-client-replace-duration',
+  'Minimum time difference required to replace a block during challenge period, in EthClient, in seconds.',
+  18000
+)
+RainbowConfig.declareOption(
+  'eth-client-address',
+  'ETH address of the EthClient contract.'
+)
+RainbowConfig.declareOption(
+  'eth-client-abi-path',
+  'Path to the .abi file defining Ethereum Client contract.',
+  path.join(LIBS_SOL_SRC_DIR, 'nearbridge/dist/NearBridge.full.abi')
+)
+RainbowConfig.declareOption(
+  'eth-client-bin-path',
+  'Path to the .bin file defining Ethereum Client contract.',
+  path.join(LIBS_SOL_SRC_DIR, 'nearbridge/dist/NearBridge.full.bin')
+)
+RainbowConfig.declareOption(
+  'eth-prover-address',
+  'ETH address of the EthProver contract.'
+)
+RainbowConfig.declareOption(
+  'eth-prover-abi-path',
+  'Path to the .abi file defining Ethereum Prover contract.',
+  path.join(LIBS_SOL_SRC_DIR, 'nearprover/dist/NearProver.full.abi')
+)
+RainbowConfig.declareOption(
+  'eth-prover-bin-path',
+  'Path to the .bin file defining Ethereum Prover contract.',
+  path.join(LIBS_SOL_SRC_DIR, 'nearprover/dist/NearProver.full.bin')
+)
+RainbowConfig.declareOption(
+  'near2eth-relay-min-delay',
+  "Minimum number of seconds to wait if the relay can't submit a block right away.",
+  '1'
+)
+RainbowConfig.declareOption(
+  'near2eth-relay-max-delay',
+  "Maximum number of seconds to wait if the relay can't submit a block right away.",
+  '600'
+)
+RainbowConfig.declareOption(
+  'near2eth-relay-error-delay',
+  'Number of seconds to wait before retrying if there is an error.',
+  '1'
+)
+RainbowConfig.declareOption(
+  'watchdog-delay',
+  'Number of seconds to wait after validating all signatures.',
+  '300'
+)
+RainbowConfig.declareOption(
+  'watchdog-error-delay',
+  'Number of seconds to wait before retrying if there is an error.',
+  '1'
+)
+RainbowConfig.declareOption('near-erc20-account', 'Must be declared before set')
+
 class Near2EthRelay {
   async initialize () {
     // @ts-ignore
     this.robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'))
     this.web3 = this.robustWeb3.web3
     this.ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(
-      normalizeEthKey(RainbowConfig.getParam('eth-master-sk'))
+      // TODO remove this hard-coded constant!
+      normalizeEthKey('0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201')
+      // normalizeEthKey(RainbowConfig.getParam('eth-master-sk'))
     )
     this.web3.eth.accounts.wallet.add(this.ethMasterAccount)
     this.web3.eth.defaultAccount = this.ethMasterAccount.address
@@ -281,5 +520,14 @@ class Near2EthRelay {
   }
 }
 
+async function runNear2EthRelay () {
+  const relay = new Near2EthRelay()
+  await relay.initialize()
+  relay.run()
+}
+
 exports.Near2EthRelay = Near2EthRelay
 exports.borshify = borshify
+exports.runNear2EthRelay = runNear2EthRelay
+
+require('make-runnable')
