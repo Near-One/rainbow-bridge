@@ -38,18 +38,19 @@ const {
 } = require('./init')
 
 // source dir or where rainbow cli is installed (when install with npm)
+// TODO @frol use config
 const BRIDGE_SRC_DIR = __dirname
 const LIBS_SOL_SRC_DIR = path.join(
   BRIDGE_SRC_DIR,
-  '../rainbow-bridge-sol'
+  '../node_modules/rainbow-bridge-sol'
 )
 const LIBS_RS_SRC_DIR = path.join(
   BRIDGE_SRC_DIR,
-  '../rainbow-bridge-rs'
+  '../node_modules/rainbow-bridge-rs'
 )
 const LIBS_TC_SRC_DIR = path.join(
   BRIDGE_SRC_DIR,
-  '../rainbow-token-connector'
+  '../node_modules/rainbow-token-connector'
 )
 
 RainbowConfig.declareOption(

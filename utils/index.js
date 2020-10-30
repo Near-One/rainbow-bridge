@@ -1,4 +1,4 @@
-const { nearAPI, Web3, RobustWeb3 } = require('./robust')
+const { nearAPI, Web3, RobustWeb3, normalizeEthKey } = require('./robust')
 const { RainbowConfig } = require('./config')
 const {
   txnStatus,
@@ -25,6 +25,7 @@ module.exports = {
   Web3,
   RobustWeb3,
   setupEthNear,
+  normalizeEthKey,
   accountExists,
   remove0x,
   createLocalKeyStore,
