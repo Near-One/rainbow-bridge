@@ -257,9 +257,7 @@ class Near2EthRelay {
     this.robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'))
     this.web3 = this.robustWeb3.web3
     this.ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(
-      // TODO remove this hard-coded constant!
-      normalizeEthKey('0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201')
-      // normalizeEthKey(RainbowConfig.getParam('eth-master-sk'))
+      normalizeEthKey(RainbowConfig.getParam('eth-master-sk'))
     )
     this.web3.eth.accounts.wallet.add(this.ethMasterAccount)
     this.web3.eth.defaultAccount = this.ethMasterAccount.address
@@ -522,6 +520,10 @@ class Near2EthRelay {
 
 async function runNear2EthRelay () {
   const relay = new Near2EthRelay()
+  // TODO remove this hard-coded constant! This is for testing purposes only. Replace with config when possible.
+  RainbowConfig.setParam('eth-master-sk', normalizeEthKey('0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201'))
+  RainbowConfig.saveConfig()
+
   await relay.initialize()
   relay.run()
 }
