@@ -20,7 +20,7 @@
     "eth-object": "near/eth-object#54e03b8aac8208cf724e206d49ffb8bdd30451d7",
     "eth-util-lite": "near/eth-util-lite#master",
     "ethereumjs-tx": "^2.1.2",
-    "rainbow-bridge-utils": "^1.0.0"
+    "rainbow-bridge-utils": "1.0.0"
   },
   "devDependencies": {
     "standard": "*"

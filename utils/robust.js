@@ -93,7 +93,7 @@ class RobustWeb3 {
         )
         if (_.isArray(receipt.logs)) {
           // decode logs
-          var events = _.map(receipt.logs, function (log) {
+          const events = _.map(receipt.logs, function (log) {
             return contract._decodeEventABI.call(
               {
                 name: 'ALLEVENTS',
@@ -105,7 +105,7 @@ class RobustWeb3 {
 
           // make log names keys
           receipt.events = {}
-          var count = 0
+          let count = 0
           events.forEach(function (ev) {
             if (ev.event) {
               // if > 1 of the same event, don't overwrite any existing events

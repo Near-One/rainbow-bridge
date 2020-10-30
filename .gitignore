@@ -11,3 +11,5 @@ eth2near/ethashproof
 **/*.tgz
 
 **/.yarn*
+
+write_config.js

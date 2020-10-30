@@ -1,11 +1,11 @@
 const BN = require('bn.js')
 const blockFromRpc = require('ethereumjs-block/from-rpc')
+const utils = require('ethereumjs-util')
 const {
   Web3,
   BorshContract,
   hexToBuffer,
-  readerToHex,
-  utils
+  readerToHex
 } = require('rainbow-bridge-utils')
 const roots = require('./dag_merkle_roots.json')
 

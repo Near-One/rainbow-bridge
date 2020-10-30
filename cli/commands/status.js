@@ -339,8 +339,8 @@ class ServicesStatus {
   }
 
   processArgs (args) {
-    var res = []
-    for (var i = 0; i + 1 < args.length; i++) {
+    const res = []
+    for (let i = 0; i + 1 < args.length; i++) {
       if (args[i].startsWith('--')) {
         res.push(args[i].substring(2, args[i].length) + '=' + args[i + 1])
       }
@@ -377,7 +377,7 @@ function printLine (field, status = null) {
   if (!status) {
     status = new Status(Unknown, Error, RecordNotFound)
   }
-  var color = '\x1B[35m'
+  let color = '\x1B[35m'
   switch (status.verdict) {
     case Ok:
       color = '\x1B[32m'
@@ -393,7 +393,7 @@ function printLine (field, status = null) {
       break
   }
   const explanation = status.explanation ? '(' + status.explanation + ')' : ''
-  var line = field + ':'
+  let line = field + ':'
   while (line.length < 50) {
     line = line + ' '
   }

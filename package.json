@@ -24,7 +24,18 @@
   },
   "standard": {
     "ignore": [
-      "/contracts/**/*.js"
+      "/contracts/eth/**/*.js"
     ]
-  }
+  },
+  "private": true,
+  "workspaces": [
+    "cli",
+    "contracts/eth",
+    "contracts/near",
+    "eth2near/eth2near-block-relay",
+    "near2eth/near2eth-block-relay",
+    "near2eth/watchdog",
+    "testing",
+    "utils"
+  ]
 }

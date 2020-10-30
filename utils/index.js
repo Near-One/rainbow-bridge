@@ -1,4 +1,4 @@
-const { nearAPI, Web3, RobustWeb3 } = require('./robust')
+const { nearAPI, Web3, RobustWeb3, normalizeEthKey } = require('./robust')
 const { RainbowConfig } = require('./config')
 const {
   txnStatus,
@@ -18,12 +18,14 @@ const {
   toWei,
   ethCallContract
 } = require('./utils')
+const { maybeCreateAccount, verifyAccount } = require('./helpers')
 
 module.exports = {
   nearAPI,
   Web3,
   RobustWeb3,
   setupEthNear,
+  normalizeEthKey,
   accountExists,
   remove0x,
   createLocalKeyStore,
@@ -37,5 +39,7 @@ module.exports = {
   BorshContract,
   hexToBuffer,
   readerToHex,
+  maybeCreateAccount,
+  verifyAccount,
   RainbowConfig
 }

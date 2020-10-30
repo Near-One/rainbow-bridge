@@ -4,7 +4,7 @@ const { RainbowConfig } = require('rainbow-bridge-utils')
 
 class PrepareCommand {
   static execute () {
-    var scriptDir = path.resolve(__dirname, '../scripts/prepare.sh')
+    const scriptDir = path.resolve(__dirname, '../scripts/prepare.sh')
 
     const shell = ['bash', scriptDir].join(' ')
 
@@ -21,7 +21,7 @@ class PrepareCommand {
       path.resolve(RainbowConfig.getParam('nearup-src'))
 
     // @ts-ignore
-    var prepareScript = exec(shell, { env: env })
+    const prepareScript = exec(shell, { env: env })
     // @ts-ignore
     prepareScript.stdout.on('data', function (data) {
       console.log(data.toString())
