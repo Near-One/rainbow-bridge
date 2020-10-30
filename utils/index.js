@@ -1,4 +1,4 @@
-const { nearAPI, Web3, RobustWeb3, normalizeEthKey } = require('./robust')
+const { nearAPI, Web3, RobustWeb3, normalizeEthKey, sleep } = require('./robust')
 const { RainbowConfig } = require('./config')
 const {
   txnStatus,
@@ -19,10 +19,14 @@ const {
   ethCallContract
 } = require('./utils')
 const { maybeCreateAccount, verifyAccount } = require('./helpers')
+const { borshifyInitialValidators, borshify } = require('./borsh')
 
 module.exports = {
+  borshifyInitialValidators,
+  borshify,
   nearAPI,
   Web3,
+  sleep,
   RobustWeb3,
   setupEthNear,
   normalizeEthKey,
