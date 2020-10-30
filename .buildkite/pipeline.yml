@@ -1,7 +1,7 @@
 steps:
   - label: 'Linter'
     command: |
-      source rainbow-bridge-testing/ci/e2e_ci_prepare_env.sh
+      source testing/ci/e2e_ci_prepare_env.sh
       yarn
       yarn standard
 

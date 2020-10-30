@@ -29,13 +29,13 @@
   },
   "private": true,
   "workspaces": [
-    "rainbow-bridge-cli",
-    "rainbow-bridge-eth2near-block-relay",
-    "rainbow-bridge-near2eth-block-relay",
-    "rainbow-bridge-rs",
-    "rainbow-bridge-sol",
-    "rainbow-bridge-testing",
-    "rainbow-bridge-utils",
-    "rainbow-bridge-watchdog"
+    "cli",
+    "contracts/eth",
+    "contracts/near",
+    "eth2near/eth2near-block-relay",
+    "near2eth/near2eth-block-relay",
+    "near2eth/watchdog",
+    "testing",
+    "utils"
   ]
 }
