@@ -21,9 +21,14 @@ const {
 const { maybeCreateAccount, verifyAccount } = require('./helpers')
 const { borshifyInitialValidators, borshify } = require('./borsh')
 
+function getScript(name) {
+  return path.resolve(path.join(__dirname, `scripts/${name}.sh`));
+}
+
 module.exports = {
   borshifyInitialValidators,
   borshify,
+  getScript,
   nearAPI,
   Web3,
   sleep,

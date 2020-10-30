@@ -1,7 +1,6 @@
 const ProcessManager = require('pm2')
 const { spawnProcess } = require('./helpers')
-const { RainbowConfig } = require('rainbow-bridge-utils')
-const { getScript } = require('rainbow-bridge-testing')
+const { RainbowConfig, getScript } = require('rainbow-bridge-utils')
 const path = require('path')
 
 class StartGanacheNodeCommand {
