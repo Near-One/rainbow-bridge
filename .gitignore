@@ -5,7 +5,7 @@
 **/.vscode
 *.pyc
 
-ethashproof
+eth2near/ethashproof
 
 **/*.swp
 **/*.tgz
