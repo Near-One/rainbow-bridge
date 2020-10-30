@@ -2,7 +2,8 @@ const path = require('path')
 const exec = require('child_process').exec
 const BN = require('bn.js')
 const { RobustWeb3, sleep, txnStatus } = require('rainbow-bridge-utils')
-const { web3BlockToRlp } = require('./eth-on-near-client')
+const { web3BlockToRlp, EthOnNearClientContract } = require('./eth-on-near-client')
+const { EthOnNearProverContract } = require('./eth-on-near-prover')
 const { EthProofExtractor } = require('./eth-proof-extractor')
 const MAX_SUBMIT_BLOCK = 10
 const BRIDGE_SRC_DIR = path.join(__dirname, '..')
@@ -170,3 +171,5 @@ class Eth2NearRelay {
 exports.Eth2NearRelay = Eth2NearRelay
 exports.EthProofExtractor = EthProofExtractor
 exports.ethashproof = ethashproof
+exports.EthOnNearClientContract = EthOnNearClientContract
+exports.EthOnNearProverContract = EthOnNearProverContract

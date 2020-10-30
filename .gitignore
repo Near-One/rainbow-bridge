@@ -11,3 +11,5 @@ ethashproof
 **/*.tgz
 
 **/.yarn*
+
+write_config.js

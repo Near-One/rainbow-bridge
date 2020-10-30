@@ -41,15 +41,15 @@ const {
 const BRIDGE_SRC_DIR = __dirname
 const LIBS_SOL_SRC_DIR = path.join(
   BRIDGE_SRC_DIR,
-  'node_modules/rainbow-bridge-sol'
+  '../rainbow-bridge-sol'
 )
 const LIBS_RS_SRC_DIR = path.join(
   BRIDGE_SRC_DIR,
-  'node_modules/rainbow-bridge-rs'
+  '../rainbow-bridge-rs'
 )
 const LIBS_TC_SRC_DIR = path.join(
   BRIDGE_SRC_DIR,
-  'node_modules/rainbow-token-connector'
+  '../rainbow-token-connector'
 )
 
 RainbowConfig.declareOption(

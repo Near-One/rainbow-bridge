@@ -1,4 +1,4 @@
-const nearAPI = require('./robust')
+const { nearAPI } = require('./robust')
 const fs = require('fs')
 const BN = require('bn.js')
 

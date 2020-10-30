@@ -18,6 +18,7 @@ const {
   toWei,
   ethCallContract
 } = require('./utils')
+const { maybeCreateAccount, verifyAccount } = require('./helpers')
 
 module.exports = {
   nearAPI,
@@ -37,5 +38,7 @@ module.exports = {
   BorshContract,
   hexToBuffer,
   readerToHex,
+  maybeCreateAccount,
+  verifyAccount,
   RainbowConfig
 }
