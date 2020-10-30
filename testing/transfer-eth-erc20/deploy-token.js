@@ -1,6 +1,6 @@
 const {
   nearAPI,
-  utils,
+  remove0x,
   RainbowConfig,
   verifyAccount
 } = require('rainbow-bridge-utils')
@@ -77,7 +77,7 @@ class DeployToken {
       // Try initializing the contract.
       await tokenFactoryContract.deploy_bridge_token(
         {
-          address: utils.remove0x(tokenAddress)
+          address: remove0x(tokenAddress)
         },
         new BN('300000000000000'),
         new BN('150000000000000000000000000')
@@ -91,7 +91,7 @@ class DeployToken {
     console.log(`${tokenName} deployed`)
     RainbowConfig.setParam(
       tokenAccountParam(tokenName),
-      utils.remove0x(tokenAddress) + '.' + tokenFactoryAccount
+      remove0x(tokenAddress) + '.' + tokenFactoryAccount
     )
     RainbowConfig.setParam(tokenAddressParam(tokenName), tokenAddress)
 
