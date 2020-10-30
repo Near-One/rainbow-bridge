@@ -4,7 +4,9 @@ const {
   txnStatus,
   BorshContract,
   hexToBuffer,
-  readerToHex
+  readerToHex,
+  borshifyInitialValidators,
+  borshify
 } = require('./borsh')
 const {
   setupEthNear,
@@ -19,11 +21,14 @@ const {
   ethCallContract
 } = require('./utils')
 const { maybeCreateAccount, verifyAccount } = require('./helpers')
-const { borshifyInitialValidators, borshify } = require('./borsh')
+const path = require('path')
+
+function getScript (name) {
+  return path.resolve(path.join(__dirname, `scripts/${name}.sh`))
+}
 
 module.exports = {
-  borshifyInitialValidators,
-  borshify,
+  getScript,
   nearAPI,
   Web3,
   sleep,
@@ -45,5 +50,7 @@ module.exports = {
   readerToHex,
   maybeCreateAccount,
   verifyAccount,
-  RainbowConfig
+  RainbowConfig,
+  borshifyInitialValidators,
+  borshify
 }

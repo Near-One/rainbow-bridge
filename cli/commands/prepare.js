@@ -1,10 +1,11 @@
 const { exec } = require('child_process')
 const path = require('path')
 const { RainbowConfig } = require('rainbow-bridge-utils')
+const { getScript } = require('rainbow-bridge-testing')
 
 class PrepareCommand {
   static execute () {
-    const scriptDir = path.resolve(__dirname, '../scripts/prepare.sh')
+    const scriptDir = getScript('prepare')
 
     const shell = ['bash', scriptDir].join(' ')
 
@@ -16,6 +17,7 @@ class PrepareCommand {
     env.LOCAL_CORE_SRC =
       RainbowConfig.getParam('core-src') &&
       path.resolve(RainbowConfig.getParam('core-src'))
+
     env.LOCAL_NEARUP_SRC =
       RainbowConfig.getParam('nearup-src') &&
       path.resolve(RainbowConfig.getParam('nearup-src'))
@@ -24,11 +26,12 @@ class PrepareCommand {
     const prepareScript = exec(shell, { env: env })
     // @ts-ignore
     prepareScript.stdout.on('data', function (data) {
-      console.log(data.toString())
+      process.stdout.write(data)
     })
+
     // @ts-ignore
     prepareScript.stderr.on('data', function (data) {
-      console.log(data.toString())
+      process.stderr.write(data)
     })
   }
 }
