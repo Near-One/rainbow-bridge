@@ -1,11 +1,11 @@
 const { exec } = require('child_process')
 const path = require('path')
 const { RainbowConfig } = require('rainbow-bridge-utils')
-const { getScript } = require('rainbow-bridge-testing');
+const { getScript } = require('rainbow-bridge-testing')
 
 class PrepareCommand {
   static execute () {
-    var scriptDir = getScript("prepare");
+    const scriptDir = getScript('prepare')
 
     const shell = ['bash', scriptDir].join(' ')
 
@@ -26,12 +26,12 @@ class PrepareCommand {
     const prepareScript = exec(shell, { env: env })
     // @ts-ignore
     prepareScript.stdout.on('data', function (data) {
-      process.stdout.write(data);
+      process.stdout.write(data)
     })
 
     // @ts-ignore
     prepareScript.stderr.on('data', function (data) {
-      process.stderr.write(data);
+      process.stderr.write(data)
     })
   }
 }
