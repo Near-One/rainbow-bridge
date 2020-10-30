@@ -4,7 +4,9 @@ const {
   txnStatus,
   BorshContract,
   hexToBuffer,
-  readerToHex
+  readerToHex,
+  borshifyInitialValidators,
+  borshify,
 } = require('./borsh')
 const {
   setupEthNear,
@@ -50,5 +52,8 @@ module.exports = {
   readerToHex,
   maybeCreateAccount,
   verifyAccount,
-  RainbowConfig
+  RainbowConfig,
+  borshifyInitialValidators,
+  sleep,
+  borshify,
 }
