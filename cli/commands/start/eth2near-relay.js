@@ -4,12 +4,20 @@ const {
   EthOnNearClientContract,
   Eth2NearRelay
 } = require('rainbow-bridge-eth2near-block-relay')
-const { nearAPI, RainbowConfig } = require('rainbow-bridge-utils')
+const { nearAPI } = require('rainbow-bridge-utils')
 const path = require('path')
 
 class StartEth2NearRelayCommand {
-  static async execute () {
-    if (RainbowConfig.getParam('daemon') === 'true') {
+  static async execute ({
+    daemon,
+    nearNetworkId,
+    nearNodeUrl,
+    nearMasterAccount,
+    nearMasterSk,
+    nearClientAccount,
+    ethNodeUrl
+  }) {
+    if (daemon === 'true') {
       ProcessManager.connect((err) => {
         if (err) {
           console.log(
@@ -30,18 +38,16 @@ class StartEth2NearRelayCommand {
         })
       })
     } else {
-      const masterAccount = RainbowConfig.getParam('near-master-account')
-      const masterSk = RainbowConfig.getParam('near-master-sk')
       const keyStore = new nearAPI.keyStores.InMemoryKeyStore()
       await keyStore.setKey(
-        RainbowConfig.getParam('near-network-id'),
-        masterAccount,
-        nearAPI.KeyPair.fromString(masterSk)
+        nearNetworkId,
+        nearMasterAccount,
+        nearAPI.KeyPair.fromString(nearMasterSk)
       )
       const near = await nearAPI.connect({
-        nodeUrl: RainbowConfig.getParam('near-node-url'),
-        networkId: RainbowConfig.getParam('near-network-id'),
-        masterAccount: masterAccount,
+        nodeUrl: nearNodeUrl,
+        networkId: nearNetworkId,
+        masterAccount: nearMasterAccount,
         deps: {
           keyStore: keyStore
         }
@@ -49,12 +55,12 @@ class StartEth2NearRelayCommand {
 
       const relay = new Eth2NearRelay()
       const clientContract = new EthOnNearClientContract(
-        new nearAPI.Account(near.connection, masterAccount),
-        RainbowConfig.getParam('near-client-account')
+        new nearAPI.Account(near.connection, nearMasterAccount),
+        nearClientAccount
       )
       await clientContract.accessKeyInit()
       console.log('Initializing eth2near-relay...')
-      relay.initialize(clientContract, RainbowConfig.getParam('eth-node-url'))
+      relay.initialize(clientContract, ethNodeUrl)
       console.log('Starting eth2near-relay...')
       await relay.run()
     }

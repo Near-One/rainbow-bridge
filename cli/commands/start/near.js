@@ -1,8 +1,8 @@
 const util = require('util')
 const { execSync } = require('child_process')
 const request = require('request')
+
 const { getLocalNearNodeURL } = require('./helpers')
-const { RainbowConfig } = require('rainbow-bridge-utils')
 
 class StartLocalNearNodeCommand {
   static execute () {

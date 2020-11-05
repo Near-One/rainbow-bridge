@@ -6,7 +6,6 @@ const {
   Web3,
   nearAPI,
   verifyAccountGently,
-  RainbowConfig,
   normalizeEthKey
 } = require('rainbow-bridge-utils')
 
@@ -56,25 +55,24 @@ class Status {
 
 class NearContracts {
   // TODO put it into constructor if possible
-  async init (near) {
-    const masterAccount = RainbowConfig.getParam('near-master-account')
-    if (!masterAccount) {
+  async init (near, { nearMasterAccount, nearClientAccount, nearProverAccount, nearTokenFactoryAccount }) {
+    if (!nearMasterAccount) {
       return
     }
     this.client = await this.checkContract(
       near,
-      masterAccount,
-      RainbowConfig.getParam('near-client-account')
+      nearMasterAccount,
+      nearClientAccount
     )
     this.prover = await this.checkContract(
       near,
-      masterAccount,
-      RainbowConfig.getParam('near-prover-account')
+      nearMasterAccount,
+      nearProverAccount
     )
     this.funToken = await this.checkContract(
       near,
-      masterAccount,
-      RainbowConfig.getParam('near-token-factory-account')
+      nearMasterAccount,
+      nearTokenFactoryAccount
     )
   }
 
@@ -110,95 +108,95 @@ class NearContracts {
 
 class NearStatus {
   // TODO put it into constructor if possible
-  async init () {
-    const networkId = RainbowConfig.getParam('near-network-id')
-    this.networkLocation = networkId
-      ? new Status(networkId, Info)
+  async init ({
+    nearNetworkId,
+    nearNodeUrl,
+    nearMasterAccount,
+    nearMasterSk,
+    nearClientAccount,
+    nearClientSk,
+    nearProverAccount,
+    nearProverSk
+  }) {
+    this.networkLocation = nearNetworkId
+      ? new Status(nearNetworkId, Info)
       : new Status(Unknown)
-
-    const masterAccount = RainbowConfig.getParam('near-master-account')
-    const masterKey = RainbowConfig.getParam('near-master-sk')
-    const clientAccount = RainbowConfig.getParam('near-client-account')
-    const clientKey = RainbowConfig.getParam('near-client-sk')
-    const proverAccount = RainbowConfig.getParam('near-prover-account')
-    const proverKey = RainbowConfig.getParam('near-prover-sk')
 
     // Init with basic data
-    this.masterAccount = masterAccount
-      ? new Status(masterAccount, Info, NotVerified)
+    this.masterAccount = nearMasterAccount
+      ? new Status(nearMasterAccount, Info, NotVerified)
       : new Status(Unknown)
-    this.masterKey = masterKey
-      ? new Status(masterKey, Info)
+    this.masterKey = nearMasterSk
+      ? new Status(nearMasterSk, Info)
       : new Status(Unknown)
-    this.clientAccount = clientAccount
-      ? new Status(clientAccount, Info, NotVerified)
+    this.clientAccount = nearClientAccount
+      ? new Status(nearClientAccount, Info, NotVerified)
       : new Status(Unknown, Info, UsingMaster)
-    this.clientKey = clientKey
-      ? new Status(clientKey, Info)
+    this.clientKey = nearClientSk
+      ? new Status(nearClientSk, Info)
       : new Status(Unknown, Info, UsingMaster)
-    this.proverAccount = proverAccount
-      ? new Status(proverAccount, Info, NotVerified)
+    this.proverAccount = nearProverAccount
+      ? new Status(nearProverAccount, Info, NotVerified)
       : new Status(Unknown, Info, UsingMaster)
-    this.proverKey = proverKey
-      ? new Status(proverKey, Info)
+    this.proverKey = nearProverSk
+      ? new Status(nearProverSk, Info)
       : new Status(Unknown, Info, UsingMaster)
 
-    const url = RainbowConfig.getParam('near-node-url')
-    if (url) {
-      const [verdict, explanation, lastBlock] = await request(url + '/status')
-      this.networkConnection = new Status(url, verdict, explanation)
+    if (nearNodeUrl) {
+      const [verdict, explanation, lastBlock] = await request(nearNodeUrl + '/status')
+      this.networkConnection = new Status(nearNodeUrl, verdict, explanation)
       this.networkLastBlock = new Status(lastBlock, verdict)
       if (verdict === Ok) {
         // Connected to NEAR node
-        if (masterAccount && masterKey) {
+        if (nearMasterAccount && nearMasterSk) {
           const keyStore = new nearAPI.keyStores.InMemoryKeyStore()
           await keyStore.setKey(
-            networkId,
-            masterAccount,
-            nearAPI.KeyPair.fromString(masterKey)
+            nearNetworkId,
+            nearMasterAccount,
+            nearAPI.KeyPair.fromString(nearMasterSk)
           )
-          if (clientAccount && clientKey) {
+          if (nearClientAccount && nearClientSk) {
             await keyStore.setKey(
-              networkId,
-              clientAccount,
-              nearAPI.KeyPair.fromString(clientKey)
+              nearNetworkId,
+              nearClientAccount,
+              nearAPI.KeyPair.fromString(nearClientSk)
             )
           }
-          if (proverAccount && proverKey) {
+          if (nearProverAccount && nearProverSk) {
             await keyStore.setKey(
-              networkId,
-              proverAccount,
-              nearAPI.KeyPair.fromString(proverKey)
+              nearNetworkId,
+              nearProverAccount,
+              nearAPI.KeyPair.fromString(nearProverSk)
             )
           }
           const near = await nearAPI.connect({
-            nodeUrl: url,
-            networkId,
-            masterAccount: masterAccount,
+            nodeUrl: nearNodeUrl,
+            nearNetworkId,
+            masterAccount: nearMasterAccount,
             deps: {
               keyStore: keyStore
             }
           })
-          this.masterAccount = (await verifyAccountGently(near, masterAccount))
-            ? new Status(masterAccount, Ok, Valid)
-            : new Status(masterAccount, Error, Invalid)
+          this.masterAccount = (await verifyAccountGently(near, nearMasterAccount))
+            ? new Status(nearMasterAccount, Ok, Valid)
+            : new Status(nearMasterAccount, Error, Invalid)
           this.masterKey.verdict = this.masterAccount.verdict
-          if (clientAccount && clientKey) {
-            this.clientAccount = (await verifyAccountGently(
+          if (nearClientAccount && nearClientSk) {
+            this.nearClientAccount = (await verifyAccountGently(
               near,
-              clientAccount
+              nearClientAccount
             ))
-              ? new Status(clientAccount, Ok, Valid)
-              : new Status(clientAccount, Error, Invalid)
+              ? new Status(nearClientAccount, Ok, Valid)
+              : new Status(nearClientAccount, Error, Invalid)
             this.clientKey.verdict = this.clientAccount.verdict
           }
-          if (proverAccount && proverKey) {
-            this.proverAccount = (await verifyAccountGently(
+          if (nearProverAccount && nearProverSk) {
+            this.nearProverAccount = (await verifyAccountGently(
               near,
-              proverAccount
+              nearProverAccount
             ))
-              ? new Status(proverAccount, Ok, Valid)
-              : new Status(proverAccount, Error, Invalid)
+              ? new Status(nearProverAccount, Ok, Valid)
+              : new Status(nearProverAccount, Error, Invalid)
             this.proverKey.verdict = this.proverAccount.verdict
           }
 
@@ -216,32 +214,25 @@ class NearStatus {
 
 class EthContracts {
   // TODO put it into constructor if possible
-  async init (web3) {
-    this.ed25519 = await this.checkContract(
-      web3,
-      RainbowConfig.getParam('eth-ed25519-abi-path'),
-      RainbowConfig.getParam('eth-ed25519-address')
-    )
-    this.erc20 = await this.checkContract(
-      web3,
-      RainbowConfig.getParam('eth-erc20-abi-path'),
-      RainbowConfig.getParam('eth-erc20-address')
-    )
-    this.locker = await this.checkContract(
-      web3,
-      RainbowConfig.getParam('eth-locker-abi-path'),
-      RainbowConfig.getParam('eth-locker-address')
-    )
-    this.client = await this.checkContract(
-      web3,
-      RainbowConfig.getParam('eth-client-abi-path'),
-      RainbowConfig.getParam('eth-client-address')
-    )
-    this.prover = await this.checkContract(
-      web3,
-      RainbowConfig.getParam('eth-prover-abi-path'),
-      RainbowConfig.getParam('eth-prover-address')
-    )
+  async init (
+    web3,
+    {
+      ethEd25519AbiPath,
+      ethEd25519Address,
+      ethErc20AbiPath,
+      ethErc20Address,
+      ethLockerAbiPath,
+      ethLockerAddress,
+      ethClientAbiPath,
+      ethClientAddress,
+      ethProverAbiPath,
+      ethProverAbiAddress
+    }) {
+    this.ed25519 = await this.checkContract(web3, ethEd25519AbiPath, ethEd25519Address)
+    this.erc20 = await this.checkContract(web3, ethErc20AbiPath, ethErc20Address)
+    this.locker = await this.checkContract(web3, ethLockerAbiPath, ethLockerAddress)
+    this.client = await this.checkContract(web3, ethClientAbiPath, ethClientAddress)
+    this.prover = await this.checkContract(web3, ethProverAbiPath, ethProverAbiAddress)
   }
 
   async checkContract (web3, abiPath, address) {
@@ -268,34 +259,30 @@ class EthContracts {
 
 class EthStatus {
   // TODO put it into constructor if possible
-  async init () {
-    const url = RainbowConfig.getParam('eth-node-url')
-
-    const masterKey = RainbowConfig.getParam('eth-master-sk')
-
+  async init ({ ethNodeUrl, ethMasterSk }) {
     // Init with basic data
     this.masterAccount = new Status(Unknown, Info, NotVerified)
-    this.masterKey = masterKey
-      ? new Status(normalizeEthKey(masterKey), Info)
+    this.masterKey = ethMasterSk
+      ? new Status(normalizeEthKey(ethMasterSk), Info)
       : new Status(Unknown)
 
-    if (url) {
+    if (ethNodeUrl) {
       try {
-        const web3 = await new Web3(url)
+        const web3 = await new Web3(ethNodeUrl)
         const chain = web3.eth.defaultChain ? web3.eth.defaultChain : 'local'
         this.networkLocation = new Status(chain, Info)
         try {
           const version = 'version ' + (await web3.eth.getProtocolVersion())
           const lastBlock = await web3.eth.getBlockNumber()
-          this.networkConnection = new Status(url, Ok, version)
+          this.networkConnection = new Status(ethNodeUrl, Ok, version)
           this.networkLastBlock = new Status(lastBlock, Ok)
         } catch (err) {
-          this.networkConnection = new Status(url, Error, Unreachable)
+          this.networkConnection = new Status(ethNodeUrl, Error, Unreachable)
           this.networkLastBlock = new Status(Unknown)
         }
         try {
           const masterAccount = await web3.eth.accounts.privateKeyToAccount(
-            normalizeEthKey(masterKey)
+            normalizeEthKey(ethMasterSk)
           )
           const accounts = await web3.eth.getAccounts()
           if (accounts.includes(masterAccount.address)) {
@@ -309,7 +296,7 @@ class EthStatus {
             )
             this.masterKey.verdict = Error
           }
-        } catch (err) {}
+        } catch (err) { }
 
         const ethContracts = new EthContracts()
         await ethContracts.init(web3)
@@ -317,10 +304,10 @@ class EthStatus {
 
         try {
           web3.currentProvider.connection.close()
-        } catch (err) {}
+        } catch (err) { }
       } catch (err) {
         this.networkLocation = new Status(Unknown)
-        this.networkConnection = new Status(url, Error, Unreachable)
+        this.networkConnection = new Status(ethNodeUrl, Error, Unreachable)
         this.networkLastBlock = new Status(Unknown)
       }
     } else {
@@ -405,16 +392,39 @@ function printFooter () {
 }
 
 class StatusCommand {
-  static async execute () {
+  static async execute ({
+    nearNetworkId,
+    nearNodeUrl,
+    nearMasterAccount,
+    nearMasterSk,
+    nearClientAccount,
+    nearClientSk,
+    nearProverAccount,
+    nearProverSk,
+    ethNodeUrl,
+    ethMasterSk
+  }) {
     const consoleError = console.error
     // A cool hack to avoid annoying Web3 printing to stderr
-    console.error = function () {}
+    console.error = function () { }
 
     const nearStatus = new NearStatus()
-    await nearStatus.init()
+    await nearStatus.init({
+      nearNetworkId,
+      nearNodeUrl,
+      nearMasterAccount,
+      nearMasterSk,
+      nearClientAccount,
+      nearClientSk,
+      nearProverAccount,
+      nearProverSk
+    })
 
     const ethStatus = new EthStatus()
-    await ethStatus.init()
+    await ethStatus.init({
+      ethNodeUrl,
+      ethMasterSk
+    })
 
     const servicesStatus = new ServicesStatus()
     await servicesStatus.init()

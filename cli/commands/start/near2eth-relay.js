@@ -1,12 +1,11 @@
 const ProcessManager = require('pm2')
 const { spawnProcess } = require('./helpers')
 const { Near2EthRelay } = require('rainbow-bridge-near2eth-block-relay')
-const { RainbowConfig } = require('rainbow-bridge-utils')
 const path = require('path')
 
 class StartNear2EthRelayCommand {
-  static async execute () {
-    if (RainbowConfig.getParam('daemon') === 'true') {
+  static async execute ({ daemon }) {
+    if (daemon === 'true') {
       ProcessManager.connect((err) => {
         if (err) {
           console.log(

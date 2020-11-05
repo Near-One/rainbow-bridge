@@ -1,6 +1,6 @@
 const BN = require('bn.js')
 const fs = require('fs')
-const { Web3, RainbowConfig, normalizeEthKey } = require('rainbow-bridge-utils')
+const { Web3, normalizeEthKey } = require('rainbow-bridge-utils')
 
 class EthContractInitializer {
   async execute (contractName, args, gas) {

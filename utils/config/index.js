@@ -15,31 +15,33 @@ class RainbowConfig {
 
   // Adds a list of options to the given commander action.
   // options is a list of string representing parameter name.
-  static addOptions (action, options) {
-    let prev = action
+  static addOptions (command, handler, options) {
+    let prev = command
     for (const option of options) {
       const declaration = this.paramDeclarations[option]
       const paramCase = changeCase.paramCase(option)
       const snakeCase = changeCase.snakeCase(option)
-      if (declaration.defaultValue) {
-        prev = prev.option(
-          `--${paramCase} <${snakeCase}>`,
-          declaration.description,
-          (value, previous) => {
-            this._processArg(option, value, previous)
-          }
-        )
-      } else {
-        prev = prev.option(
-          `--${paramCase} <${snakeCase}>`,
-          declaration.description,
-          (value, previous) => {
-            this._processArg(option, value, previous)
-          },
-          declaration.defaultValue
-        )
+      let defaultValue = declaration.defaultValue
+      if (defaultValue === null) {
+        defaultValue = undefined
       }
+      prev = prev.option(
+        `--${paramCase} <${snakeCase}>`,
+        declaration.description,
+        (value, previous) => this._processArg(option, value, previous),
+        defaultValue
+      )
     }
+    prev.action((cliArgs) => {
+      const args = { ...cliArgs }
+      for (const option of options) {
+        const optionCamelCase = changeCase.camelCase(option)
+        if (!Object.prototype.hasOwnProperty.call(args, optionCamelCase)) {
+          args[optionCamelCase] = this.getParam(option)
+        }
+      }
+      return handler(args)
+    })
   }
 
   // This function is called when argument is processed by the commander.
@@ -50,24 +52,27 @@ class RainbowConfig {
       console.error(`Argument ${name} is specified more than once.`)
       process.exit(1)
     }
+    let paramType
     if (process.env[constantCase]) {
-      this.paramValues[name] = {
-        value: process.env[constantCase],
-        paramType: 'env'
-      }
+      value = process.env[constantCase]
+      paramType = 'env'
     } else if (value) {
-      this.paramValues[name] = { value: value, paramType: 'arg' }
+      paramType = 'arg'
     } else if (this.configFile.has(camelCase)) {
-      this.paramValues[name] = {
-        value: this.configFile.get(camelCase),
-        paramType: 'config'
-      }
+      value = this.configFile.get(camelCase)
+      paramType = 'config'
     } else if (previous) {
-      this.paramValues[name] = { value: previous, paramType: 'default' }
+      value = previous
+      paramType = 'default'
     } else {
       console.error('Unreachable code')
       process.exit(1)
     }
+    this.paramValues[name] = {
+      value,
+      paramType
+    }
+    return value
   }
 
   // This function should be used to retrieve the actual value of the argument.
@@ -86,10 +91,7 @@ class RainbowConfig {
         return this.configFile.get(camelCase)
       } else {
         const decl = this.paramDeclarations[name]
-        if (
-          typeof decl !== 'undefined' &&
-          typeof decl.defaultValue !== 'undefined'
-        ) {
+        if (typeof decl !== 'undefined' && typeof decl.defaultValue !== 'undefined') {
           return decl.defaultValue
         } else {
           return null
