@@ -252,12 +252,14 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption('near-erc20-account', 'Must be declared before set')
 
 class Near2EthRelay {
-  async initialize () {
+  async initialize (ethMasterSk = null) {
     // @ts-ignore
     this.robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'))
     this.web3 = this.robustWeb3.web3
     this.ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(
-      normalizeEthKey(RainbowConfig.getParam('eth-master-sk'))
+      ethMasterSk
+        ? normalizeEthKey(ethMasterSk)
+        : normalizeEthKey(RainbowConfig.getParam('eth-master-sk'))
     )
     this.web3.eth.accounts.wallet.add(this.ethMasterAccount)
     this.web3.eth.defaultAccount = this.ethMasterAccount.address
@@ -521,10 +523,7 @@ class Near2EthRelay {
 async function runNear2EthRelay () {
   const relay = new Near2EthRelay()
   // TODO remove this hard-coded constant! This is for testing purposes only. Replace with config when possible.
-  RainbowConfig.setParam('eth-master-sk', normalizeEthKey('0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201'))
-  RainbowConfig.saveConfig()
-
-  await relay.initialize()
+  await relay.initialize(normalizeEthKey('0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201'))
   relay.run()
 }
 
