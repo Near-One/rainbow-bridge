@@ -9,3 +9,16 @@ steps:
 
     agents:
       - 'queue=default'
+
+  - label: 'e2e test'
+    command: |
+      source testing/ci/e2e_ci_prepare_env.sh
+      source testing/ci/e2e_ci_prepare_log.sh
+      testing/ci/e2e.sh
+
+    artifact_paths:
+      - 'logs/**/*.log'
+    timeout: 40
+
+    agents:
+      - 'queue=default'
