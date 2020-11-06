@@ -1,7 +1,6 @@
 const { exec } = require('child_process')
 const path = require('path')
-const { RainbowConfig } = require('rainbow-bridge-utils')
-const { getScript } = require('rainbow-bridge-testing')
+const { RainbowConfig, getScript } = require('rainbow-bridge-utils')
 
 class PrepareCommand {
   static execute () {

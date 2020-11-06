@@ -253,8 +253,10 @@ class TransferETHERC20ToNear {
         JSON.parse(
           fs.readFileSync('transfer-eth-erc20-to-near.log.json').toString()
         ) || {}
+      console.log('Transfer log found', log)
       return TransferETHERC20ToNear.parseBuffer(log)
     } catch (e) {
+      console.log("Coudn't find transfer log", e)
       return {}
     }
   }

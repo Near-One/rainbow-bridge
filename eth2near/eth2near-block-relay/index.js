@@ -360,8 +360,8 @@ class Eth2NearRelay {
       const unparsedBlock = await ethashproof(
         `${BRIDGE_SRC_DIR}/eth2near/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`
       )
-      console.log('---')
-      console.log(unparsedBlock)
+      // console.log('---')
+      // console.log(unparsedBlock)
       return JSON.parse(unparsedBlock)
     } catch (e) {
       console.log(`Failed to get or parse block ${blockNumber}: ${e}`)

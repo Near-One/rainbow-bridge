@@ -8,7 +8,7 @@ export LOCAL_NEARUP_SRC
 
 eval CORE_SRC=~/.rainbow/core
 SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" 2>&1 && pwd )"
-eval BRIDGE_SRC=${SCRIPTS_DIR}/..
+eval BRIDGE_SRC=${SCRIPTS_DIR}/../..
 eval LIBS_SOL_SRC=${BRIDGE_SRC}/node_modules/rainbow-bridge-sol
 eval LIBS_RS_SRC=${BRIDGE_SRC}/node_modules/rainbow-bridge-rs
 eval NEARUP_SRC=~/.rainbow/nearup
@@ -64,7 +64,7 @@ fi
 yarn
 echo "Installed CLI dependencies"
 
-cd $BRIDGE_SRC/vendor/ganache
+cd $BRIDGE_SRC/testing/vendor/ganache
 yarn
 echo "Installed ganache-cli"
 
