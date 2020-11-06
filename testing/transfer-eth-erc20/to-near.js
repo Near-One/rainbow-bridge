@@ -186,8 +186,8 @@ class TransferETHERC20ToNear {
     }
     TransferETHERC20ToNear.recordTransferLog({
       finished: 'block-safe',
-      proof_locker: proofLocker,
-      new_owner_id: newOwnerId
+      proofLocker: proofLocker,
+      newOwnerId: newOwnerId
     })
   }
 
@@ -253,8 +253,10 @@ class TransferETHERC20ToNear {
         JSON.parse(
           fs.readFileSync('transfer-eth-erc20-to-near.log.json').toString()
         ) || {}
+      console.log('Transfer log found', log)
       return TransferETHERC20ToNear.parseBuffer(log)
     } catch (e) {
+      console.log("Coudn't find transfer log", e)
       return {}
     }
   }
