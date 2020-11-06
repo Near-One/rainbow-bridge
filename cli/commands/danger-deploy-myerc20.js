@@ -14,7 +14,7 @@ class DangerDeployMyERC20 {
 
     // use default ERC20 ABI
     const abiPath = RainbowConfig.getParam('eth-erc20-abi-path')
-    const binPath = './test/MyERC20.full.bin'
+    const binPath = '../testing/ci/MyERC20.full.bin'
 
     const tokenContract = new web3.eth.Contract(
       JSON.parse(fs.readFileSync(abiPath))
