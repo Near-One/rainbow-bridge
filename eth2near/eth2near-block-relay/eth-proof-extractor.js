@@ -1,4 +1,4 @@
-const { BaseTrie } = require('merkle-patricia-tree')
+const Tree = require('merkle-patricia-tree')
 const { Header, Proof, Receipt, Log } = require('eth-object')
 const { encode } = require('eth-util-lite')
 const { promisfy } = require('promisfy')
@@ -32,24 +32,27 @@ class EthProofExtractor {
       block.transactions.map((t) => this.robustWeb3.getTransactionReceipt(t))
     )
     // Build a Patricia Merkle Trie
-    const tree = new BaseTrie()
+    const tree = new Tree()
     await Promise.all(
       blockReceipts.map((receipt) => {
         const path = encode(receipt.transactionIndex)
         const serializedReceipt = receiptFromWeb3(receipt).serialize()
-        return tree.put(path, serializedReceipt)
+        return promisfy(tree.put, tree)(path, serializedReceipt)
       })
     )
     return tree
   }
 
   async extractProof (web3, block, tree, transactionIndex) {
+    console.log('PROOF1', tree.findPath, tree, transactionIndex)
     const [, , stack] = await promisfy(
       tree.findPath,
       tree
     )(encode(transactionIndex))
+    console.log('PROOF2')
 
     const blockData = await web3.eth.getBlock(block.number)
+    console.log('PROOF3')
     // Correctly compose and encode the header.
     const header = Header.fromWeb3(blockData)
     return {

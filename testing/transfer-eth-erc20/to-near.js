@@ -95,15 +95,21 @@ class TransferETHERC20ToNear {
   }
 
   static async findProof ({ extractor, lockedEvent, web3 }) {
+    console.log('HERE!!!')
     const receipt = await extractor.extractReceipt(lockedEvent.transactionHash)
+    console.log('HERE!!!')
+    console.log(receipt)
     const block = await extractor.extractBlock(receipt.blockNumber)
+    console.log('HERE!!! BLOCK')
     const tree = await extractor.buildTrie(block)
+    console.log('HERE!!! TRIE')
     const proof = await extractor.extractProof(
       web3,
       block,
       tree,
       receipt.transactionIndex
     )
+    console.log('HERE!!!')
     let txLogIndex = -1
 
     let logFound = false
@@ -186,8 +192,8 @@ class TransferETHERC20ToNear {
     }
     TransferETHERC20ToNear.recordTransferLog({
       finished: 'block-safe',
-      proof_locker: proofLocker,
-      new_owner_id: newOwnerId
+      proofLocker: proofLocker,
+      newOwnerId: newOwnerId
     })
   }
 

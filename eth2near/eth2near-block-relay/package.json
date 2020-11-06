@@ -22,7 +22,7 @@
     "eth-util-lite": "near/eth-util-lite#master",
     "ethereumjs-block": "^2.2.2",
     "make-runnable": "^1.3.8",
-    "merkle-patricia-tree": "^4.0.0",
+    "merkle-patricia-tree": "^2.1.2",
     "promisfy": "^1.2.0",
     "rainbow-bridge-utils": "1.0.0"
   },

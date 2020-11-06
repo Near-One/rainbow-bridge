@@ -1,4 +1,4 @@
-const { nearAPI, Web3, RobustWeb3, normalizeEthKey, sleep } = require('./robust')
+const { nearAPI, Web3, RobustWeb3, normalizeEthKey, sleep, backoff, nearJsonContractFunctionCall } = require('./robust')
 const { RainbowConfig } = require('./config')
 const {
   txnStatus,
@@ -6,6 +6,7 @@ const {
   hexToBuffer,
   readerToHex,
   borshifyInitialValidators,
+  borshifyOutcomeProof,
   borshify
 } = require('./borsh')
 const {
@@ -29,6 +30,7 @@ function getScript (name) {
 
 module.exports = {
   getScript,
+  backoff,
   nearAPI,
   Web3,
   sleep,
@@ -51,6 +53,8 @@ module.exports = {
   maybeCreateAccount,
   verifyAccount,
   RainbowConfig,
+  nearJsonContractFunctionCall,
   borshifyInitialValidators,
+  borshifyOutcomeProof,
   borshify
 }

@@ -4,7 +4,7 @@ const BN = require('bn.js')
 const { RobustWeb3, sleep, txnStatus, nearAPI, RainbowConfig } = require('rainbow-bridge-utils')
 const { web3BlockToRlp, EthOnNearClientContract } = require('./eth-on-near-client')
 const { EthOnNearProverContract } = require('./eth-on-near-prover')
-const { EthProofExtractor } = require('./eth-proof-extractor')
+const { EthProofExtractor, logFromWeb3, receiptFromWeb3 } = require('./eth-proof-extractor')
 const MAX_SUBMIT_BLOCK = 10
 const BRIDGE_SRC_DIR = path.join(__dirname, '..', '..')
 
@@ -439,5 +439,7 @@ exports.ethashproof = ethashproof
 exports.EthOnNearClientContract = EthOnNearClientContract
 exports.EthOnNearProverContract = EthOnNearProverContract
 exports.runEth2NearRelay = runEth2NearRelay
+exports.logFromWeb3 = logFromWeb3
+exports.receiptFromWeb3 = receiptFromWeb3
 
 require('make-runnable')
