@@ -520,10 +520,9 @@ class Near2EthRelay {
   }
 }
 
-async function runNear2EthRelay () {
+async function runNear2EthRelay (ethMasterSk) {
   const relay = new Near2EthRelay()
-  // TODO remove this hard-coded constant! This is for testing purposes only. Replace with config when possible.
-  await relay.initialize(normalizeEthKey('0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201'))
+  await relay.initialize(ethMasterSk)
   relay.run()
 }
 
