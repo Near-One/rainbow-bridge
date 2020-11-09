@@ -2,6 +2,7 @@ const BN = require('bn.js')
 const fs = require('fs')
 // const assert = require('bsert')
 const bs58 = require('bs58')
+const crypto = require('crypto')
 const { toBuffer } = require('eth-util-lite')
 const {
   nearAPI,
@@ -18,7 +19,7 @@ const { tokenAddressParam, tokenAccountParam } = require('./deploy-token')
 const { NearMintableToken } = require('./near-mintable-token')
 
 let initialCmd
-const txLogFilename = Date.now() + '-transfer-eth-erc20-from-near.log.json'
+const txLogFilename = Date.now() + '-' + crypto.randomBytes(8).toString('hex') + '-transfer-eth-erc20-from-near.log.json'
 
 class TransferEthERC20FromNear {
   static showRetryAndExit () {
