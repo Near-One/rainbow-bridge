@@ -2,6 +2,7 @@ const BN = require('bn.js')
 const fs = require('fs')
 // const assert = require('bsert')
 const bs58 = require('bs58')
+const crypto = require('crypto')
 const { toBuffer } = require('eth-util-lite')
 const {
   nearAPI,
@@ -18,6 +19,7 @@ const { tokenAddressParam, tokenAccountParam } = require('./deploy-token')
 const { NearMintableToken } = require('./near-mintable-token')
 
 let initialCmd
+const txLogFilename = Date.now() + '-' + crypto.randomBytes(8).toString('hex') + '-transfer-eth-erc20-from-near.log.json'
 
 class TransferEthERC20FromNear {
   static showRetryAndExit () {
@@ -41,7 +43,7 @@ class TransferEthERC20FromNear {
     try {
       const log =
         JSON.parse(
-          fs.readFileSync('transfer-eth-erc20-from-near.log.json').toString()
+          fs.readFileSync(txLogFilename).toString()
         ) || {}
       return TransferEthERC20FromNear.parseBuffer(log)
     } catch (e) {
@@ -49,17 +51,9 @@ class TransferEthERC20FromNear {
     }
   }
 
-  static deleteTransferLog () {
-    try {
-      fs.unlinkSync('transfer-eth-erc20-from-near.log.json')
-    } catch (e) {
-      console.log('Warning: failed to remove tranfer log')
-    }
-  }
-
   static recordTransferLog (obj) {
     fs.writeFileSync(
-      'transfer-eth-erc20-from-near.log.json',
+      txLogFilename,
       JSON.stringify(obj)
     )
   }
@@ -351,8 +345,6 @@ class TransferEthERC20FromNear {
       console.log(
         `ERC20 balance of ${ethReceiverAddress} after the transfer: ${newBalance}`
       )
-
-      TransferEthERC20FromNear.deleteTransferLog()
     } catch (txRevertMessage) {
       console.log('Failed to unlock.')
       console.log(txRevertMessage.toString())

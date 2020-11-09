@@ -1,6 +1,7 @@
 const utils = require('ethereumjs-util')
 const BN = require('bn.js')
 const fs = require('fs')
+const crypto = require('crypto')
 const {
   nearAPI,
   sleep,
@@ -19,6 +20,7 @@ const { tokenAddressParam, tokenAccountParam } = require('./deploy-token')
 const { NearMintableToken } = require('./near-mintable-token')
 
 let initialCmd
+const txLogFilename = Date.now() + '-' + crypto.randomBytes(4).toString('hex') + '-transfer-eth-erc20-from-near.log.json'
 
 class TransferETHERC20ToNear {
   static showRetryAndExit () {
@@ -229,11 +231,10 @@ class TransferETHERC20ToNear {
     console.log(
       `Balance of ${newOwnerId} after the transfer is ${newBalance}`
     )
-    TransferETHERC20ToNear.deleteTransferLog()
   }
 
   static recordTransferLog (obj) {
-    fs.writeFileSync('transfer-eth-erc20-to-near.log.json', JSON.stringify(obj))
+    fs.writeFileSync(txLogFilename, JSON.stringify(obj))
   }
 
   static parseBuffer (obj) {
@@ -251,21 +252,13 @@ class TransferETHERC20ToNear {
     try {
       const log =
         JSON.parse(
-          fs.readFileSync('transfer-eth-erc20-to-near.log.json').toString()
+          fs.readFileSync(txLogFilename).toString()
         ) || {}
       console.log('Transfer log found', log)
       return TransferETHERC20ToNear.parseBuffer(log)
     } catch (e) {
       console.log("Coudn't find transfer log", e)
       return {}
-    }
-  }
-
-  static deleteTransferLog () {
-    try {
-      fs.unlinkSync('transfer-eth-erc20-to-near.log.json')
-    } catch (e) {
-      console.log('Warning: failed to remove tranfer log')
     }
   }
 

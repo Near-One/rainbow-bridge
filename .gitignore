@@ -11,3 +11,4 @@
 **/.yarn*
 
 write_config.js
+**/*transfer-eth-erc20-from-near.log.json
