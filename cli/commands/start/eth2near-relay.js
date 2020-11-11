@@ -31,7 +31,15 @@ class StartEth2NearRelayCommand {
           interpreter: 'node',
           error_file: '~/.rainbow/logs/eth2near-relay/err.log',
           out_file: '~/.rainbow/logs/eth2near-relay/out.log',
-          args: ['start', 'eth2near-relay', ...RainbowConfig.getArgsNoDaemon()],
+          args: [
+            'start', 'eth2near-relay',
+            '--near-network-id', nearNetworkId,
+            '--near-node-url', nearNodeUrl,
+            '--near-master-account', nearMasterAccount,
+            '--near-master-sk', nearMasterSk,
+            '--near-client-account', nearClientAccount,
+            '--eth-node-url', ethNodeUrl
+          ],
           wait_ready: true,
           kill_timeout: 60000,
           logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS'
@@ -60,7 +68,7 @@ class StartEth2NearRelayCommand {
       )
       await clientContract.accessKeyInit()
       console.log('Initializing eth2near-relay...')
-      relay.initialize(clientContract, ethNodeUrl)
+      relay.initialize(clientContract, { ethNodeUrl })
       console.log('Starting eth2near-relay...')
       await relay.run()
     }

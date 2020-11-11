@@ -3,7 +3,12 @@ const { BN } = require('ethereumjs-util')
 const fs = require('fs')
 
 class DangerDeployMyERC20 {
-  static async execute ({ ethNodeUrl, ethMasterSk, ethErc20AbiPath, ethGasMultiplier }) {
+  static async execute ({
+    ethNodeUrl,
+    ethMasterSk,
+    ethErc20AbiPath,
+    ethGasMultiplier
+  }) {
     const web3 = new Web3(ethNodeUrl)
     let ethMasterAccount = web3.eth.accounts.privateKeyToAccount(
       normalizeEthKey(ethMasterSk)

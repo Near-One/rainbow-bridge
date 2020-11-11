@@ -17,14 +17,12 @@ class StartLocalNearNodeCommand {
         console.log('Local Node is already running. Skipping...')
       }
     })
-    RainbowConfig.setParam('near-node-url', 'http://localhost:3030')
-    RainbowConfig.setParam('near-network-id', 'local')
-    RainbowConfig.setParam('near-master-account', 'node0')
-    RainbowConfig.setParam(
-      'near-master-sk',
-      'ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP'
-    )
-    RainbowConfig.saveConfig()
+    return {
+      nearNodeUrl: 'http://localhost:3030',
+      nearNetworkId: 'local',
+      nearMasterAccount: 'node0',
+      nearMasterSk: 'ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP'
+    }
   }
 }
 

@@ -32,14 +32,12 @@ class InitNearContracts {
         'Key to call Near Client contract is not specified. Reusing master key.'
       )
       nearClientSk = nearMasterSk
-      RainbowConfig.setParam('near-client-sk', nearMasterSk)
     }
     if (!nearProverSk) {
       console.log(
         'Key to call Near Prover contract is not specified. Reusing master key.'
       )
       nearProverSk = nearMasterSk
-      RainbowConfig.setParam('near-prover-sk', nearMasterSk)
     }
     const nearClientPk = nearAPI.KeyPair.fromString(nearClientSk).getPublicKey()
     const nearProverPk = nearAPI.KeyPair.fromString(nearProverSk).getPublicKey()
@@ -106,8 +104,11 @@ class InitNearContracts {
       nearProverAccount
     )
     await proverContract.maybeInitialize(nearClientAccount)
-    RainbowConfig.saveConfig()
-    process.exit(0)
+
+    return {
+      nearClientSk,
+      nearProverSk
+    }
   }
 }
 

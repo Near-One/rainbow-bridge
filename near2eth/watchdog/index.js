@@ -38,7 +38,12 @@ class Watchdog {
     )
   }
 
-  async run ({ ethMasterSk, ethClientAddress, watchdogDelay, watchdogErrorDelay }) {
+  async run ({
+    ethMasterSk,
+    ethClientAddress,
+    watchdogDelay,
+    watchdogErrorDelay
+  }) {
     if (ethMasterSk.startsWith('0x')) {
       ethMasterSk = ethMasterSk.slice(2)
     }

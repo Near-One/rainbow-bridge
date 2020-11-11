@@ -25,7 +25,6 @@ class InitNearTokenFactory {
         'Secret key for fungible token is not specified. Reusing master secret key.'
       )
       nearTokenFactorySk = nearMasterSk
-      RainbowConfig.setParam('near-token-factory-sk', nearTokenFactorySk)
     }
     const nearTokenFactoryPk = nearAPI.KeyPair.fromString(nearTokenFactorySk).getPublicKey()
 
@@ -81,7 +80,16 @@ class InitNearTokenFactory {
       process.exit(1)
     }
 
-    DeployToken.execute('erc20', ethErc20Address)
+    return DeployToken.execute({
+      tokenName: 'erc20',
+      ethTokenAddress: ethErc20Address,
+      nearNodeUrl,
+      nearNetworkId,
+      nearMasterAccount,
+      nearMasterSk,
+      nearTokenFactoryAccount,
+      nearTokenFactorySk
+    })
   }
 }
 

@@ -314,7 +314,7 @@ RainbowConfig.addOptions(
 RainbowConfig.addOptions(
   startCommand.command('ganache'),
   StartGanacheNodeCommand.execute,
-  ['daemon']
+  []
 )
 
 RainbowConfig.addOptions(
@@ -326,6 +326,7 @@ RainbowConfig.addOptions(
     'near-client-account',
     'near-network-id',
     'near-node-url',
+    'eth-node-url',
     'daemon'
   ]
 )
@@ -355,9 +356,10 @@ RainbowConfig.addOptions(
     'eth-node-url',
     'eth-master-sk',
     'eth-client-abi-path',
-    'daemon',
+    'eth-client-address',
     'watchdog-delay',
-    'watchdog-error-delay'
+    'watchdog-error-delay',
+    'daemon'
   ]
 )
 
@@ -483,20 +485,48 @@ RainbowConfig.addOptions(
     ),
   InitNearTokenFactory.execute,
   [
+    'near-node-url',
+    'near-network-id',
+    'near-master-account',
+    'near-master-sk',
+    'near-prover-account',
     'near-token-factory-account',
     'near-token-factory-sk',
     'near-token-factory-contract-path',
     'near-token-factory-init-balance',
-    'eth-locker-address'
+    'eth-locker-address',
+    'eth-erc20-address'
   ]
 )
 
 RainbowConfig.addOptions(
   program
-    .command('deploy-token <token_name> <token_address>')
+    .command('deploy-token <token_name> <eth_token_address>')
     .description('Deploys and initializes token on NEAR.'),
-  DeployToken.execute,
-  ['near-token-factory-account']
+  (args) => {
+    const deployedTokenInfo = DeployToken.execute(args)
+    if (!deployedTokenInfo) {
+      return null
+    }
+    const {
+      nearTokenAccount,
+      ethTokenAddress,
+      ...otherDeployedTokenInfo
+    } = deployedTokenInfo
+    return {
+      [`near-${args.tokenName}-account`]: nearTokenAccount,
+      [`eth-${args.tokenName}-address`]: ethTokenAddress,
+      ...otherDeployedTokenInfo
+    }
+  },
+  [
+    'near-node-url',
+    'near-network-id',
+    'near-master-account',
+    'near-master-sk',
+    'near-token-factory-account',
+    'near-token-factory-sk'
+  ]
 )
 
 RainbowConfig.addOptions(
@@ -507,12 +537,11 @@ RainbowConfig.addOptions(
     ),
   InitEthLocker.execute,
   [
+    'near-token-factory-account',
     'eth-node-url',
     'eth-master-sk',
     'eth-locker-abi-path',
     'eth-locker-bin-path',
-    'eth-erc20-address',
-    'near-token-factory-account',
     'eth-prover-address',
     'eth-gas-multiplier'
   ]
@@ -550,10 +579,17 @@ RainbowConfig.addOptions(
       '--token-name <token_name>',
       'Specific ERC20 token that is already bound by `deploy-token`.'
     ),
-  TransferETHERC20ToNear.execute,
+  ({ tokenName, ...args }) => {
+    if (tokenName) {
+      args.ethErc20Address = RainbowConfig.getParam(`eth-${tokenName}-address`)
+      args.nearErc20Account = RainbowConfig.getParam(`near-${tokenName}-account`)
+    }
+    return TransferETHERC20ToNear.execute(args)
+  },
   [
-    'eth-node-url',
     'eth-erc20-address',
+    'near-erc20-account',
+    'eth-node-url',
     'eth-erc20-abi-path',
     'eth-locker-address',
     'eth-locker-abi-path',
@@ -562,8 +598,7 @@ RainbowConfig.addOptions(
     'near-token-factory-account',
     'near-client-account',
     'near-master-account',
-    'near-master-sk',
-    'eth-gas-multiplier'
+    'near-master-sk'
   ]
 )
 
@@ -587,19 +622,25 @@ RainbowConfig.addOptions(
       '--token-name <token_name>',
       'Specific ERC20 token that is already bound by `deploy-token`.'
     ),
-  TransferEthERC20FromNear.execute,
+  ({ tokenName, ...args }) => {
+    if (tokenName) {
+      args.ethErc20Address = RainbowConfig.getParam(`eth-${tokenName}-address`)
+      args.nearErc20Account = RainbowConfig.getParam(`near-${tokenName}-account`)
+    }
+    return TransferEthERC20FromNear.execute(args)
+  },
   [
+    'eth-erc20-address',
+    'near-erc20-account',
     'near-node-url',
     'near-network-id',
     'near-token-factory-account',
     'eth-node-url',
-    'eth-erc20-address',
     'eth-erc20-abi-path',
     'eth-locker-address',
     'eth-locker-abi-path',
     'eth-client-abi-path',
     'eth-client-address',
-    'eth-master-sk',
     'eth-prover-abi-path',
     'eth-prover-address',
     'eth-gas-multiplier'
@@ -639,13 +680,17 @@ RainbowConfig.addOptions(
     .command('deploy_test_erc20')
     .description('Deploys MyERC20'),
   DangerDeployMyERC20.execute,
-  ['eth-node-url', 'eth-master-sk', 'eth-erc20-abi-path', 'eth-gas-multiplier']
+  [
+    'eth-node-url',
+    'eth-master-sk',
+    'eth-erc20-abi-path',
+    'eth-gas-multiplier'
+  ]
 )
 
 RainbowConfig.addOptions(
   program
     .command('eth-dump <kind_of_data>')
-    .option('--eth-node-url <eth_node_url>', 'ETH node API url')
     .option('--path <path>', 'Dir path to dump eth data')
     .option(
       '--start-block <start_block>',
@@ -656,7 +701,7 @@ RainbowConfig.addOptions(
       'End block number (inclusive), default to be latest block'
     ),
   ETHDump.execute,
-  []
+  ['eth-node-url']
 )
 
 RainbowConfig.addOptions(
