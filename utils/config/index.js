@@ -21,9 +21,12 @@ class RainbowConfig {
       const declaration = this.paramDeclarations[option]
       const paramCase = changeCase.paramCase(option)
       const snakeCase = changeCase.snakeCase(option)
-      let defaultValue = declaration.defaultValue
+      let defaultValue = this.maybeGetParam(paramCase)
       if (defaultValue === null) {
-        defaultValue = undefined
+        defaultValue = declaration.defaultValue
+        if (defaultValue === null) {
+          defaultValue = undefined
+        }
       }
       prev = prev.option(
         `--${paramCase} <${snakeCase}>`,
@@ -33,16 +36,7 @@ class RainbowConfig {
       )
     }
     prev.action((...args) => {
-      const [commanderArgs] = args.splice(-1, 1)
-      const positionalArgs = args
-      const commanderArgsWithRainbowConfig = { ...commanderArgs }
-      for (const option of options) {
-        const optionCamelCase = changeCase.camelCase(option)
-        if (!Object.prototype.hasOwnProperty.call(commanderArgsWithRainbowConfig, optionCamelCase)) {
-          commanderArgsWithRainbowConfig[optionCamelCase] = this.getParam(option)
-        }
-      }
-      const newOptions = handler(...positionalArgs, commanderArgsWithRainbowConfig)
+      const newOptions = handler(...args)
       if (newOptions) {
         for (const [optionCamelCase, optionValue] of Object.entries(newOptions)) {
           this.setParam(changeCase.paramCase(optionCamelCase), optionValue)

@@ -367,7 +367,8 @@ class TransferETHERC20ToNear {
         robustWeb3,
         ethERC20Contract,
         amount,
-        ethSenderAccount
+        ethSenderAccount,
+        ethLockerAddress
       })
       transferLog = TransferETHERC20ToNear.loadTransferLog()
     }
