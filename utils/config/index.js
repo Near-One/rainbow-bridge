@@ -18,7 +18,6 @@ class RainbowConfig {
   static addOptions (command, handler, options) {
     let prev = command
     for (const option of options) {
-      console.log('option', option)
       const declaration = this.paramDeclarations[option]
       const paramCase = changeCase.paramCase(option)
       const snakeCase = changeCase.snakeCase(option)
@@ -44,11 +43,13 @@ class RainbowConfig {
         }
       }
       const newOptions = handler(...positionalArgs, commanderArgsWithRainbowConfig)
-      for (const [optionCamelCase, optionValue] of Object.entries(newOptions)) {
-        this.setParam(changeCase.paramCase(optionCamelCase), optionValue)
-      }
-      if (newOptions && Object.keys(newOptions).length > 0) {
-        this.saveConfig()
+      if (newOptions) {
+        for (const [optionCamelCase, optionValue] of Object.entries(newOptions)) {
+          this.setParam(changeCase.paramCase(optionCamelCase), optionValue)
+        }
+        if (newOptions && Object.keys(newOptions).length > 0) {
+          this.saveConfig()
+        }
       }
     })
   }
