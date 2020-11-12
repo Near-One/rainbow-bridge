@@ -58,16 +58,20 @@ impl EthProver {
         }
     }
 
-    fn extract_nibbles(a: Vec<u8>) -> Vec<u8> {
-        a.iter().flat_map(|b| vec![b >> 4, b & 0x0F]).collect()
+    fn extract_nibbles(bytes: Vec<u8>) -> Vec<u8> {
+        bytes
+            .iter()
+            .flat_map(|byte| vec![byte >> 4, byte & 0x0F])
+            .collect()
     }
 
-    fn concat_nibbles(a: Vec<u8>) -> Vec<u8> {
-        a.iter()
-            .enumerate()
-            .filter(|(i, _)| i % 2 == 0)
-            .zip(a.iter().enumerate().filter(|(i, _)| i % 2 == 1))
-            .map(|((_, x), (_, y))| (x << 4) | y)
+    fn concat_nibbles(nibbles: Vec<u8>) -> Vec<u8> {
+        assert!(nibbles.len() % 2 == 0);
+        nibbles
+            .as_slice()
+            .windows(2)
+            .step_by(2)
+            .map(|pair| (pair[0] << 4) | pair[1])
             .collect()
     }
 
@@ -160,13 +164,15 @@ impl EthProver {
 
     /// Iterate the proof following the key.
     /// Return True if the value at the leaf is equal to the expected value.
+    ///
     /// @param expected_root is the expected root of the current proof node.
     /// @param key is the key for which we are proving the value.
+    ///     Note: key should be passed as a list of bytes (rather than as a list of nibbles)
     /// @param proof is the proof the key nibbles as path.
     /// @param expected_value is the key's value expected to be stored in
     ///     the last node (leaf node) of the proof.
     ///
-    /// Patricia Trie: https://github.com/ethereum/wiki/wiki/Patricia-Tree#example-trie
+    /// Patricia Trie: https://eth.wiki/en/fundamentals/patricia-tree
     /// Patricia Img:  https://ethereum.stackexchange.com/questions/268/ethereum-block-architecture/6413#6413
     ///
     /// Verification:  https://github.com/slockit/in3/wiki/Ethereum-Verification-and-MerkleProof#receipt-proof
@@ -180,16 +186,14 @@ impl EthProver {
         proof: Vec<Vec<u8>>,
         expected_value: Vec<u8>,
     ) -> bool {
-        let mut actual_key = vec![];
-        for el in key {
-            if actual_key.len() + 1 == proof.len() {
-                actual_key.push(el);
-            } else {
-                actual_key.push(el / 16);
-                actual_key.push(el % 16);
-            }
-        }
-        Self::_verify_trie_proof(expected_root, actual_key, proof, 0, 0, expected_value)
+        Self::_verify_trie_proof(
+            expected_root,
+            Self::extract_nibbles(key),
+            proof,
+            0,
+            0,
+            expected_value,
+        )
     }
 
     fn _verify_trie_proof(
@@ -204,112 +208,139 @@ impl EthProver {
         let dec = Rlp::new(&node.as_slice());
 
         if key_index == 0 {
-            // trie root is always a hash
-            assert_eq!(near_keccak256(node), (expected_root.0).0);
+            if near_keccak256(node) != (expected_root.0).0 {
+                return false;
+            }
         } else if node.len() < 32 {
             // if rlp < 32 bytes, then it is not hashed
-            assert_eq!(dec.as_raw(), (expected_root.0).0);
+            if dec.as_raw() != (expected_root.0).0 {
+                return false;
+            }
         } else {
-            assert_eq!(near_keccak256(node), (expected_root.0).0);
+            if near_keccak256(node) != (expected_root.0).0 {
+                return false;
+            }
         }
 
-        if dec.iter().count() == 17 {
-            // branch node
+        let item_count = if let Ok(item_count) = dec.item_count() {
+            item_count
+        } else {
+            return false;
+        };
+
+        if item_count == 17 {
+            // Branch node
             if key_index == key.len() {
-                if dec
-                    .at(dec.iter().count() - 1)
-                    .unwrap()
-                    .as_val::<Vec<u8>>()
-                    .unwrap()
-                    == expected_value
-                {
-                    // value stored in the branch
-                    return true;
-                }
+                // The key was fully traversed, so we should check the value stored at this node
+                dec.at(item_count - 1) // The value is in the last field of the branch node
+                    .and_then(|rlp| rlp.as_val::<Vec<u8>>())
+                    .map(|value| value == expected_value)
+                    .unwrap_or_default()
             } else if key_index < key.len() {
+                // Move along the right branch of the trie
                 let new_expected_root = dec
                     .at(key[key_index] as usize)
-                    .unwrap()
-                    .as_val::<Vec<u8>>()
-                    .unwrap();
-                if new_expected_root.len() != 0 {
-                    return Self::_verify_trie_proof(
-                        new_expected_root.into(),
+                    .and_then(|rlp| rlp.as_val::<Vec<u8>>());
+
+                new_expected_root.is_ok()
+                    && Self::_verify_trie_proof(
+                        new_expected_root.unwrap().into(),
                         key,
                         proof,
                         key_index + 1,
                         proof_index + 1,
                         expected_value,
-                    );
-                }
+                    )
             } else {
-                panic!("This should not be reached if the proof has the correct format");
+                // Invalid proof. Key index must be less or equal than key size.
+                false
             }
-        } else if dec.iter().count() == 2 {
-            // leaf or extension node
-            // get prefix and optional nibble from the first byte
-            let nibbles = Self::extract_nibbles(dec.at(0).unwrap().as_val::<Vec<u8>>().unwrap());
-            let (prefix, nibble) = (nibbles[0], nibbles[1]);
+        } else if item_count == 2 {
+            // Leaf or extension node
+
+            let nibbles = if let Ok(nibbles) = dec
+                .at(0)
+                .and_then(|rlp| rlp.as_val::<Vec<u8>>())
+                .map(Self::extract_nibbles)
+                .map_err(|_| ())
+                .and_then(|nibbles| {
+                    if nibbles.len() >= 2 {
+                        Ok(nibbles)
+                    } else {
+                        Err(())
+                    }
+                }) {
+                nibbles
+            } else {
+                return false;
+            };
+
+            // Get prefix and optional nibble from the first byte
+            let (prefix, optional) = (nibbles[0], nibbles[1]);
 
             if prefix == 2 {
-                // even leaf node
+                // Even leaf node
                 let key_end = &nibbles[2..];
-                if Self::concat_nibbles(key_end.to_vec()) == &key[key_index..]
-                    && expected_value == dec.at(1).unwrap().as_val::<Vec<u8>>().unwrap()
-                {
-                    return true;
-                }
+                let current_value = dec.at(1).and_then(|rlp| rlp.as_val::<Vec<u8>>());
+
+                optional == 0
+                    && key_index <= key.len()
+                    && key_end.to_vec() == &key[key_index..]
+                    && current_value.is_ok()
+                    && expected_value == current_value.unwrap()
             } else if prefix == 3 {
-                // odd leaf node
+                // Odd leaf node
                 let key_end = &nibbles[2..];
-                if nibble == key[key_index]
+                let current_value = dec.at(1).and_then(|rlp| rlp.as_val::<Vec<u8>>());
+
+                key_index < key.len()
+                    && optional == key[key_index]
                     && Self::concat_nibbles(key_end.to_vec()) == &key[key_index + 1..]
-                    && expected_value == dec.at(1).unwrap().as_val::<Vec<u8>>().unwrap()
-                {
-                    return true;
-                }
+                    && current_value.is_ok()
+                    && expected_value == current_value.unwrap()
             } else if prefix == 0 {
-                // even extension node
+                // Even extension node
                 let shared_nibbles = &nibbles[2..];
                 let extension_length = shared_nibbles.len();
-                if Self::concat_nibbles(shared_nibbles.to_vec())
-                    == &key[key_index..key_index + extension_length]
-                {
-                    let new_expected_root = dec.at(1).unwrap().as_val::<Vec<u8>>().unwrap();
-                    return Self::_verify_trie_proof(
-                        new_expected_root.into(),
+                let new_expected_root = dec.at(1).and_then(|rlp| rlp.as_val::<Vec<u8>>());
+
+                optional == 0
+                    && key_index <= key.len()
+                    && shared_nibbles.to_vec() == &key[key_index..key_index + extension_length]
+                    && new_expected_root.is_ok()
+                    && Self::_verify_trie_proof(
+                        new_expected_root.unwrap().into(),
                         key,
                         proof,
                         key_index + extension_length,
                         proof_index + 1,
                         expected_value,
-                    );
-                }
+                    )
             } else if prefix == 1 {
-                // odd extension node
+                // Odd extension node
                 let shared_nibbles = &nibbles[2..];
                 let extension_length = 1 + shared_nibbles.len();
-                if nibble == key[key_index]
-                    && Self::concat_nibbles(shared_nibbles.to_vec())
-                        == &key[key_index + 1..key_index + extension_length]
-                {
-                    let new_expected_root = dec.at(1).unwrap().as_val::<Vec<u8>>().unwrap();
-                    return Self::_verify_trie_proof(
-                        new_expected_root.into(),
+                let new_expected_root = dec.at(1).and_then(|rlp| rlp.as_val::<Vec<u8>>());
+
+                key_index < key.len()
+                    && optional == key[key_index]
+                    && shared_nibbles.to_vec() == &key[key_index + 1..key_index + extension_length]
+                    && new_expected_root.is_ok()
+                    && Self::_verify_trie_proof(
+                        new_expected_root.unwrap().into(),
                         key,
                         proof,
                         key_index + extension_length,
                         proof_index + 1,
                         expected_value,
-                    );
-                }
+                    )
             } else {
-                panic!("This should not be reached if the proof has the correct format");
+                // Invalid proof
+                false
             }
         } else {
-            panic!("This should not be reached if the proof has the correct format");
+            // Invalid proof
+            false
         }
-
-        expected_value.len() == 0
     }
 }
