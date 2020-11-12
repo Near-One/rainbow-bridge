@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 const path = require('path')
+const changeCase = require('change-case')
 const { program } = require('commander')
 
 const { CleanCommand } = require('./commands/clean')
@@ -514,8 +515,8 @@ RainbowConfig.addOptions(
       ...otherDeployedTokenInfo
     } = deployedTokenInfo
     return {
-      [`near-${args.tokenName}-account`]: nearTokenAccount,
-      [`eth-${args.tokenName}-address`]: ethTokenAddress,
+      [`near${changeCase.capitalCase(tokenName)}Account`]: nearTokenAccount,
+      [`eth${changeCase.capitalCase(tokenName)}Address`]: ethTokenAddress,
       ...otherDeployedTokenInfo
     }
   },
