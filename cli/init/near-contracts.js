@@ -105,6 +105,7 @@ class InitNearContracts {
     )
     await proverContract.maybeInitialize(nearClientAccount)
 
+    robustWeb3.destroy()
     return {
       nearClientSk,
       nearProverSk

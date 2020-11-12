@@ -35,13 +35,13 @@ class RainbowConfig {
         defaultValue
       )
     }
-    prev.action((...args) => {
-      const newOptions = handler(...args)
-      if (newOptions) {
-        for (const [optionCamelCase, optionValue] of Object.entries(newOptions)) {
+    prev.action(async (...args) => {
+      const newConfigValues = await handler(...args)
+      if (newConfigValues) {
+        for (const [optionCamelCase, optionValue] of Object.entries(newConfigValues)) {
           this.setParam(changeCase.paramCase(optionCamelCase), optionValue)
         }
-        if (newOptions && Object.keys(newOptions).length > 0) {
+        if (newConfigValues && Object.keys(newConfigValues).length > 0) {
           this.saveConfig()
         }
       }
