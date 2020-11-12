@@ -636,6 +636,7 @@ RainbowConfig.addOptions(
     'near-network-id',
     'near-token-factory-account',
     'eth-node-url',
+    'eth-master-sk',
     'eth-erc20-abi-path',
     'eth-locker-address',
     'eth-locker-abi-path',
