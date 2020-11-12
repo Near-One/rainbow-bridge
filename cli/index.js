@@ -503,14 +503,14 @@ RainbowConfig.addOptions(
   program
     .command('deploy-token <token_name> <eth_token_address>')
     .description('Deploys and initializes token on NEAR.'),
-  (args) => {
-    const deployedTokenInfo = DeployToken.execute(args)
+  (tokenName, ethTokenAddress, args) => {
+    const deployedTokenInfo = DeployToken.execute({ tokenName, ethTokenAddress, ...args })
     if (!deployedTokenInfo) {
       return null
     }
     const {
       nearTokenAccount,
-      ethTokenAddress,
+      ethTokenAddress: _,
       ...otherDeployedTokenInfo
     } = deployedTokenInfo
     return {
