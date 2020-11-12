@@ -186,14 +186,13 @@ class TransferETHERC20ToNear {
     }
     TransferETHERC20ToNear.recordTransferLog({
       finished: 'block-safe',
-      proofLocker: proofLocker,
-      newOwnerId: newOwnerId
+      proofLocker,
+      newOwnerId
     })
   }
 
   static async deposit ({
     proofLocker,
-    nearFactoryContract,
     nearFactoryContractBorsh,
     nearTokenContract,
     newOwnerId
@@ -317,14 +316,6 @@ class TransferETHERC20ToNear {
     )
     await verifyAccount(near, nearMasterAccountId)
 
-    const nearFactoryContract = new nearAPI.Contract(
-      nearMasterAccount,
-      nearTokenFactoryAccount,
-      {
-        changeMethods: ['deposit'],
-        viewMethods: []
-      }
-    )
     const nearTokenContract = new nearAPI.Contract(
       nearMasterAccount,
       nearErc20Account,
@@ -400,7 +391,6 @@ class TransferETHERC20ToNear {
     }
     if (transferLog.finished === 'block-safe') {
       await TransferETHERC20ToNear.deposit({
-        nearFactoryContract,
         nearFactoryContractBorsh,
         nearTokenContract,
         ...transferLog

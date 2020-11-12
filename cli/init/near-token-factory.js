@@ -80,7 +80,7 @@ class InitNearTokenFactory {
       process.exit(1)
     }
 
-    return DeployToken.execute({
+    const deployedTokenInfo = await DeployToken.execute({
       tokenName: 'erc20',
       ethTokenAddress: ethErc20Address,
       nearNodeUrl,
@@ -90,6 +90,19 @@ class InitNearTokenFactory {
       nearTokenFactoryAccount,
       nearTokenFactorySk
     })
+    if (!deployedTokenInfo) {
+      return null
+    }
+    const {
+      nearTokenAccount,
+      ethTokenAddress,
+      ...otherDeployedTokenInfo
+    } = deployedTokenInfo
+    return {
+      nearErc20Account: nearTokenAccount,
+      ethErc20Address: ethTokenAddress,
+      ...otherDeployedTokenInfo
+    }
   }
 }
 
