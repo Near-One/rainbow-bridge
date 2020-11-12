@@ -59,11 +59,11 @@ class TransferETHERC20ToNear {
 
   static async lock ({
     robustWeb3,
-    ethTokenLockerContract,
-    tokenAddress,
     amount,
-    nearReceiverAccount,
-    ethSenderAccount
+    ethTokenLockerContract,
+    ethErc20Address,
+    ethSenderAccount,
+    nearReceiverAccount
   }) {
     try {
       console.log(
@@ -74,7 +74,7 @@ class TransferETHERC20ToNear {
       const transaction = await robustWeb3.callContract(
         ethTokenLockerContract,
         'lockToken',
-        [tokenAddress, Number(amount), nearReceiverAccount],
+        [ethErc20Address, Number(amount), nearReceiverAccount],
         {
           from: ethSenderAccount,
           gas: 5000000
