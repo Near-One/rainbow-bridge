@@ -38,7 +38,8 @@ class StartEth2NearRelayCommand {
             '--near-master-account', nearMasterAccount,
             '--near-master-sk', nearMasterSk,
             '--near-client-account', nearClientAccount,
-            '--eth-node-url', ethNodeUrl
+            '--eth-node-url', ethNodeUrl,
+            '--daemon', 'false'
           ],
           wait_ready: true,
           kill_timeout: 60000,

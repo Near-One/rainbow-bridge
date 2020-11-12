@@ -42,7 +42,8 @@ class StartNear2EthRelayCommand {
             '--eth-gas-multiplier', ethGasMultiplier,
             '--near2eth-relay-min-delay', near2ethRelayMinDelay,
             '--near2eth-relay-max-delay', near2ethRelayMaxDelay,
-            '--near2eth-relay-error-delay', near2ethRelayErrorDelay
+            '--near2eth-relay-error-delay', near2ethRelayErrorDelay,
+            '--daemon', 'false'
           ],
           wait_ready: true,
           kill_timeout: 60000,

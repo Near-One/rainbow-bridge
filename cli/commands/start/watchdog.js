@@ -35,7 +35,8 @@ class StartWatchdogCommand {
             '--eth-client-abi-path', ethClientAbiPath,
             '--eth-client-address', ethClientAddress,
             '--watchdog-delay', watchdogDelay,
-            '--watchdog-error-delay', watchdogErrorDelay
+            '--watchdog-error-delay', watchdogErrorDelay,
+            '--daemon', 'false'
           ],
           logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS'
         })

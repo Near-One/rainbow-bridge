@@ -110,21 +110,6 @@ class RainbowConfig {
     this.paramValues[name] = { value: value, paramType: 'config' }
   }
 
-  // Get all args, but without daemon as array of strings.
-  static getArgsNoDaemon () {
-    const result = []
-    for (const name in this.paramValues) {
-      const value = this.paramValues[name]
-      if (value.paramType === 'arg' && name !== 'daemon') {
-        result.push(`--${name}`)
-        result.push(`${value.value}`)
-      }
-    }
-    result.push('--daemon')
-    result.push('false')
-    return result
-  }
-
   // Iterates over the params and writes them into config if they were set through arguments
   // or default values.
   static saveConfig () {
