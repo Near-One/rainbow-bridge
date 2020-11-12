@@ -59,7 +59,7 @@ class TransferEthERC20FromNear {
   static async withdraw ({
     nearTokenContract,
     nearSenderAccountId,
-    tokenAccount,
+    nearErc20Account,
     amount,
     ethReceiverAddress,
     nearSenderAccount
@@ -79,7 +79,7 @@ class TransferEthERC20FromNear {
         `Withdrawing ${amount} tokens on NEAR blockchain in favor of ${ethReceiverAddress}.`
       )
       const txWithdraw = await nearJsonContractFunctionCall(
-        tokenAccount,
+        nearErc20Account,
         nearSenderAccount,
         'withdraw',
         { amount: amount, recipient: ethReceiverAddress },
