@@ -292,48 +292,5 @@ class Near2EthRelay {
   }
 }
 
-// TODO: remove it unless we use it somewhere
-//
-// async function runNear2EthRelay ({
-//   nearNodeUrl,
-//   nearNetworkId,
-//   ethNodeUrl,
-//   ethMasterSk,
-//   ethClientAbiPath,
-//   ethClientAddress,
-//   ethGasMultiplier,
-//   near2ethRelayMinDelay,
-//   near2ethRelayMaxDelay,
-//   near2ethRelayErrorDelay
-// }) {
-//   const relay = new Near2EthRelay()
-
-//   // TODO remove this hard-coded constant! This is for testing purposes only. Replace with config when possible.
-//   ethMasterSk = normalizeEthKey('0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201')
-
-//   await relay.initialize({
-//     ethNodeUrl,
-//     ethMasterSk,
-//     nearNodeUrl,
-//     nearNetworkId,
-//     ethClientAbiPath,
-//     ethClientAddress,
-//     ethGasMultiplier
-//   })
-//   relay.run({
-//     near2ethRelayMinDelay,
-//     near2ethRelayMaxDelay,
-//     near2ethRelayErrorDelay,
-//     ethGasMultiplier
-//   })
-
-//   return {
-//     ethMasterSk
-//   }
-// }
-
 exports.Near2EthRelay = Near2EthRelay
 exports.borshify = borshify
-// exports.runNear2EthRelay = runNear2EthRelay
-
-// require('make-runnable')

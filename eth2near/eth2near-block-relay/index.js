@@ -170,38 +170,6 @@ class Eth2NearRelay {
   }
 }
 
-// TODO: remove it once confurmed it is not used
-//
-// async function runEth2NearRelay () {
-//   const masterAccount = RainbowConfig.getParam('near-master-account')
-//   const masterSk = RainbowConfig.getParam('near-master-sk')
-//   const keyStore = new nearAPI.keyStores.InMemoryKeyStore()
-//   await keyStore.setKey(
-//     RainbowConfig.getParam('near-network-id'),
-//     masterAccount,
-//     nearAPI.KeyPair.fromString(masterSk)
-//   )
-//   const near = await nearAPI.connect({
-//     nodeUrl: RainbowConfig.getParam('near-node-url'),
-//     networkId: RainbowConfig.getParam('near-network-id'),
-//     masterAccount: masterAccount,
-//     deps: {
-//       keyStore: keyStore
-//     }
-//   })
-
-//   const relay = new Eth2NearRelay()
-//   const clientContract = new EthOnNearClientContract(
-//     new nearAPI.Account(near.connection, masterAccount),
-//     RainbowConfig.getParam('near-client-account')
-//   )
-//   await clientContract.accessKeyInit()
-//   console.log('Initializing eth2near-relay...')
-//   relay.initialize(clientContract, RainbowConfig.getParam('eth-node-url'))
-//   console.log('Starting eth2near-relay...')
-//   relay.run()
-// }
-
 exports.Eth2NearRelay = Eth2NearRelay
 exports.EthProofExtractor = EthProofExtractor
 exports.ethashproof = ethashproof
@@ -209,6 +177,3 @@ exports.EthOnNearClientContract = EthOnNearClientContract
 exports.EthOnNearProverContract = EthOnNearProverContract
 exports.logFromWeb3 = logFromWeb3
 exports.receiptFromWeb3 = receiptFromWeb3
-// exports.runEth2NearRelay = runEth2NearRelay
-
-// require('make-runnable')
