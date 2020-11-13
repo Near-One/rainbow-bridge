@@ -11,7 +11,6 @@ SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" 2>&1 && pwd )"
 eval BRIDGE_SRC=${SCRIPTS_DIR}/../..
 eval LIBS_SOL_SRC=${BRIDGE_SRC}/node_modules/rainbow-bridge-sol
 eval LIBS_RS_SRC=${BRIDGE_SRC}/node_modules/rainbow-bridge-rs
-eval NEARUP_SRC=~/.rainbow/nearup
 eval NEARUP_LOGS=~/.nearup/localnet-logs
 
 mkdir -p $RAINBOW_DIR
@@ -28,6 +27,8 @@ touch $RAINBOW_DIR/logs/eth2near-relay/err.log
 touch $RAINBOW_DIR/logs/watchdog/out.log
 touch $RAINBOW_DIR/logs/watchdog/err.log
 
+pip3 install nearup --upgrade --user
+
 if test -z "$LOCAL_CORE_SRC"
 then
 echo "near-core home not specified..."
@@ -38,17 +39,6 @@ else
 echo "Linking the specified local repo from ${LOCAL_CORE_SRC} to ${CORE_SRC}"
 ln -s $LOCAL_CORE_SRC $CORE_SRC
 fi
-
-if test -z "$LOCAL_NEARUP_SRC"
-then
-echo "nearup home not specified..."
-git clone "https://github.com/near/nearup/" $NEARUP_SRC
-else
-echo "Linking the specified local repo from ${LOCAL_NEARUP_SRC} to ${NEARUP_SRC}"
-ln -s $LOCAL_NEARUP_SRC $NEARUP_SRC
-fi
-mkdir -p $NEARUP_LOGS
-cd $NEARUP_SRC && git checkout 0.1.2
 
 cd $CORE_SRC
 cargo build --package neard --bin neard

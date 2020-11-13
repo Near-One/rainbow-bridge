@@ -16,8 +16,6 @@ class PrepareCommand {
 
     env.LOCAL_CORE_SRC = coreSrc && path.resolve(coreSrc)
 
-    env.LOCAL_NEARUP_SRC = nearupSrc && path.resolve(nearupSrc)
-
     // @ts-ignore
     const prepareScript = exec(shell, { env: env })
     // @ts-ignore

@@ -133,11 +133,6 @@ RainbowConfig.declareOption(
   ''
 )
 RainbowConfig.declareOption(
-  'nearup-src',
-  'Path to the nearup source. It will be downloaded if not provided.',
-  ''
-)
-RainbowConfig.declareOption(
   'eth-gas-multiplier',
   'How many times more in Ethereum gas are we willing to overpay.',
   '1'
@@ -283,7 +278,7 @@ program.command('clean').action(CleanCommand.execute)
 RainbowConfig.addOptions(
   program.command('prepare'),
   PrepareCommand.execute,
-  ['core-src', 'nearup-src']
+  ['core-src']
 )
 
 RainbowConfig.addOptions(
