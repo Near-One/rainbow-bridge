@@ -3,12 +3,12 @@ const { execSync } = require('child_process')
 
 async function stopLocalNearNode () {
   console.log('Stopping near node')
-  const command = 'python3 ~/.rainbow/nearup/main.py stop'
+  const command = '$HOME/.local/bin/nearup stop'
   try {
     execSync(command)
     console.log('near node successfully stopped')
   } catch (err) {
-    console.log('Error stopping local near node', err)
+    console.error('Error stopping local near node', err)
   }
 }
 
