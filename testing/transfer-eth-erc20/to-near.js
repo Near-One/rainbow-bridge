@@ -39,12 +39,12 @@ class TransferETHERC20ToNear {
     const lockerAddress = RainbowConfig.getParam('eth-locker-address')
     try {
       console.log(
-        `Approving token transfer to ${lockerAddress} ${Number(amount)}.`
+        `Approving token transfer to ${lockerAddress} ${(new BN(amount)).toString()}.`
       )
       await robustWeb3.callContract(
         ethERC20Contract,
         'approve',
-        [lockerAddress, Number(amount)],
+        [lockerAddress, new BN(amount)],
         {
           from: ethSenderAccount,
           gas: 5000000
@@ -69,14 +69,14 @@ class TransferETHERC20ToNear {
   }) {
     try {
       console.log(
-        `Transferring tokens from the ERC20 account to the token locker account ${Number(
+        `Transferring tokens from the ERC20 account to the token locker account ${(new BN(
           amount
-        )}.`
+        )).toString()}.`
       )
       const transaction = await robustWeb3.callContract(
         ethTokenLockerContract,
         'lockToken',
-        [tokenAddress, Number(amount), nearReceiverAccount],
+        [tokenAddress, new BN(amount), nearReceiverAccount],
         {
           from: ethSenderAccount,
           gas: 5000000
