@@ -24,7 +24,8 @@ const {
   TransferETHERC20ToNear,
   TransferEthERC20FromNear,
   DeployToken,
-  getEthErc20Balance
+  getEthErc20Balance,
+  getEthAddressBySecretKey
 } = require('rainbow-bridge-testing')
 const { ETHDump } = require('./commands/eth-dump')
 const { NearDump } = require('./commands/near-dump')
@@ -654,10 +655,22 @@ const testingCommand = program
 
 RainbowConfig.addOptions(
   testingCommand
-    .command('get-eth-erc20-balance <eth_secret_key>')
-    .description('Get ERC20 balance on Ethereum.'),
+    .command('get-eth-account-address <eth_secret_key>')
+    .description('Get account address accessible by its secret key on Ethereum.'),
   async (ethSecretKey, args) => {
-    await getEthErc20Balance({ ethSecretKey, ...args })
+    await getEthAddressBySecretKey({ ethSecretKey, ...args })
+  },
+  [
+    'eth-node-url'
+  ]
+)
+
+RainbowConfig.addOptions(
+  testingCommand
+    .command('get-eth-erc20-balance <eth_account_address>')
+    .description('Get ERC20 balance on Ethereum.'),
+  async (ethAccountAddress, args) => {
+    await getEthErc20Balance({ ethAccountAddress, ...args })
   },
   [
     'eth-node-url',
