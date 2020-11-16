@@ -1,21 +1,19 @@
 const BN = require('bn.js')
 const fs = require('fs')
-// const assert = require('bsert')
 const bs58 = require('bs58')
 const crypto = require('crypto')
 const { toBuffer } = require('eth-util-lite')
 const {
   nearAPI,
   verifyAccount,
-  RainbowConfig,
   borshifyOutcomeProof,
   sleep,
   RobustWeb3,
+  remove0x,
   normalizeEthKey,
   backoff,
   nearJsonContractFunctionCall
 } = require('rainbow-bridge-utils')
-const { tokenAddressParam, tokenAccountParam } = require('./deploy-token')
 const { NearMintableToken } = require('./near-mintable-token')
 
 let initialCmd
@@ -61,7 +59,7 @@ class TransferEthERC20FromNear {
   static async withdraw ({
     nearTokenContract,
     nearSenderAccountId,
-    tokenAccount,
+    nearErc20Account,
     amount,
     ethReceiverAddress,
     nearSenderAccount
@@ -81,7 +79,7 @@ class TransferEthERC20FromNear {
         `Withdrawing ${amount} tokens on NEAR blockchain in favor of ${ethReceiverAddress}.`
       )
       const txWithdraw = await nearJsonContractFunctionCall(
-        tokenAccount,
+        nearErc20Account,
         nearSenderAccount,
         'withdraw',
         { amount: amount, recipient: ethReceiverAddress },
@@ -106,9 +104,6 @@ class TransferEthERC20FromNear {
       let txReceiptId
       let txReceiptBlockHash
       let idType
-      /* assert(
-        RainbowConfig.getParam('near-token-factory-account') !== nearSenderAccountId
-      ) */
 
       // Getting 1st tx
       const receipts = txWithdraw.transaction_outcome.outcome.receipt_ids
@@ -296,6 +291,7 @@ class TransferEthERC20FromNear {
     ethReceiverAddress,
     ethTokenLockerContract,
     ethMasterAccount,
+    ethGasMultiplier,
     robustWeb3
   }) {
     try {
@@ -324,21 +320,9 @@ class TransferEthERC20FromNear {
           from: ethMasterAccount,
           gas: 5000000,
           handleRevert: true,
-          gasPrice: new BN(await robustWeb3.web3.eth.getGasPrice()).mul(
-            new BN(RainbowConfig.getParam('eth-gas-multiplier'))
-          )
+          gasPrice: new BN(await robustWeb3.web3.eth.getGasPrice()).mul(new BN(ethGasMultiplier))
         }
       )
-      /* await ethTokenLockerContract.methods
-        .unlockToken(borshProofRes, clientBlockHeight)
-        .send({
-          from: ethMasterAccount,
-          gas: 5000000,
-          handleRevert: true,
-          gasPrice: new BN(await robustWeb3.web3.eth.getGasPrice()).mul(
-            new BN(RainbowConfig.getParam('eth-gas-multiplier'))
-          ),
-        }) */
       const newBalance = await ethERC20Contract.methods
         .balanceOf(ethReceiverAddress)
         .call()
@@ -352,29 +336,38 @@ class TransferEthERC20FromNear {
     }
   }
 
-  static async execute (command) {
-    initialCmd = command.parent.rawArgs.join(' ')
-    const nearSenderAccountId = command.nearSenderAccount
-    const amount = command.amount
-    const ethReceiverAddress = command.ethReceiverAddress.startsWith('0x')
-      ? command.ethReceiverAddress.substr(2)
-      : command.ethReceiverAddress
-    const tokenAddress = command.tokenName
-      ? RainbowConfig.getParam(tokenAddressParam(command.tokenName))
-      : RainbowConfig.getParam('eth-erc20-address')
-    const tokenAccount = command.tokenName
-      ? RainbowConfig.getParam(tokenAccountParam(command.tokenName))
-      : RainbowConfig.getParam('near-erc20-account')
-
+  static async execute ({
+    parent: { rawArgs },
+    amount,
+    nearSenderAccount: nearSenderAccountId,
+    ethReceiverAddress,
+    nearNetworkId,
+    nearNodeUrl,
+    nearSenderSk,
+    nearErc20Account,
+    ethNodeUrl,
+    ethMasterSk,
+    ethClientAbiPath,
+    ethClientAddress,
+    ethProverAbiPath,
+    ethProverAddress,
+    ethLockerAbiPath,
+    ethLockerAddress,
+    ethErc20AbiPath,
+    ethErc20Address,
+    ethGasMultiplier
+  }) {
+    initialCmd = rawArgs.join(' ')
+    ethReceiverAddress = remove0x(ethReceiverAddress)
     const keyStore = new nearAPI.keyStores.InMemoryKeyStore()
     await keyStore.setKey(
-      RainbowConfig.getParam('near-network-id'),
+      nearNetworkId,
       nearSenderAccountId,
-      nearAPI.KeyPair.fromString(command.nearSenderSk)
+      nearAPI.KeyPair.fromString(nearSenderSk)
     )
     const near = await nearAPI.connect({
-      nodeUrl: RainbowConfig.getParam('near-node-url'),
-      networkId: RainbowConfig.getParam('near-network-id'),
+      nodeUrl: nearNodeUrl,
+      networkId: nearNetworkId,
       masterAccount: nearSenderAccountId,
       deps: { keyStore: keyStore }
     })
@@ -386,7 +379,7 @@ class TransferEthERC20FromNear {
 
     const nearTokenContract = new nearAPI.Contract(
       nearSenderAccount,
-      tokenAccount,
+      nearErc20Account,
       {
         changeMethods: ['new', 'withdraw'],
         viewMethods: ['get_balance']
@@ -394,24 +387,20 @@ class TransferEthERC20FromNear {
     )
     const nearTokenContractBorsh = new NearMintableToken(
       nearSenderAccount,
-      tokenAccount
+      nearErc20Account
     )
     await nearTokenContractBorsh.accessKeyInit()
 
-    const robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'))
+    const robustWeb3 = new RobustWeb3(ethNodeUrl)
     const web3 = robustWeb3.web3
-    let ethMasterAccount = web3.eth.accounts.privateKeyToAccount(
-      normalizeEthKey(RainbowConfig.getParam('eth-master-sk'))
-    )
+    let ethMasterAccount = web3.eth.accounts.privateKeyToAccount(normalizeEthKey(ethMasterSk))
     web3.eth.accounts.wallet.add(ethMasterAccount)
     web3.eth.defaultAccount = ethMasterAccount.address
     ethMasterAccount = ethMasterAccount.address
     const clientContract = new web3.eth.Contract(
       // @ts-ignore
-      JSON.parse(
-        fs.readFileSync(RainbowConfig.getParam('eth-client-abi-path'))
-      ),
-      RainbowConfig.getParam('eth-client-address'),
+      JSON.parse(fs.readFileSync(ethClientAbiPath)),
+      ethClientAddress,
       {
         from: ethMasterAccount,
         handleRevert: true
@@ -419,10 +408,8 @@ class TransferEthERC20FromNear {
     )
     const proverContract = new web3.eth.Contract(
       // @ts-ignore
-      JSON.parse(
-        fs.readFileSync(RainbowConfig.getParam('eth-prover-abi-path'))
-      ),
-      RainbowConfig.getParam('eth-prover-address'),
+      JSON.parse(fs.readFileSync(ethProverAbiPath)),
+      ethProverAddress,
       {
         from: ethMasterAccount,
         handleRevert: true
@@ -430,10 +417,8 @@ class TransferEthERC20FromNear {
     )
     const ethTokenLockerContract = new web3.eth.Contract(
       // @ts-ignore
-      JSON.parse(
-        fs.readFileSync(RainbowConfig.getParam('eth-locker-abi-path'))
-      ),
-      RainbowConfig.getParam('eth-locker-address'),
+      JSON.parse(fs.readFileSync(ethLockerAbiPath)),
+      ethLockerAddress,
       {
         from: ethMasterAccount,
         handleRevert: true
@@ -441,8 +426,8 @@ class TransferEthERC20FromNear {
     )
     const ethERC20Contract = new web3.eth.Contract(
       // @ts-ignore
-      JSON.parse(fs.readFileSync(RainbowConfig.getParam('eth-erc20-abi-path'))),
-      tokenAddress,
+      JSON.parse(fs.readFileSync(ethErc20AbiPath)),
+      ethErc20Address,
       {
         from: ethMasterAccount,
         handleRevert: true
@@ -454,7 +439,7 @@ class TransferEthERC20FromNear {
       await TransferEthERC20FromNear.withdraw({
         nearTokenContract,
         nearSenderAccountId,
-        tokenAccount,
+        nearErc20Account,
         amount,
         ethReceiverAddress,
         nearSenderAccount
@@ -502,6 +487,7 @@ class TransferEthERC20FromNear {
         ethReceiverAddress,
         ethTokenLockerContract,
         ethMasterAccount,
+        ethGasMultiplier,
         robustWeb3
       })
     }

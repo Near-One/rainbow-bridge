@@ -1,6 +1,5 @@
 const fs = require('fs').promises
 const Path = require('path')
-const { RainbowConfig } = require('rainbow-bridge-utils')
 const fetch = require('node-fetch')
 
 async function getLatestBlock (nearNodeUrl) {
@@ -92,7 +91,7 @@ async function getNextLightClientBlock (nearNodeUrl, blockHash) {
 }
 
 class NearDump {
-  static async execute (kindOfData, { path, numBlocks }) {
+  static async execute (kindOfData, { path, numBlocks, nearNodeUrl }) {
     if (kindOfData !== 'headers' && kindOfData !== 'proofs') {
       console.log(
         'Usage: node index.js near-dump headers\n       node index.js near-dump proofs'
@@ -103,8 +102,6 @@ class NearDump {
     if (!numBlocks) {
       numBlocks = 100
     }
-    const nearNodeUrl = RainbowConfig.getParam('near-node-url')
-
     const latestBlock = await getLatestBlock(nearNodeUrl)
 
     if (kindOfData === 'headers') {

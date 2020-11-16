@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 const path = require('path')
+const changeCase = require('change-case')
 const { program } = require('commander')
 
 const { CleanCommand } = require('./commands/clean')
@@ -22,7 +23,8 @@ const { DangerDeployMyERC20 } = require('./commands/danger-deploy-myerc20')
 const {
   TransferETHERC20ToNear,
   TransferEthERC20FromNear,
-  DeployToken
+  DeployToken,
+  getEthErc20Balance
 } = require('rainbow-bridge-testing')
 const { ETHDump } = require('./commands/eth-dump')
 const { NearDump } = require('./commands/near-dump')
@@ -275,41 +277,60 @@ program.version(require('./package.json').version)
 program.command('clean').action(CleanCommand.execute)
 
 RainbowConfig.addOptions(
-  program.command('prepare').action(PrepareCommand.execute),
+  program.command('prepare'),
+  PrepareCommand.execute,
   ['core-src']
 )
 
-program.command('status').action(StatusCommand.execute)
+RainbowConfig.addOptions(
+  program.command('status'),
+  StatusCommand.execute,
+  [
+    'near-network-id',
+    'near-node-url',
+    'near-master-account',
+    'near-master-sk',
+    'near-client-account',
+    'near-client-sk',
+    'near-prover-account',
+    'near-prover-sk',
+    'eth-node-url',
+    'eth-master-sk'
+  ]
+)
 
 // Maintainer commands.
-
 const startCommand = program.command('start')
 
-startCommand.command('near-node').action(StartLocalNearNodeCommand.execute)
-
 RainbowConfig.addOptions(
-  startCommand.command('ganache').action(StartGanacheNodeCommand.execute),
-  ['daemon']
+  startCommand.command('near-node'),
+  StartLocalNearNodeCommand.execute,
+  []
 )
 
 RainbowConfig.addOptions(
-  startCommand
-    .command('eth2near-relay')
-    .action(StartEth2NearRelayCommand.execute),
+  startCommand.command('ganache'),
+  StartGanacheNodeCommand.execute,
+  []
+)
+
+RainbowConfig.addOptions(
+  startCommand.command('eth2near-relay'),
+  StartEth2NearRelayCommand.execute,
   [
     'near-master-account',
     'near-master-sk',
     'near-client-account',
     'near-network-id',
     'near-node-url',
+    'eth-node-url',
     'daemon'
   ]
 )
 
 RainbowConfig.addOptions(
-  startCommand
-    .command('near2eth-relay')
-    .action(StartNear2EthRelayCommand.execute),
+  startCommand.command('near2eth-relay'),
+  StartNear2EthRelayCommand.execute,
   [
     'eth-node-url',
     'eth-master-sk',
@@ -326,38 +347,63 @@ RainbowConfig.addOptions(
 )
 
 RainbowConfig.addOptions(
-  startCommand.command('bridge-watchdog').action(StartWatchdogCommand.execute),
+  startCommand.command('bridge-watchdog'),
+  StartWatchdogCommand.execute,
   [
     'eth-node-url',
     'eth-master-sk',
     'eth-client-abi-path',
-    'daemon',
+    'eth-client-address',
     'watchdog-delay',
-    'watchdog-error-delay'
+    'watchdog-error-delay',
+    'daemon'
   ]
 )
 
 const stopCommand = program.command('stop')
 
-stopCommand.command('all').action(StopManagedProcessCommand.execute)
+RainbowConfig.addOptions(
+  stopCommand.command('all'),
+  StopManagedProcessCommand.execute,
+  []
+)
 
-stopCommand.command('near-node').action(StopManagedProcessCommand.execute)
+RainbowConfig.addOptions(
+  stopCommand.command('near-node'),
+  StopManagedProcessCommand.execute,
+  []
+)
 
-stopCommand.command('ganache').action(StopManagedProcessCommand.execute)
+RainbowConfig.addOptions(
+  stopCommand.command('ganache'),
+  StopManagedProcessCommand.execute,
+  []
+)
 
-stopCommand.command('eth2near-relay').action(StopManagedProcessCommand.execute)
+RainbowConfig.addOptions(
+  stopCommand.command('eth2near-relay'),
+  StopManagedProcessCommand.execute,
+  [])
 
-stopCommand.command('near2eth-relay').action(StopManagedProcessCommand.execute)
+RainbowConfig.addOptions(
+  stopCommand.command('near2eth-relay'),
+  StopManagedProcessCommand.execute,
+  []
+)
 
-stopCommand.command('bridge-watchdog').action(StopManagedProcessCommand.execute)
+RainbowConfig.addOptions(
+  stopCommand.command('bridge-watchdog'),
+  StopManagedProcessCommand.execute,
+  []
+)
 
 RainbowConfig.addOptions(
   program
     .command('init-near-contracts')
     .description(
       'Deploys and initializes Near Client and Near Prover contracts to NEAR blockchain.'
-    )
-    .action(InitNearContracts.execute),
+    ),
+  InitNearContracts.execute,
   [
     'near-network-id',
     'near-node-url',
@@ -382,8 +428,8 @@ RainbowConfig.addOptions(
     .command('init-eth-ed25519')
     .description(
       'Deploys and initializes ED25519 Solidity contract. It replaces missing precompile.'
-    )
-    .action(InitEthEd25519.execute),
+    ),
+  InitEthEd25519.execute,
   [
     'eth-node-url',
     'eth-master-sk',
@@ -396,8 +442,8 @@ RainbowConfig.addOptions(
 RainbowConfig.addOptions(
   program
     .command('init-eth-client')
-    .description('Deploys and initializes EthClient.')
-    .action(InitEthClient.execute),
+    .description('Deploys and initializes EthClient.'),
+  InitEthClient.execute,
   [
     'eth-node-url',
     'eth-master-sk',
@@ -414,8 +460,8 @@ RainbowConfig.addOptions(
 RainbowConfig.addOptions(
   program
     .command('init-eth-prover')
-    .description('Deploys and initializes EthProver.')
-    .action(InitEthProver.execute),
+    .description('Deploys and initializes EthProver.'),
+  InitEthProver.execute,
   [
     'eth-node-url',
     'eth-master-sk',
@@ -433,23 +479,51 @@ RainbowConfig.addOptions(
     .command('init-near-token-factory')
     .description(
       'Deploys and initializes token factory to NEAR blockchain. Requires locker on Ethereum side.'
-    )
-    .action(InitNearTokenFactory.execute),
+    ),
+  InitNearTokenFactory.execute,
   [
+    'near-node-url',
+    'near-network-id',
+    'near-master-account',
+    'near-master-sk',
+    'near-prover-account',
     'near-token-factory-account',
     'near-token-factory-sk',
     'near-token-factory-contract-path',
     'near-token-factory-init-balance',
-    'eth-locker-address'
+    'eth-locker-address',
+    'eth-erc20-address'
   ]
 )
 
 RainbowConfig.addOptions(
   program
-    .command('deploy-token <token_name> <token_address>')
-    .description('Deploys and initializes token on NEAR.')
-    .action(DeployToken.execute),
-  ['near-token-factory-account']
+    .command('deploy-token <token_name> <eth_token_address>')
+    .description('Deploys and initializes token on NEAR.'),
+  async (tokenName, ethTokenAddress, args) => {
+    const deployedTokenInfo = await DeployToken.execute({ tokenName, ethTokenAddress, ...args })
+    if (!deployedTokenInfo) {
+      return null
+    }
+    const {
+      nearTokenAccount,
+      ethTokenAddress: _,
+      ...otherDeployedTokenInfo
+    } = deployedTokenInfo
+    return {
+      [`near${changeCase.capitalCase(tokenName)}Account`]: nearTokenAccount,
+      [`eth${changeCase.capitalCase(tokenName)}Address`]: ethTokenAddress,
+      ...otherDeployedTokenInfo
+    }
+  },
+  [
+    'near-node-url',
+    'near-network-id',
+    'near-master-account',
+    'near-master-sk',
+    'near-token-factory-account',
+    'near-token-factory-sk'
+  ]
 )
 
 RainbowConfig.addOptions(
@@ -457,15 +531,14 @@ RainbowConfig.addOptions(
     .command('init-eth-locker')
     .description(
       'Deploys and initializes locker contract on Ethereum blockchain. Requires mintable fungible token on Near side.'
-    )
-    .action(InitEthLocker.execute),
+    ),
+  InitEthLocker.execute,
   [
+    'near-token-factory-account',
     'eth-node-url',
     'eth-master-sk',
     'eth-locker-abi-path',
     'eth-locker-bin-path',
-    'eth-erc20-address',
-    'near-token-factory-account',
     'eth-prover-address',
     'eth-gas-multiplier'
   ]
@@ -476,8 +549,8 @@ RainbowConfig.addOptions(
     .command('init-eth-erc20')
     .description(
       'Deploys and initializes ERC20 contract on Ethereum blockchain.'
-    )
-    .action(InitEthErc20.execute),
+    ),
+  InitEthErc20.execute,
   [
     'eth-node-url',
     'eth-master-sk',
@@ -490,7 +563,6 @@ RainbowConfig.addOptions(
 RainbowConfig.addOptions(
   program
     .command('transfer-eth-erc20-to-near')
-    .action(TransferETHERC20ToNear.execute)
     .option('--amount <amount>', 'Amount of ERC20 tokens to transfer')
     .option(
       '--eth-sender-sk <eth_sender_sk>',
@@ -504,9 +576,17 @@ RainbowConfig.addOptions(
       '--token-name <token_name>',
       'Specific ERC20 token that is already bound by `deploy-token`.'
     ),
+  ({ tokenName, ...args }) => {
+    if (tokenName) {
+      args.ethErc20Address = RainbowConfig.getParam(`eth-${tokenName}-address`)
+      args.nearErc20Account = RainbowConfig.getParam(`near-${tokenName}-account`)
+    }
+    return TransferETHERC20ToNear.execute(args)
+  },
   [
-    'eth-node-url',
     'eth-erc20-address',
+    'near-erc20-account',
+    'eth-node-url',
     'eth-erc20-abi-path',
     'eth-locker-address',
     'eth-locker-abi-path',
@@ -515,15 +595,13 @@ RainbowConfig.addOptions(
     'near-token-factory-account',
     'near-client-account',
     'near-master-account',
-    'near-master-sk',
-    'eth-gas-multiplier'
+    'near-master-sk'
   ]
 )
 
 RainbowConfig.addOptions(
   program
     .command('transfer-eth-erc20-from-near')
-    .action(TransferEthERC20FromNear.execute)
     .option('--amount <amount>', 'Amount of ERC20 tokens to transfer')
     .option(
       '--near-sender-account <near_sender_account>',
@@ -541,25 +619,54 @@ RainbowConfig.addOptions(
       '--token-name <token_name>',
       'Specific ERC20 token that is already bound by `deploy-token`.'
     ),
+  ({ tokenName, ...args }) => {
+    if (tokenName) {
+      args.ethErc20Address = RainbowConfig.getParam(`eth-${tokenName}-address`)
+      args.nearErc20Account = RainbowConfig.getParam(`near-${tokenName}-account`)
+    }
+    return TransferEthERC20FromNear.execute(args)
+  },
   [
+    'eth-erc20-address',
+    'near-erc20-account',
     'near-node-url',
     'near-network-id',
     'near-token-factory-account',
     'eth-node-url',
-    'eth-erc20-address',
+    'eth-master-sk',
     'eth-erc20-abi-path',
     'eth-locker-address',
     'eth-locker-abi-path',
     'eth-client-abi-path',
     'eth-client-address',
-    'eth-master-sk',
     'eth-prover-abi-path',
     'eth-prover-address',
     'eth-gas-multiplier'
   ]
 )
 
-// Testing command
+// Testing commands
+const testingCommand = program
+  .command('TESTING')
+  .description(
+    'Commands that should only be used for testing purpose.'
+  )
+
+RainbowConfig.addOptions(
+  testingCommand
+    .command('get-eth-erc20-balance <eth_secret_key>')
+    .description('Get ERC20 balance on Ethereum.'),
+  async (ethSecretKey, args) => {
+    await getEthErc20Balance({ ethSecretKey, ...args })
+  },
+  [
+    'eth-node-url',
+    'eth-erc20-address',
+    'eth-erc20-abi-path'
+  ]
+)
+
+// Danger Testing commands
 const dangerCommand = program
   .command('DANGER')
   .description(
@@ -571,8 +678,8 @@ RainbowConfig.addOptions(
     .command('submit_invalid_near_block')
     .description(
       'Fetch latest near block, randomly mutate one byte and submit to NearBridge'
-    )
-    .action(DangerSubmitInvalidNearBlock.execute),
+    ),
+  DangerSubmitInvalidNearBlock.execute,
   [
     'eth-node-url',
     'eth-master-sk',
@@ -590,24 +697,31 @@ RainbowConfig.addOptions(
 RainbowConfig.addOptions(
   dangerCommand
     .command('deploy_test_erc20')
-    .description('Deploys MyERC20')
-    .action(DangerDeployMyERC20.execute),
-  ['eth-node-url', 'eth-master-sk', 'eth-erc20-abi-path', 'eth-gas-multiplier']
+    .description('Deploys MyERC20'),
+  DangerDeployMyERC20.execute,
+  [
+    'eth-node-url',
+    'eth-master-sk',
+    'eth-erc20-abi-path',
+    'eth-gas-multiplier'
+  ]
 )
 
-program
-  .command('eth-dump <kind_of_data>')
-  .option('--eth-node-url <eth_node_url>', 'ETH node API url')
-  .option('--path <path>', 'Dir path to dump eth data')
-  .option(
-    '--start-block <start_block>',
-    'Start block number (inclusive), default to be 4.3K blocks away from start block'
-  )
-  .option(
-    '--end-block <end_block>',
-    'End block number (inclusive), default to be latest block'
-  )
-  .action(ETHDump.execute)
+RainbowConfig.addOptions(
+  program
+    .command('eth-dump <kind_of_data>')
+    .option('--path <path>', 'Dir path to dump eth data')
+    .option(
+      '--start-block <start_block>',
+      'Start block number (inclusive), default to be 4.3K blocks away from start block'
+    )
+    .option(
+      '--end-block <end_block>',
+      'End block number (inclusive), default to be latest block'
+    ),
+  ETHDump.execute,
+  ['eth-node-url']
+)
 
 RainbowConfig.addOptions(
   program
@@ -616,10 +730,11 @@ RainbowConfig.addOptions(
     .option(
       '--num-blocks <num_blocks>',
       'Number of blocks to dump, default: 100'
-    )
-    .action(NearDump.execute),
+    ),
+  NearDump.execute,
   ['near-node-url']
 )
+
 ;(async () => {
   await program.parseAsync(process.argv)
 })()

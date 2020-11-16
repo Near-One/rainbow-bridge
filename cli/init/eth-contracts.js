@@ -1,165 +1,230 @@
 const BN = require('bn.js')
 const fs = require('fs')
-const { Web3, RainbowConfig, normalizeEthKey } = require('rainbow-bridge-utils')
+const { Web3, normalizeEthKey } = require('rainbow-bridge-utils')
 
 class EthContractInitializer {
-  async execute (contractName, args, gas) {
-    const address = 'eth-' + contractName + '-address'
-    const abiPath = RainbowConfig.getParam('eth-' + contractName + '-abi-path')
-    const binPath = RainbowConfig.getParam('eth-' + contractName + '-bin-path')
-    if (!abiPath || !binPath) {
-      return false
+  async execute ({
+    args,
+    gas,
+    ethNodeUrl,
+    ethMasterSk,
+    ethContractAbiPath,
+    ethContractBinPath,
+    ethGasMultiplier
+  }) {
+    let ethContractAddress
+    if (!ethContractAbiPath || !ethContractBinPath) {
+      return null
     }
 
     try {
-      const web3 = new Web3(RainbowConfig.getParam('eth-node-url'))
+      const web3 = new Web3(ethNodeUrl)
       let ethMasterAccount = web3.eth.accounts.privateKeyToAccount(
-        normalizeEthKey(RainbowConfig.getParam('eth-master-sk'))
+        normalizeEthKey(ethMasterSk)
       )
       web3.eth.accounts.wallet.add(ethMasterAccount)
       web3.eth.defaultAccount = ethMasterAccount.address
       ethMasterAccount = ethMasterAccount.address
 
-      console.log('Deploying ETH contract', contractName)
+      console.log('Deploying ETH contract')
       const tokenContract = new web3.eth.Contract(
-        JSON.parse(fs.readFileSync(abiPath))
+        JSON.parse(fs.readFileSync(ethContractAbiPath))
       )
       const txContract = await tokenContract
         .deploy({
-          data: '0x' + fs.readFileSync(binPath),
+          data: '0x' + fs.readFileSync(ethContractBinPath),
           arguments: args
         })
         .send({
           from: ethMasterAccount,
-          gas: gas,
-          gasPrice: new BN(await web3.eth.getGasPrice()).mul(
-            new BN(RainbowConfig.getParam('eth-gas-multiplier'))
-          )
+          gas,
+          gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(ethGasMultiplier))
         })
-      console.log(
-        'Deployed ETH contract',
-        contractName,
-        'to',
-        `${txContract.options.address}`
-      )
-      RainbowConfig.setParam(
-        address,
-        normalizeEthKey(txContract.options.address)
-      )
-      RainbowConfig.saveConfig()
+      ethContractAddress = normalizeEthKey(txContract.options.address)
+      console.log(`Deployed ETH contract to ${ethContractAddress}`)
       try {
         // Only WebSocket provider can close.
         web3.currentProvider.connection.close()
       } catch (e) {}
     } catch (e) {
       console.log(e)
-      return false
+      return null
     }
-    return true
+    return { ethContractAddress }
   }
 }
 
 class InitEthEd25519 {
-  static async execute () {
+  static async execute ({
+    ethNodeUrl,
+    ethMasterSk,
+    ethEd25519AbiPath,
+    ethEd25519BinPath,
+    ethGasMultiplier
+  }) {
     const ethContractInitializer = new EthContractInitializer()
-    const contractName = 'ed25519'
     const success = await ethContractInitializer.execute(
-      contractName,
-      [],
-      5000000
+      {
+        args: [],
+        gas: 5000000,
+        ethContractAbiPath: ethEd25519AbiPath,
+        ethContractBinPath: ethEd25519BinPath,
+        ethNodeUrl,
+        ethMasterSk,
+        ethGasMultiplier
+      }
     )
     if (!success) {
-      console.log("Can't deploy", contractName)
+      console.log("Can't deploy", ethEd25519AbiPath)
       process.exit(1)
+    }
+    return {
+      ethEd25519Address: success.ethContractAddress
     }
   }
 }
 
 class InitEthErc20 {
-  static async execute () {
+  static async execute ({
+    ethNodeUrl,
+    ethMasterSk,
+    ethErc20AbiPath,
+    ethErc20BinPath,
+    ethGasMultiplier
+  }) {
     const ethContractInitializer = new EthContractInitializer()
-    const contractName = 'erc20'
     const success = await ethContractInitializer.execute(
-      contractName,
-      [],
-      3000000
+      {
+        args: [],
+        gas: 3000000,
+        ethContractAbiPath: ethErc20AbiPath,
+        ethContractBinPath: ethErc20BinPath,
+        ethNodeUrl,
+        ethMasterSk,
+        ethGasMultiplier
+      }
     )
     if (!success) {
-      console.log("Can't deploy", contractName)
+      console.log("Can't deploy", ethErc20AbiPath)
       process.exit(1)
+    }
+    return {
+      ethErc20Address: success.ethContractAddress
     }
   }
 }
 
 class InitEthLocker {
-  static async execute () {
+  static async execute ({
+    ethNodeUrl,
+    ethMasterSk,
+    nearTokenFactoryAccount,
+    ethProverAddress,
+    ethLockerAbiPath,
+    ethLockerBinPath,
+    ethGasMultiplier
+  }) {
     const ethContractInitializer = new EthContractInitializer()
-    const contractName = 'locker'
     const success = await ethContractInitializer.execute(
-      contractName,
-      [
-        Buffer.from(
-          RainbowConfig.getParam('near-token-factory-account'),
-          'utf8'
-        ),
-        RainbowConfig.getParam('eth-prover-address')
-      ],
-      5000000
+      {
+        args: [
+          Buffer.from(nearTokenFactoryAccount, 'utf8'),
+          ethProverAddress
+        ],
+        gas: 5000000,
+        ethContractAbiPath: ethLockerAbiPath,
+        ethContractBinPath: ethLockerBinPath,
+        ethNodeUrl,
+        ethMasterSk,
+        ethGasMultiplier
+      }
     )
     if (!success) {
-      console.log("Can't deploy", contractName)
+      console.log("Can't deploy", ethLockerAbiPath)
       process.exit(1)
+    }
+    return {
+      ethLockerAddress: success.ethContractAddress
     }
   }
 }
 
 class InitEthClient {
-  static async execute () {
+  static async execute ({
+    ethNodeUrl,
+    ethMasterSk,
+    ethClientLockEthAmount,
+    ethClientLockDuration,
+    ethClientReplaceDuration,
+    ethEd25519Address,
+    ethClientAbiPath,
+    ethClientBinPath,
+    ethGasMultiplier
+  }) {
     const ethContractInitializer = new EthContractInitializer()
-    const contractName = 'client'
-    const web3 = new Web3(RainbowConfig.getParam('eth-node-url'))
-    const lockEthAmount = web3.utils.toBN(
-      RainbowConfig.getParam('eth-client-lock-eth-amount')
-    )
-    const lockDuration = web3.utils.toBN(
-      RainbowConfig.getParam('eth-client-lock-duration')
-    )
+    const web3 = new Web3(ethNodeUrl)
+    const lockEthAmount = web3.utils.toBN(ethClientLockEthAmount)
+    const lockDuration = web3.utils.toBN(ethClientLockDuration)
     const replaceDuration = web3.utils
-      .toBN(RainbowConfig.getParam('eth-client-replace-duration'))
+      .toBN(ethClientReplaceDuration)
       .mul(new web3.utils.BN(1e9))
     try {
       // Only WebSocket provider can close.
       web3.currentProvider.connection.close()
     } catch (e) {}
     const success = await ethContractInitializer.execute(
-      contractName,
-      [
-        RainbowConfig.getParam('eth-ed25519-address'),
-        lockEthAmount,
-        lockDuration,
-        replaceDuration
-      ],
-      5000000
+      {
+        args: [
+          ethEd25519Address,
+          lockEthAmount,
+          lockDuration,
+          replaceDuration
+        ],
+        gas: 5000000,
+        ethContractAbiPath: ethClientAbiPath,
+        ethContractBinPath: ethClientBinPath,
+        ethNodeUrl,
+        ethMasterSk,
+        ethGasMultiplier
+      }
     )
     if (!success) {
-      console.log("Can't deploy", contractName)
+      console.log("Can't deploy", ethClientAbiPath)
       process.exit(1)
+    }
+    return {
+      ethClientAddress: success.ethContractAddress
     }
   }
 }
 
 class InitEthProver {
-  static async execute () {
+  static async execute ({
+    ethNodeUrl,
+    ethMasterSk,
+    ethClientAddress,
+    ethProverAbiPath,
+    ethProverBinPath,
+    ethGasMultiplier
+  }) {
     const ethContractInitializer = new EthContractInitializer()
-    const contractName = 'prover'
     const success = await ethContractInitializer.execute(
-      contractName,
-      [RainbowConfig.getParam('eth-client-address')],
-      3000000
+      {
+        args: [ethClientAddress],
+        gas: 3000000,
+        ethContractAbiPath: ethProverAbiPath,
+        ethContractBinPath: ethProverBinPath,
+        ethNodeUrl,
+        ethMasterSk,
+        ethGasMultiplier
+      }
     )
     if (!success) {
-      console.log("Can't deploy", contractName)
+      console.log("Can't deploy", ethProverAbiPath)
       process.exit(1)
+    }
+    return {
+      ethProverAddress: success.ethContractAddress
     }
   }
 }

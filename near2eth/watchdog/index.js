@@ -1,6 +1,5 @@
 const fs = require('fs')
 const {
-  RainbowConfig,
   sleep,
   Web3,
   RobustWeb3,
@@ -12,13 +11,16 @@ const Tx = require('ethereumjs-tx').Transaction
 const SLOW_TX_ERROR_MSG = 'transaction not executed within 5 minutes'
 
 class Watchdog {
-  async initialize () {
+  async initialize ({
+    ethNodeUrl,
+    ethMasterSk,
+    ethClientAbiPath,
+    ethClientAddress
+  }) {
     // @ts-ignore
-    this.robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'))
+    this.robustWeb3 = new RobustWeb3(ethNodeUrl)
     this.web3 = this.robustWeb3.web3
-    const ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(
-      normalizeEthKey(RainbowConfig.getParam('eth-master-sk'))
-    )
+    const ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(normalizeEthKey(ethMasterSk))
     this.web3.eth.accounts.wallet.add(ethMasterAccount)
     this.web3.eth.defaultAccount = ethMasterAccount.address
     this.ethMasterAccount = ethMasterAccount.address
@@ -27,10 +29,8 @@ class Watchdog {
     console.log('Deploying Near2EthClient contract.')
     this.clientContract = new this.web3.eth.Contract(
       // @ts-ignore
-      JSON.parse(
-        fs.readFileSync(RainbowConfig.getParam('eth-client-abi-path'))
-      ),
-      RainbowConfig.getParam('eth-client-address'),
+      JSON.parse(fs.readFileSync(ethClientAbiPath)),
+      ethClientAddress,
       {
         from: this.ethMasterAccount,
         handleRevert: true
@@ -38,14 +38,16 @@ class Watchdog {
     )
   }
 
-  async run () {
-    let privateKey = RainbowConfig.getParam('eth-master-sk')
-    if (privateKey.startsWith('0x')) {
-      privateKey = privateKey.slice(2)
+  async run ({
+    ethMasterSk,
+    ethClientAddress,
+    watchdogDelay,
+    watchdogErrorDelay
+  }) {
+    if (ethMasterSk.startsWith('0x')) {
+      ethMasterSk = ethMasterSk.slice(2)
     }
-    privateKey = Buffer.from(privateKey, 'hex')
-    const delay = RainbowConfig.getParam('watchdog-delay')
-    const errorDelay = RainbowConfig.getParam('watchdog-error-delay')
+    ethMasterSk = Buffer.from(ethMasterSk, 'hex')
     while (true) {
       try {
         const bridgeState = await this.clientContract.methods
@@ -82,7 +84,7 @@ class Watchdog {
                     let tx = new Tx({
                       from: this.ethMasterAccount.address,
                       // this is required otherwise gas is infinite
-                      to: RainbowConfig.getParam('eth-client-address'),
+                      to: ethClientAddress,
                       gasLimit: Web3.utils.toHex(2000000),
                       gasPrice: Web3.utils.toHex(gasPrice),
                       nonce: Web3.utils.toHex(nonce),
@@ -90,7 +92,7 @@ class Watchdog {
                         .challenge(this.ethMasterAccount, i)
                         .encodeABI()
                     })
-                    tx.sign(privateKey)
+                    tx.sign(ethMasterSk)
                     tx = '0x' + tx.serialize().toString('hex')
 
                     await promiseWithTimeout(
@@ -120,11 +122,11 @@ class Watchdog {
             }
           }
         }
-        console.log(`Sleeping for ${delay} seconds.`)
-        await sleep(delay * 1000)
+        console.log(`Sleeping for ${watchdogDelay} seconds.`)
+        await sleep(watchdogDelay * 1000)
       } catch (e) {
         console.log('Error', e)
-        await sleep(errorDelay * 1000)
+        await sleep(watchdogErrorDelay * 1000)
       }
     }
   }

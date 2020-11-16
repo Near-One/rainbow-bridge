@@ -1,12 +1,19 @@
 const ProcessManager = require('pm2')
 const { spawnProcess } = require('./helpers')
 const { Watchdog } = require('rainbow-bridge-watchdog')
-const { RainbowConfig } = require('rainbow-bridge-utils')
 const path = require('path')
 
 class StartWatchdogCommand {
-  static async execute () {
-    if (RainbowConfig.getParam('daemon') === 'true') {
+  static async execute ({
+    daemon,
+    ethNodeUrl,
+    ethMasterSk,
+    ethClientAbiPath,
+    ethClientAddress,
+    watchdogDelay,
+    watchdogErrorDelay
+  }) {
+    if (daemon === 'true') {
       ProcessManager.connect((err) => {
         if (err) {
           console.log(
@@ -23,15 +30,31 @@ class StartWatchdogCommand {
           args: [
             'start',
             'bridge-watchdog',
-            ...RainbowConfig.getArgsNoDaemon()
+            '--eth-node-url', ethNodeUrl,
+            '--eth-master-sk', ethMasterSk,
+            '--eth-client-abi-path', ethClientAbiPath,
+            '--eth-client-address', ethClientAddress,
+            '--watchdog-delay', watchdogDelay,
+            '--watchdog-error-delay', watchdogErrorDelay,
+            '--daemon', 'false'
           ],
           logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS'
         })
       })
     } else {
       const watchdog = new Watchdog()
-      await watchdog.initialize()
-      await watchdog.run()
+      await watchdog.initialize({
+        ethNodeUrl,
+        ethMasterSk,
+        ethClientAbiPath,
+        ethClientAddress
+      })
+      await watchdog.run({
+        ethMasterSk,
+        ethClientAddress,
+        watchdogDelay,
+        watchdogErrorDelay
+      })
     }
   }
 }

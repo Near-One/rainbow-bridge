@@ -1,72 +1,55 @@
 const {
   nearAPI,
   remove0x,
-  RainbowConfig,
   verifyAccount
 } = require('rainbow-bridge-utils')
 const { BN } = require('ethereumjs-util')
 
-function tokenAccountParam (tokenName) {
-  return 'near-' + tokenName + '-account'
-}
-
-function tokenAddressParam (tokenName) {
-  return 'eth-' + tokenName + '-address'
-}
-
 class DeployToken {
-  static async execute (tokenName, tokenAddress) {
-    console.log('execute', tokenName, tokenAddress)
-    if (RainbowConfig.maybeGetParam(tokenAccountParam(tokenName))) {
-      console.log(
-        `Token name ${tokenName} is occupied. Is it already deployed?`
-      )
-      process.exit(1)
-    }
-
+  static async execute ({
+    tokenName,
+    ethTokenAddress,
+    nearNodeUrl,
+    nearNetworkId,
+    nearMasterAccount,
+    nearMasterSk,
+    nearTokenFactoryAccount,
+    nearTokenFactorySk
+  }) {
     // use init near instead
-    const masterAccount = RainbowConfig.getParam('near-master-account')
-    const masterSk = RainbowConfig.getParam('near-master-sk')
-    const tokenFactoryAccount = RainbowConfig.getParam(
-      'near-token-factory-account'
-    )
-    let tokenSk = RainbowConfig.maybeGetParam('near-token-factory-sk')
-    if (!tokenSk) {
+    if (!nearTokenFactorySk) {
       console.log(
         'Secret key for fungible token is not specified. Reusing master secret key.'
       )
-      tokenSk = masterSk
-      RainbowConfig.setParam('near-token-factory-sk', tokenSk)
+      nearTokenFactorySk = nearMasterSk
     }
-    const nearNodeUrl = RainbowConfig.getParam('near-node-url')
-    const nearNetworkId = RainbowConfig.getParam('near-network-id')
 
     const keyStore = new nearAPI.keyStores.InMemoryKeyStore()
     await keyStore.setKey(
       nearNetworkId,
-      masterAccount,
-      nearAPI.KeyPair.fromString(masterSk)
+      nearMasterAccount,
+      nearAPI.KeyPair.fromString(nearMasterSk)
     )
     await keyStore.setKey(
       nearNetworkId,
-      tokenFactoryAccount,
-      nearAPI.KeyPair.fromString(tokenSk)
+      nearTokenFactoryAccount,
+      nearAPI.KeyPair.fromString(nearTokenFactorySk)
     )
     const near = await nearAPI.connect({
       nodeUrl: nearNodeUrl,
       networkId: nearNetworkId,
-      masterAccount: masterAccount,
+      masterAccount: nearMasterAccount,
       deps: { keyStore: keyStore }
     })
 
-    await verifyAccount(near, masterAccount)
-    await verifyAccount(near, tokenFactoryAccount)
+    await verifyAccount(near, nearMasterAccount)
+    await verifyAccount(near, nearTokenFactoryAccount)
 
-    console.log('Adding token ' + tokenName + ' at ' + tokenAddress)
+    console.log('Adding token ' + tokenName + ' at ' + ethTokenAddress)
 
     const tokenFactoryContract = new nearAPI.Contract(
-      new nearAPI.Account(near.connection, tokenFactoryAccount),
-      tokenFactoryAccount,
+      new nearAPI.Account(near.connection, nearTokenFactoryAccount),
+      nearTokenFactoryAccount,
       {
         changeMethods: ['deploy_bridge_token'],
         viewMethods: ['get_bridge_token_account_id']
@@ -77,7 +60,7 @@ class DeployToken {
       // Try initializing the contract.
       await tokenFactoryContract.deploy_bridge_token(
         {
-          address: remove0x(tokenAddress)
+          address: remove0x(ethTokenAddress)
         },
         new BN('300000000000000'),
         new BN('150000000000000000000000000')
@@ -89,19 +72,13 @@ class DeployToken {
       process.exit(1)
     }
     console.log(`${tokenName} deployed`)
-    RainbowConfig.setParam(
-      tokenAccountParam(tokenName),
-      remove0x(tokenAddress) + '.' + tokenFactoryAccount
-    )
-    RainbowConfig.setParam(tokenAddressParam(tokenName), tokenAddress)
 
-    RainbowConfig.saveConfig()
-    console.log(
-      `Token address of ${tokenName} set to ${RainbowConfig.getParam(
-        tokenAccountParam(tokenName)
-      )}, param ${tokenAccountParam(tokenName)}`
-    )
+    return {
+      nearTokenFactorySk,
+      nearTokenAccount: remove0x(ethTokenAddress) + '.' + nearTokenFactoryAccount,
+      ethTokenAddress
+    }
   }
 }
 
-module.exports = { DeployToken, tokenAddressParam, tokenAccountParam }
+module.exports = { DeployToken }

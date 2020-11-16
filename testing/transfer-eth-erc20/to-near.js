@@ -7,7 +7,6 @@ const {
   sleep,
   RobustWeb3,
   normalizeEthKey,
-  RainbowConfig,
   verifyAccount
 } = require('rainbow-bridge-utils')
 const {
@@ -16,7 +15,6 @@ const {
   receiptFromWeb3,
   logFromWeb3
 } = require('rainbow-bridge-eth2near-block-relay')
-const { tokenAddressParam, tokenAccountParam } = require('./deploy-token')
 const { NearMintableToken } = require('./near-mintable-token')
 
 let initialCmd
@@ -33,18 +31,18 @@ class TransferETHERC20ToNear {
     robustWeb3,
     ethERC20Contract,
     amount,
-    ethSenderAccount
+    ethSenderAccount,
+    ethLockerAddress
   }) {
     // Approve tokens for transfer.
-    const lockerAddress = RainbowConfig.getParam('eth-locker-address')
     try {
       console.log(
-        `Approving token transfer to ${lockerAddress} ${(new BN(amount)).toString()}.`
+        `Approving token transfer to ${ethLockerAddress} ${(new BN(amount)).toString()}.`
       )
       await robustWeb3.callContract(
         ethERC20Contract,
         'approve',
-        [lockerAddress, new BN(amount)],
+        [ethLockerAddress, new BN(amount)],
         {
           from: ethSenderAccount,
           gas: 5000000
@@ -61,11 +59,11 @@ class TransferETHERC20ToNear {
 
   static async lock ({
     robustWeb3,
-    ethTokenLockerContract,
-    tokenAddress,
     amount,
-    nearReceiverAccount,
-    ethSenderAccount
+    ethTokenLockerContract,
+    ethErc20Address,
+    ethSenderAccount,
+    nearReceiverAccount
   }) {
     try {
       console.log(
@@ -76,7 +74,7 @@ class TransferETHERC20ToNear {
       const transaction = await robustWeb3.callContract(
         ethTokenLockerContract,
         'lockToken',
-        [tokenAddress, new BN(amount), nearReceiverAccount],
+        [ethErc20Address, new BN(amount), nearReceiverAccount],
         {
           from: ethSenderAccount,
           gas: 5000000
@@ -188,14 +186,13 @@ class TransferETHERC20ToNear {
     }
     TransferETHERC20ToNear.recordTransferLog({
       finished: 'block-safe',
-      proofLocker: proofLocker,
-      newOwnerId: newOwnerId
+      proofLocker,
+      newOwnerId
     })
   }
 
   static async deposit ({
     proofLocker,
-    nearFactoryContract,
     nearFactoryContractBorsh,
     nearTokenContract,
     newOwnerId
@@ -262,22 +259,30 @@ class TransferETHERC20ToNear {
     }
   }
 
-  static async execute (command) {
-    initialCmd = command.parent.rawArgs.join(' ')
+  static async execute ({
+    parent: { rawArgs },
+    amount,
+    ethSenderSk,
+    nearReceiverAccount,
+    nearMasterAccount: nearMasterAccountId,
+    nearNetworkId,
+    nearNodeUrl,
+    nearMasterSk,
+    nearTokenFactoryAccount,
+    nearClientAccount,
+    nearErc20Account,
+    ethNodeUrl,
+    ethErc20AbiPath,
+    ethErc20Address,
+    ethLockerAbiPath,
+    ethLockerAddress
+  }) {
+    initialCmd = rawArgs.join(' ')
     let transferLog = TransferETHERC20ToNear.loadTransferLog()
-    const amount = command.amount
-    const ethSenderSk = command.ethSenderSk
-    const nearReceiverAccount = command.nearReceiverAccount
-    const tokenAddress = command.tokenName
-      ? RainbowConfig.getParam(tokenAddressParam(command.tokenName))
-      : RainbowConfig.getParam('eth-erc20-address')
-    const tokenAccount = command.tokenName
-      ? RainbowConfig.getParam(tokenAccountParam(command.tokenName))
-      : RainbowConfig.getParam('near-erc20-account')
-    console.log(`Using ETH address ${tokenAddress}`)
+    console.log(`Using ETH address ${ethErc20Address}`)
 
     // @ts-ignore
-    const robustWeb3 = new RobustWeb3(RainbowConfig.getParam('eth-node-url'))
+    const robustWeb3 = new RobustWeb3(ethNodeUrl)
     const web3 = robustWeb3.web3
     let ethSenderAccount = web3.eth.accounts.privateKeyToAccount(
       normalizeEthKey(ethSenderSk)
@@ -288,22 +293,20 @@ class TransferETHERC20ToNear {
 
     const ethERC20Contract = new web3.eth.Contract(
       // @ts-ignore
-      JSON.parse(fs.readFileSync(RainbowConfig.getParam('eth-erc20-abi-path'))),
-      tokenAddress
+      JSON.parse(fs.readFileSync(ethErc20AbiPath)),
+      ethErc20Address
     )
 
-    const nearMasterAccountId = RainbowConfig.getParam('near-master-account')
-    console.log(nearMasterAccountId)
     // @ts-ignore
     const keyStore = new nearAPI.keyStores.InMemoryKeyStore()
     await keyStore.setKey(
-      RainbowConfig.getParam('near-network-id'),
+      nearNetworkId,
       nearMasterAccountId,
-      nearAPI.KeyPair.fromString(RainbowConfig.getParam('near-master-sk'))
+      nearAPI.KeyPair.fromString(nearMasterSk)
     )
     const near = await nearAPI.connect({
-      nodeUrl: RainbowConfig.getParam('near-node-url'),
-      networkId: RainbowConfig.getParam('near-network-id'),
+      nodeUrl: nearNodeUrl,
+      networkId: nearNetworkId,
       masterAccount: nearMasterAccountId,
       deps: { keyStore: keyStore }
     })
@@ -313,17 +316,9 @@ class TransferETHERC20ToNear {
     )
     await verifyAccount(near, nearMasterAccountId)
 
-    const nearFactoryContract = new nearAPI.Contract(
-      nearMasterAccount,
-      RainbowConfig.getParam('near-token-factory-account'),
-      {
-        changeMethods: ['deposit'],
-        viewMethods: []
-      }
-    )
     const nearTokenContract = new nearAPI.Contract(
       nearMasterAccount,
-      tokenAccount,
+      nearErc20Account,
       {
         changeMethods: [],
         viewMethods: ['get_balance']
@@ -331,25 +326,22 @@ class TransferETHERC20ToNear {
     )
     const nearFactoryContractBorsh = new NearMintableToken(
       nearMasterAccount,
-      RainbowConfig.getParam('near-token-factory-account')
+      nearTokenFactoryAccount
     )
     await nearFactoryContractBorsh.accessKeyInit()
 
     const extractor = new EthProofExtractor()
-    extractor.initialize(RainbowConfig.getParam('eth-node-url'))
+    extractor.initialize(ethNodeUrl)
 
     const ethTokenLockerContract = new web3.eth.Contract(
       // @ts-ignore
-      JSON.parse(
-        fs.readFileSync(RainbowConfig.getParam('eth-locker-abi-path'))
-      ),
-      RainbowConfig.getParam('eth-locker-address')
+      JSON.parse(fs.readFileSync(ethLockerAbiPath)),
+      ethLockerAddress
     )
 
-    const clientAccount = RainbowConfig.getParam('near-client-account')
     const ethOnNearClientContract = new EthOnNearClientContract(
       nearMasterAccount,
-      clientAccount
+      nearClientAccount
     )
 
     if (transferLog.finished === undefined) {
@@ -366,7 +358,8 @@ class TransferETHERC20ToNear {
         robustWeb3,
         ethERC20Contract,
         amount,
-        ethSenderAccount
+        ethSenderAccount,
+        ethLockerAddress
       })
       transferLog = TransferETHERC20ToNear.loadTransferLog()
     }
@@ -374,7 +367,7 @@ class TransferETHERC20ToNear {
       await TransferETHERC20ToNear.lock({
         robustWeb3,
         ethTokenLockerContract,
-        tokenAddress,
+        ethErc20Address,
         amount,
         nearReceiverAccount,
         ethSenderAccount
@@ -398,7 +391,6 @@ class TransferETHERC20ToNear {
     }
     if (transferLog.finished === 'block-safe') {
       await TransferETHERC20ToNear.deposit({
-        nearFactoryContract,
         nearFactoryContractBorsh,
         nearTokenContract,
         ...transferLog

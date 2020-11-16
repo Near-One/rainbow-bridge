@@ -1,12 +1,23 @@
 const ProcessManager = require('pm2')
 const { spawnProcess } = require('./helpers')
 const { Near2EthRelay } = require('rainbow-bridge-near2eth-block-relay')
-const { RainbowConfig } = require('rainbow-bridge-utils')
 const path = require('path')
 
 class StartNear2EthRelayCommand {
-  static async execute () {
-    if (RainbowConfig.getParam('daemon') === 'true') {
+  static async execute ({
+    daemon,
+    nearNodeUrl,
+    nearNetworkId,
+    ethNodeUrl,
+    ethMasterSk,
+    ethClientAbiPath,
+    ethClientAddress,
+    ethGasMultiplier,
+    near2ethRelayMinDelay,
+    near2ethRelayMaxDelay,
+    near2ethRelayErrorDelay
+  }) {
+    if (daemon === 'true') {
       ProcessManager.connect((err) => {
         if (err) {
           console.log(
@@ -20,7 +31,20 @@ class StartNear2EthRelayCommand {
           interpreter: 'node',
           error_file: '~/.rainbow/logs/near2eth-relay/err.log',
           out_file: '~/.rainbow/logs/near2eth-relay/out.log',
-          args: ['start', 'near2eth-relay', ...RainbowConfig.getArgsNoDaemon()],
+          args: [
+            'start', 'near2eth-relay',
+            '--near-node-url', nearNodeUrl,
+            '--near-network-id', nearNetworkId,
+            '--eth-node-url', ethNodeUrl,
+            '--eth-master-sk', ethMasterSk,
+            '--eth-client-abi-path', ethClientAbiPath,
+            '--eth-client-address', ethClientAddress,
+            '--eth-gas-multiplier', ethGasMultiplier,
+            '--near2eth-relay-min-delay', near2ethRelayMinDelay,
+            '--near2eth-relay-max-delay', near2ethRelayMaxDelay,
+            '--near2eth-relay-error-delay', near2ethRelayErrorDelay,
+            '--daemon', 'false'
+          ],
           wait_ready: true,
           kill_timeout: 60000,
           logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS'
@@ -28,8 +52,21 @@ class StartNear2EthRelayCommand {
       })
     } else {
       const relay = new Near2EthRelay()
-      await relay.initialize()
-      await relay.run()
+      await relay.initialize({
+        nearNodeUrl,
+        nearNetworkId,
+        ethNodeUrl,
+        ethMasterSk,
+        ethClientAbiPath,
+        ethClientAddress,
+        ethGasMultiplier
+      })
+      await relay.run({
+        near2ethRelayMinDelay,
+        near2ethRelayMaxDelay,
+        near2ethRelayErrorDelay,
+        ethGasMultiplier
+      })
     }
   }
 }
