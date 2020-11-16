@@ -32,7 +32,3 @@ function getEthErc20Balance ({ ethAccountAddress, ethNodeUrl, ethErc20Address, e
 
 exports.getEthErc20Balance = getEthErc20Balance
 exports.getEthAddressBySecretKey = getEthAddressBySecretKey
-
-require('make-runnable/custom')({
-  printOutputFrame: false
-})
