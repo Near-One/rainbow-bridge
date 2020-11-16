@@ -23,7 +23,8 @@ const { DangerDeployMyERC20 } = require('./commands/danger-deploy-myerc20')
 const {
   TransferETHERC20ToNear,
   TransferEthERC20FromNear,
-  DeployToken
+  DeployToken,
+  getEthErc20Balance
 } = require('rainbow-bridge-testing')
 const { ETHDump } = require('./commands/eth-dump')
 const { NearDump } = require('./commands/near-dump')
@@ -644,7 +645,28 @@ RainbowConfig.addOptions(
   ]
 )
 
-// Testing command
+// Testing commands
+const testingCommand = program
+  .command('TESTING')
+  .description(
+    'Commands that should only be used for testing purpose.'
+  )
+
+RainbowConfig.addOptions(
+  testingCommand
+    .command('get-eth-erc20-balance <eth_secret_key>')
+    .description('Get ERC20 balance on Ethereum.'),
+  async (ethSecretKey, args) => {
+    await getEthErc20Balance({ ethSecretKey, ...args })
+  },
+  [
+    'eth-node-url',
+    'eth-erc20-address',
+    'eth-erc20-abi-path'
+  ]
+)
+
+// Danger Testing commands
 const dangerCommand = program
   .command('DANGER')
   .description(
