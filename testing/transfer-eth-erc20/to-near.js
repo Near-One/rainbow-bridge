@@ -37,12 +37,12 @@ class TransferETHERC20ToNear {
     // Approve tokens for transfer.
     try {
       console.log(
-        `Approving token transfer to ${ethLockerAddress} ${Number(amount)}.`
+        `Approving token transfer to ${ethLockerAddress} ${(new BN(amount)).toString()}.`
       )
       await robustWeb3.callContract(
         ethERC20Contract,
         'approve',
-        [ethLockerAddress, Number(amount)],
+        [ethLockerAddress, new BN(amount)],
         {
           from: ethSenderAccount,
           gas: 5000000
@@ -67,14 +67,14 @@ class TransferETHERC20ToNear {
   }) {
     try {
       console.log(
-        `Transferring tokens from the ERC20 account to the token locker account ${Number(
+        `Transferring tokens from the ERC20 account to the token locker account ${(new BN(
           amount
-        )}.`
+        )).toString()}.`
       )
       const transaction = await robustWeb3.callContract(
         ethTokenLockerContract,
         'lockToken',
-        [ethErc20Address, Number(amount), nearReceiverAccount],
+        [ethErc20Address, new BN(amount), nearReceiverAccount],
         {
           from: ethSenderAccount,
           gas: 5000000
