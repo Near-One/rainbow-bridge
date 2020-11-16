@@ -16,7 +16,6 @@ class RainbowConfig {
   // Adds a list of options to the given commander action.
   // options is a list of string representing parameter name.
   static addOptions (command, handler, options) {
-    let prev = command
     for (const option of options) {
       const declaration = this.paramDeclarations[option]
       const paramCase = changeCase.paramCase(option)
@@ -28,14 +27,14 @@ class RainbowConfig {
           defaultValue = undefined
         }
       }
-      prev = prev.option(
+      command = command.option(
         `--${paramCase} <${snakeCase}>`,
         declaration.description,
         (value, previous) => this._processArg(option, value, previous),
         defaultValue
       )
     }
-    prev.action(async (...args) => {
+    command.action(async (...args) => {
       const newConfigValues = await handler(...args)
       if (newConfigValues) {
         for (const [optionCamelCase, optionValue] of Object.entries(newConfigValues)) {
