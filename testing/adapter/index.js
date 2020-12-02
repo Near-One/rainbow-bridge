@@ -7,6 +7,21 @@ const {
 
 const { exit } = require('process')
 
+function mintErc20 ({ ethAccountAddress, amount, ethNodeUrl, ethErc20Address, ethErc20AbiPath }) {
+  const robustWeb3 = new RobustWeb3(ethNodeUrl)
+  const web3 = robustWeb3.web3
+  const ethContract = new web3.eth.Contract(
+    JSON.parse(fs.readFileSync(ethErc20AbiPath)),
+    remove0x(ethErc20Address)
+  )
+  ethContract.methods
+    .mint(ethAccountAddress, Number(amount))
+    .send({ from: ethAccountAddress, gas: 5000000 }).then(result => {
+      console.log('OK')
+      exit(0)
+    })
+}
+
 function getEthAddressBySecretKey ({ ethSecretKey, ethNodeUrl }) {
   const robustWeb3 = new RobustWeb3(ethNodeUrl)
   const web3 = robustWeb3.web3
@@ -24,11 +39,12 @@ function getEthErc20Balance ({ ethAccountAddress, ethNodeUrl, ethErc20Address, e
     JSON.parse(fs.readFileSync(ethErc20AbiPath)),
     remove0x(ethErc20Address)
   )
-  return ethContract.methods.balanceOf(remove0x(ethAccountAddress)).call().then(result => {
+  ethContract.methods.balanceOf(remove0x(ethAccountAddress)).call().then(result => {
     console.log(result)
     exit(0)
   })
 }
 
+exports.mintErc20 = mintErc20
 exports.getEthErc20Balance = getEthErc20Balance
 exports.getEthAddressBySecretKey = getEthAddressBySecretKey
