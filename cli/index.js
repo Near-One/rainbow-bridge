@@ -24,6 +24,7 @@ const {
   TransferETHERC20ToNear,
   TransferEthERC20FromNear,
   DeployToken,
+  mintErc20,
   getEthErc20Balance,
   getEthAddressBySecretKey
 } = require('rainbow-bridge-testing')
@@ -652,6 +653,20 @@ const testingCommand = program
   .description(
     'Commands that should only be used for testing purpose.'
   )
+
+RainbowConfig.addOptions(
+  testingCommand
+    .command('mint-erc20-tokens <eth_account_address> <amount>')
+    .description('Mint ERC20 test token for specific account address'),
+  async (ethAccountAddress, amount, args) => {
+    await mintErc20({ ethAccountAddress, amount, ...args })
+  },
+  [
+    'eth-node-url',
+    'eth-erc20-address',
+    'eth-erc20-abi-path'
+  ]
+)
 
 RainbowConfig.addOptions(
   testingCommand
