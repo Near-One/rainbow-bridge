@@ -4,7 +4,7 @@ const BN = require('bn.js')
 const { RobustWeb3, sleep, txnStatus } = require('rainbow-bridge-utils')
 const { web3BlockToRlp, EthOnNearClientContract } = require('./eth-on-near-client')
 const { EthOnNearProverContract } = require('./eth-on-near-prover')
-const { EthProofExtractor, logFromWeb3, receiptFromWeb3 } = require('./eth-proof-extractor')
+const { EthProofExtractor, logFromWeb3, receiptFromWeb3, ethToNearFindProof } = require('./eth-proof-extractor')
 
 // TODO: enable configuration
 const MAX_SUBMIT_BLOCK = 10
@@ -177,3 +177,4 @@ exports.EthOnNearClientContract = EthOnNearClientContract
 exports.EthOnNearProverContract = EthOnNearProverContract
 exports.logFromWeb3 = logFromWeb3
 exports.receiptFromWeb3 = receiptFromWeb3
+exports.ethToNearFindProof = ethToNearFindProof

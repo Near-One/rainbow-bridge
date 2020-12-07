@@ -6,7 +6,10 @@ const {
 const {
   mintErc20,
   getEthErc20Balance,
-  getEthAddressBySecretKey
+  getEthAddressBySecretKey,
+  ethToNearApprove,
+  ethToNearLock,
+  ethToNearFindProof
 } = require('./adapter')
 
 exports.TransferETHERC20ToNear = TransferETHERC20ToNear
@@ -15,3 +18,6 @@ exports.DeployToken = DeployToken
 exports.mintErc20 = mintErc20
 exports.getEthErc20Balance = getEthErc20Balance
 exports.getEthAddressBySecretKey = getEthAddressBySecretKey
+exports.ethToNearApprove = ethToNearApprove
+exports.ethToNearLock = ethToNearLock
+exports.ethToNearFindProof = ethToNearFindProof
