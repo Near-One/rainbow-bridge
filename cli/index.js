@@ -25,10 +25,12 @@ const {
   TransferEthERC20FromNear,
   DeployToken,
   mintErc20,
-  getEthErc20Balance,
-  getEthAddressBySecretKey,
+  getErc20Balance,
+  getClientBlockHeightHash,
+  getAddressBySecretKey,
   ethToNearApprove,
-  ethToNearLock
+  ethToNearLock,
+  nearToEthUnlock
 } = require('rainbow-bridge-testing')
 const { ETHDump } = require('./commands/eth-dump')
 const { NearDump } = require('./commands/near-dump')
@@ -688,10 +690,10 @@ RainbowConfig.addOptions(
 
 RainbowConfig.addOptions(
   testingCommand
-    .command('get-eth-account-address <eth_secret_key>')
+    .command('get-account-address <eth_secret_key>')
     .description('Get account address accessible by its secret key on Ethereum.'),
   async (ethSecretKey, args) => {
-    await getEthAddressBySecretKey({ ethSecretKey, ...args })
+    await getAddressBySecretKey({ ethSecretKey, ...args })
   },
   [
     'eth-node-url'
@@ -700,18 +702,33 @@ RainbowConfig.addOptions(
 
 RainbowConfig.addOptions(
   testingCommand
-    .command('get-eth-erc20-balance <eth_account_address> <token_name>')
+    .command('get-erc20-balance <eth_account_address> <token_name>')
     .description('Get ERC20 balance on Ethereum for specific token (e.g. erc20).'),
   async (ethAccountAddress, tokenName, args) => {
     if (tokenName) {
       args.ethErc20Address = RainbowConfig.getParam(`eth-${tokenName}-address`)
     }
-    await getEthErc20Balance({ ethAccountAddress, ...args })
+    await getErc20Balance({ ethAccountAddress, ...args })
   },
   [
     'eth-node-url',
     'eth-erc20-address',
     'eth-erc20-abi-path'
+  ]
+)
+
+RainbowConfig.addOptions(
+  testingCommand
+    .command('get-client-block-height-hash')
+    .description('Get last block height available on Eth client.'),
+  async (args) => {
+    await getClientBlockHeightHash(args)
+  },
+  [
+    'eth-node-url',
+    'eth-master-sk',
+    'eth-client-abi-path',
+    'eth-client-address'
   ]
 )
 
@@ -748,6 +765,24 @@ RainbowConfig.addOptions(
     'eth-erc20-address',
     'eth-locker-abi-path',
     'eth-locker-address'
+  ]
+)
+
+RainbowConfig.addOptions(
+  testingCommand
+    .command('near-to-eth-unlock <block_height> <proof>')
+    .description('Unlock ERC20 tokens'),
+  async (blockHeight, proof, args) => {
+    await nearToEthUnlock({ blockHeight, proof, ...args })
+  },
+  [
+    'eth-node-url',
+    'eth-master-sk',
+    'eth-locker-abi-path',
+    'eth-locker-address',
+    'eth-prover-abi-path',
+    'eth-prover-address',
+    'eth-gas-multiplier'
   ]
 )
 

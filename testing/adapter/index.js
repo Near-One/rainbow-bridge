@@ -1,9 +1,12 @@
 const fs = require('fs')
+const bs58 = require('bs58')
+const { toBuffer } = require('eth-util-lite')
 const {
   RobustWeb3,
   remove0x,
   normalizeEthKey,
-  JSONreplacer
+  JSONreplacer,
+  borshifyOutcomeProof
 } = require('rainbow-bridge-utils')
 
 async function mintErc20 ({ ethAccountAddress, amount, ethNodeUrl, ethErc20Address, ethErc20AbiPath }) {
@@ -21,7 +24,7 @@ async function mintErc20 ({ ethAccountAddress, amount, ethNodeUrl, ethErc20Addre
   web3.currentProvider.connection.close()
 }
 
-function getEthAddressBySecretKey ({ ethSecretKey, ethNodeUrl }) {
+function getAddressBySecretKey ({ ethSecretKey, ethNodeUrl }) {
   const robustWeb3 = new RobustWeb3(ethNodeUrl)
   const web3 = robustWeb3.web3
   try {
@@ -35,7 +38,7 @@ function getEthAddressBySecretKey ({ ethSecretKey, ethNodeUrl }) {
   web3.currentProvider.connection.close()
 }
 
-async function getEthErc20Balance ({ ethAccountAddress, ethNodeUrl, ethErc20Address, ethErc20AbiPath }) {
+async function getErc20Balance ({ ethAccountAddress, ethNodeUrl, ethErc20Address, ethErc20AbiPath }) {
   const robustWeb3 = new RobustWeb3(ethNodeUrl)
   const web3 = robustWeb3.web3
   try {
@@ -101,8 +104,91 @@ async function ethToNearLock ({ ethAccountAddress, amount, nearAccountName, ethN
   web3.currentProvider.connection.close()
 }
 
+async function getClientBlockHeightHash ({
+  ethNodeUrl,
+  ethClientAddress,
+  ethClientAbiPath,
+  ethMasterAccount
+}) {
+  const robustWeb3 = new RobustWeb3(ethNodeUrl)
+  const web3 = robustWeb3.web3
+  try {
+    const clientContract = new web3.eth.Contract(
+      JSON.parse(fs.readFileSync(ethClientAbiPath)),
+      ethClientAddress,
+      {
+        from: ethMasterAccount,
+        handleRevert: true
+      }
+    )
+
+    const clientState = await clientContract.methods.bridgeState().call()
+    const clientBlockHash = bs58.encode(
+      toBuffer(
+        await clientContract.methods.blockHashes(clientState.currentHeight).call()
+      )
+    )
+    console.log(clientState.currentHeight, clientBlockHash)
+  } catch (error) {
+    console.log('Failed', error.toString())
+  }
+  web3.currentProvider.connection.close()
+}
+
+async function nearToEthUnlock ({
+  blockHeight,
+  proof,
+  ethNodeUrl,
+  ethMasterSk,
+  ethProverAddress,
+  ethProverAbiPath,
+  ethLockerAddress,
+  ethLockerAbiPath,
+  ethGasMultiplier
+}) {
+  const robustWeb3 = new RobustWeb3(ethNodeUrl)
+  const web3 = robustWeb3.web3
+  try {
+    const ethMasterAccount = web3.eth.accounts.privateKeyToAccount(normalizeEthKey(ethMasterSk)).address
+    const proverContract = new web3.eth.Contract(
+      JSON.parse(fs.readFileSync(ethProverAbiPath)),
+      ethProverAddress,
+      {
+        from: ethMasterAccount,
+        handleRevert: true
+      }
+    )
+    const ethTokenLockerContract = new web3.eth.Contract(
+      JSON.parse(fs.readFileSync(ethLockerAbiPath)),
+      ethLockerAddress
+    )
+    const borshProof = borshifyOutcomeProof(JSON.parse(proof))
+    blockHeight = Number(blockHeight)
+    await proverContract.methods
+      .proveOutcome(borshProof, blockHeight)
+      .call()
+    await robustWeb3.callContract(
+      ethTokenLockerContract,
+      'unlockToken',
+      [borshProof, blockHeight],
+      {
+        from: ethMasterAccount,
+        gas: 5000000,
+        handleRevert: true,
+        gasPrice: Number(await robustWeb3.web3.eth.getGasPrice() * ethGasMultiplier)
+      }
+    )
+    console.log('OK')
+  } catch (error) {
+    console.log('Failed', error.toString())
+  }
+  web3.currentProvider.connection.close()
+}
+
 exports.ethToNearApprove = ethToNearApprove
 exports.ethToNearLock = ethToNearLock
+exports.nearToEthUnlock = nearToEthUnlock
 exports.mintErc20 = mintErc20
-exports.getEthErc20Balance = getEthErc20Balance
-exports.getEthAddressBySecretKey = getEthAddressBySecretKey
+exports.getErc20Balance = getErc20Balance
+exports.getAddressBySecretKey = getAddressBySecretKey
+exports.getClientBlockHeightHash = getClientBlockHeightHash
