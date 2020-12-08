@@ -28,10 +28,19 @@ function getScript (name) {
   return path.resolve(path.join(__dirname, `scripts/${name}.sh`))
 }
 
+// This method is to disallow JSON.stringify to convert automatically binary array to {'blah':..., 'Buffer':[...]} structure.
+function JSONreplacer (key, value) {
+  if (typeof value === 'object' && value !== null && value.type === 'Buffer') {
+    return value.data
+  }
+  return value
+}
+
 module.exports = {
   getScript,
   backoff,
   nearAPI,
+  JSONreplacer,
   Web3,
   sleep,
   RobustWeb3,

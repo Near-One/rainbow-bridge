@@ -260,7 +260,7 @@ class TransferETHERC20ToNear {
   }
 
   static async execute ({
-    parent: { rawArgs },
+    parent: { args },
     amount,
     ethSenderSk,
     nearReceiverAccount,
@@ -277,7 +277,7 @@ class TransferETHERC20ToNear {
     ethLockerAbiPath,
     ethLockerAddress
   }) {
-    initialCmd = rawArgs.join(' ')
+    initialCmd = args.join(' ')
     let transferLog = TransferETHERC20ToNear.loadTransferLog()
     console.log(`Using ETH address ${ethErc20Address}`)
 

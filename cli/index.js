@@ -26,10 +26,13 @@ const {
   DeployToken,
   mintErc20,
   getEthErc20Balance,
-  getEthAddressBySecretKey
+  getEthAddressBySecretKey,
+  ethToNearApprove,
+  ethToNearLock
 } = require('rainbow-bridge-testing')
 const { ETHDump } = require('./commands/eth-dump')
 const { NearDump } = require('./commands/near-dump')
+const { ethToNearFindProof } = require('rainbow-bridge-eth2near-block-relay')
 const { RainbowConfig } = require('rainbow-bridge-utils')
 const {
   InitNearContracts,
@@ -564,6 +567,25 @@ RainbowConfig.addOptions(
 
 RainbowConfig.addOptions(
   program
+    .command('eth-to-near-find-proof <locked_event>')
+    .description('Get eth-to-near proof by locked event.'),
+  async (lockedEventRaw, args) => {
+    await ethToNearFindProof({ lockedEventRaw, ...args })
+  },
+  [
+    'eth-node-url'
+  ]
+)
+
+// Testing commands
+const testingCommand = program
+  .command('TESTING')
+  .description(
+    'Commands that should only be used for testing purpose.'
+  )
+
+RainbowConfig.addOptions(
+  testingCommand
     .command('transfer-eth-erc20-to-near')
     .option('--amount <amount>', 'Amount of ERC20 tokens to transfer')
     .option(
@@ -602,7 +624,7 @@ RainbowConfig.addOptions(
 )
 
 RainbowConfig.addOptions(
-  program
+  testingCommand
     .command('transfer-eth-erc20-from-near')
     .option('--amount <amount>', 'Amount of ERC20 tokens to transfer')
     .option(
@@ -647,18 +669,14 @@ RainbowConfig.addOptions(
   ]
 )
 
-// Testing commands
-const testingCommand = program
-  .command('TESTING')
-  .description(
-    'Commands that should only be used for testing purpose.'
-  )
-
 RainbowConfig.addOptions(
   testingCommand
-    .command('mint-erc20-tokens <eth_account_address> <amount>')
+    .command('mint-erc20-tokens <eth_account_address> <amount> <token_name>')
     .description('Mint ERC20 test token for specific account address'),
-  async (ethAccountAddress, amount, args) => {
+  async (ethAccountAddress, amount, tokenName, args) => {
+    if (tokenName) {
+      args.ethErc20Address = RainbowConfig.getParam(`eth-${tokenName}-address`)
+    }
     await mintErc20({ ethAccountAddress, amount, ...args })
   },
   [
@@ -682,15 +700,54 @@ RainbowConfig.addOptions(
 
 RainbowConfig.addOptions(
   testingCommand
-    .command('get-eth-erc20-balance <eth_account_address>')
-    .description('Get ERC20 balance on Ethereum.'),
-  async (ethAccountAddress, args) => {
+    .command('get-eth-erc20-balance <eth_account_address> <token_name>')
+    .description('Get ERC20 balance on Ethereum for specific token (e.g. erc20).'),
+  async (ethAccountAddress, tokenName, args) => {
+    if (tokenName) {
+      args.ethErc20Address = RainbowConfig.getParam(`eth-${tokenName}-address`)
+    }
     await getEthErc20Balance({ ethAccountAddress, ...args })
   },
   [
     'eth-node-url',
     'eth-erc20-address',
     'eth-erc20-abi-path'
+  ]
+)
+
+RainbowConfig.addOptions(
+  testingCommand
+    .command('eth-to-near-approve <eth_account_address> <amount> <token_name>')
+    .description('Approve ERC20 token to lock'),
+  async (ethAccountAddress, amount, tokenName, args) => {
+    if (tokenName) {
+      args.ethErc20Address = RainbowConfig.getParam(`eth-${tokenName}-address`)
+    }
+    await ethToNearApprove({ ethAccountAddress, amount, ...args })
+  },
+  [
+    'eth-node-url',
+    'eth-erc20-address',
+    'eth-erc20-abi-path',
+    'eth-locker-address'
+  ]
+)
+
+RainbowConfig.addOptions(
+  testingCommand
+    .command('eth-to-near-lock <eth_account_address> <near_account_name> <amount> <token_name>')
+    .description('Lock ERC20 tokens'),
+  async (ethAccountAddress, nearAccountName, amount, tokenName, args) => {
+    if (tokenName) {
+      args.ethErc20Address = RainbowConfig.getParam(`eth-${tokenName}-address`)
+    }
+    await ethToNearLock({ ethAccountAddress, nearAccountName, amount, ...args })
+  },
+  [
+    'eth-node-url',
+    'eth-erc20-address',
+    'eth-locker-abi-path',
+    'eth-locker-address'
   ]
 )
 
