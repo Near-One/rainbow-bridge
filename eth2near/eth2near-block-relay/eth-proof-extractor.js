@@ -79,12 +79,13 @@ async function ethToNearFindProof ({ lockedEventRaw, ethNodeUrl }) {
     const receipt = await extractor.extractReceipt(lockedEvent.transactionHash)
     const block = await extractor.extractBlock(receipt.blockNumber)
     const tree = await extractor.buildTrie(block)
-    const proof = await extractor.extractProof(
+    const extractedProof = await extractor.extractProof(
       web3,
       block,
       tree,
       receipt.transactionIndex
     )
+    // destroy extractor here to close its web3 connection
     extractor.destroy()
 
     let txLogIndex = -1
@@ -102,12 +103,12 @@ async function ethToNearFindProof ({ lockedEventRaw, ethNodeUrl }) {
     }
     if (logFound) {
       const logEntryData = logFromWeb3(log).serialize()
-      const receiptIndex = proof.txIndex
+      const receiptIndex = extractedProof.txIndex
       const receiptData = receiptFromWeb3(receipt).serialize()
-      const headerData = proof.header_rlp
-      const _proof = []
-      for (const node of proof.receiptProof) {
-        _proof.push(utils.rlp.encode(node))
+      const headerData = extractedProof.header_rlp
+      const proof = []
+      for (const node of extractedProof.receiptProof) {
+        proof.push(utils.rlp.encode(node))
       }
       const proofLocker = {
         log_index: txLogIndex,
@@ -115,7 +116,7 @@ async function ethToNearFindProof ({ lockedEventRaw, ethNodeUrl }) {
         receipt_index: receiptIndex,
         receipt_data: receiptData,
         header_data: headerData,
-        proof: _proof
+        proof
       }
       console.log(JSON.stringify({ block_number: block.number, proof_locker: proofLocker }, JSONreplacer))
     } else {

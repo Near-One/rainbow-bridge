@@ -337,7 +337,7 @@ class TransferEthERC20FromNear {
   }
 
   static async execute ({
-    parent: { rawArgs },
+    parent: { args },
     amount,
     nearSenderAccount: nearSenderAccountId,
     ethReceiverAddress,
@@ -357,7 +357,7 @@ class TransferEthERC20FromNear {
     ethErc20Address,
     ethGasMultiplier
   }) {
-    initialCmd = rawArgs.join(' ')
+    initialCmd = args.join(' ')
     ethReceiverAddress = remove0x(ethReceiverAddress)
     const keyStore = new nearAPI.keyStores.InMemoryKeyStore()
     await keyStore.setKey(
