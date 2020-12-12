@@ -780,8 +780,6 @@ RainbowConfig.addOptions(
     'eth-master-sk',
     'eth-locker-abi-path',
     'eth-locker-address',
-    'eth-prover-abi-path',
-    'eth-prover-address',
     'eth-gas-multiplier'
   ]
 )
