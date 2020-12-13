@@ -8,7 +8,20 @@ const {
   JSONreplacer,
   borshifyOutcomeProof
 } = require('rainbow-bridge-utils')
+const { exit } = require('process')
 
+// === JS Adapter function agreement ===
+//
+// All functions return void type because there is no external usage from JS expected.
+// Execution results should be printed to stdout and they will be parsed later in pytest.
+// To distinguish timeout from successful function execution, all changing functions must return 'OK' in the first line of output.
+//
+// Unfortunately, in case of reverting txs web3 not closes the connection even after calling `close()`.
+// That's why all functions must finish with exit(0) to make sure not getting stuck by any reason.
+//
+// Please follow the agreement when adding new functions. XOXO
+
+// Change
 async function mintErc20 ({ ethAccountAddress, amount, ethNodeUrl, ethErc20Address, ethErc20AbiPath }) {
   const robustWeb3 = new RobustWeb3(ethNodeUrl)
   const web3 = robustWeb3.web3
@@ -18,12 +31,15 @@ async function mintErc20 ({ ethAccountAddress, amount, ethNodeUrl, ethErc20Addre
       remove0x(ethErc20Address)
     )
     await ethContract.methods.mint(ethAccountAddress, Number(amount)).send({ from: ethAccountAddress, gas: 5000000 })
+    console.log('OK')
   } catch (error) {
     console.log('Failed', error.toString())
   }
   web3.currentProvider.connection.close()
+  exit(0)
 }
 
+// View
 function getAddressBySecretKey ({ ethSecretKey, ethNodeUrl }) {
   const robustWeb3 = new RobustWeb3(ethNodeUrl)
   const web3 = robustWeb3.web3
@@ -36,8 +52,10 @@ function getAddressBySecretKey ({ ethSecretKey, ethNodeUrl }) {
     console.log('Failed', error.toString())
   }
   web3.currentProvider.connection.close()
+  exit(0)
 }
 
+// View
 async function getErc20Balance ({ ethAccountAddress, ethNodeUrl, ethErc20Address, ethErc20AbiPath }) {
   const robustWeb3 = new RobustWeb3(ethNodeUrl)
   const web3 = robustWeb3.web3
@@ -52,8 +70,10 @@ async function getErc20Balance ({ ethAccountAddress, ethNodeUrl, ethErc20Address
     console.log('Failed', error.toString())
   }
   web3.currentProvider.connection.close()
+  exit(0)
 }
 
+// Change
 async function ethToNearApprove ({ ethAccountAddress, amount, ethNodeUrl, ethErc20Address, ethErc20AbiPath, ethLockerAddress }) {
   const robustWeb3 = new RobustWeb3(ethNodeUrl)
   const web3 = robustWeb3.web3
@@ -76,8 +96,10 @@ async function ethToNearApprove ({ ethAccountAddress, amount, ethNodeUrl, ethErc
     console.log('Failed', error.toString())
   }
   web3.currentProvider.connection.close()
+  exit(0)
 }
 
+// Change
 async function ethToNearLock ({ ethAccountAddress, amount, nearAccountName, ethNodeUrl, ethErc20Address, ethLockerAbiPath, ethLockerAddress }) {
   const robustWeb3 = new RobustWeb3(ethNodeUrl)
   const web3 = robustWeb3.web3
@@ -102,8 +124,10 @@ async function ethToNearLock ({ ethAccountAddress, amount, nearAccountName, ethN
     console.log('Failed', error.toString())
   }
   web3.currentProvider.connection.close()
+  exit(0)
 }
 
+// View
 async function getClientBlockHeightHash ({
   ethNodeUrl,
   ethClientAddress,
@@ -121,7 +145,6 @@ async function getClientBlockHeightHash ({
         handleRevert: true
       }
     )
-
     const clientState = await clientContract.methods.bridgeState().call()
     const clientBlockHash = bs58.encode(
       toBuffer(
@@ -133,15 +156,15 @@ async function getClientBlockHeightHash ({
     console.log('Failed', error.toString())
   }
   web3.currentProvider.connection.close()
+  exit(0)
 }
 
+// Change
 async function nearToEthUnlock ({
   blockHeight,
   proof,
   ethNodeUrl,
   ethMasterSk,
-  ethProverAddress,
-  ethProverAbiPath,
   ethLockerAddress,
   ethLockerAbiPath,
   ethGasMultiplier
@@ -150,23 +173,12 @@ async function nearToEthUnlock ({
   const web3 = robustWeb3.web3
   try {
     const ethMasterAccount = web3.eth.accounts.privateKeyToAccount(normalizeEthKey(ethMasterSk)).address
-    const proverContract = new web3.eth.Contract(
-      JSON.parse(fs.readFileSync(ethProverAbiPath)),
-      ethProverAddress,
-      {
-        from: ethMasterAccount,
-        handleRevert: true
-      }
-    )
     const ethTokenLockerContract = new web3.eth.Contract(
       JSON.parse(fs.readFileSync(ethLockerAbiPath)),
       ethLockerAddress
     )
     const borshProof = borshifyOutcomeProof(JSON.parse(proof))
     blockHeight = Number(blockHeight)
-    await proverContract.methods
-      .proveOutcome(borshProof, blockHeight)
-      .call()
     await robustWeb3.callContract(
       ethTokenLockerContract,
       'unlockToken',
@@ -183,6 +195,7 @@ async function nearToEthUnlock ({
     console.log('Failed', error.toString())
   }
   web3.currentProvider.connection.close()
+  exit(0)
 }
 
 exports.ethToNearApprove = ethToNearApprove
