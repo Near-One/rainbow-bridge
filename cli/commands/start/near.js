@@ -7,7 +7,7 @@ const { getLocalNearNodeURL } = require('./helpers')
 class StartLocalNearNodeCommand {
   static execute () {
     const command = util.format(
-      '$HOME/.local/bin/nearup run localnet --num-nodes 1 --binary-path %s',
+      'nearup run localnet --num-nodes 1 --binary-path %s',
       '~/.rainbow/core/target/debug'
     )
     request(getLocalNearNodeURL(), { json: true }, (err, _res, _body) => {

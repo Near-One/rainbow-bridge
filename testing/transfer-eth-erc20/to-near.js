@@ -254,7 +254,7 @@ class TransferETHERC20ToNear {
       console.log('Transfer log found', log)
       return TransferETHERC20ToNear.parseBuffer(log)
     } catch (e) {
-      console.log("Coudn't find transfer log", e)
+      console.log("Coudn't find transfer log at ", txLogFilename)
       return {}
     }
   }

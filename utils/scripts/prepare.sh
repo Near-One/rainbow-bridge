@@ -4,7 +4,6 @@ set -euo pipefail
 eval RAINBOW_DIR=~/.rainbow
 
 export LOCAL_CORE_SRC
-export LOCAL_NEARUP_SRC
 
 eval CORE_SRC=~/.rainbow/core
 SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" 2>&1 && pwd )"

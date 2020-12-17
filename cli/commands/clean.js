@@ -17,7 +17,7 @@ class CleanCommand {
         ProcessManager.disconnect()
         try {
           console.log('Stopping nearup')
-          execSync('$HOME/.local/bin/nearup stop')
+          execSync('nearup stop')
         } catch (err) {
           console.error(`Error stopping nearup ${err}`)
         }

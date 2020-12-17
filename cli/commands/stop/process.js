@@ -3,7 +3,7 @@ const { execSync } = require('child_process')
 
 async function stopLocalNearNode () {
   console.log('Stopping near node')
-  const command = '$HOME/.local/bin/nearup stop'
+  const command = 'nearup stop'
   try {
     execSync(command)
     console.log('near node successfully stopped')
