@@ -15,7 +15,8 @@ class StartEth2NearRelayCommand {
     nearMasterAccount,
     nearMasterSk,
     nearClientAccount,
-    ethNodeUrl
+    ethNodeUrl,
+    metricsPort
   }) {
     if (daemon === 'true') {
       ProcessManager.connect((err) => {
@@ -39,7 +40,8 @@ class StartEth2NearRelayCommand {
             '--near-master-sk', nearMasterSk,
             '--near-client-account', nearClientAccount,
             '--eth-node-url', ethNodeUrl,
-            '--daemon', 'false'
+            '--daemon', 'false',
+            '--metrics-port', metricsPort
           ],
           wait_ready: true,
           kill_timeout: 60000,
@@ -68,8 +70,8 @@ class StartEth2NearRelayCommand {
         nearClientAccount
       )
       await clientContract.accessKeyInit()
-      console.log('Initializing eth2near-relay...')
-      relay.initialize(clientContract, { ethNodeUrl })
+      console.log('Initializing eth2near-relay...', { ethNodeUrl, metricsPort })
+      relay.initialize(clientContract, { ethNodeUrl, metricsPort })
       console.log('Starting eth2near-relay...')
       await relay.run()
     }

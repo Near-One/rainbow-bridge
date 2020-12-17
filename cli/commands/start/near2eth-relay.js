@@ -15,7 +15,8 @@ class StartNear2EthRelayCommand {
     ethGasMultiplier,
     near2ethRelayMinDelay,
     near2ethRelayMaxDelay,
-    near2ethRelayErrorDelay
+    near2ethRelayErrorDelay,
+    metricsPort
   }) {
     if (daemon === 'true') {
       ProcessManager.connect((err) => {
@@ -43,7 +44,8 @@ class StartNear2EthRelayCommand {
             '--near2eth-relay-min-delay', near2ethRelayMinDelay,
             '--near2eth-relay-max-delay', near2ethRelayMaxDelay,
             '--near2eth-relay-error-delay', near2ethRelayErrorDelay,
-            '--daemon', 'false'
+            '--daemon', 'false',
+            '--metrics-port', metricsPort
           ],
           wait_ready: true,
           kill_timeout: 60000,
@@ -59,7 +61,8 @@ class StartNear2EthRelayCommand {
         ethMasterSk,
         ethClientAbiPath,
         ethClientAddress,
-        ethGasMultiplier
+        ethGasMultiplier,
+        metricsPort
       })
       await relay.run({
         near2ethRelayMinDelay,

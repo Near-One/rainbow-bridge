@@ -145,6 +145,11 @@ RainbowConfig.declareOption(
   'How many times more in Ethereum gas are we willing to overpay.',
   '1'
 )
+RainbowConfig.declareOption(
+  'metrics-port',
+  'On which port to expose metrics for corresponding relayer, if not provided no metrics exposed',
+  null
+)
 
 // User-specific arguments.
 RainbowConfig.declareOption(
@@ -331,7 +336,8 @@ RainbowConfig.addOptions(
     'near-network-id',
     'near-node-url',
     'eth-node-url',
-    'daemon'
+    'daemon',
+    'metrics-port'
   ]
 )
 
@@ -349,7 +355,8 @@ RainbowConfig.addOptions(
     'near2eth-relay-max-delay',
     'near2eth-relay-error-delay',
     'eth-gas-multiplier',
-    'daemon'
+    'daemon',
+    'metrics-port'
   ]
 )
 

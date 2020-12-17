@@ -12,6 +12,7 @@ const {
   borshifyInitialValidators,
   nearAPI
 } = require('rainbow-bridge-utils')
+const { HttpPrometheus } = require('../../utils/http-prometheus.js')
 
 class Near2EthRelay {
   async initialize ({
@@ -21,7 +22,8 @@ class Near2EthRelay {
     ethMasterSk,
     ethClientAbiPath,
     ethClientAddress,
-    ethGasMultiplier
+    ethGasMultiplier,
+    metricsPort
   }) {
     // @ts-ignore
     this.robustWeb3 = new RobustWeb3(ethNodeUrl)
@@ -32,6 +34,7 @@ class Near2EthRelay {
     this.web3.eth.accounts.wallet.add(this.ethMasterAccount)
     this.web3.eth.defaultAccount = this.ethMasterAccount.address
     this.ethMasterAccount = this.ethMasterAccount.address
+    this.metricsPort = metricsPort
 
     const keyStore = new nearAPI.keyStores.InMemoryKeyStore()
     this.near = await nearAPI.connect({
@@ -179,6 +182,10 @@ class Near2EthRelay {
     const maxDelay = Number(near2ethRelayMaxDelay)
     const errorDelay = Number(near2ethRelayErrorDelay)
 
+    const httpPrometheus = new HttpPrometheus(this.metricsPort, 'near_bridge_near2eth_')
+    const clientHeightGauge = httpPrometheus.gauge('client_height', 'amount of block client processed')
+    const chainHeightGauge = httpPrometheus.gauge('chain_height', 'current chain height')
+
     while (true) {
       try {
         // Determine the next action: sleep or attempt an update.
@@ -269,6 +276,8 @@ class Near2EthRelay {
         console.log(
           `Client height is ${bridgeState.currentHeight}, chain height is ${lastBlock.inner_lite.height}. Sleeping for ${delay} seconds.`
         )
+        clientHeightGauge.set(Number(BigInt(bridgeState.currentHeight)))
+        chainHeightGauge.set(Number(BigInt(lastBlock.inner_lite.height)))
         await sleep(1000 * delay)
       } catch (e) {
         console.log('Error', e)
