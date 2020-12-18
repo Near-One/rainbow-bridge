@@ -1,0 +1,61 @@
+steps:
+  - command: |
+      source ~/.cargo/env
+      source ~/.nvm/nvm.sh
+      source ~/.yarn/yarn.sh
+      yarn
+      yarn build
+      git status
+      changed_files=$$(git status --porcelain --untracked-files=no | wc -l)
+      if [ $$changed_files -gt 0 ]; then
+        echo 'contract changed, please rebuild contract'
+        exit 1
+      fi
+    label: 'build all solidity contracts'
+    agents:
+      - 'queue=medium'
+
+  - command: |
+      source ~/.nvm/nvm.sh
+      source ~/.yarn/yarn.sh
+      cd nearbridge
+      yarn
+      yarn test
+      node test/ed25519-test.js
+    label: 'nearbridge test'
+    agents:
+      - 'queue=medium'
+
+  - command: |
+      source ~/.nvm/nvm.sh
+      source ~/.yarn/yarn.sh
+      cd nearprover
+      yarn
+      yarn test
+    label: 'nearprover test'
+    agents:
+      - 'queue=medium'
+
+  - command: |
+      source ~/.nvm/nvm.sh
+      source ~/.yarn/yarn.sh
+      yarn
+      ci/test_verify_near_headers.sh
+    label: 'verify near headers'
+    agents:
+      - 'queue=medium'
+
+  - command: |
+      source ~/.nvm/nvm.sh
+      source ~/.yarn/yarn.sh
+      yarn
+      ci/test_verify_near_proofs.sh
+    label: 'verify near proofs'
+    agents:
+      - 'queue=medium'
+
+  - trigger: "rainbow-bridge"
+    label: "rainbow bridge cli tests"
+    build:
+      env:
+        PATCH_RAINBOW_BRIDGE_SOL: "${BUILDKITE_COMMIT}"

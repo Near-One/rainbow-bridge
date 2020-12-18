@@ -1,0 +1,32 @@
+{
+  "name": "rainbow-bridge-near2eth-block-relay",
+  "version": "1.0.0",
+  "description": "Rainbow Bridge NEAR to Eth Block Relay",
+  "main": "index.js",
+  "author": "Near Inc. <hello@near.org>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/near/rainbow-bridge.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "nearprotocol",
+    "decentralized",
+    "blockchain",
+    "ethereum",
+    "bridge"
+  ],
+  "dependencies": {
+    "bs58": "^4.0.1",
+    "eth-object": "near/eth-object#54e03b8aac8208cf724e206d49ffb8bdd30451d7",
+    "eth-util-lite": "near/eth-util-lite#master",
+    "ethereumjs-util": "^6.2.0",
+    "rainbow-bridge-utils": "1.0.0"
+  },
+  "devDependencies": {
+    "standard": "*"
+  },
+  "scripts": {
+    "standard": "standard"
+  }
+}

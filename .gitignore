@@ -1,18 +1,17 @@
-node_modules
+**/node_modules
 .idea
 **/.idea
 **/.near
 **/.vscode
 *.pyc
-neardev/
-ethrelay/testdir
-/testdata
-/testenv
 
-venv
-
-**/transfer-eth-erc20-to-near.log.json
 **/*.swp
 **/*.tgz
 
 **/.yarn*
+
+write_config.js
+**/*transfer-eth-erc20-from-near.log.json
+
+**/*.log.json
+/vendor
