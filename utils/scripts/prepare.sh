@@ -1,9 +1,7 @@
 #!/bin/bash
-set -euo pipefail
+set -xeo pipefail
 
 eval RAINBOW_DIR=~/.rainbow
-
-export LOCAL_CORE_SRC
 
 eval CORE_SRC=~/.rainbow/core
 SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" 2>&1 && pwd )"
@@ -28,20 +26,39 @@ touch $RAINBOW_DIR/logs/watchdog/err.log
 
 pip3 install nearup --upgrade --user
 
+unameOut="$(uname -s)"
+case "${unameOut}" in
+    Linux*)     MACHINE=Linux;;
+    Darwin*)    MACHINE=Mac;;
+    CYGWIN*)    MACHINE=Cygwin;;
+    MINGW*)     MACHINE=MinGw;;
+    *)          MACHINE="UNKNOWN:${unameOut}"
+esac
+
 if test -z "$LOCAL_CORE_SRC"
 then
-echo "near-core home not specified..."
-git clone "https://github.com/nearprotocol/nearcore" $CORE_SRC
-eval CURR_DIR=$(pwd)
-cd $CURR_DIR
+  echo "near-core home not specified..."
+  if [ "$MACHINE" == "Linux" ]; then
+    NEAR_CORE_LATEST_COMMIT="$(git ls-remote git://github.com/near/nearcore.git | grep refs/heads/master | cut -f 1)"
+    NEAR_CORE_BINARY_URL="https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/Linux/master/$NEAR_CORE_LATEST_COMMIT/neard"
+    NEAR_CORE_BINARY_DIR="$CORE_SRC/target/debug"
+    NEAR_CORE_BINARY_PATH="$NEAR_CORE_BINARY_DIR/neard"
+    mkdir -p $NEAR_CORE_BINARY_DIR
+    curl $NEAR_CORE_BINARY_URL > $NEAR_CORE_BINARY_PATH
+    chmod +x $NEAR_CORE_BINARY_PATH
+  else
+    git clone "https://github.com/nearprotocol/nearcore" $CORE_SRC
+    cd $CORE_SRC
+    cargo build --package neard --bin neard
+  fi
 else
-echo "Linking the specified local repo from ${LOCAL_CORE_SRC} to ${CORE_SRC}"
-ln -s $LOCAL_CORE_SRC $CORE_SRC
+  echo "Linking the specified local repo from ${LOCAL_CORE_SRC} to ${CORE_SRC}"
+  ln -s $LOCAL_CORE_SRC $CORE_SRC
+  cd $CORE_SRC
+  cargo build --package neard --bin neard
 fi
 
-cd $CORE_SRC
-cargo build --package neard --bin neard
-echo "Compiled source of nearcore"
+mkdir -p $NEARUP_LOGS
 
 cd $BRIDGE_SRC
 # In local development, this update ethashproof repo
