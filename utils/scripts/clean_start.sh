@@ -3,7 +3,7 @@ set -xeo pipefail
 
 ./cli/index.js clean
 
-if test -z $LOCAL_CORE_SRC 
+if test -z $LOCAL_CORE_SRC
 then
   ./cli/index.js prepare
 else
@@ -20,8 +20,6 @@ sleep 10
 ./cli/index.js init-eth-erc20
 ./cli/index.js init-eth-locker
 ./cli/index.js init-near-token-factory
-./cli/index.js start eth2near-relay
-./cli/index.js start near2eth-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
-# ./cli/index.js start eth2near-relay --metrics-port 8080
-# ./cli/index.js start near2eth-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201 --metrics-port 8181
+./cli/index.js start eth2near-relay --metrics-port 8080
+./cli/index.js start near2eth-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201 --metrics-port 8181
 ./cli/index.js start bridge-watchdog --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501202
