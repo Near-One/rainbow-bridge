@@ -22,6 +22,7 @@
     "eth-util-lite": "near/eth-util-lite#master",
     "ethereumjs-block": "^2.2.2",
     "merkle-patricia-tree": "^2.1.2",
+    "prom-client": "^12.0.0",
     "promisfy": "^1.2.0",
     "rainbow-bridge-utils": "1.0.0"
   },

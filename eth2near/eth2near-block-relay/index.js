@@ -1,10 +1,28 @@
 const path = require('path')
 const exec = require('child_process').exec
 const BN = require('bn.js')
-const { RobustWeb3, sleep, txnStatus } = require('rainbow-bridge-utils')
-const { web3BlockToRlp, EthOnNearClientContract } = require('./eth-on-near-client')
-const { EthOnNearProverContract } = require('./eth-on-near-prover')
-const { EthProofExtractor, logFromWeb3, receiptFromWeb3, ethToNearFindProof } = require('./eth-proof-extractor')
+const {
+  RobustWeb3,
+  sleep,
+  txnStatus
+} = require('rainbow-bridge-utils')
+const {
+  web3BlockToRlp,
+  EthOnNearClientContract
+} = require('./eth-on-near-client')
+const {
+  EthOnNearProverContract
+} = require('./eth-on-near-prover')
+const {
+  EthProofExtractor,
+  logFromWeb3,
+  receiptFromWeb3,
+  ethToNearFindProof
+} = require('./eth-proof-extractor')
+
+const {
+  HttpPrometheus
+} = require('../../utils/http-prometheus.js')
 
 // TODO: enable configuration
 const MAX_SUBMIT_BLOCK = 10
@@ -14,7 +32,7 @@ function ethashproof (command, _callback) {
   return new Promise((resolve) =>
     exec(command, (error, stdout, _stderr) => {
       if (error) {
-        console.log(error)
+        console.error(error)
       }
       resolve(stdout)
     })
@@ -22,15 +40,24 @@ function ethashproof (command, _callback) {
 }
 
 class Eth2NearRelay {
-  initialize (ethClientContract, { ethNodeUrl }) {
+  initialize (ethClientContract, {
+    ethNodeUrl,
+    metricsPort
+  }) {
     this.ethClientContract = ethClientContract
     // @ts-ignore
     this.robustWeb3 = new RobustWeb3(ethNodeUrl)
     this.web3 = this.robustWeb3.web3
+    this.metricsPort = metricsPort
   }
 
   async run () {
     const robustWeb3 = this.robustWeb3
+    const httpPrometheus = new HttpPrometheus(this.metricsPort, 'near_bridge_eth2near_')
+
+    const clientBlockNumberGauge = httpPrometheus.gauge('client_block_number', 'current client block number')
+    const chainBlockNumberGauge = httpPrometheus.gauge('chain_block_number', 'current chain block number')
+
     while (true) {
       let clientBlockNumber
       let chainBlockNumber
@@ -40,11 +67,11 @@ class Eth2NearRelay {
         clientBlockNumber = (
           await this.ethClientContract.last_block_number()
         ).toNumber()
-        console.log('Client block number is ' + clientBlockNumber)
+        clientBlockNumberGauge.set(clientBlockNumber)
         chainBlockNumber = await robustWeb3.getBlockNumber()
-        console.log('Chain block number is ' + chainBlockNumber)
+        chainBlockNumberGauge.set(chainBlockNumber)
       } catch (e) {
-        console.log(e)
+        console.error(e)
         continue
       }
 
@@ -63,9 +90,10 @@ class Eth2NearRelay {
               `Block ${chainBlockHash} height: ${clientBlockNumber} is not known to the client. Backtracking.`
             )
             clientBlockNumber -= 1
+            clientBlockNumberGauge.set(clientBlockNumber)
           }
         } catch (e) {
-          console.log(e)
+          console.error(e)
           continue
         }
       }
@@ -111,7 +139,7 @@ class Eth2NearRelay {
             `Success added block ${clientBlockNumber + 1} to block ${endBlock}`
           )
         } catch (e) {
-          console.log(e)
+          console.error(e)
         }
       } else {
         await sleep(10000)
@@ -131,7 +159,7 @@ class Eth2NearRelay {
       // console.log(unparsedBlock)
       return JSON.parse(unparsedBlock)
     } catch (e) {
-      console.log(`Failed to get or parse block ${blockNumber}: ${e}`)
+      console.error(`Failed to get or parse block ${blockNumber}: ${e}`)
     }
   }
 
