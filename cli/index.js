@@ -107,8 +107,23 @@ RainbowConfig.declareOption(
   'true'
 )
 RainbowConfig.declareOption(
+  'hashes-gc-threshold',
+  'Events that happen past this threshold cannot be verified by the client.',
+  40000
+)
+RainbowConfig.declareOption(
+  'finalized-gc-threshold',
+  'We store full information about the headers for the past `finalized_gc_threshold` blocks.',
+  500
+)
+RainbowConfig.declareOption(
+  'num-confirmations',
+  'Number of confirmations that applications can use to consider the transaction safe.',
+  10
+)
+RainbowConfig.declareOption(
   'near-client-trusted-signer',
-  'When non empty, deploy as trusted-signer mode where only tursted signer can submit blocks to client',
+  'When non empty, deploy as trusted-signer mode where only trusted signer can submit blocks to client',
   ''
 )
 RainbowConfig.declareOption(
@@ -449,10 +464,15 @@ RainbowConfig.addOptions(
     'near-client-init-balance',
     'near-client-validate-ethash',
     'near-client-trusted-signer',
+    'hashes-gc-threshold',
+    'finalized-gc-threshold',
+    'num-confirmations',
+    // 40000, 500, 10
     'near-prover-account',
     'near-prover-sk',
     'near-prover-contract-path',
     'near-prover-init-balance'
+
   ]
 )
 

@@ -138,7 +138,7 @@ class EthOnNearClientContract extends BorshContract {
 
   // Call initialization methods on the contract.
   // If validateEthash is true will do ethash validation otherwise it won't.
-  async maybeInitialize (validateEthash, trustedSigner, robustWeb3) {
+  async maybeInitialize (hashesGCThreshold, finalizedGCThreshold, numConfirmations, validateEthash, trustedSigner, robustWeb3) {
     await this.accessKeyInit()
     let initialized = false
     try {
@@ -158,9 +158,9 @@ class EthOnNearClientContract extends BorshContract {
           dags_start_epoch: 0,
           dags_merkle_roots: roots.dag_merkle_roots,
           first_header: blockRlp,
-          hashes_gc_threshold: 40000,
-          finalized_gc_threshold: 500,
-          num_confirmations: 10,
+          hashes_gc_threshold: hashesGCThreshold,
+          finalized_gc_threshold: finalizedGCThreshold,
+          num_confirmations: numConfirmations,
           trusted_signer: trustedSigner
         },
         new BN('300000000000000')
