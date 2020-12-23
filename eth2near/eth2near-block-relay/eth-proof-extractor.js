@@ -61,7 +61,7 @@ class EthProofExtractor {
   }
 
   destroy () {
-    if (this.web3.currentProvider.connection.close) {
+    if (this.web3.currentProvider.connection && this.web3.currentProvider.connection.close) {
       // Only WebSocket provider has close, HTTPS don't
       this.web3.currentProvider.connection.close()
     }
