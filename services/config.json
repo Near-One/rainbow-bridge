@@ -1,0 +1,11 @@
+{
+  "db-path": "db",
+  "rpc-url": "https://rpc.testnet.near.org/",
+  "account-id": "bridge.near",
+  "poll-delay": 1000,
+  "pipeline-depth": 20,
+  "server-addr": {
+    "host": "127.0.0.1",
+    "port": 3030
+  }
+}

@@ -1,0 +1,11 @@
+[package]
+name = "bridge-test"
+version = "0.0.0"
+edition = "2018"
+
+[dependencies]
+arrayref = "^0.3"
+near-sdk = "^2.0"
+
+[dev-dependencies]
+hex-literal = "^0.3"
