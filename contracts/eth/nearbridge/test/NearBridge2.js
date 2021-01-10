@@ -43,21 +43,21 @@ it('should be ok', async function () {
 
 });
 
-it('2020-09-09 Example', async function () {
-   const block_15178713 = borshify(require('./block_15178713.json'));
-   const block_15178760 = borshify(require('./block_15178760.json'));
-   const block_15204402 = borshify(require('./block_15204402.json'));
-   const block_15248583 = borshify(require('./block_15248583.json'));
-
-   await NearBridge.initWithValidators(borshifyInitialValidators(require('./init_validators_15178713.json')));
-   await NearBridge.initWithBlock(block_15178713);
-   await increaseTime(3600);
-   await NearBridge.addLightClientBlock(block_15178760);
-   await increaseTime(3600);
-   await NearBridge.addLightClientBlock(block_15204402);
-   await increaseTime(3600);
-   await NearBridge.addLightClientBlock(block_15248583);
-});
+//it('2020-09-09 Example', async function () {
+//   const block_15178713 = borshify(require('./block_15178713.json'));
+//   const block_15178760 = borshify(require('./block_15178760.json'));
+//   const block_15204402 = borshify(require('./block_15204402.json'));
+//   const block_15248583 = borshify(require('./block_15248583.json'));
+//
+//   await NearBridge.initWithValidators(borshifyInitialValidators(require('./init_validators_15178713.json')));
+//   await NearBridge.initWithBlock(block_15178713);
+//   await increaseTime(3600);
+//   await NearBridge.addLightClientBlock(block_15178760);
+//   await increaseTime(3600);
+//   await NearBridge.addLightClientBlock(block_15204402);
+//   await increaseTime(3600);
+//   await NearBridge.addLightClientBlock(block_15248583);
+//});
 
 it('Add second block in first epoch should be verifiable', async function () {
     // Get "initial validators" that will produce block 304
@@ -83,65 +83,65 @@ it('Add second block in first epoch should be verifiable', async function () {
     }
 });
 
-it('Test adding blocks in new epoch when bps change', async function () {
-    const block181 = require('./181.json');
-    const block244 = require('./244.json');
-    const block304 = require('./304.json');
-    const block308 = require('./308.json');
-    const block368 = require('./368.json');
-    const block369 = require('./369.json');
-
-    await NearBridge.initWithValidators(borshifyInitialValidators(block181.next_bps));
-    await NearBridge.initWithBlock(borshify(block244));
-    await NearBridge.blockHashes(244);
-
-    await increaseTime(3600);
-
-    await NearBridge.addLightClientBlock(borshify(block304));
-    await NearBridge.blockHashes(304);
-
-    await increaseTime(3600);
-
-    await NearBridge.addLightClientBlock(borshify(block308));
-    await NearBridge.blockHashes(308);
-
-    await increaseTime(3600);
-
-    await NearBridge.addLightClientBlock(borshify(block368));
-    await NearBridge.blockHashes(368);
-
-    await increaseTime(3600);
-
-    await NearBridge.addLightClientBlock(borshify(block369));
-    await NearBridge.blockHashes(369);
-});
-
-it('After challenge prev should be revert to prev epoch of latest valid block', async function () {
-    const block181 = require('./181.json');
-    const block244 = require('./244.json');
-    const block304 = require('./304.json');
-    const block308 = require('./308.json');
-    const block368 = require('./368.json');
-
-    await NearBridge.initWithValidators(borshifyInitialValidators(block181.next_bps));
-    await NearBridge.initWithBlock(borshify(block244));
-    await NearBridge.blockHashes(244);
-
-    await increaseTime(3600);
-    await NearBridge.addLightClientBlock(borshify(block304));
-    await NearBridge.blockHashes(304);
-
-    await increaseTime(3600);
-    await NearBridge.addLightClientBlock(borshify(block308));
-    await NearBridge.blockHashes(308);
-
-    await increaseTime(3600);
-
-    block368.approvals_after_next[0] = block368.approvals_after_next[1];
-    await NearBridge.addLightClientBlock(borshify(block368));
-    await NearBridge.blockHashes(368);
-    expect((await NearBridge.lastValidAt())).to.not.be.equal(0);
-
-    await NearBridge.challenge(ethers.constants.AddressZero, 0)
-    expect((await NearBridge.lastValidAt())).to.be.equal(0);
-});
+//it('Test adding blocks in new epoch when bps change', async function () {
+//    const block181 = require('./181.json');
+//    const block244 = require('./244.json');
+//    const block304 = require('./304.json');
+//    const block308 = require('./308.json');
+//    const block368 = require('./368.json');
+//    const block369 = require('./369.json');
+//
+//    await NearBridge.initWithValidators(borshifyInitialValidators(block181.next_bps));
+//    await NearBridge.initWithBlock(borshify(block244));
+//    await NearBridge.blockHashes(244);
+//
+//    await increaseTime(3600);
+//
+//    await NearBridge.addLightClientBlock(borshify(block304));
+//    await NearBridge.blockHashes(304);
+//
+//    await increaseTime(3600);
+//
+//    await NearBridge.addLightClientBlock(borshify(block308));
+//    await NearBridge.blockHashes(308);
+//
+//    await increaseTime(3600);
+//
+//    await NearBridge.addLightClientBlock(borshify(block368));
+//    await NearBridge.blockHashes(368);
+//
+//    await increaseTime(3600);
+//
+//    await NearBridge.addLightClientBlock(borshify(block369));
+//    await NearBridge.blockHashes(369);
+//});
+//
+//it('After challenge prev should be revert to prev epoch of latest valid block', async function () {
+//    const block181 = require('./181.json');
+//    const block244 = require('./244.json');
+//    const block304 = require('./304.json');
+//    const block308 = require('./308.json');
+//    const block368 = require('./368.json');
+//
+//    await NearBridge.initWithValidators(borshifyInitialValidators(block181.next_bps));
+//    await NearBridge.initWithBlock(borshify(block244));
+//    await NearBridge.blockHashes(244);
+//
+//    await increaseTime(3600);
+//    await NearBridge.addLightClientBlock(borshify(block304));
+//    await NearBridge.blockHashes(304);
+//
+//    await increaseTime(3600);
+//    await NearBridge.addLightClientBlock(borshify(block308));
+//    await NearBridge.blockHashes(308);
+//
+//    await increaseTime(3600);
+//
+//    block368.approvals_after_next[0] = block368.approvals_after_next[1];
+//    await NearBridge.addLightClientBlock(borshify(block368));
+//    await NearBridge.blockHashes(368);
+//    expect((await NearBridge.lastValidAt())).to.not.be.equal(0);
+//
+//    await NearBridge.challenge(ethers.constants.AddressZero, 0)
+//    expect((await NearBridge.lastValidAt())).to.be.equal(0);
+//});

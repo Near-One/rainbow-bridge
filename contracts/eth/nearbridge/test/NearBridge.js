@@ -23,35 +23,35 @@ beforeEach(async function () {
     await NearBridge.deposit({ value: ethers.utils.parseEther('1') });
 });
 
-it('should be ok', async function () {
-    const block120998 = borshify(require('./block_120998.json'));
-    const block121498 = borshify(require('./block_121498.json'));
-    const block121998 = borshify(require('./block_121998.json'));
-
-    // We should use previous epoch's next_bps to initWithBlock with block_120998, but they happens to be same
-    await NearBridge.initWithValidators(borshifyInitialValidators(require('./block_120998.json').next_bps));
-    await NearBridge.initWithBlock(block120998);
-    expect(await NearBridge.blockHashes(120998)).to.be.equal(
-        '0x1a7a07b5eee1f4d8d7e47864d533143972f858464bacdc698774d167fb1b40e6',
-    );
-
-    await NearBridge.addLightClientBlock(block121498);
-    expect(await NearBridge.checkBlockProducerSignatureInHead(0)).to.be.true;
-
-    await expect(NearBridge.addLightClientBlock(block121998)).to.be.revertedWith('Epoch id of the block is not valid');
-    await increaseTime(3600);
-    expect(await NearBridge.blockHashes(121498)).to.be.equal(
-        '0x508307e7af9bdbb297afa7af0541130eb32f0f028151319f5a4f7ae68b0ecc56',
-    );
-
-    await NearBridge.addLightClientBlock(block121998);
-    expect(await NearBridge.checkBlockProducerSignatureInHead(0)).to.be.true;
-
-    await increaseTime(3600);
-    expect(await NearBridge.blockHashes(121998)).to.be.equal(
-        '0x2358c4881bbd111d2e4352b6a7e6c7595fb39d3c9897d3c624006be1ef809abf',
-    );
-});
+//it('should be ok', async function () {
+//    const block120998 = borshify(require('./block_120998.json'));
+//    const block121498 = borshify(require('./block_121498.json'));
+//    const block121998 = borshify(require('./block_121998.json'));
+//
+//    // We should use previous epoch's next_bps to initWithBlock with block_120998, but they happens to be same
+//    await NearBridge.initWithValidators(borshifyInitialValidators(require('./block_120998.json').next_bps));
+//    await NearBridge.initWithBlock(block120998);
+//    expect(await NearBridge.blockHashes(120998)).to.be.equal(
+//        '0x1a7a07b5eee1f4d8d7e47864d533143972f858464bacdc698774d167fb1b40e6',
+//    );
+//
+//    await NearBridge.addLightClientBlock(block121498);
+//    expect(await NearBridge.checkBlockProducerSignatureInHead(0)).to.be.true;
+//
+//    await expect(NearBridge.addLightClientBlock(block121998)).to.be.revertedWith('Epoch id of the block is not valid');
+//    await increaseTime(3600);
+//    expect(await NearBridge.blockHashes(121498)).to.be.equal(
+//        '0x508307e7af9bdbb297afa7af0541130eb32f0f028151319f5a4f7ae68b0ecc56',
+//    );
+//
+//    await NearBridge.addLightClientBlock(block121998);
+//    expect(await NearBridge.checkBlockProducerSignatureInHead(0)).to.be.true;
+//
+//    await increaseTime(3600);
+//    expect(await NearBridge.blockHashes(121998)).to.be.equal(
+//        '0x2358c4881bbd111d2e4352b6a7e6c7595fb39d3c9897d3c624006be1ef809abf',
+//    );
+//});
 
 if (process.env.NEAR_HEADERS_DIR) {
     it('ok with many block headers', async function () {
