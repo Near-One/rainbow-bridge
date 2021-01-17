@@ -66,10 +66,11 @@ class Watchdog {
                 .checkBlockProducerSignatureInHead(i)
                 .call()
             } catch (e) {
-              if (!e.reason || !e.signature) {
+              if (e.message.endsWith('This signature was skipped')) {
+                continue
+              } else {
                 throw e
               }
-              continue
             }
             if (!result) {
               console.log(`Challenging signature ${i}.`)
