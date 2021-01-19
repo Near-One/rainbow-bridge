@@ -282,6 +282,7 @@ RainbowConfig.declareOption(
   '1'
 )
 RainbowConfig.declareOption('near-erc20-account', 'Must be declared before set')
+RainbowConfig.declareOption('total-submit-block', 'Number of blocks to submit on each batch update from Ethereum to NEAR', 6)
 
 program.version(require('./package.json').version)
 
@@ -336,6 +337,7 @@ RainbowConfig.addOptions(
     'near-network-id',
     'near-node-url',
     'eth-node-url',
+    'total-submit-block',
     'daemon',
     'metrics-port'
   ]

@@ -24,8 +24,6 @@ const {
   HttpPrometheus
 } = require('../../utils/http-prometheus.js')
 
-// TODO: enable configuration
-const MAX_SUBMIT_BLOCK = 10
 const BRIDGE_SRC_DIR = path.join(__dirname, '..', '..')
 
 function ethashproof (command, _callback) {
@@ -41,9 +39,11 @@ function ethashproof (command, _callback) {
 
 class Eth2NearRelay {
   initialize (ethClientContract, {
+    totalSubmitBlock,
     ethNodeUrl,
     metricsPort
   }) {
+    this.totalSubmitBlock = parseInt(totalSubmitBlock)
     this.ethClientContract = ethClientContract
     // @ts-ignore
     this.robustWeb3 = new RobustWeb3(ethNodeUrl)
@@ -100,10 +100,11 @@ class Eth2NearRelay {
 
       if (clientBlockNumber < chainBlockNumber) {
         try {
+          console.log(clientBlockNumber, this.totalSubmitBlock, clientBlockNumber + this.totalSubmitBlock)
           // Submit add_block txns
           const blockPromises = []
           let endBlock = Math.min(
-            clientBlockNumber + MAX_SUBMIT_BLOCK,
+            clientBlockNumber + this.totalSubmitBlock,
             chainBlockNumber
           )
           if (clientBlockNumber < 5) {
@@ -149,14 +150,13 @@ class Eth2NearRelay {
 
   async getParseBlock (blockNumber) {
     try {
+      const block = await this.robustWeb3.getBlock(blockNumber)
       const blockRlp = this.web3.utils.bytesToHex(
-        web3BlockToRlp(await this.robustWeb3.getBlock(blockNumber))
+        web3BlockToRlp(block)
       )
       const unparsedBlock = await ethashproof(
         `${BRIDGE_SRC_DIR}/eth2near/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`
       )
-      // console.log('---')
-      // console.log(unparsedBlock)
       return JSON.parse(unparsedBlock)
     } catch (e) {
       console.error(`Failed to get or parse block ${blockNumber}: ${e}`)
