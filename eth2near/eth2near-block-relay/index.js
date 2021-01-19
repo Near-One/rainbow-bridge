@@ -100,7 +100,6 @@ class Eth2NearRelay {
 
       if (clientBlockNumber < chainBlockNumber) {
         try {
-          console.log(clientBlockNumber, this.totalSubmitBlock, clientBlockNumber + this.totalSubmitBlock)
           // Submit add_block txns
           const blockPromises = []
           let endBlock = Math.min(
