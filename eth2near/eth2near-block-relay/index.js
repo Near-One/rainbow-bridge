@@ -1,14 +1,16 @@
 const path = require('path')
 const exec = require('child_process').exec
+const nearAPI = require('near-api-js')
 const BN = require('bn.js')
+const { serialize } = require('../../utils/borsh')
 const {
   RobustWeb3,
-  sleep,
-  txnStatus
+  sleep
 } = require('rainbow-bridge-utils')
 const {
   web3BlockToRlp,
-  EthOnNearClientContract
+  EthOnNearClientContract,
+  borshSchema
 } = require('./eth-on-near-client')
 const {
   EthOnNearProverContract
@@ -44,6 +46,13 @@ class Eth2NearRelay {
     metricsPort
   }) {
     this.totalSubmitBlock = parseInt(totalSubmitBlock)
+
+    // totalSubmitBlock must be 6 or less, otherwise a batch transaction
+    // of `add_block_header` won't fit in a single block.
+    if (this.totalSubmitBlock > 6) {
+      throw new Error(`total-submit-block must be 6 or less. Currently it is: ${this.totalSubmitBlock}`)
+    }
+
     this.ethClientContract = ethClientContract
     // @ts-ignore
     this.robustWeb3 = new RobustWeb3(ethNodeUrl)
@@ -118,10 +127,14 @@ class Eth2NearRelay {
             `Got and parsed block ${clientBlockNumber + 1} to block ${endBlock}`
           )
 
-          const txHashes = []
+          // Send all transactions in a single batch, so they are processed in order.
+          const actions = []
           for (let i = clientBlockNumber + 1, j = 0; i <= endBlock; i++, j++) {
-            txHashes.push(await this.submitBlock(blocks[j], i))
+            const action = this.submitBlock(blocks[j], i)
+            actions.push(action)
           }
+
+          const task = this.ethClientContract.account.signAndSendTransaction(this.ethClientContract.contractId, actions)
 
           console.log(
             `Submit txn to add block ${
@@ -129,14 +142,10 @@ class Eth2NearRelay {
             } to block ${endBlock}`
           )
 
-          // Wait add_block txns commit
-          await Promise.all(
-            txHashes.map((txHash) =>
-              txnStatus(this.ethClientContract.account, txHash, 10, 2000)
-            )
-          )
+          await task
+
           console.log(
-            `Success added block ${clientBlockNumber + 1} to block ${endBlock}`
+            `Success added block ${clientBlockNumber + 1} to block ${endBlock}. Chain block number: ${chainBlockNumber}`
           )
         } catch (e) {
           console.error(e)
@@ -162,7 +171,7 @@ class Eth2NearRelay {
     }
   }
 
-  async submitBlock (block, blockNumber) {
+  submitBlock (block, blockNumber) {
     const h512s = block.elements
       .filter((_, index) => index % 2 === 0)
       .map((element, index) => {
@@ -172,7 +181,7 @@ class Eth2NearRelay {
         )
       })
 
-    const args = {
+    let args = {
       block_header: this.web3.utils.hexToBytes(block.header_rlp),
       dag_nodes: h512s
         .filter((_, index) => index % 2 === 0)
@@ -189,11 +198,8 @@ class Eth2NearRelay {
         })
     }
 
-    console.log(`Submitting block ${blockNumber} to EthClient`)
-    return await this.ethClientContract.add_block_header_async(
-      args,
-      new BN('300000000000000')
-    )
+    args = serialize(borshSchema, 'addBlockHeaderInput', args)
+    return nearAPI.transactions.functionCall('add_block_header', args, new BN('50000000000000'))
   }
 }
 

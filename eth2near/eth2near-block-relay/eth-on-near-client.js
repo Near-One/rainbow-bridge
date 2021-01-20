@@ -193,3 +193,4 @@ class EthOnNearClientContract extends BorshContract {
 
 exports.EthOnNearClientContract = EthOnNearClientContract
 exports.web3BlockToRlp = web3BlockToRlp
+exports.borshSchema = borshSchema
