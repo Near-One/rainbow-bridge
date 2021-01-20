@@ -66,6 +66,7 @@ class Eth2NearRelay {
 
     const clientBlockNumberGauge = httpPrometheus.gauge('client_block_number', 'current client block number')
     const chainBlockNumberGauge = httpPrometheus.gauge('chain_block_number', 'current chain block number')
+    const errorsOnSubmitCounter = httpPrometheus.counter('errors_on_submit', 'number of errors while submitting header')
 
     while (true) {
       let clientBlockNumber
@@ -148,6 +149,7 @@ class Eth2NearRelay {
             `Success added block ${clientBlockNumber + 1} to block ${endBlock}. Chain block number: ${chainBlockNumber}`
           )
         } catch (e) {
+          errorsOnSubmitCounter.inc(1)
           console.error(e)
         }
       } else {

@@ -7,6 +7,7 @@ const {
   promiseWithTimeout
 } = require('rainbow-bridge-utils')
 const Tx = require('ethereumjs-tx').Transaction
+const { HttpPrometheus } = require('../../utils/http-prometheus.js')
 
 const SLOW_TX_ERROR_MSG = 'transaction not executed within 5 minutes'
 
@@ -15,11 +16,13 @@ class Watchdog {
     ethNodeUrl,
     ethMasterSk,
     ethClientAbiPath,
-    ethClientAddress
+    ethClientAddress,
+    metricsPort
   }) {
     // @ts-ignore
     this.robustWeb3 = new RobustWeb3(ethNodeUrl)
     this.web3 = this.robustWeb3.web3
+    this.metricsPort = metricsPort
     const ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(normalizeEthKey(ethMasterSk))
     this.web3.eth.accounts.wallet.add(ethMasterAccount)
     this.web3.eth.defaultAccount = ethMasterAccount.address
@@ -44,6 +47,12 @@ class Watchdog {
     watchdogDelay,
     watchdogErrorDelay
   }) {
+    const httpPrometheus = new HttpPrometheus(this.metricsPort, 'near_bridge_watchdog_')
+    const lastBlockVerified = httpPrometheus.gauge('last_block_verified', 'last block that was already verified')
+    const totBlockProducers = httpPrometheus.gauge('block_producers', 'number of block producers for current block')
+    const incorrectBlocks = httpPrometheus.counter('incorrect_blocks', 'number of incorrect blocks found')
+    const challengesSubmitted = httpPrometheus.counter('challenges_submitted', 'number of blocks challenged')
+
     if (ethMasterSk.startsWith('0x')) {
       ethMasterSk = ethMasterSk.slice(2)
     }
@@ -53,12 +62,18 @@ class Watchdog {
         const bridgeState = await this.clientContract.methods
           .bridgeState()
           .call()
+
+        const numBlockProducers = Number(bridgeState.numBlockProducers)
+
+        lastBlockVerified.set(Number(bridgeState.currentHeight))
+        totBlockProducers.set(numBlockProducers)
+
         if (Number(bridgeState.nextValidAt) === 0) {
           console.log('No block to check.')
         } else {
           console.log('Checking block.')
           // We cannot memorize processed blocks because they might have been re-submitted with different data.
-          for (let i = 0; i < Number(bridgeState.numBlockProducers); i++) {
+          for (let i = 0; i < numBlockProducers; i++) {
             console.log(`Checking signature ${i}.`)
             let result
             try {
@@ -73,6 +88,7 @@ class Watchdog {
               }
             }
             if (!result) {
+              incorrectBlocks.inc(1)
               console.log(`Challenging signature ${i}.`)
               try {
                 let gasPrice = await this.web3.eth.getGasPrice()
@@ -101,6 +117,7 @@ class Watchdog {
                       this.web3.eth.sendSignedTransaction(tx),
                       SLOW_TX_ERROR_MSG
                     )
+                    challengesSubmitted.inc(1)
                     break
                   } catch (e) {
                     if (e.message === SLOW_TX_ERROR_MSG) {

@@ -372,7 +372,8 @@ RainbowConfig.addOptions(
     'eth-client-address',
     'watchdog-delay',
     'watchdog-error-delay',
-    'daemon'
+    'daemon',
+    'metrics-port'
   ]
 )
 
