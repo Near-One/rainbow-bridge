@@ -48,16 +48,24 @@ class AddressWatcher {
 
     while (true) {
       await Promise.all(this.nearAccounts.map(async (nearAccount) => {
-        const account = await this.near.account(nearAccount.id)
-        const state = await account.state()
-        const balanceNanoNear = new BN(state.amount).div(nearYocto2Nano).toNumber()
-        const storageBytes = new BN(state.storage_usage).toNumber()
-        nearAccount.balanceGauge.set(balanceNanoNear)
-        nearAccount.stateStorageGauge.set(storageBytes)
+        try {
+          const account = await this.near.account(nearAccount.id)
+          const state = await account.state()
+          const balanceNanoNear = new BN(state.amount).div(nearYocto2Nano).toNumber()
+          const storageBytes = new BN(state.storage_usage).toNumber()
+          nearAccount.balanceGauge.set(balanceNanoNear)
+          nearAccount.stateStorageGauge.set(storageBytes)
+        } catch (err) {
+          console.log(err)
+        }
       }).concat(this.ethereumAccounts.map(async (ethereumAccount) => {
-        const balance = await this.web3.eth.getBalance(ethereumAccount.account.address)
-        const balanceGwei = new BN(balance).div(ethWei2Gwei).toNumber()
-        ethereumAccount.balanceGauge.set(balanceGwei)
+        try {
+          const balance = await this.web3.eth.getBalance(ethereumAccount.account.address)
+          const balanceGwei = new BN(balance).div(ethWei2Gwei).toNumber()
+          ethereumAccount.balanceGauge.set(balanceGwei)
+        } catch (err) {
+          console.error(err)
+        }
       })))
 
       await sleep(1 * 1000)
