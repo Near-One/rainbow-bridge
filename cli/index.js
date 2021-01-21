@@ -15,6 +15,7 @@ const {
 const { StartWatchdogCommand } = require('./commands/start/watchdog.js')
 const { StartGanacheNodeCommand } = require('./commands/start/ganache.js')
 const { StartLocalNearNodeCommand } = require('./commands/start/near.js')
+const { AddressWatcherCommand } = require('./commands/start/address-watcher.js')
 const { StopManagedProcessCommand } = require('./commands/stop/process.js')
 const {
   DangerSubmitInvalidNearBlock
@@ -372,6 +373,21 @@ RainbowConfig.addOptions(
     'eth-client-address',
     'watchdog-delay',
     'watchdog-error-delay',
+    'daemon',
+    'metrics-port'
+  ]
+)
+
+RainbowConfig.addOptions(
+  startCommand.command('address-watcher'),
+  AddressWatcherCommand.execute,
+  [
+    'eth-node-url',
+    'near-node-url',
+    'near-network-id',
+    'eth-master-sk',
+    'near-client-account',
+    'near-master-account',
     'daemon',
     'metrics-port'
   ]
