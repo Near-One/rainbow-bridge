@@ -82,6 +82,7 @@ class Watchdog {
                 .call()
             } catch (e) {
               if (e.message.endsWith('This signature was skipped')) {
+                console.log('Signature skipped')
                 continue
               } else {
                 throw e
