@@ -244,17 +244,22 @@ class Near2EthRelay {
               console.log(borshBlock)
               borshBlock[Math.floor(borshBlock.length * Math.random())] += 1
             }
+
+            const gasPrice = new BN(await web3.eth.getGasPrice())
+            console.log('Gas price:', gasPrice)
+
             await clientContract.methods.addLightClientBlock(borshBlock).send({
               from: ethMasterAccount,
-              gas: 4000000,
+              gas: 7000000,
               handleRevert: true,
-              gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(ethGasMultiplier))
+              gasPrice: gasPrice.mul(new BN(ethGasMultiplier))
             })
 
             if (submitInvalidBlock) {
               console.log('Successfully submit invalid block')
               return process.exit(0)
             }
+
             console.log('Submitted.')
             continue
           }
