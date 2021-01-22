@@ -51,7 +51,7 @@ const {
 // TODO @frol use config
 const BRIDGE_SRC_DIR = __dirname
 const LIBS_SOL_SRC_DIR = path.join(BRIDGE_SRC_DIR, '..', 'contracts', 'eth')
-const LIBS_RS_SRC_DIR = path.join(BRIDGE_SRC_DIR, '..', 'contracts', 'near', 'res')
+const LIBS_RS_SRC_DIR = path.join(BRIDGE_SRC_DIR, '..', 'contracts', 'near')
 const LIBS_TC_SRC_DIR = path.join(BRIDGE_SRC_DIR, '..', 'node_modules', 'rainbow-token-connector')
 
 RainbowConfig.declareOption(
@@ -458,7 +458,6 @@ RainbowConfig.addOptions(
     'hashes-gc-threshold',
     'finalized-gc-threshold',
     'num-confirmations',
-    // 40000, 500, 10
     'near-prover-account',
     'near-prover-sk',
     'near-prover-contract-path',
