@@ -107,10 +107,13 @@ RainbowConfig.declareOption(
   'We store full information about the headers for the past `finalized_gc_threshold` blocks.',
   500
 )
+// TODO: https://github.com/near/rainbow-bridge/issues/388
+// Move the number of confirmation out of the prover, and let each application
+// decide that parameter considering if they prefer fast finality or higher confidence of inclusion.
 RainbowConfig.declareOption(
   'num-confirmations',
-  'Number of confirmations that applications can use to consider the transaction safe.',
-  10
+  'Number of confirmations blocks on Ethereum that applications can use to consider the transaction safe.',
+  30
 )
 RainbowConfig.declareOption(
   'near-client-trusted-signer',
