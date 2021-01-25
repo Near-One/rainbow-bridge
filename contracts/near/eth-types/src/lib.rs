@@ -1,4 +1,12 @@
-use borsh::{BorshDeserialize, BorshSerialize};
+#![no_std]
+#![feature(core_intrinsics, alloc_error_handler)]
+
+extern crate alloc;
+
+
+use alloc::{string::{ToString}, vec::Vec};
+
+use near_sdk_pure::borsh::{self, BorshDeserialize, BorshSerialize};
 use derive_more::{
     Add, AddAssign, Display, Div, DivAssign, From, Into, Mul, MulAssign, Rem, RemAssign, Sub,
     SubAssign,
@@ -9,11 +17,27 @@ use rlp::{
     RlpStream,
 };
 use rlp_derive::{RlpDecodable as RlpDecodableDerive, RlpEncodable as RlpEncodableDerive};
-#[cfg(not(target_arch = "wasm32"))]
-use serde::{Deserialize, Serialize};
-use std::io::{Error, Write};
 
 const ERROR_UNEXPECTED_LENGTH_OF_INPUT: &str = "Unexpected length of input";
+use near_sdk_pure::borsh::maybestd::io::{Error, Result as BorshResult, ErrorKind, Write};
+
+
+#[cfg(target_arch = "wasm32")]
+#[global_allocator]
+static ALLOC: near_sdk_pure::wee_alloc::WeeAlloc = near_sdk_pure::wee_alloc::WeeAlloc::INIT;
+
+
+#[panic_handler]
+#[no_mangle]
+pub fn panic(info: &::core::panic::PanicInfo) -> ! {
+    near_sdk_pure::env::panic(info.to_string().as_bytes())
+}
+
+#[alloc_error_handler]
+#[no_mangle]
+pub fn oom(_: ::core::alloc::Layout) -> ! {
+    ::core::intrinsics::abort();
+}
 
 macro_rules! arr_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
@@ -57,7 +81,7 @@ macro_rules! arr_declare_wrapper_and_serde {
 
         impl BorshSerialize for $name {
             #[inline]
-            fn serialize<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
+            fn serialize<W: Write>(&self, writer: &mut W) -> BorshResult<()> {
                 writer.write_all(&(self.0).0)?;
                 Ok(())
             }
@@ -65,12 +89,9 @@ macro_rules! arr_declare_wrapper_and_serde {
 
         impl BorshDeserialize for $name {
             #[inline]
-            fn deserialize(buf: &mut &[u8]) -> Result<Self, Error> {
+            fn deserialize(buf: &mut &[u8]) -> BorshResult<Self> {
                 if buf.len() < $len {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::InvalidInput,
-                        ERROR_UNEXPECTED_LENGTH_OF_INPUT,
-                    ));
+                    return Err(Error::new(ErrorKind::InvalidData, ERROR_UNEXPECTED_LENGTH_OF_INPUT));
                 }
                 let mut data = [0u8; $len];
                 data.copy_from_slice(&buf[..$len]);
@@ -126,12 +147,11 @@ macro_rules! uint_declare_wrapper_and_serde {
             From,
             Into,
         )]
-        #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
         pub struct $name(pub ethereum_types::$name);
 
         impl BorshSerialize for $name {
             #[inline]
-            fn serialize<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
+            fn serialize<W: Write>(&self, writer: &mut W) -> BorshResult<()> {
                 for i in 0..$len {
                     BorshSerialize::serialize(&(self.0).0[i], writer)?;
                 }
@@ -141,7 +161,7 @@ macro_rules! uint_declare_wrapper_and_serde {
 
         impl BorshDeserialize for $name {
             #[inline]
-            fn deserialize(buf: &mut &[u8]) -> Result<Self, Error> {
+            fn deserialize(buf: &mut &[u8]) -> BorshResult<Self> {
                 let mut data = [0u64; $len];
                 for i in 0..$len {
                     data[i] = borsh::de::BorshDeserialize::deserialize(buf)?;
@@ -176,7 +196,6 @@ pub type Signature = H520;
 // Block Header
 
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct BlockHeader {
     pub parent_hash: H256,
     pub uncles_hash: H256,
@@ -311,18 +330,18 @@ pub struct Receipt {
 
 pub fn near_sha256(data: &[u8]) -> [u8; 32] {
     let mut buffer = [0u8; 32];
-    buffer.copy_from_slice(&near_sdk::env::sha256(data).as_slice());
+    buffer.copy_from_slice(&near_sdk_pure::env::sha256(data).as_slice());
     buffer
 }
 
 pub fn near_keccak256(data: &[u8]) -> [u8; 32] {
     let mut buffer = [0u8; 32];
-    buffer.copy_from_slice(&near_sdk::env::keccak256(data).as_slice());
+    buffer.copy_from_slice(&near_sdk_pure::env::keccak256(data).as_slice());
     buffer
 }
 
 pub fn near_keccak512(data: &[u8]) -> [u8; 64] {
     let mut buffer = [0u8; 64];
-    buffer.copy_from_slice(&near_sdk::env::keccak512(data).as_slice());
+    buffer.copy_from_slice(&near_sdk_pure::env::keccak512(data).as_slice());
     buffer
 }

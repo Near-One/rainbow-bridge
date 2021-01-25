@@ -1,9 +1,9 @@
 [workspace]
 members = [
     "eth-client",
-    "eth-prover",
+    # "eth-prover",
     "eth-types",
-    "mintable-fungible-token"
+    # "mintable-fungible-token"
 ]
 
 [profile.release]

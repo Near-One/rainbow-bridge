@@ -1,16 +1,17 @@
-use borsh::{BorshDeserialize, BorshSerialize};
+#![no_std]
+#![feature(core_intrinsics, alloc_error_handler)]
+//#![deny(warnings)]
+
+extern crate alloc;
+
+use near_sdk_pure::borsh::{self, BorshDeserialize, BorshSerialize};
 use eth_types::*;
-use near_sdk::collections::UnorderedMap;
-use near_sdk::AccountId;
-use near_sdk::{env, near_bindgen};
+use near_sdk_pure::collections::UnorderedMap;
+use near_sdk_pure::AccountId;
+use near_sdk_pure::{env, near_bindgen};
 
-#[cfg(target_arch = "wasm32")]
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+use alloc::{ vec::Vec};
 
-#[cfg(not(target_arch = "wasm32"))]
-#[cfg(test)]
-mod tests;
 
 #[derive(Default, Debug, Clone, BorshDeserialize, BorshSerialize)]
 pub struct DoubleNodeWithMerkleProof {
@@ -139,8 +140,10 @@ impl EthClient {
         };
         res.canonical_header_hashes
             .insert(&header_number, &header_hash);
+        let mut v = Vec::new();
+        v.push(header_hash.clone());
         res.all_header_hashes
-            .insert(&header_number, &vec![header_hash.clone()]);
+            .insert(&header_number, &v);
         res.headers.insert(&header_hash, &header);
         res.infos.insert(
             &header_hash,
@@ -387,7 +390,7 @@ impl EthClient {
         nodes: &[DoubleNodeWithMerkleProof],
     ) -> (H256, H256) {
         // Boxed index since ethash::hashimoto gets Fn, but not FnMut
-        let index = std::cell::RefCell::new(0);
+        let index = core::cell::RefCell::new(0);
 
         // Reuse single Merkle root across all the proofs
         let merkle_root = self.dag_merkle_root((header_number as usize / 30000) as u64);
