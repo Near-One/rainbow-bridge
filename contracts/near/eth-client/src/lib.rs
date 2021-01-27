@@ -366,8 +366,8 @@ impl EthClient {
         //
         U256((result.0).0.into()) < U256(ethash::cross_boundary(header.difficulty.0))
             && (!self.validate_ethash
-                || (header.difficulty < header.difficulty * 101 / 100
-                    && header.difficulty > header.difficulty * 99 / 100))
+                || (header.difficulty < prev.difficulty * 101 / 100
+                    && header.difficulty > prev.difficulty * 99 / 100))
             && header.gas_used <= header.gas_limit
             && header.gas_limit < prev.gas_limit * 1025 / 1024
             && header.gas_limit > prev.gas_limit * 1023 / 1024
