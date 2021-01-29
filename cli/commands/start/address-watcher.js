@@ -40,6 +40,7 @@ class AddressWatcherCommand {
             '--eth-master-sk', ethMasterSk,
             '--near-client-account', nearClientAccount,
             '--near-master-account', nearMasterAccount,
+            '--monitor-accounts-path', monitorAccountsPath,
             '--daemon', 'false',
             '--metrics-port', metricsPort
           ],
