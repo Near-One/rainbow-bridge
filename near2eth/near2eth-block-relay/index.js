@@ -246,7 +246,7 @@ class Near2EthRelay {
             }
 
             const gasPrice = new BN(await web3.eth.getGasPrice())
-            console.log('Gas price:', gasPrice)
+            console.log('Gas price:', gasPrice.toNumber())
 
             await clientContract.methods.addLightClientBlock(borshBlock).send({
               from: ethMasterAccount,
