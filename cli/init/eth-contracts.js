@@ -122,14 +122,22 @@ class InitEthLocker {
     ethProverAddress,
     ethLockerAbiPath,
     ethLockerBinPath,
+    ethAdminAddress,
     ethGasMultiplier
   }) {
+    if (ethAdminAddress === '') {
+      const web3 = new Web3(ethNodeUrl)
+      ethAdminAddress = web3.eth.accounts.privateKeyToAccount(ethMasterSk).address
+    }
+
+    console.log('Using as locker admin:', ethAdminAddress)
     const ethContractInitializer = new EthContractInitializer()
     const success = await ethContractInitializer.execute(
       {
         args: [
           Buffer.from(nearTokenFactoryAccount, 'utf8'),
-          ethProverAddress
+          ethProverAddress,
+          ethAdminAddress
         ],
         gas: 5000000,
         ethContractAbiPath: ethLockerAbiPath,
@@ -144,7 +152,8 @@ class InitEthLocker {
       process.exit(1)
     }
     return {
-      ethLockerAddress: success.ethContractAddress
+      ethLockerAddress: success.ethContractAddress,
+      ethAdminAddress: ethAdminAddress
     }
   }
 }

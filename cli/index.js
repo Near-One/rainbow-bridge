@@ -188,12 +188,12 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'eth-locker-abi-path',
   'Path to the .abi file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
-  path.join(LIBS_TC_SRC_DIR, 'res/BridgeTokenFactory.full.abi')
+  path.join(LIBS_TC_SRC_DIR, 'res/ERC20Locker.full.abi')
 )
 RainbowConfig.declareOption(
   'eth-locker-bin-path',
   'Path to the .bin file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
-  path.join(LIBS_TC_SRC_DIR, 'res/BridgeTokenFactory.full.bin')
+  path.join(LIBS_TC_SRC_DIR, 'res/ERC20Locker.full.bin')
 )
 RainbowConfig.declareOption(
   'eth-erc20-address',
@@ -251,6 +251,10 @@ RainbowConfig.declareOption(
   'eth-client-bin-path',
   'Path to the .bin file defining Ethereum Client contract.',
   path.join(LIBS_SOL_SRC_DIR, 'nearbridge/dist/NearBridge.full.bin')
+)
+RainbowConfig.declareOption(
+  'eth-admin-address',
+  'ETH address of the administrator for locker contract. It is used for upgradeability purposes. If empty, used address of eth-master-sk.'
 )
 RainbowConfig.declareOption(
   'eth-prover-address',
@@ -585,6 +589,7 @@ RainbowConfig.addOptions(
     'eth-master-sk',
     'eth-locker-abi-path',
     'eth-locker-bin-path',
+    'eth-admin-address',
     'eth-prover-address',
     'eth-gas-multiplier'
   ]

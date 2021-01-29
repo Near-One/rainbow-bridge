@@ -21,6 +21,7 @@ async function maybeCreateAccount (
     const masterAccount = new nearAPI.Account(near.connection, masterAccountId)
     const balance = new BN(initBalance)
     let accountCreated = false
+    let lastError
     for (let i = 0; i < RETRY_NONCE; i++) {
       try {
         await masterAccount.createAccount(accountId, accountPK, balance)
@@ -31,12 +32,15 @@ async function maybeCreateAccount (
           // Last createAccount can timeout, but actually success later
           accountCreated = true
           break
+        } else {
+          // retry on timeout, nonce error, and socket hangout, not enough funds
+          lastError = e
         }
-        // retry on timeout, nonce error, and socket hangout
       }
     }
     if (!accountCreated) {
       console.log(`Failed to create account ${accountId} in ${RETRY_NONCE} retries due to nonce`)
+      console.error(lastError)
       process.exit(1)
     }
 
