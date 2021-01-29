@@ -49,11 +49,9 @@ class Eth2NearRelay {
   }) {
     this.gasPerTransaction = new BN(gasPerTransaction)
     const limitSubmitBlock = new BN(MAX_GAS_PER_BLOCK).div(this.gasPerTransaction).toNumber()
-
-    if (totalSubmitBlock === '') {
-      this.totalSubmitBlock = limitSubmitBlock
-    } else {
-      this.totalSubmitBlock = parseInt(totalSubmitBlock)
+    this.totalSubmitBlock = parseInt(totalSubmitBlock)
+    if (Number.isNaN(this.totalSubmitBlock)) {
+      throw new Error(`Invalid total-submit-block (${totalSubmitBlock})`)
     }
 
     if (this.totalSubmitBlock > limitSubmitBlock) {
