@@ -2,6 +2,8 @@ const ProcessManager = require('pm2')
 const { spawnProcess } = require('./helpers')
 const { AddressWatcher } = require('../../../utils/address-watcher')
 const path = require('path')
+const fs = require('fs')
+const Web3 = require('web3')
 
 class AddressWatcherCommand {
   static async execute ({
@@ -11,6 +13,7 @@ class AddressWatcherCommand {
     ethMasterSk,
     nearClientAccount,
     nearMasterAccount,
+    monitorAccountsPath,
     daemon,
     metricsPort
   }) {
@@ -45,6 +48,7 @@ class AddressWatcherCommand {
       })
     } else {
       const watcher = new AddressWatcher()
+      const web3 = new Web3(ethNodeUrl)
 
       const nearAccounts = [
         { id: nearClientAccount, name: 'near_client_account', description: 'eth on near client account' },
@@ -52,8 +56,17 @@ class AddressWatcherCommand {
       ]
 
       const ethereumAccounts = [
-        { sk: ethMasterSk, name: 'ethereum_master_account', description: 'ethereum master sk' }
+        { address: web3.eth.accounts.privateKeyToAccount(ethMasterSk).address, name: 'ethereum_master_account', description: 'ethereum master sk' }
       ]
+
+      if (monitorAccountsPath !== '') {
+        // Load other accounts to be monitored too.
+        // By default only accounts directly related to the bridge are monitored.
+        // No accounts related to token connector or other services are monitored.
+        const monitorList = JSON.parse(fs.readFileSync(monitorAccountsPath))
+        monitorList.near.forEach((nearAccount) => { nearAccounts.push(nearAccount) })
+        monitorList.ethereum.forEach((ethereumAccount) => { ethereumAccounts.push(ethereumAccount) })
+      }
 
       await watcher.initialize({ ethNodeUrl, nearNodeUrl, nearNetworkId, nearAccounts, ethereumAccounts, metricsPort })
       await watcher.run()

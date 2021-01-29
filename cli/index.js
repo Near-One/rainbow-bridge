@@ -256,6 +256,12 @@ RainbowConfig.declareOption(
   'eth-admin-address',
   'ETH address of the administrator for locker contract. It is used for upgradeability purposes. If empty, used address of eth-master-sk.'
 )
+// TODO: Add example of json file with description of accounts to be watched.
+RainbowConfig.declareOption(
+  'monitor-accounts-path',
+  'Path to all accounts on NEAR and Ethereum side to monitor. Ignored if not specified.',
+  ''
+)
 RainbowConfig.declareOption(
   'eth-prover-address',
   'ETH address of the EthProver contract.'
@@ -401,6 +407,7 @@ RainbowConfig.addOptions(
     'eth-master-sk',
     'near-client-account',
     'near-master-account',
+    'monitor-accounts-path',
     'daemon',
     'metrics-port'
   ]

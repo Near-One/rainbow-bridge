@@ -33,9 +33,8 @@ class AddressWatcher {
     }))
 
     this.ethereumAccounts = ethereumAccounts.map((ethAccount) => {
-      ethAccount.account = this.ethereumAccount(ethAccount.sk)
       ethAccount.balanceGauge = this.httpPrometheus.gauge(ethAccount.name + '_balance_gwei', ethAccount.description + ' balance in gwei')
-      console.log('Watching Ethereum account:', ethAccount.account.address, ethAccount.name)
+      console.log('Watching Ethereum account:', ethAccount.address, ethAccount.name)
       return ethAccount
     })
 
@@ -60,7 +59,7 @@ class AddressWatcher {
         }
       }).concat(this.ethereumAccounts.map(async (ethereumAccount) => {
         try {
-          const balance = await this.web3.eth.getBalance(ethereumAccount.account.address)
+          const balance = await this.web3.eth.getBalance(ethereumAccount.address)
           const balanceGwei = new BN(balance).div(ethWei2Gwei).toNumber()
           ethereumAccount.balanceGauge.set(balanceGwei)
         } catch (err) {
@@ -68,15 +67,8 @@ class AddressWatcher {
         }
       })))
 
-      await sleep(1 * 1000)
+      await sleep(1_000)
     }
-  }
-
-  ethereumAccount (secretKey) {
-    if (!secretKey.startsWith('0x')) {
-      secretKey = '0x' + secretKey
-    }
-    return this.web3.eth.accounts.privateKeyToAccount(secretKey)
   }
 }
 
