@@ -302,7 +302,8 @@ RainbowConfig.declareOption(
   '1'
 )
 RainbowConfig.declareOption('near-erc20-account', 'Must be declared before set')
-RainbowConfig.declareOption('total-submit-block', 'Number of blocks to submit on each batch update from Ethereum to NEAR', 6)
+RainbowConfig.declareOption('total-submit-block', 'Number of blocks to submit on each batch update from Ethereum to NEAR', '')
+RainbowConfig.declareOption('gas-per-transaction', 'Maximum gas per transaction add_block_header', '72000000000000')
 
 program.version(require('./package.json').version)
 
@@ -358,6 +359,7 @@ RainbowConfig.addOptions(
     'near-node-url',
     'eth-node-url',
     'total-submit-block',
+    'gas-per-transaction',
     'daemon',
     'metrics-port'
   ]

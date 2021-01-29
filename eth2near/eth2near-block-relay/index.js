@@ -27,6 +27,7 @@ const {
 } = require('../../utils/http-prometheus.js')
 
 const BRIDGE_SRC_DIR = path.join(__dirname, '..', '..')
+const MAX_GAS_PER_BLOCK = '300000000000000'
 
 function ethashproof (command, _callback) {
   return new Promise((resolve) =>
@@ -41,16 +42,22 @@ function ethashproof (command, _callback) {
 
 class Eth2NearRelay {
   initialize (ethClientContract, {
-    totalSubmitBlock,
     ethNodeUrl,
+    totalSubmitBlock,
+    gasPerTransaction,
     metricsPort
   }) {
-    this.totalSubmitBlock = parseInt(totalSubmitBlock)
+    this.gasPerTransaction = new BN(gasPerTransaction)
+    const limitSubmitBlock = new BN(MAX_GAS_PER_BLOCK).div(this.gasPerTransaction).toNumber()
 
-    // totalSubmitBlock must be 6 or less, otherwise a batch transaction
-    // of `add_block_header` won't fit in a single block.
-    if (this.totalSubmitBlock > 6) {
-      throw new Error(`total-submit-block must be 6 or less. Currently it is: ${this.totalSubmitBlock}`)
+    if (totalSubmitBlock === '') {
+      this.totalSubmitBlock = limitSubmitBlock
+    } else {
+      this.totalSubmitBlock = parseInt(totalSubmitBlock)
+    }
+
+    if (this.totalSubmitBlock > limitSubmitBlock) {
+      throw new Error(`total-submit-block must be ${limitSubmitBlock} or less. Currently it is: ${this.totalSubmitBlock}`)
     }
 
     this.ethClientContract = ethClientContract
@@ -201,7 +208,7 @@ class Eth2NearRelay {
     }
 
     args = serialize(borshSchema, 'addBlockHeaderInput', args)
-    return nearAPI.transactions.functionCall('add_block_header', args, new BN('50000000000000'))
+    return nearAPI.transactions.functionCall('add_block_header', args, this.gasPerTransaction)
   }
 }
 

@@ -16,6 +16,7 @@ class StartEth2NearRelayCommand {
     nearMasterSk,
     nearClientAccount,
     totalSubmitBlock,
+    gasPerTransaction,
     ethNodeUrl,
     metricsPort
   }) {
@@ -41,6 +42,8 @@ class StartEth2NearRelayCommand {
             '--near-master-sk', nearMasterSk,
             '--near-client-account', nearClientAccount,
             '--eth-node-url', ethNodeUrl,
+            '--total-submit-block', totalSubmitBlock,
+            '--gas-per-transaction', gasPerTransaction,
             '--daemon', 'false',
             '--metrics-port', metricsPort
           ],
@@ -72,7 +75,7 @@ class StartEth2NearRelayCommand {
       )
       await clientContract.accessKeyInit()
       console.log('Initializing eth2near-relay...', { ethNodeUrl, metricsPort })
-      relay.initialize(clientContract, { totalSubmitBlock, ethNodeUrl, metricsPort })
+      relay.initialize(clientContract, { ethNodeUrl, totalSubmitBlock, gasPerTransaction, metricsPort })
       console.log('Starting eth2near-relay...')
       await relay.run()
     }
