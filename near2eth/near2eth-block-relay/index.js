@@ -165,6 +165,19 @@ class Near2EthRelay {
     }
   }
 
+  // TODO: Add cli command that allows withdraw funds from client.
+  async withdraw ({
+    ethGasMultiplier
+  }) {
+    const web3 = this.web3
+    await this.clientContract.methods.withdraw().send({
+      from: this.ethMasterAccount,
+      gas: 1000000,
+      handleRevert: true,
+      gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(ethGasMultiplier))
+    })
+  }
+
   async runInternal ({
     submitInvalidBlock,
     near2ethRelayMinDelay,
