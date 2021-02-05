@@ -27,6 +27,7 @@ const {
   DeployToken,
   mintErc20,
   getErc20Balance,
+  getBridgeOnNearBalance,
   getClientBlockHeightHash,
   getAddressBySecretKey,
   ethToNearApprove,
@@ -641,7 +642,7 @@ const testingCommand = program
   )
 
 RainbowConfig.addOptions(
-  testingCommand
+  program
     .command('transfer-eth-erc20-to-near')
     .option('--amount <amount>', 'Amount of ERC20 tokens to transfer')
     .option(
@@ -680,7 +681,7 @@ RainbowConfig.addOptions(
 )
 
 RainbowConfig.addOptions(
-  testingCommand
+  program
     .command('transfer-eth-erc20-from-near')
     .option('--amount <amount>', 'Amount of ERC20 tokens to transfer')
     .option(
@@ -755,19 +756,39 @@ RainbowConfig.addOptions(
 )
 
 RainbowConfig.addOptions(
-  testingCommand
-    .command('get-erc20-balance <eth_account_address> <token_name>')
+  program
+    .command('get-erc20-balance <eth_account_address>')
     .description('Get ERC20 balance on Ethereum for specific token (e.g. erc20).'),
-  async (ethAccountAddress, tokenName, args) => {
-    if (tokenName) {
-      args.ethErc20Address = RainbowConfig.getParam(`eth-${tokenName}-address`)
-    }
+  async (ethAccountAddress, args) => {
+    console.log(
+      `(Contract: ${args.ethErc20Address}) ERC20 balance of ${ethAccountAddress} is:`
+    )
     await getErc20Balance({ ethAccountAddress, ...args })
   },
   [
     'eth-node-url',
     'eth-erc20-address',
     'eth-erc20-abi-path'
+  ]
+)
+
+RainbowConfig.addOptions(
+  program
+    .command('get-bridge-on-near-balance')
+    .option(
+      '--near-receiver-account <near_receiver_account>',
+      'The account on NEAR blockchain that received the minted token.'
+    )
+    .description('Gets balance on Near for Rainbow-Bridge Eth on Near Prover.'),
+  async (args) => {
+    await getBridgeOnNearBalance(args)
+  },
+  [
+    'near-master-account',
+    'near-erc20-account',
+    'near-network-id',
+    'near-node-url',
+    'near-master-sk'
   ]
 )
 

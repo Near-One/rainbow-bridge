@@ -69,7 +69,7 @@ To learn the commands that you can use with the rainbow bridge run
 Alternatively, clone this repo, `yarn install`, then you can see what commands you can use with:
 
 ```
-    ./index.js --help
+    cli/./index.js --help
 ```
 
 Parameters of each command can be specified through environment variables, command line arguments, entries in the `~/.rainbow/config.json` config file, or the default value will be used -- in that priority.
@@ -283,11 +283,18 @@ pm2 logs
 
 ### Transferring tokens
 
+Let's check the balance of the rainbow bridge prover on Near before transferring the tokens
+```bash
+rainbow get-bridge-on-near-balance --near-receiver-account rainbow_bridge_eth_on_near_prover
+```
+
 Finally, let's transfer some tokens
 
 ```bash
 rainbow transfer-eth-erc20-to-near --amount 1000 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account rainbow_bridge_eth_on_near_prover --near-master-account neartokenfactory
 ```
+
+Now you check the balance of the rainbow bridge prover again. You should notice the balance was changed.
 
 Note, when we deployed ERC20 to the Ethereum blockchain we have minted a large number of tokens to the default master
 key of Ganache, so we have transferred ERC20 tokens from it to `alice.test.near`.
@@ -301,6 +308,12 @@ rainbow transfer-eth-erc20-from-near --amount 1 --near-sender-account rainbow_br
 ```
 
 You should observe the change of the ERC20 balance as reported by the CLI.
+
+You can also manually check the ERC20 balance of the receiver before and after the transfer
+
+```bash
+rainbow get-erc20-balance 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8
+```
 
 ## Contract Development Workflow
 

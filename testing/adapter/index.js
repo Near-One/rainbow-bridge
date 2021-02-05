@@ -2,6 +2,7 @@ const fs = require('fs')
 const bs58 = require('bs58')
 const { toBuffer } = require('eth-util-lite')
 const {
+  nearAPI,
   RobustWeb3,
   remove0x,
   normalizeEthKey,
@@ -64,8 +65,8 @@ async function getErc20Balance ({ ethAccountAddress, ethNodeUrl, ethErc20Address
       JSON.parse(fs.readFileSync(ethErc20AbiPath)),
       remove0x(ethErc20Address)
     )
-    const result = await ethContract.methods.balanceOf(remove0x(ethAccountAddress)).call()
-    console.log(result)
+    const balance = await ethContract.methods.balanceOf(remove0x(ethAccountAddress)).call()
+    console.log(balance)
   } catch (error) {
     console.log('Failed', error.toString())
   }
@@ -198,6 +199,55 @@ async function nearToEthUnlock ({
   exit(0)
 }
 
+// View
+async function getBridgeOnNearBalance ({
+  nearReceiverAccount,
+  nearMasterAccount: nearMasterAccountId,
+  nearErc20Account,
+  nearMasterSk,
+  nearNetworkId,
+  nearNodeUrl,
+}) {
+  try {
+    // @ts-ignore
+    const keyStore = new nearAPI.keyStores.InMemoryKeyStore()
+    await keyStore.setKey(
+      nearNetworkId,
+      nearMasterAccountId,
+      nearAPI.KeyPair.fromString(nearMasterSk)
+    )
+    const near = await nearAPI.connect({
+      nodeUrl: nearNodeUrl,
+      networkId: nearNetworkId,
+      masterAccount: nearMasterAccountId,
+      deps: { keyStore: keyStore }
+    })
+    const nearMasterAccount = new nearAPI.Account(
+      near.connection,
+      nearMasterAccountId
+    )
+
+    const nearTokenContract = new nearAPI.Contract(
+      nearMasterAccount,
+      nearErc20Account,
+      {
+        changeMethods: [],
+        viewMethods: ['get_balance']
+      }
+    )
+
+    const balance = await nearTokenContract.get_balance({
+      owner_id: nearReceiverAccount
+    })
+    console.log(
+      `[Rainbow-Bridge on Near] Balance of ${nearReceiverAccount} is ${balance}`
+    )
+  } catch (error) {
+    console.log('Failed', error.toString())
+  }
+  exit(0)
+}
+
 exports.ethToNearApprove = ethToNearApprove
 exports.ethToNearLock = ethToNearLock
 exports.nearToEthUnlock = nearToEthUnlock
@@ -205,3 +255,4 @@ exports.mintErc20 = mintErc20
 exports.getErc20Balance = getErc20Balance
 exports.getAddressBySecretKey = getAddressBySecretKey
 exports.getClientBlockHeightHash = getClientBlockHeightHash
+exports.getBridgeOnNearBalance = getBridgeOnNearBalance
