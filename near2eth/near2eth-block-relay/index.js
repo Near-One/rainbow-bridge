@@ -273,11 +273,12 @@ class Near2EthRelay {
           )
         }
         delay = Math.max(delay, minDelay)
-        console.log(
-          `Client height is ${bridgeState.currentHeight}, chain height is ${lastBlock.inner_lite.height}. Sleeping for ${delay} seconds.`
-        )
         clientHeightGauge.set(Number(BigInt(bridgeState.currentHeight)))
         chainHeightGauge.set(Number(BigInt(lastBlock.inner_lite.height)))
+
+        const status = await this.near.connection.provider.sendJsonRpc('status', '')
+        console.log(`Last valid header on the client: ${bridgeState.currentHeight}. Next light client block: ${lastBlock.inner_lite.height}`)
+        console.log(`Chain height: ${status.sync_info.latest_block_height} Sleeping for ${delay} seconds.`)
         await sleep(1000 * delay)
       } catch (e) {
         console.log('Error', e)
