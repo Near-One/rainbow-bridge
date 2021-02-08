@@ -727,7 +727,7 @@ dependencies = [
 [[package]]
 name = "ethash"
 version = "0.4.0"
-source = "git+https://github.com/nearprotocol/rust-ethash?branch=upgrade-eth-types#d1dd3efad109498189c03957dc1cf80b4f410632"
+source = "git+https://github.com/nearprotocol/rust-ethash#ed163a30dfdd6b1b61a817de7ccb1b2224c8a431"
 dependencies = [
  "byteorder",
  "ethereum-types 0.9.2",

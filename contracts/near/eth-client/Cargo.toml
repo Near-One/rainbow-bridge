@@ -16,7 +16,7 @@ rlp = "0.4.2"
 futures = "0.1.26"
 primal = "0.2.3"
 arrutil = "0.1.2"
-ethash = { git = "https://github.com/nearprotocol/rust-ethash", branch = "upgrade-eth-types" }
+ethash = { git = "https://github.com/nearprotocol/rust-ethash" }
 hex = "0.4.0"
 rustc-hex = "2.1.0"
 
