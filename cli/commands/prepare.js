@@ -4,7 +4,7 @@ const path = require('path')
 const { getScript } = require('rainbow-bridge-utils')
 
 class PrepareCommand {
-  static execute ({ coreSrc, nearupSrc }) {
+  static execute ({ coreSrc }) {
     const scriptDir = getScript('prepare')
 
     const shell = ['bash', scriptDir].join(' ')
