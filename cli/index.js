@@ -642,7 +642,7 @@ const testingCommand = program
   )
 
 RainbowConfig.addOptions(
-  program
+  testingCommand
     .command('transfer-eth-erc20-to-near')
     .option('--amount <amount>', 'Amount of ERC20 tokens to transfer')
     .option(
@@ -681,7 +681,7 @@ RainbowConfig.addOptions(
 )
 
 RainbowConfig.addOptions(
-  program
+  testingCommand
     .command('transfer-eth-erc20-from-near')
     .option('--amount <amount>', 'Amount of ERC20 tokens to transfer')
     .option(
@@ -756,7 +756,7 @@ RainbowConfig.addOptions(
 )
 
 RainbowConfig.addOptions(
-  program
+  testingCommand
     .command('get-erc20-balance <eth_account_address>')
     .description('Get ERC20 balance on Ethereum for specific token (e.g. erc20).'),
   async (ethAccountAddress, args) => {
@@ -773,7 +773,7 @@ RainbowConfig.addOptions(
 )
 
 RainbowConfig.addOptions(
-  program
+  testingCommand
     .command('get-bridge-on-near-balance')
     .option(
       '--near-receiver-account <near_receiver_account>',
@@ -788,7 +788,6 @@ RainbowConfig.addOptions(
     'near-erc20-account',
     'near-network-id',
     'near-node-url',
-    'near-master-sk'
   ]
 )
 

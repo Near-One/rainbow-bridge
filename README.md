@@ -69,7 +69,7 @@ To learn the commands that you can use with the rainbow bridge run
 Alternatively, clone this repo, `yarn install`, then you can see what commands you can use with:
 
 ```
-    cli/./index.js --help
+    cli/index.js --help
 ```
 
 Parameters of each command can be specified through environment variables, command line arguments, entries in the `~/.rainbow/config.json` config file, or the default value will be used -- in that priority.
@@ -173,7 +173,7 @@ You can get infura project id, by registering at [infura.io](http://infura.io/).
 
 To transfer ERC20 from ETH to NEAR run:
 ```bash
-rainbow transfer-eth-erc20-to-near --amount 10 --eth-sender-sk <eth_token_holder_address> --near-receiver-account <near_token_holder_account>
+rainbow TESTING transfer-eth-erc20-to-near --amount 10 --eth-sender-sk <eth_token_holder_address> --near-receiver-account <near_token_holder_account>
 ```
 (If the command interrupts in the middle re-run it and it will resume the transfer. PoA RPC sometimes has issues)
 Wait for the transfer to finish. You should see:
@@ -184,7 +184,7 @@ Balance of <near_token_holder_account> after the transfer is 10
 
 To transfer ERC20 back from NEAR to ETH run:
 ```bash
-rainbow transfer-eth-erc20-from-near --amount 1 --near-sender-account <near_token_holder_account> --near-sender-sk <near_token_holder_sk> --eth-receiver-address <eth_token_holder_address>
+rainbow TESTING transfer-eth-erc20-from-near --amount 1 --near-sender-account <near_token_holder_account> --near-sender-sk <near_token_holder_sk> --eth-receiver-address <eth_token_holder_address>
 ```
 
 You should see:
@@ -285,13 +285,13 @@ pm2 logs
 
 Let's check the balance of the rainbow bridge prover on Near before transferring the tokens
 ```bash
-rainbow get-bridge-on-near-balance --near-receiver-account rainbow_bridge_eth_on_near_prover
+rainbow TESTING get-bridge-on-near-balance --near-receiver-account rainbow_bridge_eth_on_near_prover
 ```
 
 Finally, let's transfer some tokens
 
 ```bash
-rainbow transfer-eth-erc20-to-near --amount 1000 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account rainbow_bridge_eth_on_near_prover --near-master-account neartokenfactory
+rainbow TESTING transfer-eth-erc20-to-near --amount 1000 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account rainbow_bridge_eth_on_near_prover --near-master-account neartokenfactory
 ```
 
 Now you check the balance of the rainbow bridge prover again. You should notice the balance was changed.
@@ -301,18 +301,35 @@ key of Ganache, so we have transferred ERC20 tokens from it to `alice.test.near`
 Notice that we are using `neartokenfactory` account here to pay for the NEAR gas fees, any account for which we know a secret key would've worked too.
 You must observe blocks being submitted.
 
+You can also manually check the ERC20 balance of the receiver before and after receiving the transfer back from the NEAR side
+
+```bash
+rainbow TESTING get-erc20-balance 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8
+```
+
 Now let's try to transfer one token back to Ethereum
 
 ```bash
-rainbow transfer-eth-erc20-from-near --amount 1 --near-sender-account rainbow_bridge_eth_on_near_prover --near-sender-sk ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP --eth-receiver-address 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8
+rainbow TESTING transfer-eth-erc20-from-near --amount 1 --near-sender-account rainbow_bridge_eth_on_near_prover --near-sender-sk ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP --eth-receiver-address 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8
 ```
 
 You should observe the change of the ERC20 balance as reported by the CLI.
 
-You can also manually check the ERC20 balance of the receiver before and after the transfer
+### Stopping the services
+
+If you need to stop relay services or node clients one by one you can execure the following commands:
 
 ```bash
-rainbow get-erc20-balance 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8
+rainbow stop near-node
+rainbow stop ganache
+rainbow stop eth2near-relay
+rainbow stop near2eth-relay
+rainbow stop bridge-watchdog
+```
+
+Or you can stop all them at once:
+```bash
+rainbow stop all
 ```
 
 ## Contract Development Workflow
