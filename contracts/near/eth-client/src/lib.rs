@@ -395,7 +395,7 @@ impl EthClient {
         let pair = ethash::hashimoto_with_hasher(
             header_hash.0,
             nonce.0,
-            ethash::get_full_size(header_number as usize / 30000),
+            ethash::get_full_size(header_number / 30000),
             |offset| {
                 let idx = *index.borrow_mut();
                 *index.borrow_mut() += 1;
