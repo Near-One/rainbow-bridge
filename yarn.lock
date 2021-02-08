@@ -4130,9 +4130,9 @@ query-string@^5.0.1:
     object-assign "^4.1.0"
     strict-uri-encode "^1.0.0"
 
-rainbow-token-connector@near/rainbow-token-connector#87ba0a1a8268f26ff58b67a6139ddb74f8eecce6:
-  version "1.0.0"
-  resolved "https://codeload.github.com/near/rainbow-token-connector/tar.gz/87ba0a1a8268f26ff58b67a6139ddb74f8eecce6"
+rainbow-token-connector@near/rainbow-token-connector#0646850267c42057e92f2d670eebe79c9c9211f9:
+  version "0.0.0"
+  resolved "https://codeload.github.com/near/rainbow-token-connector/tar.gz/0646850267c42057e92f2d670eebe79c9c9211f9"
 
 randombytes@^2.0.0, randombytes@^2.0.1, randombytes@^2.0.5, randombytes@^2.1.0:
   version "2.1.0"

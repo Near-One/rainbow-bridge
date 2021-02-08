@@ -37,6 +37,17 @@ class HttpPrometheus {
     self.promClient.register.registerMetric(gauge)
     return gauge
   }
+
+  counter (name, help, labels = {}) {
+    const self = this
+    const counter = new self.promClient.Counter({
+      name: self.metricsPrefix + name,
+      help,
+      labelNames: Object.keys(labels)
+    })
+    self.promClient.register.registerMetric(counter)
+    return counter
+  }
 }
 
 module.exports = {

@@ -14,11 +14,14 @@ async function maybeCreateAccount (
   initBalance,
   contractPath
 ) {
-  if (!(await accountExists(near, accountId))) {
-    console.log('Account %s does not exist creating it.', accountId)
+  const status = await getAccountStatus(near, accountId)
+
+  if (status === accountStatus.ACCOUNT_DOES_NOT_EXIST) {
+    console.log(`Account ${accountId} does not exist creating it.`)
     const masterAccount = new nearAPI.Account(near.connection, masterAccountId)
     const balance = new BN(initBalance)
     let accountCreated = false
+    let lastError
     for (let i = 0; i < RETRY_NONCE; i++) {
       try {
         await masterAccount.createAccount(accountId, accountPK, balance)
@@ -29,20 +32,24 @@ async function maybeCreateAccount (
           // Last createAccount can timeout, but actually success later
           accountCreated = true
           break
+        } else {
+          // retry on timeout, nonce error, and socket hangout, not enough funds
+          lastError = e
         }
-        // retry on timeout, nonce error, and socket hangout
       }
     }
     if (!accountCreated) {
-      console.log(
-        `Failed to create account %s in ${RETRY_NONCE} retries due to nonce`,
-        accountId
-      )
+      console.log(`Failed to create account ${accountId} in ${RETRY_NONCE} retries due to nonce`)
+      console.error(lastError)
       process.exit(1)
     }
 
     console.log('Created account %s', accountId)
+  } else {
+    console.log(`Account ${accountId} already exist.`)
+  }
 
+  if (status !== accountStatus.WITH_CONTRACT) {
     const account = new nearAPI.Account(near.connection, accountId)
 
     let contractDeployed = false
@@ -72,6 +79,29 @@ async function maybeCreateAccount (
       process.exit(1)
     }
     console.log('Deployed contract to account %s', accountId)
+  }
+}
+
+const EMPTY_HASH = '11111111111111111111111111111111'
+
+const accountStatus = {
+  ACCOUNT_DOES_NOT_EXIST: 'Account does not exist',
+  EMPTY_ACCOUNT: 'No contract deployed',
+  WITH_CONTRACT: 'With contract deployed'
+}
+
+async function getAccountStatus (near, accountId) {
+  const account = new nearAPI.Account(near.connection, accountId)
+  try {
+    await account.fetchState()
+
+    if (account._state.code_hash === EMPTY_HASH) {
+      return accountStatus.EMPTY_HASH
+    } else {
+      return accountStatus.WITH_CONTRACT
+    }
+  } catch (e) {
+    return accountStatus.ACCOUNT_DOES_NOT_EXIST
   }
 }
 

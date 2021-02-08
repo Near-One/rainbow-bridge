@@ -165,6 +165,19 @@ class Near2EthRelay {
     }
   }
 
+  // TODO: Add cli command that allows withdraw funds from client.
+  async withdraw ({
+    ethGasMultiplier
+  }) {
+    const web3 = this.web3
+    await this.clientContract.methods.withdraw().send({
+      from: this.ethMasterAccount,
+      gas: 1000000,
+      handleRevert: true,
+      gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(ethGasMultiplier))
+    })
+  }
+
   async runInternal ({
     submitInvalidBlock,
     near2ethRelayMinDelay,
@@ -244,17 +257,22 @@ class Near2EthRelay {
               console.log(borshBlock)
               borshBlock[Math.floor(borshBlock.length * Math.random())] += 1
             }
+
+            const gasPrice = new BN(await web3.eth.getGasPrice())
+            console.log('Gas price:', gasPrice.toNumber())
+
             await clientContract.methods.addLightClientBlock(borshBlock).send({
               from: ethMasterAccount,
-              gas: 4000000,
+              gas: 7000000,
               handleRevert: true,
-              gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(ethGasMultiplier))
+              gasPrice: gasPrice.mul(new BN(ethGasMultiplier))
             })
 
             if (submitInvalidBlock) {
               console.log('Successfully submit invalid block')
               return process.exit(0)
             }
+
             console.log('Submitted.')
             continue
           }

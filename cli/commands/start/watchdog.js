@@ -11,7 +11,8 @@ class StartWatchdogCommand {
     ethClientAbiPath,
     ethClientAddress,
     watchdogDelay,
-    watchdogErrorDelay
+    watchdogErrorDelay,
+    metricsPort
   }) {
     if (daemon === 'true') {
       ProcessManager.connect((err) => {
@@ -36,7 +37,8 @@ class StartWatchdogCommand {
             '--eth-client-address', ethClientAddress,
             '--watchdog-delay', watchdogDelay,
             '--watchdog-error-delay', watchdogErrorDelay,
-            '--daemon', 'false'
+            '--daemon', 'false',
+            '--metrics-port', metricsPort
           ],
           logDateFormat: 'YYYY-MM-DD HH:mm:ss.SSS'
         })
@@ -47,7 +49,8 @@ class StartWatchdogCommand {
         ethNodeUrl,
         ethMasterSk,
         ethClientAbiPath,
-        ethClientAddress
+        ethClientAddress,
+        metricsPort
       })
       await watchdog.run({
         ethMasterSk,

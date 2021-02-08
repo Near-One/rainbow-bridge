@@ -17,6 +17,9 @@ class InitNearContracts {
     nearClientSk,
     nearClientContractPath,
     nearClientInitBalance,
+    hashesGcThreshold,
+    finalizedGcThreshold,
+    numConfirmations,
     nearProverAccount,
     nearProverSk,
     nearProverContractPath,
@@ -95,6 +98,9 @@ class InitNearContracts {
     )
     const robustWeb3 = new RobustWeb3(ethNodeUrl)
     await clientContract.maybeInitialize(
+      hashesGcThreshold,
+      finalizedGcThreshold,
+      numConfirmations,
       nearClientValidateEthhash === 'true',
       nearClientTrustedSigner || null,
       robustWeb3

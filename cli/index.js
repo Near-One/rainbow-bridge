@@ -15,6 +15,7 @@ const {
 const { StartWatchdogCommand } = require('./commands/start/watchdog.js')
 const { StartGanacheNodeCommand } = require('./commands/start/ganache.js')
 const { StartLocalNearNodeCommand } = require('./commands/start/near.js')
+const { AddressWatcherCommand } = require('./commands/start/address-watcher.js')
 const { StopManagedProcessCommand } = require('./commands/stop/process.js')
 const {
   DangerSubmitInvalidNearBlock
@@ -49,18 +50,9 @@ const {
 // source dir or where rainbow cli is installed (when install with npm)
 // TODO @frol use config
 const BRIDGE_SRC_DIR = __dirname
-const LIBS_SOL_SRC_DIR = path.join(
-  BRIDGE_SRC_DIR,
-  '../node_modules/rainbow-bridge-sol'
-)
-const LIBS_RS_SRC_DIR = path.join(
-  BRIDGE_SRC_DIR,
-  '../node_modules/rainbow-bridge-rs'
-)
-const LIBS_TC_SRC_DIR = path.join(
-  BRIDGE_SRC_DIR,
-  '../node_modules/rainbow-token-connector'
-)
+const LIBS_SOL_SRC_DIR = path.join(BRIDGE_SRC_DIR, '..', 'contracts', 'eth')
+const LIBS_RS_SRC_DIR = path.join(BRIDGE_SRC_DIR, '..', 'contracts', 'near')
+const LIBS_TC_SRC_DIR = path.join(BRIDGE_SRC_DIR, '..', 'node_modules', 'rainbow-token-connector')
 
 RainbowConfig.declareOption(
   'near-network-id',
@@ -106,8 +98,26 @@ RainbowConfig.declareOption(
   'true'
 )
 RainbowConfig.declareOption(
+  'hashes-gc-threshold',
+  'Events that happen past this threshold cannot be verified by the client.',
+  40000
+)
+RainbowConfig.declareOption(
+  'finalized-gc-threshold',
+  'We store full information about the headers for the past `finalized_gc_threshold` blocks.',
+  500
+)
+// TODO: https://github.com/near/rainbow-bridge/issues/388
+// Move the number of confirmation out of the prover, and let each application
+// decide that parameter considering if they prefer fast finality or higher confidence of inclusion.
+RainbowConfig.declareOption(
+  'num-confirmations',
+  'Number of confirmations blocks on Ethereum that applications can use to consider the transaction safe.',
+  30
+)
+RainbowConfig.declareOption(
   'near-client-trusted-signer',
-  'When non empty, deploy as trusted-signer mode where only tursted signer can submit blocks to client',
+  'When non empty, deploy as trusted-signer mode where only trusted signer can submit blocks to client',
   ''
 )
 RainbowConfig.declareOption(
@@ -178,12 +188,12 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'eth-locker-abi-path',
   'Path to the .abi file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
-  path.join(LIBS_TC_SRC_DIR, 'res/BridgeTokenFactory.full.abi')
+  path.join(LIBS_TC_SRC_DIR, 'res/ERC20Locker.full.abi')
 )
 RainbowConfig.declareOption(
   'eth-locker-bin-path',
   'Path to the .bin file defining Ethereum locker contract. This contract works in pair with mintable fungible token on NEAR blockchain.',
-  path.join(LIBS_TC_SRC_DIR, 'res/BridgeTokenFactory.full.bin')
+  path.join(LIBS_TC_SRC_DIR, 'res/ERC20Locker.full.bin')
 )
 RainbowConfig.declareOption(
   'eth-erc20-address',
@@ -243,6 +253,16 @@ RainbowConfig.declareOption(
   path.join(LIBS_SOL_SRC_DIR, 'nearbridge/dist/NearBridge.full.bin')
 )
 RainbowConfig.declareOption(
+  'eth-admin-address',
+  'ETH address of the administrator for locker contract. It is used for upgradeability purposes. If empty, used address of eth-master-sk.'
+)
+// TODO: Add example of json file with description of accounts to be watched.
+RainbowConfig.declareOption(
+  'monitor-accounts-path',
+  'Path to all accounts on NEAR and Ethereum side to monitor. Ignored if not specified.',
+  ''
+)
+RainbowConfig.declareOption(
   'eth-prover-address',
   'ETH address of the EthProver contract.'
 )
@@ -282,6 +302,8 @@ RainbowConfig.declareOption(
   '1'
 )
 RainbowConfig.declareOption('near-erc20-account', 'Must be declared before set')
+RainbowConfig.declareOption('total-submit-block', 'Number of blocks to submit on each batch update from Ethereum to NEAR', 4)
+RainbowConfig.declareOption('gas-per-transaction', 'Maximum gas per transaction add_block_header', '72000000000000')
 
 program.version(require('./package.json').version)
 
@@ -336,6 +358,8 @@ RainbowConfig.addOptions(
     'near-network-id',
     'near-node-url',
     'eth-node-url',
+    'total-submit-block',
+    'gas-per-transaction',
     'daemon',
     'metrics-port'
   ]
@@ -370,7 +394,24 @@ RainbowConfig.addOptions(
     'eth-client-address',
     'watchdog-delay',
     'watchdog-error-delay',
-    'daemon'
+    'daemon',
+    'metrics-port'
+  ]
+)
+
+RainbowConfig.addOptions(
+  startCommand.command('address-watcher'),
+  AddressWatcherCommand.execute,
+  [
+    'eth-node-url',
+    'near-node-url',
+    'near-network-id',
+    'eth-master-sk',
+    'near-client-account',
+    'near-master-account',
+    'monitor-accounts-path',
+    'daemon',
+    'metrics-port'
   ]
 )
 
@@ -430,10 +471,14 @@ RainbowConfig.addOptions(
     'near-client-init-balance',
     'near-client-validate-ethash',
     'near-client-trusted-signer',
+    'hashes-gc-threshold',
+    'finalized-gc-threshold',
+    'num-confirmations',
     'near-prover-account',
     'near-prover-sk',
     'near-prover-contract-path',
     'near-prover-init-balance'
+
   ]
 )
 
@@ -553,6 +598,7 @@ RainbowConfig.addOptions(
     'eth-master-sk',
     'eth-locker-abi-path',
     'eth-locker-bin-path',
+    'eth-admin-address',
     'eth-prover-address',
     'eth-gas-multiplier'
   ]
