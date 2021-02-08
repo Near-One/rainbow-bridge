@@ -285,19 +285,19 @@ pm2 logs
 
 Let's check the balance of the rainbow bridge prover on Near before transferring the tokens
 ```bash
-rainbow TESTING get-bridge-on-near-balance --near-receiver-account rainbow_bridge_eth_on_near_prover
+rainbow TESTING get-bridge-on-near-balance --near-receiver-account node0
 ```
 
 Finally, let's transfer some tokens
 
 ```bash
-rainbow TESTING transfer-eth-erc20-to-near --amount 1000 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account rainbow_bridge_eth_on_near_prover --near-master-account neartokenfactory
+rainbow TESTING transfer-eth-erc20-to-near --amount 1000 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account node0 --near-master-account neartokenfactory
 ```
 
 Now you check the balance of the rainbow bridge prover again. You should notice the balance was changed.
 
 Note, when we deployed ERC20 to the Ethereum blockchain we have minted a large number of tokens to the default master
-key of Ganache, so we have transferred ERC20 tokens from it to `alice.test.near`.
+key of Ganache, so we have transferred ERC20 tokens from it to `node0` account.
 Notice that we are using `neartokenfactory` account here to pay for the NEAR gas fees, any account for which we know a secret key would've worked too.
 You must observe blocks being submitted.
 
@@ -310,14 +310,14 @@ rainbow TESTING get-erc20-balance 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8
 Now let's try to transfer one token back to Ethereum
 
 ```bash
-rainbow TESTING transfer-eth-erc20-from-near --amount 1 --near-sender-account rainbow_bridge_eth_on_near_prover --near-sender-sk ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP --eth-receiver-address 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8
+rainbow TESTING transfer-eth-erc20-from-near --amount 1 --near-sender-account node0 --near-sender-sk ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP --eth-receiver-address 0xEC8bE1A5630364292E56D01129E8ee8A9578d7D8
 ```
 
 You should observe the change of the ERC20 balance as reported by the CLI.
 
 ### Stopping the services
 
-If you need to stop relay services or node clients one by one you can execure the following commands:
+If you need to stop relay services or node clients one by one you can execute the following commands:
 
 ```bash
 rainbow stop near-node
