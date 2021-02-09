@@ -3,7 +3,6 @@ const { Web3, BorshContract, readerToHex } = require('rainbow-bridge-utils')
 const borshSchema = {
   bool: {
     kind: 'function',
-    // @ts-ignore
     ser: (b) => Buffer.from(Web3.utils.hexToBytes(b ? '0x01' : '0x00')),
     deser: (z) => readerToHex(1)(z) === '0x01'
   },

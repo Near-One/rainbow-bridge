@@ -1,7 +1,5 @@
 const fs = require('fs')
-// @ts-ignore
 const bs58 = require('bs58')
-// @ts-ignore
 const { toBuffer } = require('eth-util-lite')
 const { BN } = require('ethereumjs-util')
 const {
@@ -25,7 +23,6 @@ class Near2EthRelay {
     ethGasMultiplier,
     metricsPort
   }) {
-    // @ts-ignore
     this.robustWeb3 = new RobustWeb3(ethNodeUrl)
     this.web3 = this.robustWeb3.web3
     this.ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(
@@ -47,7 +44,6 @@ class Near2EthRelay {
 
     // Declare Near2EthClient contract.
     this.clientContract = new this.web3.eth.Contract(
-      // @ts-ignore
       JSON.parse(
         fs.readFileSync(ethClientAbiPath)
       ),
@@ -72,13 +68,11 @@ class Near2EthRelay {
         const headBlock = await this.near.connection.provider.block({
           blockId: status.sync_info.latest_block_height
         })
-        // @ts-ignore
         const lastFinalBlockHash = headBlock.header.last_final_block
         // The finalized block is not immediately available so we wait for it to become available.
         let lightClientBlock = null
         let currentValidators = null
         while (!lightClientBlock) {
-          // @ts-ignore
           currentValidators = await this.near.connection.provider.sendJsonRpc(
             'EXPERIMENTAL_validators_ordered',
             [lastFinalBlockHash]
@@ -101,7 +95,6 @@ class Near2EthRelay {
         const borshInitialValidators = borshifyInitialValidators(
           currentValidators
         )
-        // @ts-ignore
         let gasPrice = new BN(await this.web3.eth.getGasPrice()).mul(new BN(ethGasMultiplier))
         let err
         for (let i = 0; i < 10; i++) {

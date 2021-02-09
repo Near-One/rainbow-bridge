@@ -25,7 +25,6 @@ function web3BlockToRlp (blockData) {
 const borshSchema = {
   bool: {
     kind: 'function',
-    // @ts-ignore
     ser: (b) => Buffer.from(Web3.utils.hexToBytes(b ? '0x01' : '0x00')),
     deser: (z) => readerToHex(1)(z) === '0x01'
   },
@@ -142,7 +141,6 @@ class EthOnNearClientContract extends BorshContract {
     await this.accessKeyInit()
     let initialized = false
     try {
-      // @ts-ignore
       initialized = await this.initialized()
     } catch (e) {}
     if (!initialized) {
@@ -151,7 +149,6 @@ class EthOnNearClientContract extends BorshContract {
       const blockRlp = web3BlockToRlp(
         await robustWeb3.getBlock(lastBlockNumber)
       )
-      // @ts-ignore
       await this.init(
         {
           validate_ethash: validateEthash,
@@ -169,11 +166,9 @@ class EthOnNearClientContract extends BorshContract {
     }
 
     console.log('Checking EthOnNearClient initialization.')
-    // @ts-ignore
     const firstRoot = await this.dag_merkle_root({
       epoch: 0
     })
-    // @ts-ignore
     const lastRoot = await this.dag_merkle_root({
       epoch: 511
     })

@@ -59,7 +59,6 @@ class Eth2NearRelay {
     }
 
     this.ethClientContract = ethClientContract
-    // @ts-ignore
     this.robustWeb3 = new RobustWeb3(ethNodeUrl)
     this.web3 = this.robustWeb3.web3
     this.metricsPort = metricsPort

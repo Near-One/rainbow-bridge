@@ -398,7 +398,6 @@ class TransferEthERC20FromNear {
     web3.eth.defaultAccount = ethMasterAccount.address
     ethMasterAccount = ethMasterAccount.address
     const clientContract = new web3.eth.Contract(
-      // @ts-ignore
       JSON.parse(fs.readFileSync(ethClientAbiPath)),
       ethClientAddress,
       {
@@ -407,7 +406,6 @@ class TransferEthERC20FromNear {
       }
     )
     const proverContract = new web3.eth.Contract(
-      // @ts-ignore
       JSON.parse(fs.readFileSync(ethProverAbiPath)),
       ethProverAddress,
       {
@@ -416,7 +414,6 @@ class TransferEthERC20FromNear {
       }
     )
     const ethTokenLockerContract = new web3.eth.Contract(
-      // @ts-ignore
       JSON.parse(fs.readFileSync(ethLockerAbiPath)),
       ethLockerAddress,
       {
@@ -425,7 +422,6 @@ class TransferEthERC20FromNear {
       }
     )
     const ethERC20Contract = new web3.eth.Contract(
-      // @ts-ignore
       JSON.parse(fs.readFileSync(ethErc20AbiPath)),
       ethErc20Address,
       {
