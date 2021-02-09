@@ -25,11 +25,5 @@
     "prom-client": "^12.0.0",
     "promisfy": "^1.2.0",
     "rainbow-bridge-utils": "1.0.0"
-  },
-  "devDependencies": {
-    "standard": "*"
-  },
-  "scripts": {
-    "standard": "standard"
   }
 }

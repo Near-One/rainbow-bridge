@@ -24,11 +24,5 @@
     "ethereumjs-util": "^6.2.0",
     "rainbow-bridge-utils": "1.0.0",
     "rainbow-bridge-eth2near-block-relay": "1.0.0"
-  },
-  "devDependencies": {
-    "standard": "*"
-  },
-  "scripts": {
-    "standard": "standard"
   }
 }

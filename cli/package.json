@@ -1,13 +1,13 @@
 {
   "name": "rainbow-bridge-cli",
   "version": "4.0.0",
+  "author": "Near Inc. <hello@near.org>",
   "description": "CLI to set up the environment needed for the Rainbow Bridge to work.",
   "main": "index.js",
   "bin": {
     "rainbow-bridge": "./index.js",
     "rainbow": "./index.js"
   },
-  "author": "Near Inc. <hello@near.org>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/near/rainbow-bridge.git"
@@ -36,11 +36,5 @@
     "rainbow-bridge-testing": "1.0.0",
     "rainbow-token-connector": "near/rainbow-token-connector#0646850267c42057e92f2d670eebe79c9c9211f9",
     "request": "^2.88.2"
-  },
-  "devDependencies": {
-    "standard": "*"
-  },
-  "scripts": {
-    "standard": "standard"
   }
 }

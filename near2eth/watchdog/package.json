@@ -21,11 +21,5 @@
     "eth-util-lite": "near/eth-util-lite#master",
     "ethereumjs-tx": "^2.1.2",
     "rainbow-bridge-utils": "1.0.0"
-  },
-  "devDependencies": {
-    "standard": "*"
-  },
-  "scripts": {
-    "standard": "standard"
   }
 }
