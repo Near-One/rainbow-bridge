@@ -25,6 +25,8 @@ touch $RAINBOW_DIR/logs/watchdog/out.log
 touch $RAINBOW_DIR/logs/watchdog/err.log
 
 pip3 install nearup --upgrade --user
+USER_BASE_BIN=$(python3 -m site --user-base)/bin
+export PATH="$USER_BASE_BIN:$PATH"
 
 unameOut="$(uname -s)"
 case "${unameOut}" in
