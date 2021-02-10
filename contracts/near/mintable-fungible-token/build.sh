@@ -3,7 +3,8 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-if [[ -z "$BUILDKITE" ]]; then
+if [[ -z "$BUILDKITE" ]] && [[ "$(uname -s)" != "Darwin" ]];
+then
      userflag="-u $UID:$UID"
 else
      userflag=""
