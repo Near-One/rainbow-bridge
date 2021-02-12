@@ -14,8 +14,9 @@ contract NearProver is INearProver {
 
     INearBridge public bridge;
 
-    constructor(INearBridge _bridge) public {
+    constructor(INearBridge _bridge, address _admin) public {
         bridge = _bridge;
+        admin = _admin;
     }
 
     function proveOutcome(bytes memory proofData, uint64 blockHeight) public view override returns (bool) {
@@ -56,5 +57,18 @@ contract NearProver is INearProver {
                 hash = sha256(abi.encodePacked(hash, item.hash));
             }
         }
+    }
+
+    address public admin;
+
+    modifier onlyAdmin {
+        require(msg.sender == admin);
+        _;
+    }
+
+    function adminDelegatecall(address target, bytes memory data) public onlyAdmin returns (bytes memory) {
+        (bool success, bytes memory rdata) = target.delegatecall(data);
+        require(success);
+        return rdata;
     }
 }

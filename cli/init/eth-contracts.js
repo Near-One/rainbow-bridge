@@ -168,8 +168,33 @@ class InitEthClient {
     ethEd25519Address,
     ethClientAbiPath,
     ethClientBinPath,
+    ethAdminAddress,
     ethGasMultiplier
   }) {
+    if (ethAdminAddress === '') {
+      const web3 = new Web3(ethNodeUrl)
+      ethAdminAddress = web3.eth.accounts.privateKeyToAccount(ethMasterSk)
+        .address
+    }
+
+    ethClientLockDuration = Number(ethClientLockDuration)
+    ethClientReplaceDuration = Number(ethClientReplaceDuration)
+
+    // replace duration should be at least twice as long as lock duration or 20 minutes longer
+    const minAllowedReplaceDuration = Math.min(
+      ethClientLockDuration + 20 * 60,
+      2 * ethClientLockDuration
+    )
+    if (ethClientReplaceDuration < minAllowedReplaceDuration) {
+      throw new Error(
+        `Invalid parameters ${JSON.stringify({
+          ethClientLockDuration,
+          ethClientReplaceDuration,
+          minAllowedReplaceDuration
+        })}`
+      )
+    }
+
     const ethContractInitializer = new EthContractInitializer()
     const web3 = new Web3(ethNodeUrl)
     const lockEthAmount = web3.utils.toBN(ethClientLockEthAmount)
@@ -187,7 +212,8 @@ class InitEthClient {
           ethEd25519Address,
           lockEthAmount,
           lockDuration,
-          replaceDuration
+          replaceDuration,
+          ethAdminAddress
         ],
         gas: 5000000,
         ethContractAbiPath: ethClientAbiPath,
@@ -214,12 +240,19 @@ class InitEthProver {
     ethClientAddress,
     ethProverAbiPath,
     ethProverBinPath,
+    ethAdminAddress,
     ethGasMultiplier
   }) {
+    if (ethAdminAddress === '') {
+      const web3 = new Web3(ethNodeUrl)
+      ethAdminAddress = web3.eth.accounts.privateKeyToAccount(ethMasterSk)
+        .address
+    }
+
     const ethContractInitializer = new EthContractInitializer()
     const success = await ethContractInitializer.execute(
       {
-        args: [ethClientAddress],
+        args: [ethClientAddress, ethAdminAddress],
         gas: 3000000,
         ethContractAbiPath: ethProverAbiPath,
         ethContractBinPath: ethProverBinPath,

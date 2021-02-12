@@ -79,12 +79,15 @@ contract NearBridge is INearBridge {
         Ed25519 ed,
         uint256 lockEthAmount_,
         uint256 lockDuration_,
-        uint256 replaceDuration_
+        uint256 replaceDuration_,
+        address admin_
     ) public {
+        require(replaceDuration_ > lockDuration_.mul(1000000000));
         edwards = ed;
         lockEthAmount = lockEthAmount_;
         lockDuration = lockDuration_;
         replaceDuration = replaceDuration_;
+        admin = admin_;
         burner = address(0);
     }
 
@@ -347,5 +350,18 @@ contract NearBridge is INearBridge {
         if (res == 0 && block.timestamp >= lastValidAt && lastValidAt != 0 && height == untrustedHead.height) {
             res = untrustedHead.merkleRoot;
         }
+    }
+
+    address public admin;
+
+    modifier onlyAdmin {
+        require(msg.sender == admin);
+        _;
+    }
+
+    function adminDelegatecall(address target, bytes memory data) public onlyAdmin returns (bytes memory) {
+        (bool success, bytes memory rdata) = target.delegatecall(data);
+        require(success);
+        return rdata;
     }
 }
