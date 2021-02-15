@@ -283,18 +283,18 @@ pm2 logs
 
 ### Transferring tokens
 
-Let's check the balance of the rainbow bridge prover on Near before transferring the tokens
+Let's check the balance of bridged tokens from ETH to NEAR before starting the transfer. To this end let's use `node0` account, which is automatically created and funded on startup when localnet is started. 
 ```bash
 rainbow TESTING get-bridge-on-near-balance --near-receiver-account node0
 ```
 
-Finally, let's transfer some tokens
+Then transfer some tokens with:
 
 ```bash
 rainbow TESTING transfer-eth-erc20-to-near --amount 1000 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account node0 --near-master-account neartokenfactory
 ```
 
-Now you check the balance of the rainbow bridge prover again. You should notice the balance was changed.
+Now you check the balance of `node0` again. You should notice the balance was changed.
 
 Note, when we deployed ERC20 to the Ethereum blockchain we have minted a large number of tokens to the default master
 key of Ganache, so we have transferred ERC20 tokens from it to `node0` account.
