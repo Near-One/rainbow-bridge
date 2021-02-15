@@ -202,7 +202,6 @@ async function nearToEthUnlock ({
 // View
 async function getBridgeOnNearBalance ({
   nearReceiverAccount,
-  nearMasterAccount: nearMasterAccountId,
   nearErc20Account,
   nearNetworkId,
   nearNodeUrl,
@@ -213,16 +212,17 @@ async function getBridgeOnNearBalance ({
     const near = await nearAPI.connect({
       nodeUrl: nearNodeUrl,
       networkId: nearNetworkId,
-      masterAccount: nearMasterAccountId,
+      masterAccount: nearReceiverAccount,
       deps: { keyStore: keyStore }
     })
-    const nearMasterAccount = new nearAPI.Account(
+
+    const nearAccount = new nearAPI.Account(
       near.connection,
-      nearMasterAccountId
+      nearReceiverAccount
     )
 
     const nearTokenContract = new nearAPI.Contract(
-      nearMasterAccount,
+      nearAccount,
       nearErc20Account,
       {
         changeMethods: [],

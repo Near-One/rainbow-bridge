@@ -779,12 +779,11 @@ RainbowConfig.addOptions(
       '--near-receiver-account <near_receiver_account>',
       'The account on NEAR blockchain that owns bridged tokens.'
     )
-    .description('Gets balance on Near for Rainbow-Bridge Eth on Near Prover.'),
+    .description('Gets balance of bridged tokens from ETH to NEAR for the provided account.'),
   async (args) => {
     await getBridgeOnNearBalance(args)
   },
   [
-    'near-master-account',
     'near-erc20-account',
     'near-network-id',
     'near-node-url',

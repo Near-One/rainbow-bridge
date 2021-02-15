@@ -317,7 +317,13 @@ You should observe the change of the ERC20 balance as reported by the CLI.
 
 ### Stopping the services
 
-If you need to stop relay services or node clients one by one you can execute the following commands:
+To stop relay services and node clients execute the following command:
+
+```bash
+rainbow stop all
+```
+
+Or you can stop them one by one using these commands:
 
 ```bash
 rainbow stop near-node
@@ -325,11 +331,6 @@ rainbow stop ganache
 rainbow stop eth2near-relay
 rainbow stop near2eth-relay
 rainbow stop bridge-watchdog
-```
-
-Or you can stop all them at once:
-```bash
-rainbow stop all
 ```
 
 ## Contract Development Workflow
