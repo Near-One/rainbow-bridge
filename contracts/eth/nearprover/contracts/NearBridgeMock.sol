@@ -2,10 +2,9 @@ pragma solidity ^0.6;
 
 import "../../nearbridge/contracts/INearBridge.sol";
 
-
 contract NearBridgeMock is INearBridge {
-    mapping(uint64 => bytes32) override public blockHashes;
-    mapping(uint64 => bytes32) override public blockMerkleRoots;
+    mapping(uint64 => bytes32) public override blockHashes;
+    mapping(uint64 => bytes32) public override blockMerkleRoots;
 
     function setBlockMerkleRoot(uint64 blockNumber, bytes32 root) external {
         blockMerkleRoots[blockNumber] = root;
@@ -15,29 +14,23 @@ contract NearBridgeMock is INearBridge {
         blockHashes[blockNumber] = hash;
     }
 
-    function balanceOf(address) override external view returns(uint256) {
+    function balanceOf(address) external view override returns (uint256) {
         return 0;
     }
 
-    function deposit() override external payable {
-    }
+    function deposit() external payable override {}
 
-    function withdraw() override external {
-    }
+    function withdraw() external override {}
 
-    function initWithValidators(bytes calldata) override external {
-    }
+    function initWithValidators(bytes calldata) external override {}
 
-    function initWithBlock(bytes calldata) override external {
-    }
+    function initWithBlock(bytes calldata) external override {}
 
-    function addLightClientBlock(bytes calldata) override external {
-    }
+    function addLightClientBlock(bytes calldata) external override {}
 
-    function challenge(address payable, uint256) override external {
-    }
+    function challenge(address payable, uint256) external override {}
 
-    function checkBlockProducerSignatureInHead(uint256) override external view returns(bool) {
+    function checkBlockProducerSignatureInHead(uint256) external view override returns (bool) {
         return true;
     }
 }

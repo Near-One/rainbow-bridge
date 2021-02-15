@@ -20,7 +20,8 @@
     "standard": "*"
   },
   "scripts": {
-    "standard": "standard"
+    "standard": "standard",
+    "prettier-solidity": "prettier --list-different --plugin node_modules/prettier-plugin-solidity/ **/*.sol"
   },
   "standard": {
     "ignore": [
