@@ -27,3 +27,9 @@ services:
         node index.js init-near-contracts &&
         node index.js start eth2near-relay --daemon false
       "
+  compile-solidity:
+    image: node:10.23-buster
+    volumes:
+      - ./contracts/eth:/host
+    working_dir: /host
+    command: ./build_all.sh

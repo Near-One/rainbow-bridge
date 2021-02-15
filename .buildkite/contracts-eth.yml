@@ -1,12 +1,7 @@
 steps:
     - label: "build all solidity contracts"
       command: |
-          source ~/.cargo/env
-          source ~/.nvm/nvm.sh
-          source ~/.yarn/yarn.sh
-          yarn
-          cd contracts/eth
-          yarn build
+          docker-compose up compile-solidity
           git status
           changed_files=$$(git status --porcelain --untracked-files=no | wc -l)
           if [ $$changed_files -gt 0 ]; then
