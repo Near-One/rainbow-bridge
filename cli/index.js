@@ -777,7 +777,7 @@ RainbowConfig.addOptions(
     .command('get-bridge-on-near-balance')
     .option(
       '--near-receiver-account <near_receiver_account>',
-      'The account on NEAR blockchain that received the minted token.'
+      'The account on NEAR blockchain that owns bridged tokens.'
     )
     .description('Gets balance on Near for Rainbow-Bridge Eth on Near Prover.'),
   async (args) => {
