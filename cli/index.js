@@ -304,6 +304,7 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption('near-erc20-account', 'Must be declared before set')
 RainbowConfig.declareOption('total-submit-block', 'Number of blocks to submit on each batch update from Ethereum to NEAR', 4)
 RainbowConfig.declareOption('gas-per-transaction', 'Maximum gas per transaction add_block_header', '72000000000000')
+RainbowConfig.declareOption('archival', 'Start Near node in archival mode (no garbage collection)', 'false')
 
 program.version(require('./package.json').version)
 
@@ -339,7 +340,7 @@ const startCommand = program.command('start')
 RainbowConfig.addOptions(
   startCommand.command('near-node'),
   StartLocalNearNodeCommand.execute,
-  []
+  ['archival']
 )
 
 RainbowConfig.addOptions(

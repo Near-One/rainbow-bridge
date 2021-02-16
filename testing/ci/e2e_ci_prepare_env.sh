@@ -10,3 +10,7 @@ fi
 export GOROOT=~/.go
 export GOPATH=~/go
 export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+
+pip3 install nearup --upgrade --user
+USER_BASE_BIN=$(python3 -m site --user-base)/bin
+export PATH="$USER_BASE_BIN:$PATH"

@@ -281,7 +281,7 @@ class EthStatus {
           this.networkLastBlock = new Status(Unknown)
         }
         try {
-          const masterAccount = await web3.eth.accounts.privateKeyToAccount(
+          const masterAccount = web3.eth.accounts.privateKeyToAccount(
             normalizeEthKey(ethMasterSk)
           )
           const accounts = await web3.eth.getAccounts()

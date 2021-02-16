@@ -1,0 +1,53 @@
+steps:
+    - label: "build all solidity contracts"
+      command: |
+          docker-compose up compile-solidity
+          git status
+          changed_files=$$(git status --porcelain --untracked-files=no | wc -l)
+          if [ $$changed_files -gt 0 ]; then
+            echo 'contract changed, please rebuild contract'
+            exit 1
+          fi
+      agents:
+          - "queue=medium"
+
+    - label: "nearbridge test"
+      command: |
+          source ~/.nvm/nvm.sh
+          source ~/.yarn/yarn.sh
+          cd contracts/eth/nearbridge
+          yarn
+          yarn test
+          node test/ed25519-test.js
+      agents:
+          - "queue=medium"
+
+    - label: "nearprover test"
+      command: |
+          source ~/.nvm/nvm.sh
+          source ~/.yarn/yarn.sh
+          cd contracts/eth/nearprover
+          yarn
+          yarn test
+      agents:
+          - "queue=medium"
+
+    - label: "verify near headers"
+      command: |
+          source ~/.nvm/nvm.sh
+          source ~/.yarn/yarn.sh
+          yarn
+          cd contracts/eth/
+          ci/test_verify_near_headers.sh
+      agents:
+          - "queue=medium"
+
+    - label: "verify near proofs"
+      command: |
+          source ~/.nvm/nvm.sh
+          source ~/.yarn/yarn.sh
+          yarn
+          cd contracts/eth/
+          ci/test_verify_near_proofs.sh
+      agents:
+          - "queue=medium"

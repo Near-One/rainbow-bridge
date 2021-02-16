@@ -14,7 +14,7 @@ if [ -n "${LOCAL_CORE_SRC+x}" ]; then
 else
   node index.js prepare
 fi
-node index.js start near-node
+node index.js start near-node --archival true
 # First start pm2 daemon
 yarn run pm2 ping
 node index.js start ganache
