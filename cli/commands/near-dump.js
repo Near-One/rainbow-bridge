@@ -34,7 +34,7 @@ async function getBlockChunk (nearNodeUrl, block) {
   return data.result
 }
 
-/* async function getTxProof (nearNodeUrl, futureBlock, txn) {
+async function getTxProof (nearNodeUrl, futureBlock, txn) {
   const resp = await fetch(nearNodeUrl, {
     method: 'post',
     headers: { 'Content-Type': 'application/json' },
@@ -53,7 +53,7 @@ async function getBlockChunk (nearNodeUrl, block) {
   })
   const data = await resp.json()
   return data.result
-} */
+}
 
 async function getReceiptProof (nearNodeUrl, futureBlock, receipt) {
   const resp = await fetch(nearNodeUrl, {
@@ -157,10 +157,10 @@ class NearDump {
         console.log(
           `There are ${chunk.receipts.length} receipts in block  ${latestBlock.header.height}'s chunk`
         )
-        /* for (const i in chunk.transactions) {
+        for (const i in chunk.transactions) {
           const proof = await getTxProof(nearNodeUrl, newLatestBlock, chunk.transactions[i])
           await NearDump.saveProof(latestBlock.header.height, 'txn', i, proof, path)
-        } */
+        }
         for (const i in chunk.receipts) {
           const proof = await getReceiptProof(
             nearNodeUrl,
