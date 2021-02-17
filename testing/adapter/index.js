@@ -207,7 +207,6 @@ async function getBridgeOnNearBalance ({
   nearNodeUrl,
 }) {
   try {
-    // @ts-ignore
     const keyStore = new nearAPI.keyStores.InMemoryKeyStore()
     const near = await nearAPI.connect({
       nodeUrl: nearNodeUrl,
