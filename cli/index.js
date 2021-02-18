@@ -510,6 +510,7 @@ RainbowConfig.addOptions(
     'eth-master-sk',
     'eth-client-abi-path',
     'eth-client-bin-path',
+    'eth-admin-address',
     'eth-ed25519-address',
     'eth-client-lock-eth-amount',
     'eth-client-lock-duration',
@@ -528,6 +529,7 @@ RainbowConfig.addOptions(
     'eth-master-sk',
     'eth-prover-abi-path',
     'eth-prover-bin-path',
+    'eth-admin-address',
     'eth-client-address',
     'eth-gas-multiplier'
   ]

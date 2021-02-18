@@ -9,7 +9,7 @@ const NearDecoder = artifacts.require('NearDecoder');
 
 contract('NearBridge', function ([_, addr1]) {
     it('should be ok', async function () {
-        const bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(3600), web3.utils.toBN(7200));
+        const bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(3600), web3.utils.toBN(7200), "0x0000000000000000000000000000000000000000");
         await bridge.deposit({ value: web3.utils.toWei('1') });
 
         const block120998 = borshify(require('./block_120998.json'));
@@ -48,7 +48,7 @@ contract('NearBridge', function ([_, addr1]) {
 
     if (process.env.NEAR_HEADERS_DIR) {
         it('ok with many block headers', async function () {
-            this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(10), web3.utils.toBN(20));
+            this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(10), web3.utils.toBN(20), '0x0000000000000000000000000000000000000000');
             await this.bridge.deposit({ value: web3.utils.toWei('1') });
             this.timeout(0);
             const blockFiles = await fs.readdir(process.env.NEAR_HEADERS_DIR);

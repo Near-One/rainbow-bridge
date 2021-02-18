@@ -6,10 +6,12 @@ const Ed25519 = artifacts.require('Ed25519');
 const NearBridge = artifacts.require('NearBridge');
 const NearDecoder = artifacts.require('NearDecoder');
 
+const zeroAddress = '0x0000000000000000000000000000000000000000';
+
 contract('NearBridge2', function ([_, addr1]) {
     beforeEach(async function () {
         this.decoder = await NearDecoder.new();
-        this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(10), web3.utils.toBN(20));
+        this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(10), web3.utils.toBN(20), zeroAddress);
         await this.bridge.deposit({ value: web3.utils.toWei('1') });
     });
 
@@ -36,7 +38,7 @@ contract('NearBridge2', function ([_, addr1]) {
 contract('2020-09-09 Example', function ([_, addr1]) {
    beforeEach(async function () {
        this.decoder = await NearDecoder.new();
-       this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(10), web3.utils.toBN(20));
+       this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(10), web3.utils.toBN(20), zeroAddress);
        await this.bridge.deposit({ value: web3.utils.toWei('1') });
    });
 
@@ -64,7 +66,7 @@ contract('Add second block in first epoch should be verifiable', function ([_, a
 
     it('should be ok', async function () {
         this.decoder = await NearDecoder.new();
-        this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(3600), web3.utils.toBN(7200));
+        this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(3600), web3.utils.toBN(7200), zeroAddress);
         await this.bridge.deposit({ value: web3.utils.toWei('1') });
 
         // Get "initial validators" that will produce block 304
@@ -98,7 +100,7 @@ contract('Test adding blocks in new epoch when bps change', function ([_, addr1]
 
     it('should be ok', async function () {
         this.decoder = await NearDecoder.new();
-        this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(3600), web3.utils.toBN(7200));
+        this.bridge = await NearBridge.new((await Ed25519.deployed()).address, web3.utils.toBN(1e18), web3.utils.toBN(3600), web3.utils.toBN(7200), zeroAddress);
         await this.bridge.deposit({ value: web3.utils.toWei('1') });
 
         const block181 = require('./181.json');

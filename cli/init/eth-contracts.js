@@ -172,7 +172,7 @@ class InitEthClient {
     ethGasMultiplier
   }) {
     if (ethAdminAddress === '') {
-      const web3 = new Web3(ethNodeUrl)
+      const web3 = new Web3('')
       ethAdminAddress = web3.eth.accounts.privateKeyToAccount(ethMasterSk)
         .address
     }
@@ -244,7 +244,7 @@ class InitEthProver {
     ethGasMultiplier
   }) {
     if (ethAdminAddress === '') {
-      const web3 = new Web3(ethNodeUrl)
+      const web3 = new Web3('')
       ethAdminAddress = web3.eth.accounts.privateKeyToAccount(ethMasterSk)
         .address
     }
