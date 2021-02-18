@@ -6,6 +6,7 @@ const {
 const {
   mintErc20,
   getErc20Balance,
+  getBridgeOnNearBalance,
   getClientBlockHeightHash,
   getAddressBySecretKey,
   ethToNearApprove,
@@ -18,6 +19,7 @@ exports.TransferEthERC20FromNear = TransferEthERC20FromNear
 exports.DeployToken = DeployToken
 exports.mintErc20 = mintErc20
 exports.getErc20Balance = getErc20Balance
+exports.getBridgeOnNearBalance = getBridgeOnNearBalance
 exports.getClientBlockHeightHash = getClientBlockHeightHash
 exports.getAddressBySecretKey = getAddressBySecretKey
 exports.ethToNearApprove = ethToNearApprove
