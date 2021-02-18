@@ -204,7 +204,7 @@ async function getBridgeOnNearBalance ({
   nearReceiverAccount,
   nearErc20Account,
   nearNetworkId,
-  nearNodeUrl,
+  nearNodeUrl
 }) {
   try {
     const keyStore = new nearAPI.keyStores.InMemoryKeyStore()

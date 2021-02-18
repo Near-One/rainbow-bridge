@@ -786,7 +786,7 @@ RainbowConfig.addOptions(
   [
     'near-erc20-account',
     'near-network-id',
-    'near-node-url',
+    'near-node-url'
   ]
 )
 
