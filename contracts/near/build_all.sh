@@ -9,5 +9,3 @@ cd $DIR/eth-client
 ./build.sh
 cd $DIR/eth-prover
 ./build.sh
-cd $DIR/mintable-fungible-token
-./build.sh

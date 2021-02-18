@@ -1379,21 +1379,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mintable-fungible-token"
-version = "0.2.0"
-dependencies = [
- "borsh",
- "eth-types",
- "ethabi 12.0.0",
- "hex",
- "near-sdk",
- "rlp",
- "serde",
- "serde_json",
- "wee_alloc",
-]
-
-[[package]]
 name = "mio"
 version = "0.6.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
