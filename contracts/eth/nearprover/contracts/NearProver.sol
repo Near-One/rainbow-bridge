@@ -1,12 +1,14 @@
 pragma solidity ^0.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "../../nearbridge/contracts/AdminControlled.sol";
 import "../../nearbridge/contracts/INearBridge.sol";
 import "../../nearbridge/contracts/NearDecoder.sol";
 import "./ProofDecoder.sol";
 import "./INearProver.sol";
 
-contract NearProver is INearProver {
+
+contract NearProver is INearProver, AdminControlled {
     using SafeMath for uint256;
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
@@ -19,7 +21,9 @@ contract NearProver is INearProver {
         admin = _admin;
     }
 
-    function proveOutcome(bytes memory proofData, uint64 blockHeight) public view override returns (bool) {
+    uint constant PAUSED_VERIFY = 1;
+
+    function proveOutcome(bytes memory proofData, uint64 blockHeight) override public view pausable(PAUSED_VERIFY) returns(bool) {
         Borsh.Data memory borshData = Borsh.from(proofData);
         ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borshData.decodeFullOutcomeProof();
         require(borshData.finished(), "NearProver: argument should be exact borsh serialization");
@@ -57,18 +61,5 @@ contract NearProver is INearProver {
                 hash = sha256(abi.encodePacked(hash, item.hash));
             }
         }
-    }
-
-    address public admin;
-
-    modifier onlyAdmin {
-        require(msg.sender == admin);
-        _;
-    }
-
-    function adminDelegatecall(address target, bytes memory data) public onlyAdmin returns (bytes memory) {
-        (bool success, bytes memory rdata) = target.delegatecall(data);
-        require(success);
-        return rdata;
     }
 }
