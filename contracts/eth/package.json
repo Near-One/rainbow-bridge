@@ -19,5 +19,8 @@
   "scripts": {
     "build": "./build_all.sh"
   },
-  "files": [ "nearbridge/contracts/*", "nearprover/contracts/*" ]
+  "files": [
+    "nearbridge/contracts/*",
+    "nearprover/contracts/*"
+  ]
 }

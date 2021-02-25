@@ -169,7 +169,6 @@ class TransferETHERC20ToNear {
     const blockNumber = block.number
     // Wait until client accepts this block number.
     while (true) {
-      // @ts-ignore
       const lastBlockNumber = (
         await ethOnNearClientContract.last_block_number()
       ).toNumber()
@@ -197,14 +196,12 @@ class TransferETHERC20ToNear {
     nearTokenContract,
     newOwnerId
   }) {
-    // @ts-ignore
     const oldBalance = await nearTokenContract.get_balance({
       owner_id: newOwnerId
     })
     console.log(
       `Balance of ${newOwnerId} before the transfer is ${oldBalance}`
     )
-    // @ts-ignore
     try {
       await nearFactoryContractBorsh.deposit(
         proofLocker,
@@ -221,7 +218,6 @@ class TransferETHERC20ToNear {
       TransferETHERC20ToNear.showRetryAndExit()
     }
 
-    // @ts-ignore
     const newBalance = await nearTokenContract.get_balance({
       owner_id: newOwnerId
     })
@@ -281,7 +277,6 @@ class TransferETHERC20ToNear {
     let transferLog = TransferETHERC20ToNear.loadTransferLog()
     console.log(`Using ETH address ${ethErc20Address}`)
 
-    // @ts-ignore
     const robustWeb3 = new RobustWeb3(ethNodeUrl)
     const web3 = robustWeb3.web3
     let ethSenderAccount = web3.eth.accounts.privateKeyToAccount(
@@ -292,12 +287,10 @@ class TransferETHERC20ToNear {
     ethSenderAccount = ethSenderAccount.address
 
     const ethERC20Contract = new web3.eth.Contract(
-      // @ts-ignore
       JSON.parse(fs.readFileSync(ethErc20AbiPath)),
       ethErc20Address
     )
 
-    // @ts-ignore
     const keyStore = new nearAPI.keyStores.InMemoryKeyStore()
     await keyStore.setKey(
       nearNetworkId,
@@ -334,7 +327,6 @@ class TransferETHERC20ToNear {
     extractor.initialize(ethNodeUrl)
 
     const ethTokenLockerContract = new web3.eth.Contract(
-      // @ts-ignore
       JSON.parse(fs.readFileSync(ethLockerAbiPath)),
       ethLockerAddress
     )

@@ -1,10 +1,10 @@
 {
-    "name": "NearProver",
+    "name": "near-prover",
     "version": "0.0.1",
     "description": "",
     "repository": {
         "type": "git",
-        "url": "git@github.com:nearprotocol/near-bridge.git"
+        "url": "git+https://github.com/near/rainbow-bridge.git"
     },
     "license": "MIT",
     "dependencies": {

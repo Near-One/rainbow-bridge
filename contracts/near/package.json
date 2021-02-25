@@ -1,19 +1,12 @@
 {
   "name": "rainbow-bridge-rs",
   "version": "1.0.2",
+  "author": "Near Inc. <hello@near.org>",
   "description": "Rainbow Bridge Rust Contracts",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/near/rainbow-bridge.git"
   },
-  "author": "Near Inc",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/near/rainbow-bridge-rs/issues"
-  },
-  "homepage": "https://github.com/near/rainbow-bridge-rs#readme"
+  "license": "ISC"
 }

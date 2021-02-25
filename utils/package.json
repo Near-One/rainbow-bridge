@@ -1,9 +1,9 @@
 {
   "name": "rainbow-bridge-utils",
   "version": "1.0.0",
+  "author": "Near Inc. <hello@near.org>",
   "description": "Rainbow Bridge utils and config",
   "main": "index.js",
-  "author": "Near Inc. <hello@near.org>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/near/rainbow-bridge.git"
@@ -27,11 +27,5 @@
     "lodash": "^4.17.20",
     "near-api-js": "^0.26.0",
     "web3": "=1.2.6"
-  },
-  "devDependencies": {
-    "standard": "*"
-  },
-  "scripts": {
-    "standard": "standard"
   }
 }

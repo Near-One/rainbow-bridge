@@ -16,14 +16,11 @@ class PrepareCommand {
 
     env.LOCAL_CORE_SRC = coreSrc && path.resolve(coreSrc)
 
-    // @ts-ignore
     const prepareScript = exec(shell, { env: env })
-    // @ts-ignore
     prepareScript.stdout.on('data', function (data) {
       process.stdout.write(data)
     })
 
-    // @ts-ignore
     prepareScript.stderr.on('data', function (data) {
       process.stderr.write(data)
     })

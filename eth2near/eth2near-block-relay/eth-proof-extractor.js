@@ -15,7 +15,6 @@ function logFromWeb3 (result) {
 
 class EthProofExtractor {
   initialize (ethNodeURL) {
-    // @ts-ignore
     this.robustWeb3 = new RobustWeb3(ethNodeURL)
     this.web3 = this.robustWeb3.web3
   }

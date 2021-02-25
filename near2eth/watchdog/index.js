@@ -19,7 +19,6 @@ class Watchdog {
     ethClientAddress,
     metricsPort
   }) {
-    // @ts-ignore
     this.robustWeb3 = new RobustWeb3(ethNodeUrl)
     this.web3 = this.robustWeb3.web3
     this.metricsPort = metricsPort
@@ -31,7 +30,6 @@ class Watchdog {
     // Initialize client contract.
     console.log('Deploying Near2EthClient contract.')
     this.clientContract = new this.web3.eth.Contract(
-      // @ts-ignore
       JSON.parse(fs.readFileSync(ethClientAbiPath)),
       ethClientAddress,
       {
