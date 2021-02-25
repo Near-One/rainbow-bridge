@@ -164,9 +164,7 @@ library SafeMath {
 pragma solidity ^0.6;
 
 
-
 library Borsh {
-
     using SafeMath for uint256;
 
     struct Data {
@@ -174,11 +172,8 @@ library Borsh {
         bytes raw;
     }
 
-    function from(bytes memory data) internal pure returns(Data memory) {
-        return Data({
-            offset: 0,
-            raw: data
-        });
+    function from(bytes memory data) internal pure returns (Data memory) {
+        return Data({offset: 0, raw: data});
     }
 
     modifier shift(Data memory data, uint256 size) {
@@ -187,26 +182,34 @@ library Borsh {
         data.offset += size;
     }
 
-    function finished(Data memory data) internal pure returns(bool) {
+    function finished(Data memory data) internal pure returns (bool) {
         return data.offset == data.raw.length;
     }
 
-    function peekKeccak256(Data memory data, uint256 length) internal pure returns(bytes32 res) {
+    function peekKeccak256(Data memory data, uint256 length) internal pure returns (bytes32 res) {
         return bytesKeccak256(data.raw, data.offset, length);
     }
 
-    function bytesKeccak256(bytes memory ptr, uint256 offset, uint256 length) internal pure returns(bytes32 res) {
+    function bytesKeccak256(
+        bytes memory ptr,
+        uint256 offset,
+        uint256 length
+    ) internal pure returns (bytes32 res) {
         // solium-disable-next-line security/no-inline-assembly
         assembly {
             res := keccak256(add(add(ptr, 32), offset), length)
         }
     }
 
-    function peekSha256(Data memory data, uint256 length) internal view returns(bytes32) {
+    function peekSha256(Data memory data, uint256 length) internal view returns (bytes32) {
         return bytesSha256(data.raw, data.offset, length);
     }
 
-    function bytesSha256(bytes memory ptr, uint256 offset, uint256 length) internal view returns(bytes32) {
+    function bytesSha256(
+        bytes memory ptr,
+        uint256 offset,
+        uint256 length
+    ) internal view returns (bytes32) {
         bytes32[1] memory result;
         // solium-disable-next-line security/no-inline-assembly
         assembly {
@@ -215,76 +218,76 @@ library Borsh {
         return result[0];
     }
 
-    function decodeU8(Data memory data) internal pure shift(data, 1) returns(uint8 value) {
+    function decodeU8(Data memory data) internal pure shift(data, 1) returns (uint8 value) {
         value = uint8(data.raw[data.offset]);
     }
 
-    function decodeI8(Data memory data) internal pure shift(data, 1) returns(int8 value) {
+    function decodeI8(Data memory data) internal pure shift(data, 1) returns (int8 value) {
         value = int8(data.raw[data.offset]);
     }
 
-    function decodeU16(Data memory data) internal pure returns(uint16 value) {
+    function decodeU16(Data memory data) internal pure returns (uint16 value) {
         value = uint16(decodeU8(data));
         value |= (uint16(decodeU8(data)) << 8);
     }
 
-    function decodeI16(Data memory data) internal pure returns(int16 value) {
+    function decodeI16(Data memory data) internal pure returns (int16 value) {
         value = int16(decodeI8(data));
         value |= (int16(decodeI8(data)) << 8);
     }
 
-    function decodeU32(Data memory data) internal pure returns(uint32 value) {
+    function decodeU32(Data memory data) internal pure returns (uint32 value) {
         value = uint32(decodeU16(data));
         value |= (uint32(decodeU16(data)) << 16);
     }
 
-    function decodeI32(Data memory data) internal pure returns(int32 value) {
+    function decodeI32(Data memory data) internal pure returns (int32 value) {
         value = int32(decodeI16(data));
         value |= (int32(decodeI16(data)) << 16);
     }
 
-    function decodeU64(Data memory data) internal pure returns(uint64 value) {
+    function decodeU64(Data memory data) internal pure returns (uint64 value) {
         value = uint64(decodeU32(data));
         value |= (uint64(decodeU32(data)) << 32);
     }
 
-    function decodeI64(Data memory data) internal pure returns(int64 value) {
+    function decodeI64(Data memory data) internal pure returns (int64 value) {
         value = int64(decodeI32(data));
         value |= (int64(decodeI32(data)) << 32);
     }
 
-    function decodeU128(Data memory data) internal pure returns(uint128 value) {
+    function decodeU128(Data memory data) internal pure returns (uint128 value) {
         value = uint128(decodeU64(data));
         value |= (uint128(decodeU64(data)) << 64);
     }
 
-    function decodeI128(Data memory data) internal pure returns(int128 value) {
+    function decodeI128(Data memory data) internal pure returns (int128 value) {
         value = int128(decodeI64(data));
         value |= (int128(decodeI64(data)) << 64);
     }
 
-    function decodeU256(Data memory data) internal pure returns(uint256 value) {
+    function decodeU256(Data memory data) internal pure returns (uint256 value) {
         value = uint256(decodeU128(data));
         value |= (uint256(decodeU128(data)) << 128);
     }
 
-    function decodeI256(Data memory data) internal pure returns(int256 value) {
+    function decodeI256(Data memory data) internal pure returns (int256 value) {
         value = int256(decodeI128(data));
         value |= (int256(decodeI128(data)) << 128);
     }
 
-    function decodeBool(Data memory data) internal pure returns(bool value) {
+    function decodeBool(Data memory data) internal pure returns (bool value) {
         value = (decodeU8(data) != 0);
     }
 
-    function decodeBytes(Data memory data) internal pure returns(bytes memory value) {
+    function decodeBytes(Data memory data) internal pure returns (bytes memory value) {
         value = new bytes(decodeU32(data));
         for (uint i = 0; i < value.length; i++) {
             value[i] = byte(decodeU8(data));
         }
     }
 
-    function decodeBytes32(Data memory data) internal pure shift(data, 32) returns(bytes32 value) {
+    function decodeBytes32(Data memory data) internal pure shift(data, 32) returns (bytes32 value) {
         bytes memory raw = data.raw;
         uint256 offset = data.offset;
         // solium-disable-next-line security/no-inline-assembly
@@ -293,7 +296,7 @@ library Borsh {
         }
     }
 
-    function decodeBytes20(Data memory data) internal pure returns(bytes20 value) {
+    function decodeBytes20(Data memory data) internal pure returns (bytes20 value) {
         for (uint i = 0; i < 20; i++) {
             value |= bytes20(byte(decodeU8(data)) & 0xFF) >> (i * 8);
         }
@@ -306,7 +309,7 @@ library Borsh {
         uint256 y;
     }
 
-    function decodeSECP256K1PublicKey(Borsh.Data memory data) internal pure returns(SECP256K1PublicKey memory key) {
+    function decodeSECP256K1PublicKey(Borsh.Data memory data) internal pure returns (SECP256K1PublicKey memory key) {
         key.x = decodeU256(data);
         key.y = decodeU256(data);
     }
@@ -315,7 +318,7 @@ library Borsh {
         bytes32 xy;
     }
 
-    function decodeED25519PublicKey(Borsh.Data memory data) internal pure returns(ED25519PublicKey memory key) {
+    function decodeED25519PublicKey(Borsh.Data memory data) internal pure returns (ED25519PublicKey memory key) {
         key.xy = decodeBytes32(data);
     }
 
@@ -327,7 +330,7 @@ library Borsh {
         uint8 v;
     }
 
-    function decodeSECP256K1Signature(Borsh.Data memory data) internal pure returns(SECP256K1Signature memory sig) {
+    function decodeSECP256K1Signature(Borsh.Data memory data) internal pure returns (SECP256K1Signature memory sig) {
         sig.r = decodeBytes32(data);
         sig.s = decodeBytes32(data);
         sig.v = decodeU8(data);
@@ -337,7 +340,7 @@ library Borsh {
         bytes32[2] rs;
     }
 
-    function decodeED25519Signature(Borsh.Data memory data) internal pure returns(ED25519Signature memory sig) {
+    function decodeED25519Signature(Borsh.Data memory data) internal pure returns (ED25519Signature memory sig) {
         sig.rs[0] = decodeBytes32(data);
         sig.rs[1] = decodeBytes32(data);
     }
@@ -349,29 +352,24 @@ pragma solidity ^0.6;
 
 
 
-
 library NearDecoder {
-
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
 
     struct PublicKey {
         uint8 enumIndex;
-
         Borsh.ED25519PublicKey ed25519;
         Borsh.SECP256K1PublicKey secp256k1;
     }
 
-    function decodePublicKey(Borsh.Data memory data) internal pure returns(PublicKey memory key) {
+    function decodePublicKey(Borsh.Data memory data) internal pure returns (PublicKey memory key) {
         key.enumIndex = data.decodeU8();
 
         if (key.enumIndex == 0) {
             key.ed25519 = data.decodeED25519PublicKey();
-        }
-        else if (key.enumIndex == 1) {
+        } else if (key.enumIndex == 1) {
             key.secp256k1 = data.decodeSECP256K1PublicKey();
-        }
-        else {
+        } else {
             revert("NearBridge: Only ED25519 and SECP256K1 public keys are supported");
         }
     }
@@ -382,7 +380,7 @@ library NearDecoder {
         uint128 stake;
     }
 
-    function decodeValidatorStake(Borsh.Data memory data) internal pure returns(ValidatorStake memory validatorStake) {
+    function decodeValidatorStake(Borsh.Data memory data) internal pure returns (ValidatorStake memory validatorStake) {
         validatorStake.account_id = string(data.decodeBytes());
         validatorStake.public_key = data.decodePublicKey();
         validatorStake.stake = data.decodeU128();
@@ -390,12 +388,15 @@ library NearDecoder {
 
     struct OptionalValidatorStakes {
         bool none;
-
         ValidatorStake[] validatorStakes;
         bytes32 hash; // Additional computable element
     }
 
-    function decodeOptionalValidatorStakes(Borsh.Data memory data) internal view returns(OptionalValidatorStakes memory stakes) {
+    function decodeOptionalValidatorStakes(Borsh.Data memory data)
+        internal
+        view
+        returns (OptionalValidatorStakes memory stakes)
+    {
         stakes.none = (data.decodeU8() == 0);
         if (!stakes.none) {
             uint256 start = data.offset;
@@ -414,21 +415,18 @@ library NearDecoder {
 
     struct Signature {
         uint8 enumIndex;
-
         Borsh.ED25519Signature ed25519;
         Borsh.SECP256K1Signature secp256k1;
     }
 
-    function decodeSignature(Borsh.Data memory data) internal pure returns(Signature memory sig) {
+    function decodeSignature(Borsh.Data memory data) internal pure returns (Signature memory sig) {
         sig.enumIndex = data.decodeU8();
 
         if (sig.enumIndex == 0) {
             sig.ed25519 = data.decodeED25519Signature();
-        }
-        else if (sig.enumIndex == 1) {
+        } else if (sig.enumIndex == 1) {
             sig.secp256k1 = data.decodeSECP256K1Signature();
-        }
-        else {
+        } else {
             revert("NearBridge: Only ED25519 and SECP256K1 signatures are supported");
         }
     }
@@ -438,7 +436,7 @@ library NearDecoder {
         Signature signature;
     }
 
-    function decodeOptionalSignature(Borsh.Data memory data) internal pure returns(OptionalSignature memory sig) {
+    function decodeOptionalSignature(Borsh.Data memory data) internal pure returns (OptionalSignature memory sig) {
         sig.none = (data.decodeU8() == 0);
         if (!sig.none) {
             sig.signature = data.decodeSignature();
@@ -452,7 +450,6 @@ library NearDecoder {
         bytes32 inner_rest_hash;
         OptionalValidatorStakes next_bps;
         OptionalSignature[] approvals_after_next;
-
         bytes32 hash;
         bytes32 next_hash;
     }
@@ -461,14 +458,18 @@ library NearDecoder {
         ValidatorStake[] validator_stakes;
     }
 
-    function decodeInitialValidators(Borsh.Data memory data) internal view returns(InitialValidators memory validators) {
+    function decodeInitialValidators(Borsh.Data memory data)
+        internal
+        view
+        returns (InitialValidators memory validators)
+    {
         validators.validator_stakes = new ValidatorStake[](data.decodeU32());
         for (uint i = 0; i < validators.validator_stakes.length; i++) {
             validators.validator_stakes[i] = data.decodeValidatorStake();
         }
     }
 
-    function decodeLightClientBlock(Borsh.Data memory data) internal view returns(LightClientBlock memory header) {
+    function decodeLightClientBlock(Borsh.Data memory data) internal view returns (LightClientBlock memory header) {
         header.prev_block_hash = data.decodeBytes32();
         header.next_block_inner_hash = data.decodeBytes32();
         header.inner_lite = data.decodeBlockHeaderInnerLite();
@@ -476,38 +477,37 @@ library NearDecoder {
         header.next_bps = data.decodeOptionalValidatorStakes();
 
         header.approvals_after_next = new OptionalSignature[](data.decodeU32());
-        for (uint  i = 0; i < header.approvals_after_next.length; i++) {
+        for (uint i = 0; i < header.approvals_after_next.length; i++) {
             header.approvals_after_next[i] = data.decodeOptionalSignature();
         }
 
-        header.hash = sha256(abi.encodePacked(
-            sha256(abi.encodePacked(
-                header.inner_lite.hash,
-                header.inner_rest_hash
-            )),
-            header.prev_block_hash
-        ));
+        header.hash = sha256(
+            abi.encodePacked(
+                sha256(abi.encodePacked(header.inner_lite.hash, header.inner_rest_hash)),
+                header.prev_block_hash
+            )
+        );
 
-        header.next_hash = sha256(abi.encodePacked(
-            header.next_block_inner_hash,
-            header.hash
-        ));
+        header.next_hash = sha256(abi.encodePacked(header.next_block_inner_hash, header.hash));
     }
 
     struct BlockHeaderInnerLite {
-        uint64 height;              /// Height of this block since the genesis block (height 0).
-        bytes32 epoch_id;           /// Epoch start hash of this block's epoch. Used for retrieving validator information
+        uint64 height; /// Height of this block since the genesis block (height 0).
+        bytes32 epoch_id; /// Epoch start hash of this block's epoch. Used for retrieving validator information
         bytes32 next_epoch_id;
-        bytes32 prev_state_root;    /// Root hash of the state at the previous block.
-        bytes32 outcome_root;       /// Root of the outcomes of transactions and receipts.
-        uint64 timestamp;           /// Timestamp at which the block was built.
-        bytes32 next_bp_hash;       /// Hash of the next epoch block producers set
+        bytes32 prev_state_root; /// Root hash of the state at the previous block.
+        bytes32 outcome_root; /// Root of the outcomes of transactions and receipts.
+        uint64 timestamp; /// Timestamp at which the block was built.
+        bytes32 next_bp_hash; /// Hash of the next epoch block producers set
         bytes32 block_merkle_root;
-
         bytes32 hash; // Additional computable element
     }
 
-    function decodeBlockHeaderInnerLite(Borsh.Data memory data) internal view returns(BlockHeaderInnerLite memory header) {
+    function decodeBlockHeaderInnerLite(Borsh.Data memory data)
+        internal
+        view
+        returns (BlockHeaderInnerLite memory header)
+    {
         header.hash = data.peekSha256(208);
         header.height = data.decodeU64();
         header.epoch_id = data.decodeBytes32();

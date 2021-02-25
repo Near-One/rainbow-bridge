@@ -4,6 +4,7 @@ steps:
           source testing/ci/e2e_ci_prepare_env.sh
           yarn
           yarn standard
+          yarn prettier-solidity
 
       timeout: 5
 
