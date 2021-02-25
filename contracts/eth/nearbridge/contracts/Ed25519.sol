@@ -6,59 +6,26 @@ pragma solidity ^0.6;
 contract Ed25519 {
     // Computes (v^(2^250-1), v^11) mod p
     function pow22501(uint256 v) private pure returns (uint256 p22501, uint256 p11) {
-        p11 = mulmod(
-            v,
-            v,
-            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-        );
+        p11 = mulmod(v, v, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+        p22501 = mulmod(p11, p11, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         p22501 = mulmod(
-            p11,
-            p11,
-            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-        );
-        p22501 = mulmod(
-            mulmod(
-                p22501,
-                p22501,
-                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-            ),
+            mulmod(p22501, p22501, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed),
             v,
             0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
         );
-        p11 = mulmod(
-            p22501,
-            p11,
-            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-        );
+        p11 = mulmod(p22501, p11, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         p22501 = mulmod(
-            mulmod(
-                p11,
-                p11,
-                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-            ),
+            mulmod(p11, p11, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed),
             p22501,
             0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
         );
-        uint256 a =
-            mulmod(
-                p22501,
-                p22501,
-                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-            );
+        uint256 a = mulmod(p22501, p22501, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
-        p22501 = mulmod(
-            p22501,
-            a,
-            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-        );
-        a = mulmod(
-            p22501,
-            p22501,
-            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-        );
+        p22501 = mulmod(p22501, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+        a = mulmod(p22501, p22501, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
@@ -68,13 +35,8 @@ contract Ed25519 {
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
-        a = mulmod(
-            p22501,
-            a,
-            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-        );
-        uint256 b =
-            mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+        a = mulmod(p22501, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+        uint256 b = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         b = mulmod(b, b, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         b = mulmod(b, b, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         b = mulmod(b, b, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
@@ -105,16 +67,8 @@ contract Ed25519 {
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
-        p22501 = mulmod(
-            p22501,
-            a,
-            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-        );
-        a = mulmod(
-            p22501,
-            p22501,
-            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-        );
+        p22501 = mulmod(p22501, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+        a = mulmod(p22501, p22501, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
@@ -164,11 +118,7 @@ contract Ed25519 {
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
-        a = mulmod(
-            p22501,
-            a,
-            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-        );
+        a = mulmod(p22501, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         b = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         b = mulmod(b, b, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         b = mulmod(b, b, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
@@ -320,11 +270,7 @@ contract Ed25519 {
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         a = mulmod(a, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
-        p22501 = mulmod(
-            p22501,
-            a,
-            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-        );
+        p22501 = mulmod(p22501, a, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
     }
 
     function check(
@@ -453,26 +399,20 @@ contract Ed25519 {
                     ]
                 ];
             uint256 w0 =
-                (uint256(r) &
-                    0xffffffff_ffffffff_00000000_00000000_00000000_00000000_ffffffff_ffffffff) |
+                (uint256(r) & 0xffffffff_ffffffff_00000000_00000000_00000000_00000000_ffffffff_ffffffff) |
                     ((uint256(r) & 0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >> 64) |
                     ((uint256(r) & 0xffffffff_ffffffff_00000000_00000000) << 64);
             uint256 w1 =
-                (uint256(k) &
-                    0xffffffff_ffffffff_00000000_00000000_00000000_00000000_ffffffff_ffffffff) |
+                (uint256(k) & 0xffffffff_ffffffff_00000000_00000000_00000000_00000000_ffffffff_ffffffff) |
                     ((uint256(k) & 0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >> 64) |
                     ((uint256(k) & 0xffffffff_ffffffff_00000000_00000000) << 64);
             uint256 w2 =
-                (uint256(m1) &
-                    0xffffffff_ffffffff_00000000_00000000_00000000_00000000_ffffffff_ffffffff) |
-                    ((uint256(m1) & 0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >>
-                        64) |
+                (uint256(m1) & 0xffffffff_ffffffff_00000000_00000000_00000000_00000000_ffffffff_ffffffff) |
+                    ((uint256(m1) & 0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >> 64) |
                     ((uint256(m1) & 0xffffffff_ffffffff_00000000_00000000) << 64);
             uint256 w3 =
-                (uint256(bytes32(m2)) &
-                    0xffffffff_ffffffff_00000000_00000000_00000000_00000000_00000000_00000000) |
-                    ((uint256(bytes32(m2)) &
-                        0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >> 64) |
+                (uint256(bytes32(m2)) & 0xffffffff_ffffffff_00000000_00000000_00000000_00000000_00000000_00000000) |
+                    ((uint256(bytes32(m2)) & 0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >> 64) |
                     0x800000_00000000_00000000_00000348;
             uint256 a = 0x6a09e667_f3bcc908;
             uint256 b = 0xbb67ae85_84caa73b;
@@ -957,26 +897,21 @@ contract Ed25519 {
                     uint256 t2 = w2;
                     uint256 t3 = w3;
                     {
-                        uint256 n1 =
-                            t0 &
-                                0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000;
+                        uint256 n1 = t0 & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000;
                         n1 +=
                             ((t2 & 0xffffffff_ffffffff_00000000_00000000) << 128) |
                             ((t2 & 0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >> 64);
                         {
                             uint256 u1 =
                                 ((t0 & 0xffffffff_ffffffff_00000000_00000000) << 64) |
-                                    ((t0 &
-                                        0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >>
-                                        128);
+                                    ((t0 & 0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >> 128);
                             uint256 uu1 = u1 | (u1 << 64);
                             n1 +=
                                 ((uu1 << 63) ^ (uu1 << 56) ^ (u1 << 57)) &
                                 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000;
                         }
                         {
-                            uint256 v1 =
-                                t3 & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff;
+                            uint256 v1 = t3 & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff;
                             uint256 vv1 = v1 | (v1 << 64);
                             n1 +=
                                 ((vv1 << 45) ^ (vv1 << 3) ^ (v1 << 58)) &
@@ -1002,26 +937,21 @@ contract Ed25519 {
                         t0 = n1 | n2;
                     }
                     {
-                        uint256 n1 =
-                            t1 &
-                                0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000;
+                        uint256 n1 = t1 & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000;
                         n1 +=
                             ((t3 & 0xffffffff_ffffffff_00000000_00000000) << 128) |
                             ((t3 & 0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >> 64);
                         {
                             uint256 u1 =
                                 ((t1 & 0xffffffff_ffffffff_00000000_00000000) << 64) |
-                                    ((t1 &
-                                        0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >>
-                                        128);
+                                    ((t1 & 0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >> 128);
                             uint256 uu1 = u1 | (u1 << 64);
                             n1 +=
                                 ((uu1 << 63) ^ (uu1 << 56) ^ (u1 << 57)) &
                                 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000;
                         }
                         {
-                            uint256 v1 =
-                                t0 & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff;
+                            uint256 v1 = t0 & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff;
                             uint256 vv1 = v1 | (v1 << 64);
                             n1 +=
                                 ((vv1 << 45) ^ (vv1 << 3) ^ (v1 << 58)) &
@@ -1047,26 +977,21 @@ contract Ed25519 {
                         t1 = n1 | n2;
                     }
                     {
-                        uint256 n1 =
-                            t2 &
-                                0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000;
+                        uint256 n1 = t2 & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000;
                         n1 +=
                             ((t0 & 0xffffffff_ffffffff_00000000_00000000) << 128) |
                             ((t0 & 0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >> 64);
                         {
                             uint256 u1 =
                                 ((t2 & 0xffffffff_ffffffff_00000000_00000000) << 64) |
-                                    ((t2 &
-                                        0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >>
-                                        128);
+                                    ((t2 & 0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >> 128);
                             uint256 uu1 = u1 | (u1 << 64);
                             n1 +=
                                 ((uu1 << 63) ^ (uu1 << 56) ^ (u1 << 57)) &
                                 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000;
                         }
                         {
-                            uint256 v1 =
-                                t1 & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff;
+                            uint256 v1 = t1 & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff;
                             uint256 vv1 = v1 | (v1 << 64);
                             n1 +=
                                 ((vv1 << 45) ^ (vv1 << 3) ^ (v1 << 58)) &
@@ -1092,26 +1017,21 @@ contract Ed25519 {
                         t2 = n1 | n2;
                     }
                     {
-                        uint256 n1 =
-                            t3 &
-                                0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000;
+                        uint256 n1 = t3 & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000;
                         n1 +=
                             ((t1 & 0xffffffff_ffffffff_00000000_00000000) << 128) |
                             ((t1 & 0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >> 64);
                         {
                             uint256 u1 =
                                 ((t3 & 0xffffffff_ffffffff_00000000_00000000) << 64) |
-                                    ((t3 &
-                                        0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >>
-                                        128);
+                                    ((t3 & 0xffffffff_ffffffff_00000000_00000000_00000000_00000000) >> 128);
                             uint256 uu1 = u1 | (u1 << 64);
                             n1 +=
                                 ((uu1 << 63) ^ (uu1 << 56) ^ (u1 << 57)) &
                                 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000;
                         }
                         {
-                            uint256 v1 =
-                                t2 & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff;
+                            uint256 v1 = t2 & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff;
                             uint256 vv1 = v1 | (v1 << 64);
                             n1 +=
                                 ((vv1 << 45) ^ (vv1 << 3) ^ (v1 << 58)) &
@@ -1148,38 +1068,28 @@ contract Ed25519 {
                     (((c + 0x3c6ef372_fe94f82b) & 0xffffffff_ffffffff) << 128) |
                     ((d + 0xa54ff53a_5f1d36f1) << 192);
             h0 =
-                ((h0 & 0xff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff) <<
-                    8) |
-                ((h0 & 0xff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00) >>
-                    8);
+                ((h0 & 0xff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff) << 8) |
+                ((h0 & 0xff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00) >> 8);
             h0 =
-                ((h0 & 0xffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff) <<
-                    16) |
-                ((h0 & 0xffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000) >>
-                    16);
+                ((h0 & 0xffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff) << 16) |
+                ((h0 & 0xffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000) >> 16);
             h0 =
                 ((h0 & 0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff) << 32) |
-                ((h0 & 0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff_00000000) >>
-                    32);
+                ((h0 & 0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff_00000000) >> 32);
             uint256 h1 =
                 ((e + 0x510e527f_ade682d1) & 0xffffffff_ffffffff) |
                     (((f + 0x9b05688c_2b3e6c1f) & 0xffffffff_ffffffff) << 64) |
                     (((g + 0x1f83d9ab_fb41bd6b) & 0xffffffff_ffffffff) << 128) |
                     ((h + 0x5be0cd19_137e2179) << 192);
             h1 =
-                ((h1 & 0xff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff) <<
-                    8) |
-                ((h1 & 0xff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00) >>
-                    8);
+                ((h1 & 0xff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff) << 8) |
+                ((h1 & 0xff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00) >> 8);
             h1 =
-                ((h1 & 0xffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff) <<
-                    16) |
-                ((h1 & 0xffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000) >>
-                    16);
+                ((h1 & 0xffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff) << 16) |
+                ((h1 & 0xffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000) >> 16);
             h1 =
                 ((h1 & 0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff) << 32) |
-                ((h1 & 0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff_00000000) >>
-                    32);
+                ((h1 & 0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff_00000000) >> 32);
             hh = addmod(
                 h0,
                 mulmod(
@@ -1192,42 +1102,26 @@ contract Ed25519 {
         }
         // Step 2: unpack k
         k = bytes32(
-            ((uint256(k) &
-                0xff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff) << 8) |
-                ((uint256(k) &
-                    0xff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00) >> 8)
+            ((uint256(k) & 0xff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff) << 8) |
+                ((uint256(k) & 0xff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00) >> 8)
         );
         k = bytes32(
-            ((uint256(k) & 0xffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff) <<
-                16) |
-                ((uint256(k) &
-                    0xffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000) >>
-                    16)
+            ((uint256(k) & 0xffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff) << 16) |
+                ((uint256(k) & 0xffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000) >> 16)
         );
         k = bytes32(
-            ((uint256(k) & 0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff) <<
-                32) |
-                ((uint256(k) &
-                    0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff_00000000) >>
-                    32)
+            ((uint256(k) & 0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff) << 32) |
+                ((uint256(k) & 0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff_00000000) >> 32)
         );
         k = bytes32(
             ((uint256(k) & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff) << 64) |
-                ((uint256(k) &
-                    0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000) >>
-                    64)
+                ((uint256(k) & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000) >> 64)
         );
         k = bytes32((uint256(k) << 128) | (uint256(k) >> 128));
-        uint256 ky =
-            uint256(k) & 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff;
+        uint256 ky = uint256(k) & 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff;
         uint256 kx;
         {
-            uint256 ky2 =
-                mulmod(
-                    ky,
-                    ky,
-                    0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                );
+            uint256 ky2 = mulmod(ky, ky, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
             uint256 u =
                 addmod(
                     ky2,
@@ -1240,45 +1134,25 @@ contract Ed25519 {
                     0x52036cee_2b6ffe73_8cc74079_7779e898_00700a4d_4141d8ab_75eb4dca_135978a3,
                     0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
                 ) + 1;
-            uint256 t =
-                mulmod(
-                    u,
-                    v,
-                    0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                );
+            uint256 t = mulmod(u, v, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
             (kx, ) = pow22501(t);
-            kx = mulmod(
-                kx,
-                kx,
-                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-            );
+            kx = mulmod(kx, kx, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
             kx = mulmod(
                 u,
                 mulmod(
-                    mulmod(
-                        kx,
-                        kx,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    ),
+                    mulmod(kx, kx, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed),
                     t,
                     0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
                 ),
                 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
             );
             t = mulmod(
-                mulmod(
-                    kx,
-                    kx,
-                    0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                ),
+                mulmod(kx, kx, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed),
                 v,
                 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
             );
             if (t != u) {
-                if (
-                    t !=
-                    0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed - u
-                ) {
+                if (t != 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed - u) {
                     return false;
                 }
                 kx = mulmod(
@@ -1293,35 +1167,23 @@ contract Ed25519 {
         }
         // Verify s
         s = bytes32(
-            ((uint256(s) &
-                0xff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff) << 8) |
-                ((uint256(s) &
-                    0xff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00) >> 8)
+            ((uint256(s) & 0xff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff) << 8) |
+                ((uint256(s) & 0xff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00) >> 8)
         );
         s = bytes32(
-            ((uint256(s) & 0xffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff) <<
-                16) |
-                ((uint256(s) &
-                    0xffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000) >>
-                    16)
+            ((uint256(s) & 0xffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff) << 16) |
+                ((uint256(s) & 0xffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000) >> 16)
         );
         s = bytes32(
-            ((uint256(s) & 0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff) <<
-                32) |
-                ((uint256(s) &
-                    0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff_00000000) >>
-                    32)
+            ((uint256(s) & 0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff) << 32) |
+                ((uint256(s) & 0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff_00000000) >> 32)
         );
         s = bytes32(
             ((uint256(s) & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff) << 64) |
-                ((uint256(s) &
-                    0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000) >>
-                    64)
+                ((uint256(s) & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000) >> 64)
         );
         s = bytes32((uint256(s) << 128) | (uint256(s) >> 128));
-        if (
-            uint256(s) >= 0x10000000_00000000_00000000_00000000_14def9de_a2f79cd6_5812631a_5cf5d3ed
-        ) {
+        if (uint256(s) >= 0x10000000_00000000_00000000_00000000_14def9de_a2f79cd6_5812631a_5cf5d3ed) {
             return false;
         }
         uint256 vx;
@@ -1332,15 +1194,10 @@ contract Ed25519 {
         uint256[8][3][2] memory tables;
         {
             uint256 ks = ky + kx;
-            uint256 kd =
-                ky + 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed - kx;
+            uint256 kd = ky + 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed - kx;
             uint256 k2dt =
                 mulmod(
-                    mulmod(
-                        kx,
-                        ky,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    ),
+                    mulmod(kx, ky, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed),
                     0x2406d9dc_56dffce7_198e80f2_eef3d130_00e0149a_8283b156_ebd69b94_26b2f159,
                     0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
                 );
@@ -1350,52 +1207,18 @@ contract Ed25519 {
             uint256 kkv = 1;
             {
                 uint256 xx =
-                    mulmod(
-                        kkx,
-                        kkv,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
+                    mulmod(kkx, kkv, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                 uint256 yy =
-                    mulmod(
-                        kky,
-                        kku,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
+                    mulmod(kky, kku, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                 uint256 zz =
-                    mulmod(
-                        kku,
-                        kkv,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
-                uint256 xx2 =
-                    mulmod(
-                        xx,
-                        xx,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
-                uint256 yy2 =
-                    mulmod(
-                        yy,
-                        yy,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
+                    mulmod(kku, kkv, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+                uint256 xx2 = mulmod(xx, xx, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+                uint256 yy2 = mulmod(yy, yy, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                 uint256 xxyy =
-                    mulmod(
-                        xx,
-                        yy,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
-                uint256 zz2 =
-                    mulmod(
-                        zz,
-                        zz,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
+                    mulmod(xx, yy, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+                uint256 zz2 = mulmod(zz, zz, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                 kkx = xxyy + xxyy;
-                kku =
-                    yy2 -
-                    xx2 +
-                    0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
+                kku = yy2 - xx2 + 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
                 kky = xx2 + yy2;
                 kkv = addmod(
                     zz2 + zz2,
@@ -1405,52 +1228,18 @@ contract Ed25519 {
             }
             {
                 uint256 xx =
-                    mulmod(
-                        kkx,
-                        kkv,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
+                    mulmod(kkx, kkv, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                 uint256 yy =
-                    mulmod(
-                        kky,
-                        kku,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
+                    mulmod(kky, kku, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                 uint256 zz =
-                    mulmod(
-                        kku,
-                        kkv,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
-                uint256 xx2 =
-                    mulmod(
-                        xx,
-                        xx,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
-                uint256 yy2 =
-                    mulmod(
-                        yy,
-                        yy,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
+                    mulmod(kku, kkv, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+                uint256 xx2 = mulmod(xx, xx, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+                uint256 yy2 = mulmod(yy, yy, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                 uint256 xxyy =
-                    mulmod(
-                        xx,
-                        yy,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
-                uint256 zz2 =
-                    mulmod(
-                        zz,
-                        zz,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
+                    mulmod(xx, yy, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+                uint256 zz2 = mulmod(zz, zz, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                 kkx = xxyy + xxyy;
-                kku =
-                    yy2 -
-                    xx2 +
-                    0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
+                kku = yy2 - xx2 + 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
                 kky = xx2 + yy2;
                 kkv = addmod(
                     zz2 + zz2,
@@ -1460,52 +1249,18 @@ contract Ed25519 {
             }
             {
                 uint256 xx =
-                    mulmod(
-                        kkx,
-                        kkv,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
+                    mulmod(kkx, kkv, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                 uint256 yy =
-                    mulmod(
-                        kky,
-                        kku,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
+                    mulmod(kky, kku, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                 uint256 zz =
-                    mulmod(
-                        kku,
-                        kkv,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
-                uint256 xx2 =
-                    mulmod(
-                        xx,
-                        xx,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
-                uint256 yy2 =
-                    mulmod(
-                        yy,
-                        yy,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
+                    mulmod(kku, kkv, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+                uint256 xx2 = mulmod(xx, xx, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+                uint256 yy2 = mulmod(yy, yy, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                 uint256 xxyy =
-                    mulmod(
-                        xx,
-                        yy,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
-                uint256 zz2 =
-                    mulmod(
-                        zz,
-                        zz,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
+                    mulmod(xx, yy, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+                uint256 zz2 = mulmod(zz, zz, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                 kkx = xxyy + xxyy;
-                kku =
-                    yy2 -
-                    xx2 +
-                    0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
+                kku = yy2 - xx2 + 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
                 kky = xx2 + yy2;
                 kkv = addmod(
                     zz2 + zz2,
@@ -1522,33 +1277,14 @@ contract Ed25519 {
                 uint256 c2z;
                 {
                     uint256 cx =
-                        mulmod(
-                            kkx,
-                            kkv,
-                            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                        );
+                        mulmod(kkx, kkv, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                     uint256 cy =
-                        mulmod(
-                            kky,
-                            kku,
-                            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                        );
+                        mulmod(kky, kku, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                     uint256 cz =
-                        mulmod(
-                            kku,
-                            kkv,
-                            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                        );
-                    ct = mulmod(
-                        kkx,
-                        kky,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
+                        mulmod(kku, kkv, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+                    ct = mulmod(kkx, kky, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                     cs = cy + cx;
-                    cd =
-                        cy -
-                        cx +
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
+                    cd = cy - cx + 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
                     c2z = cz + cz;
                 }
                 tables_[1][0][i] = cs;
@@ -1560,41 +1296,16 @@ contract Ed25519 {
                 );
                 tables_[0][0][i] = c2z;
                 tables_[0][1][i] = cprod;
-                cprod = mulmod(
-                    cprod,
-                    c2z,
-                    0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                );
+                cprod = mulmod(cprod, c2z, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                 if (i == 7) {
                     break;
                 }
-                uint256 ab =
-                    mulmod(
-                        cs,
-                        ks,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
-                uint256 aa =
-                    mulmod(
-                        cd,
-                        kd,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
+                uint256 ab = mulmod(cs, ks, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+                uint256 aa = mulmod(cd, kd, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                 uint256 ac =
-                    mulmod(
-                        ct,
-                        k2dt,
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                    );
-                kkx =
-                    ab -
-                    aa +
-                    0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
-                kku = addmod(
-                    c2z,
-                    ac,
-                    0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                );
+                    mulmod(ct, k2dt, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+                kkx = ab - aa + 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
+                kku = addmod(c2z, ac, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                 kky = ab + aa;
                 kkv = addmod(
                     c2z,
@@ -1604,36 +1315,12 @@ contract Ed25519 {
             }
             uint256 t;
             (cprod, t) = pow22501(cprod);
-            cprod = mulmod(
-                cprod,
-                cprod,
-                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-            );
-            cprod = mulmod(
-                cprod,
-                cprod,
-                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-            );
-            cprod = mulmod(
-                cprod,
-                cprod,
-                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-            );
-            cprod = mulmod(
-                cprod,
-                cprod,
-                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-            );
-            cprod = mulmod(
-                cprod,
-                cprod,
-                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-            );
-            cprod = mulmod(
-                cprod,
-                t,
-                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-            );
+            cprod = mulmod(cprod, cprod, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+            cprod = mulmod(cprod, cprod, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+            cprod = mulmod(cprod, cprod, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+            cprod = mulmod(cprod, cprod, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+            cprod = mulmod(cprod, cprod, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+            cprod = mulmod(cprod, t, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
             for (uint256 i = 7; ; i--) {
                 uint256 cinv =
                     mulmod(
@@ -1701,8 +1388,7 @@ contract Ed25519 {
         // Step 4: compute s*G - h*A
         {
             uint256 ss = uint256(s) << 3;
-            uint256 hhh =
-                hh + 0x80000000_00000000_00000000_00000000_a6f7cef5_17bce6b2_c09318d2_e7ae9f60;
+            uint256 hhh = hh + 0x80000000_00000000_00000000_00000000_a6f7cef5_17bce6b2_c09318d2_e7ae9f60;
             uint256 vvx = 0;
             uint256 vvu = 1;
             uint256 vvy = 1;
@@ -1716,22 +1402,11 @@ contract Ed25519 {
                     uint256 wt;
                     {
                         uint256 wx =
-                            mulmod(
-                                vvx,
-                                vvv,
-                                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                            );
+                            mulmod(vvx, vvv, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                         uint256 wy =
-                            mulmod(
-                                vvy,
-                                vvu,
-                                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                            );
+                            mulmod(vvy, vvu, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                         ws = wy + wx;
-                        wd =
-                            wy -
-                            wx +
-                            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
+                        wd = wy - wx + 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
                         wz = mulmod(
                             vvu,
                             vvv,
@@ -1764,16 +1439,10 @@ contract Ed25519 {
                             tables_[0][2][j],
                             0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
                         );
-                    vvx =
-                        ab -
-                        aa +
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
+                    vvx = ab - aa + 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
                     vvu = wz + ac;
                     vvy = ab + aa;
-                    vvv =
-                        wz -
-                        ac +
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
+                    vvv = wz - ac + 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
                 }
                 if ((hhh & bit) != 0) {
                     uint256 ws;
@@ -1782,22 +1451,11 @@ contract Ed25519 {
                     uint256 wt;
                     {
                         uint256 wx =
-                            mulmod(
-                                vvx,
-                                vvv,
-                                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                            );
+                            mulmod(vvx, vvv, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                         uint256 wy =
-                            mulmod(
-                                vvy,
-                                vvu,
-                                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                            );
+                            mulmod(vvy, vvu, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                         ws = wy + wx;
-                        wd =
-                            wy -
-                            wx +
-                            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
+                        wd = wy - wx + 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
                         wz = mulmod(
                             vvu,
                             vvv,
@@ -1830,14 +1488,8 @@ contract Ed25519 {
                             tables_[1][2][j],
                             0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
                         );
-                    vvx =
-                        ab -
-                        aa +
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
-                    vvu =
-                        wz -
-                        ac +
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
+                    vvx = ab - aa + 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
+                    vvu = wz - ac + 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
                     vvy = ab + aa;
                     vvv = wz + ac;
                 }
@@ -1848,22 +1500,11 @@ contract Ed25519 {
                     uint256 wt;
                     {
                         uint256 wx =
-                            mulmod(
-                                vvx,
-                                vvv,
-                                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                            );
+                            mulmod(vvx, vvv, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                         uint256 wy =
-                            mulmod(
-                                vvy,
-                                vvu,
-                                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                            );
+                            mulmod(vvy, vvu, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                         ws = wy + wx;
-                        wd =
-                            wy -
-                            wx +
-                            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
+                        wd = wy - wx + 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
                         wz = mulmod(
                             vvu,
                             vvv,
@@ -1895,71 +1536,33 @@ contract Ed25519 {
                             tables_[1][2][j],
                             0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
                         );
-                    vvx =
-                        ab -
-                        aa +
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
-                    vvu =
-                        wz -
-                        ac +
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
+                    vvx = ab - aa + 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
+                    vvu = wz - ac + 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
                     vvy = ab + aa;
                     vvv = wz + ac;
                     break;
                 }
                 {
                     uint256 xx =
-                        mulmod(
-                            vvx,
-                            vvv,
-                            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                        );
+                        mulmod(vvx, vvv, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                     uint256 yy =
-                        mulmod(
-                            vvy,
-                            vvu,
-                            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                        );
+                        mulmod(vvy, vvu, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                     uint256 zz =
-                        mulmod(
-                            vvu,
-                            vvv,
-                            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                        );
+                        mulmod(vvu, vvv, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                     uint256 xx2 =
-                        mulmod(
-                            xx,
-                            xx,
-                            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                        );
+                        mulmod(xx, xx, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                     uint256 yy2 =
-                        mulmod(
-                            yy,
-                            yy,
-                            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                        );
+                        mulmod(yy, yy, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                     uint256 xxyy =
-                        mulmod(
-                            xx,
-                            yy,
-                            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                        );
+                        mulmod(xx, yy, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                     uint256 zz2 =
-                        mulmod(
-                            zz,
-                            zz,
-                            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                        );
+                        mulmod(zz, zz, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
                     vvx = xxyy + xxyy;
-                    vvu =
-                        yy2 -
-                        xx2 +
-                        0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
+                    vvu = yy2 - xx2 + 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed;
                     vvy = xx2 + yy2;
                     vvv = addmod(
                         zz2 + zz2,
-                        0xffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffda -
-                            vvu,
+                        0xffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffda - vvu,
                         0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
                     );
                 }
@@ -1971,87 +1574,39 @@ contract Ed25519 {
         }
         // Step 5: compare the points
         (uint256 vi, uint256 vj) =
-            pow22501(
-                mulmod(
-                    vu,
-                    vv,
-                    0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-                )
-            );
-        vi = mulmod(
-            vi,
-            vi,
-            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-        );
-        vi = mulmod(
-            vi,
-            vi,
-            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-        );
-        vi = mulmod(
-            vi,
-            vi,
-            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-        );
-        vi = mulmod(
-            vi,
-            vi,
-            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-        );
-        vi = mulmod(
-            vi,
-            vi,
-            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-        );
-        vi = mulmod(
-            vi,
-            vj,
-            0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-        );
+            pow22501(mulmod(vu, vv, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed));
+        vi = mulmod(vi, vi, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+        vi = mulmod(vi, vi, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+        vi = mulmod(vi, vi, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+        vi = mulmod(vi, vi, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+        vi = mulmod(vi, vi, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
+        vi = mulmod(vi, vj, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed);
         vx = mulmod(
             vx,
-            mulmod(
-                vi,
-                vv,
-                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-            ),
+            mulmod(vi, vv, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed),
             0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
         );
         vy = mulmod(
             vy,
-            mulmod(
-                vi,
-                vu,
-                0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
-            ),
+            mulmod(vi, vu, 0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed),
             0x7fffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffff_ffffffed
         );
         bytes32 v = bytes32(vy | (vx << 255));
         v = bytes32(
-            ((uint256(v) &
-                0xff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff) << 8) |
-                ((uint256(v) &
-                    0xff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00) >> 8)
+            ((uint256(v) & 0xff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff_00ff00ff) << 8) |
+                ((uint256(v) & 0xff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00_ff00ff00) >> 8)
         );
         v = bytes32(
-            ((uint256(v) & 0xffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff) <<
-                16) |
-                ((uint256(v) &
-                    0xffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000) >>
-                    16)
+            ((uint256(v) & 0xffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff_0000ffff) << 16) |
+                ((uint256(v) & 0xffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000_ffff0000) >> 16)
         );
         v = bytes32(
-            ((uint256(v) & 0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff) <<
-                32) |
-                ((uint256(v) &
-                    0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff_00000000) >>
-                    32)
+            ((uint256(v) & 0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff) << 32) |
+                ((uint256(v) & 0xffffffff_00000000_ffffffff_00000000_ffffffff_00000000_ffffffff_00000000) >> 32)
         );
         v = bytes32(
             ((uint256(v) & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff) << 64) |
-                ((uint256(v) &
-                    0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000) >>
-                    64)
+                ((uint256(v) & 0xffffffff_ffffffff_00000000_00000000_ffffffff_ffffffff_00000000_00000000) >> 64)
         );
         v = bytes32((uint256(v) << 128) | (uint256(v) >> 128));
         return v == r;

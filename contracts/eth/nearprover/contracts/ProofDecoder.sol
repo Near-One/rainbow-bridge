@@ -15,11 +15,7 @@ library ProofDecoder {
         MerklePath block_proof;
     }
 
-    function decodeFullOutcomeProof(Borsh.Data memory data)
-        internal
-        view
-        returns (FullOutcomeProof memory proof)
-    {
+    function decodeFullOutcomeProof(Borsh.Data memory data) internal view returns (FullOutcomeProof memory proof) {
         proof.outcome_proof = data.decodeExecutionOutcomeWithIdAndProof();
         proof.outcome_root_proof = data.decodeMerklePath();
         proof.block_header_lite = data.decodeBlockHeaderLight();
@@ -33,11 +29,7 @@ library ProofDecoder {
         bytes32 hash; // Computable
     }
 
-    function decodeBlockHeaderLight(Borsh.Data memory data)
-        internal
-        view
-        returns (BlockHeaderLight memory header)
-    {
+    function decodeBlockHeaderLight(Borsh.Data memory data) internal view returns (BlockHeaderLight memory header) {
         header.prev_block_hash = data.decodeBytes32();
         header.inner_rest_hash = data.decodeBytes32();
         header.inner_lite = data.decodeBlockHeaderInnerLite();
@@ -90,11 +82,7 @@ library ProofDecoder {
         bytes32[] merkelization_hashes;
     }
 
-    function decodeExecutionOutcome(Borsh.Data memory data)
-        internal
-        view
-        returns (ExecutionOutcome memory outcome)
-    {
+    function decodeExecutionOutcome(Borsh.Data memory data) internal view returns (ExecutionOutcome memory outcome) {
         outcome.logs = new bytes[](data.decodeU32());
         for (uint i = 0; i < outcome.logs.length; i++) {
             outcome.logs[i] = data.decodeBytes();
@@ -152,11 +140,7 @@ library ProofDecoder {
         uint8 direction; // 0 = left, 1 = right
     }
 
-    function decodeMerklePathItem(Borsh.Data memory data)
-        internal
-        pure
-        returns (MerklePathItem memory item)
-    {
+    function decodeMerklePathItem(Borsh.Data memory data) internal pure returns (MerklePathItem memory item) {
         item.hash = data.decodeBytes32();
         item.direction = data.decodeU8();
         require(item.direction < 2, "ProofDecoder: MerklePathItem direction should be 0 or 1");
@@ -166,11 +150,7 @@ library ProofDecoder {
         MerklePathItem[] items;
     }
 
-    function decodeMerklePath(Borsh.Data memory data)
-        internal
-        pure
-        returns (MerklePath memory path)
-    {
+    function decodeMerklePath(Borsh.Data memory data) internal pure returns (MerklePath memory path) {
         path.items = new MerklePathItem[](data.decodeU32());
         for (uint i = 0; i < path.items.length; i++) {
             path.items[i] = data.decodeMerklePathItem();

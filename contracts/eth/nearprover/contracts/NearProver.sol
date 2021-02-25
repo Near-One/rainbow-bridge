@@ -18,21 +18,13 @@ contract NearProver is INearProver {
         bridge = _bridge;
     }
 
-    function proveOutcome(bytes memory proofData, uint64 blockHeight)
-        public
-        view
-        override
-        returns (bool)
-    {
+    function proveOutcome(bytes memory proofData, uint64 blockHeight) public view override returns (bool) {
         Borsh.Data memory borshData = Borsh.from(proofData);
         ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borshData.decodeFullOutcomeProof();
         require(borshData.finished(), "NearProver: argument should be exact borsh serialization");
 
         bytes32 hash =
-            _computeRoot(
-                fullOutcomeProof.outcome_proof.outcome_with_id.hash,
-                fullOutcomeProof.outcome_proof.proof
-            );
+            _computeRoot(fullOutcomeProof.outcome_proof.outcome_with_id.hash, fullOutcomeProof.outcome_proof.proof);
 
         hash = sha256(abi.encodePacked(hash));
 
@@ -54,11 +46,7 @@ contract NearProver is INearProver {
         return true;
     }
 
-    function _computeRoot(bytes32 node, ProofDecoder.MerklePath memory proof)
-        internal
-        pure
-        returns (bytes32 hash)
-    {
+    function _computeRoot(bytes32 node, ProofDecoder.MerklePath memory proof) internal pure returns (bytes32 hash) {
         hash = node;
         for (uint i = 0; i < proof.items.length; i++) {
             ProofDecoder.MerklePathItem memory item = proof.items[i];

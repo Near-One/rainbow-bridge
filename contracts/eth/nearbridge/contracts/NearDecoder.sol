@@ -31,11 +31,7 @@ library NearDecoder {
         uint128 stake;
     }
 
-    function decodeValidatorStake(Borsh.Data memory data)
-        internal
-        pure
-        returns (ValidatorStake memory validatorStake)
-    {
+    function decodeValidatorStake(Borsh.Data memory data) internal pure returns (ValidatorStake memory validatorStake) {
         validatorStake.account_id = string(data.decodeBytes());
         validatorStake.public_key = data.decodePublicKey();
         validatorStake.stake = data.decodeU128();
@@ -91,11 +87,7 @@ library NearDecoder {
         Signature signature;
     }
 
-    function decodeOptionalSignature(Borsh.Data memory data)
-        internal
-        pure
-        returns (OptionalSignature memory sig)
-    {
+    function decodeOptionalSignature(Borsh.Data memory data) internal pure returns (OptionalSignature memory sig) {
         sig.none = (data.decodeU8() == 0);
         if (!sig.none) {
             sig.signature = data.decodeSignature();
@@ -128,11 +120,7 @@ library NearDecoder {
         }
     }
 
-    function decodeLightClientBlock(Borsh.Data memory data)
-        internal
-        view
-        returns (LightClientBlock memory header)
-    {
+    function decodeLightClientBlock(Borsh.Data memory data) internal view returns (LightClientBlock memory header) {
         header.prev_block_hash = data.decodeBytes32();
         header.next_block_inner_hash = data.decodeBytes32();
         header.inner_lite = data.decodeBlockHeaderInnerLite();

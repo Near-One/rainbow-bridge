@@ -147,11 +147,7 @@ library Borsh {
         uint256 y;
     }
 
-    function decodeSECP256K1PublicKey(Borsh.Data memory data)
-        internal
-        pure
-        returns (SECP256K1PublicKey memory key)
-    {
+    function decodeSECP256K1PublicKey(Borsh.Data memory data) internal pure returns (SECP256K1PublicKey memory key) {
         key.x = decodeU256(data);
         key.y = decodeU256(data);
     }
@@ -160,11 +156,7 @@ library Borsh {
         bytes32 xy;
     }
 
-    function decodeED25519PublicKey(Borsh.Data memory data)
-        internal
-        pure
-        returns (ED25519PublicKey memory key)
-    {
+    function decodeED25519PublicKey(Borsh.Data memory data) internal pure returns (ED25519PublicKey memory key) {
         key.xy = decodeBytes32(data);
     }
 
@@ -176,11 +168,7 @@ library Borsh {
         uint8 v;
     }
 
-    function decodeSECP256K1Signature(Borsh.Data memory data)
-        internal
-        pure
-        returns (SECP256K1Signature memory sig)
-    {
+    function decodeSECP256K1Signature(Borsh.Data memory data) internal pure returns (SECP256K1Signature memory sig) {
         sig.r = decodeBytes32(data);
         sig.s = decodeBytes32(data);
         sig.v = decodeU8(data);
@@ -190,11 +178,7 @@ library Borsh {
         bytes32[2] rs;
     }
 
-    function decodeED25519Signature(Borsh.Data memory data)
-        internal
-        pure
-        returns (ED25519Signature memory sig)
-    {
+    function decodeED25519Signature(Borsh.Data memory data) internal pure returns (ED25519Signature memory sig) {
         sig.rs[0] = decodeBytes32(data);
         sig.rs[1] = decodeBytes32(data);
     }

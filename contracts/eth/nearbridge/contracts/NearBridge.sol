@@ -102,20 +102,12 @@ contract NearBridge is INearBridge {
     function challenge(address payable receiver, uint256 signatureIndex) public override {
         require(block.timestamp < lastValidAt, "No block can be challenged at this time");
 
-        require(
-            !checkBlockProducerSignatureInHead(signatureIndex),
-            "Can't challenge valid signature"
-        );
+        require(!checkBlockProducerSignatureInHead(signatureIndex), "Can't challenge valid signature");
 
         _payRewardAndRollBack(receiver);
     }
 
-    function checkBlockProducerSignatureInHead(uint256 signatureIndex)
-        public
-        view
-        override
-        returns (bool)
-    {
+    function checkBlockProducerSignatureInHead(uint256 signatureIndex) public view override returns (bool) {
         BlockProducerInfo storage untrustedBlockProducers =
             untrustedHeadIsFromNextEpoch ? nextBlockProducers : currentBlockProducers;
         require(signatureIndex < untrustedBlockProducers.bpsLength, "Signature index out of range");
@@ -145,8 +137,7 @@ contract NearBridge is INearBridge {
         require(!initialized, "NearBridge: already initialized");
 
         Borsh.Data memory initialValidatorsBorsh = Borsh.from(initialValidators_);
-        NearDecoder.InitialValidators memory initialValidators =
-            initialValidatorsBorsh.decodeInitialValidators();
+        NearDecoder.InitialValidators memory initialValidators = initialValidatorsBorsh.decodeInitialValidators();
         require(
             initialValidatorsBorsh.finished(),
             "NearBridge: only initial validators should be passed as second argument"
@@ -157,34 +148,22 @@ contract NearBridge is INearBridge {
 
     // The second part of the initialization -- setting the current head.
     function initWithBlock(bytes memory data) public override {
-        require(
-            currentBlockProducers.totalStake > 0,
-            "NearBridge: validators need to be initialized first"
-        );
+        require(currentBlockProducers.totalStake > 0, "NearBridge: validators need to be initialized first");
         require(!initialized, "NearBridge: already initialized");
         initialized = true;
 
         Borsh.Data memory borsh = Borsh.from(data);
         NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
-        require(
-            borsh.finished(),
-            "NearBridge: only light client block should be passed as first argument"
-        );
+        require(borsh.finished(), "NearBridge: only light client block should be passed as first argument");
 
-        require(
-            !nearBlock.next_bps.none,
-            "NearBridge: Initialization block should contain next_bps."
-        );
+        require(!nearBlock.next_bps.none, "NearBridge: Initialization block should contain next_bps.");
         setBlock(nearBlock, head);
         setBlockProducers(nearBlock.next_bps.validatorStakes, nextBlockProducers);
         blockHashes_[head.height] = head.hash;
         blockMerkleRoots_[head.height] = head.merkleRoot;
     }
 
-    function _checkBp(
-        NearDecoder.LightClientBlock memory nearBlock,
-        BlockProducerInfo storage bpInfo
-    ) internal {
+    function _checkBp(NearDecoder.LightClientBlock memory nearBlock, BlockProducerInfo storage bpInfo) internal {
         require(
             nearBlock.approvals_after_next.length >= bpInfo.bpsLength,
             "NearBridge: number of approvals should be at least as large as number of BPs"
@@ -199,10 +178,7 @@ contract NearBridge is INearBridge {
         }
         // Last block in the epoch might contain extra approvals that light client can ignore.
 
-        require(
-            votedFor > bpInfo.totalStake.mul(2).div(3),
-            "NearBridge: Less than 2/3 voted by the block after next"
-        );
+        require(votedFor > bpInfo.totalStake.mul(2).div(3), "NearBridge: Less than 2/3 voted by the block after next");
     }
 
     struct BridgeState {
@@ -218,9 +194,7 @@ contract NearBridge is INearBridge {
             res.currentHeight = head.height;
             res.nextTimestamp = untrustedHead.timestamp;
             res.nextValidAt = lastValidAt;
-            res.numBlockProducers = (
-                untrustedHeadIsFromNextEpoch ? nextBlockProducers : currentBlockProducers
-            )
+            res.numBlockProducers = (untrustedHeadIsFromNextEpoch ? nextBlockProducers : currentBlockProducers)
                 .bpsLength;
         } else {
             res.currentHeight = (lastValidAt == 0 ? head : untrustedHead).height;
@@ -248,10 +222,7 @@ contract NearBridge is INearBridge {
         }
 
         // Check that the new block's height is greater than the current one's.
-        require(
-            nearBlock.inner_lite.height > head.height,
-            "NearBridge: Height of the block is not valid"
-        );
+        require(nearBlock.inner_lite.height > head.height, "NearBridge: Height of the block is not valid");
 
         // Check that the new block is from the same epoch as the current one, or from the next one.
         bool nearBlockIsFromNextEpoch;
@@ -300,10 +271,7 @@ contract NearBridge is INearBridge {
         emit BlockHashAdded(src.inner_lite.height, src.hash);
     }
 
-    function setBlockProducers(
-        NearDecoder.ValidatorStake[] memory src,
-        BlockProducerInfo storage dest
-    ) internal {
+    function setBlockProducers(NearDecoder.ValidatorStake[] memory src, BlockProducerInfo storage dest) internal {
         dest.bpsLength = src.length;
         uint256 totalStake = 0;
         for (uint i = 0; i < src.length; i++) {
@@ -328,9 +296,7 @@ contract NearBridge is INearBridge {
         blockMerkleRoots_[head.height] = head.merkleRoot;
     }
 
-    function copyBlockProducers(BlockProducerInfo storage src, BlockProducerInfo storage dest)
-        internal
-    {
+    function copyBlockProducers(BlockProducerInfo storage src, BlockProducerInfo storage dest) internal {
         dest.bpsLength = src.bpsLength;
         dest.totalStake = src.totalStake;
         for (uint i = 0; i < src.bpsLength; i++) {
@@ -344,20 +310,13 @@ contract NearBridge is INearBridge {
         NearDecoder.Signature memory signature,
         NearDecoder.PublicKey storage publicKey
     ) internal view returns (bool) {
-        bytes memory message =
-            abi.encodePacked(uint8(0), next_block_hash, _reversedUint64(height + 2), bytes23(0));
+        bytes memory message = abi.encodePacked(uint8(0), next_block_hash, _reversedUint64(height + 2), bytes23(0));
 
         if (signature.enumIndex == 0) {
             (bytes32 arg1, bytes9 arg2) = abi.decode(message, (bytes32, bytes9));
             return
                 publicKey.ed25519.xy != bytes32(0) &&
-                edwards.check(
-                    publicKey.ed25519.xy,
-                    signature.ed25519.rs[0],
-                    signature.ed25519.rs[1],
-                    arg1,
-                    arg2
-                );
+                edwards.check(publicKey.ed25519.xy, signature.ed25519.rs[0], signature.ed25519.rs[1], arg1, arg2);
         } else {
             return
                 ecrecover(
@@ -365,12 +324,7 @@ contract NearBridge is INearBridge {
                     signature.secp256k1.v + (signature.secp256k1.v < 27 ? 27 : 0),
                     signature.secp256k1.r,
                     signature.secp256k1.s
-                ) ==
-                address(
-                    uint256(
-                        keccak256(abi.encodePacked(publicKey.secp256k1.x, publicKey.secp256k1.y))
-                    )
-                );
+                ) == address(uint256(keccak256(abi.encodePacked(publicKey.secp256k1.x, publicKey.secp256k1.y))));
         }
     }
 
@@ -383,24 +337,14 @@ contract NearBridge is INearBridge {
 
     function blockHashes(uint64 height) public view override returns (bytes32 res) {
         res = blockHashes_[height];
-        if (
-            res == 0 &&
-            block.timestamp >= lastValidAt &&
-            lastValidAt != 0 &&
-            height == untrustedHead.height
-        ) {
+        if (res == 0 && block.timestamp >= lastValidAt && lastValidAt != 0 && height == untrustedHead.height) {
             res = untrustedHead.hash;
         }
     }
 
     function blockMerkleRoots(uint64 height) public view override returns (bytes32 res) {
         res = blockMerkleRoots_[height];
-        if (
-            res == 0 &&
-            block.timestamp >= lastValidAt &&
-            lastValidAt != 0 &&
-            height == untrustedHead.height
-        ) {
+        if (res == 0 && block.timestamp >= lastValidAt && lastValidAt != 0 && height == untrustedHead.height) {
             res = untrustedHead.merkleRoot;
         }
     }
