@@ -219,7 +219,6 @@ library SafeMath {
 pragma solidity ^0.6;
 
 contract AdminControlled {
-
     address public admin;
     uint public paused;
 
@@ -2274,7 +2273,6 @@ pragma experimental ABIEncoderV2;
 
 
 
-
 contract NearBridge is INearBridge, AdminControlled {
     using SafeMath for uint256;
     using Borsh for Borsh.Data;
@@ -2344,7 +2342,14 @@ contract NearBridge is INearBridge, AdminControlled {
 
     event BlockHashReverted(uint64 indexed height, bytes32 blockHash);
 
-    constructor(Ed25519 ed, uint256 lockEthAmount_, uint256 lockDuration_, uint256 replaceDuration_, address admin_) public {
+    constructor(
+        Ed25519 ed,
+        uint256 lockEthAmount_,
+        uint256 lockDuration_,
+        uint256 replaceDuration_,
+        address admin_
+    ) public {
+        require(replaceDuration_ > lockDuration_.mul(1000000000));
         edwards = ed;
         lockEthAmount = lockEthAmount_;
         lockDuration = lockDuration_;
@@ -2359,18 +2364,18 @@ contract NearBridge is INearBridge, AdminControlled {
     uint constant PAUSED_CHALLENGE = 8;
     uint constant PAUSED_VERIFY = 16;
 
-    function deposit() override public payable pausable(PAUSED_DEPOSIT) {
+    function deposit() public payable override pausable(PAUSED_DEPOSIT) {
         require(msg.value == lockEthAmount && balanceOf[msg.sender] == 0);
         balanceOf[msg.sender] = balanceOf[msg.sender].add(msg.value);
     }
 
-    function withdraw() override public pausable(PAUSED_WITHDRAW) {
+    function withdraw() public override pausable(PAUSED_WITHDRAW) {
         require(msg.sender != lastSubmitter || block.timestamp >= lastValidAt);
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(lockEthAmount);
         msg.sender.transfer(lockEthAmount);
     }
 
-    function challenge(address payable receiver, uint256 signatureIndex) override public pausable(PAUSED_CHALLENGE) {
+    function challenge(address payable receiver, uint256 signatureIndex) public override pausable(PAUSED_CHALLENGE) {
         require(block.timestamp < lastValidAt, "No block can be challenged at this time");
 
         require(!checkBlockProducerSignatureInHead(signatureIndex), "Can't challenge valid signature");
@@ -2472,7 +2477,7 @@ contract NearBridge is INearBridge, AdminControlled {
         }
     }
 
-    function addLightClientBlock(bytes memory data) override public pausable(PAUSED_ADD_BLOCK) {
+    function addLightClientBlock(bytes memory data) public override pausable(PAUSED_ADD_BLOCK) {
         require(initialized, "NearBridge: Contract is not initialized.");
         require(balanceOf[msg.sender] >= lockEthAmount, "Balance is not enough");
 
@@ -2606,14 +2611,14 @@ contract NearBridge is INearBridge, AdminControlled {
         r = ((r & 0x00FF00FF00FF00FF) << 8) | ((r & 0xFF00FF00FF00FF00) >> 8);
     }
 
-    function blockHashes(uint64 height) override public view pausable(PAUSED_VERIFY) returns (bytes32 res) {
+    function blockHashes(uint64 height) public view override pausable(PAUSED_VERIFY) returns (bytes32 res) {
         res = blockHashes_[height];
         if (res == 0 && block.timestamp >= lastValidAt && lastValidAt != 0 && height == untrustedHead.height) {
             res = untrustedHead.hash;
         }
     }
 
-    function blockMerkleRoots(uint64 height) override public view pausable(PAUSED_VERIFY) returns (bytes32 res) {
+    function blockMerkleRoots(uint64 height) public view override pausable(PAUSED_VERIFY) returns (bytes32 res) {
         res = blockMerkleRoots_[height];
         if (res == 0 && block.timestamp >= lastValidAt && lastValidAt != 0 && height == untrustedHead.height) {
             res = untrustedHead.merkleRoot;

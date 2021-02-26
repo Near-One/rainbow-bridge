@@ -1,7 +1,6 @@
 pragma solidity ^0.6;
 
 contract AdminControlled {
-
     address public admin;
     uint public paused;
 

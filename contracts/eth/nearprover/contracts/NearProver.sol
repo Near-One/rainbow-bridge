@@ -7,7 +7,6 @@ import "../../nearbridge/contracts/NearDecoder.sol";
 import "./ProofDecoder.sol";
 import "./INearProver.sol";
 
-
 contract NearProver is INearProver, AdminControlled {
     using SafeMath for uint256;
     using Borsh for Borsh.Data;
@@ -23,7 +22,13 @@ contract NearProver is INearProver, AdminControlled {
 
     uint constant PAUSED_VERIFY = 1;
 
-    function proveOutcome(bytes memory proofData, uint64 blockHeight) override public view pausable(PAUSED_VERIFY) returns(bool) {
+    function proveOutcome(bytes memory proofData, uint64 blockHeight)
+        public
+        view
+        override
+        pausable(PAUSED_VERIFY)
+        returns (bool)
+    {
         Borsh.Data memory borshData = Borsh.from(proofData);
         ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borshData.decodeFullOutcomeProof();
         require(borshData.finished(), "NearProver: argument should be exact borsh serialization");
