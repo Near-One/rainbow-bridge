@@ -228,7 +228,7 @@ contract AdminControlled {
     }
 
     modifier pausable(uint flag) {
-        require((paused & flag) == 0);
+        require((paused & flag) == 0 || msg.sender == admin);
         _;
     }
 
