@@ -15,10 +15,7 @@ contract NearProver is INearProver, AdminControlled {
 
     INearBridge public bridge;
 
-    constructor(INearBridge _bridge, address _admin)
-        AdminControlled(_admin, UNPAUSE_ALL)
-        public
-    {
+    constructor(INearBridge _bridge, address _admin) public AdminControlled(_admin, UNPAUSE_ALL) {
         bridge = _bridge;
     }
 

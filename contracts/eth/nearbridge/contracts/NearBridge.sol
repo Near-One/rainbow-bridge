@@ -82,10 +82,7 @@ contract NearBridge is INearBridge, AdminControlled {
         uint256 lockDuration_,
         uint256 replaceDuration_,
         address admin_
-    )
-        AdminControlled(admin_, UNPAUSE_ALL)
-        public
-    {
+    ) public AdminControlled(admin_, UNPAUSE_ALL) {
         require(replaceDuration_ > lockDuration_.mul(1000000000));
         edwards = ed;
         lockEthAmount = lockEthAmount_;
