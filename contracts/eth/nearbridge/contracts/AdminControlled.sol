@@ -4,6 +4,13 @@ contract AdminControlled {
     address public admin;
     uint public paused;
 
+    constructor(address _admin, uint flags) public {
+        admin = _admin;
+
+        // Add the possibility to set pause flags on the initialization
+        paused = flags;
+    }
+
     modifier onlyAdmin {
         require(msg.sender == admin);
         _;

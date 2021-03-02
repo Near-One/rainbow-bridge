@@ -222,6 +222,13 @@ contract AdminControlled {
     address public admin;
     uint public paused;
 
+    constructor(address _admin, uint flags) public {
+        admin = _admin;
+
+        // Add the possibility to set pause flags on the initialization
+        paused = flags;
+    }
+
     modifier onlyAdmin {
         require(msg.sender == admin);
         _;
@@ -849,11 +856,14 @@ contract NearProver is INearProver, AdminControlled {
 
     INearBridge public bridge;
 
-    constructor(INearBridge _bridge, address _admin) public {
+    constructor(INearBridge _bridge, address _admin)
+        AdminControlled(_admin, UNPAUSE_ALL)
+        public
+    {
         bridge = _bridge;
-        admin = _admin;
     }
 
+    uint constant UNPAUSE_ALL = 0;
     uint constant PAUSED_VERIFY = 1;
 
     function proveOutcome(bytes memory proofData, uint64 blockHeight)
