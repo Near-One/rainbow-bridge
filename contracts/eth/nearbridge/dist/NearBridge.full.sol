@@ -2332,7 +2332,7 @@ contract NearBridge is INearBridge, AdminControlled {
     // Address of the account which submitted the last block.
     address lastSubmitter;
     // End of challenge period. If zero, untrusted* fields and lastSubmitter are not meaningful.
-    uint lastValidAt;
+    uint public lastValidAt;
 
     mapping(uint64 => bytes32) blockHashes_;
     mapping(uint64 => bytes32) blockMerkleRoots_;
