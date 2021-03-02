@@ -58,6 +58,37 @@ pub struct HeaderInfo {
     pub number: u64,
 }
 
+type Mask = u128;
+
+pub trait AdminControlled {
+    fn is_owner(&self) -> bool {
+        env::current_account_id() == env::signer_account_id()
+    }
+
+    fn assert_owner(&self) {
+        assert!(self.is_owner());
+    }
+
+    /// Return the current mask representing all paused events.
+    fn get_paused(&self) -> Mask;
+
+    /// Update mask with all paused events.
+    /// Implementor is responsible for guaranteeing that this function can only be
+    /// called by owner of the contract.
+    fn set_paused(&mut self, paused: Mask);
+
+    /// Return if the contract is paused for the current flag and user
+    fn is_paused(&self, flag: Mask) -> bool {
+        (self.get_paused() & flag) != 0 && !self.is_owner()
+    }
+
+    fn check_not_paused(&self, flag: Mask) {
+        assert!(!self.is_paused(flag));
+    }
+}
+
+const PAUSE_ADD_BLOCK_HEADER: u128 = 1;
+
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct EthClient {
@@ -98,11 +129,27 @@ pub struct EthClient {
     /// If set, block header added by trusted signer will skip validation and added by
     /// others will be immediately rejected, used in PoA testnets
     trusted_signer: Option<AccountId>,
+    /// Mask determining all paused functions
+    paused: Mask,
 }
 
 impl Default for EthClient {
     fn default() -> Self {
         env::panic(b"EthClient is not initialized");
+    }
+}
+
+#[near_bindgen]
+impl AdminControlled for EthClient {
+    #[result_serializer(borsh)]
+    fn get_paused(&self) -> Mask {
+        self.paused
+    }
+
+    #[result_serializer(borsh)]
+    fn set_paused(&mut self, #[serializer(borsh)] paused: Mask) {
+        self.assert_owner();
+        self.paused = paused;
     }
 }
 
@@ -136,6 +183,7 @@ impl EthClient {
             headers: UnorderedMap::new(b"h".to_vec()),
             infos: UnorderedMap::new(b"i".to_vec()),
             trusted_signer,
+            paused: Mask::default(),
         };
         res.canonical_header_hashes
             .insert(&header_number, &header_hash);
@@ -204,6 +252,7 @@ impl EthClient {
         #[serializer(borsh)] block_header: Vec<u8>,
         #[serializer(borsh)] dag_nodes: Vec<DoubleNodeWithMerkleProof>,
     ) {
+        self.check_not_paused(PAUSE_ADD_BLOCK_HEADER);
         let header: BlockHeader = rlp::decode(block_header.as_slice()).unwrap();
 
         if let Some(trusted_signer) = &self.trusted_signer {
