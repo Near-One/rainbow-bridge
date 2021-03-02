@@ -1,12 +1,13 @@
 pragma solidity ^0.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "../../nearbridge/contracts/AdminControlled.sol";
 import "../../nearbridge/contracts/INearBridge.sol";
 import "../../nearbridge/contracts/NearDecoder.sol";
 import "./ProofDecoder.sol";
 import "./INearProver.sol";
 
-contract NearProver is INearProver {
+contract NearProver is INearProver, AdminControlled {
     using SafeMath for uint256;
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
@@ -14,11 +15,20 @@ contract NearProver is INearProver {
 
     INearBridge public bridge;
 
-    constructor(INearBridge _bridge) public {
+    constructor(INearBridge _bridge, address _admin) public AdminControlled(_admin, UNPAUSE_ALL) {
         bridge = _bridge;
     }
 
-    function proveOutcome(bytes memory proofData, uint64 blockHeight) public view override returns (bool) {
+    uint constant UNPAUSE_ALL = 0;
+    uint constant PAUSED_VERIFY = 1;
+
+    function proveOutcome(bytes memory proofData, uint64 blockHeight)
+        public
+        view
+        override
+        pausable(PAUSED_VERIFY)
+        returns (bool)
+    {
         Borsh.Data memory borshData = Borsh.from(proofData);
         ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borshData.decodeFullOutcomeProof();
         require(borshData.finished(), "NearProver: argument should be exact borsh serialization");

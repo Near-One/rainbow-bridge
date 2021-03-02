@@ -18,7 +18,7 @@ async function testProof(env, merkleRoot, height, proofPath) {
 contract('NearProver', function ([_, addr1]) {
     beforeEach(async function () {
         this.bridge = await NearBridgeMock.new();
-        this.prover = await NearProver.new(this.bridge.address);
+        this.prover = await NearProver.new(this.bridge.address, '0x0000000000000000000000000000000000000000');
     });
 
     it('should be ok', async function () {

@@ -14,8 +14,11 @@
     },
     "devDependencies": {
         "@codechecks/client": "^0.1.9",
+        "@nomiclabs/hardhat-ethers": "^2.0.1",
+        "@nomiclabs/hardhat-waffle": "^2.0.1",
+        "@nomiclabs/hardhat-web3": "^2.0.0",
         "@openzeppelin/test-helpers": "^0.5.1",
-        "chai": "^4.2.0",
+        "chai": "^4.3.0",
         "coveralls": "^3.0.3",
         "eslint": "^6.3.0",
         "eslint-config-standard": "^14.1.0",
@@ -24,7 +27,10 @@
         "eslint-plugin-promise": "^4.0.1",
         "eslint-plugin-standard": "^4.0.0",
         "eth-gas-reporter": "^0.2.11",
+        "ethereum-waffle": "^3.3.0",
+        "ethers": "^5.0.31",
         "ganache-cli": "^6.9.1",
+        "hardhat": "^2.0.11",
         "rainbow-bridge-lib": "^2.0.0",
         "solc": "^0.6",
         "solidity-coverage": "^0.7.0",
@@ -34,7 +40,7 @@
         "web3": "^1.2.9"
     },
     "scripts": {
-        "test": "scripts/test.sh",
+        "test": "npx hardhat test test/NearBridge && npx hardhat test test/NearBridge2",
         "coverage": "scripts/coverage.sh",
         "lint:js": "eslint .",
         "lint:js:fix": "eslint . --fix",
