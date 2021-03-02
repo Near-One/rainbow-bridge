@@ -7,6 +7,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fe438c63458706e03479442743baae6c88256498e6431708f6dfc520a26515d3"
 
 [[package]]
+name = "admin-controlled"
+version = "0.1.0"
+dependencies = [
+ "near-sdk",
+]
+
+[[package]]
 name = "aho-corasick"
 version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -645,6 +652,7 @@ dependencies = [
 name = "eth-client"
 version = "0.1.0"
 dependencies = [
+ "admin-controlled",
  "arrutil",
  "borsh",
  "eth-types",
@@ -667,6 +675,7 @@ dependencies = [
 name = "eth-prover"
 version = "0.1.0"
 dependencies = [
+ "admin-controlled",
  "borsh",
  "eth-types",
  "hex",

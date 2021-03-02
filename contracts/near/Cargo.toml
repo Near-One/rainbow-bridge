@@ -3,6 +3,7 @@ members = [
     "eth-client",
     "eth-prover",
     "eth-types",
+    "admin-controlled"
 ]
 
 [profile.release]

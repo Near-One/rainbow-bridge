@@ -1,3 +1,4 @@
+use admin_controlled::{AdminControlled, Mask};
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
 use near_sdk::collections::UnorderedMap;
@@ -56,35 +57,6 @@ pub struct HeaderInfo {
     pub total_difficulty: U256,
     pub parent_hash: H256,
     pub number: u64,
-}
-
-type Mask = u128;
-
-pub trait AdminControlled {
-    fn is_owner(&self) -> bool {
-        env::current_account_id() == env::signer_account_id()
-    }
-
-    fn assert_owner(&self) {
-        assert!(self.is_owner());
-    }
-
-    /// Return the current mask representing all paused events.
-    fn get_paused(&self) -> Mask;
-
-    /// Update mask with all paused events.
-    /// Implementor is responsible for guaranteeing that this function can only be
-    /// called by owner of the contract.
-    fn set_paused(&mut self, paused: Mask);
-
-    /// Return if the contract is paused for the current flag and user
-    fn is_paused(&self, flag: Mask) -> bool {
-        (self.get_paused() & flag) != 0 && !self.is_owner()
-    }
-
-    fn check_not_paused(&self, flag: Mask) {
-        assert!(!self.is_paused(flag));
-    }
 }
 
 const PAUSE_ADD_BLOCK_HEADER: u128 = 1;
