@@ -1,3 +1,4 @@
+use admin_controlled::{AdminControlled, Mask};
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
 use near_sdk::collections::UnorderedMap;
@@ -58,6 +59,8 @@ pub struct HeaderInfo {
     pub number: u64,
 }
 
+const PAUSE_ADD_BLOCK_HEADER: Mask = 1;
+
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct EthClient {
@@ -98,11 +101,27 @@ pub struct EthClient {
     /// If set, block header added by trusted signer will skip validation and added by
     /// others will be immediately rejected, used in PoA testnets
     trusted_signer: Option<AccountId>,
+    /// Mask determining all paused functions
+    paused: Mask,
 }
 
 impl Default for EthClient {
     fn default() -> Self {
         env::panic(b"EthClient is not initialized");
+    }
+}
+
+#[near_bindgen]
+impl AdminControlled for EthClient {
+    #[result_serializer(borsh)]
+    fn get_paused(&self) -> Mask {
+        self.paused
+    }
+
+    #[result_serializer(borsh)]
+    fn set_paused(&mut self, #[serializer(borsh)] paused: Mask) {
+        self.assert_owner();
+        self.paused = paused;
     }
 }
 
@@ -136,6 +155,7 @@ impl EthClient {
             headers: UnorderedMap::new(b"h".to_vec()),
             infos: UnorderedMap::new(b"i".to_vec()),
             trusted_signer,
+            paused: Mask::default(),
         };
         res.canonical_header_hashes
             .insert(&header_number, &header_hash);
@@ -204,6 +224,7 @@ impl EthClient {
         #[serializer(borsh)] block_header: Vec<u8>,
         #[serializer(borsh)] dag_nodes: Vec<DoubleNodeWithMerkleProof>,
     ) {
+        self.check_not_paused(PAUSE_ADD_BLOCK_HEADER);
         let header: BlockHeader = rlp::decode(block_header.as_slice()).unwrap();
 
         if let Some(trusted_signer) = &self.trusted_signer {

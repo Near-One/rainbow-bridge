@@ -1,3 +1,4 @@
+use admin_controlled::{AdminControlled, Mask};
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
 use near_sdk::{env, ext_contract, near_bindgen, PromiseOrValue};
@@ -16,6 +17,7 @@ type AccountId = String;
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct EthProver {
     bridge_smart_contract: AccountId,
+    paused: Mask,
 }
 
 fn assert_self() {
@@ -45,6 +47,8 @@ impl Default for EthProver {
     }
 }
 
+const PAUSE_VERIFY: Mask = 1;
+
 #[near_bindgen]
 impl EthProver {
     #[init]
@@ -55,6 +59,7 @@ impl EthProver {
         );
         Self {
             bridge_smart_contract,
+            paused: Mask::default(),
         }
     }
 
@@ -122,6 +127,7 @@ impl EthProver {
         #[serializer(borsh)] proof: Vec<Vec<u8>>,
         #[serializer(borsh)] skip_bridge_call: bool,
     ) -> PromiseOrValue<bool> {
+        self.check_not_paused(PAUSE_VERIFY);
         let log_entry: LogEntry = rlp::decode(log_entry_data.as_slice()).unwrap();
         let receipt: Receipt = rlp::decode(receipt_data.as_slice()).unwrap();
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
@@ -311,5 +317,19 @@ impl EthProver {
         }
 
         expected_value.len() == 0
+    }
+}
+
+#[near_bindgen]
+impl AdminControlled for EthProver {
+    #[result_serializer(borsh)]
+    fn get_paused(&self) -> Mask {
+        self.paused
+    }
+
+    #[result_serializer(borsh)]
+    fn set_paused(&mut self, #[serializer(borsh)] paused: Mask) {
+        self.assert_owner();
+        self.paused = paused;
     }
 }
