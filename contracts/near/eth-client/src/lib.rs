@@ -59,7 +59,7 @@ pub struct HeaderInfo {
     pub number: u64,
 }
 
-const PAUSE_ADD_BLOCK_HEADER: u128 = 1;
+const PAUSE_ADD_BLOCK_HEADER: Mask = 1;
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]

@@ -47,7 +47,7 @@ impl Default for EthProver {
     }
 }
 
-const PAUSE_VERIFY: u128 = 1;
+const PAUSE_VERIFY: Mask = 1;
 
 #[near_bindgen]
 impl EthProver {
