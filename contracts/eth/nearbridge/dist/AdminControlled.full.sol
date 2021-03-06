@@ -8,8 +8,6 @@ contract AdminControlled {
 
     constructor(address _admin, uint flags) public {
         admin = _admin;
-
-        // Add the possibility to set pause flags on the initialization
         paused = flags;
     }
 
@@ -30,6 +28,13 @@ contract AdminControlled {
     function adminSstore(uint key, uint value) public onlyAdmin {
         assembly {
             sstore(key, value)
+        }
+    }
+
+    function adminSstoreWithMask(uint key, uint value, uint mask) public onlyAdmin {
+        assembly {
+            let oldval := sload(key)
+            sstore(key, xor(and(xor(value, oldval), mask), oldval))
         }
     }
 
