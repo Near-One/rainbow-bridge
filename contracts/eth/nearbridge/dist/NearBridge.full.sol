@@ -247,7 +247,11 @@ contract AdminControlled {
         }
     }
 
-    function adminSstoreWithMask(uint key, uint value, uint mask) public onlyAdmin {
+    function adminSstoreWithMask(
+        uint key,
+        uint value,
+        uint mask
+    ) public onlyAdmin {
         assembly {
             let oldval := sload(key)
             sstore(key, xor(and(xor(value, oldval), mask), oldval))
