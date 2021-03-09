@@ -1,7 +1,7 @@
 pragma solidity ^0.6;
 
-import "../../nearbridge/contracts/Borsh.sol";
-import "../../nearbridge/contracts/NearDecoder.sol";
+import "./bridge/Borsh.sol";
+import "./bridge/NearDecoder.sol";
 
 library ProofDecoder {
     using Borsh for Borsh.Data;

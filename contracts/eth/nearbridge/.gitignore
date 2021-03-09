@@ -1,9 +1,0 @@
-node_modules
-coverage
-coverage.json
-build
-.idea
-
-# Hardhat
-cache/
-artifacts/

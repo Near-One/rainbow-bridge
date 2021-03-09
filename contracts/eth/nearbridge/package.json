@@ -8,45 +8,36 @@
     },
     "license": "MIT",
     "dependencies": {
-        "@openzeppelin/contracts": "^3.2",
-        "borsh": "^0.2.6",
-        "bs58": "^4.0.1"
+        "@openzeppelin/contracts": "^3.2"
     },
     "devDependencies": {
-        "@codechecks/client": "^0.1.9",
         "@nomiclabs/hardhat-ethers": "^2.0.1",
         "@nomiclabs/hardhat-waffle": "^2.0.1",
-        "@nomiclabs/hardhat-web3": "^2.0.0",
-        "@openzeppelin/test-helpers": "^0.5.1",
-        "chai": "^4.3.0",
-        "coveralls": "^3.0.3",
+        "chai": "^4.3.3",
         "eslint": "^6.3.0",
         "eslint-config-standard": "^14.1.0",
         "eslint-plugin-import": "^2.14.0",
         "eslint-plugin-node": "^11.0.0",
         "eslint-plugin-promise": "^4.0.1",
         "eslint-plugin-standard": "^4.0.0",
-        "eth-gas-reporter": "^0.2.11",
         "ethereum-waffle": "^3.3.0",
         "ethers": "^5.0.31",
         "ganache-cli": "^6.9.1",
-        "hardhat": "^2.0.11",
+        "hardhat": "^2.1.1",
         "rainbow-bridge-lib": "^2.0.0",
-        "solc": "^0.6",
-        "solidity-coverage": "^0.7.0",
-        "solium": "^1.2.3",
-        "truffle": "^5.1 <5.1.8",
-        "truffle-flattener": "^1.5",
-        "web3": "^1.2.9"
+        "solc": "^0.6.12",
+        "solidity-coverage": "^0.7.16",
+        "solium": "^1.2.5",
+        "truffle-flattener": "^1.5"
     },
     "scripts": {
-        "test": "npx hardhat test test/NearBridge && npx hardhat test test/NearBridge2",
-        "coverage": "scripts/coverage.sh",
+        "test": "hardhat test test/NearBridge.js test/NearBridge2.js && node test/ed25519-test.js",
+        "coverage": "hardhat coverage --testfiles \"test/NearBridge*.js\"",
         "lint:js": "eslint .",
         "lint:js:fix": "eslint . --fix",
         "lint:sol": "solium -d .",
         "lint:sol:fix": "solium -d . --fix",
-        "lint": "yarn run lint:js && yarn run lint:sol",
-        "lint:fix": "yarn run lint:js:fix && yarn run lint:sol:fix"
+        "lint": "yarn lint:js && yarn lint:sol",
+        "lint:fix": "yarn lint:js:fix && yarn lint:sol:fix"
     }
 }

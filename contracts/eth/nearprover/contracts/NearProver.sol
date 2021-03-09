@@ -1,9 +1,9 @@
 pragma solidity ^0.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "../../nearbridge/contracts/AdminControlled.sol";
-import "../../nearbridge/contracts/INearBridge.sol";
-import "../../nearbridge/contracts/NearDecoder.sol";
+import "./bridge/AdminControlled.sol";
+import "./bridge/INearBridge.sol";
+import "./bridge/NearDecoder.sol";
 import "./ProofDecoder.sol";
 import "./INearProver.sol";
 

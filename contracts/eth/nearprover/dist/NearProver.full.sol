@@ -214,7 +214,7 @@ library SafeMath {
     }
 }
 
-// File: ../nearbridge/contracts/AdminControlled.sol
+// File: contracts/bridge/AdminControlled.sol
 
 pragma solidity ^0.6;
 
@@ -271,7 +271,7 @@ contract AdminControlled {
     }
 }
 
-// File: ../nearbridge/contracts/INearBridge.sol
+// File: contracts/bridge/INearBridge.sol
 
 pragma solidity ^0.6;
 
@@ -301,7 +301,7 @@ interface INearBridge {
     function checkBlockProducerSignatureInHead(uint256 signatureIndex) external view returns (bool);
 }
 
-// File: ../nearbridge/contracts/Borsh.sol
+// File: contracts/bridge/Borsh.sol
 
 pragma solidity ^0.6;
 
@@ -488,7 +488,7 @@ library Borsh {
     }
 }
 
-// File: ../nearbridge/contracts/NearDecoder.sol
+// File: contracts/bridge/NearDecoder.sol
 
 pragma solidity ^0.6;
 
