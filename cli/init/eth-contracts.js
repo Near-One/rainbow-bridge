@@ -185,6 +185,7 @@ class InitEthClient {
       ethClientLockDuration + 20 * 60,
       2 * ethClientLockDuration
     )
+
     if (ethClientReplaceDuration < minAllowedReplaceDuration) {
       throw new Error(
         `Invalid parameters ${JSON.stringify({
@@ -213,7 +214,8 @@ class InitEthClient {
           lockEthAmount,
           lockDuration,
           replaceDuration,
-          ethAdminAddress
+          ethAdminAddress,
+          0
         ],
         gas: 5000000,
         ethContractAbiPath: ethClientAbiPath,
@@ -252,7 +254,7 @@ class InitEthProver {
     const ethContractInitializer = new EthContractInitializer()
     const success = await ethContractInitializer.execute(
       {
-        args: [ethClientAddress, ethAdminAddress],
+        args: [ethClientAddress, ethAdminAddress, 0],
         gas: 3000000,
         ethContractAbiPath: ethProverAbiPath,
         ethContractBinPath: ethProverBinPath,

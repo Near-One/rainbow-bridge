@@ -1,4 +1,5 @@
 const { expect } = require('chai');
+const { ethers } = require('hardhat');
 const { borshifyOutcomeProof } = require(`rainbow-bridge-lib/rainbow/borsh`);
 const fs = require('fs').promises;
 const { computeMerkleRoot } = require('../utils/utils');
@@ -9,7 +10,8 @@ beforeEach(async function () {
     NearBridgeMock = await (await ethers.getContractFactory('NearBridgeMock')).deploy();
     NearProver = await (await ethers.getContractFactory('NearProver')).deploy(
         NearBridgeMock.address,
-        ethers.constants.AddressZero
+        ethers.constants.AddressZero,
+        0
     );
 });
 
