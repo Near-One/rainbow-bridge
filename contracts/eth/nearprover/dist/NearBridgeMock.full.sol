@@ -1,4 +1,4 @@
-// File: ../nearbridge/contracts/INearBridge.sol
+// File: contracts/bridge/INearBridge.sol
 
 pragma solidity ^0.6;
 

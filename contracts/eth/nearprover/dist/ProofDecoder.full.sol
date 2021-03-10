@@ -214,7 +214,7 @@ library SafeMath {
     }
 }
 
-// File: ../nearbridge/contracts/Borsh.sol
+// File: contracts/bridge/Borsh.sol
 
 pragma solidity ^0.6;
 
@@ -401,7 +401,7 @@ library Borsh {
     }
 }
 
-// File: ../nearbridge/contracts/NearDecoder.sol
+// File: contracts/bridge/NearDecoder.sol
 
 pragma solidity ^0.6;
 
