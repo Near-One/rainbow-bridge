@@ -1,4 +1,4 @@
-use admin_controlled::{AdminControlled, Mask};
+use admin_controlled::Mask;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
 use near_sdk::collections::UnorderedMap;
@@ -108,20 +108,6 @@ pub struct EthClient {
 impl Default for EthClient {
     fn default() -> Self {
         env::panic(b"EthClient is not initialized");
-    }
-}
-
-#[near_bindgen]
-impl AdminControlled for EthClient {
-    #[result_serializer(borsh)]
-    fn get_paused(&self) -> Mask {
-        self.paused
-    }
-
-    #[result_serializer(borsh)]
-    fn set_paused(&mut self, #[serializer(borsh)] paused: Mask) {
-        self.assert_owner();
-        self.paused = paused;
     }
 }
 
@@ -441,3 +427,5 @@ impl EthClient {
         (H256(pair.0), H256(pair.1))
     }
 }
+
+admin_controlled::impl_admin_controlled!(EthClient, paused);

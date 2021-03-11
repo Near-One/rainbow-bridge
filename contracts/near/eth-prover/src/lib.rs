@@ -1,4 +1,4 @@
-use admin_controlled::{AdminControlled, Mask};
+use admin_controlled::Mask;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
 use near_sdk::{env, ext_contract, near_bindgen, PromiseOrValue};
@@ -320,16 +320,4 @@ impl EthProver {
     }
 }
 
-#[near_bindgen]
-impl AdminControlled for EthProver {
-    #[result_serializer(borsh)]
-    fn get_paused(&self) -> Mask {
-        self.paused
-    }
-
-    #[result_serializer(borsh)]
-    fn set_paused(&mut self, #[serializer(borsh)] paused: Mask) {
-        self.assert_owner();
-        self.paused = paused;
-    }
-}
+admin_controlled::impl_admin_controlled!(EthProver, paused);
