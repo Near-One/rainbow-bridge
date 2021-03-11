@@ -132,12 +132,17 @@ class InitEthLocker {
 
     console.log('Using as locker admin:', ethAdminAddress)
     const ethContractInitializer = new EthContractInitializer()
+    const minBlockAcceptanceHeight = 0
+    const pausedFlag = 0
+
     const success = await ethContractInitializer.execute(
       {
         args: [
           Buffer.from(nearTokenFactoryAccount, 'utf8'),
           ethProverAddress,
-          ethAdminAddress
+          minBlockAcceptanceHeight,
+          ethAdminAddress,
+          pausedFlag
         ],
         gas: 5000000,
         ethContractAbiPath: ethLockerAbiPath,
