@@ -10,7 +10,7 @@ checksum = "fe438c63458706e03479442743baae6c88256498e6431708f6dfc520a26515d3"
 name = "admin-controlled"
 version = "0.1.0"
 dependencies = [
- "near-sdk 0.11.0",
+ "near-sdk 3.0.0-pre.3",
 ]
 
 [[package]]

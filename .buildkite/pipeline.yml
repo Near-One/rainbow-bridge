@@ -65,3 +65,6 @@ steps:
 
     - label: "contracts/eth/"
       command: buildkite-agent pipeline upload .buildkite/contracts-eth.yml
+
+    - label: "contracts/near/"
+      command: buildkite-agent pipeline upload .buildkite/contracts-near.yml
