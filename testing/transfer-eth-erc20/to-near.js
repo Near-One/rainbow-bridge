@@ -196,8 +196,8 @@ class TransferETHERC20ToNear {
     nearTokenContract,
     newOwnerId
   }) {
-    const oldBalance = await nearTokenContract.get_balance({
-      owner_id: newOwnerId
+    const oldBalance = await nearTokenContract.ft_balance_of({
+      account_id: newOwnerId
     })
     console.log(
       `Balance of ${newOwnerId} before the transfer is ${oldBalance}`
@@ -218,8 +218,8 @@ class TransferETHERC20ToNear {
       TransferETHERC20ToNear.showRetryAndExit()
     }
 
-    const newBalance = await nearTokenContract.get_balance({
-      owner_id: newOwnerId
+    const newBalance = await nearTokenContract.ft_balance_of({
+      account_id: newOwnerId
     })
     console.log(
       `Balance of ${newOwnerId} after the transfer is ${newBalance}`
@@ -314,7 +314,7 @@ class TransferETHERC20ToNear {
       nearErc20Account,
       {
         changeMethods: [],
-        viewMethods: ['get_balance']
+        viewMethods: ['ft_balance_of']
       }
     )
     const nearFactoryContractBorsh = new NearMintableToken(

@@ -67,8 +67,8 @@ class TransferEthERC20FromNear {
     // Withdraw the token on Near side.
     try {
       const oldBalance = await backoff(10, () =>
-        nearTokenContract.get_balance({
-          owner_id: nearSenderAccountId
+        nearTokenContract.ft_balance_of({
+          account_id: nearSenderAccountId
         })
       )
       console.log(
@@ -84,7 +84,7 @@ class TransferEthERC20FromNear {
         'withdraw',
         { amount: amount, recipient: ethReceiverAddress },
         new BN('300000000000000'),
-        new BN(0)
+        new BN(1)
       )
       console.log(`tx withdraw: ${JSON.stringify(txWithdraw)}`)
 
@@ -214,8 +214,8 @@ class TransferEthERC20FromNear {
       }
       console.log(`Withdrawn ${JSON.stringify(amount)}`)
       const newBalance = await backoff(10, () =>
-        nearTokenContract.get_balance({
-          owner_id: nearSenderAccountId
+        nearTokenContract.ft_balance_of({
+          account_id: nearSenderAccountId
         })
       )
       console.log(
@@ -382,7 +382,7 @@ class TransferEthERC20FromNear {
       nearErc20Account,
       {
         changeMethods: ['new', 'withdraw'],
-        viewMethods: ['get_balance']
+        viewMethods: ['ft_balance_of']
       }
     )
     const nearTokenContractBorsh = new NearMintableToken(
