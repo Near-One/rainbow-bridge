@@ -1,7 +1,7 @@
 use admin_controlled::Mask;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
-use near_sdk::{env, ext_contract, near_bindgen, PromiseOrValue};
+use near_sdk::{env, ext_contract, near_bindgen, Gas, PanicOnDefault, PromiseOrValue};
 use rlp::Rlp;
 
 #[cfg(test)]
@@ -12,6 +12,12 @@ mod tests;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 type AccountId = String;
+
+/// Gas to call block_hash_safe
+const BLOCK_HASH_SAFE_GAS: Gas = 10_000_000_000_000;
+
+/// Gas to call on_block_hash
+const ON_BLOCK_HASH_GAS: Gas = 5_000_000_000_000;
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
@@ -105,13 +111,13 @@ impl EthProver {
             block_number,
             &self.bridge_smart_contract,
             0,
-            env::prepaid_gas() / 3,
+            BLOCK_HASH_SAFE_GAS,
         )
         .then(remote_self::on_block_hash(
             expected_block_hash,
             &env::current_account_id(),
             0,
-            10000000000000,
+            ON_BLOCK_HASH_GAS,
         ))
         .into()
     }
@@ -153,13 +159,13 @@ impl EthProver {
             header.number,
             &self.bridge_smart_contract,
             0,
-            10000000000000,
+            BLOCK_HASH_SAFE_GAS,
         )
         .then(remote_self::on_block_hash(
             header.hash.unwrap(),
             &env::current_account_id(),
             0,
-            env::prepaid_gas() / 2,
+            ON_BLOCK_HASH_GAS,
         ))
         .into()
     }
