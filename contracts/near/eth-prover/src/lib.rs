@@ -7,9 +7,7 @@ use rlp::Rlp;
 #[cfg(test)]
 mod tests;
 
-#[cfg(target_arch = "wasm32")]
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+near_sdk::setup_alloc!();
 
 type AccountId = String;
 
@@ -20,7 +18,7 @@ const BLOCK_HASH_SAFE_GAS: Gas = 10_000_000_000_000;
 const ON_BLOCK_HASH_GAS: Gas = 5_000_000_000_000;
 
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct EthProver {
     bridge_smart_contract: AccountId,
     paused: Mask,
@@ -45,12 +43,6 @@ pub trait RemoteSelf {
 pub trait RemoteEthClient {
     #[result_serializer(borsh)]
     fn block_hash_safe(&self, #[serializer(borsh)] index: u64) -> Option<H256>;
-}
-
-impl Default for EthProver {
-    fn default() -> Self {
-        env::panic(b"Not initialized yet.");
-    }
 }
 
 const PAUSE_VERIFY: Mask = 1;
