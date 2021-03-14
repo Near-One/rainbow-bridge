@@ -225,12 +225,12 @@ async function getBridgeOnNearBalance ({
       nearErc20Account,
       {
         changeMethods: [],
-        viewMethods: ['get_balance']
+        viewMethods: ['ft_balance_of']
       }
     )
 
-    const balance = await nearTokenContract.get_balance({
-      owner_id: nearReceiverAccount
+    const balance = await nearTokenContract.ft_balance_of({
+      account_id: nearReceiverAccount
     })
     console.log(
       `[Rainbow-Bridge on Near] Balance of ${nearReceiverAccount} is ${balance}`

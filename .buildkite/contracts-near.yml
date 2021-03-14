@@ -1,0 +1,13 @@
+steps:
+    - label: "build all rust contracts"
+      command: |
+          cd contracts/near/eth-client
+          ./build.sh
+          cd ../eth-prover
+          ./build.sh
+          git status
+          changed_files=$$(git status --porcelain --untracked-files=no | wc -l)
+          if [ $$changed_files -gt 0 ]; then
+            echo 'contract changed, please rebuild contract'
+            exit 1
+          fi

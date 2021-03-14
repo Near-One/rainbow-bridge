@@ -18,6 +18,6 @@ docker run \
      -w /host/eth-prover \
      -e RUSTFLAGS='-C link-arg=-s' \
      nearprotocol/contract-builder \
-     cargo +stable build --target wasm32-unknown-unknown --release
+     /bin/bash -c "rustup target add wasm32-unknown-unknown; cargo build --target wasm32-unknown-unknown --release"
 
 cp $DIR/../target/wasm32-unknown-unknown/release/eth_prover.wasm $DIR/../res/

@@ -1,13 +1,11 @@
-use admin_controlled::{AdminControlled, Mask};
+use admin_controlled::Mask;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
 use near_sdk::collections::UnorderedMap;
 use near_sdk::AccountId;
-use near_sdk::{env, near_bindgen};
+use near_sdk::{env, near_bindgen, PanicOnDefault};
 
-#[cfg(target_arch = "wasm32")]
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+near_sdk::setup_alloc!();
 
 #[cfg(not(target_arch = "wasm32"))]
 #[cfg(test)]
@@ -62,7 +60,7 @@ pub struct HeaderInfo {
 const PAUSE_ADD_BLOCK_HEADER: Mask = 1;
 
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct EthClient {
     /// Whether client validates the PoW when accepting the header. Should only be set to `false`
     /// for debugging, testing, diagnostic purposes when used with Ganache or in PoA testnets
@@ -103,26 +101,6 @@ pub struct EthClient {
     trusted_signer: Option<AccountId>,
     /// Mask determining all paused functions
     paused: Mask,
-}
-
-impl Default for EthClient {
-    fn default() -> Self {
-        env::panic(b"EthClient is not initialized");
-    }
-}
-
-#[near_bindgen]
-impl AdminControlled for EthClient {
-    #[result_serializer(borsh)]
-    fn get_paused(&self) -> Mask {
-        self.paused
-    }
-
-    #[result_serializer(borsh)]
-    fn set_paused(&mut self, #[serializer(borsh)] paused: Mask) {
-        self.assert_owner();
-        self.paused = paused;
-    }
 }
 
 #[near_bindgen]
@@ -441,3 +419,5 @@ impl EthClient {
         (H256(pair.0), H256(pair.1))
     }
 }
+
+admin_controlled::impl_admin_controlled!(EthClient, paused);

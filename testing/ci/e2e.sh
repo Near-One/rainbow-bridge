@@ -26,7 +26,7 @@ while ! curl localhost:9545; do
   sleep 1
 done
 
-node index.js init-near-contracts
+node index.js init-near-contracts --num-confirmations 2
 node index.js init-eth-ed25519
 # Use short lockup time for tests
 node index.js init-eth-client --eth-client-lock-eth-amount 1000000000000000000 --eth-client-lock-duration 30
