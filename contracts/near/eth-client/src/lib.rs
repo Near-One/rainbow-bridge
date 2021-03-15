@@ -4,6 +4,7 @@ use eth_types::*;
 use near_sdk::collections::UnorderedMap;
 use near_sdk::AccountId;
 use near_sdk::{env, near_bindgen, PanicOnDefault};
+use serde::{Deserialize, Serialize};
 
 near_sdk::setup_alloc!();
 
@@ -11,7 +12,7 @@ near_sdk::setup_alloc!();
 #[cfg(test)]
 mod tests;
 
-#[derive(Default, Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Default, Debug, Clone, BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
 pub struct DoubleNodeWithMerkleProof {
     pub dag_nodes: Vec<H512>, // [H512; 2]
     pub proof: Vec<H128>,
