@@ -90,7 +90,7 @@ RainbowConfig.declareOption(
 )
 RainbowConfig.declareOption(
   'near-client-init-balance',
-  'The initial balance of Near Client contract in femtoNEAR.',
+  'The initial balance of Near Client contract in yoctoNEAR.',
   '100000000000000000000000000'
 )
 RainbowConfig.declareOption(
@@ -137,7 +137,7 @@ RainbowConfig.declareOption(
 )
 RainbowConfig.declareOption(
   'near-prover-init-balance',
-  'The initial balance of Near Prover contract in femtoNEAR.',
+  'The initial balance of Near Prover contract in yoctoNEAR.',
   '100000000000000000000000000'
 )
 RainbowConfig.declareOption(
