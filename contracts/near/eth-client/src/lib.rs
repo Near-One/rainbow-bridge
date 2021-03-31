@@ -15,8 +15,7 @@ near_sdk::setup_alloc!();
 mod tests;
 
 #[derive(Default, Debug, Clone, BorshDeserialize, BorshSerialize)]
-#[cfg(test)]
-#[derive(Serialize, Deserialize)]
+#[cfg_attr(test, derive(Serialize, Deserialize))]
 pub struct DoubleNodeWithMerkleProof {
     pub dag_nodes: Vec<H512>, // [H512; 2]
     pub proof: Vec<H128>,
