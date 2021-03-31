@@ -5,3 +5,7 @@ coverage
 coverage.json
 testdata
 target
+
+eth2near/ethashproof/cmd/epoch/epoch
+eth2near/ethashproof/cmd/relayer/relayer
+eth2near/ethashproof/cmd/cache/cache
