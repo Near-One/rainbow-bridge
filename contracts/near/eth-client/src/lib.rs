@@ -5,6 +5,9 @@ use near_sdk::collections::UnorderedMap;
 use near_sdk::AccountId;
 use near_sdk::{env, near_bindgen, PanicOnDefault};
 
+#[cfg(test)]
+use serde::{Deserialize, Serialize};
+
 near_sdk::setup_alloc!();
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -12,6 +15,7 @@ near_sdk::setup_alloc!();
 mod tests;
 
 #[derive(Default, Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[cfg_attr(test, derive(Serialize, Deserialize))]
 pub struct DoubleNodeWithMerkleProof {
     pub dag_nodes: Vec<H512>, // [H512; 2]
     pub proof: Vec<H128>,
