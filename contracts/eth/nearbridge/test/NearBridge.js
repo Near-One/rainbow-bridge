@@ -17,7 +17,7 @@ beforeEach(async function () {
         ethers.BigNumber.from("1000000000000000000"), // 1e18
         ethers.BigNumber.from("360"), // lock duration
         ethers.BigNumber.from("362627730000"), // replace duration
-        ethers.constants.AddressZero,
+        await (await ethers.getSigners())[0].getAddress(),
         0
     );
     await NearBridge.deposit({ value: ethers.utils.parseEther('1') });
@@ -38,7 +38,7 @@ it('should be ok', async function () {
     await NearBridge.addLightClientBlock(block121498);
     expect(await NearBridge.checkBlockProducerSignatureInHead(0)).to.be.true;
 
-    await expect(NearBridge.addLightClientBlock(block121998)).to.be.revertedWith('NearBridge: Epoch id of the block is not valid');
+    await expect(NearBridge.addLightClientBlock(block121998)).to.be.revertedWith('Epoch id of the block is not valid');
     await increaseTime(3600);
     expect(await NearBridge.blockHashes(121498)).to.be.equal(
         '0x508307e7af9bdbb297afa7af0541130eb32f0f028151319f5a4f7ae68b0ecc56',

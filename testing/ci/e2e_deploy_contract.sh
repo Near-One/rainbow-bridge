@@ -34,20 +34,21 @@ node index.js init-eth-prover
 node index.js init-eth-erc20
 node index.js init-eth-locker
 node index.js init-near-token-factory
+
+# deploy myerc20 token
+node index.js DANGER deploy_test_erc20 > /tmp/eth2neartransfer.out
+cat /tmp/eth2neartransfer.out | xargs node index.js deploy-token myerc20
+
 # First start pm2 daemon
 yarn run pm2 ping
 sleep 5
 yarn run pm2 list
-node index.js start near2eth-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
+node index.js start near2eth-relay
 sleep 5
 yarn run pm2 list
 node index.js start eth2near-relay
 sleep 5
 yarn run pm2 list
-
-# deploy myerc20 token
-node index.js DANGER deploy_test_erc20 > /tmp/eth2neartransfer.out
-cat /tmp/eth2neartransfer.out | xargs node index.js deploy-token myerc20 $1
 
 node index.js TESTING transfer-eth-erc20-to-near --token-name myerc20 --amount 1000 \
 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 \
