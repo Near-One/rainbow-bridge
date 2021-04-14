@@ -64,7 +64,6 @@ impl EthProver {
         }
     }
 
-
     /// Implementation of the callback when the EthClient returns data.
     /// This method can only be called by the EthProver contract itself (e.g. as callback).
     /// - `block_hash` is the actual data from the EthClient call
@@ -125,12 +124,8 @@ impl EthProver {
         assert_eq!(receipt.logs[log_index as usize], log_entry);
 
         // Verify receipt included into header
-        let data = Self::verify_trie_proof(
-            header.receipts_root,
-            rlp::encode(&receipt_index),
-            proof,
-
-        );
+        let data =
+            Self::verify_trie_proof(header.receipts_root, rlp::encode(&receipt_index), proof);
         let verification_result = receipt_data == data;
         if verification_result && skip_bridge_call {
             return PromiseOrValue::Value(true);
@@ -258,8 +253,8 @@ admin_controlled::impl_admin_controlled!(EthProver, paused);
 #[cfg(test)]
 mod tests {
     use crate::EthProver;
-    use near_sdk::{VMConfig, VMContext};
     use near_sdk::{testing_env, MockedBlockchain};
+    use near_sdk::{VMConfig, VMContext};
 
     fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
         VMContext {
@@ -284,7 +279,7 @@ mod tests {
 
     #[test]
     pub fn test_verify_proof() {
-        let  vm_config = VMConfig::free();
+        let vm_config = VMConfig::free();
         testing_env!(get_context(vec![], false), vm_config, Default::default());
 
         let expected_value = "f902a60183af4adfb9010000000000000000000000000000000000000000000000000000000000000000000800010000000000000002000100000000000000000000000000000000000000000000000000000008000008000000000000000000000200000000000000000000000000000000000000000000000000000000000000010000000010000000040000000000000000000000000000000200000000010000000000000000000000000000000000200080000000202000000000000000000000000000004000000000000002000000000000000000000000000000000000080000000000000000000000000000000000000000000200000004000000000000000000000000000000f9019bf89b94a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48f863a0ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3efa0000000000000000000000000c22df065a81f6e0107e214991b9d7fb179d401b3a000000000000000000000000023ddd3e3692d1861ed57ede224608875809e127fa00000000000000000000000000000000000000000000000000000000005f5e100f8fc9423ddd3e3692d1861ed57ede224608875809e127ff863a0dd85dc56b5b4da387bf69c28ec19b1d66e793e0d51b567882fa31dc50bbd32c5a0000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48a0000000000000000000000000c22df065a81f6e0107e214991b9d7fb179d401b3b8800000000000000000000000000000000000000000000000000000000005f5e1000000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000a6d616b6b652e6e65617200000000000000000000000000000000000000000000";
@@ -294,11 +289,15 @@ mod tests {
 
         let expected_root = hex::decode(expected_root).unwrap().into();
         let key = hex::decode(key).unwrap();
-        let proof = proof_rlp.into_iter().map(|x| {
-            hex::decode(x).unwrap()
-        }).collect();
+        let proof = proof_rlp
+            .into_iter()
+            .map(|x| hex::decode(x).unwrap())
+            .collect();
         let expected_value = hex::decode(expected_value).unwrap();
 
-        assert_eq!(EthProver::verify_trie_proof(expected_root, key, proof), expected_value);
+        assert_eq!(
+            EthProver::verify_trie_proof(expected_root, key, proof),
+            expected_value
+        );
     }
 }
