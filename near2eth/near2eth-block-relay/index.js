@@ -267,6 +267,7 @@ class Near2EthRelay {
             }
 
             console.log('Submitted.')
+            await sleep(240000) // To prevent submitting the same block again
             continue
           }
         }
