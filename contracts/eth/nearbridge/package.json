@@ -22,7 +22,6 @@
         "eslint-plugin-standard": "^4.0.0",
         "ethereum-waffle": "^3.3.0",
         "ethers": "^5.0.31",
-        "ganache-cli": "^6.9.1",
         "hardhat": "^2.1.1",
         "rainbow-bridge-lib": "^2.0.0",
         "solc": "^0.6.12",
@@ -31,8 +30,8 @@
         "truffle-flattener": "^1.5"
     },
     "scripts": {
-        "test": "hardhat test test/NearBridge.js test/NearBridge2.js && node test/ed25519-test.js",
-        "coverage": "hardhat coverage --testfiles \"test/NearBridge*.js\"",
+        "test": "hardhat test",
+        "coverage": "hardhat coverage",
         "lint:js": "eslint .",
         "lint:js:fix": "eslint . --fix",
         "lint:sol": "solium -d .",

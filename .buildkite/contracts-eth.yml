@@ -18,7 +18,6 @@ steps:
           cd contracts/eth/nearbridge
           yarn
           yarn test
-          node test/ed25519-test.js
       agents:
           - "queue=medium"
 
