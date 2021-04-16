@@ -1,216 +1,100 @@
-// File: @openzeppelin/contracts/math/SafeMath.sol
+// File: contracts/Utils.sol
 
+pragma solidity ^0.6;
 
-pragma solidity >=0.6.0 <0.8.0;
-
-/**
- * @dev Wrappers over Solidity's arithmetic operations with added overflow
- * checks.
- *
- * Arithmetic operations in Solidity wrap on overflow. This can easily result
- * in bugs, because programmers usually assume that an overflow raises an
- * error, which is the standard behavior in high level programming languages.
- * `SafeMath` restores this intuition by reverting the transaction when an
- * operation overflows.
- *
- * Using this library instead of the unchecked operations eliminates an entire
- * class of bugs, so it's recommended to use it always.
- */
-library SafeMath {
-    /**
-     * @dev Returns the addition of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        uint256 c = a + b;
-        if (c < a) return (false, 0);
-        return (true, c);
+library Utils {
+    function swapBytes2(uint16 v) internal pure returns (uint16) {
+        return (v << 8) | (v >> 8);
     }
 
-    /**
-     * @dev Returns the substraction of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function trySub(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        if (b > a) return (false, 0);
-        return (true, a - b);
+    function swapBytes4(uint32 v) internal pure returns (uint32) {
+        v = ((v & 0x00ff00ff) << 8) | ((v & 0xff00ff00) >> 8);
+        return (v << 16) | (v >> 16);
     }
 
-    /**
-     * @dev Returns the multiplication of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryMul(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-        if (a == 0) return (true, 0);
-        uint256 c = a * b;
-        if (c / a != b) return (false, 0);
-        return (true, c);
+    function swapBytes8(uint64 v) internal pure returns (uint64) {
+        v = ((v & 0x00ff00ff00ff00ff) << 8) | ((v & 0xff00ff00ff00ff00) >> 8);
+        v = ((v & 0x0000ffff0000ffff) << 16) | ((v & 0xffff0000ffff0000) >> 16);
+        return (v << 32) | (v >> 32);
     }
 
-    /**
-     * @dev Returns the division of two unsigned integers, with a division by zero flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryDiv(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        if (b == 0) return (false, 0);
-        return (true, a / b);
+    function swapBytes16(uint128 v) internal pure returns (uint128) {
+        v = ((v & 0x00ff00ff00ff00ff00ff00ff00ff00ff) << 8) | ((v & 0xff00ff00ff00ff00ff00ff00ff00ff00) >> 8);
+        v = ((v & 0x0000ffff0000ffff0000ffff0000ffff) << 16) | ((v & 0xffff0000ffff0000ffff0000ffff0000) >> 16);
+        v = ((v & 0x00000000ffffffff00000000ffffffff) << 32) | ((v & 0xffffffff00000000ffffffff00000000) >> 32);
+        return (v << 64) | (v >> 64);
     }
 
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers, with a division by zero flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryMod(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-        if (b == 0) return (false, 0);
-        return (true, a % b);
+    function swapBytes32(uint256 v) internal pure returns (uint256) {
+        v =
+            ((v & 0x00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff) << 8) |
+            ((v & 0xff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00) >> 8);
+        v =
+            ((v & 0x0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff) << 16) |
+            ((v & 0xffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000ffff0000) >> 16);
+        v =
+            ((v & 0x00000000ffffffff00000000ffffffff00000000ffffffff00000000ffffffff) << 32) |
+            ((v & 0xffffffff00000000ffffffff00000000ffffffff00000000ffffffff00000000) >> 32);
+        v =
+            ((v & 0x0000000000000000ffffffffffffffff0000000000000000ffffffffffffffff) << 64) |
+            ((v & 0xffffffffffffffff0000000000000000ffffffffffffffff0000000000000000) >> 64);
+        return (v << 128) | (v >> 128);
     }
 
-    /**
-     * @dev Returns the addition of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `+` operator.
-     *
-     * Requirements:
-     *
-     * - Addition cannot overflow.
-     */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a, "SafeMath: addition overflow");
-        return c;
+    function readMemory(uint ptr) internal pure returns (uint res) {
+        assembly {
+            res := mload(ptr)
+        }
     }
 
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a, "SafeMath: subtraction overflow");
-        return a - b;
+    function writeMemory(uint ptr, uint value) internal pure {
+        assembly {
+            mstore(ptr, value)
+        }
     }
 
-    /**
-     * @dev Returns the multiplication of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     *
-     * - Multiplication cannot overflow.
-     */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        if (a == 0) return 0;
-        uint256 c = a * b;
-        require(c / a == b, "SafeMath: multiplication overflow");
-        return c;
+    function memoryToBytes(uint ptr, uint length) internal pure returns (bytes memory res) {
+        if (length != 0) {
+            assembly {
+                // 0x40 is the address of free memory pointer.
+                res := mload(0x40)
+                let end := add(
+                    res,
+                    and(add(length, 63), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0)
+                )
+                // end = res + 32 + 32 * ceil(length / 32).
+                mstore(0x40, end)
+                mstore(res, length)
+                let destPtr := add(res, 32)
+                // prettier-ignore
+                for { } 1 { } {
+                    mstore(destPtr, mload(ptr))
+                    destPtr := add(destPtr, 32)
+                    if eq(destPtr, end) {
+                        break
+                    }
+                    ptr := add(ptr, 32)
+                }
+            }
+        }
     }
 
-    /**
-     * @dev Returns the integer division of two unsigned integers, reverting on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b > 0, "SafeMath: division by zero");
-        return a / b;
+    function keccak256Raw(uint ptr, uint length) internal pure returns (bytes32 res) {
+        assembly {
+            res := keccak256(ptr, length)
+        }
     }
 
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * reverting when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b > 0, "SafeMath: modulo by zero");
-        return a % b;
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
-     * overflow (when the result is negative).
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {trySub}.
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        require(b <= a, errorMessage);
-        return a - b;
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers, reverting with custom message on
-     * division by zero. The result is rounded towards zero.
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {tryDiv}.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        require(b > 0, errorMessage);
-        return a / b;
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * reverting with custom message when dividing by zero.
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {tryMod}.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        require(b > 0, errorMessage);
-        return a % b;
+    function sha256Raw(uint ptr, uint length) internal view returns (bytes32 res) {
+        assembly {
+            // 2 is the address of SHA256 precompiled contract.
+            // First 64 bytes of memory can be used as scratch space.
+            let ret := staticcall(gas(), 2, ptr, length, 0, 32)
+            // If the call to SHA256 precompile ran out of gas, burn any gas that remains.
+            // prettier-ignore
+            for { } iszero(ret) { } { }
+            res := mload(0)
+        }
     }
 }
 
@@ -220,184 +104,99 @@ pragma solidity ^0.6;
 
 
 library Borsh {
-    using SafeMath for uint256;
+    using Borsh for Data;
 
     struct Data {
-        uint256 offset;
-        bytes raw;
+        uint ptr;
+        uint end;
     }
 
-    function from(bytes memory data) internal pure returns (Data memory) {
-        return Data({offset: 0, raw: data});
-    }
-
-    modifier shift(Data memory data, uint256 size) {
-        require(data.raw.length >= data.offset + size, "Borsh: Out of range");
-        _;
-        data.offset += size;
-    }
-
-    function finished(Data memory data) internal pure returns (bool) {
-        return data.offset == data.raw.length;
-    }
-
-    function peekKeccak256(Data memory data, uint256 length) internal pure returns (bytes32 res) {
-        return bytesKeccak256(data.raw, data.offset, length);
-    }
-
-    function bytesKeccak256(
-        bytes memory ptr,
-        uint256 offset,
-        uint256 length
-    ) internal pure returns (bytes32 res) {
-        // solium-disable-next-line security/no-inline-assembly
+    function from(bytes memory data) internal pure returns (Data memory res) {
+        uint ptr;
         assembly {
-            res := keccak256(add(add(ptr, 32), offset), length)
+            ptr := data
         }
+        res.ptr = ptr + 32;
+        res.end = res.ptr + Utils.readMemory(ptr);
     }
 
-    function peekSha256(Data memory data, uint256 length) internal view returns (bytes32) {
-        return bytesSha256(data.raw, data.offset, length);
+    // This function assumes that length is reasonably small, so that data.ptr + length will not overflow. In the current code, length is always less than 2^32.
+    function requireSpace(Data memory data, uint length) internal pure {
+        require(data.ptr + length <= data.end, "Parse error: unexpected EOI");
     }
 
-    function bytesSha256(
-        bytes memory ptr,
-        uint256 offset,
-        uint256 length
-    ) internal view returns (bytes32) {
-        bytes32[1] memory result;
-        // solium-disable-next-line security/no-inline-assembly
-        assembly {
-            pop(staticcall(gas(), 0x02, add(add(ptr, 32), offset), length, result, 32))
-        }
-        return result[0];
+    function read(Data memory data, uint length) internal pure returns (bytes32 res) {
+        data.requireSpace(length);
+        res = bytes32(Utils.readMemory(data.ptr));
+        data.ptr += length;
+        return res;
     }
 
-    function decodeU8(Data memory data) internal pure shift(data, 1) returns (uint8 value) {
-        value = uint8(data.raw[data.offset]);
+    function done(Data memory data) internal pure {
+        require(data.ptr == data.end, "Parse error: EOI expected");
     }
 
-    function decodeI8(Data memory data) internal pure shift(data, 1) returns (int8 value) {
-        value = int8(data.raw[data.offset]);
+    // Same considerations as for requireSpace.
+    function peekKeccak256(Data memory data, uint length) internal pure returns (bytes32) {
+        data.requireSpace(length);
+        return Utils.keccak256Raw(data.ptr, length);
     }
 
-    function decodeU16(Data memory data) internal pure returns (uint16 value) {
-        value = uint16(decodeU8(data));
-        value |= (uint16(decodeU8(data)) << 8);
+    // Same considerations as for requireSpace.
+    function peekSha256(Data memory data, uint length) internal view returns (bytes32) {
+        data.requireSpace(length);
+        return Utils.sha256Raw(data.ptr, length);
     }
 
-    function decodeI16(Data memory data) internal pure returns (int16 value) {
-        value = int16(decodeI8(data));
-        value |= (int16(decodeI8(data)) << 8);
+    function decodeU8(Data memory data) internal pure returns (uint8) {
+        return uint8(bytes1(data.read(1)));
     }
 
-    function decodeU32(Data memory data) internal pure returns (uint32 value) {
-        value = uint32(decodeU16(data));
-        value |= (uint32(decodeU16(data)) << 16);
+    function decodeU16(Data memory data) internal pure returns (uint16) {
+        return Utils.swapBytes2(uint16(bytes2(data.read(2))));
     }
 
-    function decodeI32(Data memory data) internal pure returns (int32 value) {
-        value = int32(decodeI16(data));
-        value |= (int32(decodeI16(data)) << 16);
+    function decodeU32(Data memory data) internal pure returns (uint32) {
+        return Utils.swapBytes4(uint32(bytes4(data.read(4))));
     }
 
-    function decodeU64(Data memory data) internal pure returns (uint64 value) {
-        value = uint64(decodeU32(data));
-        value |= (uint64(decodeU32(data)) << 32);
+    function decodeU64(Data memory data) internal pure returns (uint64) {
+        return Utils.swapBytes8(uint64(bytes8(data.read(8))));
     }
 
-    function decodeI64(Data memory data) internal pure returns (int64 value) {
-        value = int64(decodeI32(data));
-        value |= (int64(decodeI32(data)) << 32);
+    function decodeU128(Data memory data) internal pure returns (uint128) {
+        return Utils.swapBytes16(uint128(bytes16(data.read(16))));
     }
 
-    function decodeU128(Data memory data) internal pure returns (uint128 value) {
-        value = uint128(decodeU64(data));
-        value |= (uint128(decodeU64(data)) << 64);
+    function decodeU256(Data memory data) internal pure returns (uint256) {
+        return Utils.swapBytes32(uint256(data.read(32)));
     }
 
-    function decodeI128(Data memory data) internal pure returns (int128 value) {
-        value = int128(decodeI64(data));
-        value |= (int128(decodeI64(data)) << 64);
+    function decodeBytes20(Data memory data) internal pure returns (bytes20) {
+        return bytes20(data.read(20));
     }
 
-    function decodeU256(Data memory data) internal pure returns (uint256 value) {
-        value = uint256(decodeU128(data));
-        value |= (uint256(decodeU128(data)) << 128);
+    function decodeBytes32(Data memory data) internal pure returns (bytes32) {
+        return data.read(32);
     }
 
-    function decodeI256(Data memory data) internal pure returns (int256 value) {
-        value = int256(decodeI128(data));
-        value |= (int256(decodeI128(data)) << 128);
+    function decodeBool(Data memory data) internal pure returns (bool) {
+        uint8 res = data.decodeU8();
+        require(res <= 1, "Parse error: invalid bool");
+        return res != 0;
     }
 
-    function decodeBool(Data memory data) internal pure returns (bool value) {
-        value = (decodeU8(data) != 0);
+    function skipBytes(Data memory data) internal pure {
+        uint length = data.decodeU32();
+        data.requireSpace(length);
+        data.ptr += length;
     }
 
-    function decodeBytes(Data memory data) internal pure returns (bytes memory value) {
-        value = new bytes(decodeU32(data));
-        for (uint i = 0; i < value.length; i++) {
-            value[i] = byte(decodeU8(data));
-        }
-    }
-
-    function decodeBytes32(Data memory data) internal pure shift(data, 32) returns (bytes32 value) {
-        bytes memory raw = data.raw;
-        uint256 offset = data.offset;
-        // solium-disable-next-line security/no-inline-assembly
-        assembly {
-            value := mload(add(add(raw, 32), offset))
-        }
-    }
-
-    function decodeBytes20(Data memory data) internal pure returns (bytes20 value) {
-        for (uint i = 0; i < 20; i++) {
-            value |= bytes20(byte(decodeU8(data)) & 0xFF) >> (i * 8);
-        }
-    }
-
-    // Public key
-
-    struct SECP256K1PublicKey {
-        uint256 x;
-        uint256 y;
-    }
-
-    function decodeSECP256K1PublicKey(Borsh.Data memory data) internal pure returns (SECP256K1PublicKey memory key) {
-        key.x = decodeU256(data);
-        key.y = decodeU256(data);
-    }
-
-    struct ED25519PublicKey {
-        bytes32 xy;
-    }
-
-    function decodeED25519PublicKey(Borsh.Data memory data) internal pure returns (ED25519PublicKey memory key) {
-        key.xy = decodeBytes32(data);
-    }
-
-    // Signature
-
-    struct SECP256K1Signature {
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-    }
-
-    function decodeSECP256K1Signature(Borsh.Data memory data) internal pure returns (SECP256K1Signature memory sig) {
-        sig.r = decodeBytes32(data);
-        sig.s = decodeBytes32(data);
-        sig.v = decodeU8(data);
-    }
-
-    struct ED25519Signature {
-        bytes32[2] rs;
-    }
-
-    function decodeED25519Signature(Borsh.Data memory data) internal pure returns (ED25519Signature memory sig) {
-        sig.rs[0] = decodeBytes32(data);
-        sig.rs[1] = decodeBytes32(data);
+    function decodeBytes(Data memory data) internal pure returns (bytes memory res) {
+        uint length = data.decodeU32();
+        data.requireSpace(length);
+        res = Utils.memoryToBytes(data.ptr, length);
+        data.ptr += length;
     }
 }
 
@@ -406,154 +205,88 @@ library Borsh {
 pragma solidity ^0.6;
 
 
-
 library NearDecoder {
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
 
     struct PublicKey {
-        uint8 enumIndex;
-        Borsh.ED25519PublicKey ed25519;
-        Borsh.SECP256K1PublicKey secp256k1;
+        bytes32 k;
     }
 
-    function decodePublicKey(Borsh.Data memory data) internal pure returns (PublicKey memory key) {
-        key.enumIndex = data.decodeU8();
-
-        if (key.enumIndex == 0) {
-            key.ed25519 = data.decodeED25519PublicKey();
-        } else if (key.enumIndex == 1) {
-            key.secp256k1 = data.decodeSECP256K1PublicKey();
-        } else {
-            revert("NearBridge: Only ED25519 and SECP256K1 public keys are supported");
-        }
-    }
-
-    struct ValidatorStake {
-        string account_id;
-        PublicKey public_key;
-        uint128 stake;
-    }
-
-    function decodeValidatorStake(Borsh.Data memory data) internal pure returns (ValidatorStake memory validatorStake) {
-        validatorStake.account_id = string(data.decodeBytes());
-        validatorStake.public_key = data.decodePublicKey();
-        validatorStake.stake = data.decodeU128();
-    }
-
-    struct OptionalValidatorStakes {
-        bool none;
-        ValidatorStake[] validatorStakes;
-        bytes32 hash; // Additional computable element
-    }
-
-    function decodeOptionalValidatorStakes(Borsh.Data memory data)
-        internal
-        view
-        returns (OptionalValidatorStakes memory stakes)
-    {
-        stakes.none = (data.decodeU8() == 0);
-        if (!stakes.none) {
-            uint256 start = data.offset;
-
-            stakes.validatorStakes = new ValidatorStake[](data.decodeU32());
-            for (uint i = 0; i < stakes.validatorStakes.length; i++) {
-                stakes.validatorStakes[i] = data.decodeValidatorStake();
-            }
-
-            uint256 stop = data.offset;
-            data.offset = start;
-            stakes.hash = data.peekSha256(stop - start);
-            data.offset = stop;
-        }
+    function decodePublicKey(Borsh.Data memory data) internal pure returns (PublicKey memory res) {
+        require(data.decodeU8() == 0, "Parse error: invalid key type");
+        res.k = data.decodeBytes32();
     }
 
     struct Signature {
-        uint8 enumIndex;
-        Borsh.ED25519Signature ed25519;
-        Borsh.SECP256K1Signature secp256k1;
+        bytes32 r;
+        bytes32 s;
     }
 
-    function decodeSignature(Borsh.Data memory data) internal pure returns (Signature memory sig) {
-        sig.enumIndex = data.decodeU8();
+    function decodeSignature(Borsh.Data memory data) internal pure returns (Signature memory res) {
+        require(data.decodeU8() == 0, "Parse error: invalid signature type");
+        res.r = data.decodeBytes32();
+        res.s = data.decodeBytes32();
+    }
 
-        if (sig.enumIndex == 0) {
-            sig.ed25519 = data.decodeED25519Signature();
-        } else if (sig.enumIndex == 1) {
-            sig.secp256k1 = data.decodeSECP256K1Signature();
-        } else {
-            revert("NearBridge: Only ED25519 and SECP256K1 signatures are supported");
+    struct BlockProducer {
+        PublicKey publicKey;
+        uint128 stake;
+    }
+
+    function decodeBlockProducer(Borsh.Data memory data) internal pure returns (BlockProducer memory res) {
+        data.skipBytes();
+        res.publicKey = data.decodePublicKey();
+        res.stake = data.decodeU128();
+    }
+
+    function decodeBlockProducers(Borsh.Data memory data) internal pure returns (BlockProducer[] memory res) {
+        uint length = data.decodeU32();
+        res = new BlockProducer[](length);
+        for (uint i = 0; i < length; i++) {
+            res[i] = data.decodeBlockProducer();
+        }
+    }
+
+    struct OptionalBlockProducers {
+        bool some;
+        BlockProducer[] blockProducers;
+        bytes32 hash; // Additional computable element
+    }
+
+    function decodeOptionalBlockProducers(Borsh.Data memory data)
+        internal
+        view
+        returns (OptionalBlockProducers memory res)
+    {
+        res.some = data.decodeBool();
+        if (res.some) {
+            uint start = data.ptr;
+            res.blockProducers = data.decodeBlockProducers();
+            res.hash = Utils.sha256Raw(start, data.ptr - start);
         }
     }
 
     struct OptionalSignature {
-        bool none;
+        bool some;
         Signature signature;
     }
 
-    function decodeOptionalSignature(Borsh.Data memory data) internal pure returns (OptionalSignature memory sig) {
-        sig.none = (data.decodeU8() == 0);
-        if (!sig.none) {
-            sig.signature = data.decodeSignature();
+    function decodeOptionalSignature(Borsh.Data memory data) internal pure returns (OptionalSignature memory res) {
+        res.some = data.decodeBool();
+        if (res.some) {
+            res.signature = data.decodeSignature();
         }
-    }
-
-    struct LightClientBlock {
-        bytes32 prev_block_hash;
-        bytes32 next_block_inner_hash;
-        BlockHeaderInnerLite inner_lite;
-        bytes32 inner_rest_hash;
-        OptionalValidatorStakes next_bps;
-        OptionalSignature[] approvals_after_next;
-        bytes32 hash;
-        bytes32 next_hash;
-    }
-
-    struct InitialValidators {
-        ValidatorStake[] validator_stakes;
-    }
-
-    function decodeInitialValidators(Borsh.Data memory data)
-        internal
-        view
-        returns (InitialValidators memory validators)
-    {
-        validators.validator_stakes = new ValidatorStake[](data.decodeU32());
-        for (uint i = 0; i < validators.validator_stakes.length; i++) {
-            validators.validator_stakes[i] = data.decodeValidatorStake();
-        }
-    }
-
-    function decodeLightClientBlock(Borsh.Data memory data) internal view returns (LightClientBlock memory header) {
-        header.prev_block_hash = data.decodeBytes32();
-        header.next_block_inner_hash = data.decodeBytes32();
-        header.inner_lite = data.decodeBlockHeaderInnerLite();
-        header.inner_rest_hash = data.decodeBytes32();
-        header.next_bps = data.decodeOptionalValidatorStakes();
-
-        header.approvals_after_next = new OptionalSignature[](data.decodeU32());
-        for (uint i = 0; i < header.approvals_after_next.length; i++) {
-            header.approvals_after_next[i] = data.decodeOptionalSignature();
-        }
-
-        header.hash = sha256(
-            abi.encodePacked(
-                sha256(abi.encodePacked(header.inner_lite.hash, header.inner_rest_hash)),
-                header.prev_block_hash
-            )
-        );
-
-        header.next_hash = sha256(abi.encodePacked(header.next_block_inner_hash, header.hash));
     }
 
     struct BlockHeaderInnerLite {
-        uint64 height; /// Height of this block since the genesis block (height 0).
-        bytes32 epoch_id; /// Epoch start hash of this block's epoch. Used for retrieving validator information
+        uint64 height; // Height of this block since the genesis block (height 0).
+        bytes32 epoch_id; // Epoch start hash of this block's epoch. Used for retrieving validator information
         bytes32 next_epoch_id;
-        bytes32 prev_state_root; /// Root hash of the state at the previous block.
-        bytes32 outcome_root; /// Root of the outcomes of transactions and receipts.
-        uint64 timestamp; /// Timestamp at which the block was built.
-        bytes32 next_bp_hash; /// Hash of the next epoch block producers set
+        bytes32 prev_state_root; // Root hash of the state at the previous block.
+        bytes32 outcome_root; // Root of the outcomes of transactions and receipts.
+        uint64 timestamp; // Timestamp at which the block was built.
+        bytes32 next_bp_hash; // Hash of the next epoch block producers set
         bytes32 block_merkle_root;
         bytes32 hash; // Additional computable element
     }
@@ -561,16 +294,47 @@ library NearDecoder {
     function decodeBlockHeaderInnerLite(Borsh.Data memory data)
         internal
         view
-        returns (BlockHeaderInnerLite memory header)
+        returns (BlockHeaderInnerLite memory res)
     {
-        header.hash = data.peekSha256(208);
-        header.height = data.decodeU64();
-        header.epoch_id = data.decodeBytes32();
-        header.next_epoch_id = data.decodeBytes32();
-        header.prev_state_root = data.decodeBytes32();
-        header.outcome_root = data.decodeBytes32();
-        header.timestamp = data.decodeU64();
-        header.next_bp_hash = data.decodeBytes32();
-        header.block_merkle_root = data.decodeBytes32();
+        res.hash = data.peekSha256(208);
+        res.height = data.decodeU64();
+        res.epoch_id = data.decodeBytes32();
+        res.next_epoch_id = data.decodeBytes32();
+        res.prev_state_root = data.decodeBytes32();
+        res.outcome_root = data.decodeBytes32();
+        res.timestamp = data.decodeU64();
+        res.next_bp_hash = data.decodeBytes32();
+        res.block_merkle_root = data.decodeBytes32();
+    }
+
+    struct LightClientBlock {
+        bytes32 prev_block_hash;
+        bytes32 next_block_inner_hash;
+        BlockHeaderInnerLite inner_lite;
+        bytes32 inner_rest_hash;
+        OptionalBlockProducers next_bps;
+        OptionalSignature[] approvals_after_next;
+        bytes32 hash;
+        bytes32 next_hash;
+    }
+
+    function decodeLightClientBlock(Borsh.Data memory data) internal view returns (LightClientBlock memory res) {
+        res.prev_block_hash = data.decodeBytes32();
+        res.next_block_inner_hash = data.decodeBytes32();
+        res.inner_lite = data.decodeBlockHeaderInnerLite();
+        res.inner_rest_hash = data.decodeBytes32();
+        res.next_bps = data.decodeOptionalBlockProducers();
+
+        uint length = data.decodeU32();
+        res.approvals_after_next = new OptionalSignature[](length);
+        for (uint i = 0; i < length; i++) {
+            res.approvals_after_next[i] = data.decodeOptionalSignature();
+        }
+
+        res.hash = sha256(
+            abi.encodePacked(sha256(abi.encodePacked(res.inner_lite.hash, res.inner_rest_hash)), res.prev_block_hash)
+        );
+
+        res.next_hash = sha256(abi.encodePacked(res.next_block_inner_hash, res.hash));
     }
 }
