@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.6;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -33,9 +34,9 @@ contract NearProver is INearProver, AdminControlled {
         pausable(PAUSED_VERIFY)
         returns (bool)
     {
-        Borsh.Data memory borshData = Borsh.from(proofData);
-        ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borshData.decodeFullOutcomeProof();
-        require(borshData.finished(), "NearProver: argument should be exact borsh serialization");
+        Borsh.Data memory borsh = Borsh.from(proofData);
+        ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borsh.decodeFullOutcomeProof();
+        borsh.done();
 
         bytes32 hash =
             _computeRoot(fullOutcomeProof.outcome_proof.outcome_with_id.hash, fullOutcomeProof.outcome_proof.proof);
