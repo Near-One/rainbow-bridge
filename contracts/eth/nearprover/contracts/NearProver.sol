@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.6;
+pragma solidity ^0.8;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./bridge/AdminControlled.sol";
 import "./bridge/INearBridge.sol";
 import "./bridge/NearDecoder.sol";
@@ -9,7 +8,6 @@ import "./ProofDecoder.sol";
 import "./INearProver.sol";
 
 contract NearProver is INearProver, AdminControlled {
-    using SafeMath for uint256;
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
     using ProofDecoder for Borsh.Data;
@@ -20,7 +18,7 @@ contract NearProver is INearProver, AdminControlled {
         INearBridge _bridge,
         address _admin,
         uint _pausedFlags
-    ) public AdminControlled(_admin, _pausedFlags) {
+    ) AdminControlled(_admin, _pausedFlags) {
         bridge = _bridge;
     }
 

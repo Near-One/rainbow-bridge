@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.6;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./AdminControlled.sol";
 import "./INearBridge.sol";
 import "./NearDecoder.sol";
 import "./Ed25519.sol";
 
 contract NearBridge is INearBridge, AdminControlled {
-    using SafeMath for uint256;
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
 
@@ -27,6 +24,7 @@ contract NearBridge is INearBridge, AdminControlled {
     // Whether the contract was initialized.
     bool public initialized;
     uint256 public lockEthAmount;
+    // lockDuration and replaceDuration shouldn't be extremely big, so adding them to an uint64 timestamp should not overflow uint256.
     uint256 public lockDuration;
     // replaceDuration is in nanoseconds, because it is a difference between NEAR timestamps.
     uint256 public replaceDuration;
@@ -62,8 +60,8 @@ contract NearBridge is INearBridge, AdminControlled {
         uint256 replaceDuration_,
         address admin_,
         uint256 pausedFlags_
-    ) public AdminControlled(admin_, pausedFlags_) {
-        require(replaceDuration_ > lockDuration_.mul(1000000000));
+    ) AdminControlled(admin_, pausedFlags_) {
+        require(replaceDuration_ > lockDuration_ * 1000000000);
         edwards = ed;
         lockEthAmount = lockEthAmount_;
         lockDuration = lockDuration_;
@@ -87,14 +85,14 @@ contract NearBridge is INearBridge, AdminControlled {
         uint amount = balanceOf[msg.sender];
         require(amount != 0);
         balanceOf[msg.sender] = 0;
-        msg.sender.transfer(amount);
+        payable(msg.sender).transfer(amount);
     }
 
     function challenge(address payable receiver, uint signatureIndex) public override pausable(PAUSED_CHALLENGE) {
         require(block.timestamp < lastValidAt, "No block can be challenged at this time");
         require(!checkBlockProducerSignatureInHead(signatureIndex), "Can't challenge valid signature");
 
-        balanceOf[lastSubmitter] = balanceOf[lastSubmitter].sub(lockEthAmount);
+        balanceOf[lastSubmitter] = balanceOf[lastSubmitter] - lockEthAmount;
         receiver.transfer(lockEthAmount / 2);
         lastValidAt = 0;
     }
@@ -102,12 +100,14 @@ contract NearBridge is INearBridge, AdminControlled {
     function checkBlockProducerSignatureInHead(uint signatureIndex) public view override returns (bool) {
         // Shifting by a number >= 256 returns zero.
         require((untrustedSignatureSet & (1 << signatureIndex)) != 0, "No such signature");
-        Epoch storage untrustedEpoch = epochs[untrustedNextEpoch ? (curEpoch + 1) % 3 : curEpoch];
-        NearDecoder.Signature storage signature = untrustedSignatures[signatureIndex];
-        bytes memory message =
-            abi.encodePacked(uint8(0), untrustedNextHash, Utils.swapBytes8(untrustedHeight + 2), bytes23(0));
-        (bytes32 arg1, bytes9 arg2) = abi.decode(message, (bytes32, bytes9));
-        return edwards.check(untrustedEpoch.keys[signatureIndex], signature.r, signature.s, arg1, arg2);
+        unchecked {
+            Epoch storage untrustedEpoch = epochs[untrustedNextEpoch ? (curEpoch + 1) % 3 : curEpoch];
+            NearDecoder.Signature storage signature = untrustedSignatures[signatureIndex];
+            bytes memory message =
+                abi.encodePacked(uint8(0), untrustedNextHash, Utils.swapBytes8(untrustedHeight + 2), bytes23(0));
+            (bytes32 arg1, bytes9 arg2) = abi.decode(message, (bytes32, bytes9));
+            return edwards.check(untrustedEpoch.keys[signatureIndex], signature.r, signature.s, arg1, arg2);
+        }
     }
 
     // The first part of initialization -- setting the validators of the current epoch.
@@ -153,7 +153,9 @@ contract NearBridge is INearBridge, AdminControlled {
             res.currentHeight = curHeight;
             res.nextTimestamp = untrustedTimestamp;
             res.nextValidAt = lastValidAt;
-            res.numBlockProducers = epochs[untrustedNextEpoch ? (curEpoch + 1) % 3 : curEpoch].numBPs;
+            unchecked {
+                res.numBlockProducers = epochs[untrustedNextEpoch ? (curEpoch + 1) % 3 : curEpoch].numBPs;
+            }
         } else {
             res.currentHeight = lastValidAt == 0 ? curHeight : untrustedHeight;
         }
@@ -167,110 +169,114 @@ contract NearBridge is INearBridge, AdminControlled {
         NearDecoder.LightClientBlock memory nearBlock = borsh.decodeLightClientBlock();
         borsh.done();
 
-        // Commit the previous block, or make sure that it is OK to replace it.
-        if (block.timestamp < lastValidAt) {
-            require(
-                nearBlock.inner_lite.timestamp >= untrustedTimestamp.add(replaceDuration),
-                "Can only replace with a sufficiently newer block"
-            );
-        } else if (lastValidAt != 0) {
-            curHeight = untrustedHeight;
-            if (untrustedNextEpoch) {
-                curEpoch = (curEpoch + 1) % 3;
+        unchecked {
+            // Commit the previous block, or make sure that it is OK to replace it.
+            if (block.timestamp < lastValidAt) {
+                require(
+                    nearBlock.inner_lite.timestamp >= untrustedTimestamp + replaceDuration,
+                    "Can only replace with a sufficiently newer block"
+                );
+            } else if (lastValidAt != 0) {
+                curHeight = untrustedHeight;
+                if (untrustedNextEpoch) {
+                    curEpoch = (curEpoch + 1) % 3;
+                }
+                lastValidAt = 0;
+
+                blockHashes_[curHeight] = untrustedHash;
+                blockMerkleRoots_[curHeight] = untrustedMerkleRoot;
             }
-            lastValidAt = 0;
 
-            blockHashes_[curHeight] = untrustedHash;
-            blockMerkleRoots_[curHeight] = untrustedMerkleRoot;
-        }
+            // Check that the new block's height is greater than the current one's.
+            require(nearBlock.inner_lite.height > curHeight, "New block must have higher height");
 
-        // Check that the new block's height is greater than the current one's.
-        require(nearBlock.inner_lite.height > curHeight, "New block must have higher height");
-
-        // Check that the new block is from the same epoch as the current one, or from the next one.
-        bool fromNextEpoch;
-        if (nearBlock.inner_lite.epoch_id == epochs[curEpoch].epochId) {
-            fromNextEpoch = false;
-        } else if (nearBlock.inner_lite.epoch_id == epochs[(curEpoch + 1) % 3].epochId) {
-            fromNextEpoch = true;
-        } else {
-            revert("Epoch id of the block is not valid");
-        }
-
-        // Check that the new block is signed by more than 2/3 of the validators.
-        Epoch storage thisEpoch = epochs[fromNextEpoch ? (curEpoch + 1) % 3 : curEpoch];
-        // Last block in the epoch might contain extra approvals that light client can ignore.
-        require(nearBlock.approvals_after_next.length >= thisEpoch.numBPs, "Approval list is too short");
-        // The sum of uint128 values cannot overflow.
-        uint256 votedFor = 0;
-        for ((uint i, uint cnt) = (0, thisEpoch.numBPs); i != cnt; ++i) {
-            bytes32 stakes = thisEpoch.packedStakes[i >> 1];
-            if (nearBlock.approvals_after_next[i].some) {
-                votedFor += uint128(bytes16(stakes));
+            // Check that the new block is from the same epoch as the current one, or from the next one.
+            bool fromNextEpoch;
+            if (nearBlock.inner_lite.epoch_id == epochs[curEpoch].epochId) {
+                fromNextEpoch = false;
+            } else if (nearBlock.inner_lite.epoch_id == epochs[(curEpoch + 1) % 3].epochId) {
+                fromNextEpoch = true;
+            } else {
+                revert("Epoch id of the block is not valid");
             }
-            if (++i == cnt) {
-                break;
-            }
-            if (nearBlock.approvals_after_next[i].some) {
-                votedFor += uint128(uint256(stakes));
-            }
-        }
-        require(votedFor > thisEpoch.stakeThreshold, "Too few approvals");
 
-        // If the block is from the next epoch, make sure that next_bps is supplied and has a correct hash.
-        if (fromNextEpoch) {
-            require(nearBlock.next_bps.some, "Next next_bps should not be None");
-            require(
-                nearBlock.next_bps.hash == nearBlock.inner_lite.next_bp_hash,
-                "Hash of block producers does not match"
-            );
-        }
-
-        untrustedHeight = nearBlock.inner_lite.height;
-        untrustedTimestamp = nearBlock.inner_lite.timestamp;
-        untrustedHash = nearBlock.hash;
-        untrustedMerkleRoot = nearBlock.inner_lite.block_merkle_root;
-        untrustedNextHash = nearBlock.next_hash;
-
-        uint256 signatureSet = 0;
-        for ((uint i, uint cnt) = (0, thisEpoch.numBPs); i < cnt; i++) {
-            NearDecoder.OptionalSignature memory approval = nearBlock.approvals_after_next[i];
-            if (approval.some) {
-                signatureSet |= 1 << i;
-                untrustedSignatures[i] = approval.signature;
+            // Check that the new block is signed by more than 2/3 of the validators.
+            Epoch storage thisEpoch = epochs[fromNextEpoch ? (curEpoch + 1) % 3 : curEpoch];
+            // Last block in the epoch might contain extra approvals that light client can ignore.
+            require(nearBlock.approvals_after_next.length >= thisEpoch.numBPs, "Approval list is too short");
+            // The sum of uint128 values cannot overflow.
+            uint256 votedFor = 0;
+            for ((uint i, uint cnt) = (0, thisEpoch.numBPs); i != cnt; ++i) {
+                bytes32 stakes = thisEpoch.packedStakes[i >> 1];
+                if (nearBlock.approvals_after_next[i].some) {
+                    votedFor += uint128(bytes16(stakes));
+                }
+                if (++i == cnt) {
+                    break;
+                }
+                if (nearBlock.approvals_after_next[i].some) {
+                    votedFor += uint128(uint256(stakes));
+                }
             }
+            require(votedFor > thisEpoch.stakeThreshold, "Too few approvals");
+
+            // If the block is from the next epoch, make sure that next_bps is supplied and has a correct hash.
+            if (fromNextEpoch) {
+                require(nearBlock.next_bps.some, "Next next_bps should not be None");
+                require(
+                    nearBlock.next_bps.hash == nearBlock.inner_lite.next_bp_hash,
+                    "Hash of block producers does not match"
+                );
+            }
+
+            untrustedHeight = nearBlock.inner_lite.height;
+            untrustedTimestamp = nearBlock.inner_lite.timestamp;
+            untrustedHash = nearBlock.hash;
+            untrustedMerkleRoot = nearBlock.inner_lite.block_merkle_root;
+            untrustedNextHash = nearBlock.next_hash;
+
+            uint256 signatureSet = 0;
+            for ((uint i, uint cnt) = (0, thisEpoch.numBPs); i < cnt; i++) {
+                NearDecoder.OptionalSignature memory approval = nearBlock.approvals_after_next[i];
+                if (approval.some) {
+                    signatureSet |= 1 << i;
+                    untrustedSignatures[i] = approval.signature;
+                }
+            }
+            untrustedSignatureSet = signatureSet;
+            untrustedNextEpoch = fromNextEpoch;
+            if (fromNextEpoch) {
+                Epoch storage nextEpoch = epochs[(curEpoch + 2) % 3];
+                nextEpoch.epochId = nearBlock.inner_lite.next_epoch_id;
+                setBlockProducers(nearBlock.next_bps.blockProducers, nextEpoch);
+            }
+            lastSubmitter = msg.sender;
+            lastValidAt = block.timestamp + lockDuration;
         }
-        untrustedSignatureSet = signatureSet;
-        untrustedNextEpoch = fromNextEpoch;
-        if (fromNextEpoch) {
-            Epoch storage nextEpoch = epochs[(curEpoch + 2) % 3];
-            nextEpoch.epochId = nearBlock.inner_lite.next_epoch_id;
-            setBlockProducers(nearBlock.next_bps.blockProducers, nextEpoch);
-        }
-        lastSubmitter = msg.sender;
-        lastValidAt = block.timestamp.add(lockDuration);
     }
 
     function setBlockProducers(NearDecoder.BlockProducer[] memory src, Epoch storage epoch) internal {
         uint cnt = src.length;
         require(cnt <= MAX_BLOCK_PRODUCERS);
         epoch.numBPs = cnt;
-        for (uint i = 0; i < cnt; i++) {
-            epoch.keys[i] = src[i].publicKey.k;
-        }
-        uint256 totalStake = 0; // Sum of uint128, can't be too big.
-        for (uint i = 0; i != cnt; ++i) {
-            uint128 stake1 = src[i].stake;
-            totalStake += stake1;
-            if (++i == cnt) {
-                epoch.packedStakes[i >> 1] = bytes32(bytes16(stake1));
-                break;
+        unchecked {
+            for (uint i = 0; i < cnt; i++) {
+                epoch.keys[i] = src[i].publicKey.k;
             }
-            uint128 stake2 = src[i].stake;
-            totalStake += stake2;
-            epoch.packedStakes[i >> 1] = bytes32(uint256(bytes32(bytes16(stake1))) + stake2);
+            uint256 totalStake = 0; // Sum of uint128, can't be too big.
+            for (uint i = 0; i != cnt; ++i) {
+                uint128 stake1 = src[i].stake;
+                totalStake += stake1;
+                if (++i == cnt) {
+                    epoch.packedStakes[i >> 1] = bytes32(bytes16(stake1));
+                    break;
+                }
+                uint128 stake2 = src[i].stake;
+                totalStake += stake2;
+                epoch.packedStakes[i >> 1] = bytes32(uint256(bytes32(bytes16(stake1))) + stake2);
+            }
+            epoch.stakeThreshold = (totalStake * 2) / 3;
         }
-        epoch.stakeThreshold = (totalStake * 2) / 3;
     }
 
     function blockHashes(uint64 height) public view override pausable(PAUSED_VERIFY) returns (bytes32 res) {
