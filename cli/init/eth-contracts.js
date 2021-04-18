@@ -10,10 +10,11 @@ class EthContractInitializer {
     ethMasterSk,
     ethContractAbiPath,
     ethContractBinPath,
+    ethContractArtifactPath,
     ethGasMultiplier
   }) {
     let ethContractAddress
-    if (!ethContractAbiPath || !ethContractBinPath) {
+    if ((!ethContractAbiPath || !ethContractBinPath) && !ethContractArtifactPath) {
       return null
     }
 
@@ -27,12 +28,17 @@ class EthContractInitializer {
       ethMasterAccount = ethMasterAccount.address
 
       console.log('Deploying ETH contract')
-      const tokenContract = new web3.eth.Contract(
-        JSON.parse(fs.readFileSync(ethContractAbiPath))
-      )
+      let abi, bytecode
+      if (ethContractArtifactPath) {
+        ({ abi, bytecode } = JSON.parse(fs.readFileSync(ethContractArtifactPath)))
+      } else {
+        abi = JSON.parse(fs.readFileSync(ethContractAbiPath))
+        bytecode = '0x' + fs.readFileSync(ethContractBinPath)
+      }
+      const tokenContract = new web3.eth.Contract(abi)
       const txContract = await tokenContract
         .deploy({
-          data: '0x' + fs.readFileSync(ethContractBinPath),
+          data: bytecode,
           arguments: args
         })
         .send({
@@ -58,8 +64,7 @@ class InitEthEd25519 {
   static async execute ({
     ethNodeUrl,
     ethMasterSk,
-    ethEd25519AbiPath,
-    ethEd25519BinPath,
+    ethEd25519ArtifactPath,
     ethGasMultiplier
   }) {
     const ethContractInitializer = new EthContractInitializer()
@@ -67,15 +72,14 @@ class InitEthEd25519 {
       {
         args: [],
         gas: 5000000,
-        ethContractAbiPath: ethEd25519AbiPath,
-        ethContractBinPath: ethEd25519BinPath,
+        ethContractArtifactPath: ethEd25519ArtifactPath,
         ethNodeUrl,
         ethMasterSk,
         ethGasMultiplier
       }
     )
     if (!success) {
-      console.log("Can't deploy", ethEd25519AbiPath)
+      console.log("Can't deploy", ethEd25519ArtifactPath)
       process.exit(1)
     }
     return {
@@ -171,8 +175,7 @@ class InitEthClient {
     ethClientLockDuration,
     ethClientReplaceDuration,
     ethEd25519Address,
-    ethClientAbiPath,
-    ethClientBinPath,
+    ethClientArtifactPath,
     ethAdminAddress,
     ethGasMultiplier
   }) {
@@ -223,15 +226,14 @@ class InitEthClient {
           0
         ],
         gas: 5000000,
-        ethContractAbiPath: ethClientAbiPath,
-        ethContractBinPath: ethClientBinPath,
+        ethContractArtifactPath: ethClientArtifactPath,
         ethNodeUrl,
         ethMasterSk,
         ethGasMultiplier
       }
     )
     if (!success) {
-      console.log("Can't deploy", ethClientAbiPath)
+      console.log("Can't deploy", ethClientArtifactPath)
       process.exit(1)
     }
     return {
@@ -245,8 +247,7 @@ class InitEthProver {
     ethNodeUrl,
     ethMasterSk,
     ethClientAddress,
-    ethProverAbiPath,
-    ethProverBinPath,
+    ethProverArtifactPath,
     ethAdminAddress,
     ethGasMultiplier
   }) {
@@ -261,15 +262,14 @@ class InitEthProver {
       {
         args: [ethClientAddress, ethAdminAddress, 0],
         gas: 3000000,
-        ethContractAbiPath: ethProverAbiPath,
-        ethContractBinPath: ethProverBinPath,
+        ethContractArtifactPath: ethProverArtifactPath,
         ethNodeUrl,
         ethMasterSk,
         ethGasMultiplier
       }
     )
     if (!success) {
-      console.log("Can't deploy", ethProverAbiPath)
+      console.log("Can't deploy", ethProverArtifactPath)
       process.exit(1)
     }
     return {

@@ -132,14 +132,14 @@ async function ethToNearLock ({ ethAccountAddress, amount, nearAccountName, ethN
 async function getClientBlockHeightHash ({
   ethNodeUrl,
   ethClientAddress,
-  ethClientAbiPath,
+  ethClientArtifactPath,
   ethMasterAccount
 }) {
   const robustWeb3 = new RobustWeb3(ethNodeUrl)
   const web3 = robustWeb3.web3
   try {
     const clientContract = new web3.eth.Contract(
-      JSON.parse(fs.readFileSync(ethClientAbiPath)),
+      JSON.parse(fs.readFileSync(ethClientArtifactPath)).abi,
       ethClientAddress,
       {
         from: ethMasterAccount,

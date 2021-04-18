@@ -25,12 +25,12 @@
         "rainbow-bridge-lib": "^2.0.0",
         "solc": "^0.6.12",
         "solidity-coverage": "^0.7.16",
-        "solium": "^1.2.5",
-        "truffle-flattener": "^1.5"
+        "solium": "^1.2.5"
     },
     "scripts": {
-        "test": "hardhat test test/NearProver.js",
-        "coverage": "hardhat coverage --testfiles test/NearProver.js",
+        "build": "hardhat compile",
+        "test": "hardhat test",
+        "coverage": "hardhat coverage",
         "lint:js": "eslint .",
         "lint:js:fix": "eslint . --fix",
         "lint:sol": "solium -d .",
