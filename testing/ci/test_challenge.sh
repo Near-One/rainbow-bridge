@@ -28,6 +28,12 @@ while ! curl localhost:9545; do
 done
 
 node index.js init-near-contracts
+(cd $ROOT_DIR/contracts/eth/nearbridge
+yarn
+yarn build)
+(cd $ROOT_DIR/contracts/eth/nearprover
+yarn
+yarn build)
 node index.js init-eth-ed25519
 # Use short lockup time for tests
 node index.js init-eth-client --eth-client-lock-eth-amount 1000000000000000000 --eth-client-lock-duration 30

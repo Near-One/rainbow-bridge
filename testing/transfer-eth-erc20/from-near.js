@@ -347,9 +347,9 @@ class TransferEthERC20FromNear {
     nearErc20Account,
     ethNodeUrl,
     ethMasterSk,
-    ethClientAbiPath,
+    ethClientArtifactPath,
     ethClientAddress,
-    ethProverAbiPath,
+    ethProverArtifactPath,
     ethProverAddress,
     ethLockerAbiPath,
     ethLockerAddress,
@@ -398,7 +398,7 @@ class TransferEthERC20FromNear {
     web3.eth.defaultAccount = ethMasterAccount.address
     ethMasterAccount = ethMasterAccount.address
     const clientContract = new web3.eth.Contract(
-      JSON.parse(fs.readFileSync(ethClientAbiPath)),
+      JSON.parse(fs.readFileSync(ethClientArtifactPath)).abi,
       ethClientAddress,
       {
         from: ethMasterAccount,
@@ -406,7 +406,7 @@ class TransferEthERC20FromNear {
       }
     )
     const proverContract = new web3.eth.Contract(
-      JSON.parse(fs.readFileSync(ethProverAbiPath)),
+      JSON.parse(fs.readFileSync(ethProverArtifactPath)).abi,
       ethProverAddress,
       {
         from: ethMasterAccount,

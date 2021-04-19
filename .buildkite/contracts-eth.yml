@@ -1,16 +1,4 @@
 steps:
-    - label: "build all solidity contracts"
-      command: |
-          docker-compose up compile-solidity
-          git status
-          changed_files=$$(git status --porcelain --untracked-files=no | wc -l)
-          if [ $$changed_files -gt 0 ]; then
-            echo 'contract changed, please rebuild contract'
-            exit 1
-          fi
-      agents:
-          - "queue=medium"
-
     - label: "nearbridge test"
       command: |
           source ~/.nvm/nvm.sh
