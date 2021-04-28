@@ -62,6 +62,7 @@ pub struct HeaderInfo {
 }
 
 const PAUSE_ADD_BLOCK_HEADER: Mask = 1;
+const CANONICAL_HASHES_UPDATE_THRESHOLD: u64 = 50;
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -302,7 +303,10 @@ impl EthClient {
                 let prev_value = self.canonical_header_hashes.insert(&number, &current_hash);
                 // If the current block hash is 0 (unlikely), or the previous hash matches the
                 // current hash, then the chains converged and we can stop now.
-                if number == 0 || prev_value == Some(current_hash) {
+                if number == 0
+                    || prev_value == Some(current_hash)
+                    || number < header.number - CANONICAL_HASHES_UPDATE_THRESHOLD
+                {
                     break;
                 }
                 // Check if there is an info to get the parent hash
