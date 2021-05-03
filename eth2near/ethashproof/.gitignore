@@ -12,3 +12,6 @@
 *.out
 
 ethashproof
+
+!cache
+cmd/cache/cache
