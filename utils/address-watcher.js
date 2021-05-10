@@ -67,7 +67,7 @@ class AddressWatcher {
         }
       })))
 
-      await sleep(1000)
+      await sleep(1_000)
     }
   }
 }
