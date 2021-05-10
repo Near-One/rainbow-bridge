@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.6;
+pragma solidity ^0.8;
 
 import "./Utils.sol";
 
@@ -16,19 +16,25 @@ library Borsh {
         assembly {
             ptr := data
         }
-        res.ptr = ptr + 32;
-        res.end = res.ptr + Utils.readMemory(ptr);
+        unchecked {
+            res.ptr = ptr + 32;
+            res.end = res.ptr + Utils.readMemory(ptr);
+        }
     }
 
     // This function assumes that length is reasonably small, so that data.ptr + length will not overflow. In the current code, length is always less than 2^32.
     function requireSpace(Data memory data, uint length) internal pure {
-        require(data.ptr + length <= data.end, "Parse error: unexpected EOI");
+        unchecked {
+            require(data.ptr + length <= data.end, "Parse error: unexpected EOI");
+        }
     }
 
     function read(Data memory data, uint length) internal pure returns (bytes32 res) {
         data.requireSpace(length);
         res = bytes32(Utils.readMemory(data.ptr));
-        data.ptr += length;
+        unchecked {
+            data.ptr += length;
+        }
         return res;
     }
 
@@ -89,13 +95,17 @@ library Borsh {
     function skipBytes(Data memory data) internal pure {
         uint length = data.decodeU32();
         data.requireSpace(length);
-        data.ptr += length;
+        unchecked {
+            data.ptr += length;
+        }
     }
 
     function decodeBytes(Data memory data) internal pure returns (bytes memory res) {
         uint length = data.decodeU32();
         data.requireSpace(length);
         res = Utils.memoryToBytes(data.ptr, length);
-        data.ptr += length;
+        unchecked {
+            data.ptr += length;
+        }
     }
 }

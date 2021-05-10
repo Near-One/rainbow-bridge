@@ -215,14 +215,9 @@ RainbowConfig.declareOption(
   'ETH address of the ED25519 contract.'
 )
 RainbowConfig.declareOption(
-  'eth-ed25519-abi-path',
-  'Path to the .abi file defining Ethereum ED25519 contract.',
-  path.join(LIBS_SOL_SRC_DIR, 'nearbridge/dist/Ed25519.full.abi')
-)
-RainbowConfig.declareOption(
-  'eth-ed25519-bin-path',
-  'Path to the .bin file defining Ethereum ED25519 contract.',
-  path.join(LIBS_SOL_SRC_DIR, 'nearbridge/dist/Ed25519.full.bin')
+  'eth-ed25519-artifact-path',
+  'Path to the artifact file defining Ethereum ED25519 contract.',
+  path.join(LIBS_SOL_SRC_DIR, 'nearbridge/artifacts/contracts/Ed25519.sol/Ed25519.json')
 )
 RainbowConfig.declareOption(
   'eth-client-lock-eth-amount',
@@ -244,14 +239,9 @@ RainbowConfig.declareOption(
   'ETH address of the EthClient contract.'
 )
 RainbowConfig.declareOption(
-  'eth-client-abi-path',
-  'Path to the .abi file defining Ethereum Client contract.',
-  path.join(LIBS_SOL_SRC_DIR, 'nearbridge/dist/NearBridge.full.abi')
-)
-RainbowConfig.declareOption(
-  'eth-client-bin-path',
-  'Path to the .bin file defining Ethereum Client contract.',
-  path.join(LIBS_SOL_SRC_DIR, 'nearbridge/dist/NearBridge.full.bin')
+  'eth-client-artifact-path',
+  'Path to the artifact file defining Ethereum Client contract.',
+  path.join(LIBS_SOL_SRC_DIR, 'nearbridge/artifacts/contracts/NearBridge.sol/NearBridge.json')
 )
 RainbowConfig.declareOption(
   'eth-admin-address',
@@ -268,14 +258,9 @@ RainbowConfig.declareOption(
   'ETH address of the EthProver contract.'
 )
 RainbowConfig.declareOption(
-  'eth-prover-abi-path',
-  'Path to the .abi file defining Ethereum Prover contract.',
-  path.join(LIBS_SOL_SRC_DIR, 'nearprover/dist/NearProver.full.abi')
-)
-RainbowConfig.declareOption(
-  'eth-prover-bin-path',
-  'Path to the .bin file defining Ethereum Prover contract.',
-  path.join(LIBS_SOL_SRC_DIR, 'nearprover/dist/NearProver.full.bin')
+  'eth-prover-artifact-path',
+  'Path to the artifact file defining Ethereum Prover contract.',
+  path.join(LIBS_SOL_SRC_DIR, 'nearprover/artifacts/contracts/NearProver.sol/NearProver.json')
 )
 RainbowConfig.declareOption(
   'near2eth-relay-min-delay',
@@ -375,7 +360,7 @@ RainbowConfig.addOptions(
     'eth-master-sk',
     'near-node-url',
     'near-network-id',
-    'eth-client-abi-path',
+    'eth-client-artifact-path',
     'eth-client-address',
     'near2eth-relay-min-delay',
     'near2eth-relay-max-delay',
@@ -392,7 +377,7 @@ RainbowConfig.addOptions(
   [
     'eth-node-url',
     'eth-master-sk',
-    'eth-client-abi-path',
+    'eth-client-artifact-path',
     'eth-client-address',
     'watchdog-delay',
     'watchdog-error-delay',
@@ -494,8 +479,7 @@ RainbowConfig.addOptions(
   [
     'eth-node-url',
     'eth-master-sk',
-    'eth-ed25519-abi-path',
-    'eth-ed25519-bin-path',
+    'eth-ed25519-artifact-path',
     'eth-gas-multiplier'
   ]
 )
@@ -508,8 +492,7 @@ RainbowConfig.addOptions(
   [
     'eth-node-url',
     'eth-master-sk',
-    'eth-client-abi-path',
-    'eth-client-bin-path',
+    'eth-client-artifact-path',
     'eth-admin-address',
     'eth-ed25519-address',
     'eth-client-lock-eth-amount',
@@ -527,8 +510,7 @@ RainbowConfig.addOptions(
   [
     'eth-node-url',
     'eth-master-sk',
-    'eth-prover-abi-path',
-    'eth-prover-bin-path',
+    'eth-prover-artifact-path',
     'eth-admin-address',
     'eth-client-address',
     'eth-gas-multiplier'
@@ -720,9 +702,9 @@ RainbowConfig.addOptions(
     'eth-erc20-abi-path',
     'eth-locker-address',
     'eth-locker-abi-path',
-    'eth-client-abi-path',
+    'eth-client-artifact-path',
     'eth-client-address',
-    'eth-prover-abi-path',
+    'eth-prover-artifact-path',
     'eth-prover-address',
     'eth-gas-multiplier'
   ]
@@ -802,7 +784,7 @@ RainbowConfig.addOptions(
   [
     'eth-node-url',
     'eth-master-sk',
-    'eth-client-abi-path',
+    'eth-client-artifact-path',
     'eth-client-address'
   ]
 )
@@ -878,7 +860,7 @@ RainbowConfig.addOptions(
     'eth-master-sk',
     'near-node-url',
     'near-network-id',
-    'eth-client-abi-path',
+    'eth-client-artifact-path',
     'eth-client-address',
     'near2eth-relay-min-delay',
     'near2eth-relay-max-delay',

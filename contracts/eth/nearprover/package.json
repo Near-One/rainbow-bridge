@@ -7,9 +7,6 @@
         "url": "git+https://github.com/near/rainbow-bridge.git"
     },
     "license": "MIT",
-    "dependencies": {
-        "@openzeppelin/contracts": "^3.2"
-    },
     "devDependencies": {
         "@nomiclabs/hardhat-ethers": "^2.0.1",
         "chai": "^4.3.3",
@@ -23,14 +20,14 @@
         "ethers": "^5.0.31",
         "hardhat": "^2.1.1",
         "rainbow-bridge-lib": "^2.0.0",
-        "solc": "^0.6.12",
+        "solc": "0.8.3",
         "solidity-coverage": "^0.7.16",
-        "solium": "^1.2.5",
-        "truffle-flattener": "^1.5"
+        "solium": "^1.2.5"
     },
     "scripts": {
-        "test": "hardhat test test/NearProver.js",
-        "coverage": "hardhat coverage --testfiles test/NearProver.js",
+        "build": "hardhat compile",
+        "test": "hardhat test",
+        "coverage": "hardhat coverage",
         "lint:js": "eslint .",
         "lint:js:fix": "eslint . --fix",
         "lint:sol": "solium -d .",

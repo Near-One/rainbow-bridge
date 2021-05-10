@@ -18,7 +18,7 @@ class Near2EthRelay {
     nearNetworkId,
     ethNodeUrl,
     ethMasterSk,
-    ethClientAbiPath,
+    ethClientArtifactPath,
     ethClientAddress,
     ethGasMultiplier,
     metricsPort
@@ -44,9 +44,7 @@ class Near2EthRelay {
 
     // Declare Near2EthClient contract.
     this.clientContract = new this.web3.eth.Contract(
-      JSON.parse(
-        fs.readFileSync(ethClientAbiPath)
-      ),
+      JSON.parse(fs.readFileSync(ethClientArtifactPath)).abi,
       ethClientAddress,
       {
         from: this.ethMasterAccount,
