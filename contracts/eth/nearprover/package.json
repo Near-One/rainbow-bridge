@@ -9,6 +9,7 @@
     "license": "MIT",
     "devDependencies": {
         "@nomiclabs/hardhat-ethers": "^2.0.1",
+        "nearbridge": "../nearbridge",
         "chai": "^4.3.3",
         "dotenv": "^8.2.0",
         "eslint": "^6.3.0",
