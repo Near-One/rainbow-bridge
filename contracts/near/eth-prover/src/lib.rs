@@ -246,6 +246,15 @@ impl EthProver {
             }
         }
     }
+
+    pub fn set_bridge_smart_contract(&mut self, bridge_smart_contract: AccountId) {
+        assert_self();
+        self.bridge_smart_contract = bridge_smart_contract;
+    }
+
+    pub fn get_bridge_smart_contract(&self) -> AccountId {
+        self.bridge_smart_contract.clone()
+    }
 }
 
 admin_controlled::impl_admin_controlled!(EthProver, paused);
