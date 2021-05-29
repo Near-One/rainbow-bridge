@@ -7,8 +7,9 @@
   </p>
 
   <p>
-    [![Build status](https://badge.buildkite.com/93478642b0ddf8e3548c16d2e60c4adbca4fd853520b6a5bca.svg)](https://buildkite.com/nearprotocol/rainbow-bridge)
-    [![Bridge Version](https://img.shields.io/github/package-json/v/aurora-is-near/rainbow-bridge)](https://github.com/near/rainbow-bridge)
+    <a href="https://buildkite.com/nearprotocol/rainbow-bridge"><img alt="Build status" src="https://badge.buildkite.com/93478642b0ddf8e3548c16d2e60c4adbca4fd853520b6a5bca.svg"/></a>
+    <a href="https://github.com/near/rainbow-bridge"><img alt="Bridge Version" src="https://img.shields.io/github/package-json/v/aurora-is-near/rainbow-bridge"></a>
+    <a href="https://t.me/rainbowbridgesupport"><img alt="Telegram Chat" src="https://img.shields.io/badge/telegram-chat-blue?logo=telegram"></a>
   </p>
 </div>
 
