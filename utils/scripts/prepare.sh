@@ -35,8 +35,6 @@ case "${unameOut}" in
     *)          MACHINE="UNKNOWN:${unameOut}"
 esac
 
-echo "HERE" $LOCAL_CORE_SRC
-
 if test -z "$LOCAL_CORE_SRC"
 then
   echo "near-core home not specified..."
