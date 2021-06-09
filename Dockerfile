@@ -35,6 +35,8 @@ RUN curl -L https://golang.org/dl/go1.16.linux-amd64.tar.gz --output go1.16.linu
 WORKDIR /usr/src
 COPY . .
 RUN yarn
+RUN cd contracts/eth/nearbridge/ && yarn && yarn build && cd ../../..
+RUN cd contracts/eth/nearprover/ && yarn && yarn build && cd ../../..
 ENV PATH /usr/local/go/bin:$PATH
 RUN go version
 RUN sh -c "./utils/scripts/docker_prepare.sh"
