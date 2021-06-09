@@ -35,6 +35,8 @@ case "${unameOut}" in
     *)          MACHINE="UNKNOWN:${unameOut}"
 esac
 
+echo "HERE" $LOCAL_CORE_SRC
+
 if test -z "$LOCAL_CORE_SRC"
 then
   echo "near-core home not specified..."
@@ -76,6 +78,9 @@ if [ -d .git ]; then
 fi
 
 yarn
+(cd contracts/eth/nearbridge/ && yarn && yarn build)
+(cd contracts/eth/nearprover/ && yarn && yarn build)
+
 echo "Installed CLI dependencies"
 
 cd $BRIDGE_SRC/testing/vendor/ganache
