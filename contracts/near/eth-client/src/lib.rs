@@ -349,6 +349,26 @@ impl EthClient {
         }
     }
 
+    fn verify_header(
+        &self,
+        header: &BlockHeader,
+        prev: &BlockHeader,
+        dag_nodes: &[DoubleNodeWithMerkleProof],
+    ) -> bool {
+
+        if self.validate_header == false {
+            return true;
+        }
+
+        if self.validate_header_mode == 'ethash' {
+            self.verify_header_pow(&header, &prev, &dag_nodes);
+        }
+        else if self.validate_header_mode == 'bsc' {
+            self.verify_header_bsc(&header, &prev, &dag_nodes);
+        }
+        
+    }
+
     //  Verify POSA of the binance chain header.
     fn verify_header_bsc(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
         let (extra_vanity, extra_seal) = (32, 65);
@@ -442,7 +462,7 @@ impl EthClient {
     }
 
     /// Verify PoW of the header.
-    fn verify_header(
+    fn verify_header_pow(
         &self,
         header: &BlockHeader,
         prev: &BlockHeader,
@@ -461,9 +481,8 @@ impl EthClient {
         // 2. Added condition: header.parent_hash() == prev.hash()
         //
         U256((result.0).0.into()) < U256(ethash::cross_boundary(header.difficulty.0))
-            && (!self.validate_ethash
-                || (header.difficulty < prev.difficulty * 101 / 100
-                    && header.difficulty > prev.difficulty * 99 / 100))
+            && header.difficulty < prev.difficulty * 101 / 100
+            && header.difficulty > prev.difficulty * 99 / 100
             && header.gas_used <= header.gas_limit
             && header.gas_limit < prev.gas_limit * 1025 / 1024
             && header.gas_limit > prev.gas_limit * 1023 / 1024
