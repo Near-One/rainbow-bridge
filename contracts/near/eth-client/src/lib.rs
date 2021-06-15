@@ -348,6 +348,98 @@ impl EthClient {
         }
     }
 
+    //  Verify POSA of the binance chain header.
+    fn verify_header_bsc(
+        &self,
+        header: &BlockHeader,
+        prev: &BlockHeader,
+        dag_nodes: &[DoubleNodeWithMerkleProof],
+    ) -> bool {
+        let (extra_vanity, extra_seal) = (32, 65);
+        let validator_bytes_length = 20;
+        // validate block number
+        if header.number != prev.number + 1 {
+            return false;
+        }
+        // Don't waste time checking blocks from the future
+        if header.timestamp < prev.timestamp {
+            return false;
+        }
+        // Check that the extra-data contains the vanity, validators and signature.
+        if header.extra_data.len() < extra_vanity + extra_seal {
+            return false;
+        }
+        // verify epoch block
+        let is_epoch = header.number % 200 == 0;
+        let signers_bytes = header.extra_data.len() - (extra_vanity + extra_seal);
+        if (!is_epoch && signers_bytes != 0)
+            || (is_epoch && signers_bytes % validator_bytes_length != 0)
+        {
+            return false;
+        }
+
+        // Ensure that the mix digest is zero as we don't have fork protection currently
+        if header.mix_hash != H256([0; 32].into()) {
+            return false;
+        }
+
+        // Ensure that the block doesn't contain any uncles which are meaningless in PoA
+        if header.uncles_hash == H256([0; 32].into()) {
+            return false;
+        }
+        return self.verify_cascading_fields(header, prev);
+    }
+
+    fn verify_cascading_fields(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
+        let capacity: u64 = 9223372036854776000;
+        let (gas_limit_bound_divisor, min_gas_limit) = (256, 5000);
+        let limit = prev.gas_limit / gas_limit_bound_divisor;
+
+        // The genesis block is the always valid dead-end
+        if header.number == 0 {
+            return true;
+        }
+        if prev.number != header.number - 1 || prev.hash.unwrap() != header.parent_hash {
+            return false;
+        }
+        // Verify that the gas limit is <= 2^63-1
+        if header.gas_limit > U256(capacity.into()) {
+            return false;
+        }
+        // Verify that the gasUsed is <= gasLimit
+        if header.gas_used < header.gas_limit {
+            return false;
+        }
+        // Verify that the gas limit remains within allowed bounds
+        let mut diff = prev.gas_limit - header.gas_limit;
+        if diff < U256(0.into()) {
+            diff *= -1
+        }
+        if diff >= limit || header.gas_limit < U256(min_gas_limit.into()) {
+            return false;
+        }
+
+        return self.verify_seal(header, prev);
+    }
+
+    fn verify_seal(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
+        // Verifying the genesis block is not supported
+        if header.number == 0 {
+            return false;
+        }
+
+        let (extra_vanity, extra_seal) = (32, 65);
+
+        // let secp = Secp256k1::new();
+        // let signature: [u8] =
+        //     header.extra_data[header.extra_data.len() - extra_seal..header.extra_data.len()];
+
+        // let message = Message::from_slice(&signature).expect("32 bytes");
+        // secp.verify(&message, &sig, &public_key).is_ok();
+
+        true
+    }
+
     /// Verify PoW of the header.
     fn verify_header(
         &self,

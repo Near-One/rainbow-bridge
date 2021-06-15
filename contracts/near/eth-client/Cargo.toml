@@ -20,6 +20,7 @@ arrutil = "0.1.2"
 ethash = { git = "https://github.com/nearprotocol/rust-ethash" }
 hex = "0.4.0"
 rustc-hex = "2.1.0"
+secp256k1 = "0.20.2"
 
 [dev-dependencies]
 web3 = "0.8.0"

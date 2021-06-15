@@ -758,6 +758,7 @@ dependencies = [
  "primal",
  "rlp",
  "rustc-hex",
+ "secp256k1",
  "serde",
  "serde_json",
  "web3",
@@ -1843,7 +1844,7 @@ dependencies = [
  "near-runtime-utils",
  "near-vm-errors 3.0.0",
  "serde",
- "sha2 0.8.2",
+ "sha2 0.9.3",
  "sha3",
 ]
 
@@ -2686,6 +2687,24 @@ name = "scopeguard"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
+
+[[package]]
+name = "secp256k1"
+version = "0.20.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee5070fdc6f26ca5be6dcfc3d07c76fdb974a63a8b246b459854274145f5a258"
+dependencies = [
+ "secp256k1-sys",
+]
+
+[[package]]
+name = "secp256k1-sys"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "67e4b6455ee49f5901c8985b88f98fb0a0e1d90a6661f5a03f4888bd987dad29"
+dependencies = [
+ "cc",
+]
 
 [[package]]
 name = "security-framework"
