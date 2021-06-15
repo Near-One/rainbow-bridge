@@ -124,6 +124,7 @@ impl EthClient {
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
         let header_hash = header.hash.unwrap().clone();
         let header_number = header.number;
+
         let mut res = Self {
             validate_ethash,
             dags_start_epoch,
@@ -349,12 +350,7 @@ impl EthClient {
     }
 
     //  Verify POSA of the binance chain header.
-    fn verify_header_bsc(
-        &self,
-        header: &BlockHeader,
-        prev: &BlockHeader,
-        dag_nodes: &[DoubleNodeWithMerkleProof],
-    ) -> bool {
+    fn verify_header_bsc(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
         let (extra_vanity, extra_seal) = (32, 65);
         let validator_bytes_length = 20;
         // validate block number
@@ -428,16 +424,21 @@ impl EthClient {
             return false;
         }
 
-        let (extra_vanity, extra_seal) = (32, 65);
+        // verify if the author is inside the validator set.
+        let (extra_vanity, extra_seal, address_size) = (32, 65, 20);
+        let validators =
+            header.extra_data[extra_vanity..(header.extra_data.len() - extra_seal)].to_vec();
+        let mut found = false;
 
-        // let secp = Secp256k1::new();
-        // let signature: [u8] =
-        //     header.extra_data[header.extra_data.len() - extra_seal..header.extra_data.len()];
-
-        // let message = Message::from_slice(&signature).expect("32 bytes");
-        // secp.verify(&message, &sig, &public_key).is_ok();
-
-        true
+        // loop throught the validators and check if the author exists.
+        for x in 0..(validators.len() / address_size) {
+            let add: Address =
+                Address::from(&validators[(x * address_size)..((x + 1) * address_size)]);
+            if header.author == add {
+                found = true;
+            }
+        }
+        return found;
     }
 
     /// Verify PoW of the header.
