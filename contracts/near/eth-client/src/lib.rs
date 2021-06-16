@@ -105,6 +105,13 @@ pub struct EthClient {
     trusted_signer: Option<AccountId>,
     /// Mask determining all paused functions
     paused: Mask,
+    /// Validate header allows to validate the block header or skip
+    /// if true the validate_header_mode is ignored
+    validate_header: bool,
+    /// Validate header mode to switch between ethash (POW) and bsc (POSA)
+    validate_header_mode: String,
+    /// Store the bsc epoch header key 
+    epoch_header: H256,
 }
 
 #[near_bindgen]
@@ -119,12 +126,14 @@ impl EthClient {
         #[serializer(borsh)] finalized_gc_threshold: u64,
         #[serializer(borsh)] num_confirmations: u64,
         #[serializer(borsh)] trusted_signer: Option<AccountId>,
+        #[serializer(borsh)] validate_header: bool,
+        #[serializer(borsh)] validate_header_mode: String,
     ) -> Self {
         assert!(!Self::initialized(), "Already initialized");
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
         let header_hash = header.hash.unwrap().clone();
         let header_number = header.number;
-
+        
         let mut res = Self {
             validate_ethash,
             dags_start_epoch,
@@ -139,6 +148,9 @@ impl EthClient {
             infos: UnorderedMap::new(b"i".to_vec()),
             trusted_signer,
             paused: Mask::default(),
+            validate_header,
+            validate_header_mode,
+            epoch_header: H256([0; 32].into()),
         };
         res.canonical_header_hashes
             .insert(&header_number, &header_hash);
@@ -236,9 +248,15 @@ impl EthClient {
     fn record_header(&mut self, header: BlockHeader) {
         let best_info = self.infos.get(&self.best_header_hash).unwrap();
         let header_hash = header.hash.unwrap();
-        let header_number = header.number;
+        let header_number = header.number;       
         if header_number + self.finalized_gc_threshold < best_info.number {
             panic!("Header is too old to have a chance to appear on the canonical chain.");
+        }
+
+        // Check if the current mode is BSC (POSA) and the header is epoch
+        // is_epoch_header = heaber_number % 200 == 0 
+        if self.validate_header_mode == String::from("bsc") && self.is_epoch(header.number){
+            self.epoch_header = header.hash.unwrap();
         }
 
         let parent_info = self
@@ -360,13 +378,12 @@ impl EthClient {
             return true;
         }
 
-        if self.validate_header_mode == 'ethash' {
-            self.verify_header_pow(&header, &prev, &dag_nodes);
+        if self.validate_header_mode == String::from("ethash") {
+            return self.verify_header_pow(&header, &prev, &dag_nodes);
+        }else if self.validate_header_mode == String::from("bsc") {
+            return self.verify_header_bsc(&header, &prev);
         }
-        else if self.validate_header_mode == 'bsc' {
-            self.verify_header_bsc(&header, &prev, &dag_nodes);
-        }
-        
+        false
     }
 
     //  Verify POSA of the binance chain header.
@@ -386,7 +403,7 @@ impl EthClient {
             return false;
         }
         // verify epoch block
-        let is_epoch = header.number % 200 == 0;
+        let is_epoch = self.is_epoch(header.number);
         let signers_bytes = header.extra_data.len() - (extra_vanity + extra_seal);
         if (!is_epoch && signers_bytes != 0)
             || (is_epoch && signers_bytes % validator_bytes_length != 0)
@@ -438,16 +455,23 @@ impl EthClient {
         return self.verify_seal(header, prev);
     }
 
+    fn is_epoch(&self, number: u64)->bool{
+        number%200==0
+    }
+
     fn verify_seal(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
         // Verifying the genesis block is not supported
         if header.number == 0 {
             return false;
         }
 
+        // get the epoch header.
+        let epoch_header = self.headers.get(&self.epoch_header).unwrap();
+
         // verify if the author is inside the validator set.
         let (extra_vanity, extra_seal, address_size) = (32, 65, 20);
         let validators =
-            header.extra_data[extra_vanity..(header.extra_data.len() - extra_seal)].to_vec();
+            epoch_header.extra_data[extra_vanity..(epoch_header.extra_data.len() - extra_seal)].to_vec();
         let mut found = false;
 
         // loop throught the validators and check if the author exists.
@@ -458,6 +482,8 @@ impl EthClient {
                 found = true;
             }
         }
+
+        // verify signature
         return found;
     }
 
@@ -533,7 +559,7 @@ impl EthClient {
         );
 
         (H256(pair.0), H256(pair.1))
-    }
+    }  
 }
 
 admin_controlled::impl_admin_controlled!(EthClient, paused);
