@@ -7,6 +7,7 @@ use near_sdk::AccountId;
 use near_sdk::{env, near_bindgen, PanicOnDefault};
 use forest_crypto;
 use arrayref;
+use chrono;
 
 #[cfg(test)]
 use serde::{Deserialize, Serialize};
@@ -116,7 +117,7 @@ pub struct EthClient {
     /// Store the bsc epoch header key 
     epoch_header: H256,
     /// chain id
-    chain_id: U256, 
+    chain_id: u64, 
 }
 
 #[near_bindgen]
@@ -133,7 +134,7 @@ impl EthClient {
         #[serializer(borsh)] trusted_signer: Option<AccountId>,
         #[serializer(borsh)] validate_header: bool,
         #[serializer(borsh)] validate_header_mode: String,
-        #[serializer(borsh)] chain_id: U256,
+        #[serializer(borsh)] chain_id: u64,
     ) -> Self {
         assert!(!Self::initialized(), "Already initialized");
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
@@ -403,33 +404,36 @@ impl EthClient {
         false
     }
 
-    fn seal_hash(&self, header: &BlockHeader, chain_id: U256)-> [u8; 32]{
+    fn seal_hash(&self, header: &BlockHeader, chain_id: u64)-> [u8; 32]{
         let d = SealData{chain_id, header};
         d.seal_hash()
     }
 
     //  Verify POSA of the binance chain header.
     fn verify_header_bsc(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
+       
+        // Don't waste time checking blocks from the future
+        if header.timestamp > chrono::Utc::now().timestamp() as u64{
+            return false;
+        }
+
         let (extra_vanity, extra_seal) = (32, 65);
         let validator_bytes_length = 20;
-        // validate block number
-        if header.number != prev.number + 1 {
-            return false;
-        }
-        // Don't waste time checking blocks from the future
-        if header.timestamp < prev.timestamp {
-            return false;
-        }
+
         // Check that the extra-data contains the vanity, validators and signature.
         if header.extra_data.len() < extra_vanity + extra_seal {
             return false;
         }
+
         // verify epoch block
         let is_epoch = self.is_epoch(header.number);
         let signers_bytes = header.extra_data.len() - (extra_vanity + extra_seal);
-        if (!is_epoch && signers_bytes != 0)
-            || (is_epoch && signers_bytes % validator_bytes_length != 0)
-        {
+
+        if !is_epoch && signers_bytes != 0{
+            return false;
+        }
+
+        if is_epoch && signers_bytes % validator_bytes_length != 0{
             return false;
         }
 
@@ -442,34 +446,43 @@ impl EthClient {
         if header.uncles_hash == H256([0; 32].into()) {
             return false;
         }
+
         return self.verify_cascading_fields(header, prev);
     }
 
     fn verify_cascading_fields(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
-        let capacity: u64 = 9223372036854776000;
-        let (gas_limit_bound_divisor, min_gas_limit) = (256, 5000);
-        let limit = prev.gas_limit / gas_limit_bound_divisor;
-
+        
         // The genesis block is the always valid dead-end
         if header.number == 0 {
             return true;
         }
+        
+        // check if the parent hash and bumber match.
         if prev.number != header.number - 1 || prev.hash.unwrap() != header.parent_hash {
             return false;
         }
+
+        let capacity = 0x7fffffffffffffff as u64;
+        let (gas_limit_bound_divisor, min_gas_limit) = (256, 5000);
+        
         // Verify that the gas limit is <= 2^63-1
         if header.gas_limit > U256(capacity.into()) {
             return false;
         }
+        
         // Verify that the gasUsed is <= gasLimit
-        if header.gas_used < header.gas_limit {
+        if header.gas_used > header.gas_limit {
             return false;
         }
+        
         // Verify that the gas limit remains within allowed bounds
         let mut diff = prev.gas_limit - header.gas_limit;
         if diff < U256(0.into()) {
             diff *= -1
         }
+        
+        let limit = prev.gas_limit / gas_limit_bound_divisor;
+        
         if diff >= limit || header.gas_limit < U256(min_gas_limit.into()) {
             return false;
         }
@@ -482,13 +495,12 @@ impl EthClient {
     }
 
     fn verify_seal(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
-        // Verifying the genesis block is not supported
+        
+        // Verifying the genesis block is not supported.
         if header.number == 0 {
             return false;
         }
-
-        // get the epoch header.
-        let epoch_header = self.headers.get(&self.epoch_header).unwrap();
+        
         let (extra_vanity, extra_seal, address_size) = (32, 65, 20);
 
         // verify the signature.
@@ -501,7 +513,7 @@ impl EthClient {
         let seal_hash = self.seal_hash(header, self.chain_id);
         let pub_key = forest_crypto::ecrecover(&seal_hash, sig).unwrap();
 
-        // Todo: check if the pub_key has 0x.. is yes trim it.
+        // Todo: check if the pub_key has 0x.. if Yes trim it.
         // Parlia bsc copy(signer[:], crypto.Keccak256(pubkey[1:])[12:])
         let signer_address = near_keccak256(&pub_key.payload_bytes());
         let signer: [u8; 20] = [0;20];
@@ -510,6 +522,9 @@ impl EthClient {
         if H160(signer.into()) != header.author {
             return false;
         }
+
+        // get the epoch header.
+        let epoch_header = self.headers.get(&self.epoch_header).unwrap();
 
         // verify if the author is inside the validator set.
         let validators =

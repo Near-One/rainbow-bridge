@@ -40,6 +40,7 @@ const borshSchema = {
       ['finalized_gc_threshold', 'u64'],
       ['num_confirmations', 'u64'],
       ['trusted_signer', '?AccountId']
+      ['chain_id', 'u64'],
     ]
   },
   dagMerkleRootInput: {
@@ -138,7 +139,7 @@ class EthOnNearClientContract extends BorshContract {
 
   // Call initialization methods on the contract.
   // If validateHeader is true will do header validation otherwise it won't.
-  async maybeInitialize (hashesGcThreshold, finalizedGcThreshold, numConfirmations, validateHeader, validateHeaderMode, trustedSigner, robustWeb3) {
+  async maybeInitialize (hashesGcThreshold, finalizedGcThreshold, numConfirmations, validateHeader, validateHeaderMode, trustedSigner, chainID, robustWeb3) {
     await this.accessKeyInit()
     let initialized = false
     try {
@@ -160,7 +161,8 @@ class EthOnNearClientContract extends BorshContract {
           hashes_gc_threshold: hashesGcThreshold,
           finalized_gc_threshold: finalizedGcThreshold,
           num_confirmations: numConfirmations,
-          trusted_signer: trustedSigner
+          trusted_signer: trustedSigner,         
+          chain_id: chainID
         },
         new BN('300000000000000')
       )

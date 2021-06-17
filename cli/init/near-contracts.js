@@ -98,6 +98,13 @@ class InitNearContracts {
       nearClientAccount
     )
     const robustWeb3 = new RobustWeb3(ethNodeUrl)
+
+    // TODO: Binance chain Check if we can get this chain_id from other source
+    // The chain_id is used by the bsc POSA https://chainid.network/chains/
+    // 57: mainnet
+    // 97: testnet
+    const chainID = 97
+
     await clientContract.maybeInitialize(
       hashesGcThreshold,
       finalizedGcThreshold,
@@ -105,6 +112,7 @@ class InitNearContracts {
       nearClientValidateHeader === 'true',
       nearClientValidateHeaderMode || 'ethash',
       nearClientTrustedSigner || null,
+      chainID,
       robustWeb3
     )
     const proverContract = new EthOnNearProverContract(

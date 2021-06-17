@@ -328,7 +328,7 @@ pub fn near_keccak512(data: &[u8]) -> [u8; 64] {
 }
 
 pub struct SealData<'s>{
-    pub chain_id: U256,
+    pub chain_id: u64,
     pub header: &'s BlockHeader,
 }
 

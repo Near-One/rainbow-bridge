@@ -24,6 +24,7 @@ secp256k1 = "0.20.2"
 sha3 = "0.9.1"
 forest_crypto = "0.5.2"
 arrayref = "0.3.6"
+chrono = "0.4.19"
 
 [dev-dependencies]
 web3 = "0.8.0"
