@@ -1,9 +1,12 @@
 use admin_controlled::Mask;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
+use eth_types::{SealData};
 use near_sdk::collections::UnorderedMap;
 use near_sdk::AccountId;
 use near_sdk::{env, near_bindgen, PanicOnDefault};
+use forest_crypto;
+use arrayref;
 
 #[cfg(test)]
 use serde::{Deserialize, Serialize};
@@ -112,6 +115,8 @@ pub struct EthClient {
     validate_header_mode: String,
     /// Store the bsc epoch header key 
     epoch_header: H256,
+    /// chain id
+    chain_id: U256, 
 }
 
 #[near_bindgen]
@@ -128,11 +133,22 @@ impl EthClient {
         #[serializer(borsh)] trusted_signer: Option<AccountId>,
         #[serializer(borsh)] validate_header: bool,
         #[serializer(borsh)] validate_header_mode: String,
+        #[serializer(borsh)] chain_id: U256,
     ) -> Self {
         assert!(!Self::initialized(), "Already initialized");
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
         let header_hash = header.hash.unwrap().clone();
         let header_number = header.number;
+        let epoch_header: H256 = H256([0; 32].into());
+
+        // check if the current mode is bsc POSA, then is the header is epoch
+        // if not panic
+        if validate_header_mode == String::from("bsc"){
+            if !header.number%200==0{
+                panic!("The initial header for POSA have to be an epoch header");
+            }
+            epoch_header = header.hash.unwrap();
+        }
         
         let mut res = Self {
             validate_ethash,
@@ -150,7 +166,8 @@ impl EthClient {
             paused: Mask::default(),
             validate_header,
             validate_header_mode,
-            epoch_header: H256([0; 32].into()),
+            epoch_header: epoch_header,
+            chain_id,
         };
         res.canonical_header_hashes
             .insert(&header_number, &header_hash);
@@ -386,6 +403,11 @@ impl EthClient {
         false
     }
 
+    fn seal_hash(&self, header: &BlockHeader, chain_id: U256)-> [u8; 32]{
+        let d = SealData{chain_id, header};
+        d.seal_hash()
+    }
+
     //  Verify POSA of the binance chain header.
     fn verify_header_bsc(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
         let (extra_vanity, extra_seal) = (32, 65);
@@ -467,9 +489,29 @@ impl EthClient {
 
         // get the epoch header.
         let epoch_header = self.headers.get(&self.epoch_header).unwrap();
+        let (extra_vanity, extra_seal, address_size) = (32, 65, 20);
+
+        // verify the signature.
+        // 1. extract the signature from the extra_data, then convert it from vec<u8> to [u8; 65]
+        // 2. return seal hash of the block.
+        // 3. recover public key using secp256k1 ecrecover
+        // 4. get the address of the signer and compare it with the validator block
+        let signature = header.extra_data[header.extra_data.len()-extra_seal..].to_vec();
+        let sig= arrayref::array_ref![signature, 0, 65];
+        let seal_hash = self.seal_hash(header, self.chain_id);
+        let pub_key = forest_crypto::ecrecover(&seal_hash, sig).unwrap();
+
+        // Todo: check if the pub_key has 0x.. is yes trim it.
+        // Parlia bsc copy(signer[:], crypto.Keccak256(pubkey[1:])[12:])
+        let signer_address = near_keccak256(&pub_key.payload_bytes());
+        let signer: [u8; 20] = [0;20];
+        signer[0..20].clone_from_slice(&signer_address[12..32]);
+        
+        if H160(signer.into()) != header.author {
+            return false;
+        }
 
         // verify if the author is inside the validator set.
-        let (extra_vanity, extra_seal, address_size) = (32, 65, 20);
         let validators =
             epoch_header.extra_data[extra_vanity..(epoch_header.extra_data.len() - extra_seal)].to_vec();
         let mut found = false;
@@ -483,7 +525,6 @@ impl EthClient {
             }
         }
 
-        // verify signature
         return found;
     }
 
