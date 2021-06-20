@@ -30,7 +30,7 @@ const {
 const BRIDGE_SRC_DIR = path.join(__dirname, '..', '..')
 const MAX_GAS_PER_BLOCK = '300000000000000'
 
-function ethashproof(command, _callback) {
+function ethashproof (command, _callback) {
   return new Promise((resolve) =>
     exec(command, (error, stdout, _stderr) => {
       if (error) {
@@ -43,48 +43,50 @@ function ethashproof(command, _callback) {
 
 // This function find the result in O(log delta) where delta is the difference between estimatedPosition and the result.
 // In particular if estimatedPosition is the correct value it will make two calls to predicate, so it will behave in O(1) in this case.
-async function binarySearchWithEstimate(limitLo, limitHi, estimatedPosition, predicate) {
-  let lo = limitLo;
-  let hi = limitHi;
-  let value = await predicate(estimatedPosition);
+async function binarySearchWithEstimate (limitLo, limitHi, estimatedPosition, predicate) {
+  let lo = limitLo
+  let hi = limitHi
+  const value = await predicate(estimatedPosition)
 
   if (value) {
-    hi = estimatedPosition;
-    let step = 1;
+    hi = estimatedPosition
+    let step = 1
     while (hi - step > lo && await predicate(hi - step)) {
-      step *= 2;
+      step *= 2
     }
-    hi -= Math.floor(step / 2);
-    lo = Math.max(lo, hi - step);
+    hi -= Math.floor(step / 2)
+    lo = Math.max(lo, hi - step)
   } else {
-    lo = estimatedPosition;
-    let step = 1;
+    lo = estimatedPosition
+    let step = 1
     while (lo + step < hi && !await predicate(lo + step)) {
-      step *= 2;
+      step *= 2
     }
-    lo += Math.floor(step / 2);
-    hi = Math.min(hi, lo + step);
+    lo += Math.floor(step / 2)
+    hi = Math.min(hi, lo + step)
   }
 
   while (lo + 1 < hi) {
-    let mid = Math.floor((lo + hi) / 2);
+    const mid = Math.floor((lo + hi) / 2)
     if (await predicate(mid)) {
-      hi = mid;
+      hi = mid
     } else {
-      lo = mid;
+      lo = mid
     }
   }
-  return hi;
+  return hi
 }
 
 class Eth2NearRelay {
-  initialize(ethClientContract, {
+  initialize (ethClientContract, {
     ethNodeUrl,
     totalSubmitBlock,
     gasPerTransaction,
     nearNetworkId,
-    metricsPort
+    metricsPort,
+    nearClientValidateHeaderMode
   }) {
+    this.validateHeaderMode = nearClientValidateHeaderMode
     this.gasPerTransaction = new BN(gasPerTransaction)
     const limitSubmitBlock = new BN(MAX_GAS_PER_BLOCK).div(this.gasPerTransaction).toNumber()
     this.totalSubmitBlock = parseInt(totalSubmitBlock)
@@ -103,7 +105,7 @@ class Eth2NearRelay {
     this.metricsPort = metricsPort
   }
 
-  async run() {
+  async run () {
     const robustWeb3 = this.robustWeb3
     const httpPrometheus = new HttpPrometheus(this.metricsPort, 'near_bridge_eth2near_')
 
@@ -111,7 +113,7 @@ class Eth2NearRelay {
     const chainBlockNumberGauge = httpPrometheus.gauge('chain_block_number', 'current chain block number')
     const errorsOnSubmitCounter = httpPrometheus.counter('errors_on_submit', 'number of errors while submitting header')
 
-    let previousBlockNumber = undefined;
+    let previousBlockNumber
 
     while (true) {
       let clientBlockNumber
@@ -130,18 +132,18 @@ class Eth2NearRelay {
         continue
       }
 
-      let predicate = async (value) => {
-        let blockNumber = clientBlockNumber - value;
-        console.log('Checking block:', blockNumber);
+      const predicate = async (value) => {
+        const blockNumber = clientBlockNumber - value
+        console.log('Checking block:', blockNumber)
         try {
           const chainBlock = await getEthBlock(blockNumber, robustWeb3)
 
           /// Block is not ready
           if (chainBlock === null) {
-            const seconds = 3;
-            console.log(`Block ${blockNumber} is not ready. Sleeping ${seconds} seconds.`);
-            await sleep(seconds * 1000);
-            return await predicate(value);
+            const seconds = 3
+            console.log(`Block ${blockNumber} is not ready. Sleeping ${seconds} seconds.`)
+            await sleep(seconds * 1000)
+            return await predicate(value)
           }
 
           const chainBlockHash = chainBlock.hash
@@ -149,23 +151,23 @@ class Eth2NearRelay {
             blockNumber
           )
           if (clientHashes.find((x) => x === chainBlockHash)) {
-            return true;
+            return true
           } else {
-            return false;
+            return false
           }
         } catch (e) {
           console.error(e)
-          return await predicate(value);
+          return await predicate(value)
         }
-      };
+      }
 
-      let estimatedValued = (previousBlockNumber === undefined) ? 0 : clientBlockNumber - (previousBlockNumber + this.totalSubmitBlock);
+      const estimatedValued = (previousBlockNumber === undefined) ? 0 : clientBlockNumber - (previousBlockNumber + this.totalSubmitBlock)
 
       /// In case there exist a fork, find how many steps should go backward (delta) to the first block
       /// in the client that is also in the main chain. If the answer is 0, then the current head is valid
-      let delta = await binarySearchWithEstimate(0, clientBlockNumber, estimatedValued, predicate);
-      clientBlockNumber -= delta;
-      previousBlockNumber = clientBlockNumber;
+      const delta = await binarySearchWithEstimate(0, clientBlockNumber, estimatedValued, predicate)
+      clientBlockNumber -= delta
+      previousBlockNumber = clientBlockNumber
 
       if (clientBlockNumber < chainBlockNumber) {
         try {
@@ -180,8 +182,14 @@ class Eth2NearRelay {
             endBlock = clientBlockNumber + 1
           }
           for (let i = clientBlockNumber + 1; i <= endBlock; i++) {
-            blockPromises.push(this.getParseBlock(i))
+            if (this.validateHeaderMode === 'bsc') {
+              const block = await this.robustWeb3.getBlock(i)
+              blockPromises.push({ header_rlp: block })
+            } else {
+              blockPromises.push(this.getParseBlock(i))
+            }
           }
+
           const blocks = await Promise.all(blockPromises)
           console.log(
             `Got and parsed block ${clientBlockNumber + 1} to block ${endBlock}`
@@ -216,7 +224,7 @@ class Eth2NearRelay {
     }
   }
 
-  async getParseBlock(blockNumber) {
+  async getParseBlock (blockNumber) {
     try {
       const block = await getEthBlock(blockNumber, this.robustWeb3)
       const blockRlp = this.web3.utils.bytesToHex(
@@ -231,31 +239,40 @@ class Eth2NearRelay {
     }
   }
 
-  submitBlock(block, blockNumber) {
-    const h512s = block.elements
-      .filter((_, index) => index % 2 === 0)
-      .map((element, index) => {
-        return (
-          this.web3.utils.padLeft(element, 64) +
-          this.web3.utils.padLeft(block.elements[index * 2 + 1], 64).substr(2)
-        )
-      })
+  submitBlock (block, blockNumber) {
+    let args = {}
 
-    let args = {
-      block_header: this.web3.utils.hexToBytes(block.header_rlp),
-      dag_nodes: h512s
+    if (this.validateHeaderMode === 'bsc') {
+      args = {
+        block_header: web3BlockToRlp(block.header_rlp),
+        dag_nodes: []
+      }
+    } else {
+      const h512s = block.elements
         .filter((_, index) => index % 2 === 0)
         .map((element, index) => {
-          return {
-            dag_nodes: [element, h512s[index * 2 + 1]],
-            proof: block.merkle_proofs
-              .slice(
-                index * block.proof_length,
-                (index + 1) * block.proof_length
-              )
-              .map((leaf) => this.web3.utils.padLeft(leaf, 32))
-          }
+          return (
+            this.web3.utils.padLeft(element, 64) +
+            this.web3.utils.padLeft(block.elements[index * 2 + 1], 64).substr(2)
+          )
         })
+
+      args = {
+        block_header: this.web3.utils.hexToBytes(block.header_rlp),
+        dag_nodes: h512s
+          .filter((_, index) => index % 2 === 0)
+          .map((element, index) => {
+            return {
+              dag_nodes: [element, h512s[index * 2 + 1]],
+              proof: block.merkle_proofs
+                .slice(
+                  index * block.proof_length,
+                  (index + 1) * block.proof_length
+                )
+                .map((leaf) => this.web3.utils.padLeft(leaf, 32))
+            }
+          })
+      }
     }
 
     args = serialize(borshSchema, 'addBlockHeaderInput', args)
