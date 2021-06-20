@@ -39,8 +39,8 @@ const borshSchema = {
       ['hashes_gc_threshold', 'u64'],
       ['finalized_gc_threshold', 'u64'],
       ['num_confirmations', 'u64'],
-      ['trusted_signer', '?AccountId']
-      ['chain_id', 'u64'],
+      ['trusted_signer', '?AccountId'],
+      ['chain_id', 'u64']
     ]
   },
   dagMerkleRootInput: {

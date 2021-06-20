@@ -5,8 +5,8 @@ use eth_types::{SealData};
 use near_sdk::collections::UnorderedMap;
 use near_sdk::AccountId;
 use near_sdk::{env, near_bindgen, PanicOnDefault};
-use forest_crypto;
-use arrayref;
+// use forest_crypto;
+// use arrayref;
 use chrono;
 
 #[cfg(test)]
@@ -72,7 +72,7 @@ const PAUSE_ADD_BLOCK_HEADER: Mask = 1;
 pub struct EthClient {
     /// Whether client validates the PoW when accepting the header. Should only be set to `false`
     /// for debugging, testing, diagnostic purposes when used with Ganache or in PoA testnets
-    validate_ethash: bool,
+    // validate_ethash: bool,
     /// The epoch from which the DAG merkle roots start.
     dags_start_epoch: u64,
     /// DAG merkle roots for the next several years.
@@ -124,7 +124,8 @@ pub struct EthClient {
 impl EthClient {
     #[init]
     pub fn init(
-        #[serializer(borsh)] validate_ethash: bool,
+        #[serializer(borsh)] validate_header: bool,
+        #[serializer(borsh)] validate_header_mode: String,
         #[serializer(borsh)] dags_start_epoch: u64,
         #[serializer(borsh)] dags_merkle_roots: Vec<H128>,
         #[serializer(borsh)] first_header: Vec<u8>,
@@ -132,15 +133,13 @@ impl EthClient {
         #[serializer(borsh)] finalized_gc_threshold: u64,
         #[serializer(borsh)] num_confirmations: u64,
         #[serializer(borsh)] trusted_signer: Option<AccountId>,
-        #[serializer(borsh)] validate_header: bool,
-        #[serializer(borsh)] validate_header_mode: String,
         #[serializer(borsh)] chain_id: u64,
     ) -> Self {
         assert!(!Self::initialized(), "Already initialized");
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
         let header_hash = header.hash.unwrap().clone();
         let header_number = header.number;
-        let epoch_header: H256 = H256([0; 32].into());
+        let mut epoch_header: H256 = H256([0; 32].into());
 
         // check if the current mode is bsc POSA, then is the header is epoch
         // if not panic
@@ -152,7 +151,9 @@ impl EthClient {
         }
         
         let mut res = Self {
-            validate_ethash,
+            // validate_ethash,
+            validate_header_mode,
+            epoch_header: epoch_header,
             dags_start_epoch,
             dags_merkle_roots,
             best_header_hash: header_hash.clone(),
@@ -166,8 +167,6 @@ impl EthClient {
             trusted_signer,
             paused: Mask::default(),
             validate_header,
-            validate_header_mode,
-            epoch_header: epoch_header,
             chain_id,
         };
         res.canonical_header_hashes
@@ -508,20 +507,20 @@ impl EthClient {
         // 2. return seal hash of the block.
         // 3. recover public key using secp256k1 ecrecover
         // 4. get the address of the signer and compare it with the validator block
-        let signature = header.extra_data[header.extra_data.len()-extra_seal..].to_vec();
-        let sig= arrayref::array_ref![signature, 0, 65];
-        let seal_hash = self.seal_hash(header, self.chain_id);
-        let pub_key = forest_crypto::ecrecover(&seal_hash, sig).unwrap();
+        // let signature = header.extra_data[header.extra_data.len()-extra_seal..].to_vec();
+        // let sig= arrayref::array_ref![signature, 0, 65];
+        // let seal_hash = self.seal_hash(header, self.chain_id);
+        // let pub_key = forest_crypto::ecrecover(&seal_hash, sig).unwrap();
 
-        // Todo: check if the pub_key has 0x.. if Yes trim it.
-        // Parlia bsc copy(signer[:], crypto.Keccak256(pubkey[1:])[12:])
-        let signer_address = near_keccak256(&pub_key.payload_bytes());
-        let signer: [u8; 20] = [0;20];
-        signer[0..20].clone_from_slice(&signer_address[12..32]);
+        // // Todo: check if the pub_key has 0x.. if Yes trim it.
+        // // Parlia bsc copy(signer[:], crypto.Keccak256(pubkey[1:])[12:])
+        // let signer_address = near_keccak256(&pub_key.payload_bytes());
+        // let mut signer: [u8; 20] = [0;20];
+        // signer[0..20].clone_from_slice(&signer_address[12..32]);
         
-        if H160(signer.into()) != header.author {
-            return false;
-        }
+        // if H160(signer.into()) != header.author {
+        //     return false;
+        // }
 
         // get the epoch header.
         let epoch_header = self.headers.get(&self.epoch_header).unwrap();
@@ -599,7 +598,7 @@ impl EthClient {
 
                 // Each two nodes are packed into single 128 bytes with Merkle proof
                 let node = &nodes[idx / 2];
-                if idx % 2 == 0 && self.validate_ethash {
+                if idx % 2 == 0 && self.validate_header {
                     // Divide by 2 to adjust offset for 64-byte words instead of 128-byte
                     assert_eq!(merkle_root, node.apply_merkle_proof((offset / 2) as u64));
                 };
