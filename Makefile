@@ -1,7 +1,7 @@
 help:
 	@echo Deploy rainbow bridge
 	@echo 1 run "make init" first time only and one time.
-	@echo 2 run "make startup"
+	@echo 2 run "make start-bsc" or "make start-ethash"
 	@echo 3 run "make gen-contarcts"
 	@echo 4 run "make deploy-contarcts"
 	@echo 5 run "make start-relayer"
@@ -11,17 +11,26 @@ init:
 	yarn
 	yarn install
 
-startup:
+# start near bc and connect with binance test net.
+start-ethash:
 	cli/index.js clean
-	cli/index.js prepare
+	cli/index.js prepare --core-src ${HOME}/Desktop/core
 	cli/index.js start near-node
 	cli/index.js start ganache
 
+# start near bc and connect with binance test net.
+start-bsc:
+	cli/index.js clean
+	cli/index.js prepare --core-src ${HOME}/Desktop/core
+	cli/index.js start near-node
+	cli/index.js start binance-smart-chain
 
+# generate ether contracts
 gen-contracts:
 	cd contracts/eth/nearbridge/ && yarn && yarn build
 	cd contracts/eth/nearprover/ && yarn && yarn build
 
+# deploy contracts
 deploy-contracts:
 	cli/index.js init-near-contracts
 	cli/index.js init-eth-ed25519
@@ -33,12 +42,14 @@ deploy-contracts:
 
 start-relayer:
 	cli/index.js start eth2near-relay
-	cli/index.js start near2eth-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
-	cli/index.js start bridge-watchdog --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501202
+	cli/index.js start near2eth-relay 
+	cli/index.js start bridge-watchdog
 	pm2 logs
 
 stop-all:
 	cli/index.js stop all
 
+build-eth-client:
+	cd contracts/near/eth-client && ./build.sh
 
-.PHONEY: help init startup gen-contracts deploy-contracts start-relayer stop-all 
+.PHONEY: help init start-ethash start-bsc gen-contracts deploy-contracts start-relayer stop-all build-eth-client

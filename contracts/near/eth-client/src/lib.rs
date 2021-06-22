@@ -1,13 +1,13 @@
 use admin_controlled::Mask;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
-use eth_types::{SealData};
+// use eth_types::{SealData};
 use near_sdk::collections::UnorderedMap;
 use near_sdk::AccountId;
 use near_sdk::{env, near_bindgen, PanicOnDefault};
 // use forest_crypto;
 // use arrayref;
-use chrono;
+// use chrono;
 
 #[cfg(test)]
 use serde::{Deserialize, Serialize};
@@ -141,8 +141,7 @@ impl EthClient {
         let header_number = header.number;
         let mut epoch_header: H256 = H256([0; 32].into());
 
-        // check if the current mode is bsc POSA, then is the header is epoch
-        // if not panic
+        // check if the current mode is bsc POSA, then store the epoch header.
         if validate_header_mode == String::from("bsc"){
             if !header.number%200==0{
                 panic!("The initial header for POSA have to be an epoch header");
@@ -151,7 +150,6 @@ impl EthClient {
         }
         
         let mut res = Self {
-            // validate_ethash,
             validate_header_mode,
             epoch_header: epoch_header,
             dags_start_epoch,
@@ -412,10 +410,11 @@ impl EthClient {
     fn verify_header_bsc(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
        
         // Don't waste time checking blocks from the future
-        if header.timestamp > chrono::Utc::now().timestamp() as u64{
-            return false;
-        }
-
+        // if header.timestamp > chrono::Utc::now().timestamp() as u64{
+        //     env::log("----------------1-------------------".as_bytes());
+        //     return false;
+        // }
+        
         let (extra_vanity, extra_seal) = (32, 65);
         let validator_bytes_length = 20;
 
@@ -486,14 +485,14 @@ impl EthClient {
             return false;
         }
 
-        return self.verify_seal(header, prev);
+        return self.verify_seal(header);
     }
 
     fn is_epoch(&self, number: u64)->bool{
         number%200==0
     }
 
-    fn verify_seal(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
+    fn verify_seal(&self, header: &BlockHeader) -> bool {
         
         // Verifying the genesis block is not supported.
         if header.number == 0 {
