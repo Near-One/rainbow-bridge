@@ -361,7 +361,8 @@ RainbowConfig.addOptions(
     'total-submit-block',
     'gas-per-transaction',
     'daemon',
-    'metrics-port'
+    'metrics-port',
+    'near-client-validate-header-mode'
   ]
 )
 

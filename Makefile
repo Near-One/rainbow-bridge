@@ -50,6 +50,9 @@ stop-all:
 	cli/index.js stop all
 
 build-eth-client:
-	cd contracts/near/eth-client && ./build.sh
+	cd contracts/near/eth-client && sudo ./build.sh
+
+test-eth-client:
+	cd contracts/near/eth-client && ./test.sh
 
 .PHONEY: help init start-ethash start-bsc gen-contracts deploy-contracts start-relayer stop-all build-eth-client

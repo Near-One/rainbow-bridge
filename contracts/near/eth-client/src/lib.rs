@@ -411,7 +411,6 @@ impl EthClient {
        
         // Don't waste time checking blocks from the future
         // if header.timestamp > chrono::Utc::now().timestamp() as u64{
-        //     env::log("----------------1-------------------".as_bytes());
         //     return false;
         // }
         
@@ -469,10 +468,12 @@ impl EthClient {
         }
         
         // Verify that the gasUsed is <= gasLimit
-        if header.gas_used > header.gas_limit {
+        if header.gas_used < header.gas_limit {
             return false;
         }
         
+        return true;
+
         // Verify that the gas limit remains within allowed bounds
         let mut diff = prev.gas_limit - header.gas_limit;
         if diff < U256(0.into()) {

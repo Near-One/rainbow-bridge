@@ -36,7 +36,6 @@ const borshSchema = {
       ['dags_start_epoch', 'u64'],
       ['dags_merkle_roots', ['H128']],
       ['first_header', ['u8']],
-      ['start_header', ['u8']],
       ['hashes_gc_threshold', 'u64'],
       ['finalized_gc_threshold', 'u64'],
       ['num_confirmations', 'u64'],
