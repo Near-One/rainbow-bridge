@@ -1,3 +1,4 @@
+// Binance Smart chain configurations to connect with testnet
 class StartBinanceSmartChainNodeCommand {
   static async execute () {
     return {

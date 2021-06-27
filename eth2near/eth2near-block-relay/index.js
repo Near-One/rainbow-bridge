@@ -190,7 +190,12 @@ class Eth2NearRelay {
   submitBlock (block, blockNumber) {
     let args = {};
 
-    if (this.validateHeaderMode == "ethash"){
+    if (this.validateHeaderMode == "bsc"){
+      args = {
+        block_header: web3BlockToRlp(block.header_rlp),
+        dag_nodes: []
+      }
+    }else{
       const h512s = block.elements
         .filter((_, index) => index % 2 === 0)
         .map((element, index) => {
@@ -215,11 +220,6 @@ class Eth2NearRelay {
                 .map((leaf) => this.web3.utils.padLeft(leaf, 32))
             }
           })
-      }
-    }else{
-      args = {
-        block_header: web3BlockToRlp(block.header_rlp),
-        dag_nodes: []
       }
     }
 
