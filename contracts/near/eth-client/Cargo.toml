@@ -37,3 +37,4 @@ indicatif = "0.14"
 default = ["eip1559"]
 expensive_tests = []
 eip1559 = ["eth-types/eip1559"]
+bsc = []

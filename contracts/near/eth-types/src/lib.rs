@@ -478,11 +478,13 @@ pub fn near_keccak512(data: &[u8]) -> [u8; 64] {
 }
 
 // SealData struct used by bsc to encode header to rlp and hash using keccak256.
+#[cfg(bsc)]
 pub struct SealData<'s>{
     pub chain_id: U256,
     pub header: &'s BlockHeader,
 }
 
+#[cfg(bsc)]
 impl<'s> SealData<'s> {
     // hash using keccak256 an RLP encoded header.
     pub fn seal_hash(&self) -> [u8; 32]{
@@ -491,6 +493,7 @@ impl<'s> SealData<'s> {
 }
 
 // implement RlpEncodable for SealData.
+#[cfg(bsc)]
 impl<'s> RlpEncodable for SealData<'s> {
     fn rlp_append(&self, stream: &mut RlpStream) {
         stream.begin_list(16);

@@ -46,7 +46,12 @@ async function getEthBlock (number, RobustWeb3) {
 }
 
 /// bridgeId matches nearNetworkId. It is one of two strings [testnet / mainnet]
-function web3BlockToRlp (blockData, bridgeId) {
+function web3BlockToRlp (blockData, bridgeId, validateHeaderMode) {
+  if (validateHeaderMode === 'bsc') {
+    const block = blockFromRpc.default(blockData, [], {})
+    return block.header.serialize()
+  }
+
   let chain
   if (bridgeId === 'testnet') {
     chain = 'ropsten'
@@ -192,18 +197,18 @@ class EthOnNearClientContract extends BorshContract {
     if (!initialized) {
       console.log('EthOnNearClient is not initialized, initializing...')
       let lastBlockNumber = await robustWeb3.getBlockNumber()
+      let blockData
 
       // if validateHeaderMode is bsc(POSA) we have to get the last epoch header
       if (validateHeaderMode === 'bsc' && lastBlockNumber % 200 !== 0) {
         lastBlockNumber = lastBlockNumber - lastBlockNumber % 200
-        // const blockRlp = web3BlockToRlp(
-        //   await robustWeb3.getBlock(lastBlockNumber)
-        // )
+        blockData = await robustWeb3.getBlock(lastBlockNumber)
+      } else {
+        blockData = await getEthBlock(lastBlockNumber, robustWeb3)
       }
 
-      const blockData = await getEthBlock(lastBlockNumber, robustWeb3)
-      const blockRlp = web3BlockToRlp(blockData, bridgeId)
-
+      const blockRlp = web3BlockToRlp(blockData, bridgeId, validateHeaderMode)
+      console.log(blockRlp)
       await this.init(
         {
           validate_header: validateHeader,

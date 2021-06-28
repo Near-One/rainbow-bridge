@@ -344,7 +344,11 @@ RainbowConfig.addOptions(
 RainbowConfig.addOptions(
   startCommand.command('binance-smart-chain'),
   StartBinanceSmartChainNodeCommand.execute,
-  []
+  [
+    'eth-node-url',
+    'eth-master-sk',
+    'near-client-validate-header'
+  ]
 )
 
 RainbowConfig.addOptions(
@@ -924,6 +928,6 @@ RainbowConfig.addOptions(
   ['near-node-url']
 )
 
-  ; (async () => {
-    await program.parseAsync(process.argv)
-  })()
+; (async () => {
+  await program.parseAsync(process.argv)
+})()
