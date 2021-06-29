@@ -193,6 +193,7 @@ pub struct BlockHeader {
     pub extra_data: Vec<u8>,
     pub mix_hash: H256,
     pub nonce: H64,
+    pub base_fee_per_gas: u64,
 
     pub hash: Option<H256>,
     pub partial_hash: Option<H256>,
@@ -253,6 +254,7 @@ impl RlpDecodable for BlockHeader {
             extra_data: serialized.val_at(12)?,
             mix_hash: serialized.val_at(13)?,
             nonce: serialized.val_at(14)?,
+            base_fee_per_gas: serialized.val_at(15)?,
             hash: Some(near_keccak256(serialized.as_raw()).into()),
             partial_hash: None,
         };

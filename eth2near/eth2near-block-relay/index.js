@@ -10,7 +10,8 @@ const {
 const {
   web3BlockToRlp,
   EthOnNearClientContract,
-  borshSchema
+  borshSchema,
+  getEthBlock
 } = require('./eth-on-near-client')
 const {
   EthOnNearProverContract
@@ -65,7 +66,6 @@ async function binarySearchWithEstimate(limitLo, limitHi, estimatedPosition, pre
     hi = Math.min(hi, lo + step);
   }
 
-
   while (lo + 1 < hi) {
     let mid = Math.floor((lo + hi) / 2);
     if (await predicate(mid)) {
@@ -82,6 +82,7 @@ class Eth2NearRelay {
     ethNodeUrl,
     totalSubmitBlock,
     gasPerTransaction,
+    nearNetworkId,
     metricsPort
   }) {
     this.gasPerTransaction = new BN(gasPerTransaction)
@@ -95,6 +96,7 @@ class Eth2NearRelay {
       throw new Error(`total-submit-block must be ${limitSubmitBlock} or less. Currently it is: ${this.totalSubmitBlock}`)
     }
 
+    this.bridgeId = nearNetworkId
     this.ethClientContract = ethClientContract
     this.robustWeb3 = new RobustWeb3(ethNodeUrl)
     this.web3 = this.robustWeb3.web3
@@ -132,7 +134,7 @@ class Eth2NearRelay {
         let blockNumber = clientBlockNumber - value;
         console.log('Checking block:', blockNumber);
         try {
-          const chainBlock = await robustWeb3.getBlock(blockNumber)
+          const chainBlock = await getEthBlock(blockNumber, robustWeb3)
           const chainBlockHash = chainBlock.hash
           const clientHashes = await this.ethClientContract.known_hashes(
             blockNumber
@@ -149,7 +151,9 @@ class Eth2NearRelay {
       };
 
       let estimatedValued = (previousBlockNumber === undefined) ? 0 : clientBlockNumber - (previousBlockNumber + this.totalSubmitBlock);
-      let delta = await binarySearchWithEstimate(-1, 1000000000, estimatedValued, predicate);
+      /// In case there exist a fork, find how many steps should go backward (delta) to the first block
+      /// in the other side of the fork. If the answer is -1, then there is no fork.
+      let delta = await binarySearchWithEstimate(-1, clientBlockNumber, estimatedValued, predicate);
       clientBlockNumber -= delta;
       previousBlockNumber = clientBlockNumber;
 
@@ -204,7 +208,7 @@ class Eth2NearRelay {
 
   async getParseBlock(blockNumber) {
     try {
-      const block = await this.robustWeb3.getBlock(blockNumber)
+      const block = await getEthBlock(blockNumber, this.robustWeb3)
       const blockRlp = this.web3.utils.bytesToHex(
         web3BlockToRlp(block)
       )
