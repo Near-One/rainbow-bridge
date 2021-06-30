@@ -148,7 +148,6 @@ class Eth2NearRelay {
           const clientHashes = await this.ethClientContract.known_hashes(
             blockNumber
           )
-          console.log({ chainBlockHash, clientHashes })
           if (clientHashes.find((x) => x === chainBlockHash)) {
             return true;
           } else {
