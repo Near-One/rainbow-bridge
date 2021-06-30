@@ -43,21 +43,23 @@ class RobustWeb3 {
     })
   }
 
-  /// TODO: This method returns error 400, use instead getEthBlock. (Fix this)
-  async _getBlock(number) {
-    const blockData = await got.post(this.ethNodeUrl, {
-      json: {
-        "id": 0,
-        "jsonrpc": "2.0",
-        "method": "eth_getBlockByNumber",
-        "params": [
-          "0x" + number.toString(16),
-          false
-        ]
-      },
-      responseType: "json"
-    });
-    return blockData.body.result;
+  async getBlock(b) {
+    return await backoff(RETRY, async () => {
+      try {
+        const block = await this.web3.eth.getBlock(b)
+        // sometimes infura gives null on the very new block, but retry works
+        if (block === null) {
+          // throw so backoff will do retry
+          throw new Error('web3.eth.getBlock returns null')
+        }
+        return block
+      } catch (e) {
+        if (e && e.toString() === 'Error: connection not open') {
+          this.web3.setProvider(this.ethNodeUrl)
+        }
+        throw e
+      }
+    })
   }
 
   async callContract(contract, method, args, options) {

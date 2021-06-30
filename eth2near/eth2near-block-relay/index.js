@@ -139,7 +139,7 @@ class Eth2NearRelay {
           /// Block is not ready
           if (chainBlock === null) {
             const seconds = 3;
-            console.log(`Block ${blockNumber} is not ready. Sleeping ${seconds}`);
+            console.log(`Block ${blockNumber} is not ready. Sleeping ${seconds} seconds.`);
             await sleep(seconds * 1000);
             return await predicate(value);
           }
