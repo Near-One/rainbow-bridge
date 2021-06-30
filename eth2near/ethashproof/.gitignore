@@ -14,4 +14,4 @@
 ethashproof
 
 # Keep cache tool in the repository
-!cache
+!cmd/cache/main.go
