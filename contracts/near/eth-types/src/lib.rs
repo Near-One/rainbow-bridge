@@ -222,6 +222,7 @@ impl BlockHeader {
         stream.append(&self.gas_used);
         stream.append(&self.timestamp);
         stream.append(&self.extra_data);
+        stream.append(&self.base_fee_per_gas);
 
         if !partial {
             stream.append(&self.mix_hash);

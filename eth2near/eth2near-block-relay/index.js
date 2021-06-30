@@ -135,10 +135,20 @@ class Eth2NearRelay {
         console.log('Checking block:', blockNumber);
         try {
           const chainBlock = await getEthBlock(blockNumber, robustWeb3)
+
+          /// Block is not ready
+          if (chainBlock === null) {
+            const seconds = 3;
+            console.log(`Block ${blockNumber} is not ready. Sleeping ${seconds}`);
+            await sleep(seconds * 1000);
+            return await predicate(value);
+          }
+
           const chainBlockHash = chainBlock.hash
           const clientHashes = await this.ethClientContract.known_hashes(
             blockNumber
           )
+          console.log({ chainBlockHash, clientHashes })
           if (clientHashes.find((x) => x === chainBlockHash)) {
             return true;
           } else {
@@ -146,14 +156,15 @@ class Eth2NearRelay {
           }
         } catch (e) {
           console.error(e)
-          return predicate(value);
+          return await predicate(value);
         }
       };
 
       let estimatedValued = (previousBlockNumber === undefined) ? 0 : clientBlockNumber - (previousBlockNumber + this.totalSubmitBlock);
+
       /// In case there exist a fork, find how many steps should go backward (delta) to the first block
-      /// in the other side of the fork. If the answer is -1, then there is no fork.
-      let delta = await binarySearchWithEstimate(-1, clientBlockNumber, estimatedValued, predicate);
+      /// in the client that is also in the main chain. If the answer is 0, then the current head is valid
+      let delta = await binarySearchWithEstimate(0, clientBlockNumber, estimatedValued, predicate);
       clientBlockNumber -= delta;
       previousBlockNumber = clientBlockNumber;
 
