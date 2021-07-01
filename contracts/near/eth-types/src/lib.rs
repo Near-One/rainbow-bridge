@@ -5,10 +5,10 @@ use derive_more::{
 };
 use ethereum_types;
 use rlp::{
-    Decodable as RlpDecodable, DecoderError as RlpDecoderError, Encodable as RlpEncodable, Rlp,
-    RlpStream,
+    Decodable as RlpDecodable, DecoderError as RlpDecoderError, DecoderError,
+    Encodable as RlpEncodable, Rlp, RlpStream,
 };
-use rlp_derive::{RlpDecodable as RlpDecodableDerive, RlpEncodable as RlpEncodableDerive};
+use rlp_derive::RlpDecodable as RlpDecodableDerive;
 #[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
 use std::io::{Error, Write};
@@ -304,12 +304,46 @@ impl rlp::Encodable for LogEntry {
 
 // Receipt Header
 
-#[derive(Debug, Clone, PartialEq, Eq, RlpEncodableDerive, RlpDecodableDerive)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Receipt {
     pub status: bool,
     pub gas_used: U256,
     pub log_bloom: Bloom,
     pub logs: Vec<LogEntry>,
+}
+
+impl rlp::Decodable for Receipt {
+    fn decode(rlp: &Rlp) -> Result<Self, DecoderError> {
+        let mut view = rlp.as_raw();
+
+        // https://eips.ethereum.org/EIPS/eip-2930
+        if let Some(&byte) = view.first() {
+            if byte > 0 {
+                view = &view[1..];
+            }
+        }
+
+        rlp::decode::<RlpDeriveReceipt>(view).map(Into::into)
+    }
+}
+
+#[derive(RlpDecodableDerive)]
+pub struct RlpDeriveReceipt {
+    pub status: bool,
+    pub gas_used: U256,
+    pub log_bloom: Bloom,
+    pub logs: Vec<LogEntry>,
+}
+
+impl From<RlpDeriveReceipt> for Receipt {
+    fn from(receipt: RlpDeriveReceipt) -> Self {
+        Self {
+            status: receipt.status,
+            gas_used: receipt.gas_used,
+            log_bloom: receipt.log_bloom,
+            logs: receipt.logs,
+        }
+    }
 }
 
 pub fn near_sha256(data: &[u8]) -> [u8; 32] {
