@@ -1,6 +1,7 @@
 const BN = require('bn.js')
-const blockFromRpc = require('@ethereumjs/block/dist/from-rpc')
-const Common = require('@ethereumjs/common')
+// const blockFromRpc = require('@ethereumjs/block/dist/from-rpc')
+// const Common = require('@ethereumjs/common')
+const { Header } = require('eth-object')
 const got = require('got');
 const {
   Web3,
@@ -46,24 +47,8 @@ async function getEthBlock(number, RobustWeb3) {
 }
 
 /// bridgeId matches nearNetworkId. It is one of two strings [testnet / mainnet]
-function web3BlockToRlp(blockData, bridgeId) {
-  let chain;
-  if (bridgeId === "testnet") {
-    chain = "ropsten";
-  } else {
-    chain = "mainnet";
-  }
-  const common = new Common.default({ chain });
-
-  /// baseFeePerGas was introduced after london hard fork.
-  /// TODO: Use better way to detect current hard fork.
-  if (blockData.baseFeePerGas !== undefined) {
-    common.setHardfork("london")
-    common.setEIPs([1559])
-  }
-
-  const block = blockFromRpc.default(blockData, [], { common });
-  return block.header.serialize();
+function web3BlockToRlp(blockData) {
+  return Header.fromRpc(blockData).serialize()
 }
 
 const borshSchema = {
@@ -191,7 +176,7 @@ class EthOnNearClientContract extends BorshContract {
       console.log('EthOnNearClient is not initialized, initializing...')
       const lastBlockNumber = await robustWeb3.getBlockNumber()
       const blockData = await getEthBlock(lastBlockNumber, robustWeb3);
-      const blockRlp = web3BlockToRlp(blockData, bridgeId);
+      const blockRlp = web3BlockToRlp(blockData);
       await this.init(
         {
           validate_ethash: validateEthash,

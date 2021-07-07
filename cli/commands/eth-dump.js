@@ -11,7 +11,7 @@ const {
 const utils = require('ethereumjs-util')
 
 class ETHDump {
-  static async execute (kindOfData, { path, startBlock, endBlock, ethNodeUrl }) {
+  static async execute(kindOfData, { path, startBlock, endBlock, ethNodeUrl }) {
     const web3 = new Web3(ethNodeUrl)
     const extractor = new EthProofExtractor()
     extractor.initialize(ethNodeUrl)
@@ -35,8 +35,7 @@ class ETHDump {
       startBlock = Number(startBlock)
     }
     console.log(
-      `Downloading block ${endBlock} down to ${startBlock} to ${path}. ${
-        endBlock - startBlock + 1
+      `Downloading block ${endBlock} down to ${startBlock} to ${path}. ${endBlock - startBlock + 1
       } blocks in total.`
     )
 
@@ -51,11 +50,11 @@ class ETHDump {
     try {
       // Only WebSocket provider can close.
       web3.currentProvider.connection.close()
-    } catch (e) {}
+    } catch (e) { }
     extractor.destroy()
   }
 
-  static async dumpHeaders (web3, b, path) {
+  static async dumpHeaders(web3, b, path) {
     console.log(`Downloading block ${b}`)
     const blockRlp = web3.utils.bytesToHex(
       web3BlockToRlp(await web3.eth.getBlock(b))
@@ -69,7 +68,7 @@ class ETHDump {
     await ETHDump.saveBlock(b, block, path)
   }
 
-  static async dumpProofs (web3, extractor, b, path) {
+  static async dumpProofs(web3, extractor, b, path) {
     const block = await web3.eth.getBlock(b)
     for (const txHash of block.transactions) {
       const receipt = await extractor.extractReceipt(txHash)
@@ -123,7 +122,7 @@ class ETHDump {
     }
   }
 
-  static async saveBlock (i, block, path) {
+  static async saveBlock(i, block, path) {
     const file = Path.join(path, `${i}.json`)
     await fs.writeFile(file, JSON.stringify(block))
   }
