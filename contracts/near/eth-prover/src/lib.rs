@@ -149,6 +149,84 @@ impl EthProver {
         .into()
     }
 
+    #[result_serializer(borsh)]
+    pub fn verify_state_entry(
+        &self,
+        #[serializer(borsh)] state_key: Vec<u8>,
+        #[serializer(borsh)] state_data: Vec<u8>,
+        #[serializer(borsh)] header_data: Vec<u8>,
+        #[serializer(borsh)] proof: Vec<Vec<u8>>,
+        #[serializer(borsh)] skip_bridge_call: bool,
+    ) -> PromiseOrValue<bool> {
+        self.check_not_paused(PAUSE_VERIFY);
+
+        let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
+
+        // Verify receipt included into header
+        let data =
+            Self::verify_trie_proof(header.state_root, state_key, proof);
+        let verification_result = state_data == data;
+        if verification_result && skip_bridge_call {
+            return PromiseOrValue::Value(true);
+        } else if !verification_result {
+            return PromiseOrValue::Value(false);
+        }
+
+        // Verify block header was in the bridge
+        eth_client::block_hash_safe(
+            header.number,
+            &self.bridge_smart_contract,
+            0,
+            BLOCK_HASH_SAFE_GAS,
+        )
+            .then(remote_self::on_block_hash(
+                header.hash.unwrap(),
+                &env::current_account_id(),
+                0,
+                ON_BLOCK_HASH_GAS,
+            ))
+            .into()
+    }
+
+    #[result_serializer(borsh)]
+    pub fn verify_transactions_entry(
+        &self,
+        #[serializer(borsh)] key: Vec<u8>,
+        #[serializer(borsh)] tx_data: Vec<u8>,
+        #[serializer(borsh)] header_data: Vec<u8>,
+        #[serializer(borsh)] proof: Vec<Vec<u8>>,
+        #[serializer(borsh)] skip_bridge_call: bool,
+    ) -> PromiseOrValue<bool> {
+        self.check_not_paused(PAUSE_VERIFY);
+
+        let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
+
+        // Verify receipt included into header
+        let data =
+            Self::verify_trie_proof(header.transactions_root, key, proof);
+        let verification_result = tx_data == data;
+        if verification_result && skip_bridge_call {
+            return PromiseOrValue::Value(true);
+        } else if !verification_result {
+            return PromiseOrValue::Value(false);
+        }
+
+        // Verify block header was in the bridge
+        eth_client::block_hash_safe(
+            header.number,
+            &self.bridge_smart_contract,
+            0,
+            BLOCK_HASH_SAFE_GAS,
+        )
+            .then(remote_self::on_block_hash(
+                header.hash.unwrap(),
+                &env::current_account_id(),
+                0,
+                ON_BLOCK_HASH_GAS,
+            ))
+            .into()
+    }
+
     /// Verify the proof recursively traversing through the key.
     /// Return the value at the end of the key, in case the proof is valid.
     ///
