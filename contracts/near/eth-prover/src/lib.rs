@@ -152,10 +152,12 @@ impl EthProver {
     #[result_serializer(borsh)]
     pub fn verify_state_entry(
         &self,
-        #[serializer(borsh)] state_key: Vec<u8>,
+        #[serializer(borsh)] contract_address: Vec<u8>,
+        #[serializer(borsh)] storage_key: Vec<u8>,
         #[serializer(borsh)] state_data: Vec<u8>,
         #[serializer(borsh)] header_data: Vec<u8>,
-        #[serializer(borsh)] proof: Vec<Vec<u8>>,
+        #[serializer(borsh)] state_proof: Vec<Vec<u8>>,
+        #[serializer(borsh)] storage_proof: Vec<Vec<u8>>,
         #[serializer(borsh)] skip_bridge_call: bool,
     ) -> PromiseOrValue<bool> {
         self.check_not_paused(PAUSE_VERIFY);
@@ -163,9 +165,15 @@ impl EthProver {
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
 
         // Verify receipt included into header
-        let data =
-            Self::verify_trie_proof(header.state_root, state_key, proof);
+        let account_state_rlp =
+            Self::verify_trie_proof(header.state_root, contract_address, state_proof);
+
+        let account_state: AccountState = rlp::decode(account_state_rlp.as_slice()).unwrap();
+        let data = Self::verify_trie_proof(account_state.storage_root, storage_key, storage_proof);
+
+        // todo - marcelo was saying we don't need to do this? double check
         let verification_result = state_data == data;
+
         if verification_result && skip_bridge_call {
             return PromiseOrValue::Value(true);
         } else if !verification_result {
