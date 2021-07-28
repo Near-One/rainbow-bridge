@@ -1,0 +1,81 @@
+---
+on: [push, pull_request]
+name: Pipeline
+jobs:
+
+  linter:
+    name: Linter
+    runs-on: self-hosted
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v2
+      - name: Execute
+        run: |
+          source testing/ci/e2e_ci_prepare_env.sh
+          yarn
+          yarn standard
+          yarn prettier-solidity
+
+  e2e:
+    name: E2E
+    runs-on: self-hosted
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v2
+      - name: Execute
+        run: |
+          source testing/ci/e2e_ci_prepare_env.sh
+          source testing/ci/e2e_ci_prepare_log.sh
+          testing/ci/e2e.sh
+      - uses: actions/upload-artifact@v2
+        with:
+          name: logs
+          path: logs/**/*.log
+
+  e2e-myerc20:
+    name: E2E myerc20
+    runs-on: self-hosted
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v2
+      - name: Execute
+        run: |
+          source testing/ci/e2e_ci_prepare_env.sh
+          source testing/ci/e2e_ci_prepare_log.sh
+          testing/ci/e2e_deploy_contract.sh
+      - uses: actions/upload-artifact@v2
+        with:
+          name: logs
+          path: logs/**/*.log
+
+  watchdog-challenge:
+    name: Challenge with watchdog
+    runs-on: self-hosted
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v2
+      - name: Execute
+        run: |
+          source testing/ci/e2e_ci_prepare_env.sh
+          source testing/ci/e2e_ci_prepare_log.sh
+          testing/ci/test_challenge.sh
+      - uses: actions/upload-artifact@v2
+        with:
+          name: logs
+          path: logs/**/*.log
+
+  test-ethrelay-catchup:
+    name: Test eth-relay catchup
+    runs-on: self-hosted
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v2
+      - name: Execute
+        run: |
+          source testing/ci/e2e_ci_prepare_env.sh
+          source testing/ci/e2e_ci_prepare_log.sh
+          testing/ci/test_ethrelay_catchup.sh
+      - uses: actions/upload-artifact@v2
+        with:
+          name: logs
+          path: logs/**/*.log
