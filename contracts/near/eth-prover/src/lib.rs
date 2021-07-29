@@ -154,7 +154,6 @@ impl EthProver {
         &self,
         #[serializer(borsh)] contract_address: Vec<u8>,
         #[serializer(borsh)] storage_key: Vec<u8>,
-        #[serializer(borsh)] state_data: Vec<u8>,
         #[serializer(borsh)] header_data: Vec<u8>,
         #[serializer(borsh)] state_proof: Vec<Vec<u8>>,
         #[serializer(borsh)] storage_proof: Vec<Vec<u8>>,
@@ -171,12 +170,9 @@ impl EthProver {
         let account_state: AccountState = rlp::decode(account_state_rlp.as_slice()).unwrap();
         let data = Self::verify_trie_proof(account_state.storage_root, storage_key, storage_proof);
 
-        // todo - marcelo was saying we don't need to do this? double check
-        let verification_result = state_data == data;
-
-        if verification_result && skip_bridge_call {
+        if data.len() > 0 && skip_bridge_call {
             return PromiseOrValue::Value(true);
-        } else if !verification_result {
+        } else if data.len() == 0 {
             return PromiseOrValue::Value(false);
         }
 
@@ -200,7 +196,6 @@ impl EthProver {
     pub fn verify_transactions_entry(
         &self,
         #[serializer(borsh)] key: Vec<u8>,
-        #[serializer(borsh)] tx_data: Vec<u8>,
         #[serializer(borsh)] header_data: Vec<u8>,
         #[serializer(borsh)] proof: Vec<Vec<u8>>,
         #[serializer(borsh)] skip_bridge_call: bool,
@@ -212,10 +207,10 @@ impl EthProver {
         // Verify receipt included into header
         let data =
             Self::verify_trie_proof(header.transactions_root, key, proof);
-        let verification_result = tx_data == data;
-        if verification_result && skip_bridge_call {
+
+        if data.len() > 0 && skip_bridge_call {
             return PromiseOrValue::Value(true);
-        } else if !verification_result {
+        } else if data.len() == 0 {
             return PromiseOrValue::Value(false);
         }
 
