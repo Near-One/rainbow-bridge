@@ -175,7 +175,7 @@ pub type Signature = H520;
 
 // Block Header
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, Clone, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct BlockHeader {
     pub parent_hash: H256,
@@ -198,6 +198,112 @@ pub struct BlockHeader {
 
     pub hash: Option<H256>,
     pub partial_hash: Option<H256>,
+}
+
+#[derive(BorshDeserialize)]
+pub struct BlockHeaderLondon {
+    pub parent_hash: H256,
+    pub uncles_hash: H256,
+    pub author: Address,
+    pub state_root: H256,
+    pub transactions_root: H256,
+    pub receipts_root: H256,
+    pub log_bloom: Bloom,
+    pub difficulty: U256,
+    pub number: u64,
+    pub gas_limit: U256,
+    pub gas_used: U256,
+    pub timestamp: u64,
+    pub extra_data: Vec<u8>,
+    pub mix_hash: H256,
+    pub nonce: H64,
+    pub base_fee_per_gas: u64,
+
+    pub hash: Option<H256>,
+    pub partial_hash: Option<H256>,
+}
+
+impl From<BlockHeaderLondon> for BlockHeader {
+    fn from(header: BlockHeaderLondon) -> Self {
+        Self {
+            parent_hash: header.parent_hash,
+            uncles_hash: header.uncles_hash,
+            author: header.author,
+            state_root: header.state_root,
+            transactions_root: header.transactions_root,
+            receipts_root: header.receipts_root,
+            log_bloom: header.log_bloom,
+            difficulty: header.difficulty,
+            number: header.number,
+            gas_limit: header.gas_limit,
+            gas_used: header.gas_used,
+            timestamp: header.timestamp,
+            extra_data: header.extra_data,
+            mix_hash: header.mix_hash,
+            nonce: header.nonce,
+            base_fee_per_gas: header.base_fee_per_gas,
+            hash: header.hash,
+            partial_hash: header.partial_hash,
+        }
+    }
+}
+
+#[derive(BorshDeserialize)]
+pub struct BlockHeaderPreLondon {
+    pub parent_hash: H256,
+    pub uncles_hash: H256,
+    pub author: Address,
+    pub state_root: H256,
+    pub transactions_root: H256,
+    pub receipts_root: H256,
+    pub log_bloom: Bloom,
+    pub difficulty: U256,
+    pub number: u64,
+    pub gas_limit: U256,
+    pub gas_used: U256,
+    pub timestamp: u64,
+    pub extra_data: Vec<u8>,
+    pub mix_hash: H256,
+    pub nonce: H64,
+
+    pub hash: Option<H256>,
+    pub partial_hash: Option<H256>,
+}
+
+impl From<BlockHeaderPreLondon> for BlockHeader {
+    fn from(header: BlockHeaderPreLondon) -> Self {
+        Self {
+            parent_hash: header.parent_hash,
+            uncles_hash: header.uncles_hash,
+            author: header.author,
+            state_root: header.state_root,
+            transactions_root: header.transactions_root,
+            receipts_root: header.receipts_root,
+            log_bloom: header.log_bloom,
+            difficulty: header.difficulty,
+            number: header.number,
+            gas_limit: header.gas_limit,
+            gas_used: header.gas_used,
+            timestamp: header.timestamp,
+            extra_data: header.extra_data,
+            mix_hash: header.mix_hash,
+            nonce: header.nonce,
+            #[cfg(feature = "eip1559")]
+            base_fee_per_gas: 7,
+            hash: header.hash,
+            partial_hash: header.partial_hash,
+        }
+    }
+}
+
+impl BorshDeserialize for BlockHeader {
+    fn deserialize(buf: &mut &[u8]) -> std::io::Result<Self> {
+        if let Ok(header) = BlockHeaderLondon::deserialize(buf) {
+            Ok(header.into())
+        } else {
+            BlockHeaderPreLondon::deserialize(buf).map(Into::into)
+        }
+    }
 }
 
 impl BlockHeader {
