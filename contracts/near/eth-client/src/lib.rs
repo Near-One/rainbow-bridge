@@ -206,8 +206,11 @@ impl EthClient {
         #[serializer(borsh)] block_header: Vec<u8>,
         #[serializer(borsh)] dag_nodes: Vec<DoubleNodeWithMerkleProof>,
     ) {
+        env::log("Add block header".as_bytes());
         self.check_not_paused(PAUSE_ADD_BLOCK_HEADER);
         let header: BlockHeader = rlp::decode(block_header.as_slice()).unwrap();
+
+        env::log(format!("{:?}", self.trusted_signer).as_bytes());
 
         if let Some(trusted_signer) = &self.trusted_signer {
             assert!(
