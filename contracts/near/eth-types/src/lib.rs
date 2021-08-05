@@ -241,6 +241,7 @@ impl From<BlockHeaderLondon> for BlockHeader {
             extra_data: header.extra_data,
             mix_hash: header.mix_hash,
             nonce: header.nonce,
+            #[cfg(feature = "eip1559")]
             base_fee_per_gas: header.base_fee_per_gas,
             hash: header.hash,
             partial_hash: header.partial_hash,
