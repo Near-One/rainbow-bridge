@@ -215,10 +215,12 @@ impl EthClient {
                 "Eth-client is deployed as trust mode, only trusted_signer can add a new header"
             );
         } else {
+            env::log(format!("Fetch parent header {:?}", header.parent_hash).as_bytes());
             let prev = self
                 .headers
                 .get(&header.parent_hash)
                 .expect("Parent header should be present to add a new header");
+            env::log(format!("Done").as_bytes());
             assert!(
                 self.verify_header(&header, &prev, &dag_nodes),
                 "The new header {} should be valid",
