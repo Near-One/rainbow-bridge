@@ -339,7 +339,7 @@ impl EthClient {
         loop {
             if let Some(all_headers) = self.all_header_hashes.get(&header_number) {
                 for hash in all_headers {
-                    self.headers.remove(&hash);
+                    self.headers.remove_raw(&hash.try_to_vec().unwrap());
                     self.infos.remove(&hash);
                 }
                 self.all_header_hashes.remove(&header_number);
