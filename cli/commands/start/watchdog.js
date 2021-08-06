@@ -8,7 +8,7 @@ class StartWatchdogCommand {
     daemon,
     ethNodeUrl,
     ethMasterSk,
-    ethClientAbiPath,
+    ethClientArtifactPath,
     ethClientAddress,
     watchdogDelay,
     watchdogErrorDelay,
@@ -33,7 +33,7 @@ class StartWatchdogCommand {
             'bridge-watchdog',
             '--eth-node-url', ethNodeUrl,
             '--eth-master-sk', ethMasterSk,
-            '--eth-client-abi-path', ethClientAbiPath,
+            '--eth-client-artifact-path', ethClientArtifactPath,
             '--eth-client-address', ethClientAddress,
             '--watchdog-delay', watchdogDelay,
             '--watchdog-error-delay', watchdogErrorDelay,
@@ -48,7 +48,7 @@ class StartWatchdogCommand {
       await watchdog.initialize({
         ethNodeUrl,
         ethMasterSk,
-        ethClientAbiPath,
+        ethClientArtifactPath,
         ethClientAddress,
         metricsPort
       })

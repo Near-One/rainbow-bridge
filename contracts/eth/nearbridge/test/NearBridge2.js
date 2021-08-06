@@ -17,7 +17,7 @@ beforeEach(async function () {
         ethers.BigNumber.from("1000000000000000000"), // 1e18
         ethers.BigNumber.from("10"), // lock duration
         ethers.BigNumber.from("20000000000"), // replace duration
-        ethers.constants.AddressZero,
+        await (await ethers.getSigners())[0].getAddress(),
         0
     );
     await NearBridge.deposit({ value: ethers.utils.parseEther('1') });

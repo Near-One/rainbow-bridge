@@ -1,4 +1,5 @@
-pragma solidity ^0.6;
+// SPDX-License-Identifier: GPL-3.0-or-later
+pragma solidity ^0.8;
 
 import "./bridge/INearBridge.sol";
 
@@ -14,7 +15,7 @@ contract NearBridgeMock is INearBridge {
         blockHashes[blockNumber] = hash;
     }
 
-    function balanceOf(address) external view override returns (uint256) {
+    function balanceOf(address) external pure override returns (uint256) {
         return 0;
     }
 
@@ -30,7 +31,7 @@ contract NearBridgeMock is INearBridge {
 
     function challenge(address payable, uint256) external override {}
 
-    function checkBlockProducerSignatureInHead(uint256) external view override returns (bool) {
+    function checkBlockProducerSignatureInHead(uint256) external pure override returns (bool) {
         return true;
     }
 }

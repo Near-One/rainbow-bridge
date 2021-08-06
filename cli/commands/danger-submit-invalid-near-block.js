@@ -6,7 +6,7 @@ class DangerSubmitInvalidNearBlock {
     nearNetworkId,
     ethNodeUrl,
     ethMasterSk,
-    ethClientAbiPath,
+    ethClientArtifactPath,
     ethClientAddress,
     ethGasMultiplier,
     near2ethRelayMinDelay,
@@ -19,7 +19,7 @@ class DangerSubmitInvalidNearBlock {
       nearNetworkId,
       ethNodeUrl,
       ethMasterSk,
-      ethClientAbiPath,
+      ethClientArtifactPath,
       ethClientAddress,
       ethGasMultiplier
     })
