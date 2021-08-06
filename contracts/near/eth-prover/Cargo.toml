@@ -27,4 +27,6 @@ near-primitives = { git = "https://github.com/nearprotocol/nearcore.git" }
 near-runtime-standalone = { git = "https://github.com/nearprotocol/nearcore.git" }
 
 [features]
+default = ["eip1559"]
 expensive_tests = []
+eip1559 = ["eth-types/eip1559"]

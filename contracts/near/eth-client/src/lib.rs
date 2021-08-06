@@ -2,10 +2,10 @@ use admin_controlled::Mask;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
 use near_sdk::collections::UnorderedMap;
-use near_sdk::AccountId;
+use near_sdk::{assert_self, AccountId};
 use near_sdk::{env, near_bindgen, PanicOnDefault};
 
-#[cfg(test)]
+#[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
 
 near_sdk::setup_alloc!();
@@ -15,7 +15,7 @@ near_sdk::setup_alloc!();
 mod tests;
 
 #[derive(Default, Debug, Clone, BorshDeserialize, BorshSerialize)]
-#[cfg_attr(test, derive(Serialize, Deserialize))]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct DoubleNodeWithMerkleProof {
     pub dag_nodes: Vec<H512>, // [H512; 2]
     pub proof: Vec<H128>,
@@ -206,12 +206,14 @@ impl EthClient {
         #[serializer(borsh)] block_header: Vec<u8>,
         #[serializer(borsh)] dag_nodes: Vec<DoubleNodeWithMerkleProof>,
     ) {
+        env::log("Add block header".as_bytes());
         self.check_not_paused(PAUSE_ADD_BLOCK_HEADER);
         let header: BlockHeader = rlp::decode(block_header.as_slice()).unwrap();
 
         if let Some(trusted_signer) = &self.trusted_signer {
-            assert!(
-                &env::signer_account_id() == trusted_signer,
+            assert_eq!(
+                &env::signer_account_id(),
+                trusted_signer,
                 "Eth-client is deployed as trust mode, only trusted_signer can add a new header"
             );
         } else {
@@ -228,11 +230,21 @@ impl EthClient {
 
         self.record_header(header);
     }
+
+    pub fn update_trusted_signer(&mut self, trusted_signer: Option<AccountId>) {
+        assert_self();
+        self.trusted_signer = trusted_signer;
+    }
+
+    pub fn get_trusted_signer(&self) -> Option<AccountId> {
+        self.trusted_signer.clone()
+    }
 }
 
 impl EthClient {
     /// Record the header. If needed update the canonical chain and perform the GC.
     fn record_header(&mut self, header: BlockHeader) {
+        env::log("Record header".as_bytes());
         let best_info = self.infos.get(&self.best_header_hash).unwrap();
         let header_hash = header.hash.unwrap();
         let header_number = header.number;
@@ -258,6 +270,7 @@ impl EthClient {
         all_hashes.push(header_hash);
         self.all_header_hashes.insert(&header_number, &all_hashes);
 
+        env::log("Inserting header".as_bytes());
         // Record full information about this header.
         self.headers.insert(&header_hash, &header);
         let info = HeaderInfo {
@@ -266,12 +279,14 @@ impl EthClient {
             number: header_number,
         };
         self.infos.insert(&header_hash, &info);
+        env::log("Inserted".as_bytes());
 
         // Check if canonical chain needs to be updated.
         if info.total_difficulty > best_info.total_difficulty
             || (info.total_difficulty == best_info.total_difficulty
                 && header.difficulty % 2 == U256::default())
         {
+            env::log("Canonical chain needs to be updated.".as_bytes());
             // If the new header has a lower number than the previous header, we need to clean it
             // going forward.
             if best_info.number > info.number {
@@ -330,10 +345,11 @@ impl EthClient {
 
     /// Remove information about the headers that are at least as old as the given header number.
     fn gc_headers(&mut self, mut header_number: u64) {
+        env::log(format!("Run headers GC. Used gas: {}", env::used_gas()).as_bytes());
         loop {
             if let Some(all_headers) = self.all_header_hashes.get(&header_number) {
                 for hash in all_headers {
-                    self.headers.remove(&hash);
+                    self.headers.remove_raw(&hash.try_to_vec().unwrap());
                     self.infos.remove(&hash);
                 }
                 self.all_header_hashes.remove(&header_number);
@@ -346,6 +362,7 @@ impl EthClient {
                 break;
             }
         }
+        env::log(format!("Finish headers GC. Used gas: {}", env::used_gas()).as_bytes());
     }
 
     /// Verify PoW of the header.
