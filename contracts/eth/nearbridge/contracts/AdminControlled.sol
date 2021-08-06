@@ -1,10 +1,11 @@
-pragma solidity ^0.6;
+// SPDX-License-Identifier: GPL-3.0-or-later
+pragma solidity ^0.8;
 
 contract AdminControlled {
     address public admin;
     uint public paused;
 
-    constructor(address _admin, uint flags) public {
+    constructor(address _admin, uint flags) {
         admin = _admin;
         paused = flags;
     }

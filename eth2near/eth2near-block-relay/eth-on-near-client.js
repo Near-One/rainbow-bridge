@@ -175,7 +175,7 @@ class EthOnNearClientContract extends BorshContract {
     if (
       !(
         firstRoot === '0x55b891e842e58f58956a847cbbf67821' &&
-        lastRoot === '0x4aa6ca6ebef942d8766065b2e590fd32'
+        lastRoot === '0x7a9010568819de327a24fa495029adcb'
       )
     ) {
       console.log(

@@ -1,4 +1,0 @@
-[submodule "eth2near/ethashproof"]
-	path = eth2near/ethashproof
-	url = https://github.com/nearprotocol/ethashproof
-	ignore = dirty

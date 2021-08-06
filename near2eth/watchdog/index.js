@@ -15,7 +15,7 @@ class Watchdog {
   async initialize ({
     ethNodeUrl,
     ethMasterSk,
-    ethClientAbiPath,
+    ethClientArtifactPath,
     ethClientAddress,
     metricsPort
   }) {
@@ -30,7 +30,7 @@ class Watchdog {
     // Initialize client contract.
     console.log('Deploying Near2EthClient contract.')
     this.clientContract = new this.web3.eth.Contract(
-      JSON.parse(fs.readFileSync(ethClientAbiPath)),
+      JSON.parse(fs.readFileSync(ethClientArtifactPath)).abi,
       ethClientAddress,
       {
         from: this.ethMasterAccount,

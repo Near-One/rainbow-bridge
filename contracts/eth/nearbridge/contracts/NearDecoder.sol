@@ -1,6 +1,6 @@
-pragma solidity ^0.6;
+// SPDX-License-Identifier: GPL-3.0-or-later
+pragma solidity ^0.8;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./Borsh.sol";
 
 library NearDecoder {
@@ -8,148 +8,83 @@ library NearDecoder {
     using NearDecoder for Borsh.Data;
 
     struct PublicKey {
-        uint8 enumIndex;
-        Borsh.ED25519PublicKey ed25519;
-        Borsh.SECP256K1PublicKey secp256k1;
+        bytes32 k;
     }
 
-    function decodePublicKey(Borsh.Data memory data) internal pure returns (PublicKey memory key) {
-        key.enumIndex = data.decodeU8();
-
-        if (key.enumIndex == 0) {
-            key.ed25519 = data.decodeED25519PublicKey();
-        } else if (key.enumIndex == 1) {
-            key.secp256k1 = data.decodeSECP256K1PublicKey();
-        } else {
-            revert("NearBridge: Only ED25519 and SECP256K1 public keys are supported");
-        }
-    }
-
-    struct ValidatorStake {
-        string account_id;
-        PublicKey public_key;
-        uint128 stake;
-    }
-
-    function decodeValidatorStake(Borsh.Data memory data) internal pure returns (ValidatorStake memory validatorStake) {
-        validatorStake.account_id = string(data.decodeBytes());
-        validatorStake.public_key = data.decodePublicKey();
-        validatorStake.stake = data.decodeU128();
-    }
-
-    struct OptionalValidatorStakes {
-        bool none;
-        ValidatorStake[] validatorStakes;
-        bytes32 hash; // Additional computable element
-    }
-
-    function decodeOptionalValidatorStakes(Borsh.Data memory data)
-        internal
-        view
-        returns (OptionalValidatorStakes memory stakes)
-    {
-        stakes.none = (data.decodeU8() == 0);
-        if (!stakes.none) {
-            uint256 start = data.offset;
-
-            stakes.validatorStakes = new ValidatorStake[](data.decodeU32());
-            for (uint i = 0; i < stakes.validatorStakes.length; i++) {
-                stakes.validatorStakes[i] = data.decodeValidatorStake();
-            }
-
-            uint256 stop = data.offset;
-            data.offset = start;
-            stakes.hash = data.peekSha256(stop - start);
-            data.offset = stop;
-        }
+    function decodePublicKey(Borsh.Data memory data) internal pure returns (PublicKey memory res) {
+        require(data.decodeU8() == 0, "Parse error: invalid key type");
+        res.k = data.decodeBytes32();
     }
 
     struct Signature {
-        uint8 enumIndex;
-        Borsh.ED25519Signature ed25519;
-        Borsh.SECP256K1Signature secp256k1;
+        bytes32 r;
+        bytes32 s;
     }
 
-    function decodeSignature(Borsh.Data memory data) internal pure returns (Signature memory sig) {
-        sig.enumIndex = data.decodeU8();
+    function decodeSignature(Borsh.Data memory data) internal pure returns (Signature memory res) {
+        require(data.decodeU8() == 0, "Parse error: invalid signature type");
+        res.r = data.decodeBytes32();
+        res.s = data.decodeBytes32();
+    }
 
-        if (sig.enumIndex == 0) {
-            sig.ed25519 = data.decodeED25519Signature();
-        } else if (sig.enumIndex == 1) {
-            sig.secp256k1 = data.decodeSECP256K1Signature();
-        } else {
-            revert("NearBridge: Only ED25519 and SECP256K1 signatures are supported");
+    struct BlockProducer {
+        PublicKey publicKey;
+        uint128 stake;
+    }
+
+    function decodeBlockProducer(Borsh.Data memory data) internal pure returns (BlockProducer memory res) {
+        data.skipBytes();
+        res.publicKey = data.decodePublicKey();
+        res.stake = data.decodeU128();
+    }
+
+    function decodeBlockProducers(Borsh.Data memory data) internal pure returns (BlockProducer[] memory res) {
+        uint length = data.decodeU32();
+        res = new BlockProducer[](length);
+        for (uint i = 0; i < length; i++) {
+            res[i] = data.decodeBlockProducer();
+        }
+    }
+
+    struct OptionalBlockProducers {
+        bool some;
+        BlockProducer[] blockProducers;
+        bytes32 hash; // Additional computable element
+    }
+
+    function decodeOptionalBlockProducers(Borsh.Data memory data)
+        internal
+        view
+        returns (OptionalBlockProducers memory res)
+    {
+        res.some = data.decodeBool();
+        if (res.some) {
+            uint start = data.ptr;
+            res.blockProducers = data.decodeBlockProducers();
+            res.hash = Utils.sha256Raw(start, data.ptr - start);
         }
     }
 
     struct OptionalSignature {
-        bool none;
+        bool some;
         Signature signature;
     }
 
-    function decodeOptionalSignature(Borsh.Data memory data) internal pure returns (OptionalSignature memory sig) {
-        sig.none = (data.decodeU8() == 0);
-        if (!sig.none) {
-            sig.signature = data.decodeSignature();
+    function decodeOptionalSignature(Borsh.Data memory data) internal pure returns (OptionalSignature memory res) {
+        res.some = data.decodeBool();
+        if (res.some) {
+            res.signature = data.decodeSignature();
         }
-    }
-
-    struct LightClientBlock {
-        bytes32 prev_block_hash;
-        bytes32 next_block_inner_hash;
-        BlockHeaderInnerLite inner_lite;
-        bytes32 inner_rest_hash;
-        OptionalValidatorStakes next_bps;
-        OptionalSignature[] approvals_after_next;
-        bytes32 hash;
-        bytes32 next_hash;
-    }
-
-    struct InitialValidators {
-        ValidatorStake[] validator_stakes;
-    }
-
-    function decodeInitialValidators(Borsh.Data memory data)
-        internal
-        view
-        returns (InitialValidators memory validators)
-    {
-        validators.validator_stakes = new ValidatorStake[](data.decodeU32());
-        for (uint i = 0; i < validators.validator_stakes.length; i++) {
-            validators.validator_stakes[i] = data.decodeValidatorStake();
-        }
-    }
-
-    function decodeLightClientBlock(Borsh.Data memory data) internal view returns (LightClientBlock memory header) {
-        header.prev_block_hash = data.decodeBytes32();
-        header.next_block_inner_hash = data.decodeBytes32();
-        header.inner_lite = data.decodeBlockHeaderInnerLite();
-        header.inner_rest_hash = data.decodeBytes32();
-        header.next_bps = data.decodeOptionalValidatorStakes();
-
-        header.approvals_after_next = new OptionalSignature[](data.decodeU32());
-        for (uint i = 0; i < header.approvals_after_next.length; i++) {
-            header.approvals_after_next[i] = data.decodeOptionalSignature();
-        }
-
-        header.hash = sha256(
-            abi.encodePacked(
-                sha256(abi.encodePacked(header.inner_lite.hash, header.inner_rest_hash)),
-                header.prev_block_hash
-            )
-        );
-
-        header.next_hash = sha256(abi.encodePacked(header.next_block_inner_hash, header.hash));
     }
 
     struct BlockHeaderInnerLite {
-        uint64 height; /// Height of this block since the genesis block (height 0).
-        bytes32 epoch_id; /// Epoch start hash of this block's epoch. Used for retrieving validator information
+        uint64 height; // Height of this block since the genesis block (height 0).
+        bytes32 epoch_id; // Epoch start hash of this block's epoch. Used for retrieving validator information
         bytes32 next_epoch_id;
-        bytes32 prev_state_root; /// Root hash of the state at the previous block.
-        bytes32 outcome_root; /// Root of the outcomes of transactions and receipts.
-        uint64 timestamp; /// Timestamp at which the block was built.
-        bytes32 next_bp_hash; /// Hash of the next epoch block producers set
+        bytes32 prev_state_root; // Root hash of the state at the previous block.
+        bytes32 outcome_root; // Root of the outcomes of transactions and receipts.
+        uint64 timestamp; // Timestamp at which the block was built.
+        bytes32 next_bp_hash; // Hash of the next epoch block producers set
         bytes32 block_merkle_root;
         bytes32 hash; // Additional computable element
     }
@@ -157,16 +92,47 @@ library NearDecoder {
     function decodeBlockHeaderInnerLite(Borsh.Data memory data)
         internal
         view
-        returns (BlockHeaderInnerLite memory header)
+        returns (BlockHeaderInnerLite memory res)
     {
-        header.hash = data.peekSha256(208);
-        header.height = data.decodeU64();
-        header.epoch_id = data.decodeBytes32();
-        header.next_epoch_id = data.decodeBytes32();
-        header.prev_state_root = data.decodeBytes32();
-        header.outcome_root = data.decodeBytes32();
-        header.timestamp = data.decodeU64();
-        header.next_bp_hash = data.decodeBytes32();
-        header.block_merkle_root = data.decodeBytes32();
+        res.hash = data.peekSha256(208);
+        res.height = data.decodeU64();
+        res.epoch_id = data.decodeBytes32();
+        res.next_epoch_id = data.decodeBytes32();
+        res.prev_state_root = data.decodeBytes32();
+        res.outcome_root = data.decodeBytes32();
+        res.timestamp = data.decodeU64();
+        res.next_bp_hash = data.decodeBytes32();
+        res.block_merkle_root = data.decodeBytes32();
+    }
+
+    struct LightClientBlock {
+        bytes32 prev_block_hash;
+        bytes32 next_block_inner_hash;
+        BlockHeaderInnerLite inner_lite;
+        bytes32 inner_rest_hash;
+        OptionalBlockProducers next_bps;
+        OptionalSignature[] approvals_after_next;
+        bytes32 hash;
+        bytes32 next_hash;
+    }
+
+    function decodeLightClientBlock(Borsh.Data memory data) internal view returns (LightClientBlock memory res) {
+        res.prev_block_hash = data.decodeBytes32();
+        res.next_block_inner_hash = data.decodeBytes32();
+        res.inner_lite = data.decodeBlockHeaderInnerLite();
+        res.inner_rest_hash = data.decodeBytes32();
+        res.next_bps = data.decodeOptionalBlockProducers();
+
+        uint length = data.decodeU32();
+        res.approvals_after_next = new OptionalSignature[](length);
+        for (uint i = 0; i < length; i++) {
+            res.approvals_after_next[i] = data.decodeOptionalSignature();
+        }
+
+        res.hash = sha256(
+            abi.encodePacked(sha256(abi.encodePacked(res.inner_lite.hash, res.inner_rest_hash)), res.prev_block_hash)
+        );
+
+        res.next_hash = sha256(abi.encodePacked(res.next_block_inner_hash, res.hash));
     }
 }
