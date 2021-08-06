@@ -27,7 +27,7 @@ The current version of CLI is all-in-one package -- it is used both for producti
 need CLI only for the token transfer you need to install all testing dependencies. This will be changed in the future.
 
 - Install golang, [see](https://golang.org/dl/).
-- Make sure you are using Node with version >=10 and <=13. We recommend using [nvm](https://github.com/nvm-sh/nvm) for installing node and npm, if you already don't have one. This constraint will be removed soon;
+- Make sure you are using Node with version >=12 and <=13. We recommend using [nvm](https://github.com/nvm-sh/nvm) for installing node and npm, if you already don't have one. This constraint will be removed soon;
 - yarn
 - docker, for deterministic compile rust contracts
 - bash, for preparation steps (needs to be re-implemented in JS)
