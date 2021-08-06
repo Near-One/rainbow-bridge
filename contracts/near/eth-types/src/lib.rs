@@ -5,10 +5,10 @@ use derive_more::{
 };
 use ethereum_types;
 use rlp::{
-    Decodable as RlpDecodable, DecoderError as RlpDecoderError, Encodable as RlpEncodable, Rlp,
-    RlpStream,
+    Decodable as RlpDecodable, DecoderError as RlpDecoderError, DecoderError,
+    Encodable as RlpEncodable, Rlp, RlpStream,
 };
-use rlp_derive::{RlpDecodable as RlpDecodableDerive, RlpEncodable as RlpEncodableDerive};
+use rlp_derive::RlpDecodable as RlpDecodableDerive;
 #[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
 use std::io::{Error, Write};
@@ -175,9 +175,82 @@ pub type Signature = H520;
 
 // Block Header
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, Clone, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct BlockHeader {
+    pub parent_hash: H256,
+    pub uncles_hash: H256,
+    pub author: Address,
+    pub state_root: H256,
+    pub transactions_root: H256,
+    pub receipts_root: H256,
+    pub log_bloom: Bloom,
+    pub difficulty: U256,
+    pub number: u64,
+    pub gas_limit: U256,
+    pub gas_used: U256,
+    pub timestamp: u64,
+    pub extra_data: Vec<u8>,
+    pub mix_hash: H256,
+    pub nonce: H64,
+    #[cfg(feature = "eip1559")]
+    pub base_fee_per_gas: u64,
+
+    pub hash: Option<H256>,
+    pub partial_hash: Option<H256>,
+}
+
+#[derive(BorshDeserialize)]
+pub struct BlockHeaderLondon {
+    pub parent_hash: H256,
+    pub uncles_hash: H256,
+    pub author: Address,
+    pub state_root: H256,
+    pub transactions_root: H256,
+    pub receipts_root: H256,
+    pub log_bloom: Bloom,
+    pub difficulty: U256,
+    pub number: u64,
+    pub gas_limit: U256,
+    pub gas_used: U256,
+    pub timestamp: u64,
+    pub extra_data: Vec<u8>,
+    pub mix_hash: H256,
+    pub nonce: H64,
+    pub base_fee_per_gas: u64,
+
+    pub hash: Option<H256>,
+    pub partial_hash: Option<H256>,
+}
+
+impl From<BlockHeaderLondon> for BlockHeader {
+    fn from(header: BlockHeaderLondon) -> Self {
+        Self {
+            parent_hash: header.parent_hash,
+            uncles_hash: header.uncles_hash,
+            author: header.author,
+            state_root: header.state_root,
+            transactions_root: header.transactions_root,
+            receipts_root: header.receipts_root,
+            log_bloom: header.log_bloom,
+            difficulty: header.difficulty,
+            number: header.number,
+            gas_limit: header.gas_limit,
+            gas_used: header.gas_used,
+            timestamp: header.timestamp,
+            extra_data: header.extra_data,
+            mix_hash: header.mix_hash,
+            nonce: header.nonce,
+            #[cfg(feature = "eip1559")]
+            base_fee_per_gas: header.base_fee_per_gas,
+            hash: header.hash,
+            partial_hash: header.partial_hash,
+        }
+    }
+}
+
+#[derive(BorshDeserialize)]
+pub struct BlockHeaderPreLondon {
     pub parent_hash: H256,
     pub uncles_hash: H256,
     pub author: Address,
@@ -196,6 +269,42 @@ pub struct BlockHeader {
 
     pub hash: Option<H256>,
     pub partial_hash: Option<H256>,
+}
+
+impl From<BlockHeaderPreLondon> for BlockHeader {
+    fn from(header: BlockHeaderPreLondon) -> Self {
+        Self {
+            parent_hash: header.parent_hash,
+            uncles_hash: header.uncles_hash,
+            author: header.author,
+            state_root: header.state_root,
+            transactions_root: header.transactions_root,
+            receipts_root: header.receipts_root,
+            log_bloom: header.log_bloom,
+            difficulty: header.difficulty,
+            number: header.number,
+            gas_limit: header.gas_limit,
+            gas_used: header.gas_used,
+            timestamp: header.timestamp,
+            extra_data: header.extra_data,
+            mix_hash: header.mix_hash,
+            nonce: header.nonce,
+            #[cfg(feature = "eip1559")]
+            base_fee_per_gas: 7,
+            hash: header.hash,
+            partial_hash: header.partial_hash,
+        }
+    }
+}
+
+impl BorshDeserialize for BlockHeader {
+    fn deserialize(buf: &mut &[u8]) -> std::io::Result<Self> {
+        if let Ok(header) = BlockHeaderLondon::deserialize(buf) {
+            Ok(header.into())
+        } else {
+            BlockHeaderPreLondon::deserialize(buf).map(Into::into)
+        }
+    }
 }
 
 impl BlockHeader {
@@ -221,6 +330,9 @@ impl BlockHeader {
         stream.append(&self.gas_used);
         stream.append(&self.timestamp);
         stream.append(&self.extra_data);
+
+        #[cfg(feature = "eip1559")]
+        stream.append(&self.base_fee_per_gas);
 
         if !partial {
             stream.append(&self.mix_hash);
@@ -253,6 +365,8 @@ impl RlpDecodable for BlockHeader {
             extra_data: serialized.val_at(12)?,
             mix_hash: serialized.val_at(13)?,
             nonce: serialized.val_at(14)?,
+            #[cfg(feature = "eip1559")]
+            base_fee_per_gas: serialized.val_at(15)?,
             hash: Some(near_keccak256(serialized.as_raw()).into()),
             partial_hash: None,
         };
@@ -301,12 +415,48 @@ impl rlp::Encodable for LogEntry {
 
 // Receipt Header
 
-#[derive(Debug, Clone, PartialEq, Eq, RlpEncodableDerive, RlpDecodableDerive)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Receipt {
     pub status: bool,
     pub gas_used: U256,
     pub log_bloom: Bloom,
     pub logs: Vec<LogEntry>,
+}
+
+impl rlp::Decodable for Receipt {
+    fn decode(rlp: &Rlp) -> Result<Self, DecoderError> {
+        let mut view = rlp.as_raw();
+
+        // https://eips.ethereum.org/EIPS/eip-2718
+        if let Some(&byte) = view.first() {
+            // https://eips.ethereum.org/EIPS/eip-2718#receipts
+            // If the first byte is between 0 and 0x7f it is an envelop receipt
+            if byte <= 0x7f {
+                view = &view[1..];
+            }
+        }
+
+        rlp::decode::<RlpDeriveReceipt>(view).map(Into::into)
+    }
+}
+
+#[derive(RlpDecodableDerive)]
+pub struct RlpDeriveReceipt {
+    pub status: bool,
+    pub gas_used: U256,
+    pub log_bloom: Bloom,
+    pub logs: Vec<LogEntry>,
+}
+
+impl From<RlpDeriveReceipt> for Receipt {
+    fn from(receipt: RlpDeriveReceipt) -> Self {
+        Self {
+            status: receipt.status,
+            gas_used: receipt.gas_used,
+            log_bloom: receipt.log_bloom,
+            logs: receipt.logs,
+        }
+    }
 }
 
 pub fn near_sha256(data: &[u8]) -> [u8; 32] {
