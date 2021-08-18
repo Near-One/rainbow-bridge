@@ -10,7 +10,7 @@ const {
 } = require('rainbow-bridge-eth2near-block-relay')
 
 class InitNearContracts {
-  static async execute({
+  static async execute ({
     nearMasterAccount,
     nearMasterSk,
     nearClientAccount,
@@ -26,7 +26,8 @@ class InitNearContracts {
     nearProverInitBalance,
     nearNodeUrl,
     nearNetworkId,
-    nearClientValidateEthash,
+    nearClientValidateHeader,
+    nearClientValidateHeaderMode,
     nearClientTrustedSigner,
     ethNodeUrl
   }) {
@@ -97,12 +98,24 @@ class InitNearContracts {
       nearClientAccount
     )
     const robustWeb3 = new RobustWeb3(ethNodeUrl)
+
+    // get chain id used only by the bsc verify header.
+    const chainID = await robustWeb3.web3.eth.net.getId()
+
+    // check if the nearClientValidateHeaderMode is either 'ethash' or 'bsc' if not set
+    // 'ethash' as default
+    if (nearClientValidateHeaderMode !== 'ethash' && nearClientValidateHeaderMode !== 'bsc') {
+      nearClientValidateHeaderMode = 'ethash'
+    }
+
     await clientContract.maybeInitialize(
       hashesGcThreshold,
       finalizedGcThreshold,
       numConfirmations,
-      nearClientValidateEthash === 'true',
+      nearClientValidateHeader === 'true',
+      nearClientValidateHeaderMode,
       nearClientTrustedSigner || null,
+      chainID,
       robustWeb3,
       nearNetworkId
     )
