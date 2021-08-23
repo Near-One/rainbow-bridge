@@ -541,6 +541,7 @@ fn add_two_blocks_from_8996776() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "bsc"), ignore)]
 // Test init bsc bridge.
 fn bsc_add_epoch_header() {
     testing_env!(get_context(vec![], false));
@@ -562,25 +563,26 @@ fn bsc_add_epoch_header() {
     assert!(hashes[0] == contract.epoch_header)
 }
 
-#[test]
 // test validate bsc headers.
+#[test]
+#[cfg_attr(not(feature = "bsc"), ignore)]
 fn bsc_update_epoch_header() {
     testing_env!(get_context(vec![], false));
-    let (blocks, hashes) = get_blocks(&BSC_WEB3RS, 10_161_400, 10_161_450);
+    let (blocks, hashes) = get_blocks(&BSC_WEB3RS, 10_161_400, 10_161_600);
     let chain_id = 97;
+    
     let mut contract = EthClient::init(
         true,
         String::from("bsc"),
         0,
-        read_roots_collection().dag_merkle_roots,
+        vec![],
         blocks[0].clone(),
         30,
-        51,
-        51,
+        201,
+        201,
         None,
         chain_id,
     );
-
     for block in blocks.into_iter().skip(1) {
         contract.add_block_header(block, vec![]);
     }

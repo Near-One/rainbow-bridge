@@ -5,10 +5,10 @@ use near_sdk::collections::UnorderedMap;
 use near_sdk::{assert_self, AccountId};
 use near_sdk::{env, near_bindgen, PanicOnDefault};
 
-#[cfg(bsc)]
+#[cfg(feature = "bsc")]
 use libsecp256k1::{recover, Message, RecoveryId, Signature};
 
-#[cfg(bsc)]
+#[cfg(feature = "bsc")]
 use tiny_keccak::{Hasher, Keccak};
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -276,7 +276,6 @@ impl EthClient {
         #[serializer(borsh)] block_header: Vec<u8>,
         #[serializer(borsh)] dag_nodes: Vec<DoubleNodeWithMerkleProof>,
     ) {
-        env::log("Add block header".as_bytes());
         self.check_not_paused(PAUSE_ADD_BLOCK_HEADER);
         let header: BlockHeader = rlp::decode(block_header.as_slice()).unwrap();
 
@@ -314,7 +313,6 @@ impl EthClient {
 impl EthClient {
     /// Record the header. If needed update the canonical chain and perform the GC.
     fn record_header(&mut self, header: BlockHeader) {
-        env::log("Record header".as_bytes());
         let best_info = self.infos.get(&self.best_header_hash).unwrap();
         let header_hash = header.hash.unwrap();
         let header_number = header.number;
@@ -343,7 +341,6 @@ impl EthClient {
         all_hashes.push(header_hash);
         self.all_header_hashes.insert(&header_number, &all_hashes);
 
-        env::log("Inserting header".as_bytes());
         // Record full information about this header.
         self.headers.insert(&header_hash, &header);
         let info = HeaderInfo {
@@ -352,14 +349,12 @@ impl EthClient {
             number: header_number,
         };
         self.infos.insert(&header_hash, &info);
-        env::log("Inserted".as_bytes());
 
         // Check if canonical chain needs to be updated.
         if info.total_difficulty > best_info.total_difficulty
             || (info.total_difficulty == best_info.total_difficulty
                 && header.difficulty % 2 == U256::default())
         {
-            env::log("Canonical chain needs to be updated.".as_bytes());
             // If the new header has a lower number than the previous header, we need to clean it
             // going forward.
             if best_info.number > info.number {
@@ -418,7 +413,6 @@ impl EthClient {
 
     /// Remove information about the headers that are at least as old as the given header number.
     fn gc_headers(&mut self, mut header_number: u64) {
-        env::log(format!("Run headers GC. Used gas: {}", env::used_gas()).as_bytes());
         loop {
             if let Some(all_headers) = self.all_header_hashes.get(&header_number) {
                 for hash in all_headers {
@@ -435,7 +429,6 @@ impl EthClient {
                 break;
             }
         }
-        env::log(format!("Finish headers GC. Used gas: {}", env::used_gas()).as_bytes());
     }
 
     fn verify_header(
@@ -446,7 +439,7 @@ impl EthClient {
     ) -> bool {
         match &self.validate_header_mode[..] {
             "ethash" => return self.verify_header_ethash(&header, &prev, &dag_nodes),
-            #[cfg(bsc)]
+            #[cfg(feature = "bsc")]
             "bsc" => return self.verify_header_bsc(&header, &prev),
             _ => return false,
         }
@@ -461,14 +454,14 @@ impl EthClient {
     }
 
     // seal and hash bsc header.
-    #[cfg(bsc)]
+    #[cfg(feature = "bsc")]
     fn seal_hash(&self, header: &BlockHeader, chain_id: U256) -> [u8; 32] {
         let d = SealData { chain_id, header };
         d.seal_hash()
     }
 
     //  Verify POSA of the binance chain header.
-    #[cfg(bsc)]
+    #[cfg(feature = "bsc")]
     fn verify_header_bsc(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
         // The genesis block is the always valid dead-end
         if header.number == 0 {
@@ -531,7 +524,7 @@ impl EthClient {
     }
 
     // check if the author is the signer.
-    #[cfg(bsc)]
+    #[cfg(feature = "bsc")]
     fn is_author(&self, header: &BlockHeader) -> bool {
         let extra_seal = 65;
         let seal_hash = self.seal_hash(header, U256(self.chain_id.into()));
@@ -567,13 +560,13 @@ impl EthClient {
         H160(address.into()) == header.author
     }
 
-    #[cfg(bsc)]
+    #[cfg(feature = "bsc")]
     fn get_epoch_header(&self) -> BlockHeader {
         self.headers.get(&self.epoch_header).unwrap()
     }
 
     // check if the author address is valid and is in the validator set.
-    #[cfg(bsc)]
+    #[cfg(feature = "bsc")]
     fn is_validator(&self, header: &BlockHeader) -> bool {
         let (extra_vanity, extra_seal, address_size) = (32, 65, 20);
 
@@ -685,7 +678,7 @@ impl EthClient {
     }
 
     // check if the author is in the validators set.
-    #[cfg(bsc)]
+    #[cfg(feature = "bsc")]
     fn is_in_validator_set(&self, epoch_header: &BlockHeader, add: Address) -> bool {
         let (extra_vanity, extra_seal, address_size) = (32, 65, 20);
         let validators = epoch_header.extra_data

@@ -18,6 +18,6 @@ docker run \
      -w /host/eth-client \
      -e RUSTFLAGS='-C link-arg=-s' \
      nearprotocol/contract-builder \
-     /bin/bash -c "rustup target add wasm32-unknown-unknown; cargo build --target wasm32-unknown-unknown --release"
+     /bin/bash -c "rustup target add wasm32-unknown-unknown; cargo build --target wasm32-unknown-unknown --features=bsc --release"
 
 cp $DIR/../target/wasm32-unknown-unknown/release/eth_client.wasm $DIR/../res/

@@ -177,6 +177,31 @@ pub type Signature = H520;
 
 #[derive(Debug, Clone, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+pub struct BlockHeaderBase {
+    pub parent_hash: H256,
+    pub uncles_hash: H256,
+    pub author: Address,
+    pub state_root: H256,
+    pub transactions_root: H256,
+    pub receipts_root: H256,
+    pub log_bloom: Bloom,
+    pub difficulty: U256,
+    pub number: u64,
+    pub gas_limit: U256,
+    pub gas_used: U256,
+    pub timestamp: u64,
+    pub extra_data: Vec<u8>,
+    pub mix_hash: H256,
+    pub nonce: H64,
+    #[cfg(feature = "eip1559")]
+    pub base_fee_per_gas: u64,
+
+    pub hash: Option<H256>,
+    pub partial_hash: Option<H256>,
+}
+
+#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct BlockHeader {
     pub parent_hash: H256,
     pub uncles_hash: H256,
@@ -223,7 +248,7 @@ pub struct BlockHeaderLondon {
     pub partial_hash: Option<H256>,
 }
 
-impl From<BlockHeaderLondon> for BlockHeader {
+impl From<BlockHeaderLondon> for BlockHeaderBase {
     fn from(header: BlockHeaderLondon) -> Self {
         Self {
             parent_hash: header.parent_hash,
@@ -271,7 +296,7 @@ pub struct BlockHeaderPreLondon {
     pub partial_hash: Option<H256>,
 }
 
-impl From<BlockHeaderPreLondon> for BlockHeader {
+impl From<BlockHeaderPreLondon> for BlockHeaderBase {
     fn from(header: BlockHeaderPreLondon) -> Self {
         Self {
             parent_hash: header.parent_hash,
@@ -297,7 +322,7 @@ impl From<BlockHeaderPreLondon> for BlockHeader {
     }
 }
 
-impl BorshDeserialize for BlockHeader {
+impl BorshDeserialize for BlockHeaderBase {
     fn deserialize(buf: &mut &[u8]) -> std::io::Result<Self> {
         if let Ok(header) = BlockHeaderLondon::deserialize(buf) {
             Ok(header.into())
@@ -478,13 +503,13 @@ pub fn near_keccak512(data: &[u8]) -> [u8; 64] {
 }
 
 // SealData struct used by bsc to encode header to rlp and hash using keccak256.
-#[cfg(bsc)]
+// #[cfg(feature ="bsc")]
 pub struct SealData<'s>{
     pub chain_id: U256,
     pub header: &'s BlockHeader,
 }
 
-#[cfg(bsc)]
+// #[cfg(feature ="bsc")]
 impl<'s> SealData<'s> {
     // hash using keccak256 an RLP encoded header.
     pub fn seal_hash(&self) -> [u8; 32]{
@@ -493,7 +518,7 @@ impl<'s> SealData<'s> {
 }
 
 // implement RlpEncodable for SealData.
-#[cfg(bsc)]
+#[cfg(feature ="bsc")]
 impl<'s> RlpEncodable for SealData<'s> {
     fn rlp_append(&self, stream: &mut RlpStream) {
         stream.begin_list(16);

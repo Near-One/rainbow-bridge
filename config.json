@@ -1,0 +1,20 @@
+{
+	"nearNodeUrl": "http://localhost:3030",
+	"nearNetworkId": "local",
+	"nearMasterAccount": "node0",
+	"nearMasterSk": "ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP",
+	"ethNodeUrl": "https://data-seed-prebsc-1-s1.binance.org:8545",
+	"ethMasterSk": "0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200",
+	"nearClientValidateHeader": "true",
+	"nearClientValidateHeaderMode": "bsc",
+	"ethEd25519Address": "0xf0411ef800a4bc50b9f16cf81a7cf09b61118319",
+	"ethClientLockEthAmount": "1000",
+	"ethClientLockDuration": "10",
+	"ethClientAddress": "0x38348eab3ddf54d2a71f060fd46dff5b0e3a0039",
+	"ethProverAddress": "0x4ea5fc5632db5014e36cf826da694e7d5a5db160",
+	"ethErc20Address": "0x7cb8d25d5f13ec6d4f9f559ef9ed0bdf46565e70",
+	"ethLockerAddress": "0xda53e0b3f24172512ed60add761a82c48e2c1796",
+	"ethAdminAddress": "0xDf08F82De32B8d460adbE8D72043E3a7e25A3B39",
+	"nearClientSk": "ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP",
+	"nearProverSk": "ed25519:3D4YudUQRE39Lc4JHghuB5WM8kbgDDa34mnrEP5DdTApVH81af7e2dWgNPEaiQfdJnZq1CNPp5im4Rg5b733oiMP"
+}

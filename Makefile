@@ -63,6 +63,6 @@ build-eth-client:
 	cd contracts/near/eth-client && sudo ./build.sh
 
 test-eth-client:
-	cd contracts/near/eth-client && sudo ./test.sh
+	cd contracts/near/eth-client && ./test.sh
 
 .PHONY: help init yarn-init gen-contracts start-bsc light-bsc-contracts start-relayer stop-all build-eth-client test-eth-client start-ethash
