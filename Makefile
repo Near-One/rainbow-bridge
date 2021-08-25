@@ -36,12 +36,12 @@ start-bsc:
 
 # deploy contracts
 full-contracts:
-	cli/index.js init-near-contracts
 	cli/index.js init-eth-ed25519
 	cli/index.js init-eth-client --eth-client-lock-eth-amount 1000 --eth-client-lock-duration 10
 	cli/index.js init-eth-prover
 	cli/index.js init-eth-erc20
 	cli/index.js init-eth-locker
+	cli/index.js init-near-contracts
 	cli/index.js init-near-token-factory
 
 # deploy contracts
@@ -66,3 +66,5 @@ test-eth-client:
 	cd contracts/near/eth-client && ./test.sh
 
 .PHONY: help init yarn-init gen-contracts start-bsc light-bsc-contracts start-relayer stop-all build-eth-client test-eth-client start-ethash
+
+# cli/index.js TESTING transfer-eth-erc20-to-near --amount 1000 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 --near-receiver-account node0 --near-master-account neartokenfactory
