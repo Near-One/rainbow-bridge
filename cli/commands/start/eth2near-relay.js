@@ -8,7 +8,7 @@ const { nearAPI } = require('rainbow-bridge-utils')
 const path = require('path')
 
 class StartEth2NearRelayCommand {
-  static async execute({
+  static async execute ({
     daemon,
     nearNetworkId,
     nearNodeUrl,
@@ -18,7 +18,8 @@ class StartEth2NearRelayCommand {
     totalSubmitBlock,
     gasPerTransaction,
     ethNodeUrl,
-    metricsPort
+    metricsPort,
+    nearClientValidateHeaderMode
   }) {
     if (daemon === 'true') {
       ProcessManager.connect((err) => {
@@ -75,7 +76,7 @@ class StartEth2NearRelayCommand {
       )
       await clientContract.accessKeyInit()
       console.log('Initializing eth2near-relay...', { ethNodeUrl, metricsPort })
-      relay.initialize(clientContract, { ethNodeUrl, totalSubmitBlock, gasPerTransaction, metricsPort, nearNetworkId })
+      relay.initialize(clientContract, { ethNodeUrl, totalSubmitBlock, gasPerTransaction, metricsPort, nearNetworkId, nearClientValidateHeaderMode })
       console.log('Starting eth2near-relay...')
       await relay.run()
     }

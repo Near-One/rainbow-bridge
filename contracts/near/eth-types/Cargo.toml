@@ -18,3 +18,4 @@ derive_more = "^0.99.2"
 
 [features]
 eip1559 = []
+bsc = []
