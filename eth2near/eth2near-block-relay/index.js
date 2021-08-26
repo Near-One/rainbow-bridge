@@ -10,6 +10,7 @@ const {
 const {
   web3BlockToRlp,
   EthOnNearClientContract,
+  temp_web3CalculateBlockHash,
   borshSchema,
   getEthBlock
 } = require('./eth-on-near-client')
@@ -135,6 +136,8 @@ class Eth2NearRelay {
         console.log('Checking block:', blockNumber);
         try {
           const chainBlock = await getEthBlock(blockNumber, robustWeb3)
+          // Set miner to all zeroes until https://github.com/ethereum/go-ethereum/commit/62ad17fb0046243255048fbf8cb0882f48d8d850 is live
+          chainBlock.miner = "0x0000000000000000000000000000000000000000";
 
           /// Block is not ready
           if (chainBlock === null) {
@@ -144,10 +147,14 @@ class Eth2NearRelay {
             return await predicate(value);
           }
 
-          const chainBlockHash = chainBlock.hash
+          // Temporarily calculate block by ouselves until https://github.com/ethereum/go-ethereum/commit/62ad17fb0046243255048fbf8cb0882f48d8d850 is adopted to Infura/Alchemy
+          //const chainBlockHash = chainBlock.hash
+          const chainBlockHash = temp_web3CalculateBlockHash(chainBlock);
+          console.log(`Web3 hash: ${chainBlock.hash}; Calculated hash: ${chainBlockHash}`);
           const clientHashes = await this.ethClientContract.known_hashes(
             blockNumber
           )
+          console.log(`Client hashes: ${clientHashes}`);
           if (clientHashes.find((x) => x === chainBlockHash)) {
             return true;
           } else {
@@ -163,6 +170,7 @@ class Eth2NearRelay {
 
       /// In case there exist a fork, find how many steps should go backward (delta) to the first block
       /// in the client that is also in the main chain. If the answer is 0, then the current head is valid
+      console.log(`Client block number: ${clientBlockNumber}`);
       let delta = await binarySearchWithEstimate(0, clientBlockNumber, estimatedValued, predicate);
       clientBlockNumber -= delta;
       previousBlockNumber = clientBlockNumber;
@@ -179,6 +187,8 @@ class Eth2NearRelay {
             // Initially, do not add block concurrently
             endBlock = clientBlockNumber + 1
           }
+          console.log(`Client block number: ${clientBlockNumber}; endBlock: ${endBlock}`);
+
           for (let i = clientBlockNumber + 1; i <= endBlock; i++) {
             blockPromises.push(this.getParseBlock(i))
           }
@@ -219,6 +229,8 @@ class Eth2NearRelay {
   async getParseBlock(blockNumber) {
     try {
       const block = await getEthBlock(blockNumber, this.robustWeb3)
+      // Set miner to all zeroes until https://github.com/ethereum/go-ethereum/commit/62ad17fb0046243255048fbf8cb0882f48d8d850 is live
+      block.miner = "0x0000000000000000000000000000000000000000";
       const blockRlp = this.web3.utils.bytesToHex(
         web3BlockToRlp(block)
       )

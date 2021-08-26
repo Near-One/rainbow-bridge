@@ -45,11 +45,31 @@ async function getEthBlock(number, RobustWeb3) {
   return blockData.body.result;
 }
 
+function temp_web3CalculateBlockHash(blockData, bridgeId) {
+  let chain;
+  if (bridgeId === "testnet") {
+    chain = "goerli";
+  } else {
+    chain = "mainnet";
+  }
+  const common = new Common.default({ chain });
+
+  /// baseFeePerGas was introduced after london hard fork.
+  /// TODO: Use better way to detect current hard fork.
+  if (blockData.baseFeePerGas !== undefined) {
+    common.setHardfork("london")
+    common.setEIPs([1559])
+  }
+
+  const block = blockFromRpc.default(blockData, [], { common });
+  return '0x' + block.hash().toString('hex');
+}
+
 /// bridgeId matches nearNetworkId. It is one of two strings [testnet / mainnet]
 function web3BlockToRlp(blockData, bridgeId) {
   let chain;
   if (bridgeId === "testnet") {
-    chain = "ropsten";
+    chain = "goerli";
   } else {
     chain = "mainnet";
   }
@@ -191,7 +211,11 @@ class EthOnNearClientContract extends BorshContract {
       console.log('EthOnNearClient is not initialized, initializing...')
       const lastBlockNumber = await robustWeb3.getBlockNumber()
       const blockData = await getEthBlock(lastBlockNumber, robustWeb3);
+      // Set miner to all zeroes until https://github.com/ethereum/go-ethereum/commit/62ad17fb0046243255048fbf8cb0882f48d8d850 is live
+      blockData.miner = "0x0000000000000000000000000000000000000000";
       const blockRlp = web3BlockToRlp(blockData, bridgeId);
+      console.log(`Initializing with blockNumber: ${lastBlockNumber}`);
+
       await this.init(
         {
           validate_ethash: validateEthash,
@@ -233,3 +257,4 @@ exports.EthOnNearClientContract = EthOnNearClientContract
 exports.web3BlockToRlp = web3BlockToRlp
 exports.getEthBlock = getEthBlock
 exports.borshSchema = borshSchema
+exports.temp_web3CalculateBlockHash = temp_web3CalculateBlockHash;
