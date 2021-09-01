@@ -12,14 +12,24 @@ else
      userflag=""
 fi
 
-docker run \
-     --mount type=bind,source=$DIR/..,target=/host \
-     --cap-add=SYS_PTRACE --security-opt seccomp=unconfined $userflag \
-     -w /host/eth-client \
-     -e RUSTFLAGS='-C link-arg=-s' \
-     nearprotocol/contract-builder \
-     /bin/bash -c "rustup target add wasm32-unknown-unknown; cargo build --target wasm32-unknown-unknown --release"
-     # TODO: bsc
-     # /bin/bash -c "rustup target add wasm32-unknown-unknown; cargo build --target wasm32-unknown-unknown --features bsc --release"
+if [ "$1" = "bsc" ]; then
+     docker run \
+          --mount type=bind,source=$DIR/..,target=/host \
+          --cap-add=SYS_PTRACE --security-opt seccomp=unconfined $userflag \
+          -w /host/eth-client \
+          -e RUSTFLAGS='-C link-arg=-s' \
+          nearprotocol/contract-builder \
+          /bin/bash -c "rustup target add wasm32-unknown-unknown; cargo build --target wasm32-unknown-unknown --no-default-features --features bsc --release"
 
-cp $DIR/../target/wasm32-unknown-unknown/release/eth_client.wasm $DIR/../res/
+     cp $DIR/../target/wasm32-unknown-unknown/release/eth_client.wasm $DIR/../res/bsc_eth_client.wasm
+else
+     docker run \
+          --mount type=bind,source=$DIR/..,target=/host \
+          --cap-add=SYS_PTRACE --security-opt seccomp=unconfined $userflag \
+          -w /host/eth-client \
+          -e RUSTFLAGS='-C link-arg=-s' \
+          nearprotocol/contract-builder \
+          /bin/bash -c "rustup target add wasm32-unknown-unknown; cargo build --target wasm32-unknown-unknown --release"
+     
+     cp $DIR/../target/wasm32-unknown-unknown/release/eth_client.wasm $DIR/../res/
+fi

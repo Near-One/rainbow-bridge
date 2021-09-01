@@ -34,8 +34,7 @@ serde_json = "1.0"
 indicatif = "0.14"
 
 [features]
-# default = ["eip1559"]
-# default = ["bsc"]
+default = ["eip1559"]
 expensive_tests = []
 eip1559 = ["eth-types/eip1559"]
 bsc = ["eth-types/bsc"]
