@@ -21,7 +21,7 @@ if [ "$1" = "bsc" ]; then
           nearprotocol/contract-builder \
           /bin/bash -c "rustup target add wasm32-unknown-unknown; cargo build --target wasm32-unknown-unknown --no-default-features --features bsc --release"
 
-     cp $DIR/../target/wasm32-unknown-unknown/release/eth_client.wasm $DIR/../res/bsc_eth_client.wasm
+     cp $DIR/../target/wasm32-unknown-unknown/release/eth_client.wasm $DIR/../res/bsc_client.wasm
 else
      docker run \
           --mount type=bind,source=$DIR/..,target=/host \

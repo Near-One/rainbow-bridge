@@ -83,7 +83,7 @@ testnet-full-contracts:
 		--near-client-sk ed25519:2eZcTKk6ic9Wk2iXgDu8ok38HNdeua5KeU9LzdpvDGUd5NGFFNNoJUZn2fWxbnWKYYDvhmhV4pqvSV1QVYTXxrSE \
 		--near-prover-account n0prv.testnet \
 		--near-prover-sk ed25519:2LWJDmCKL4Vy49jKnV4P4Znasvv6ngNNNqwhMuQEfKCUSaus7TQQTK7yDF6QPGgtfkAWJQAiYeGHJKyXhDipd7iJ \
-		--near-client-contract-path ${PWD}/contracts/near/res/bsc_eth_client.wasm \
+		--near-client-contract-path ${PWD}/contracts/near/res/bsc_client.wasm \
 		--near-prover-contract-path ${PWD}/contracts/near/res/bsc_prover.wasm \
 		--num-confirmations 3
 
@@ -122,11 +122,14 @@ stop-all:
 build-bsc-client:
 	cd contracts/near/eth-client && sudo ./build.sh bsc
 
-build-bsc-client:
-	cd contracts/near/eth-client && sudo ./build.sh bsc
-
 build-bsc-prover:
 	cd contracts/near/eth-prover && sudo ./build.sh bsc
+
+build-eth-client:
+	cd contracts/near/eth-client && sudo ./build.sh
+
+build-eth-prover:
+	cd contracts/near/eth-prover && sudo ./build.sh
 
 # ===============================Run tests==============================
 
