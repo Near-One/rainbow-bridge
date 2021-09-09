@@ -10,7 +10,7 @@ help:
 	@echo 6 run "stop-all"
 	@echo
 	@echo ======================================Testnet======================================
-	@echo 1 run "make init-config" copy config testnet file to ${HOME}/.rainbow/config.json
+	@echo 1 run "make init-test-config" copy config testnet file to ${HOME}/.rainbow/config.json
 	@echo 2 run "make testnet-full-contracts" Deploy contracts to BSC and NEAR.
 	@echo 3 run "make start-relayer" Deploy contracts to BSC and NEAR.
 	@echo 4 run "stop-all"
@@ -64,10 +64,15 @@ local-full-contracts:
 
 # ===============================Testnet==============================
 
-# copy the testnet config file to the ${HOME}/.rainbow/config.json 
 init-config:
 	mkdir -p ${HOME}/.rainbow
 	cp config.json ${HOME}/.rainbow/config.json
+
+
+# copy the testnet config file to the ${HOME}/.rainbow/config.json
+init-test-config:
+	mkdir -p ${HOME}/.rainbow
+	cp config.json.test ${HOME}/.rainbow/config.json
 	
 # deploy contracts to testnets NEAR and BSC
 testnet-full-contracts:
@@ -133,21 +138,21 @@ test-bsc-prover:
 
 
 # ===============================Test the bsc bridge==============================
-near-balance:
+testnet-near-balance:
 	cli/index.js TESTING get-bridge-on-near-balance --near-receiver-account simple10.testnet
 
-transfer-eth-to-near:
+testnet-transfer-eth-to-near:
 	cli/index.js TESTING transfer-eth-erc20-to-near \
 		--amount 10 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 \
 		--near-receiver-account simple10.testnet \
 		--near-master-account simple10.testnet \
 		--near-master-sk ed25519:4aFi4332BrFHR2pYXcqsz51P5qL4piHYWYtXggPWxPRxtLxT5veeyfFGyevJpCP7ZW13RzmPa1V2RvkApqYjMXoV
 
-transfer-near-to-eth:
+testnet-transfer-near-to-eth:
 	cli/index.js TESTING transfer-eth-erc20-from-near \
 		--amount 1 \
 		--near-sender-sk ed25519:4aFi4332BrFHR2pYXcqsz51P5qL4piHYWYtXggPWxPRxtLxT5veeyfFGyevJpCP7ZW13RzmPa1V2RvkApqYjMXoV \
 		--near-sender-account simple10.testnet \
 		--eth-receiver-address 0xDf08F82De32B8d460adbE8D72043E3a7e25A3B39
 
-.PHONY: help init yarn-init gen-contracts local-start local-start-bsc local-full-contracts init-config testnet-full-contracts start-relayer stop-all build-eth-client build-bsc-client build-eth-prover test-eth-client near-balance transfer-eth-to-near transfer-near-to-eth
+.PHONY: help init yarn-init gen-contracts local-start local-start-bsc local-full-contracts init-config init-test-config testnet-full-contracts start-relayer stop-all build-eth-client build-bsc-client build-eth-prover test-eth-client testnet-near-balance testnet-transfer-eth-to-near testnet-transfer-near-to-eth
