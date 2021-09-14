@@ -68,9 +68,9 @@ class Near2EthRelay {
         })
         const lastFinalBlockHash = headBlock.header.last_final_block
         // The finalized block is not immediately available so we wait for it to become available.
-        let lightClientBlock = {}
+        let lightClientBlock = null
         let currentValidators = null
-        while (Object.entries(lightClientBlock).length === 0) {
+        while (!lightClientBlock || Object.keys(lightClientBlock).length === 0) {
           currentValidators = await this.near.connection.provider.sendJsonRpc(
             'EXPERIMENTAL_validators_ordered',
             [lastFinalBlockHash]
@@ -83,7 +83,7 @@ class Near2EthRelay {
             'next_light_client_block',
             [lastFinalBlockHash]
           )
-          if (Object.entries(lightClientBlock).length === 0) {
+          if (!lightClientBlock || Object.keys(lightClientBlock).length === 0) {
             await sleep(300)
             continue
           }

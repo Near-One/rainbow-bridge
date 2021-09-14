@@ -177,31 +177,6 @@ pub type Signature = H520;
 
 #[derive(Debug, Clone, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
-pub struct BlockHeaderBase {
-    pub parent_hash: H256,
-    pub uncles_hash: H256,
-    pub author: Address,
-    pub state_root: H256,
-    pub transactions_root: H256,
-    pub receipts_root: H256,
-    pub log_bloom: Bloom,
-    pub difficulty: U256,
-    pub number: u64,
-    pub gas_limit: U256,
-    pub gas_used: U256,
-    pub timestamp: u64,
-    pub extra_data: Vec<u8>,
-    pub mix_hash: H256,
-    pub nonce: H64,
-    #[cfg(feature = "eip1559")]
-    pub base_fee_per_gas: u64,
-
-    pub hash: Option<H256>,
-    pub partial_hash: Option<H256>,
-}
-
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct BlockHeader {
     pub parent_hash: H256,
     pub uncles_hash: H256,
@@ -248,7 +223,7 @@ pub struct BlockHeaderLondon {
     pub partial_hash: Option<H256>,
 }
 
-impl From<BlockHeaderLondon> for BlockHeaderBase {
+impl From<BlockHeaderLondon> for BlockHeader {
     fn from(header: BlockHeaderLondon) -> Self {
         Self {
             parent_hash: header.parent_hash,
@@ -296,7 +271,7 @@ pub struct BlockHeaderPreLondon {
     pub partial_hash: Option<H256>,
 }
 
-impl From<BlockHeaderPreLondon> for BlockHeaderBase {
+impl From<BlockHeaderPreLondon> for BlockHeader {
     fn from(header: BlockHeaderPreLondon) -> Self {
         Self {
             parent_hash: header.parent_hash,
@@ -322,8 +297,13 @@ impl From<BlockHeaderPreLondon> for BlockHeaderBase {
     }
 }
 
-impl BorshDeserialize for BlockHeaderBase {
+impl BorshDeserialize for BlockHeader {
     fn deserialize(buf: &mut &[u8]) -> std::io::Result<Self> {
+        #[cfg(feature ="bsc")]        
+        if cfg!(feature = "bsc") {
+            return BlockHeaderPreLondon::deserialize(buf).map(Into::into)
+        }
+
         if let Ok(header) = BlockHeaderLondon::deserialize(buf) {
             Ok(header.into())
         } else {

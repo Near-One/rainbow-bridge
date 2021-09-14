@@ -63,7 +63,7 @@ class DeployToken {
           address: remove0x(ethTokenAddress)
         },
         new BN('300000000000000'),
-        new BN('30000000000000000000000000')
+        new BN('3400000000000000000000000')
       )
     } catch (err) {
       console.log(

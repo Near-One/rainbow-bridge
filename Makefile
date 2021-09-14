@@ -1,31 +1,30 @@
 help:
-	@echo Deploy rainbow bridge
 	@echo ======================================Local dev=====================================
-	@echo 1 run "make init" first time only and one time.
-	@echo 2 run "make local-start" to start local development tools:ganache, nearup
-	@echo 2 run "make local-start-bsc" to start local development tools:bsc testnet, nearup
-	@echo 3 run "make gen-contarcts"
-	@echo 4 run "make local-full-contracts"
-	@echo 5 run "make start-relayer"
-	@echo 6 run "stop-all"
+	@echo 1 run "make init-yarn" install node packages.
+	@echo 2 run "make gen-contarcts" generate ethereum contracts.
+	@echo 3 run "make setup-clean-and-prepare" clean and prepare local env.
+	@echo 4 run "make start-local-near-and-ganache-nodes" start nearup and ganache.
+	@echo 5 run "make deploy-full-contracts" deploy near and eth contracts.
+	@echo 6 run "make start-relayer" start relayers.
+	@echo 7 run "make stop-all" stop relayers.
 	@echo
-	@echo ======================================Testnet======================================
-	@echo 1 run "make init-test-config" copy config testnet file to ${HOME}/.rainbow/config.json
-	@echo 2 run "make testnet-full-contracts" Deploy contracts to BSC and NEAR.
-	@echo 3 run "make start-relayer" Deploy contracts to BSC and NEAR.
-	@echo 4 run "stop-all"
+	@echo ======================================Build Near Contrats=====================================
+	@echo "make bsc-build-client" build bsc client near contract.
+	@echo "make bsc-build-prover" build bsc prover near contract.
+	@echo "make eth-build-client" build eth client near contract.
+	@echo "make eth-build-prover" build eth prover near contract.
 	@echo
-	@echo ======================================Test the tesnet bridge======================================
-	@echo 1 run "make near-balance" get balance of a near account.
-	@echo 2 run "make transfer-eth-to-near" transfer tokens from eth to near.
-	@echo 3 run "make transfer-near-to-eth" transfer tokens from near to eth.
+	@echo ======================================Run Near Tests=====================================
+	@echo "make bsc-test-client" run tests bsc client
+	@echo "make bsc-test-prover" run tests bsc prover
+	@echo "make eth-test-client" run tests eth client
+	@echo "make eth-test-prover" run tests eth prover
 	@echo
-	
+
 
 # ===============================Init==============================
-init: yarn-init gen-contracts
-	
-yarn-init:
+
+init-yarn:
 	yarn
 	yarn install
 
@@ -36,126 +35,90 @@ gen-contracts:
 	cd contracts/eth/nearbridge/ && yarn && yarn build
 	cd contracts/eth/nearprover/ && yarn && yarn build
 
-# start near blockchain and connect with ganache.
-local-start:
+setup-clean-and-prepare:
 	cli/index.js clean
 	cli/index.js prepare
-	cli/index.js start near-node 
+
+# start near blockchain and connect with ganache.
+start-local-near-and-ganache-nodes:
+	cli/index.js start near-node
 	cli/index.js start ganache
 
-# start near blockchain and connect with binance test net.
-local-start-bsc:
-	cli/index.js clean
-	cli/index.js prepare
-	cli/index.js start near-node
-	cli/index.js start binance-smart-chain \
-	--eth-node-url https://data-seed-prebsc-1-s1.binance.org:8545 \
-	--eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200
+# ===============================Deploy contracts localy==============================
 
-# deploy full contracts.
-local-full-contracts:
-	cli/index.js init-near-contracts --num-confirmations 3 --near-prover-contract-path ${PWD}/contracts/near/res/bsc_prover.wasm
+# deploy contracts to testnets NEAR and BSC
+deploy-full-contracts:
+	cli/index.js init-near-contracts
 	cli/index.js init-eth-ed25519
-	cli/index.js init-eth-client --eth-client-lock-duration 2 --eth-client-replace-duration 4
+	cli/index.js init-eth-client
 	cli/index.js init-eth-prover
 	cli/index.js init-eth-erc20
 	cli/index.js init-eth-locker
 	cli/index.js init-near-token-factory
 
-# ===============================Testnet==============================
-
-init-config:
-	mkdir -p ${HOME}/.rainbow
-	cp config.json ${HOME}/.rainbow/config.json
-
-
-# copy the testnet config file to the ${HOME}/.rainbow/config.json
-init-test-config:
-	mkdir -p ${HOME}/.rainbow
-	cp config.json.test ${HOME}/.rainbow/config.json
-	
-# deploy contracts to testnets NEAR and BSC
-testnet-full-contracts:
-	cli/index.js init-near-contracts \
-		--near-master-account 0master.testnet \
-		--near-master-sk ed25519:Stg3LiwvhuTU5JvUMejBHvmoMxz3473wZHmoiE3j3VVTb1VAeTZRa258wGiiGBMJ5ppdTSP4UDjrjw5PizNch2t \
-		--near-client-account n0cli.testnet \
-		--near-client-sk ed25519:2eZcTKk6ic9Wk2iXgDu8ok38HNdeua5KeU9LzdpvDGUd5NGFFNNoJUZn2fWxbnWKYYDvhmhV4pqvSV1QVYTXxrSE \
-		--near-prover-account n0prv.testnet \
-		--near-prover-sk ed25519:2LWJDmCKL4Vy49jKnV4P4Znasvv6ngNNNqwhMuQEfKCUSaus7TQQTK7yDF6QPGgtfkAWJQAiYeGHJKyXhDipd7iJ \
-		--near-client-contract-path ${PWD}/contracts/near/res/bsc_client.wasm \
-		--near-prover-contract-path ${PWD}/contracts/near/res/bsc_prover.wasm \
-		--num-confirmations 3
-
-	cli/index.js init-eth-ed25519
-	cli/index.js init-eth-client --eth-client-lock-eth-amount 1000 --eth-client-lock-duration 10
-	cli/index.js init-eth-prover \
-
-testnet-factory:
-	cli/index.js init-eth-locker \
-		--eth-gas-multiplier 2 \
-		--near-token-factory-account n0fac.testnet
-
-	cli/index.js init-near-token-factory  \
-	--near-prover-account n0prv.testnet \
-	--near-token-factory-account n0fac.testnet \
-	--near-token-factory-sk ed25519:5sdVyUoFUDg127HvWcjQX3tz5NpysWU6HTeMEL3j3bFSuKWNjwW4NffaqAaJuH9Zi9P4SJcb1wbJjfDFaNzLztnr \
-	--eth-erc20-address 0x4bbad5810a29cd5144ca3b6ca15db3664770f604
-
 # ===============================Relayers==============================
 
 # start relayers
 start-relayer:
-# cli/index.js start eth2near-relay --gas-per-transaction 75000000000000 --total-submit-block 4
-	cli/index.js start eth2near-relay --gas-per-transaction 100000000000000 --total-submit-block 3
-	cli/index.js start near2eth-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200
-	cli/index.js start bridge-watchdog --eth-master-sk 0x6c4f2ebaf0ffa68c9822d7645fd52f365fad8164296323aa9ee4e987120a105c
+	cli/index.js start eth2near-relay
+	cli/index.js start near2eth-relay
+	cli/index.js start bridge-watchdog
 	pm2 logs
 
-# start relayers
+# stop relayers
 stop-all:
 	cli/index.js stop all
 
-
 # ===============================Build NEAR Contracts==============================
 
-build-bsc-client:
+# build bsc near client
+bsc-build-client:
 	cd contracts/near/eth-client && sudo ./build.sh bsc
 
-build-bsc-prover:
+# build bsc near prover
+bsc-build-prover:
 	cd contracts/near/eth-prover && sudo ./build.sh bsc
 
-build-eth-client:
+# build eth near client
+eth-build-client:
 	cd contracts/near/eth-client && sudo ./build.sh
 
-build-eth-prover:
+# build eth near prover
+eth-build-prover:
 	cd contracts/near/eth-prover && sudo ./build.sh
 
 # ===============================Run tests==============================
 
-test-bsc-client:
+# test bsc near client
+bsc-test-client:
 	cd contracts/near/eth-client && ./test.sh bsc
 
-test-bsc-prover:
+# test bsc near prover
+bsc-test-prover:
 	cd contracts/near/eth-prover && ./test.sh bsc
 
+# test eth near client
+eth-test-client:
+	cd contracts/near/eth-client && ./test.sh
 
-# ===============================Test the bsc bridge==============================
-testnet-near-balance:
-	cli/index.js TESTING get-bridge-on-near-balance --near-receiver-account simple10.testnet
+# test eth near prover
+eth-test-prover:
+	cd contracts/near/eth-prover && ./test.sh
 
-testnet-transfer-eth-to-near:
-	cli/index.js TESTING transfer-eth-erc20-to-near \
-		--amount 10 --eth-sender-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200 \
-		--near-receiver-account simple10.testnet \
-		--near-master-account simple10.testnet \
-		--near-master-sk ed25519:4aFi4332BrFHR2pYXcqsz51P5qL4piHYWYtXggPWxPRxtLxT5veeyfFGyevJpCP7ZW13RzmPa1V2RvkApqYjMXoV
-
-testnet-transfer-near-to-eth:
-	cli/index.js TESTING transfer-eth-erc20-from-near \
-		--amount 1 \
-		--near-sender-sk ed25519:4aFi4332BrFHR2pYXcqsz51P5qL4piHYWYtXggPWxPRxtLxT5veeyfFGyevJpCP7ZW13RzmPa1V2RvkApqYjMXoV \
-		--near-sender-account simple10.testnet \
-		--eth-receiver-address 0xDf08F82De32B8d460adbE8D72043E3a7e25A3B39
-
-.PHONY: help init yarn-init gen-contracts local-start local-start-bsc local-full-contracts init-config init-test-config testnet-full-contracts start-relayer stop-all build-eth-client build-bsc-client build-eth-prover test-eth-client testnet-near-balance testnet-transfer-eth-to-near testnet-transfer-near-to-eth
+.PHONY: help \
+		init-yarn \
+		gen-contracts \
+		setup-clean-and-prepare \
+		start-local-near-and-ganache-nodes \
+		deploy-full-contracts \
+		deploy-full-contracts \
+		start-relayer \
+		stop-all \
+		bsc-build-client \
+		bsc-build-prover \
+		eth-build-client \
+		eth-build-prover \
+		bsc-test-client \
+		bsc-test-prover \
+		eth-test-client \
+		eth-test-prover

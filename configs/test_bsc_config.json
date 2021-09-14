@@ -11,8 +11,6 @@
 	"nearClientSk": "ed25519:2eZcTKk6ic9Wk2iXgDu8ok38HNdeua5KeU9LzdpvDGUd5NGFFNNoJUZn2fWxbnWKYYDvhmhV4pqvSV1QVYTXxrSE",
 	"nearProverAccount": "n0prv.testnet",
 	"nearProverSk": "ed25519:2LWJDmCKL4Vy49jKnV4P4Znasvv6ngNNNqwhMuQEfKCUSaus7TQQTK7yDF6QPGgtfkAWJQAiYeGHJKyXhDipd7iJ",
-	"nearClientContractPath": "/home/idir/Desktop/shardlabs/rainbow-bridge/contracts/near/res/bsc_eth_client.wasm",
-	"nearProverContractPath": "/home/idir/Desktop/shardlabs/rainbow-bridge/contracts/near/res/bsc_prover.wasm",
 	"numConfirmations": "3",
 	"ethEd25519Address": "0x89bb6416922f542593a066d830da1f3bd3493bf6",
 	"ethClientLockEthAmount": "1000",

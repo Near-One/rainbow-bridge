@@ -112,9 +112,8 @@ contract NearBridge is INearBridge, AdminControlled {
 
     // The first part of initialization -- setting the validators of the current epoch.
     function initWithValidators(bytes memory data) public override onlyAdmin {
-        // TODO: Fixed for BSC
-        require(!initialized, "Wrong initialization stage");
-        // require(!initialized && epochs[0].numBPs == 0, "Wrong initialization stage");
+        require(!initialized && epochs[0].numBPs == 0, "Wrong initialization stage");
+
         Borsh.Data memory borsh = Borsh.from(data);
         NearDecoder.BlockProducer[] memory initialValidators = borsh.decodeBlockProducers();
         borsh.done();
