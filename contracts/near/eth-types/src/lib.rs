@@ -299,10 +299,8 @@ impl From<BlockHeaderPreLondon> for BlockHeader {
 
 impl BorshDeserialize for BlockHeader {
     fn deserialize(buf: &mut &[u8]) -> std::io::Result<Self> {
-        #[cfg(feature ="bsc")]        
-        if cfg!(feature = "bsc") {
-            return BlockHeaderPreLondon::deserialize(buf).map(Into::into)
-        }
+        #[cfg(feature ="bsc")]   
+        return BlockHeaderPreLondon::deserialize(buf).map(Into::into);
 
         if let Ok(header) = BlockHeaderLondon::deserialize(buf) {
             Ok(header.into())
