@@ -61,6 +61,11 @@ func main() {
 		}
 	}
 
+	err = ethashproof.RemoveCache(int(epoch - 1))
+	if err != nil {
+		fmt.Printf("error: %s\n", err)
+	}
+
 	fmt.Printf("SealHash: %s\n", ethash.Instance.SealHash(header))
 
 	indices := ethash.Instance.GetVerificationIndices(
