@@ -5,10 +5,10 @@ use near_sdk::collections::UnorderedMap;
 use near_sdk::{assert_self, AccountId};
 use near_sdk::{env, near_bindgen, PanicOnDefault};
 
-#[cfg(bsc)]
+#[cfg(feature = "bsc")]
 use libsecp256k1::{recover, Message, RecoveryId, Signature};
 
-#[cfg(bsc)]
+#[cfg(feature = "bsc")]
 use tiny_keccak::{Hasher, Keccak};
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -445,9 +445,9 @@ impl EthClient {
         dag_nodes: &[DoubleNodeWithMerkleProof],
     ) -> bool {
         match &self.validate_header_mode[..] {
-            "ethash" => return self.verify_header_ethash(&header, &prev, &dag_nodes),
-            #[cfg(bsc)]
-            "bsc" => return self.verify_header_bsc(&header, &prev),
+            "ethash" => return self.ethash_verify_header(&header, &prev, &dag_nodes),
+            #[cfg(feature = "bsc")]
+            "bsc" => return self.bsc_verify_header(&header, &prev),
             _ => return false,
         }
     }
@@ -461,15 +461,15 @@ impl EthClient {
     }
 
     // seal and hash bsc header.
-    #[cfg(bsc)]
-    fn seal_hash(&self, header: &BlockHeader, chain_id: U256) -> [u8; 32] {
+    #[cfg(feature = "bsc")]
+    fn bsc_seal_hash(&self, header: &BlockHeader, chain_id: U256) -> [u8; 32] {
         let d = SealData { chain_id, header };
         d.seal_hash()
     }
 
     //  Verify POSA of the binance chain header.
-    #[cfg(bsc)]
-    fn verify_header_bsc(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
+    #[cfg(feature = "bsc")]
+    fn bsc_verify_header(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
         // The genesis block is the always valid dead-end
         if header.number == 0 {
             return true;
@@ -518,11 +518,11 @@ impl EthClient {
             return false;
         }
 
-        if !self.is_author(&header) {
+        if !self.bsc_is_author(&header) {
             return false;
         }
 
-        self.is_validator(&header)
+        self.bsc_is_validator(&header)
     }
 
     // check if the block is an epoch header.
@@ -531,10 +531,10 @@ impl EthClient {
     }
 
     // check if the author is the signer.
-    #[cfg(bsc)]
-    fn is_author(&self, header: &BlockHeader) -> bool {
+    #[cfg(feature = "bsc")]
+    fn bsc_is_author(&self, header: &BlockHeader) -> bool {
         let extra_seal = 65;
-        let seal_hash = self.seal_hash(header, U256(self.chain_id.into()));
+        let seal_hash = self.bsc_seal_hash(header, U256(self.chain_id.into()));
 
         // get the signature from header extra_data
         let signature = header.extra_data[header.extra_data.len() - extra_seal..].to_vec();
@@ -567,23 +567,23 @@ impl EthClient {
         H160(address.into()) == header.author
     }
 
-    #[cfg(bsc)]
-    fn get_epoch_header(&self) -> BlockHeader {
+    #[cfg(feature = "bsc")]
+    fn bsc_get_epoch_header(&self) -> BlockHeader {
         self.headers.get(&self.epoch_header).unwrap()
     }
 
     // check if the author address is valid and is in the validator set.
-    #[cfg(bsc)]
-    fn is_validator(&self, header: &BlockHeader) -> bool {
+    #[cfg(feature = "bsc")]
+    fn bsc_is_validator(&self, header: &BlockHeader) -> bool {
         let (extra_vanity, extra_seal, address_size) = (32, 65, 20);
 
         let epoch_header = if EthClient::is_epoch(header.number) {
             header.clone()
         } else {
-            self.get_epoch_header()
+            self.bsc_get_epoch_header()
         };
 
-        if !self.is_in_validator_set(&epoch_header, header.author) {
+        if !self.bsc_is_in_validator_set(&epoch_header, header.author) {
             return false;
         }
 
@@ -599,14 +599,14 @@ impl EthClient {
 
             // validate the current author if it's turn with the difficulty.
             let (diff_in_turn, diff_no_turn) = (2, 1);
-            let is_turn =
+            let in_turn =
                 Address::from(&validators[(offset * address_size)..((offset + 1) * address_size)]);
 
-            if is_turn == header.author && header.difficulty != U256(diff_in_turn.into()) {
+            if in_turn == header.author && header.difficulty != U256(diff_in_turn.into()) {
                 return false;
             }
 
-            if !(is_turn == header.author) && header.difficulty != U256(diff_no_turn.into()) {
+            if !(in_turn == header.author) && header.difficulty != U256(diff_no_turn.into()) {
                 return false;
             }
         }
@@ -614,7 +614,7 @@ impl EthClient {
     }
 
     /// Verify PoW of the header.
-    fn verify_header_ethash(
+    fn ethash_verify_header(
         &self,
         header: &BlockHeader,
         prev: &BlockHeader,
@@ -685,8 +685,8 @@ impl EthClient {
     }
 
     // check if the author is in the validators set.
-    #[cfg(bsc)]
-    fn is_in_validator_set(&self, epoch_header: &BlockHeader, add: Address) -> bool {
+    #[cfg(feature = "bsc")]
+    fn bsc_is_in_validator_set(&self, epoch_header: &BlockHeader, add: Address) -> bool {
         let (extra_vanity, extra_seal, address_size) = (32, 65, 20);
         let validators = epoch_header.extra_data
             [extra_vanity..(epoch_header.extra_data.len() - extra_seal)]

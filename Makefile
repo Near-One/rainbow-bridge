@@ -1,68 +1,124 @@
 help:
-	@echo Deploy rainbow bridge
-	@echo 1 run "make init" first time only and one time.
-	@echo 2 run "make start-bsc" or "make start-ethash"
-	@echo 3 run "make gen-contarcts"
-	@echo 4 run "make deploy-contarcts"
-	@echo 5 run "make start-relayer"
-	@echo 6 run "stop-all"
+	@echo ======================================Local dev=====================================
+	@echo 1 run "make init-yarn" install node packages.
+	@echo 2 run "make gen-contarcts" generate ethereum contracts.
+	@echo 3 run "make setup-clean-and-prepare" clean and prepare local env.
+	@echo 4 run "make start-local-near-and-ganache-nodes" start nearup and ganache.
+	@echo 5 run "make deploy-full-contracts" deploy near and eth contracts.
+	@echo 6 run "make start-relayer" start relayers.
+	@echo 7 run "make stop-all" stop relayers.
+	@echo
+	@echo ======================================Build Near Contrats=====================================
+	@echo "make bsc-build-client" build bsc client near contract.
+	@echo "make bsc-build-prover" build bsc prover near contract.
+	@echo "make eth-build-client" build eth client near contract.
+	@echo "make eth-build-prover" build eth prover near contract.
+	@echo
+	@echo ======================================Run Near Tests=====================================
+	@echo "make bsc-test-client" run tests bsc client
+	@echo "make bsc-test-prover" run tests bsc prover
+	@echo "make eth-test-client" run tests eth client
+	@echo "make eth-test-prover" run tests eth prover
+	@echo
 
-init: yarn-init gen-contracts
-	
-yarn-init:
+
+# ===============================Init==============================
+
+init-yarn:
 	yarn
 	yarn install
+
+# ===============================Local==============================
 
 # generate ether contracts
 gen-contracts:
 	cd contracts/eth/nearbridge/ && yarn && yarn build
 	cd contracts/eth/nearprover/ && yarn && yarn build
-	
-# start near blockchain and connect with ganache.
-start-ethash:
+
+setup-clean-and-prepare:
 	cli/index.js clean
 	cli/index.js prepare
+
+# start near blockchain and connect with ganache.
+start-local-near-and-ganache-nodes:
 	cli/index.js start near-node
 	cli/index.js start ganache
 
-# start near blockchain and connect with binance test net.
-start-bsc:
-	cli/index.js clean
-	cli/index.js prepare
-	cli/index.js start near-node
-	cli/index.js start binance-smart-chain \
-	--eth-node-url https://data-seed-prebsc-1-s1.binance.org:8545 \
-	--eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200
+# ===============================Deploy contracts localy==============================
 
-# deploy contracts
-full-contracts:
+# deploy contracts to testnets NEAR and BSC
+deploy-full-contracts:
 	cli/index.js init-near-contracts
 	cli/index.js init-eth-ed25519
-	cli/index.js init-eth-client --eth-client-lock-eth-amount 1000 --eth-client-lock-duration 10
+	cli/index.js init-eth-client
 	cli/index.js init-eth-prover
 	cli/index.js init-eth-erc20
 	cli/index.js init-eth-locker
 	cli/index.js init-near-token-factory
 
-# deploy contracts
-light-bsc-contracts:
-	cli/index.js init-near-contracts
-	cli/index.js init-near-token-factory
+# ===============================Relayers==============================
 
-# start-relayer eth2near-relay, near2eth-relay and bridge-watchdog
+# start relayers
 start-relayer:
 	cli/index.js start eth2near-relay
 	cli/index.js start near2eth-relay
 	cli/index.js start bridge-watchdog
 	pm2 logs
 
+# stop relayers
 stop-all:
 	cli/index.js stop all
 
-build-eth-client:
+# ===============================Build NEAR Contracts==============================
+
+# build bsc near client
+bsc-build-client:
+	cd contracts/near/eth-client && sudo ./build.sh bsc
+
+# build bsc near prover
+bsc-build-prover:
+	cd contracts/near/eth-prover && sudo ./build.sh bsc
+
+# build eth near client
+eth-build-client:
 	cd contracts/near/eth-client && sudo ./build.sh
 
-test-eth-client:
-	cd contracts/near/eth-client && sudo ./test.sh
+# build eth near prover
+eth-build-prover:
+	cd contracts/near/eth-prover && sudo ./build.sh
 
-.PHONY: help init yarn-init gen-contracts start-bsc light-bsc-contracts start-relayer stop-all build-eth-client test-eth-client start-ethash
+# ===============================Run tests==============================
+
+# test bsc near client
+bsc-test-client:
+	cd contracts/near/eth-client && ./test.sh bsc
+
+# test bsc near prover
+bsc-test-prover:
+	cd contracts/near/eth-prover && ./test.sh bsc
+
+# test eth near client
+eth-test-client:
+	cd contracts/near/eth-client && ./test.sh
+
+# test eth near prover
+eth-test-prover:
+	cd contracts/near/eth-prover && ./test.sh
+
+.PHONY: help \
+		init-yarn \
+		gen-contracts \
+		setup-clean-and-prepare \
+		start-local-near-and-ganache-nodes \
+		deploy-full-contracts \
+		deploy-full-contracts \
+		start-relayer \
+		stop-all \
+		bsc-build-client \
+		bsc-build-prover \
+		eth-build-client \
+		eth-build-prover \
+		bsc-test-client \
+		bsc-test-prover \
+		eth-test-client \
+		eth-test-prover

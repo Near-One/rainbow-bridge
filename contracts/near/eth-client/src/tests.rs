@@ -249,6 +249,7 @@ fn assert_hashes_equal_to_contract_hashes(
 }
 
 #[test]
+#[cfg_attr(not(feature = "eip1559"), ignore)]
 fn add_dags_merkle_roots() {
     testing_env!(get_context(vec![], false));
     let (blocks, _) = get_blocks(&WEB3RS, 400_000, 400_001);
@@ -276,6 +277,7 @@ fn add_dags_merkle_roots() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "eip1559"), ignore)]
 fn add_blocks_2_and_3() {
     testing_env!(get_context(vec![], false));
 
@@ -316,6 +318,7 @@ fn add_blocks_2_and_3() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "eip1559"), ignore)]
 fn add_blocks_before_and_after_istanbul_fork() {
     testing_env!(get_context(vec![], false));
 
@@ -363,6 +366,7 @@ fn add_blocks_before_and_after_istanbul_fork() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "eip1559"), ignore)]
 fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
     testing_env!(get_context(vec![], false));
 
@@ -423,6 +427,7 @@ fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "eip1559"), ignore)]
 fn add_block_diverged_until_ethashproof_dataset_fix() {
     testing_env!(get_context(vec![], false));
 
@@ -462,6 +467,7 @@ fn add_block_diverged_until_ethashproof_dataset_fix() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "eip1559"), ignore)]
 fn add_400000_block_only() {
     testing_env!(get_context(vec![], false));
 
@@ -496,6 +502,7 @@ fn add_400000_block_only() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "eip1559"), ignore)]
 fn add_two_blocks_from_8996776() {
     testing_env!(get_context(vec![], false));
 
@@ -541,7 +548,35 @@ fn add_two_blocks_from_8996776() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "bsc"), ignore)]
+fn bsc_validate_header_12058600() {
+    testing_env!(get_context(vec![], false));
+    let (blocks, hashes) = get_blocks(&BSC_WEB3RS, 12_058_400, 12_058_450);
+    let chain_id = 97;
+    
+    let mut contract = EthClient::init(
+        true,
+        String::from("bsc"),
+        0,
+        vec![],
+        blocks[0].clone(),
+        210,
+        210,
+        210,
+        None,
+        chain_id,
+    );
+
+    for block in blocks.into_iter().skip(1) {
+        contract.add_block_header(block, vec![]);
+    }
+    assert!(hashes[0] == contract.epoch_header);
+    assert!(contract.headers.len() == 50);
+}
+
 // Test init bsc bridge.
+#[test]
+#[cfg_attr(not(feature = "bsc"), ignore)]
 fn bsc_add_epoch_header() {
     testing_env!(get_context(vec![], false));
     let (blocks, hashes) = get_blocks(&BSC_WEB3RS, 10_161_600, 10_161_601);
@@ -562,25 +597,26 @@ fn bsc_add_epoch_header() {
     assert!(hashes[0] == contract.epoch_header)
 }
 
-#[test]
 // test validate bsc headers.
+#[test]
+#[cfg_attr(not(feature = "bsc"), ignore)]
 fn bsc_update_epoch_header() {
     testing_env!(get_context(vec![], false));
     let (blocks, hashes) = get_blocks(&BSC_WEB3RS, 10_161_400, 10_161_450);
     let chain_id = 97;
+    
     let mut contract = EthClient::init(
         true,
         String::from("bsc"),
         0,
-        read_roots_collection().dag_merkle_roots,
+        vec![],
         blocks[0].clone(),
         30,
-        51,
-        51,
+        201,
+        201,
         None,
         chain_id,
     );
-
     for block in blocks.into_iter().skip(1) {
         contract.add_block_header(block, vec![]);
     }
@@ -589,6 +625,7 @@ fn bsc_update_epoch_header() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "eip1559"), ignore)]
 fn add_two_blocks_from_400000() {
     testing_env!(get_context(vec![], false));
 

@@ -299,6 +299,9 @@ impl From<BlockHeaderPreLondon> for BlockHeader {
 
 impl BorshDeserialize for BlockHeader {
     fn deserialize(buf: &mut &[u8]) -> std::io::Result<Self> {
+        #[cfg(feature ="bsc")]   
+        return BlockHeaderPreLondon::deserialize(buf).map(Into::into);
+
         if let Ok(header) = BlockHeaderLondon::deserialize(buf) {
             Ok(header.into())
         } else {
@@ -478,13 +481,13 @@ pub fn near_keccak512(data: &[u8]) -> [u8; 64] {
 }
 
 // SealData struct used by bsc to encode header to rlp and hash using keccak256.
-#[cfg(bsc)]
+#[cfg(feature ="bsc")]
 pub struct SealData<'s>{
     pub chain_id: U256,
     pub header: &'s BlockHeader,
 }
 
-#[cfg(bsc)]
+#[cfg(feature ="bsc")]
 impl<'s> SealData<'s> {
     // hash using keccak256 an RLP encoded header.
     pub fn seal_hash(&self) -> [u8; 32]{
@@ -493,7 +496,7 @@ impl<'s> SealData<'s> {
 }
 
 // implement RlpEncodable for SealData.
-#[cfg(bsc)]
+#[cfg(feature ="bsc")]
 impl<'s> RlpEncodable for SealData<'s> {
     fn rlp_append(&self, stream: &mut RlpStream) {
         stream.begin_list(16);

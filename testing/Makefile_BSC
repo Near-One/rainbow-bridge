@@ -1,0 +1,128 @@
+include testing/bsc_test.env
+
+help:
+	@echo ======================================Near Testnet + BSC Testnet dev=====================================
+	@echo Description: Use Nearup and bsc testnet
+	@echo 1 run "make start-near-and-bsc-nodes" start bsc and nearup localy
+	@echo 2 run "make bsc-deploy-testnet-full-contracts" deploy contracts
+	@echo 3 run "make start-relayer"
+	@echo 4 run "stop-all"
+	@echo
+	@echo ======================================Test Send ERC20 on testnet======================================
+	@echo 1 run "make bsc-testnet-near-balance" get balance of a near account.
+	@echo 2 run "make bsc-testnet-transfer-eth-to-near" transfer tokens from eth to near.
+	@echo 3 run "make bsc-testnet-transfer-near-to-eth" transfer tokens from near to eth.
+	@echo
+
+# ===============================Local<>Testnet==============================
+
+# start near blockchain and connect with ganache.
+start-near-and-ganache-nodes:
+	cli/index.js start near-node
+	cli/index.js ganache
+
+# start near blockchain and connect with binance test net.
+start-near-and-bsc-nodes:
+	cli/index.js start near-node
+	cli/index.js start binance-smart-chain \
+		--eth-node-url ${BSC_TESTNET_URL} \
+		--eth-master-sk ${ETH_MASTER_SK}
+
+# deploy bsc contracts on testnet and near localy
+bsc-deploy-full-contracts-localy:
+	cli/index.js init-near-contracts \
+		--near-client-contract-path ${PWD}/${NEAR_BSC_CLIENT_CONTRACT} \
+		--near-prover-contract-path ${PWD}/${NEAR_BSC_PROVER_CONTRACT}
+	cli/index.js init-eth-ed25519
+	cli/index.js init-eth-client
+	cli/index.js init-eth-prover
+	cli/index.js init-eth-erc20
+	cli/index.js init-eth-locker
+	cli/index.js init-near-token-factory
+
+# ===============================Testnet==============================
+
+# copy the testnet config file to the ${HOME}/.rainbow/config.json
+bsc-init-test-config:
+	mkdir -p ${HOME}/.rainbow
+	cp ../configs/test_bsc_config.json ${HOME}/.rainbow/config.json
+	
+# deploy contracts to testnets NEAR and BSC
+bsc-deploy-testnet-full-contracts:
+	cli/index.js init-near-contracts \
+		--near-master-account ${NEAR_MASTER_ACCOUNT} \
+		--near-master-sk ${NEAR_MASTER_SK} \
+		--near-client-account ${NEAR_CLIENT_ACCOUNT} \
+		--near-client-sk ${NEAR_CLIENT_SK} \
+		--near-prover-account ${NEAR_PROVER_ACCOUNT} \
+		--near-prover-sk ${NEAR_PROVER_SK} \
+		--near-client-contract-path ${PWD}/${NEAR_BSC_CLIENT_CONTRACT} \
+		--near-prover-contract-path ${PWD}/${NEAR_BSC_PROVER_CONTRACT} \
+		--num-confirmations ${NUM_CONFIRMATIONS}
+
+	cli/index.js init-eth-ed25519
+	cli/index.js init-eth-client \
+		--eth-client-lock-eth-amount ${ETH_CLIENT_LOCK_ETH_AMOUNT} \
+		--eth-client-lock-duration ${ETH_CLIENT_LOCK_DURATION}
+	cli/index.js init-eth-prover \
+
+# deploy bsc locker and near erc20 factory contracts to testnets NEAR and BSC
+bsc-deploy-testnet-factory:
+	cli/index.js init-eth-locker \
+		--eth-gas-multiplier ${ETH_GAS_MULTIPLIER} \
+		--near-token-factory-account ${NEAR_TOKEN_FACTORY_ACCOUNT}
+
+	cli/index.js init-near-token-factory  \
+	--near-prover-account ${NEAR_PROVER_ACCOUNT}\
+	--near-token-factory-account ${NEAR_TOKEN_FACTORY_ACCOUNT} \
+	--near-token-factory-sk ${NEAR_TOKEN_FACTORY_SK} \
+	--eth-erc20-address ${ETH_ERC20_ADDRESS}
+
+# ===============================Relayers==============================
+
+# start relayers
+start-relayer:
+	cli/index.js start eth2near-relay \
+		--gas-per-transaction ${GAS_PER_TRANSACTION} \
+		--total-submit-block ${TOTAL_SUBMIT_BLOCK}
+	cli/index.js start near2eth-relay --eth-master-sk ${ETH_MASTER_SK}
+	cli/index.js start bridge-watchdog --eth-master-sk ${ETH_MASTER_SK_2}
+	pm2 logs
+
+# stop relayers
+stop-all:
+	cli/index.js stop all
+
+# ===============================Test the bsc bridge==============================
+
+# get near balance of a wallet
+bsc-testnet-near-balance:
+	cli/index.js TESTING get-bridge-on-near-balance \
+		--near-receiver-account ${NEAR_RECEIVER_ACCOUNT}
+
+# transfer ERC20 from eth to near
+bsc-testnet-transfer-eth-to-near:
+	cli/index.js TESTING transfer-eth-erc20-to-near \
+		--amount 10 --eth-sender-sk ${ETH_MASTER_SK} \
+		--near-receiver-account ${NEAR_RECEIVER_ACCOUNT} \
+		--near-master-account ${NEAR_RECEIVER_ACCOUNT} \
+		--near-master-sk ${NEAR_RECEIVER_SK}
+
+# transfer ERC20 from near to eth
+bsc-testnet-transfer-near-to-eth:
+	cli/index.js TESTING transfer-eth-erc20-from-near \
+		--amount 1 \
+		--near-sender-sk ${NEAR_RECEIVER_SK} \
+		--near-sender-account ${NEAR_RECEIVER_ACCOUNT} \
+		--eth-receiver-address ${ETH_MASTER_ADDRESS}
+
+.PHONY: start-near-and-bsc-nodes \
+		bsc-deploy-full-contracts-localy \
+		bsc-init-test-config \
+		bsc-deploy-testnet-full-contracts \
+		bsc-deploy-testnet-factory \
+		start-relayer \
+		stop-all \
+		bsc-testnet-near-balance \
+		bsc-testnet-transfer-eth-to-near \
+		bsc-testnet-transfer-near-to-eth
