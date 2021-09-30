@@ -250,13 +250,12 @@ class Near2EthRelay {
             }
 
             const gasPrice = new BN(await web3.eth.getGasPrice())
-            console.log('Gas price:', gasPrice.toNumber())
+            console.log('Ignore, use EIP-1559. Gas price:', gasPrice.toNumber())
 
             await clientContract.methods.addLightClientBlock(borshBlock).send({
               from: ethMasterAccount,
               gas: 10000000,
-              handleRevert: true,
-              gasPrice: gasPrice.mul(new BN(ethGasMultiplier))
+              handleRevert: true
             })
 
             if (submitInvalidBlock) {
