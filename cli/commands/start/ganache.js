@@ -3,7 +3,7 @@ const { spawnProcess } = require('./helpers')
 const { getScript } = require('rainbow-bridge-utils')
 
 class StartGanacheNodeCommand {
-  static async execute () {
+  static async execute() {
     ProcessManager.connect((err) => {
       if (err) {
         console.log(
@@ -22,7 +22,7 @@ class StartGanacheNodeCommand {
       })
     })
     return {
-      ethNodeUrl: 'ws://localhost:9545',
+      ethNodeUrl: 'http://localhost:9545',
       ethMasterSk: '0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200',
       nearClientValidateEthash: 'false'
     }
