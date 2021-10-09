@@ -61,10 +61,10 @@ func main() {
 		}
 	}
 
-	err = ethashproof.RemoveCache(int(epoch - 1))
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-	}
+	// Remove previous epoch
+	previousEpoch := epoch - 1
+	os.Remove(ethash.PathToDAG(previousEpoch, ethash.DefaultDir))
+	os.Remove(ethashproof.PathToCache(previousEpoch))
 
 	fmt.Printf("SealHash: %s\n", ethash.Instance.SealHash(header))
 

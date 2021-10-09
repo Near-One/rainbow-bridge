@@ -71,7 +71,6 @@ func LoadCache(epoch int) (*DatasetMerkleTreeCache, error) {
 	return result, nil
 }
 
-func RemoveCache(epoch int) error {
-	path := filepath.Join(getHomeDir(), ".ethashproof", fmt.Sprintf("%d.json", epoch))
-	return os.Remove(path)
+func PathToCache(epoch uint64) string {
+	return filepath.Join(getHomeDir(), ".ethashproof", fmt.Sprintf("%d.json", epoch))
 }

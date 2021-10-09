@@ -32,11 +32,14 @@ const MAX_GAS_PER_BLOCK = '300000000000000'
 
 function ethashproof(command, _callback) {
   return new Promise((resolve) =>
-    exec(command, (error, stdout, _stderr) => {
+    exec(command, (error, stdout, stderr) => {
       if (error) {
-        console.error(error)
+        console.error(error);
       }
-      resolve(stdout)
+      if (stderr) {
+        console.error(stderr);
+      }
+      resolve(stdout);
     })
   )
 }
@@ -78,30 +81,32 @@ async function binarySearchWithEstimate(limitLo, limitHi, estimatedPosition, pre
 }
 
 class Ethashproof {
+  static numOfBlocksPerEpoch = 30000;
+  static numBlocksToEndOfEpoch = 5000;
+
   constructor() {
     this.nextEpochPromise = null;
     this.nextEpoch = null;
   }
 
   async getParseBlock(blockNumber, blockRlp) {
-    const numOfBlocksPerEpoch = 30000;
-    const numBlocksToEndOfEpoch = 5000;
-
-    const currentEpoch = Math.trunc(blockNumber / numOfBlocksPerEpoch);
-    const remBlocksToEndOfEpoch = numOfBlocksPerEpoch - (blockNumber % numOfBlocksPerEpoch);
+    const currentEpoch = Math.trunc(blockNumber / Ethashproof.numOfBlocksPerEpoch);
+    const remBlocksToEndOfEpoch = Ethashproof.numOfBlocksPerEpoch - (blockNumber % Ethashproof.numOfBlocksPerEpoch);
 
     if (this.nextEpoch === currentEpoch && this.nextEpochPromise != null) {
-      await this.nextEpochPromise();
+      await this.nextEpochPromise;
     }
 
+    const result = await ethashproof(
+        `${BRIDGE_SRC_DIR}/eth2near/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`
+    )
+
     const nextEpoch = currentEpoch + 1;
-    if (this.nextEpoch !== nextEpoch && remBlocksToEndOfEpoch < numBlocksToEndOfEpoch){
+    if (this.nextEpoch !== nextEpoch && remBlocksToEndOfEpoch < Ethashproof.numBlocksToEndOfEpoch){
       this.calculateNextEpoch(nextEpoch);
     }
 
-    return await ethashproof(
-        `${BRIDGE_SRC_DIR}/eth2near/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`
-    )
+    return result;
   }
 
   calculateNextEpoch(nextEpoch) {
@@ -258,7 +263,7 @@ class Eth2NearRelay {
       const blockRlp = this.web3.utils.bytesToHex(
         web3BlockToRlp(block)
       )
-      const unparsedBlock = await this.ethashproof.getParseBlock(blockRlp);
+      const unparsedBlock = await this.ethashproof.getParseBlock(blockNumber, blockRlp);
       return JSON.parse(unparsedBlock)
     } catch (e) {
       console.error(`Failed to get or parse block ${blockNumber}: ${e}`)
