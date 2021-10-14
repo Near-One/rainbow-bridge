@@ -36,8 +36,10 @@ contract NearProver is INearProver, AdminControlled {
         ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borsh.decodeFullOutcomeProof();
         borsh.done();
 
-        bytes32 hash =
-            _computeRoot(fullOutcomeProof.outcome_proof.outcome_with_id.hash, fullOutcomeProof.outcome_proof.proof);
+        bytes32 hash = _computeRoot(
+            fullOutcomeProof.outcome_proof.outcome_with_id.hash,
+            fullOutcomeProof.outcome_proof.proof
+        );
 
         hash = sha256(abi.encodePacked(hash));
 

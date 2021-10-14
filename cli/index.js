@@ -909,6 +909,6 @@ RainbowConfig.addOptions(
   ['near-node-url']
 )
 
-  ; (async () => {
-    await program.parseAsync(process.argv)
-  })()
+; (async () => {
+  await program.parseAsync(process.argv)
+})()

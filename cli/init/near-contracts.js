@@ -10,7 +10,7 @@ const {
 } = require('rainbow-bridge-eth2near-block-relay')
 
 class InitNearContracts {
-  static async execute({
+  static async execute ({
     nearMasterAccount,
     nearMasterSk,
     nearClientAccount,
