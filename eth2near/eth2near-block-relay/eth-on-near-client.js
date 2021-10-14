@@ -1,6 +1,6 @@
 const BN = require('bn.js')
 const blockFromRpc = require('@ethereumjs/block/dist/from-rpc')
-const Common = require('@ethereumjs/common')
+const Common = require('@ethereumjs/common').default
 const got = require('got')
 const {
   Web3,
