@@ -34,7 +34,7 @@
     "rainbow-bridge-near2eth-block-relay": "1.0.0",
     "rainbow-bridge-watchdog": "1.0.0",
     "rainbow-bridge-testing": "1.0.0",
-    "rainbow-token-connector": "near/rainbow-token-connector#7fb86958362fe8e4455ebbcdb00caac067eda2ff",
+    "rainbow-token-connector": "near/rainbow-token-connector#134b3b6ad900d90c6f993c52f4e3edf985aec61a",
     "request": "^2.88.2"
   }
 }
