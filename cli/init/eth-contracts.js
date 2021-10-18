@@ -1,6 +1,8 @@
 const BN = require('bn.js')
 const fs = require('fs')
-const { Web3, normalizeEthKey } = require('rainbow-bridge-utils')
+const { Web3, normalizeEthKey, sleep } = require('rainbow-bridge-utils')
+
+const RETRY_SEND_TX = 15
 
 class EthContractInitializer {
   async execute ({
@@ -18,45 +20,55 @@ class EthContractInitializer {
       return null
     }
 
-    try {
-      const web3 = new Web3(ethNodeUrl)
-      let ethMasterAccount = web3.eth.accounts.privateKeyToAccount(
-        normalizeEthKey(ethMasterSk)
-      )
-      web3.eth.accounts.wallet.add(ethMasterAccount)
-      web3.eth.defaultAccount = ethMasterAccount.address
-      ethMasterAccount = ethMasterAccount.address
-
-      console.log('Deploying ETH contract')
-      let abi, bytecode
-      if (ethContractArtifactPath) {
-        ({ abi, bytecode } = JSON.parse(fs.readFileSync(ethContractArtifactPath)))
-      } else {
-        abi = JSON.parse(fs.readFileSync(ethContractAbiPath))
-        bytecode = '0x' + fs.readFileSync(ethContractBinPath)
-      }
-      const tokenContract = new web3.eth.Contract(abi)
-      const txContract = await tokenContract
-        .deploy({
-          data: bytecode,
-          arguments: args
-        })
-        .send({
-          from: ethMasterAccount,
-          gas,
-          gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(ethGasMultiplier))
-        })
-      ethContractAddress = normalizeEthKey(txContract.options.address)
-      console.log(`Deployed ETH contract to ${ethContractAddress}`)
+    for (let i = 0; i < RETRY_SEND_TX; i++) {
       try {
-        // Only WebSocket provider can close.
-        web3.currentProvider.connection.close()
-      } catch (e) {}
-    } catch (e) {
-      console.log(e)
-      return null
+        const web3 = new Web3(ethNodeUrl)
+        let ethMasterAccount = web3.eth.accounts.privateKeyToAccount(
+          normalizeEthKey(ethMasterSk)
+        )
+        web3.eth.accounts.wallet.add(ethMasterAccount)
+        web3.eth.defaultAccount = ethMasterAccount.address
+        ethMasterAccount = ethMasterAccount.address
+
+        console.log('Deploying ETH contract')
+        let abi, bytecode
+        if (ethContractArtifactPath) {
+          ({ abi, bytecode } = JSON.parse(fs.readFileSync(ethContractArtifactPath)))
+        } else {
+          abi = JSON.parse(fs.readFileSync(ethContractAbiPath))
+          bytecode = '0x' + fs.readFileSync(ethContractBinPath)
+        }
+        const tokenContract = new web3.eth.Contract(abi)
+        const txContract = await tokenContract
+          .deploy({
+            data: bytecode,
+            arguments: args
+          })
+          .send({
+            from: ethMasterAccount,
+            gas,
+            gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(ethGasMultiplier))
+          })
+        ethContractAddress = normalizeEthKey(txContract.options.address)
+        console.log(`Deployed ETH contract to ${ethContractAddress}`)
+        try {
+          // Only WebSocket provider can close.
+          web3.currentProvider.connection.close()
+        } catch (e) {
+        }
+        return { ethContractAddress }
+      } catch (e) {
+        if (e.message.indexOf(`the tx doesn't have the correct nonce`)  >= 0 ||
+            e.message.indexOf(`replacement transaction underpriced`) >= 0) {
+          console.log('nonce error, retrying...')
+          await sleep(5 * 1000)
+          continue
+        }
+
+        console.log(e)
+        return null
+      }
     }
-    return { ethContractAddress }
   }
 }
 

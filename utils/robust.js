@@ -134,7 +134,8 @@ class RobustWeb3 {
           )
           gasPrice *= 2
         } else if (
-          e.message.indexOf("the tx doesn't have the correct nonce") >= 0
+          e.message.indexOf("the tx doesn't have the correct nonce")  >= 0
+          || e.message.indexOf("replacement transaction underpriced") >= 0
         ) {
           console.log('nonce error, retrying with new nonce')
           nonce++
