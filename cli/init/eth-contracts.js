@@ -58,8 +58,8 @@ class EthContractInitializer {
         }
         return { ethContractAddress }
       } catch (e) {
-        if (e.message.indexOf(`the tx doesn't have the correct nonce`)  >= 0 ||
-            e.message.indexOf(`replacement transaction underpriced`) >= 0) {
+        if (e.message.indexOf('the tx doesn\'t have the correct nonce') >= 0 ||
+            e.message.indexOf('replacement transaction underpriced') >= 0) {
           console.log('nonce error, retrying...')
           await sleep(5 * 1000)
           continue
