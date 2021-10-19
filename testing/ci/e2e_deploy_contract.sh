@@ -39,7 +39,7 @@ node index.js init-eth-client --eth-client-lock-eth-amount 1e18 --eth-client-loc
 node index.js init-eth-prover
 node index.js init-eth-erc20
 node index.js init-eth-locker
-node index.js init-near-token-factory
+node index.js init-near-token-factory --near-token-factory-account=neartokenfactory.node0
 
 # deploy myerc20 token
 node index.js DANGER deploy_test_erc20 > /tmp/eth2neartransfer.out
