@@ -43,8 +43,10 @@ class TransferEthERC20FromNear {
         JSON.parse(
           fs.readFileSync(txLogFilename).toString()
         ) || {}
+      console.log('Transfer log found', log)
       return TransferEthERC20FromNear.parseBuffer(log)
     } catch (e) {
+      console.log("Coudn't find transfer log at ", txLogFilename)
       return {}
     }
   }
@@ -299,9 +301,9 @@ class TransferEthERC20FromNear {
       const borshProofRes = borshifyOutcomeProof(proofRes)
       clientBlockHeight = new BN(clientBlockHeight)
       // Debugging output, uncomment for debugging.
-      // console.log(`proof: ${JSON.stringify(proofRes)}`);
-      // console.log(`client height: ${clientBlockHeight.toString()}`);
-      // console.log(`root: ${clientBlockMerkleRoot}`);
+      console.log(`proof: ${JSON.stringify(proofRes)}`)
+      console.log(`client height: ${clientBlockHeight}`)
+
       await proverContract.methods
         .proveOutcome(borshProofRes, clientBlockHeight)
         .call()
