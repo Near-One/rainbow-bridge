@@ -40,7 +40,7 @@ node index.js init-eth-client --eth-client-lock-eth-amount 1000000000000000000 -
 node index.js init-eth-prover
 node index.js init-eth-erc20
 node index.js init-eth-locker
-node index.js init-near-token-factory --near-token-factory-account=neartokenfactory.node0
+node index.js init-near-token-factory
 
 sleep 5
 yarn run pm2 list

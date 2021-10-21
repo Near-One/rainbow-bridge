@@ -17,7 +17,7 @@ sleep 10
 ./cli/index.js init-eth-prover
 ./cli/index.js init-eth-erc20
 ./cli/index.js init-eth-locker
-./cli/index.js init-near-token-factory --near-token-factory-account=neartokenfactory.node0
+./cli/index.js init-near-token-factory
 
 ./cli/index.js stop near-node
 ./cli/index.js stop ganache

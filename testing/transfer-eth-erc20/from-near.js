@@ -301,19 +301,20 @@ class TransferEthERC20FromNear {
       const borshProofRes = borshifyOutcomeProof(proofRes)
       clientBlockHeight = new BN(clientBlockHeight)
       // Debugging output, uncomment for debugging.
-      console.log(`proof: ${JSON.stringify(proofRes)}`)
-      console.log(`client height: ${clientBlockHeight}`)
+      // console.log(`proof: ${JSON.stringify(proofRes)}`)
+      // console.log(`client height: ${clientBlockHeight}`)
 
       await proverContract.methods
         .proveOutcome(borshProofRes, clientBlockHeight)
         .call()
 
-      const oldBalance = await ethERC20Contract.methods
-        .balanceOf(ethReceiverAddress)
-        .call()
-      console.log(
-        `ERC20 balance of ${ethReceiverAddress} before the transfer: ${oldBalance}`
-      )
+      // TODO fix before using
+      // const oldBalance = await ethERC20Contract.methods
+      //   .balanceOf(ethReceiverAddress)
+      //   .call()
+      // console.log(
+      //   `ERC20 balance of ${ethReceiverAddress} before the transfer: ${oldBalance}`
+      // )
       await robustWeb3.callContract(
         ethTokenLockerContract,
         'unlockToken',
@@ -325,12 +326,13 @@ class TransferEthERC20FromNear {
           gasPrice: new BN(await robustWeb3.web3.eth.getGasPrice()).mul(new BN(ethGasMultiplier))
         }
       )
-      const newBalance = await ethERC20Contract.methods
-        .balanceOf(ethReceiverAddress)
-        .call()
-      console.log(
-        `ERC20 balance of ${ethReceiverAddress} after the transfer: ${newBalance}`
-      )
+      // TODO fix before using
+      // const newBalance = await ethERC20Contract.methods
+      //   .balanceOf(ethReceiverAddress)
+      //   .call()
+      // console.log(
+      //   `ERC20 balance of ${ethReceiverAddress} after the transfer: ${newBalance}`
+      // )
     } catch (txRevertMessage) {
       console.log('Failed to unlock.')
       console.log(txRevertMessage.toString())
