@@ -23,6 +23,7 @@
     "eth-util-lite": "near/eth-util-lite#master",
     "ethereumjs-util": "^6.2.0",
     "rainbow-bridge-utils": "1.0.0",
-    "rainbow-bridge-eth2near-block-relay": "1.0.0"
+    "rainbow-bridge-eth2near-block-relay": "1.0.0",
+    "ethers": "^5.5.1"
   }
 }

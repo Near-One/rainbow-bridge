@@ -14,6 +14,7 @@ const {
   backoff,
   nearJsonContractFunctionCall
 } = require('rainbow-bridge-utils')
+const ethers = require('ethers')
 const { NearMintableToken } = require('./near-mintable-token')
 
 let initialCmd
@@ -289,7 +290,7 @@ class TransferEthERC20FromNear {
     proverContract,
     proofRes,
     clientBlockHeight,
-    ethERC20Contract,
+    ethErc20Address,
     ethReceiverAddress,
     ethTokenLockerContract,
     ethMasterAccount,
@@ -308,13 +309,24 @@ class TransferEthERC20FromNear {
         .proveOutcome(borshProofRes, clientBlockHeight)
         .call()
 
-      // TODO fix before using
-      // const oldBalance = await ethERC20Contract.methods
-      //   .balanceOf(ethReceiverAddress)
-      //   .call()
-      // console.log(
-      //   `ERC20 balance of ${ethReceiverAddress} before the transfer: ${oldBalance}`
+      // TODO investigate and fix this web3 call
+      // const ethERC20Contract = new web3.eth.Contract(
+      //   JSON.parse(fs.readFileSync(ethErc20AbiPath)),
+      //   ethErc20Address,
+      //   {
+      //     from: ethMasterAccount,
+      //     handleRevert: true
+      //   }
       // )
+      // const oldBalance = await ethERC20Contract.methods.balanceOf(ethReceiverAddress).call()
+      const erc20 = new ethers.Contract(ethErc20Address, [
+        "function balanceOf(address owner) view returns (uint256)",
+      ], new ethers.providers.JsonRpcProvider(robustWeb3.ethNodeUrl));
+      const oldBalance = await erc20.balanceOf(ethReceiverAddress)
+      console.log(
+        `ERC20 balance of ${ethReceiverAddress} before the transfer: ${oldBalance}`
+      )
+
       await robustWeb3.callContract(
         ethTokenLockerContract,
         'unlockToken',
@@ -326,13 +338,12 @@ class TransferEthERC20FromNear {
           gasPrice: new BN(await robustWeb3.web3.eth.getGasPrice()).mul(new BN(ethGasMultiplier))
         }
       )
-      // TODO fix before using
-      // const newBalance = await ethERC20Contract.methods
-      //   .balanceOf(ethReceiverAddress)
-      //   .call()
-      // console.log(
-      //   `ERC20 balance of ${ethReceiverAddress} after the transfer: ${newBalance}`
-      // )
+      // TODO investigate and fix this web3 call
+      // const newBalance = await ethERC20Contract.methods.balanceOf(ethReceiverAddress).call()
+      const newBalance = await erc20.balanceOf(ethReceiverAddress)
+      console.log(
+        `ERC20 balance of ${ethReceiverAddress} after the transfer: ${newBalance}`
+      )
     } catch (txRevertMessage) {
       console.log('Failed to unlock.')
       console.log(txRevertMessage.toString())
@@ -425,14 +436,6 @@ class TransferEthERC20FromNear {
         handleRevert: true
       }
     )
-    const ethERC20Contract = new web3.eth.Contract(
-      JSON.parse(fs.readFileSync(ethErc20AbiPath)),
-      ethErc20Address,
-      {
-        from: ethMasterAccount,
-        handleRevert: true
-      }
-    )
 
     let transferLog = TransferEthERC20FromNear.loadTransferLog()
     if (transferLog.finished === undefined) {
@@ -483,7 +486,7 @@ class TransferEthERC20FromNear {
         proverContract,
         proofRes: transferLog.proofRes,
         clientBlockHeight: transferLog.clientBlockHeight,
-        ethERC20Contract,
+        ethErc20Address,
         ethReceiverAddress,
         ethTokenLockerContract,
         ethMasterAccount,
