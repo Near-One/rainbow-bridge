@@ -320,8 +320,8 @@ class TransferEthERC20FromNear {
       // )
       // const oldBalance = await ethERC20Contract.methods.balanceOf(ethReceiverAddress).call()
       const erc20 = new ethers.Contract(ethErc20Address, [
-        "function balanceOf(address owner) view returns (uint256)",
-      ], new ethers.providers.JsonRpcProvider(robustWeb3.ethNodeUrl));
+        'function balanceOf(address owner) view returns (uint256)'
+      ], new ethers.providers.JsonRpcProvider(robustWeb3.ethNodeUrl))
       const oldBalance = await erc20.balanceOf(ethReceiverAddress)
       console.log(
         `ERC20 balance of ${ethReceiverAddress} before the transfer: ${oldBalance}`
