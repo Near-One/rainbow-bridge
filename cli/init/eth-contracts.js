@@ -179,6 +179,55 @@ class InitEthLocker {
   }
 }
 
+class InitEthNftLocker {
+  static async execute ({
+    ethNodeUrl,
+    ethMasterSk,
+    nearNftTokenFactoryAccount,
+    ethProverAddress,
+    ethNftLockerAbiPath,
+    ethNftLockerBinPath,
+    ethAdminAddress,
+    ethGasMultiplier
+  }) {
+    if (ethAdminAddress === '') {
+      const web3 = new Web3('')
+      ethAdminAddress = web3.eth.accounts.privateKeyToAccount(ethMasterSk).address
+    }
+
+    console.log('Using as locker admin:', ethAdminAddress)
+    const ethContractInitializer = new EthContractInitializer()
+    const minBlockAcceptanceHeight = 0
+    const pausedFlag = 0
+
+    const success = await ethContractInitializer.execute(
+      {
+        args: [
+          Buffer.from(nearNftTokenFactoryAccount, 'utf8'),
+          ethProverAddress,
+          minBlockAcceptanceHeight,
+          ethAdminAddress,
+          pausedFlag
+        ],
+        gas: 5000000,
+        ethContractAbiPath: ethNftLockerAbiPath,
+        ethContractBinPath: ethNftLockerBinPath,
+        ethNodeUrl,
+        ethMasterSk,
+        ethGasMultiplier
+      }
+    )
+    if (!success) {
+      console.log("Can't deploy", ethNftLockerAbiPath)
+      process.exit(1)
+    }
+    return {
+      ethLockerAddress: success.ethContractAddress,
+      ethAdminAddress: ethAdminAddress
+    }
+  }
+}
+
 class InitEthClient {
   static async execute ({
     ethNodeUrl,
@@ -293,5 +342,6 @@ class InitEthProver {
 exports.InitEthEd25519 = InitEthEd25519
 exports.InitEthErc20 = InitEthErc20
 exports.InitEthLocker = InitEthLocker
+exports.InitEthNftLocker = InitEthNftLocker
 exports.InitEthClient = InitEthClient
 exports.InitEthProver = InitEthProver

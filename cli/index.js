@@ -41,11 +41,13 @@ const { RainbowConfig } = require('rainbow-bridge-utils')
 const {
   InitNearContracts,
   InitNearTokenFactory,
+  InitNearNftTokenFactory,
   InitEthEd25519,
   InitEthErc20,
   InitEthLocker,
+  InitEthNftLocker,
   InitEthClient,
-  InitEthProver
+  InitEthProver,
 } = require('./init')
 
 // Source dir or where rainbow cli is installed (when install with npm)
@@ -53,6 +55,7 @@ const BRIDGE_SRC_DIR = __dirname
 const LIBS_SOL_SRC_DIR = path.join(BRIDGE_SRC_DIR, '..', 'contracts', 'eth')
 const LIBS_RS_SRC_DIR = path.join(BRIDGE_SRC_DIR, '..', 'contracts', 'near')
 const LIBS_TC_SRC_DIR = path.join(BRIDGE_SRC_DIR, '..', 'node_modules', 'rainbow-token-connector')
+const LIBS_NFT_TC_SRC_DIR = path.join(BRIDGE_SRC_DIR, '..', 'node_modules', 'rainbow-non-fungible-token-connector')
 
 RainbowConfig.declareOption(
   'near-network-id',
@@ -168,13 +171,27 @@ RainbowConfig.declareOption(
   'neartokenfactory.node0'
 )
 RainbowConfig.declareOption(
+  'near-nft-token-factory-account',
+  'The account of the nft token factory contract that will be used to mint tokens locked on Ethereum.',
+  'nearnfttokenfactory.node0'
+)
+RainbowConfig.declareOption(
   'near-token-factory-sk',
   'The secret key of the token factory account. If not specified will use master SK.'
+)
+RainbowConfig.declareOption(
+  'near-nft-token-factory-sk',
+  'The secret key of the nft token factory account. If not specified will use master SK.'
 )
 RainbowConfig.declareOption(
   'near-token-factory-contract-path',
   'The path to the Wasm file containing the token factory contract.',
   path.join(LIBS_TC_SRC_DIR, 'res/bridge_token_factory.wasm')
+)
+RainbowConfig.declareOption(
+  'near-nft-token-factory-contract-path',
+  'The path to the Wasm file containing the nft token factory contract.',
+  path.join(LIBS_NFT_TC_SRC_DIR, 'res/nft_token_factory.wasm')
 )
 RainbowConfig.declareOption(
   'near-token-factory-init-balance',
@@ -186,9 +203,18 @@ RainbowConfig.declareOption(
   'ETH address of the locker contract.'
 )
 RainbowConfig.declareOption(
+  'eth-nft-locker-address',
+  'ETH address of the nft locker contract.'
+)
+RainbowConfig.declareOption(
   'eth-locker-abi-path',
-  'Path to the .abi file defining Ethereum locker contract.',
+  'Path to the .abi file defining Ethereum ERC20 locker contract.',
   path.join(LIBS_TC_SRC_DIR, 'res/ERC20Locker.full.abi')
+)
+RainbowConfig.declareOption(
+  'eth-nft-locker-abi-path',
+  'Path to the .abi file defining Ethereum ERC721 locker contract.',
+  path.join(LIBS_NFT_TC_SRC_DIR, 'res/ERC721Locker.full.abi')
 )
 RainbowConfig.declareOption(
   'eth-locker-bin-path',
@@ -196,8 +222,17 @@ RainbowConfig.declareOption(
   path.join(LIBS_TC_SRC_DIR, 'res/ERC20Locker.full.bin')
 )
 RainbowConfig.declareOption(
+  'eth-nft-locker-bin-path',
+  'Path to the .bin file defining Ethereum ERC721 locker contract.',
+  path.join(LIBS_NFT_TC_SRC_DIR, 'res/ERC721Locker.full.bin')
+)
+RainbowConfig.declareOption(
   'eth-erc20-address',
   'ETH address of the ERC20 contract.'
+)
+RainbowConfig.declareOption(
+  'eth-erc721-address',
+  'ETH address of the ERC721 contract.'
 )
 RainbowConfig.declareOption(
   'eth-erc20-abi-path',
@@ -542,6 +577,28 @@ RainbowConfig.addOptions(
 
 RainbowConfig.addOptions(
   program
+    .command('init-near-nft-token-factory')
+    .description(
+      'Deploys and initializes nft token factory to NEAR blockchain. Requires locker on Ethereum side.'
+    ),
+  InitNearNftTokenFactory.execute,
+  [
+    'near-node-url',
+    'near-network-id',
+    'near-master-account',
+    'near-master-sk',
+    'near-prover-account',
+    'near-nft-token-factory-account',
+    'near-nft-token-factory-sk',
+    'near-nft-token-factory-contract-path',
+    'near-token-factory-init-balance',
+    'eth-nft-locker-address',
+    'eth-erc721-address'
+  ]
+)
+
+RainbowConfig.addOptions(
+  program
     .command('deploy-token <token_name> <eth_token_address>')
     .description('Deploys and initializes token on NEAR.'),
   async (tokenName, ethTokenAddress, args) => {
@@ -583,6 +640,25 @@ RainbowConfig.addOptions(
     'eth-master-sk',
     'eth-locker-abi-path',
     'eth-locker-bin-path',
+    'eth-admin-address',
+    'eth-prover-address',
+    'eth-gas-multiplier'
+  ]
+)
+
+RainbowConfig.addOptions(
+  program
+    .command('init-eth-nft-locker')
+    .description(
+      'Deploys and initializes nft locker contract on Ethereum blockchain. Requires token factory on Near side.'
+    ),
+  InitEthNftLocker.execute,
+  [
+    'near-nft-token-factory-account',
+    'eth-node-url',
+    'eth-master-sk',
+    'eth-nft-locker-abi-path',
+    'eth-nft-locker-bin-path',
     'eth-admin-address',
     'eth-prover-address',
     'eth-gas-multiplier'
