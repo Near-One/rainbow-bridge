@@ -81,7 +81,7 @@ class InitNearNftTokenFactory {
     }
 
     const deployedTokenInfo = await DeployToken.execute({
-      tokenName: 'erc20',
+      tokenName: 'erc721',
       ethTokenAddress: ethErc721Address,
       nearNodeUrl,
       nearNetworkId,
@@ -99,8 +99,8 @@ class InitNearNftTokenFactory {
       ...otherDeployedTokenInfo
     } = deployedTokenInfo
     return {
-      nearErc20Account: nearTokenAccount,
-      ethErc20Address: ethTokenAddress,
+      nearErc721Account: nearTokenAccount,
+      ethErc721Address: ethTokenAddress,
       ...otherDeployedTokenInfo
     }
   }
