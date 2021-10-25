@@ -25,6 +25,7 @@ const {
   TransferETHERC20ToNear,
   TransferEthERC20FromNear,
   DeployToken,
+  DeployNftToken,
   mintErc20,
   getErc20Balance,
   getBridgeOnNearBalance,
@@ -624,6 +625,36 @@ RainbowConfig.addOptions(
     'near-master-sk',
     'near-token-factory-account',
     'near-token-factory-sk'
+  ]
+)
+
+RainbowConfig.addOptions(
+  program
+    .command('deploy-nft-token <token_name> <eth_token_address>')
+    .description('Deploys and initializes nft token on NEAR.'),
+  async (tokenName, ethTokenAddress, args) => {
+    const deployedTokenInfo = await DeployNftToken.execute({ tokenName, ethTokenAddress, ...args })
+    if (!deployedTokenInfo) {
+      return null
+    }
+    const {
+      nearTokenAccount,
+      ethTokenAddress: _,
+      ...otherDeployedTokenInfo
+    } = deployedTokenInfo
+    return {
+      [`near${changeCase.capitalCase(tokenName)}Account`]: nearTokenAccount,
+      [`eth${changeCase.capitalCase(tokenName)}Address`]: ethTokenAddress,
+      ...otherDeployedTokenInfo
+    }
+  },
+  [
+    'near-node-url',
+    'near-network-id',
+    'near-master-account',
+    'near-master-sk',
+    'near-nft-token-factory-account',
+    'near-nft-token-factory-sk'
   ]
 )
 
