@@ -4,7 +4,7 @@ const {
   verifyAccount
 } = require('rainbow-bridge-utils')
 const { BN } = require('ethereumjs-util')
-const { DeployToken } = require('rainbow-bridge-testing')
+const { DeployNftToken } = require('rainbow-bridge-testing')
 
 class InitNearNftTokenFactory {
   static async execute ({
@@ -80,7 +80,7 @@ class InitNearNftTokenFactory {
       process.exit(1)
     }
 
-    const deployedTokenInfo = await DeployToken.execute({
+    const deployedTokenInfo = await DeployNftToken.execute({
       tokenName: 'erc721',
       ethTokenAddress: ethErc721Address,
       nearNodeUrl,

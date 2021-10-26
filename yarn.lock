@@ -4896,9 +4896,9 @@ quick-lru@^5.1.1:
   resolved "https://registry.yarnpkg.com/quick-lru/-/quick-lru-5.1.1.tgz#366493e6b3e42a3a6885e2e99d18f80fb7a8c932"
   integrity sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==
 
-"rainbow-non-fungible-token-connector@https://github.com/karim-en/rainbow-non-fungible-token-connector#f6220392de4777a007d657abcc9342a9168e9a48":
+"rainbow-non-fungible-token-connector@https://github.com/karim-en/rainbow-non-fungible-token-connector#d609dbe2330ec56ddfd31b20f48e0ecf5f517670":
   version "0.0.0"
-  resolved "https://github.com/karim-en/rainbow-non-fungible-token-connector#f6220392de4777a007d657abcc9342a9168e9a48"
+  resolved "https://github.com/karim-en/rainbow-non-fungible-token-connector#d609dbe2330ec56ddfd31b20f48e0ecf5f517670"
 
 rainbow-token-connector@near/rainbow-token-connector#134b3b6ad900d90c6f993c52f4e3edf985aec61a:
   version "0.0.0"
