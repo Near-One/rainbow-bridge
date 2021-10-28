@@ -48,7 +48,7 @@ const {
   InitEthLocker,
   InitEthNftLocker,
   InitEthClient,
-  InitEthProver,
+  InitEthProver
 } = require('./init')
 
 // Source dir or where rainbow cli is installed (when install with npm)
