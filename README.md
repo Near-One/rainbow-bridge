@@ -307,7 +307,7 @@ Now you check the balance of `node0` again. You should notice the balance was ch
 
 Note, when we deployed ERC20 to the Ethereum blockchain we have minted a large number of tokens to the default master
 key of Ganache, so we have transferred ERC20 tokens from it to `node0` account.
-Notice that we are using `neartokenfactory` account here to pay for the NEAR gas fees, any account for which we know a secret key would've worked too.
+Notice that we are using `neartokenfactory.node0` account here to pay for the NEAR gas fees, any account for which we know a secret key would've worked too.
 You must observe blocks being submitted.
 
 You can also manually check the ERC20 balance of the receiver before and after receiving the transfer back from the NEAR side

@@ -24,7 +24,7 @@ RUN apt-get update -qq && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*  \
     && curl -sL https://deb.nodesource.com/setup_12.x | bash -
 
-RUN apt-get install nodejs && npm -g install ganache-cli yarn
+RUN apt-get install nodejs && npm -g install ganache@7.0.0-alpha.1 yarn
 
 RUN curl https://sh.rustup.rs -sSf | \
     sh -s -- -y --no-modify-path --default-toolchain nightly-2020-05-15

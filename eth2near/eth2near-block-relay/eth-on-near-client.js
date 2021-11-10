@@ -1,20 +1,20 @@
 const BN = require('bn.js')
 const blockFromRpc = require('@ethereumjs/block/dist/from-rpc')
-const Common = require('@ethereumjs/common')
-const got = require('got');
+const Common = require('@ethereumjs/common').default
+const got = require('got')
 const {
   Web3,
   BorshContract,
   hexToBuffer,
   readerToHex,
-  sleep,
+  sleep
 } = require('rainbow-bridge-utils')
 const roots = require('./dag_merkle_roots.json')
 
 /// Get Ethereum block by number from RPC, and returns raw json object.
-async function getEthBlock(number, RobustWeb3) {
-  let attempts = 10;
-  let blockData;
+async function getEthBlock (number, RobustWeb3) {
+  let attempts = 10
+  let blockData
 
   while (attempts > 0) {
     /// Need to call RPC directly, since function `blockFromRpc` works
@@ -22,48 +22,48 @@ async function getEthBlock(number, RobustWeb3) {
     /// tools that abstract this calls are missing the field `baseFeePerGas`
     blockData = await got.post(RobustWeb3.ethNodeUrl, {
       json: {
-        "id": 0,
-        "jsonrpc": "2.0",
-        "method": "eth_getBlockByNumber",
-        "params": [
-          "0x" + number.toString(16),
+        id: 0,
+        jsonrpc: '2.0',
+        method: 'eth_getBlockByNumber',
+        params: [
+          '0x' + number.toString(16),
           false
         ]
       },
-      responseType: "json"
-    });
+      responseType: 'json'
+    })
 
     /// When the block to be queried is the last one produced, RPC can return null.
     /// Retrying fix this problem.
     if (blockData.body.result === null) {
-      attempts -= 1;
-      await sleep(800);
+      attempts -= 1
+      await sleep(800)
     } else {
-      break;
+      break
     }
   }
-  return blockData.body.result;
+  return blockData.body.result
 }
 
 /// bridgeId matches nearNetworkId. It is one of two strings [testnet / mainnet]
-function web3BlockToRlp(blockData, bridgeId) {
-  let chain;
-  if (bridgeId === "testnet") {
-    chain = "ropsten";
+function web3BlockToRlp (blockData, bridgeId) {
+  let chain
+  if (bridgeId === 'testnet') {
+    chain = 'ropsten'
   } else {
-    chain = "mainnet";
+    chain = 'mainnet'
   }
-  const common = new Common.default({ chain });
+  const common = new Common({ chain })
 
   /// baseFeePerGas was introduced after london hard fork.
   /// TODO: Use better way to detect current hard fork.
   if (blockData.baseFeePerGas !== undefined) {
-    common.setHardfork("london")
+    common.setHardfork('london')
     common.setEIPs([1559])
   }
 
-  const block = blockFromRpc.default(blockData, [], { common });
-  return block.header.serialize();
+  const block = blockFromRpc.default(blockData, [], { common })
+  return block.header.serialize()
 }
 
 const borshSchema = {
@@ -129,7 +129,7 @@ const borshSchema = {
 }
 
 class EthOnNearClientContract extends BorshContract {
-  constructor(account, contractId) {
+  constructor (account, contractId) {
     super(borshSchema, account, contractId, {
       viewMethods: [
         {
@@ -181,7 +181,7 @@ class EthOnNearClientContract extends BorshContract {
 
   // Call initialization methods on the contract.
   // If validateEthash is true will do ethash validation otherwise it won't.
-  async maybeInitialize(hashesGcThreshold, finalizedGcThreshold, numConfirmations, validateEthash, trustedSigner, robustWeb3, bridgeId) {
+  async maybeInitialize (hashesGcThreshold, finalizedGcThreshold, numConfirmations, validateEthash, trustedSigner, robustWeb3, bridgeId) {
     await this.accessKeyInit()
     let initialized = false
     try {
@@ -190,8 +190,8 @@ class EthOnNearClientContract extends BorshContract {
     if (!initialized) {
       console.log('EthOnNearClient is not initialized, initializing...')
       const lastBlockNumber = await robustWeb3.getBlockNumber()
-      const blockData = await getEthBlock(lastBlockNumber, robustWeb3);
-      const blockRlp = web3BlockToRlp(blockData, bridgeId);
+      const blockData = await getEthBlock(lastBlockNumber, robustWeb3)
+      const blockRlp = web3BlockToRlp(blockData, bridgeId)
       await this.init(
         {
           validate_ethash: validateEthash,
