@@ -301,24 +301,11 @@ class TransferEthERC20FromNear {
       // Check that the proof is correct.
       const borshProofRes = borshifyOutcomeProof(proofRes)
       clientBlockHeight = new BN(clientBlockHeight)
-      // Debugging output, uncomment for debugging.
-      // console.log(`proof: ${JSON.stringify(proofRes)}`)
-      // console.log(`client height: ${clientBlockHeight}`)
 
       await proverContract.methods
         .proveOutcome(borshProofRes, clientBlockHeight)
         .call()
 
-      // TODO investigate and fix this web3 call
-      // const ethERC20Contract = new web3.eth.Contract(
-      //   JSON.parse(fs.readFileSync(ethErc20AbiPath)),
-      //   ethErc20Address,
-      //   {
-      //     from: ethMasterAccount,
-      //     handleRevert: true
-      //   }
-      // )
-      // const oldBalance = await ethERC20Contract.methods.balanceOf(ethReceiverAddress).call()
       const erc20 = new ethers.Contract(ethErc20Address, [
         'function balanceOf(address owner) view returns (uint256)'
       ], new ethers.providers.JsonRpcProvider(robustWeb3.ethNodeUrl))
@@ -338,8 +325,7 @@ class TransferEthERC20FromNear {
           gasPrice: new BN(await robustWeb3.web3.eth.getGasPrice()).mul(new BN(ethGasMultiplier))
         }
       )
-      // TODO investigate and fix this web3 call
-      // const newBalance = await ethERC20Contract.methods.balanceOf(ethReceiverAddress).call()
+
       const newBalance = await erc20.balanceOf(ethReceiverAddress)
       console.log(
         `ERC20 balance of ${ethReceiverAddress} after the transfer: ${newBalance}`
