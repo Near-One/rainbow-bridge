@@ -23,19 +23,19 @@ jobs:
 
           - job-name: E2E
             cmd: ./testing/ci/e2e.sh
-            timeout-minutes: 40
+            timeout-minutes: 60
 
           - job-name: E2E myerc20
             cmd: ./testing/ci/e2e_deploy_contract.sh
-            timeout-minutes: 40
+            timeout-minutes: 60
 
           - job-name: Challenge with watchdog
             cmd: ./testing/ci/test_challenge.sh
-            timeout-minutes: 40
+            timeout-minutes: 60
 
           - job-name: Test eth-relay catchup
             cmd: ./testing/ci/test_ethrelay_catchup.sh
-            timeout-minutes: 40
+            timeout-minutes: 60
 
     name: ${{ matrix.job-name }}
     steps:
