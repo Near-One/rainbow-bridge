@@ -38,6 +38,7 @@ class DangerDeployMyERC20 {
 
     const tokenAddress = normalizeEthKey(txContract.options.address)
     console.log(tokenAddress)
+    console.log(JSON.stringify(web3.currentProvider))
     web3.currentProvider.connection.close()
   }
 }
