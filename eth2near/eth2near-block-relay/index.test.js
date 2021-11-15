@@ -1,3 +1,5 @@
+/* eslint-env jest */
+
 const { Eth2NearRelay } = require('./index')
 const config = require('./test-config.json')
 const os = require('os')
