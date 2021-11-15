@@ -8,7 +8,7 @@ const { nearAPI } = require('rainbow-bridge-utils')
 const path = require('path')
 
 class StartEth2NearRelayCommand {
-  static async execute({
+  static async execute ({
     daemon,
     nearNetworkId,
     nearNodeUrl,

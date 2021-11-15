@@ -23,7 +23,7 @@
   "dependencies": {
     "bn.js": "^5.1.3",
     "commander": "^5.1.0",
-    "eth-object": "near/eth-object#54e03b8aac8208cf724e206d49ffb8bdd30451d7",
+    "eth-object": "https://github.com/near/eth-object#383b6ea68c7050bea4cab6950c1d5a7fa553e72b",
     "eth-util-lite": "near/eth-util-lite#master",
     "ethereumjs-util": "^6.2.0",
     "node-fetch": "^2.6.0",
@@ -34,7 +34,7 @@
     "rainbow-bridge-near2eth-block-relay": "1.0.0",
     "rainbow-bridge-watchdog": "1.0.0",
     "rainbow-bridge-testing": "1.0.0",
-    "rainbow-token-connector": "near/rainbow-token-connector#7fb86958362fe8e4455ebbcdb00caac067eda2ff",
+    "rainbow-token-connector": "near/rainbow-token-connector#134b3b6ad900d90c6f993c52f4e3edf985aec61a",
     "request": "^2.88.2"
   }
 }

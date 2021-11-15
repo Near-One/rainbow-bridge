@@ -12,7 +12,7 @@ services:
         while ! nc -z localhost 3030; do
           sleep 1
         done
-        ganache-cli --port 9545 --blockTime 12 --gasLimit 10000000 --account='0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200,10000000000000000000000000000'
+        ganache-cli --hardfork london --port 9545 --blockTime 12 --gasLimit 10000000 --account='0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200,10000000000000000000000000000'
       "
   eth2near-relay:
     build: .
