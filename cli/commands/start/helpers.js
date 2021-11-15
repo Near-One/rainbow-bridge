@@ -36,7 +36,7 @@ function getLocalNearNodeURL (port = NEAR_PORT) {
 }
 
 function getLocalGanacheNodeURL (port = GANACHE_PORT) {
-  return util.format('ws://localhost:%d', port)
+  return util.format('http://localhost:%d', port)
 }
 
 exports.NEAR_PORT = NEAR_PORT

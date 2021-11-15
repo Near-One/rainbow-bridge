@@ -22,10 +22,10 @@
     "bsert": "^0.0.10",
     "change-case": "^4.1.1",
     "configstore": "^5.0.1",
-    "eth-object": "near/eth-object#54e03b8aac8208cf724e206d49ffb8bdd30451d7",
+    "eth-object": "https://github.com/near/eth-object#383b6ea68c7050bea4cab6950c1d5a7fa553e72b",
     "eth-util-lite": "near/eth-util-lite#master",
     "lodash": "^4.17.20",
-    "near-api-js": "=0.26.0",
-    "web3": "=1.2.6"
+    "near-api-js": "^0.26.0",
+    "web3": "^1.6.0"
   }
 }

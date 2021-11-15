@@ -19,7 +19,7 @@ steps:
 
       artifact_paths:
           - "logs/**/*.log"
-      timeout: 40
+      timeout: 60
 
       agents:
           - "queue=default"
@@ -32,7 +32,7 @@ steps:
 
       artifact_paths:
           - "logs/**/*.log"
-      timeout: 40
+      timeout: 60
 
       agents:
           - "queue=default"
@@ -45,7 +45,7 @@ steps:
 
       artifact_paths:
           - "logs/**/*.log"
-      timeout: 40
+      timeout: 60
 
       agents:
           - "queue=default"
@@ -58,7 +58,7 @@ steps:
 
       artifact_paths:
           - "logs/**/*.log"
-      timeout: 40
+      timeout: 60
 
       agents:
           - "queue=default"
