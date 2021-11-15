@@ -80,18 +80,18 @@ async function binarySearchWithEstimate (limitLo, limitHi, estimatedPosition, pr
   return hi
 }
 
-class Ethashproof {
-  static numOfBlocksPerEpoch = 30000;
-  static numBlocksToEndOfEpoch = 5000;
+const NUM_OF_BLOCKS_PER_EPOCH = 30000;
+const NUM_OF_BLOCKS_TO_END_OF_EPOCH = 5000;
 
+class Ethashproof {
   constructor() {
     this.nextEpochPromise = null;
     this.nextEpoch = null;
   }
 
   async getParseBlock(blockNumber, blockRlp) {
-    const currentEpoch = Math.trunc(blockNumber / Ethashproof.numOfBlocksPerEpoch);
-    const remBlocksToEndOfEpoch = Ethashproof.numOfBlocksPerEpoch - (blockNumber % Ethashproof.numOfBlocksPerEpoch);
+    const currentEpoch = Math.trunc(blockNumber / NUM_OF_BLOCKS_PER_EPOCH);
+    const remBlocksToEndOfEpoch = NUM_OF_BLOCKS_PER_EPOCH - (blockNumber % NUM_OF_BLOCKS_PER_EPOCH);
 
     if (this.nextEpoch === currentEpoch && this.nextEpochPromise != null) {
       await this.nextEpochPromise;
@@ -102,7 +102,7 @@ class Ethashproof {
     )
 
     const nextEpoch = currentEpoch + 1;
-    if (this.nextEpoch !== nextEpoch && remBlocksToEndOfEpoch < Ethashproof.numBlocksToEndOfEpoch){
+    if (this.nextEpoch !== nextEpoch && remBlocksToEndOfEpoch < NUM_OF_BLOCKS_TO_END_OF_EPOCH){
       this.calculateNextEpoch(nextEpoch);
     }
 
