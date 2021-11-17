@@ -62,11 +62,11 @@ func main() {
 	}
 
     // Remove previous epoch
-	if epoch > 0 {
-		previousEpoch := epoch - 1
-		os.Remove(ethash.PathToDAG(previousEpoch, ethash.DefaultDir))
-		os.Remove(ethashproof.PathToCache(previousEpoch))
-	}
+	//if epoch > 1 {
+	//	previousEpoch := epoch - 1
+	//	os.Remove(ethash.PathToDAG(previousEpoch, ethash.DefaultDir))
+	//	os.Remove(ethashproof.PathToCache(previousEpoch))
+	//}
 
 	fmt.Printf("SealHash: %s\n", ethash.Instance.SealHash(header))
 
