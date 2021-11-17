@@ -61,12 +61,25 @@ func main() {
 		}
 	}
 
-    // Remove previous epoch
-	//if epoch > 1 {
-	//	previousEpoch := epoch - 1
-	//	os.Remove(ethash.PathToDAG(previousEpoch, ethash.DefaultDir))
-	//	os.Remove(ethashproof.PathToCache(previousEpoch))
-	//}
+	// Remove previous epoch
+	previousEpoch := epoch - 1
+	err = os.Remove(ethash.PathToDAG(previousEpoch, ethash.DefaultDir))
+	if err != nil {
+		if os.IsNotExist(err) {
+			fmt.Printf("DAG for previous epoch (%d) does not exist, nothing to remove.\n", previousEpoch)
+		} else {
+			fmt.Println(err)
+		}
+	}
+
+	err = os.Remove(ethashproof.PathToCache(previousEpoch))
+	if err != nil {
+		if os.IsNotExist(err) {
+			fmt.Printf("Cache for previous epoch (%d) does not exist, nothing to remove.\n", previousEpoch)
+		} else {
+			fmt.Println(err)
+		}
+	}
 
 	fmt.Printf("SealHash: %s\n", ethash.Instance.SealHash(header))
 
