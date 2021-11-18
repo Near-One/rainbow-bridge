@@ -1,7 +1,0 @@
-{
-  "ethNodeUrl": "<node url>",
-  "totalSubmitBlock": 0,
-  "gasPerTransaction":  1,
-  "nearNetworkId": "testnet",
-  "metricsPort": 0
-}
