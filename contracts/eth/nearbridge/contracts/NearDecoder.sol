@@ -7,6 +7,9 @@ library NearDecoder {
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
 
+    uint8 constant VALIDATOR_V1 = 0;
+    uint8 constant VALIDATOR_V2 = 1;
+
     struct PublicKey {
         bytes32 k;
     }
@@ -30,12 +33,20 @@ library NearDecoder {
     struct BlockProducer {
         PublicKey publicKey;
         uint128 stake;
+        // Flag indicating if this validator proposed to be a chunk-only producer (i.e. cannot become a block producer).
+        bool isChunkOnly;
     }
 
     function decodeBlockProducer(Borsh.Data memory data) internal pure returns (BlockProducer memory res) {
+        uint8 validator_version = data.decodeU8();
         data.skipBytes();
         res.publicKey = data.decodePublicKey();
         res.stake = data.decodeU128();
+        if (validator_version == VALIDATOR_V2) {
+            res.isChunkOnly = data.decodeU8();
+        } else {
+            res.isChunkOnly = false;
+        }
     }
 
     function decodeBlockProducers(Borsh.Data memory data) internal pure returns (BlockProducer[] memory res) {
