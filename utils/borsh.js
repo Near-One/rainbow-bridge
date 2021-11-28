@@ -404,6 +404,7 @@ function borshify (block) {
     Buffer.concat(
       block.next_bps.map((nextBp) =>
         Buffer.concat([
+          bs58.decode(nextBp.validator_stake_struct_version),
           Web3.utils.toBN(nextBp.account_id.length).toBuffer('le', 4),
           Buffer.from(nextBp.account_id),
           nextBp.public_key.substr(0, 8) === 'ed25519:'
