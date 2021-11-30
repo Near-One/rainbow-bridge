@@ -43,7 +43,7 @@ library NearDecoder {
         res.publicKey = data.decodePublicKey();
         res.stake = data.decodeU128();
         if (validator_version == VALIDATOR_V2) {
-            res.isChunkOnly = data.decodeU8();
+            res.isChunkOnly = data.decodeU8() != 0;
         } else {
             res.isChunkOnly = false;
         }
