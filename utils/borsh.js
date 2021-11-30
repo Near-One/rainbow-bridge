@@ -404,7 +404,9 @@ function borshify (block) {
     Buffer.concat(
       block.next_bps.map((nextBp) =>
         Buffer.concat([
-          bs58.decode(nextBp.validator_stake_struct_version),
+          nextBp.hasOwnProperty("validator_stake_struct_version")
+            ? bs58.decode(nextBp.validator_stake_struct_version)
+            : Buffer.from([0]),
           Web3.utils.toBN(nextBp.account_id.length).toBuffer('le', 4),
           Buffer.from(nextBp.account_id),
           nextBp.public_key.substr(0, 8) === 'ed25519:'
@@ -439,6 +441,9 @@ function borshifyInitialValidators (initialValidators) {
     Buffer.concat(
       initialValidators.map((nextBp) =>
         Buffer.concat([
+          nextBp.hasOwnProperty("validator_stake_struct_version")
+            ? bs58.decode(nextBp.validator_stake_struct_version)
+            : Buffer.from([0]),
           Web3.utils.toBN(nextBp.account_id.length).toBuffer('le', 4),
           Buffer.from(nextBp.account_id),
           nextBp.public_key.substr(0, 8) === 'ed25519:'
