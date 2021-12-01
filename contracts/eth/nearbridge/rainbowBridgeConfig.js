@@ -8,15 +8,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os')
 const { task } = require('hardhat/config');
-const { verifyContract, deployNearBridgeProxy } = require('./scripts/tasks');
-
-task("verifyContract", "Verify a contract on etherscan")
-    .addParam('address', '')
-    .setAction(
-    async (args, hre) => {
-        await verifyContract(hre, args.address);
-    }
-);
+const { deployNearBridgeProxy } = require('./scripts/tasks');
 
 task('deployNearBridgeProxy', 'Deploy NearBridge proxy')
     .addParam('ethClientArtifactPath', 'client artifact path.')
@@ -50,7 +42,7 @@ function setupRainbowBridgeNetwork() {
 module.exports = {
     defaultNetwork: 'rainbowBridge',
     solidity: {
-        version: '0.8.3',
+        version: '0.8.7',
         settings: {
             optimizer: {
                 enabled: true,
@@ -59,9 +51,9 @@ module.exports = {
         }
     },
     networks: {
-        rainbowBridge: setupRainbowBridgeNetwork(),
+        rainbowBridge: setupRainbowBridgeNetwork()
     },
     etherscan: {
-        apiKey: "HC329SSMVKK45EGAGVTVK5257I56U7ABTD"
+        apiKey: ""
     }
 };

@@ -1,11 +1,5 @@
 const path = require('path');
 
-async function verifyContract(hre, contractAddress) {
-    await hre.run("verify:verify", {
-        address: contractAddress
-    });
-};
-
 async function deployNearBridgeProxy (hre, args) {
     const {
         abi,
@@ -48,4 +42,3 @@ async function deployNearBridgeProxy (hre, args) {
 }
 
 exports.deployNearBridgeProxy = deployNearBridgeProxy
-exports.verifyContract = verifyContract

@@ -249,6 +249,17 @@ class InitEthClient {
   }
 }
 
+class VerifyAddress {
+  static async execute (address) {
+    const cmd = `cd ./contracts/eth/nearbridge && npx hardhat verify ${address} \\
+    --config rainbowBridgeConfig.js --network rainbowBridge
+    `
+    console.log(`Verify contract address ${address}`)
+    await execAsync(cmd)
+    console.log(`Contract address ${address} verified`)
+    return {}
+  }
+}
 class InitEthProver {
   static async execute ({
     ethNodeUrl,
@@ -290,3 +301,4 @@ exports.InitEthErc20 = InitEthErc20
 exports.InitEthLocker = InitEthLocker
 exports.InitEthClient = InitEthClient
 exports.InitEthProver = InitEthProver
+exports.VerifyAddress = VerifyAddress

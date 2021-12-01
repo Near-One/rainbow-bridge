@@ -46,7 +46,8 @@ const {
   InitEthErc20,
   InitEthLocker,
   InitEthClient,
-  InitEthProver
+  InitEthProver,
+  VerifyAddress
 } = require('./init')
 
 // Source dir or where rainbow cli is installed (when install with npm)
@@ -604,6 +605,19 @@ RainbowConfig.addOptions(
     'eth-erc20-bin-path',
     'eth-gas-multiplier'
   ]
+)
+
+RainbowConfig.addOptions(
+  program
+    .command('verify-address <address>')
+    .description('Verify address on etherscan.'),
+  async (address, args) => {
+    console.log('---------------------------')
+    console.log(address)
+    console.log('---------------------------')
+    await VerifyAddress.execute(address)
+  },
+  []
 )
 
 RainbowConfig.addOptions(
