@@ -91,14 +91,9 @@ eth-test-prover:
 		setup-clean-and-prepare \
 		start-local-near-and-ganache-nodes \
 		deploy-full-contracts \
-		deploy-full-contracts \
 		start-relayer \
 		stop-all \
-		bsc-build-client \
-		bsc-build-prover \
 		eth-build-client \
 		eth-build-prover \
-		bsc-test-client \
-		bsc-test-prover \
 		eth-test-client \
 		eth-test-prover
