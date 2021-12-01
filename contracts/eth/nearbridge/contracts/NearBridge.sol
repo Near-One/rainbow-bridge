@@ -5,8 +5,9 @@ import "./AdminControlled.sol";
 import "./INearBridge.sol";
 import "./NearDecoder.sol";
 import "./Ed25519.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-contract NearBridge is INearBridge, AdminControlled {
+contract NearBridge is INearBridge, UUPSUpgradeable, AdminControlled {
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
 
@@ -28,7 +29,7 @@ contract NearBridge is INearBridge, AdminControlled {
     uint256 public lockDuration;
     // replaceDuration is in nanoseconds, because it is a difference between NEAR timestamps.
     uint256 public replaceDuration;
-    Ed25519 immutable edwards;
+    Ed25519 private edwards;
 
     Epoch[3] epochs;
     uint curEpoch;
@@ -53,15 +54,22 @@ contract NearBridge is INearBridge, AdminControlled {
     mapping(uint64 => bytes32) blockMerkleRoots_;
     mapping(address => uint256) public override balanceOf;
 
-    constructor(
+    modifier checkDuration(uint256 replaceDuration_, uint256 lockDuration_) {
+        require(replaceDuration_ > lockDuration_ * 1000000000, "Invalid Duration");
+        _;
+    }
+
+    function initialize(
         Ed25519 ed,
         uint256 lockEthAmount_,
         uint256 lockDuration_,
         uint256 replaceDuration_,
         address admin_,
         uint256 pausedFlags_
-    ) AdminControlled(admin_, pausedFlags_) {
-        require(replaceDuration_ > lockDuration_ * 1000000000);
+    ) public initializer checkDuration(replaceDuration_, lockDuration_) {
+        __UUPSUpgradeable_init();
+        __AdminControlled_init(admin_, pausedFlags_);
+
         edwards = ed;
         lockEthAmount = lockEthAmount_;
         lockDuration = lockDuration_;
@@ -75,12 +83,12 @@ contract NearBridge is INearBridge, AdminControlled {
     uint constant PAUSED_CHALLENGE = 8;
     uint constant PAUSED_VERIFY = 16;
 
-    function deposit() public payable override pausable(PAUSED_DEPOSIT) {
+    function deposit() external payable override pausable(PAUSED_DEPOSIT) {
         require(msg.value == lockEthAmount && balanceOf[msg.sender] == 0);
         balanceOf[msg.sender] = msg.value;
     }
 
-    function withdraw() public override pausable(PAUSED_WITHDRAW) {
+    function withdraw() external override pausable(PAUSED_WITHDRAW) {
         require(msg.sender != lastSubmitter || block.timestamp >= lastValidAt);
         uint amount = balanceOf[msg.sender];
         require(amount != 0);
@@ -88,7 +96,7 @@ contract NearBridge is INearBridge, AdminControlled {
         payable(msg.sender).transfer(amount);
     }
 
-    function challenge(address payable receiver, uint signatureIndex) public override pausable(PAUSED_CHALLENGE) {
+    function challenge(address payable receiver, uint signatureIndex) external override pausable(PAUSED_CHALLENGE) {
         require(block.timestamp < lastValidAt, "No block can be challenged at this time");
         require(!checkBlockProducerSignatureInHead(signatureIndex), "Can't challenge valid signature");
 
@@ -115,7 +123,7 @@ contract NearBridge is INearBridge, AdminControlled {
     }
 
     // The first part of initialization -- setting the validators of the current epoch.
-    function initWithValidators(bytes memory data) public override onlyAdmin {
+    function initWithValidators(bytes memory data) external override onlyAdmin {
         require(!initialized && epochs[0].numBPs == 0, "Wrong initialization stage");
 
         Borsh.Data memory borsh = Borsh.from(data);
@@ -126,7 +134,7 @@ contract NearBridge is INearBridge, AdminControlled {
     }
 
     // The second part of the initialization -- setting the current head.
-    function initWithBlock(bytes memory data) public override onlyAdmin {
+    function initWithBlock(bytes memory data) external override onlyAdmin {
         require(!initialized && epochs[0].numBPs != 0, "Wrong initialization stage");
         initialized = true;
 
@@ -152,7 +160,7 @@ contract NearBridge is INearBridge, AdminControlled {
         uint numBlockProducers; // Number of block producers for the current unconfirmed block
     }
 
-    function bridgeState() public view returns (BridgeState memory res) {
+    function bridgeState() external view returns (BridgeState memory res) {
         if (block.timestamp < lastValidAt) {
             res.currentHeight = curHeight;
             res.nextTimestamp = untrustedTimestamp;
@@ -165,7 +173,7 @@ contract NearBridge is INearBridge, AdminControlled {
         }
     }
 
-    function addLightClientBlock(bytes memory data) public override pausable(PAUSED_ADD_BLOCK) {
+    function addLightClientBlock(bytes memory data) external override pausable(PAUSED_ADD_BLOCK) {
         require(initialized, "Contract is not initialized");
         require(balanceOf[msg.sender] >= lockEthAmount, "Balance is not enough");
 
@@ -283,17 +291,36 @@ contract NearBridge is INearBridge, AdminControlled {
         }
     }
 
-    function blockHashes(uint64 height) public view override pausable(PAUSED_VERIFY) returns (bytes32 res) {
+    function blockHashes(uint64 height) external view override pausable(PAUSED_VERIFY) returns (bytes32 res) {
         res = blockHashes_[height];
         if (res == 0 && block.timestamp >= lastValidAt && lastValidAt != 0 && height == untrustedHeight) {
             res = untrustedHash;
         }
     }
 
-    function blockMerkleRoots(uint64 height) public view override pausable(PAUSED_VERIFY) returns (bytes32 res) {
+    function blockMerkleRoots(uint64 height) external view override pausable(PAUSED_VERIFY) returns (bytes32 res) {
         res = blockMerkleRoots_[height];
         if (res == 0 && block.timestamp >= lastValidAt && lastValidAt != 0 && height == untrustedHeight) {
             res = untrustedMerkleRoot;
         }
     }
+
+    function setEdwards(Ed25519 ed_) external onlyAdmin {
+        edwards = ed_;
+    }
+
+    function setDuration(uint256 replaceDuration_, uint256 lockDuration_)
+        external
+        onlyAdmin
+        checkDuration(replaceDuration_, lockDuration_)
+    {
+        replaceDuration = replaceDuration_;
+        lockDuration = lockDuration_;
+    }
+
+    function setLockEthAmount(uint256 lockEthAmount_) external onlyAdmin {
+        lockEthAmount = lockEthAmount_;
+    }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyAdmin {}
 }

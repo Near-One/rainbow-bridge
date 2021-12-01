@@ -1,27 +1,54 @@
 const { expect } = require('chai');
+const { ethers, upgrades } = require('hardhat');
 
 const fs = require('fs').promises;
 const { borshify, borshifyInitialValidators } = require('rainbow-bridge-utils');
 
-async function increaseTime(time) {
+async function increaseTime (time) {
     await network.provider.send('evm_increaseTime', [time]);
     await network.provider.send('evm_mine', []);
 }
 
 let Ed25519, NearBridge;
-
 beforeEach(async function () {
+    accounts = await ethers.getSigners();
     Ed25519 = await (await ethers.getContractFactory('Ed25519')).deploy();
-    NearBridge = await (await ethers.getContractFactory('NearBridge')).deploy(
+    const NearBridgeFactory = await ethers.getContractFactory('NearBridge');
+    NearBridge = await upgrades.deployProxy(NearBridgeFactory, [
         Ed25519.address,
-        ethers.BigNumber.from("1000000000000000000"), // 1e18
-        ethers.BigNumber.from("360"), // lock duration
-        ethers.BigNumber.from("362627730000"), // replace duration
+        ethers.BigNumber.from('1000000000000000000'), // 1e18
+        ethers.BigNumber.from('360'), // lock duration
+        ethers.BigNumber.from('362627730000'), // replace duration
         await (await ethers.getSigners())[0].getAddress(),
-        0
-    );
+        0,
+    ], { kind: "uups" });
+    await NearBridge.deployed();
     await NearBridge.deposit({ value: ethers.utils.parseEther('1') });
 });
+
+it('upgarde the proxy', async function () {
+    const NearBridgeV2Factory = await ethers.getContractFactory('NearBridgeV2');
+    NearBridge = await upgrades.upgradeProxy(NearBridge.address, NearBridgeV2Factory)
+    expect(await NearBridge.version()).eq("2.0.0")
+});
+
+it('transfer contract ownership', async function () {
+    expect(await NearBridge.transferOwnership(accounts[1].address))
+        .emit(NearBridge, "OwnershipTransferred")
+        .withArgs(accounts[0].address, accounts[1].address)
+    expect(await NearBridge.admin()).eq(accounts[1].address)
+});
+
+it('Fail to upgrade contract, Unauthorized', async function () {
+    expect(await NearBridge.transferOwnership(accounts[1].address))
+        .emit(NearBridge, "OwnershipTransferred")
+        .withArgs(accounts[0].address, accounts[1].address)
+    
+    const NearBridgeV2Factory = await ethers.getContractFactory('NearBridgeV2');
+    await expect(upgrades.upgradeProxy(NearBridge.address, NearBridgeV2Factory))
+        .revertedWith("Unauthorized")
+});
+
 
 it('should be ok', async function () {
     const block120998 = borshify(require('./block_120998.json'));

@@ -12,14 +12,16 @@ let Ed25519, NearBridge;
 
 beforeEach(async function () {
     Ed25519 = await (await ethers.getContractFactory('Ed25519')).deploy();
-    NearBridge = await (await ethers.getContractFactory('NearBridge')).deploy(
+    const NearBridgeFactory = await ethers.getContractFactory('NearBridge');
+    NearBridge = await upgrades.deployProxy(NearBridgeFactory, [
         Ed25519.address,
-        ethers.BigNumber.from("1000000000000000000"), // 1e18
-        ethers.BigNumber.from("10"), // lock duration
-        ethers.BigNumber.from("20000000000"), // replace duration
+        ethers.BigNumber.from('1000000000000000000'), // 1e18
+        ethers.BigNumber.from('10'), // lock duration
+        ethers.BigNumber.from('20000000000'), // replace duration
         await (await ethers.getSigners())[0].getAddress(),
-        0
-    );
+        0,
+    ]);
+    await NearBridge.deployed();
     await NearBridge.deposit({ value: ethers.utils.parseEther('1') });
 });
 
