@@ -9,9 +9,7 @@ let NearProver, NearBridgeMock;
 beforeEach(async function () {
     NearBridgeMock = await (await ethers.getContractFactory('NearBridgeMock')).deploy();
     NearProver = await (await ethers.getContractFactory('NearProver')).deploy(
-        NearBridgeMock.address,
-        ethers.constants.AddressZero,
-        0
+        NearBridgeMock.address
     );
 });
 

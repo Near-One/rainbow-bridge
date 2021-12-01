@@ -7,31 +7,18 @@ import "./bridge/NearDecoder.sol";
 import "./ProofDecoder.sol";
 import "./INearProver.sol";
 
-contract NearProver is INearProver, AdminControlled {
+contract NearProver is INearProver {
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
     using ProofDecoder for Borsh.Data;
 
     INearBridge public bridge;
 
-    constructor(
-        INearBridge _bridge,
-        address _admin,
-        uint _pausedFlags
-    ) AdminControlled(_admin, _pausedFlags) {
+    constructor(INearBridge _bridge) {
         bridge = _bridge;
     }
 
-    uint constant UNPAUSE_ALL = 0;
-    uint constant PAUSED_VERIFY = 1;
-
-    function proveOutcome(bytes memory proofData, uint64 blockHeight)
-        public
-        view
-        override
-        pausable(PAUSED_VERIFY)
-        returns (bool)
-    {
+    function proveOutcome(bytes memory proofData, uint64 blockHeight) external view override returns (bool) {
         Borsh.Data memory borsh = Borsh.from(proofData);
         ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borsh.decodeFullOutcomeProof();
         borsh.done();
