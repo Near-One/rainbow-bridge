@@ -1,6 +1,6 @@
 const BN = require('bn.js')
 const fs = require('fs')
-const { Web3, normalizeEthKey, sleep } = require('rainbow-bridge-utils')
+const { Web3, normalizeEthKey, sleep, execAsync } = require('rainbow-bridge-utils')
 
 const RETRY_SEND_TX = 15
 
@@ -216,40 +216,35 @@ class InitEthClient {
       )
     }
 
-    const ethContractInitializer = new EthContractInitializer()
     const web3 = new Web3(ethNodeUrl)
     const lockEthAmount = web3.utils.toBN(ethClientLockEthAmount)
     const lockDuration = web3.utils.toBN(ethClientLockDuration)
     const replaceDuration = web3.utils
       .toBN(ethClientReplaceDuration)
       .mul(new web3.utils.BN(1e9))
-    try {
-      // Only WebSocket provider can close.
-      web3.currentProvider.connection.close()
-    } catch (e) {}
-    const success = await ethContractInitializer.execute(
-      {
-        args: [
-          ethEd25519Address,
-          lockEthAmount,
-          lockDuration,
-          replaceDuration,
-          ethAdminAddress,
-          0
-        ],
-        gas: 5000000,
-        ethContractArtifactPath: ethClientArtifactPath,
-        ethNodeUrl,
-        ethMasterSk,
-        ethGasMultiplier
-      }
-    )
-    if (!success) {
-      console.log("Can't deploy", ethClientArtifactPath)
-      process.exit(1)
-    }
+
+    const cmd = `
+    cd ./contracts/eth/nearbridge && \\
+    npx hardhat deployNearBridgeProxy \\
+    --eth-client-artifact-path ${ethClientArtifactPath} \\
+    --private-key ${ethMasterSk} \\
+    --ed25519 ${ethEd25519Address} \\
+    --lock-eth-amount ${lockEthAmount} \\
+    --lock-duration ${lockDuration} \\
+    --replace-duration ${replaceDuration} \\
+    --admin ${ethAdminAddress} \\
+    --paused-flags 0 \\
+    --config rainbowBridgeConfig.js \\
+    --network rainbowBridge
+    `
+    const data = await execAsync(cmd)
+
+    console.log(`Deployed ETH client proxy to ${data.proxy}`)
+    console.log(`Deployed ETH client implementation to ${data.implementation}`)
+
     return {
-      ethClientAddress: success.ethContractAddress
+      ethClientAddress: data.proxy,
+      ethClientImplementationAddress: data.implementation
     }
   }
 }
@@ -272,7 +267,7 @@ class InitEthProver {
     const ethContractInitializer = new EthContractInitializer()
     const success = await ethContractInitializer.execute(
       {
-        args: [ethClientAddress, ethAdminAddress, 0],
+        args: [ethClientAddress],
         gas: 3000000,
         ethContractArtifactPath: ethProverArtifactPath,
         ethNodeUrl,
