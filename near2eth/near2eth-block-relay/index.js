@@ -2,6 +2,7 @@ const fs = require('fs')
 const bs58 = require('bs58')
 const { toBuffer } = require('eth-util-lite')
 const { BN } = require('ethereumjs-util')
+const _ = require('lodash')
 const {
   sleep,
   RobustWeb3,
@@ -70,7 +71,7 @@ class Near2EthRelay {
         // The finalized block is not immediately available so we wait for it to become available.
         let lightClientBlock = null
         let currentValidators = null
-        while (!lightClientBlock || Object.keys(lightClientBlock).length === 0) {
+        while (_.isEmpty(lightClientBlock)) {
           currentValidators = await this.near.connection.provider.sendJsonRpc(
             'EXPERIMENTAL_validators_ordered',
             [lastFinalBlockHash]
@@ -83,9 +84,8 @@ class Near2EthRelay {
             'next_light_client_block',
             [lastFinalBlockHash]
           )
-          if (!lightClientBlock || Object.keys(lightClientBlock).length === 0) {
+          if (_.isEmpty(lightClientBlock)) {
             await sleep(300)
-            continue
           }
         }
         console.log('Initializing with validators')

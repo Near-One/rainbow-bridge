@@ -1,6 +1,6 @@
 const BN = require('bn.js')
 const blockFromRpc = require('@ethereumjs/block/dist/from-rpc')
-const Common = require('@ethereumjs/common')
+const Common = require('@ethereumjs/common').default
 const got = require('got')
 const {
   Web3,
@@ -58,7 +58,7 @@ function web3BlockToRlp (blockData, bridgeId, validateHeaderMode) {
   } else {
     chain = 'mainnet'
   }
-  const common = new Common.default({ chain })
+  const common = new Common({ chain })
 
   /// baseFeePerGas was introduced after london hard fork.
   /// TODO: Use better way to detect current hard fork.

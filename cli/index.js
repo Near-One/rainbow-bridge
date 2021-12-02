@@ -172,7 +172,7 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'near-token-factory-account',
   'The account of the token factory contract that will be used to mint tokens locked on Ethereum.',
-  'neartokenfactory'
+  'neartokenfactory.node0'
 )
 RainbowConfig.declareOption(
   'near-token-factory-sk',
