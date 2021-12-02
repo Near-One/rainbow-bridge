@@ -7,8 +7,8 @@ library NearDecoder {
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
 
-    uint8 constant VALIDATOR_V1 = 0;
-    uint8 constant VALIDATOR_V2 = 1;
+    uint8 constant VALIDATOR_V1 = 1;
+    uint8 constant VALIDATOR_V2 = 2;
 
     struct PublicKey {
         bytes32 k;
