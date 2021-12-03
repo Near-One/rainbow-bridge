@@ -1,16 +1,20 @@
 const { expect } = require('chai');
-const { ethers } = require('hardhat');
+const { ethers, upgrades } = require('hardhat');
 const { borshifyOutcomeProof } = require(`rainbow-bridge-lib/rainbow/borsh`);
 const fs = require('fs').promises;
 const { computeMerkleRoot } = require('../utils/utils');
 
-let NearProver, NearBridgeMock;
+let NearProver, NearBridgeMock, accounts;
 
 beforeEach(async function () {
+    accounts = await ethers.getSigners();
     NearBridgeMock = await (await ethers.getContractFactory('NearBridgeMock')).deploy();
-    NearProver = await (await ethers.getContractFactory('NearProver')).deploy(
-        NearBridgeMock.address
-    );
+    const NearProverFactory = await ethers.getContractFactory('NearProver');
+    NearProver = await upgrades.deployProxy(NearProverFactory, [
+        NearBridgeMock.address,
+        0,
+    ], { kind: 'uups' });
+    await NearProver.deployed();
 });
 
 async function testProof(merkleRoot, height, proofPath) {
@@ -21,6 +25,36 @@ async function testProof(merkleRoot, height, proofPath) {
     await NearBridgeMock.setBlockMerkleRoot(height, merkleRoot);
     expect(await NearProver.proveOutcome(proof, height)).to.be.true;
 }
+
+it('upgarde the proxy', async function () {
+    const NearProverV2Factory = await ethers.getContractFactory('NearProverV2');
+    NearProver = await upgrades.upgradeProxy(NearProver.address, NearProverV2Factory);
+    expect(await NearProver.version()).eq('2.0.0');
+});
+
+it('transfer contract ownership', async function () {
+    expect(await NearProver.transferOwnership(accounts[1].address))
+        .emit(NearProver, 'OwnershipTransferred')
+        .withArgs(accounts[0].address, accounts[1].address);
+
+    const pauseRole = await NearProver.PAUSE_ROLE();
+    const adminRole = await NearProver.DEFAULT_ADMIN_ROLE();
+    expect(await NearProver.hasRole(pauseRole, accounts[1].address)).ok;
+    expect(await NearProver.hasRole(adminRole, accounts[1].address)).ok;
+
+    expect(await NearProver.hasRole(pauseRole, accounts[0].address)).not.ok;
+    expect(await NearProver.hasRole(adminRole, accounts[0].address)).not.ok;
+});
+
+it('Fail to upgrade contract, Unauthorized', async function () {
+    expect(await NearProver.transferOwnership(accounts[1].address))
+        .emit(NearProver, 'OwnershipTransferred')
+        .withArgs(accounts[0].address, accounts[1].address);
+    
+    const NearProverV2Factory = await ethers.getContractFactory('NearProverV2');
+    await expect(upgrades.upgradeProxy(NearProver.address, NearProverV2Factory))
+        .reverted;
+});
 
 it('should be ok', async function () {
     await testProof('0x22f00dd154366d758cd3e4fe81c1caed8e0db6227fe4b2b52a8e5a468aa0a723', 498, './proof2.json');

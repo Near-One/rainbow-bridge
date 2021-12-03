@@ -6,19 +6,30 @@ import "./bridge/INearBridge.sol";
 import "./bridge/NearDecoder.sol";
 import "./ProofDecoder.sol";
 import "./INearProver.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-contract NearProver is INearProver {
+contract NearProver is INearProver, UUPSUpgradeable, AdminControlled {
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
     using ProofDecoder for Borsh.Data;
 
     INearBridge public bridge;
 
-    constructor(INearBridge _bridge) {
+    uint constant UNPAUSE_ALL = 0;
+    uint constant PAUSED_VERIFY = 1;
+
+    function initialize(INearBridge _bridge, uint flag) public initializer {
+        __AdminControlled_init(flag);
         bridge = _bridge;
     }
 
-    function proveOutcome(bytes memory proofData, uint64 blockHeight) external view override returns (bool) {
+    function proveOutcome(bytes memory proofData, uint64 blockHeight)
+        external
+        view
+        override
+        pausable(PAUSED_VERIFY)
+        returns (bool)
+    {
         Borsh.Data memory borsh = Borsh.from(proofData);
         ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borsh.decodeFullOutcomeProof();
         borsh.done();
@@ -59,4 +70,6 @@ contract NearProver is INearProver {
             }
         }
     }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 }
