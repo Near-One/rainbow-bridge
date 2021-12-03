@@ -5,8 +5,9 @@ help:
 	@echo 3 run "make setup-clean-and-prepare" clean and prepare local env.
 	@echo 4 run "make start-local-near-and-ganache-nodes" start nearup and ganache.
 	@echo 5 run "make deploy-full-contracts" deploy near and eth contracts.
-	@echo 6 run "make start-relayer" start relayers.
-	@echo 7 run "make stop-all" stop relayers.
+	@echo 6 run "make deploy-full-contracts-bsc" deploy near and bsc contracts.
+	@echo 7 run "make start-relayer" start relayers.
+	@echo 8 run "make stop-all" stop relayers.
 	@echo
 	@echo ======================================Build Near Contrats=====================================
 	@echo "make bsc-build-client" build bsc client near contract.
@@ -46,9 +47,24 @@ start-local-near-and-ganache-nodes:
 
 # ===============================Deploy contracts localy==============================
 
-# deploy contracts to testnets NEAR and BSC
+# deploy contracts to testnets NEAR
 deploy-full-contracts:
 	cli/index.js init-near-contracts
+	cli/index.js init-eth-ed25519
+	cli/index.js init-eth-client
+	cli/index.js init-eth-prover
+	cli/index.js init-eth-erc20
+	cli/index.js init-eth-locker
+	cli/index.js init-near-token-factory
+
+# deploy contracts to testnets BSC
+NEAR_BSC_CLIENT_CONTRACT=contracts/near/res/bsc_client.wasm
+NEAR_BSC_PROVER_CONTRACT=contracts/near/res/bsc_prover.wasm
+deploy-full-contracts-bsc:
+	cli/index.js init-near-contracts \
+        --near-client-contract-path ${PWD}/${NEAR_BSC_CLIENT_CONTRACT} \
+        --near-prover-contract-path ${PWD}/${NEAR_BSC_PROVER_CONTRACT} \
+        --near-client-validate-header-mode "bsc"
 	cli/index.js init-eth-ed25519
 	cli/index.js init-eth-client
 	cli/index.js init-eth-prover
