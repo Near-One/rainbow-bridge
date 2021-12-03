@@ -612,9 +612,6 @@ RainbowConfig.addOptions(
     .command('verify-address <address>')
     .description('Verify address on etherscan.'),
   async (address, args) => {
-    console.log('---------------------------')
-    console.log(address)
-    console.log('---------------------------')
     await VerifyAddress.execute(address)
   },
   []

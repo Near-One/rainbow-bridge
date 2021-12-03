@@ -232,7 +232,6 @@ class InitEthClient {
     --lock-eth-amount ${lockEthAmount} \\
     --lock-duration ${lockDuration} \\
     --replace-duration ${replaceDuration} \\
-    --admin ${ethAdminAddress} \\
     --paused-flags 0 \\
     --config rainbowBridgeConfig.js \\
     --network rainbowBridge
@@ -275,23 +274,28 @@ class InitEthProver {
         .address
     }
 
-    const ethContractInitializer = new EthContractInitializer()
-    const success = await ethContractInitializer.execute(
-      {
-        args: [ethClientAddress],
-        gas: 3000000,
-        ethContractArtifactPath: ethProverArtifactPath,
-        ethNodeUrl,
-        ethMasterSk,
-        ethGasMultiplier
-      }
-    )
-    if (!success) {
-      console.log("Can't deploy", ethProverArtifactPath)
-      process.exit(1)
+    if (!ethClientAddress) {
+      throw new Error('ethClientAddress not set')
     }
+
+    const cmd = `
+    cd ./contracts/eth/nearprover && npx hardhat deployNearProverProxy \\
+    --eth-prover-artifact-path ${ethProverArtifactPath} \\
+    --private-key ${ethMasterSk} \\
+    --eth-client-address ${ethClientAddress} \\
+    --paused-flags 0 \\
+    --config rainbowBridgeConfig.js \\
+    --network rainbowBridge
+    `
+
+    const data = await execAsync(cmd)
+
+    console.log(`Deployed ETH prover proxy to ${data.proxy}`)
+    console.log(`Deployed ETH prover implementation to ${data.implementation}`)
+
     return {
-      ethProverAddress: success.ethContractAddress
+      ethProverAddress: data.proxy,
+      ethProverImplementationAddress: data.implementation
     }
   }
 }
