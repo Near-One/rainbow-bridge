@@ -2,38 +2,43 @@
 pragma solidity 0.8.7;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
-contract AdminControlled is Initializable {
-    address public admin;
+contract AdminControlled is AccessControlUpgradeable {
     uint public paused;
+    address public admin;
 
-    function __AdminControlled_init(address _admin, uint flags) public initializer {
-        admin = _admin;
-        paused = flags;
-    }
-
-    modifier onlyAdmin() {
-        require(msg.sender == admin, "Unauthorized");
-        _;
-    }
+    bytes32 public constant PAUSE_ROLE = keccak256("NEAR_BRIDGE_PAUSE");
 
     modifier pausable(uint flag) {
-        require((paused & flag) == 0 || msg.sender == admin);
+        require((paused & flag) == 0 || hasRole(DEFAULT_ADMIN_ROLE, _msgSender()));
         _;
     }
 
-    function adminPause(uint flags) external onlyAdmin {
+    function __AdminControlled_init(uint flags) public initializer {
+        __AccessControl_init();
+
+        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _setupRole(PAUSE_ROLE, _msgSender());
         paused = flags;
     }
 
-    function transferOwnership(address newAdmin) external virtual onlyAdmin {
-        require(newAdmin != address(0), "Ownable: new owner is the zero address");
-        address oldAdmin = admin;
-        admin = newAdmin;
-        emit OwnershipTransferred(oldAdmin, newAdmin);
+    function adminPause(uint flags) external onlyRole(PAUSE_ROLE) {
+        paused = flags;
     }
 
-    function adminSstore(uint key, uint value) external onlyAdmin {
+    function transferOwnership(address newAdmin) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newAdmin != address(0), "Ownable: new owner is the zero address");
+        _grantRole(DEFAULT_ADMIN_ROLE, newAdmin);
+        _grantRole(PAUSE_ROLE, newAdmin);
+        admin = newAdmin;
+
+        revokeRole(PAUSE_ROLE, _msgSender());
+        revokeRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        emit OwnershipTransferred(_msgSender(), newAdmin);
+    }
+
+    function adminSstore(uint key, uint value) external onlyRole(DEFAULT_ADMIN_ROLE) {
         assembly {
             sstore(key, value)
         }
@@ -43,18 +48,18 @@ contract AdminControlled is Initializable {
         uint key,
         uint value,
         uint mask
-    ) external onlyAdmin {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         assembly {
             let oldval := sload(key)
             sstore(key, xor(and(xor(value, oldval), mask), oldval))
         }
     }
 
-    function adminSendEth(address payable destination, uint amount) external onlyAdmin {
+    function adminSendEth(address payable destination, uint amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
         destination.transfer(amount);
     }
 
-    function adminReceiveEth() external payable onlyAdmin {}
+    function adminReceiveEth() external payable {}
 
     event OwnershipTransferred(address oldAdmin, address newAdmin);
 }

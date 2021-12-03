@@ -64,11 +64,10 @@ contract NearBridge is INearBridge, UUPSUpgradeable, AdminControlled {
         uint256 lockEthAmount_,
         uint256 lockDuration_,
         uint256 replaceDuration_,
-        address admin_,
         uint256 pausedFlags_
     ) public initializer checkDuration(replaceDuration_, lockDuration_) {
         __UUPSUpgradeable_init();
-        __AdminControlled_init(admin_, pausedFlags_);
+        __AdminControlled_init(pausedFlags_);
 
         edwards = ed;
         lockEthAmount = lockEthAmount_;
@@ -123,7 +122,7 @@ contract NearBridge is INearBridge, UUPSUpgradeable, AdminControlled {
     }
 
     // The first part of initialization -- setting the validators of the current epoch.
-    function initWithValidators(bytes memory data) external override onlyAdmin {
+    function initWithValidators(bytes memory data) external override onlyRole(DEFAULT_ADMIN_ROLE) {
         require(!initialized && epochs[0].numBPs == 0, "Wrong initialization stage");
 
         Borsh.Data memory borsh = Borsh.from(data);
@@ -134,7 +133,7 @@ contract NearBridge is INearBridge, UUPSUpgradeable, AdminControlled {
     }
 
     // The second part of the initialization -- setting the current head.
-    function initWithBlock(bytes memory data) external override onlyAdmin {
+    function initWithBlock(bytes memory data) external override onlyRole(DEFAULT_ADMIN_ROLE) {
         require(!initialized && epochs[0].numBPs != 0, "Wrong initialization stage");
         initialized = true;
 
@@ -305,22 +304,22 @@ contract NearBridge is INearBridge, UUPSUpgradeable, AdminControlled {
         }
     }
 
-    function setEdwards(Ed25519 ed_) external onlyAdmin {
+    function setEdwards(Ed25519 ed_) external onlyRole(DEFAULT_ADMIN_ROLE) {
         edwards = ed_;
     }
 
     function setDuration(uint256 replaceDuration_, uint256 lockDuration_)
         external
-        onlyAdmin
+        onlyRole(DEFAULT_ADMIN_ROLE)
         checkDuration(replaceDuration_, lockDuration_)
     {
         replaceDuration = replaceDuration_;
         lockDuration = lockDuration_;
     }
 
-    function setLockEthAmount(uint256 lockEthAmount_) external onlyAdmin {
+    function setLockEthAmount(uint256 lockEthAmount_) external onlyRole(DEFAULT_ADMIN_ROLE) {
         lockEthAmount = lockEthAmount_;
     }
 
-    function _authorizeUpgrade(address newImplementation) internal override onlyAdmin {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 }
