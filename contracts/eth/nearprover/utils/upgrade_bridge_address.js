@@ -28,7 +28,7 @@ async function upgradeProversBridgeAddressTo(provider, proverAddress, newBridgeA
     const response = await nearProver
         .connect(adminWallet)
         .adminSstoreWithMask(BRIDGE_ADDRESS_SLOT, newBridgeAddress, mask);
-    await response.wait().then(function(receipt) {
+    await response.wait(10).then(function(receipt) {
         console.log(`Transaction mined: `);
         console.log(receipt);
     });
