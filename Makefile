@@ -4,10 +4,9 @@ help:
 	@echo 2 run "make gen-contarcts" generate ethereum contracts.
 	@echo 3 run "make setup-clean-and-prepare" clean and prepare local env.
 	@echo 4 run "make start-local-near-and-ganache-nodes" start nearup and ganache.
-	@echo 5 run "make deploy-full-contracts" deploy near and eth contracts.
-	@echo 6 run "make deploy-full-contracts-bsc" deploy near and bsc contracts.
-	@echo 7 run "make start-relayer" start relayers.
-	@echo 8 run "make stop-all" stop relayers.
+	@echo 5 run "make deploy-full-contracts" or "make deploy-full-contracts-bsc" deploy near and eth/bsc contracts.
+	@echo 6 run "make start-relayer" start relayers.
+	@echo 7 run "make stop-all" stop relayers.
 	@echo
 	@echo ======================================Build Near Contrats=====================================
 	@echo "make bsc-build-client" build bsc client near contract.
