@@ -6,7 +6,7 @@ const { EthLedgerSigner } = require('./eth-ledger-signer');
 
 const BRIDGE_ADDRESS_SLOT = 2;
 
-async function upgradeProversBridgeAddressTo (provider, proverAddress, newBridgeAddress, ledgerKey) {
+async function upgradeProversBridgeAddressTo (provider, proverAddress, newBridgeAddress, ledgerKeyPath) {
     const nearProverFactory = await ethers.getContractFactory('NearProver');
     const nearProver = nearProverFactory.attach(proverAddress);
 
@@ -17,8 +17,8 @@ async function upgradeProversBridgeAddressTo (provider, proverAddress, newBridge
     console.log(`Trying to upgrade bridge address to: ${newBridgeAddress}`);
 
     let signer;
-    if (ledgerKey != null) {
-        signer = new EthLedgerSigner(provider, ledgerKey);
+    if (ledgerKeyPath != null) {
+        signer = new EthLedgerSigner(provider, ledgerKeyPath);
     } else {
         signer = new ethers.Wallet(process.env.ETH_PRIVATE_KEY, provider);
     }

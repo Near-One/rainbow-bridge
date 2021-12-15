@@ -17,18 +17,21 @@ const ethers = require('ethers');
 const hwAppEth = require('@ledgerhq/hw-app-eth').default;
 const hid = require('@ledgerhq/hw-transport-node-hid').default;
 const defaultPath = "m/44'/60'/0'/0/0";
-function waiter(duration) {
+
+function waiter (duration) {
     return new Promise((resolve) => {
         setTimeout(resolve, duration);
     });
 }
+
 class EthLedgerSigner extends ethers.Signer {
-    constructor(provider, path) {
+    constructor (provider, path) {
         super();
         if (!path) {
             path = defaultPath;
-            console.log(defaultPath)
+            console.log('Using default HD path');
         }
+        console.log(`Using Ledger key path: ${path}`);
         ethers.utils.defineReadOnly(this, 'path', path);
         ethers.utils.defineReadOnly(this, 'provider', provider || null);
         ethers.utils.defineReadOnly(this, '_eth', hid.create().then((transport) => {
@@ -42,7 +45,8 @@ class EthLedgerSigner extends ethers.Signer {
             return Promise.reject(error);
         }));
     }
-    _retry(callback, timeout) {
+
+    _retry (callback, timeout) {
         return new Promise(async (resolve, reject) => {
             if (timeout && timeout > 0) {
                 setTimeout(() => {
@@ -55,8 +59,7 @@ class EthLedgerSigner extends ethers.Signer {
                 try {
                     const result = await callback(eth);
                     return resolve(result);
-                }
-                catch (error) {
+                } catch (error) {
                     if (error.id !== 'TransportLocked') {
                         return reject(error);
                     }
@@ -66,11 +69,13 @@ class EthLedgerSigner extends ethers.Signer {
             return reject(new Error('timeout'));
         });
     }
-    async getAddress() {
+
+    async getAddress () {
         const account = await this._retry((eth) => eth.getAddress(this.path));
         return ethers.utils.getAddress(account.address);
     }
-    async signMessage(message) {
+
+    async signMessage (message) {
         if (typeof message === 'string') {
             message = ethers.utils.toUtf8Bytes(message);
         }
@@ -80,7 +85,8 @@ class EthLedgerSigner extends ethers.Signer {
         sig.s = '0x' + sig.s;
         return ethers.utils.joinSignature(sig);
     }
-    async signTransaction(transaction) {
+
+    async signTransaction (transaction) {
         const tx = await ethers.utils.resolveProperties(transaction);
         const baseTx = {
             chainId: tx.chainId || undefined,
@@ -88,11 +94,11 @@ class EthLedgerSigner extends ethers.Signer {
             gasLimit: tx.gasLimit || undefined,
             gasPrice: tx.gasPrice || undefined,
             nonce: tx.nonce ? ethers.BigNumber.from(tx.nonce).toNumber() : undefined,
-            maxFeePerGas: tx.maxFeePerGas || undefined,
-            maxPriorityFeePerGas: tx.maxPriorityFeePerGas || undefined,
-            type: tx.type,
+            maxFeePerGas: tx.maxFeePerGas || undefined, // EIP1559 https://github.com/ethers-io/ethers.js/pull/2056
+            maxPriorityFeePerGas: tx.maxPriorityFeePerGas || undefined, // EIP1559 https://github.com/ethers-io/ethers.js/pull/2056
+            type: tx.type, // EIP1559 https://github.com/ethers-io/ethers.js/pull/2056
             to: tx.to || undefined,
-            value: tx.value || undefined
+            value: tx.value || undefined,
         };
         const unsignedTx = ethers.utils.serializeTransaction(baseTx).substring(2);
         console.log('Using public key:', await this.getAddress());
@@ -101,10 +107,11 @@ class EthLedgerSigner extends ethers.Signer {
         return ethers.utils.serializeTransaction(baseTx, {
             v: ethers.BigNumber.from('0x' + sig.v).toNumber(),
             r: '0x' + sig.r,
-            s: '0x' + sig.s
+            s: '0x' + sig.s,
         });
     }
-    connect(provider) {
+
+    connect (provider) {
         return new EthLedgerSigner(provider, this.path);
     }
 }

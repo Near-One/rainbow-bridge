@@ -26,6 +26,8 @@ To deploy the prover with the mock run: <br/>
 
 2. Upgrade the bridge address for the provided prover:<br/>
 `$ make upgrade-provers-bridge-address-to PROVER=<PROVER_ADDRESS_HERE> NEW_BRIDGE=<BRIDGE_ADDRESS_HERE>`
+or
+`$ make upgrade-provers-bridge-address-to-with-ledger PROVER=<PROVER_ADDRESS_HERE> NEW_BRIDGE=<BRIDGE_ADDRESS_HERE> LEDGER_KEY_PATH=[KEY_PATH]`
 
 3. Repeat the item 1 to ensure the Prover was updated with the new bridge address.
 
