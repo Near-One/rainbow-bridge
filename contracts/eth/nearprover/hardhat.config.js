@@ -9,7 +9,7 @@ const INFURA_API_KEY = process.env.INFURA_API_KEY || '';
 task('upgrade-provers-bridge-address-to', 'Upgrades the provided prover to use the bridge at the provided address')
     .addParam('prover', 'Prover address')
     .addParam('newBridge', 'The address of the new bridge')
-    .setAction(async taskArgs => {
+    .setAction(async (taskArgs, hre) => {
         const { upgradeProversBridgeAddressTo } = require('./utils/upgrade_bridge_address.js');
         await upgradeProversBridgeAddressTo(hre.ethers.provider, taskArgs.prover, taskArgs.newBridge);
     });
