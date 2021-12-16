@@ -17,7 +17,7 @@ async function upgradeProversBridgeAddressTo (provider, proverAddress, newBridge
     console.log(`Trying to upgrade bridge address to: ${newBridgeAddress}`);
 
     let signer;
-    if (ledgerKeyPath != null) {
+    if (ledgerKeyPath) {
         signer = new EthLedgerSigner(provider, ledgerKeyPath);
     } else {
         signer = new ethers.Wallet(process.env.ETH_PRIVATE_KEY, provider);
