@@ -240,8 +240,7 @@ class Eth2NearRelay {
   }
 
   submitBlock (block, blockNumber) {
-    let args = {}
-
+    let args
     if (this.validateHeaderMode === 'bsc') {
       args = {
         block_header: web3BlockToRlp(block.header_rlp),

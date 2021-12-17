@@ -103,8 +103,12 @@ contract NearBridge is INearBridge, AdminControlled {
         unchecked {
             Epoch storage untrustedEpoch = epochs[untrustedNextEpoch ? (curEpoch + 1) % 3 : curEpoch];
             NearDecoder.Signature storage signature = untrustedSignatures[signatureIndex];
-            bytes memory message =
-                abi.encodePacked(uint8(0), untrustedNextHash, Utils.swapBytes8(untrustedHeight + 2), bytes23(0));
+            bytes memory message = abi.encodePacked(
+                uint8(0),
+                untrustedNextHash,
+                Utils.swapBytes8(untrustedHeight + 2),
+                bytes23(0)
+            );
             (bytes32 arg1, bytes9 arg2) = abi.decode(message, (bytes32, bytes9));
             return edwards.check(untrustedEpoch.keys[signatureIndex], signature.r, signature.s, arg1, arg2);
         }
