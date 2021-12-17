@@ -10,7 +10,7 @@ task('upgrade-provers-bridge-address-to', 'Upgrades the provided prover to use t
     .addParam('prover', 'Prover address')
     .addParam('newBridge', 'The address of the new bridge')
     .addParam('ledgerKeyPath', 'The ledger key path to sign transactions', undefined, undefined, true)
-    .setAction(async taskArgs => {
+    .setAction(async (taskArgs, hre) => {
         const { upgradeProversBridgeAddressTo } = require('./utils/upgrade_bridge_address.js');
         await upgradeProversBridgeAddressTo(hre.ethers.provider, taskArgs.prover, taskArgs.newBridge, taskArgs.ledgerKeyPath);
     });

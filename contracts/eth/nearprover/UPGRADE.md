@@ -4,7 +4,7 @@ This file describes how to upgrade the bridge address in NearProver contract.
 
 ## Configuration
 
-1. Create `.env` file inside `eth-custodian` directory: `$ touch .env`.
+1. Create `.env` file inside `nearprover` directory: `$ touch .env`.
 
 2. Add to the file your Infura API key:
 `$ echo "INFURA_API_KEY=YOUR_INFURA_API_KEY_HERE" >> .env` <br/>
