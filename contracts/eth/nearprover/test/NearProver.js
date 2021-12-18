@@ -47,3 +47,62 @@ if (process.env['NEAR_PROOFS_DIR']) {
         }
     });
 }
+
+describe('NearProver with admin access', () => {
+    const BRIDGE_ADDRESS_SLOT = 2;
+
+    beforeEach(async () => {
+        [deployerAccount] = await ethers.getSigners();
+
+        // Make the deployer admin
+        adminAccount = deployerAccount;
+
+        nearBridgeMock = await (await ethers.getContractFactory('NearBridgeMock')).deploy();
+        nearProver = await (await ethers.getContractFactory('NearProver')).deploy(
+            nearBridgeMock.address,
+            adminAccount.address,
+            0
+        );
+
+    });
+
+    describe('Upgradability', async () => {
+        it('should upgrade the bridge address', async () => {
+            const initialBridgeAddress = await nearProver.bridge();
+            expect(initialBridgeAddress)
+                .to
+                .equal(nearBridgeMock.address);
+
+            const newBridge = await (await ethers.getContractFactory('NearBridgeMock')).deploy();
+            expect(await newBridge.address)
+                .to
+                .not
+                .equal(initialBridgeAddress);
+
+            // Mask matches only on the latest 20 bytes (to store the address)
+            const mask = ethers.BigNumber.from("0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff");
+            nearProver.adminSstoreWithMask(BRIDGE_ADDRESS_SLOT, newBridge.address, mask);
+
+            expect(await nearProver.bridge())
+                .to
+                .equal(newBridge.address);
+        });
+
+        it('should upgrade the bridge address from the provided hex string', async () => {
+            const initialBridgeAddress = await nearProver.bridge();
+            expect(initialBridgeAddress)
+                .to
+                .equal(nearBridgeMock.address);
+
+            const newBridgeAddress = '0x891B2749238B27fF58e951088e55b04de71Dc374';
+            const newBridgeAddressBN = ethers.BigNumber.from(newBridgeAddress);
+
+            const mask = ethers.BigNumber.from("0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff");
+            nearProver.adminSstoreWithMask(BRIDGE_ADDRESS_SLOT, newBridgeAddressBN, mask);
+
+            expect(await nearProver.bridge())
+                .to
+                .equal(newBridgeAddress);
+        });
+    });
+});
