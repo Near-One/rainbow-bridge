@@ -34,4 +34,10 @@ or
 The default network is `goerli`. To execute the network you need to provide the `NETWORK` variable (goerli, ropsten, mainnet):
 `$ make upgrade-provers-bridge-address-to PROVER=<PROVER_ADDRESS_HERE> NEW_BRIDGE=<BRIDGE_ADDRESS_HERE> NETWORK=mainnet`
 
+## Upgrade Admin
+
+1. Upgrade the bridge admin address for the provided admin:<br/>
+`$ make upgrade-near-on-eth-client-admin-to NETWORK=goerli NEAR_ON_ETH_CLIENT_ADDRESS=<NEAR_ON_ETH_CLIENT_ADDRESS> NEW_ADMIN=<NEW_ADMIN_ADDRESS_HERE>`
+or
+`$ make upgrade-near-on-eth-client-admin-to-with-ledger NETWORK=goerli NEAR_ON_ETH_CLIENT_ADDRESS=<NEAR_ON_ETH_CLIENT_ADDRESS> NEW_ADMIN=<NEW_ADMIN_ADDRESS_HERE>`
 
