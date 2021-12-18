@@ -3,7 +3,7 @@ require('solidity-coverage');
 
 require('dotenv').config();
 
-const ETH_PRIVATE_KEY = process.env.ETH_PRIVATE_KEY;
+const ETH_PRIVATE_KEY = process.env.ETH_PRIVATE_KEY || '11'.repeat(32);
 const INFURA_API_KEY = process.env.INFURA_API_KEY || '';
 
 task('upgrade-provers-bridge-address-to', 'Upgrades the provided prover to use the bridge at the provided address')
