@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 
-const { borshify, borshifyInitialValidators } = require('rainbow-bridge-lib/rainbow/borsh')
+const { borshify, borshifyInitialValidators } = require('rainbow-bridge-utils')
 
 async function increaseTime(time) {
     await network.provider.send('evm_increaseTime', [time]);
