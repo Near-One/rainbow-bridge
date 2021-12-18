@@ -9,7 +9,7 @@ This file describes how to upgrade the bridge address in NearProver contract.
 2. Add to the file your Infura API key:
 `$ echo "INFURA_API_KEY=YOUR_INFURA_API_KEY_HERE" >> .env` <br/>
 
-3. Add to the file Ethereum Private key:
+3. Add to the file Ethereum Private key (without '0x'):
 `$ echo "ETH_PRIVATE_KEY=YOUR_ETH_PRIVATE_KEY_HERE" >> .env`
 
 ## Mock deployment
