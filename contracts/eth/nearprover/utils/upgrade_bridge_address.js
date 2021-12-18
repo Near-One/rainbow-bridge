@@ -2,10 +2,11 @@ require('dotenv').config();
 
 const { ethers } = require('hardhat');
 const { assert, expect } = require('chai');
+const { EthLedgerSigner } = require('./eth-ledger-signer');
 
 const BRIDGE_ADDRESS_SLOT = 2;
 
-async function upgradeProversBridgeAddressTo(provider, proverAddress, newBridgeAddress) {
+async function upgradeProversBridgeAddressTo (provider, proverAddress, newBridgeAddress, ledgerKeyPath) {
     const nearProverFactory = await ethers.getContractFactory('NearProver');
     const nearProver = nearProverFactory.attach(proverAddress);
 
@@ -15,21 +16,28 @@ async function upgradeProversBridgeAddressTo(provider, proverAddress, newBridgeA
     console.log(`Initial bridge address: ${initialBridgeAddress}`);
     console.log(`Trying to upgrade bridge address to: ${newBridgeAddress}`);
 
-    const adminWallet = new ethers.Wallet(process.env.ETH_PRIVATE_KEY, provider);
+    let signer;
+    if (ledgerKeyPath) {
+        signer = new EthLedgerSigner(provider, ledgerKeyPath);
+    } else {
+        signer = new ethers.Wallet(process.env.ETH_PRIVATE_KEY, provider);
+    }
 
     assert.equal(
-        adminWallet.address,
+        await signer.getAddress(),
         await nearProver.admin(),
-        "The used account is not an admin of NearProver"
+        'The used account is not an admin of NearProver',
     );
 
     // Mask matches only on the latest 20 bytes (to store the address)
-    const mask = ethers.BigNumber.from("0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff");
+    const mask = ethers.BigNumber.from('0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff');
     const response = await nearProver
-        .connect(adminWallet)
+        .connect(signer)
         .adminSstoreWithMask(BRIDGE_ADDRESS_SLOT, newBridgeAddress, mask);
-    await response.wait(10).then(function(receipt) {
-        console.log(`Transaction mined: `);
+    console.log(response);
+    console.log('Waiting for tx confirmation...');
+    await response.wait(10).then(function (receipt) {
+        console.log('Transaction mined: ');
         console.log(receipt);
     });
 
@@ -40,7 +48,7 @@ async function upgradeProversBridgeAddressTo(provider, proverAddress, newBridgeA
         .equal(newBridgeAddress.toLowerCase());
 }
 
-async function getProversBridgeAddress(proverAddress) {
+async function getProversBridgeAddress (proverAddress) {
     const nearProverFactory = await ethers.getContractFactory('NearProver');
     const nearProver = nearProverFactory.attach(proverAddress);
     const bridgeAddress = await nearProver.bridge();
@@ -50,4 +58,3 @@ async function getProversBridgeAddress(proverAddress) {
 
 exports.upgradeProversBridgeAddressTo = upgradeProversBridgeAddressTo;
 exports.getProversBridgeAddress = getProversBridgeAddress;
-
