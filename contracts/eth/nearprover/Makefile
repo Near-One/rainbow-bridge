@@ -16,7 +16,7 @@ upgrade-provers-bridge-address-to:
 
 upgrade-provers-bridge-address-to-with-ledger:
 	yarn hardhat --network ${NETWORK} upgrade-provers-bridge-address-to --prover ${PROVER} --new-bridge ${NEW_BRIDGE} \
-	--ledger-key-path ${LEDGER_KEY_PATH}
+	--ledger-key-path "${LEDGER_KEY_PATH}"
 
 upgrade-near-on-eth-client-admin-to:
 	yarn hardhat --network ${NETWORK} upgrade-near-on-eth-client-admin-to --near-on-eth-client-address ${NEAR_ON_ETH_CLIENT_ADDRESS} --new-admin ${NEW_ADMIN}
