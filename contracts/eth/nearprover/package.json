@@ -8,6 +8,10 @@
     },
     "license": "MIT",
     "devDependencies": {
+        "@ledgerhq/hw-app-eth": "5.36.0",
+        "@ledgerhq/hw-transport-node-hid": "5.36.0",
+        "@ledgerhq/hw-transport-u2f": "5.36.0-deprecated",
+        "@ledgerhq/web3-subprovider": "5.36.0-deprecated",
         "@nomiclabs/hardhat-ethers": "^2.0.1",
         "chai": "^4.3.3",
         "dotenv": "^8.2.0",
@@ -19,8 +23,6 @@
         "eslint-plugin-standard": "^4.0.0",
         "eth-gas-reporter": "^0.2.11",
         "ethers": "^5.5.2",
-        "@ledgerhq/hw-app-eth": "^6.19.0",
-        "@ledgerhq/hw-transport-node-hid": "^6.19.0",
         "hardhat": "^2.1.1",
         "rainbow-bridge-lib": "^2.0.0",
         "solc": "0.8.3",
@@ -37,5 +39,8 @@
         "lint:sol:fix": "solium -d . --fix",
         "lint": "yarn lint:js && yarn lint:sol",
         "lint:fix": "yarn lint:js:fix && yarn lint:sol:fix"
+    },
+    "dependencies": {
+        "web3-provider-engine": "^16.0.3"
     }
 }
