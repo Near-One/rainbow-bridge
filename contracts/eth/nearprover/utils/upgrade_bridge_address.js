@@ -11,15 +11,18 @@ const { assert } = require('chai');
 const BRIDGE_ADDRESS_SLOT = 2;
 
 async function upgradeProversBridgeAddressTo (provider, proverAddress, newBridgeAddress, ledgerKeyPath) {
+    const network = 'goerli';
+    const networkId = 5;
     const engine = new ProviderEngine();
     const getTransport = () => hid.create();
     const ledger = createLedgerSubprovider(getTransport, {
+        networkId: networkId,
         accountsLength: 5,
         paths: [ledgerKeyPath],
     });
 
     engine.addProvider(ledger);
-    const rpcUrl = `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`;
+    const rpcUrl = `https://${network}.infura.io/v3/${process.env.INFURA_API_KEY}`;
     console.log(rpcUrl);
     engine.addProvider(new RpcSubprovider({ rpcUrl }));
     engine.start();
