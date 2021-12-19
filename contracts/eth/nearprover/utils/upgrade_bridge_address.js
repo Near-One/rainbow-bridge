@@ -32,9 +32,17 @@ async function upgradeProversBridgeAddressTo (provider, proverAddress, newBridge
 
     // Mask matches only on the latest 20 bytes (to store the address)
     const mask = ethers.BigNumber.from('0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff');
-    const response = await nearProver
+    const options = {
+        gasLimit: 50000,
+        gasPrice: 150000000000 // 150 Gwei
+    };
+    const tx = await nearProver
         .connect(signer)
-        .adminSstoreWithMask(BRIDGE_ADDRESS_SLOT, newBridgeAddress, mask);
+        .populateTransaction
+        .adminSstoreWithMask(BRIDGE_ADDRESS_SLOT, newBridgeAddress, mask, options);
+    console.log(tx);
+    const signed_tx = await signer.signTransaction(tx);
+    console.log(signed_tx);
     console.log(response);
     console.log('Waiting for tx confirmation...');
     await response.wait(10).then(function (receipt) {
