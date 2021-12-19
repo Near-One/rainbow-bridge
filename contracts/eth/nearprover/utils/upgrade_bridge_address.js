@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const { ethers } = require('hardhat');
 const { assert, expect } = require('chai');
-const { EthLedgerSigner } = require('./eth-ledger-signer');
+const { LedgerSigner } = require('@ethersproject/hardware-wallets');
 
 const BRIDGE_ADDRESS_SLOT = 2;
 
@@ -19,7 +19,7 @@ async function upgradeProversBridgeAddressTo (provider, proverAddress, newBridge
     let signer;
     // We use non-strict unequality as it also includes undefined, 0, etc
     if (ledgerKeyPath != null) {
-        signer = new EthLedgerSigner(provider, ledgerKeyPath);
+        signer = new LedgerSigner(provider, undefined, ledgerKeyPath);
     } else {
         signer = new ethers.Wallet(process.env.ETH_PRIVATE_KEY, provider);
     }
@@ -32,12 +32,22 @@ async function upgradeProversBridgeAddressTo (provider, proverAddress, newBridge
 
     // Mask matches only on the latest 20 bytes (to store the address)
     const mask = ethers.BigNumber.from('0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff');
-    const response = await nearProver
+    const options = {
+        gasLimit: 50000,
+        gasPrice: 150000000000, // 150 Gwei
+    };
+    const tx = await nearProver
         .connect(signer)
-        .adminSstoreWithMask(BRIDGE_ADDRESS_SLOT, newBridgeAddress, mask);
+        .populateTransaction
+        .adminSstoreWithMask(BRIDGE_ADDRESS_SLOT, newBridgeAddress, mask, options);
+    tx.nonce = await provider.getTransactionCount(tx.from);
+    console.log(tx);
+    const signedTx = await signer.signTransaction(tx);
+    console.log(signedTx);
+    const response = await provider.sendTransaction(signedTx);
     console.log(response);
     console.log('Waiting for tx confirmation...');
-    await response.wait(10).then(function (receipt) {
+    await response.wait(5).then(function (receipt) {
         console.log('Transaction mined: ');
         console.log(receipt);
     });
