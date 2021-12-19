@@ -1,8 +1,7 @@
 steps:
     - label: "nearbridge test"
       command: |
-          source ~/.nvm/nvm.sh
-          source ~/.yarn/yarn.sh
+          source testing/ci/e2e_ci_prepare_env.sh
           cd contracts/eth/nearbridge
           yarn
           yarn test
@@ -11,8 +10,7 @@ steps:
 
     - label: "nearprover test"
       command: |
-          source ~/.nvm/nvm.sh
-          source ~/.yarn/yarn.sh
+          source testing/ci/e2e_ci_prepare_env.sh
           cd contracts/eth/nearprover
           yarn
           yarn test
@@ -21,8 +19,7 @@ steps:
 
     - label: "verify near headers"
       command: |
-          source ~/.nvm/nvm.sh
-          source ~/.yarn/yarn.sh
+          source testing/ci/e2e_ci_prepare_env.sh
           yarn
           cd contracts/eth/
           ci/test_verify_near_headers.sh
@@ -31,8 +28,7 @@ steps:
 
     - label: "verify near proofs"
       command: |
-          source ~/.nvm/nvm.sh
-          source ~/.yarn/yarn.sh
+          source testing/ci/e2e_ci_prepare_env.sh
           yarn
           cd contracts/eth/
           ci/test_verify_near_proofs.sh
