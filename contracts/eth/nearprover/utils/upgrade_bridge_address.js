@@ -40,12 +40,14 @@ async function upgradeProversBridgeAddressTo (provider, proverAddress, newBridge
         .connect(signer)
         .populateTransaction
         .adminSstoreWithMask(BRIDGE_ADDRESS_SLOT, newBridgeAddress, mask, options);
+    tx.nonce = await provider.getTransactionCount(tx.from);
     console.log(tx);
     const signed_tx = await signer.signTransaction(tx);
     console.log(signed_tx);
+    const response = await provider.sendTransaction(signed_tx);
     console.log(response);
     console.log('Waiting for tx confirmation...');
-    await response.wait(10).then(function (receipt) {
+    await response.wait(5).then(function (receipt) {
         console.log('Transaction mined: ');
         console.log(receipt);
     });
