@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const { ethers } = require('hardhat');
 const { assert, expect } = require('chai');
-const { EthLedgerSigner } = require('./eth-ledger-signer');
+const { LedgerSigner } = require('@ethersproject/hardware-wallets');
 
 const BRIDGE_ADDRESS_SLOT = 2;
 
@@ -19,7 +19,7 @@ async function upgradeProversBridgeAddressTo (provider, proverAddress, newBridge
     let signer;
     // We use non-strict unequality as it also includes undefined, 0, etc
     if (ledgerKeyPath != null) {
-        signer = new EthLedgerSigner(provider, ledgerKeyPath);
+        signer = new LedgerSigner(provider, undefined, ledgerKeyPath);
     } else {
         signer = new ethers.Wallet(process.env.ETH_PRIVATE_KEY, provider);
     }
