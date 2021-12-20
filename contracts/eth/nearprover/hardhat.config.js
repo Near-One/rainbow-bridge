@@ -27,10 +27,36 @@ task('get-provers-bridge-address', 'Returns the current bridge address used in t
 task('upgrade-near-on-eth-client-admin-to', 'Upgrades the admin address on NearOnEthClient to the provided address')
     .addParam('nearOnEthClientAddress', 'NearOnEthClient address')
     .addParam('newAdmin', 'The address of the new admin of NearOnEthClient')
-    .addParam('ledgerKeyPath', 'The ledger key path to sign transactions', undefined, undefined, true)
+    .addParam('ledgerKeyPath', 'The ledger key path to sign transactions', undefined, undefined, types.string, true)
     .setAction(async (taskArgs, hre) => {
         const { upgradeNearOnEthClientAdminTo } = require('./utils/upgrade_near_on_eth_client_admin.js');
         await upgradeNearOnEthClientAdminTo(hre.ethers.provider, taskArgs.nearOnEthClientAddress, taskArgs.newAdmin, taskArgs.ledgerKeyPath);
+    });
+
+task('upgrade-admin-to', 'Upgrades the admin address on X contract to the provided address')
+    .addParam('contractAddress', 'Contract address')
+    .addParam('currentAdminAddress', 'The address of the current admin')
+    .addParam('newAdminAddress', 'The address of the new admin')
+    .addParam('slot', 'The admin address slot', undefined, undefined, types.int)
+    .addParam('ledgerKeyPath', 'The ledger key path to sign transactions', undefined, types.string, true)
+    .setAction(async (taskArgs, hre) => {
+        const { upgradeAdminAddressTo } = require('./utils/upgrade_admin.js');
+        await upgradeAdminAddressTo({
+            provider: hre.ethers.provider,
+            contractAddress: taskArgs.contractAddress,
+            currentAdminAddress: taskArgs.currentAdminAddress,
+            newAdminAddress: taskArgs.newAdminAddress,
+            adminAddressSlot: taskArgs.slot,
+            ledgerKeyPath: taskArgs.ledgerKeyPath,
+        });
+    });
+
+task('get-slots-data', 'Display slots')
+    .addParam('contractAddress', 'Contract address')
+    .addParam('numOfSlotsToDisplay', 'Number of slots to fetch')
+    .setAction(async (taskArgs, hre) => {
+        const { getSlotsData } = require('./utils/upgrade_admin.js');
+        await getSlotsData(hre.ethers.provider, taskArgs.contractAddress, taskArgs.numOfSlotsToDisplay);
     });
 
 /**
