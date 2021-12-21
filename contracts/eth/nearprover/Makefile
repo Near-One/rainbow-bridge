@@ -4,7 +4,7 @@ NETWORK=goerli
 LEDGER_KEY_PATH=
 NEAR_ON_ETH_CLIENT_ADDRESS=
 NEW_ADMIN=
-SLOTS=5
+NUM_SLOTS=5
 
 test:
 	yarn hardhat test
@@ -29,7 +29,7 @@ get-provers-bridge-address:
 	yarn hardhat --network ${NETWORK} get-provers-bridge-address --prover ${PROVER}
 
 get-slots-data:
-	yarn hardhat --network ${NETWORK} get-slots-data --contract-address ${ADDRESS} --num-of-slots-to-display ${SLOTS}
+	yarn hardhat --network ${NETWORK} get-slots-data --contract-address ${ADDRESS} --num-of-slots-to-display ${NUM_SLOTS}
 
 upgrade-admin:
 	yarn hardhat --network ${NETWORK} upgrade-admin-to --contract-address ${ADDRESS} --current-admin-address ${CURRENT_ADMIN} --new-admin-address ${NEW_ADMIN} --slot ${SLOT}

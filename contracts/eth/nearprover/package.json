@@ -25,7 +25,8 @@
         "rainbow-bridge-lib": "^2.0.0",
         "solc": "0.8.3",
         "solidity-coverage": "^0.7.16",
-        "solium": "^1.2.5"
+        "solium": "^1.2.5",
+        "yesno": "^0.3.1"
     },
     "scripts": {
         "build": "hardhat compile",

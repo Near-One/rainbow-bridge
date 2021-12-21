@@ -9042,3 +9042,8 @@ yauzl@^2.4.2:
   dependencies:
     buffer-crc32 "~0.2.3"
     fd-slicer "~1.1.0"
+
+yesno@^0.3.1:
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/yesno/-/yesno-0.3.1.tgz#3b2150158ee9b3f192a42313dd189c439f26c0ba"
+  integrity sha512-7RbCXegyu6DykWPWU0YEtW8gFJH8KBL2d5l2fqB0XpkH0Y9rk59YSSWpzEv7yNJBGAouPc67h3kkq0CZkpBdFw==
