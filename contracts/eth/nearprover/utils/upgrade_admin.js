@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 const { assert, expect } = require('chai');
 const { EthLedgerSigner } = require('./eth-ledger-signer');
-const yesno = require('yesno');
+const readlineSync = require('readline-sync');
 
 async function getSlotsData (provider, contractAddress, numOfSlotsToDisplay) {
     console.log(`Contract's ${contractAddress} slots:`);
@@ -48,11 +48,10 @@ async function upgradeAdminAddressTo ({
         `The used account is not an admin of contract ${contractAddress}`,
     );
 
-    const ok = await yesno({
-        question: 'WARRING! this change can\'t be reverted, are you sure that you want to change the admin address?',
-    });
+    const inputResult = readlineSync.question('WARRING! Please verify all data. This change can not be reverted,' +
+        ' do you confirm that you are aware of this and want to change the admin address?\n Enter CONFIRM if yes: ');
 
-    if (!ok) {
+    if (inputResult.toUpperCase() !== 'CONFIRM') {
         console.log('The task was aborted');
         return;
     }
