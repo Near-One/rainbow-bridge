@@ -10,6 +10,7 @@
     "devDependencies": {
         "@nomiclabs/hardhat-ethers": "^2.0.1",
         "chai": "^4.3.3",
+        "dotenv": "^8.2.0",
         "eslint": "^6.3.0",
         "eslint-config-standard": "^14.1.0",
         "eslint-plugin-import": "^2.14.0",
@@ -17,12 +18,15 @@
         "eslint-plugin-promise": "^4.0.1",
         "eslint-plugin-standard": "^4.0.0",
         "eth-gas-reporter": "^0.2.11",
-        "ethers": "^5.0.31",
+        "ethers": "^5.5.2",
+        "@ledgerhq/hw-app-eth": "^6.19.0",
+        "@ledgerhq/hw-transport-node-hid": "^6.19.0",
         "hardhat": "^2.1.1",
         "rainbow-bridge-lib": "^2.0.0",
         "solc": "0.8.3",
         "solidity-coverage": "^0.7.16",
-        "solium": "^1.2.5"
+        "solium": "^1.2.5",
+        "readline-sync": "^1.4.10"
     },
     "scripts": {
         "build": "hardhat compile",
