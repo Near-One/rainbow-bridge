@@ -76,3 +76,9 @@ jobs:
       - name: Print pm2 log
         if: ${{ always() }}
         run: cat ~/.pm2/pm2.log || true
+
+      - name: Print pm2 log
+        if: ${{ always() }}
+        run: |
+          cd cli
+          node index.js clean
