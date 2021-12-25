@@ -82,5 +82,6 @@ jobs:
         run: |
           cd cli
           node index.js clean
+          rm -f ~/.pm2/pm2.log || true
 env:
   GANACHE_BLOCK_TIME: 1
