@@ -82,3 +82,7 @@ jobs:
       - name: Print watchdog stderr
         if: ${{ always() }}
         run: cat ~/.rainbow/logs/watchdog/err.log || true
+
+      - name: Print pm2 log
+        if: ${{ always() }}
+        run: cat ~/.pm2/pm2.log || true
