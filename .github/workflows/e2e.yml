@@ -82,3 +82,5 @@ jobs:
         run: |
           cd cli
           node index.js clean
+env:
+  GANACHE_BLOCK_TIME: 1
