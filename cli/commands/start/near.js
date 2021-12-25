@@ -13,7 +13,7 @@ class StartLocalNearNodeCommand {
   static execute ({ archival }) {
     const neardPath = join(NEAR_BINARY_PATH, 'neard')
     const localnetPath = join(HOME, '/.near/localnet')
-    const initConfigCommand = `${neardPath} init --fast --home ${localnetPath} testnet  --v 1`
+    const initConfigCommand = `${neardPath} --home ${localnetPath} testnet  --v 1 init --fast`
     const startNodeCommand = `nearup run localnet --num-nodes 1 --binary-path ${NEAR_BINARY_PATH}`
 
     request(getLocalNearNodeURL(), { json: true }, (err, _res, _body) => {
