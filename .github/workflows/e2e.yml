@@ -3,7 +3,7 @@ on:
     branches:
       - master
   pull_request:
-name: Tests
+name: E2E tests
 jobs:
   test:
     runs-on: self-hosted
@@ -11,13 +11,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - job-name: Linter
-            cmd: |
-              yarn
-              yarn standard
-              yarn prettier-solidity
-            timeout-minutes: 5
-
           - job-name: E2E
             cmd: ./testing/ci/e2e.sh
             timeout-minutes: 60
