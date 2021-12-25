@@ -37,6 +37,9 @@ jobs:
           pip3 install nearup --upgrade --user
           echo "$(python3 -m site --user-base)/bin" >> $GITHUB_PATH
 
+      - name: Clean pm2 log
+        run: rm -f ~/.pm2/pm2.log || true
+
       - name: Execute
         run: ${{ matrix.cmd }}
         timeout-minutes: ${{ matrix.timeout-minutes }}
