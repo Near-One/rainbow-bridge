@@ -51,20 +51,34 @@ jobs:
         run: ${{ matrix.cmd }}
         timeout-minutes: ${{ matrix.timeout-minutes }}
 
-      - name: Collect logs
+      - name: Print ganache stdout
         if: ${{ always() }}
-        run: |
-          mkdir logs_artifact
-          if [[ -d ~/.rainbow/logs ]]; then
-            cp -r ~/.rainbow/logs logs_artifact/rainbow-logs
-          fi
-          if [[ -f ~/.pm2/pm2.log ]]; then
-            cp ~/.pm2/pm2.log logs_artifact/pm2.log
-          fi
+        run: cat ~/.rainbow/logs/ganache/out.log || true
 
-      - name: Upload logs
+      - name: Print ganache stderr
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.job-name }} (logs)
-          path: logs_artifact
+        run: cat ~/.rainbow/logs/ganache/err.log || true
+
+      - name: Print near2eth-relay stdout
+        if: ${{ always() }}
+        run: cat ~/.rainbow/logs/near2eth-relay/out.log || true
+
+      - name: Print near2eth-relay stderr
+        if: ${{ always() }}
+        run: cat ~/.rainbow/logs/near2eth-relay/err.log || true
+
+      - name: Print eth2near-relay stdout
+        if: ${{ always() }}
+        run: cat ~/.rainbow/logs/eth2near-relay/out.log || true
+
+      - name: Print eth2near-relay stderr
+        if: ${{ always() }}
+        run: cat ~/.rainbow/logs/eth2near-relay/err.log || true
+
+      - name: Print watchdog stdout
+        if: ${{ always() }}
+        run: cat ~/.rainbow/logs/watchdog/out.log || true
+
+      - name: Print watchdog stderr
+        if: ${{ always() }}
+        run: cat ~/.rainbow/logs/watchdog/err.log || true
