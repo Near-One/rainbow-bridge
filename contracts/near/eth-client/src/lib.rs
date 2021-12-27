@@ -574,14 +574,10 @@ impl EthClient {
 
     // check if the author address is valid and is in the validator set.
     #[cfg(feature = "bsc")]
-    fn bsc_is_validator(&self, header: &BlockHeader) -> bool {
+    pub fn bsc_is_validator(&self, header: &BlockHeader) -> bool {
         let (extra_vanity, extra_seal, address_size) = (32, 65, 20);
 
-        let epoch_header = if EthClient::is_epoch(header.number) {
-            header.clone()
-        } else {
-            self.bsc_get_epoch_header()
-        };
+        let epoch_header = self.bsc_get_epoch_header();
 
         if !self.bsc_is_in_validator_set(&epoch_header, header.author) {
             return false;
