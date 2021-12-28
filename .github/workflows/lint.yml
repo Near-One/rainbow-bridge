@@ -1,0 +1,18 @@
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+name: Lint
+jobs:
+  lint:
+    runs-on: self-hosted
+    name: Lint
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v2
+      - name: Lint
+        run: |
+          yarn
+          yarn standard
+          yarn prettier-solidity
