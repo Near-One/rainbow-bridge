@@ -1,7 +1,8 @@
 const { ethers } = require('hardhat');
 const { assert, expect } = require('chai');
-const { EthLedgerSigner } = require('./eth-ledger-signer');
+const { LedgerSigner } = require('@ethersproject/hardware-wallets');
 const readlineSync = require('readline-sync');
+const { upgradeAddressAtSlotLegacy } = require('./utils');
 
 async function getSlotsData (provider, contractAddress, numOfSlotsToDisplay) {
     console.log(`Contract's ${contractAddress} slots:`);
@@ -37,7 +38,7 @@ async function upgradeAdminAddressTo ({
     let signer;
     // We use non-strict unequality as it also includes undefined, etc
     if (ledgerKeyPath != null) {
-        signer = new EthLedgerSigner(provider, ledgerKeyPath);
+        signer = new LedgerSigner(provider, 'hid', ledgerKeyPath || null);
     } else {
         signer = new ethers.Wallet(process.env.ETH_PRIVATE_KEY, provider);
     }
@@ -56,11 +57,7 @@ async function upgradeAdminAddressTo ({
         return;
     }
 
-    // Mask matches only on the latest 20 bytes (to store the address)
-    const mask = ethers.BigNumber.from('0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff');
-    const response = await adminControlled
-        .connect(signer)
-        .adminSstoreWithMask(adminAddressSlot, newAdminAddress, mask);
+    const response = await upgradeAddressAtSlotLegacy(provider, signer, adminControlled, newAdminAddress, adminAddressSlot);
     console.log(response);
     console.log('Waiting for tx confirmation...');
     await response.wait(5).then(function (receipt) {

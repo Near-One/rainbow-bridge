@@ -2,7 +2,8 @@ require('dotenv').config();
 
 const { ethers } = require('hardhat');
 const { assert, expect } = require('chai');
-const { EthLedgerSigner } = require('./eth-ledger-signer');
+const { LedgerSigner } = require('@ethersproject/hardware-wallets');
+const { upgradeAddressAtSlotLegacy } = require('./utils');
 
 const BRIDGE_ADDRESS_SLOT = 2;
 
@@ -19,7 +20,7 @@ async function upgradeProversBridgeAddressTo (provider, proverAddress, newBridge
     let signer;
     // We use non-strict unequality as it also includes undefined, 0, etc
     if (ledgerKeyPath != null) {
-        signer = new EthLedgerSigner(provider, ledgerKeyPath);
+        signer = new LedgerSigner(provider, 'hid', ledgerKeyPath || null);
     } else {
         signer = new ethers.Wallet(process.env.ETH_PRIVATE_KEY, provider);
     }
@@ -30,14 +31,10 @@ async function upgradeProversBridgeAddressTo (provider, proverAddress, newBridge
         'The used account is not an admin of NearProver',
     );
 
-    // Mask matches only on the latest 20 bytes (to store the address)
-    const mask = ethers.BigNumber.from('0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff');
-    const response = await nearProver
-        .connect(signer)
-        .adminSstoreWithMask(BRIDGE_ADDRESS_SLOT, newBridgeAddress, mask);
+    const response = await upgradeAddressAtSlotLegacy(provider, signer, nearProver, newBridgeAddress, BRIDGE_ADDRESS_SLOT);
     console.log(response);
     console.log('Waiting for tx confirmation...');
-    await response.wait(10).then(function (receipt) {
+    await response.wait(5).then(function (receipt) {
         console.log('Transaction mined: ');
         console.log(receipt);
     });
