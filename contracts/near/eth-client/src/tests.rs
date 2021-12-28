@@ -597,6 +597,39 @@ fn bsc_add_epoch_header() {
     assert!(hashes[0] == contract.epoch_header)
 }
 
+#[test]
+#[cfg_attr(not(feature = "bsc"), ignore)]
+fn bsc_validate_epoch_headers_validator() {
+    let chain_id = 97;
+    let start = 10_160_000;
+    let end = 10_165_000;
+    let mut current = start;
+    
+    testing_env!(get_context(vec![], false));
+    while current <= end {
+        println!("Current block {}", current);
+
+        let (blocks, _) = get_blocks(&BSC_WEB3RS, current - 200, current -200 +1);
+        let contract = EthClient::init(
+            true,
+            String::from("bsc"),
+            0,
+            vec![],
+            blocks[0].clone(),
+            30,
+            201,
+            201,
+            None,
+            chain_id,
+        );
+        for block in blocks.into_iter() {
+            let header: BlockHeader = rlp::decode(block.as_slice()).unwrap();
+            contract.bsc_is_validator(&header);
+        }
+        current += 200;
+    }
+}
+
 // test validate bsc headers.
 #[test]
 #[cfg_attr(not(feature = "bsc"), ignore)]
