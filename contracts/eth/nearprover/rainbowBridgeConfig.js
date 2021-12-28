@@ -11,19 +11,11 @@ const { task } = require('hardhat/config')
 const { deployNearProverProxy } = require('./scripts/tasks')
 
 task('deployNearProverProxy', 'Deploy NearProver proxy')
-  .addParam('ethProverArtifactPath', 'prover artifact path.')
-  .addParam('privateKey', 'Deployer private key')
   .addParam('ethClientAddress', 'eth client address')
+  // .addParam('admin', 'ethAdminAddress')
   .addParam('pausedFlags', 'pausedFlags')
   .setAction(async (args, hre) => {
-    const data = JSON.parse(
-      await fs.promises.readFile(args.ethProverArtifactPath)
-    )
-    await deployNearProverProxy(hre, {
-      abi: data.abi,
-      bytecode: data.bytecode,
-      ...args
-    })
+    await deployNearProverProxy(hre, args)
   })
 
 function setupRainbowBridgeNetwork () {

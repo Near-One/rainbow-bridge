@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { ethers, upgrades } = require('hardhat');
+const { ethers, upgrades, network } = require('hardhat');
 
 const fs = require('fs').promises;
 const { borshify, borshifyInitialValidators } = require('rainbow-bridge-utils');
@@ -9,10 +9,11 @@ async function increaseTime (time) {
     await network.provider.send('evm_mine', []);
 }
 
-let Ed25519, NearBridge, accounts;
+let Ed25519, NearBridge, accounts, AdminWallet;
 beforeEach(async function () {
     accounts = await ethers.getSigners();
     Ed25519 = await (await ethers.getContractFactory('Ed25519')).deploy();
+    [AdminWallet] = await ethers.getSigners();
     const NearBridgeFactory = await ethers.getContractFactory('NearBridge');
     NearBridge = await upgrades.deployProxy(NearBridgeFactory, [
         Ed25519.address,
@@ -25,7 +26,7 @@ beforeEach(async function () {
     await NearBridge.deposit({ value: ethers.utils.parseEther('1') });
 });
 
-it('upgarde the proxy', async function () {
+it('upgrade the proxy', async function () {
     const NearBridgeV2Factory = await ethers.getContractFactory('NearBridgeV2');
     NearBridge = await upgrades.upgradeProxy(NearBridge.address, NearBridgeV2Factory);
     expect(await NearBridge.version()).eq('2.0.0');
@@ -55,7 +56,13 @@ it('Fail to upgrade contract, Unauthorized', async function () {
         .reverted;
 });
 
-it('should be ok', async function () {
+it('Set setLockEthAmount', async function () {
+    expect(await NearBridge.setLockEthAmount(100))
+    await expect(NearBridge.setLockEthAmount(101))
+    .revertedWith('The lockEthAmount have to be an even and positive number')
+});
+
+it.only('should be ok', async function () {
     const block120998 = borshify(require('./block_120998.json'));
     const block121498 = borshify(require('./block_121498.json'));
     const block121998 = borshify(require('./block_121998.json'));

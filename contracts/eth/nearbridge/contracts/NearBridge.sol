@@ -6,13 +6,14 @@ import "./INearBridge.sol";
 import "./NearDecoder.sol";
 import "./Ed25519.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "hardhat/console.sol";
 
 contract NearBridge is INearBridge, UUPSUpgradeable, AdminControlled {
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
 
     // Assumed to be even and to not exceed 256.
-    uint constant MAX_BLOCK_PRODUCERS = 100;
+    uint constant MAX_BLOCK_PRODUCERS = 128;
 
     struct Epoch {
         bytes32 epochId;
@@ -70,9 +71,8 @@ contract NearBridge is INearBridge, UUPSUpgradeable, AdminControlled {
         __AdminControlled_init(pausedFlags_);
 
         edwards = ed;
-        lockEthAmount = lockEthAmount_;
-        lockDuration = lockDuration_;
-        replaceDuration = replaceDuration_;
+        setLockEthAmount(lockEthAmount_);
+        setDuration(replaceDuration_, lockDuration_);
     }
 
     uint constant UNPAUSE_ALL = 0;
@@ -83,14 +83,20 @@ contract NearBridge is INearBridge, UUPSUpgradeable, AdminControlled {
     uint constant PAUSED_VERIFY = 16;
 
     function deposit() external payable override pausable(PAUSED_DEPOSIT) {
-        require(msg.value == lockEthAmount && balanceOf[msg.sender] == 0);
+        require(
+            msg.value == lockEthAmount && balanceOf[msg.sender] == 0,
+            "The deposit amount is not equal to lockEthAmount or, the address balance is not zero"
+        );
         balanceOf[msg.sender] = msg.value;
     }
 
     function withdraw() external override pausable(PAUSED_WITHDRAW) {
-        require(msg.sender != lastSubmitter || block.timestamp >= lastValidAt);
+        require(
+            msg.sender != lastSubmitter || block.timestamp >= lastValidAt,
+            "Could not withdraw the amount deposited yet"
+        );
         uint amount = balanceOf[msg.sender];
-        require(amount != 0);
+        require(amount != 0, "Amount Zero");
         balanceOf[msg.sender] = 0;
         payable(msg.sender).transfer(amount);
     }
@@ -99,8 +105,9 @@ contract NearBridge is INearBridge, UUPSUpgradeable, AdminControlled {
         require(block.timestamp < lastValidAt, "No block can be challenged at this time");
         require(!checkBlockProducerSignatureInHead(signatureIndex), "Can't challenge valid signature");
 
-        balanceOf[lastSubmitter] = balanceOf[lastSubmitter] - lockEthAmount;
-        receiver.transfer(lockEthAmount / 2);
+        uint256 lastSubmitterLockEthAmount = balanceOf[lastSubmitter];
+        balanceOf[lastSubmitter] = 0;
+        receiver.transfer(lastSubmitterLockEthAmount / 2);
         lastValidAt = 0;
     }
 
@@ -268,7 +275,10 @@ contract NearBridge is INearBridge, UUPSUpgradeable, AdminControlled {
 
     function setBlockProducers(NearDecoder.BlockProducer[] memory src, Epoch storage epoch) internal {
         uint cnt = src.length;
-        require(cnt <= MAX_BLOCK_PRODUCERS, "It is not expected having that many block producers for the provided block");
+        require(
+            cnt <= MAX_BLOCK_PRODUCERS,
+            "It is not expected having that many block producers for the provided block"
+        );
         epoch.numBPs = cnt;
         unchecked {
             for (uint i = 0; i < cnt; i++) {
@@ -309,7 +319,7 @@ contract NearBridge is INearBridge, UUPSUpgradeable, AdminControlled {
     }
 
     function setDuration(uint256 replaceDuration_, uint256 lockDuration_)
-        external
+        public
         onlyRole(DEFAULT_ADMIN_ROLE)
         checkDuration(replaceDuration_, lockDuration_)
     {
@@ -317,7 +327,11 @@ contract NearBridge is INearBridge, UUPSUpgradeable, AdminControlled {
         lockDuration = lockDuration_;
     }
 
-    function setLockEthAmount(uint256 lockEthAmount_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setLockEthAmount(uint256 lockEthAmount_) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(
+            lockEthAmount_ % 2 == 0 && lockEthAmount_ > 0,
+            "The lockEthAmount have to be an even and positive number"
+        );
         lockEthAmount = lockEthAmount_;
     }
 

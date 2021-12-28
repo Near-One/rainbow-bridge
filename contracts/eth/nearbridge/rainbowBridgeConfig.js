@@ -12,33 +12,30 @@ const {
   deployNearBridgeProxy
 } = require('./scripts/tasks')
 
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
+
 task('deployNearBridgeProxy', 'Deploy NearBridge proxy')
-  .addParam('ethClientArtifactPath', 'client artifact path.')
+  .addParam('ethClientLockEthAmount', 'ethClientLockEthAmount')
+  .addParam('ethClientLockDuration', 'ethClientLockDuration')
+  .addParam('ethClientReplaceDuration', 'ethClientReplaceDuration')
   .addParam('ed25519', 'ed25519 address')
-  .addParam('privateKey', 'Deployer private key')
-  .addParam('lockEthAmount', 'lockEthAmount')
-  .addParam('lockDuration', 'lockDuration')
-  .addParam('replaceDuration', 'replaceDuration')
   .addParam('pausedFlags', 'pausedFlags')
+  .addOptionalParam('admin', 'admin')
   .setAction(async (args, hre) => {
-    const data = JSON.parse(
-      await fs.promises.readFile(args.ethClientArtifactPath)
+    await deployNearBridgeProxy(hre, 
+      args
     )
-    await deployNearBridgeProxy(hre, {
-      abi: data.abi,
-      bytecode: data.bytecode,
-      ...args
-    })
   })
 
 function setupRainbowBridgeNetwork () {
   const p = path.join(os.homedir(), '.rainbow/config.json')
   const cfg = fs.readFileSync(p)
   const rainbowConfig = JSON.parse(cfg)
-  console.log
   return {
     url: rainbowConfig.ethNodeUrl,
-    accounts: [rainbowConfig.ethMasterSk]
+    accounts: [rainbowConfig.ethMasterSk],
+    gasPrice: 10000000000,
+    gas: 10000000
   }
 }
 
@@ -57,6 +54,6 @@ module.exports = {
     rainbowBridge: setupRainbowBridgeNetwork()
   },
   etherscan: {
-    apiKey: ''
+    apiKey: ETHERSCAN_API_KEY 
   }
 }

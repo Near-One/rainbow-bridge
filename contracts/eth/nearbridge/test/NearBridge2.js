@@ -1,18 +1,19 @@
-const { ethers } = require('hardhat');
+const { ethers, upgrades, network } = require('hardhat');
 const { expect } = require('chai');
 
-const { borshify, borshifyInitialValidators } = require('rainbow-bridge-utils')
+const { borshify, borshifyInitialValidators } = require('rainbow-bridge-utils');
 
-async function increaseTime(time) {
+async function increaseTime (time) {
     await network.provider.send('evm_increaseTime', [time]);
     await network.provider.send('evm_mine', []);
 }
 
-let Ed25519, NearBridge;
+let Ed25519, NearBridge, AdminWallet;
 
 beforeEach(async function () {
     Ed25519 = await (await ethers.getContractFactory('Ed25519')).deploy();
     const NearBridgeFactory = await ethers.getContractFactory('NearBridge');
+    [AdminWallet] = await ethers.getSigners();
     NearBridge = await upgrades.deployProxy(NearBridgeFactory, [
         Ed25519.address,
         ethers.BigNumber.from('1000000000000000000'), // 1e18
@@ -41,23 +42,22 @@ it('should be ok', async function () {
     expect(await NearBridge.blockHashes(9610)).to.be.equal(
         '0xf28629da269e59f2494c6bf283e9e67dadaa1c1f753607650d21e5e5b916a0dc',
     );
-
 });
 
 it('2020-09-09 Example', async function () {
-   const block_15178713 = borshify(require('./block_15178713.json'));
-   const block_15178760 = borshify(require('./block_15178760.json'));
-   const block_15204402 = borshify(require('./block_15204402.json'));
-   const block_15248583 = borshify(require('./block_15248583.json'));
+    const block_15178713 = borshify(require('./block_15178713.json'));
+    const block_15178760 = borshify(require('./block_15178760.json'));
+    const block_15204402 = borshify(require('./block_15204402.json'));
+    const block_15248583 = borshify(require('./block_15248583.json'));
 
-   await NearBridge.initWithValidators(borshifyInitialValidators(require('./init_validators_15178713.json')));
-   await NearBridge.initWithBlock(block_15178713);
-   await increaseTime(3600);
-   await NearBridge.addLightClientBlock(block_15178760);
-   await increaseTime(3600);
-   await NearBridge.addLightClientBlock(block_15204402);
-   await increaseTime(3600);
-   await NearBridge.addLightClientBlock(block_15248583);
+    await NearBridge.initWithValidators(borshifyInitialValidators(require('./init_validators_15178713.json')));
+    await NearBridge.initWithBlock(block_15178713);
+    await increaseTime(3600);
+    await NearBridge.addLightClientBlock(block_15178760);
+    await increaseTime(3600);
+    await NearBridge.addLightClientBlock(block_15204402);
+    await increaseTime(3600);
+    await NearBridge.addLightClientBlock(block_15248583);
 });
 
 it('Add second block in first epoch should be verifiable', async function () {
@@ -143,6 +143,29 @@ it('After challenge prev should be revert to prev epoch of latest valid block', 
     await NearBridge.blockHashes(368);
     expect((await NearBridge.lastValidAt())).to.not.be.equal(0);
 
-    await NearBridge.challenge(ethers.constants.AddressZero, 0)
+    await NearBridge.challenge(ethers.constants.AddressZero, 0);
     expect((await NearBridge.lastValidAt())).to.be.equal(0);
 });
+
+it('Check challenge when setLockEthAmount is modified with new value', async function () {
+    const block_77800000 = require('./block_77800000.json');
+    const block_77804000 = require('./block_77804000.json');
+
+    await NearBridge.initWithValidators(borshifyInitialValidators(block_77800000.next_bps));
+    await NearBridge.initWithBlock(borshify(block_77800000));
+    await NearBridge.blockHashes(77800000);
+
+    await increaseTime(3600);
+    block_77804000.approvals_after_next[0] = block_77804000.approvals_after_next[3];
+    await NearBridge.addLightClientBlock(borshify(block_77804000));
+    await NearBridge.blockHashes(77804000);
+
+    await NearBridge.setLockEthAmount(ethers.utils.parseEther('2'))
+
+    expect((await NearBridge.lastValidAt())).to.not.be.equal(0);
+    await NearBridge.challenge(ethers.constants.AddressZero, 0);
+    expect(await NearBridge.balanceOf(AdminWallet.address)).equal(0)
+
+    expect(await ethers.provider.getBalance(NearBridge.address))
+        .equal(ethers.utils.parseEther('5').div(10));
+})

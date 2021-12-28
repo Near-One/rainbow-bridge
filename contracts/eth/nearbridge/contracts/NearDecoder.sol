@@ -2,6 +2,7 @@
 pragma solidity 0.8.7;
 
 import "./Borsh.sol";
+import "hardhat/console.sol";
 
 library NearDecoder {
     using Borsh for Borsh.Data;

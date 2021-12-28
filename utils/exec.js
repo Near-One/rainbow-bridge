@@ -6,7 +6,7 @@ async function execAsync (cmd) {
   if (res.stderr) {
     throw new Error(`Error to exec the command """${cmd}""": ${res.stderr}`)
   }
-  return JSON.parse(res.stdout)
+  console.log(res.stdout)
 }
 
 exports.execAsync = execAsync

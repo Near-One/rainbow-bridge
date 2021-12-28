@@ -5,22 +5,21 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 contract AdminControlled is AccessControlUpgradeable {
-    uint public paused;
     address public admin;
+    uint public paused;
 
-    bytes32 public constant PAUSE_ROLE = keccak256("NEAR_BRIDGE_PAUSE");
+    bytes32 public constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
 
     modifier pausable(uint flag) {
-        require((paused & flag) == 0 || hasRole(DEFAULT_ADMIN_ROLE, _msgSender()));
+        require((paused & flag) == 0 || hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "Paused");
         _;
     }
 
-    function __AdminControlled_init(uint flags) public initializer {
+    function __AdminControlled_init(uint _flags) public initializer {
         __AccessControl_init();
-
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        _setupRole(PAUSE_ROLE, _msgSender());
-        paused = flags;
+        paused = _flags;
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(PAUSE_ROLE, msg.sender);
     }
 
     function adminPause(uint flags) external onlyRole(PAUSE_ROLE) {
@@ -33,8 +32,8 @@ contract AdminControlled is AccessControlUpgradeable {
         _grantRole(PAUSE_ROLE, newAdmin);
         admin = newAdmin;
 
-        revokeRole(PAUSE_ROLE, _msgSender());
-        revokeRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _revokeRole(PAUSE_ROLE, _msgSender());
+        _revokeRole(DEFAULT_ADMIN_ROLE, _msgSender());
         emit OwnershipTransferred(_msgSender(), newAdmin);
     }
 

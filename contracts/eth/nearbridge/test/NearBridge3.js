@@ -7,19 +7,17 @@ const { borshify, borshifyInitialValidators } = require('rainbow-bridge-utils')
 describe('New tests', () => {
     let Ed25519;
     let NearBridge;
-    let AdminWallet;
 
     beforeEach(async function () {
         Ed25519 = await (await ethers.getContractFactory('Ed25519')).deploy();
-        [AdminWallet] = await ethers.getSigners();
-        NearBridge = await (await ethers.getContractFactory('NearBridge')).deploy(
+        const NearBridgeFactory = await ethers.getContractFactory('NearBridge');
+        NearBridge = await upgrades.deployProxy(NearBridgeFactory, [
             Ed25519.address,
             ethers.BigNumber.from("1000000000000000000"), // 1e18
             ethers.BigNumber.from("10"), // lock duration
             ethers.BigNumber.from("20000000000"), // replace duration
-            await AdminWallet.getAddress(),
             0
-        );
+        ], { kind: 'uups' });
         await NearBridge.deposit({ value: ethers.utils.parseEther('1') });
     });
 

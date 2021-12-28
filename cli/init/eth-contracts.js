@@ -181,122 +181,59 @@ class InitEthLocker {
 
 class InitEthClient {
   static async execute ({
-    ethNodeUrl,
-    ethMasterSk,
     ethClientLockEthAmount,
     ethClientLockDuration,
     ethClientReplaceDuration,
-    ethEd25519Address,
-    ethClientArtifactPath,
-    ethAdminAddress,
-    ethGasMultiplier
+    ethEd25519Address
   }) {
-    if (ethAdminAddress === '') {
-      const web3 = new Web3('')
-      ethAdminAddress = web3.eth.accounts.privateKeyToAccount(ethMasterSk)
-        .address
-    }
-
-    ethClientLockDuration = Number(ethClientLockDuration)
-    ethClientReplaceDuration = Number(ethClientReplaceDuration)
-
-    // replace duration should be at least twice as long as lock duration or 20 minutes longer
-    const minAllowedReplaceDuration = Math.min(
-      ethClientLockDuration + 20 * 60,
-      2 * ethClientLockDuration
-    )
-
-    if (ethClientReplaceDuration < minAllowedReplaceDuration) {
-      throw new Error(
-        `Invalid parameters ${JSON.stringify({
-          ethClientLockDuration,
-          ethClientReplaceDuration,
-          minAllowedReplaceDuration
-        })}`
-      )
-    }
-
-    const web3 = new Web3(ethNodeUrl)
-    const lockEthAmount = web3.utils.toBN(ethClientLockEthAmount)
-    const lockDuration = web3.utils.toBN(ethClientLockDuration)
-    const replaceDuration = web3.utils
-      .toBN(ethClientReplaceDuration)
-      .mul(new web3.utils.BN(1e9))
+    console.log('Start deploy ETH client proxy')
 
     const cmd = `
     cd ./contracts/eth/nearbridge && \\
     npx hardhat deployNearBridgeProxy \\
-    --eth-client-artifact-path ${ethClientArtifactPath} \\
-    --private-key ${ethMasterSk} \\
     --ed25519 ${ethEd25519Address} \\
-    --lock-eth-amount ${lockEthAmount} \\
-    --lock-duration ${lockDuration} \\
-    --replace-duration ${replaceDuration} \\
+    --eth-client-lock-eth-amount ${ethClientLockEthAmount} \\
+    --eth-client-lock-duration ${ethClientLockDuration} \\
+    --eth-client-replace-duration ${ethClientReplaceDuration} \\
     --paused-flags 0 \\
     --config rainbowBridgeConfig.js \\
     --network rainbowBridge
     `
-    const data = await execAsync(cmd)
+    await execAsync(cmd)
 
-    console.log(`Deployed ETH client proxy to ${data.proxy}`)
-    console.log(`Deployed ETH client implementation to ${data.implementation}`)
-
-    return {
-      ethClientAddress: data.proxy,
-      ethClientImplementationAddress: data.implementation
-    }
+    console.log('ETH client proxy deployed!')
   }
 }
 
 class VerifyAddress {
   static async execute (address) {
+    console.log(`Start verify contract address ${address}`)
+
     const cmd = `cd ./contracts/eth/nearbridge && npx hardhat verify ${address} \\
     --config rainbowBridgeConfig.js --network rainbowBridge
     `
-    console.log(`Verify contract address ${address}`)
     await execAsync(cmd)
-    console.log(`Contract address ${address} verified`)
-    return {}
+
+    console.log(`Contract address ${address} verified!`)
   }
 }
+
 class InitEthProver {
   static async execute ({
-    ethNodeUrl,
-    ethMasterSk,
-    ethClientAddress,
-    ethProverArtifactPath,
-    ethAdminAddress,
-    ethGasMultiplier
+    ethClientAddress
   }) {
-    if (ethAdminAddress === '') {
-      const web3 = new Web3('')
-      ethAdminAddress = web3.eth.accounts.privateKeyToAccount(ethMasterSk)
-        .address
-    }
-
-    if (!ethClientAddress) {
-      throw new Error('ethClientAddress not set')
-    }
+    console.log('Start deploy ETH prover proxy')
 
     const cmd = `
     cd ./contracts/eth/nearprover && npx hardhat deployNearProverProxy \\
-    --eth-prover-artifact-path ${ethProverArtifactPath} \\
-    --private-key ${ethMasterSk} \\
     --eth-client-address ${ethClientAddress} \\
     --paused-flags 0 \\
     --config rainbowBridgeConfig.js \\
     --network rainbowBridge
     `
+    await execAsync(cmd)
 
-    const data = await execAsync(cmd)
-
-    console.log(`Deployed ETH prover proxy to ${data.proxy}`)
-    console.log(`Deployed ETH prover implementation to ${data.implementation}`)
-
-    return {
-      ethProverAddress: data.proxy,
-      ethProverImplementationAddress: data.implementation
-    }
+    console.log('ETH prover proxy deployed!')
   }
 }
 

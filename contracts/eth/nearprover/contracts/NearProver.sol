@@ -23,6 +23,10 @@ contract NearProver is INearProver, UUPSUpgradeable, AdminControlled {
         bridge = _bridge;
     }
 
+    function setBridge(INearBridge _bridge) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        bridge = _bridge;
+    }
+
     function proveOutcome(bytes memory proofData, uint64 blockHeight)
         external
         view

@@ -42,7 +42,7 @@ start-local-near-and-ganache-nodes:
 
 # ===============================Deploy contracts localy==============================
 
-# deploy contracts to testnets NEAR and BSC
+# deploy contracts
 deploy-full-contracts:
 	cli/index.js init-near-contracts
 	cli/index.js init-eth-ed25519
@@ -51,6 +51,10 @@ deploy-full-contracts:
 	cli/index.js init-eth-erc20
 	cli/index.js init-eth-locker
 	cli/index.js init-near-token-factory
+
+# Verify ethereum contract, example: make verify address=0x01...
+verify:
+	cli/index.js verify-address ${address}
 
 # ===============================Relayers==============================
 
