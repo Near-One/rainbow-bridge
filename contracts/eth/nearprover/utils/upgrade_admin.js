@@ -20,10 +20,9 @@ async function upgradeAdminAddressTo ({
     adminAddressSlot,
     ledgerKeyPath,
 }) {
-    const slotContent = await provider.getStorageAt(contractAddress, Number(adminAddressSlot));
-    const currentAdminAtSlot = ethers.BigNumber.from(slotContent).toHexString();
+    const slotContent = ethers.BigNumber.from(await provider.getStorageAt(contractAddress, Number(adminAddressSlot))).toHexString();
     assert.equal(
-        currentAdminAtSlot.toUpperCase(),
+        slotContent.toUpperCase(),
         currentAdminAddress.toUpperCase(),
         `The current admin doesn't match at the slot ${adminAddressSlot} contract ${contractAddress}`,
     );
