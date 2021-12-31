@@ -44,6 +44,7 @@ function blockHeaderInnerLiteHash(data) {
 async function upgradeAddressAtSlotLegacy (provider, signer, adminControlled, newAddress, addressSlot) {
     // Mask matches only on the latest 20 bytes (to store the address)
     const mask = ethers.BigNumber.from('0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff');
+    console.log(`Used mask: ${mask}`);
 
     const options = {
         gasLimit: 50000,
