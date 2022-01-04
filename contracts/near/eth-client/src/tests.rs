@@ -574,6 +574,89 @@ fn bsc_validate_headers() {
     assert!(contract.headers.len() == 10);
 }
 
+#[test]
+#[cfg_attr(not(feature = "bsc"), ignore)]
+fn bsc_validate_headers_genesis() {
+    testing_env!(get_context(vec![], false));
+    let (blocks, hashes) = get_blocks(&BSC_WEB3RS, 0, 10);
+    let chain_id = 97;
+    
+    let mut contract = EthClient::init(
+        true,
+        String::from("bsc"),
+        0,
+        vec![],
+        blocks[0].clone(),
+        210,
+        210,
+        210,
+        None,
+        chain_id,
+    );
+
+    for block in blocks.into_iter().skip(1) {
+        contract.add_block_header(block, vec![]);
+    }
+    assert!(hashes[0] == contract.epoch_header);
+    assert!(contract.headers.len() == 10);
+}
+
+#[test]
+#[cfg_attr(not(feature = "bsc"), ignore)]
+#[should_panic(expected = "should be valid")]
+fn bsc_validate_headers_zero_block_number() {
+    testing_env!(get_context(vec![], false));
+    let (blocks, _hashes) = get_blocks(&BSC_WEB3RS, 12_058_400, 12_058_402);
+    let chain_id = 97;
+    
+    let mut contract = EthClient::init(
+        true,
+        String::from("bsc"),
+        0,
+        vec![],
+        blocks[0].clone(),
+        210,
+        210,
+        210,
+        None,
+        chain_id,
+    );
+
+    for block in blocks.into_iter().skip(1) {
+        let mut header: BlockHeader = rlp::decode(block.as_slice()).unwrap();
+        header.number = 0;
+        contract.add_block_header(rlp::encode(&header), vec![]);
+    }
+}
+
+#[test]
+#[cfg_attr(not(feature = "bsc"), ignore)]
+#[should_panic(expected = "should be valid")]
+fn bsc_validate_headers_invalid_gas_limit() {
+    testing_env!(get_context(vec![], false));
+    let (blocks, _hashes) = get_blocks(&BSC_WEB3RS, 12_058_400, 12_058_402);
+    let chain_id = 97;
+    
+    let mut contract = EthClient::init(
+        true,
+        String::from("bsc"),
+        0,
+        vec![],
+        blocks[0].clone(),
+        210,
+        210,
+        210,
+        None,
+        chain_id,
+    );
+
+    for block in blocks.into_iter().skip(1) {
+        let mut header: BlockHeader = rlp::decode(block.as_slice()).unwrap();
+        header.gas_limit = U256((0x8fffffffffffffff as u64).into());
+        contract.add_block_header(rlp::encode(&header), vec![]);
+    }
+}
+
 // Test init bsc bridge.
 #[test]
 #[cfg_attr(not(feature = "bsc"), ignore)]
