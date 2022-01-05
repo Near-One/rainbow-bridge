@@ -46,10 +46,16 @@ func processDuringRead(f *os.File, startIn128Res int, fullSizeIn128Res uint32, m
 // 3. If saveCache is true, save root merkle tree of 10 levels
 //    to disk
 // 4. Return merkle root
-func CalculateDatasetMerkleRoot(epoch uint64, saveCache bool) (mtree.Hash, error) {
+func CalculateDatasetMerkleRoot(epoch uint64, saveCache bool, cacheDir string) (mtree.Hash, error) {
 	blockno := epoch * 30000
 	fmt.Printf("Make the dag\n")
-	ethash.MakeDAG(blockno, ethash.DefaultDir)
+
+	if cacheDir == "|default|" {
+		cacheDir = ethash.DefaultDir
+	} else {
+		ethash.DefaultDir = cacheDir
+	}
+	ethash.MakeDAG(blockno, cacheDir)
 
 	fmt.Printf("Init the tree\n")
 	dt := mtree.NewSHA256DagTree()
@@ -71,7 +77,7 @@ func CalculateDatasetMerkleRoot(epoch uint64, saveCache bool) (mtree.Hash, error
 		dt.RegisterIndex(indices...)
 	}
 
-	path := ethash.PathToDAG(uint64(blockno/30000), ethash.DefaultDir)
+	path := ethash.PathToDAG(uint64(blockno/30000), cacheDir)
 	fmt.Printf("Calculating the proofs...\n")
 	f, err := os.Open(path)
 	if err != nil {

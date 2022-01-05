@@ -49,7 +49,7 @@ func main() {
 	cache, err := ethashproof.LoadCache(int(epoch))
 	if err != nil {
 		fmt.Printf("Cache is missing, calculate dataset merkle tree to create the cache first...\n")
-		_, err = ethashproof.CalculateDatasetMerkleRoot(epoch, true)
+		_, err = ethashproof.CalculateDatasetMerkleRoot(epoch, true, "|default|")
 		if err != nil {
 			fmt.Printf("Creating cache failed: %s\n", err)
 			return
