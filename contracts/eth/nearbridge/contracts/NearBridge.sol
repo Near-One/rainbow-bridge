@@ -261,7 +261,10 @@ contract NearBridge is INearBridge, AdminControlled {
 
     function setBlockProducers(NearDecoder.BlockProducer[] memory src, Epoch storage epoch) internal {
         uint cnt = src.length;
-        require(cnt <= MAX_BLOCK_PRODUCERS, "It is not expected having that many block producers for the provided block");
+        require(
+            cnt <= MAX_BLOCK_PRODUCERS,
+            "It is not expected having that many block producers for the provided block"
+        );
         epoch.numBPs = cnt;
         unchecked {
             for (uint i = 0; i < cnt; i++) {
