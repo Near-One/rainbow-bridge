@@ -42,7 +42,9 @@ node index.js init-eth-locker
 node index.js init-near-token-factory
 
 # deploy myerc20 token
-node index.js DANGER deploy_test_erc20 > /tmp/eth2neartransfer.out
+node index.js DANGER deploy_test_erc20 \
+--eth-node-url http://localhost:9545 \
+> /tmp/eth2neartransfer.out
 cat /tmp/eth2neartransfer.out | xargs node index.js deploy-token myerc20
 
 # First start pm2 daemon
