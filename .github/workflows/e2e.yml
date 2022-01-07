@@ -1,0 +1,90 @@
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+name: E2E tests
+jobs:
+  test:
+    runs-on: self-hosted
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - job-name: E2E
+            cmd: ./testing/ci/e2e.sh
+            timeout-minutes: 60
+
+          - job-name: E2E myerc20
+            cmd: ./testing/ci/e2e_deploy_contract.sh
+            timeout-minutes: 60
+
+          - job-name: Challenge with watchdog
+            cmd: ./testing/ci/test_challenge.sh
+            timeout-minutes: 60
+
+          - job-name: Test eth-relay catchup
+            cmd: ./testing/ci/test_ethrelay_catchup.sh
+            timeout-minutes: 60
+
+    name: ${{ matrix.job-name }}
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v2
+
+      - name: Install nearup
+        run: |
+          pip3 install nearup --upgrade --user
+          echo "$(python3 -m site --user-base)/bin" >> $GITHUB_PATH
+
+      - name: Clean pm2 log
+        run: rm -f ~/.pm2/pm2.log || true
+
+      - name: Execute
+        run: ${{ matrix.cmd }}
+        timeout-minutes: ${{ matrix.timeout-minutes }}
+
+      - name: Print ganache stdout
+        if: ${{ always() }}
+        run: cat ~/.rainbow/logs/ganache/out.log || true
+
+      - name: Print ganache stderr
+        if: ${{ always() }}
+        run: cat ~/.rainbow/logs/ganache/err.log || true
+
+      - name: Print near2eth-relay stdout
+        if: ${{ always() }}
+        run: cat ~/.rainbow/logs/near2eth-relay/out.log || true
+
+      - name: Print near2eth-relay stderr
+        if: ${{ always() }}
+        run: cat ~/.rainbow/logs/near2eth-relay/err.log || true
+
+      - name: Print eth2near-relay stdout
+        if: ${{ always() }}
+        run: cat ~/.rainbow/logs/eth2near-relay/out.log || true
+
+      - name: Print eth2near-relay stderr
+        if: ${{ always() }}
+        run: cat ~/.rainbow/logs/eth2near-relay/err.log || true
+
+      - name: Print watchdog stdout
+        if: ${{ always() }}
+        run: cat ~/.rainbow/logs/watchdog/out.log || true
+
+      - name: Print watchdog stderr
+        if: ${{ always() }}
+        run: cat ~/.rainbow/logs/watchdog/err.log || true
+
+      - name: Print pm2 log
+        if: ${{ always() }}
+        run: cat ~/.pm2/pm2.log || true
+
+      - name: Clean
+        if: ${{ always() }}
+        run: |
+          cd cli
+          node index.js clean
+          rm -f ~/.pm2/pm2.log || true
+env:
+  GANACHE_BLOCK_TIME: 1

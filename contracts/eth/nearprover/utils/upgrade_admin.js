@@ -1,7 +1,8 @@
 const { ethers } = require('hardhat');
 const { assert, expect } = require('chai');
-const { EthLedgerSigner } = require('./eth-ledger-signer');
+const { LedgerSigner } = require('@ethersproject/hardware-wallets');
 const readlineSync = require('readline-sync');
+const { upgradeAddressAtSlotLegacy } = require('./utils');
 
 async function getSlotsData (provider, contractAddress, numOfSlotsToDisplay) {
     console.log(`Contract's ${contractAddress} slots:`);
@@ -19,10 +20,10 @@ async function upgradeAdminAddressTo ({
     adminAddressSlot,
     ledgerKeyPath,
 }) {
-    const currentAdminAtSlot = ethers.BigNumber.from(await provider.getStorageAt(contractAddress, Number(adminAddressSlot))).toHexString();
+    const slotContent = ethers.BigNumber.from(await provider.getStorageAt(contractAddress, Number(adminAddressSlot))).toHexString();
     assert.equal(
-        currentAdminAtSlot,
-        currentAdminAddress,
+        slotContent.toUpperCase(),
+        currentAdminAddress.toUpperCase(),
         `The current admin doesn't match at the slot ${adminAddressSlot} contract ${contractAddress}`,
     );
 
@@ -31,13 +32,14 @@ async function upgradeAdminAddressTo ({
 
     await getSlotsData(provider, contractAddress, 5);
     console.log(`Selected slot: ${adminAddressSlot}`);
+    console.log(`Selected slot content: ${slotContent}`);
     console.log(`Current admin: ${await adminControlled.admin()}`);
     console.log(`Trying to upgrade admin address to: ${newAdminAddress}`);
 
     let signer;
     // We use non-strict unequality as it also includes undefined, etc
     if (ledgerKeyPath != null) {
-        signer = new EthLedgerSigner(provider, ledgerKeyPath);
+        signer = new LedgerSigner(provider, 'hid', ledgerKeyPath || null);
     } else {
         signer = new ethers.Wallet(process.env.ETH_PRIVATE_KEY, provider);
     }
@@ -56,11 +58,7 @@ async function upgradeAdminAddressTo ({
         return;
     }
 
-    // Mask matches only on the latest 20 bytes (to store the address)
-    const mask = ethers.BigNumber.from('0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff');
-    const response = await adminControlled
-        .connect(signer)
-        .adminSstoreWithMask(adminAddressSlot, newAdminAddress, mask);
+    const response = await upgradeAddressAtSlotLegacy(provider, signer, adminControlled, newAdminAddress, adminAddressSlot);
     console.log(response);
     console.log('Waiting for tx confirmation...');
     await response.wait(5).then(function (receipt) {

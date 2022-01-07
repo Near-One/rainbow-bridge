@@ -36,8 +36,7 @@ The default network is `goerli`. To execute the network you need to provide the 
 
 ## Upgrade Admin
 
-1. Upgrade the bridge admin address for the provided admin:<br/>
-`$ make upgrade-near-on-eth-client-admin-to NETWORK=goerli NEAR_ON_ETH_CLIENT_ADDRESS=<NEAR_ON_ETH_CLIENT_ADDRESS> NEW_ADMIN=<NEW_ADMIN_ADDRESS_HERE>`
+1. Upgrade the contract's admin address for the provided admin:<br/>
+`$ make upgrade-admin NETWORK=goerli ADDRESS=<CONTRACT_ADDRESS> CURRENT_ADMIN=<CURRENT_ADMIN_ADDRESS_HERE> NEW_ADMIN=<NEW_ADMIN_ADDRESS_HERE> SLOT=<SLOT_NUMBER_HERE>`
 or
-`$ make upgrade-near-on-eth-client-admin-to-with-ledger NETWORK=goerli NEAR_ON_ETH_CLIENT_ADDRESS=<NEAR_ON_ETH_CLIENT_ADDRESS> NEW_ADMIN=<NEW_ADMIN_ADDRESS_HERE>`
-
+`$ make upgrade-admin-with-ledger NETWORK=goerli ADDRESS=<CONTRACT_ADDRESS> CURRENT_ADMIN=<CURRENT_ADMIN_ADDRESS_HERE> NEW_ADMIN=<NEW_ADMIN_ADDRESS_HERE> SLOT=<SLOT_NUMBER_HERE> LEDGER_KEY_PATH=<LEDGER_KEY_PATH_HERE>`

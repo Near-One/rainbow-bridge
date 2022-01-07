@@ -56,7 +56,7 @@ func main() {
 		}
 		cache, err = ethashproof.LoadCache(int(epoch))
 		if err != nil {
-			fmt.Printf("Getting cache failed after trying to creat it: %s. Abort.\n", err)
+			fmt.Printf("Getting cache failed after trying to create it: %s. Abort.\n", err)
 			return
 		}
 	}

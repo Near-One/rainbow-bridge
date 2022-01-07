@@ -24,15 +24,6 @@ task('get-provers-bridge-address', 'Returns the current bridge address used in t
         console.log(`Current bridge address: ${bridgeAddress}`);
     });
 
-task('upgrade-near-on-eth-client-admin-to', 'Upgrades the admin address on NearOnEthClient to the provided address')
-    .addParam('nearOnEthClientAddress', 'NearOnEthClient address')
-    .addParam('newAdmin', 'The address of the new admin of NearOnEthClient')
-    .addParam('ledgerKeyPath', 'The ledger key path to sign transactions', undefined, undefined, types.string, true)
-    .setAction(async (taskArgs, hre) => {
-        const { upgradeNearOnEthClientAdminTo } = require('./utils/upgrade_near_on_eth_client_admin.js');
-        await upgradeNearOnEthClientAdminTo(hre.ethers.provider, taskArgs.nearOnEthClientAddress, taskArgs.newAdmin, taskArgs.ledgerKeyPath);
-    });
-
 task('upgrade-admin-to', 'Upgrades the admin address on X contract to the provided address')
     .addParam('contractAddress', 'Contract address')
     .addParam('currentAdminAddress', 'The address of the current admin')
