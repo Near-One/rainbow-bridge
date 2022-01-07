@@ -14,6 +14,7 @@ fi
 
 if [ "$1" = "bsc" ]; then
      docker run \
+          --rm \
           --mount type=bind,source=$DIR/..,target=/host \
           --cap-add=SYS_PTRACE --security-opt seccomp=unconfined $userflag \
           -w /host/eth-client \
@@ -24,6 +25,7 @@ if [ "$1" = "bsc" ]; then
      cp $DIR/../target/wasm32-unknown-unknown/release/eth_client.wasm $DIR/../res/bsc_client.wasm
 else
      docker run \
+          --rm \
           --mount type=bind,source=$DIR/..,target=/host \
           --cap-add=SYS_PTRACE --security-opt seccomp=unconfined $userflag \
           -w /host/eth-client \

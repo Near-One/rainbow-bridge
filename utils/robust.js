@@ -1,7 +1,7 @@
 /// This module gives a few utils for robust error handling,
 /// and wrap web3 with error handling and retry
 const Web3 = require('web3')
-const _ = require('lodash')
+const lodash = require('lodash')
 const nearAPI = require('near-api-js')
 
 const RETRY = 10
@@ -91,9 +91,9 @@ class RobustWeb3 {
           this.web3.eth.sendTransaction(tx),
           SLOW_TX_ERROR_MSG
         )
-        if (_.isArray(receipt.logs)) {
+        if (lodash.isArray(receipt.logs)) {
           // decode logs
-          const events = _.map(receipt.logs, function (log) {
+          const events = lodash.map(receipt.logs, function (log) {
             return contract._decodeEventABI.call(
               {
                 name: 'ALLEVENTS',
