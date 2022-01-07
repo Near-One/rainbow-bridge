@@ -470,11 +470,6 @@ impl EthClient {
     //  Verify POSA of the binance chain header.
     #[cfg(feature = "bsc")]
     fn bsc_verify_header(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
-        // The genesis block is the always valid dead-end
-        if header.number == 0 {
-            return true;
-        }
-
         // verify basic header properties.
         if !self.verify_basic(header, prev) {
             return false;
