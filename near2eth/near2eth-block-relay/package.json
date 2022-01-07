@@ -22,6 +22,6 @@
     "eth-util-lite": "near/eth-util-lite#master",
     "ethereumjs-util": "^6.2.0",
     "prom-client": "^13.0.0",
-    "rainbow-bridge-utils": "1.0.0"
+    "rainbow-bridge-utils": "file:../../utils"
   }
 }

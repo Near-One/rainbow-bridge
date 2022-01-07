@@ -84,7 +84,7 @@ class Near2EthRelay {
             'next_light_client_block',
             [lastFinalBlockHash]
           )
-          if (_.isEmpty(lightClientBlock)) {
+          if (lodash.isEmpty(lightClientBlock)) {
             await sleep(300)
           }
         }

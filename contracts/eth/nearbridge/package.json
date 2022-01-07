@@ -20,7 +20,7 @@
         "ethereum-waffle": "^3.3.0",
         "ethers": "^5.0.31",
         "hardhat": "^2.1.1",
-        "rainbow-bridge-lib": "^2.0.0",
+        "rainbow-bridge-utils": "file:../../../utils",
         "solc": "0.8.3",
         "solidity-coverage": "^0.7.16",
         "solium": "^1.2.5"
