@@ -299,8 +299,8 @@ impl From<BlockHeaderPreLondon> for BlockHeader {
 
 impl BorshDeserialize for BlockHeader {
     fn deserialize(buf: &mut &[u8]) -> std::io::Result<Self> {
-        if let Ok(header) = BlockHeaderLondon::deserialize(buf) {
-            Ok(header.into())
+        if let Ok(_header) = BlockHeaderLondon::try_from_slice(buf) {
+            BlockHeaderLondon::deserialize(buf).map(Into::into)
         } else {
             BlockHeaderPreLondon::deserialize(buf).map(Into::into)
         }
