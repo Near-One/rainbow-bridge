@@ -242,6 +242,7 @@ fn assert_hashes_equal_to_contract_hashes(contract: &EthClient, heights: &[u64],
 }
 
 #[test]
+#[cfg_attr(feature = "eip1559", ignore)]
 fn add_dags_merkle_roots() {
     testing_env!(get_context(vec![], false));
     let (blocks, _) = get_blocks(&WEB3RS, 400_000, 400_001);
@@ -267,6 +268,7 @@ fn add_dags_merkle_roots() {
 }
 
 #[test]
+#[cfg_attr(feature = "eip1559", ignore)]
 fn add_blocks_2_and_3() {
     testing_env!(get_context(vec![], false));
 
@@ -305,6 +307,7 @@ fn add_blocks_2_and_3() {
 }
 
 #[test]
+#[cfg_attr(feature = "eip1559", ignore)]
 fn add_blocks_before_and_after_istanbul_fork() {
     testing_env!(get_context(vec![], false));
 
@@ -355,6 +358,7 @@ fn add_blocks_before_and_after_istanbul_fork() {
 }
 
 #[test]
+#[cfg_attr(feature = "eip1559", ignore)]
 fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
     testing_env!(get_context(vec![], false));
 
@@ -404,6 +408,7 @@ fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
 }
 
 #[test]
+#[cfg_attr(feature = "eip1559", ignore)]
 fn add_block_diverged_until_ethashproof_dataset_fix() {
     testing_env!(get_context(vec![], false));
 
@@ -428,6 +433,7 @@ fn add_block_diverged_until_ethashproof_dataset_fix() {
 }
 
 #[test]
+#[cfg_attr(feature = "eip1559", ignore)]
 fn add_400000_block_only() {
     testing_env!(get_context(vec![], false));
 
@@ -457,6 +463,7 @@ fn add_400000_block_only() {
 }
 
 #[test]
+#[cfg_attr(feature = "eip1559", ignore)]
 fn add_two_blocks_from_8996776() {
     testing_env!(get_context(vec![], false));
 
@@ -502,6 +509,7 @@ fn add_two_blocks_from_8996776() {
 }
 
 #[test]
+#[cfg_attr(feature = "eip1559", ignore)]
 fn add_two_blocks_from_400000() {
     testing_env!(get_context(vec![], false));
 
