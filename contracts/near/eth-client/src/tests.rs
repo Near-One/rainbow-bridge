@@ -8,7 +8,7 @@ use rlp::RlpStream;
 use serde::{Deserialize, Deserializer};
 use web3::futures::Future;
 use web3::types::Block;
-
+use std::{thread, time};
 use lazy_static::lazy_static;
 
 fn catch_unwind_silent<F: FnOnce() -> R + panic::UnwindSafe, R>(f: F) -> std::thread::Result<R> {
@@ -266,6 +266,7 @@ fn add_dags_merkle_roots() {
         10,
         None,
         chain_id,
+        None
     );
 
     assert_eq!(dmr.dag_merkle_roots[0], contract.dag_merkle_root(0));
@@ -301,6 +302,7 @@ fn add_blocks_2_and_3() {
         10,
         None,
         chain_id,
+        None
     );
 
     for (block, proof) in blocks
@@ -345,6 +347,7 @@ fn add_blocks_before_and_after_istanbul_fork() {
         10,
         None,
         chain_id,
+        None
     );
 
     for (block, proof) in blocks
@@ -407,6 +410,7 @@ fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
         10,
         None,
         chain_id,
+        None
     );
 
     for (block, proof) in blocks
@@ -454,6 +458,7 @@ fn add_block_diverged_until_ethashproof_dataset_fix() {
         20,
         None,
         chain_id,
+        None
     );
 
     contract.add_block_header(
@@ -493,6 +498,7 @@ fn add_400000_block_only() {
         10,
         None,
         chain_id,
+        None
     );
     contract.add_block_header(
         blocks[1].clone(),
@@ -531,6 +537,7 @@ fn add_two_blocks_from_8996776() {
         10,
         None,
         chain_id,
+        None
     );
 
     for (block, proof) in blocks
@@ -565,6 +572,7 @@ fn bsc_validate_headers() {
         210,
         None,
         chain_id,
+        None
     );
 
     for block in blocks.into_iter().skip(1) {
@@ -572,6 +580,50 @@ fn bsc_validate_headers() {
     }
     assert!(hashes[0] == contract.epoch_header);
     assert!(contract.headers.len() == 10);
+}
+
+#[test]
+#[cfg_attr(not(feature = "bsc"), ignore)]
+fn bsc_validate_headers_bulbul() {
+    testing_env!(get_context(vec![], false));
+
+    for start_block in (15_180_200..15_725_370).step_by(200) {
+        println!("Process block {}", start_block);
+        let (blocks_from_previus_epoch, _hashes) = get_blocks(&BSC_WEB3RS, start_block - 200, start_block - 199);
+        let chain_id = 97;
+        
+        let previus_epoch_header: BlockHeader = rlp::decode(blocks_from_previus_epoch[0].as_slice()).unwrap();
+        let (extra_vanity, extra_seal, address_size) = (32, 65, 20);
+        let validators = previus_epoch_header.extra_data
+        [extra_vanity..(previus_epoch_header.extra_data.len() - extra_seal)]
+        .to_vec();
+
+        let num_of_validators = validators.len() / address_size;
+        let num_of_blocks_to_add = num_of_validators / 2 + 1;
+
+        println!("Num of blocks to add {}", num_of_blocks_to_add);
+        let (blocks, hashes) = get_blocks(&BSC_WEB3RS, start_block, start_block + num_of_blocks_to_add);
+        let mut contract = EthClient::init(
+            true,
+            String::from("bsc"),
+            0,
+            vec![],
+            blocks[0].clone(),
+            210,
+            210,
+            210,
+            None,
+            chain_id,
+            Some(validators)
+        );
+
+        for block in blocks.into_iter().skip(1) {
+            contract.add_block_header(block, vec![]);
+        }
+
+        assert!(hashes[0] == contract.epoch_header);
+        assert!(contract.headers.len() == num_of_blocks_to_add as u64);
+    }
 }
 
 // Test init bsc bridge.
@@ -592,6 +644,7 @@ fn bsc_add_epoch_header() {
         10,
         None,
         chain_id,
+        None
     );
 
     assert!(hashes[0] == contract.epoch_header)
@@ -621,6 +674,7 @@ fn bsc_validate_epoch_headers_validator() {
             201,
             None,
             chain_id,
+            None
         );
         for block in blocks.into_iter() {
             let header: BlockHeader = rlp::decode(block.as_slice()).unwrap();
@@ -665,6 +719,7 @@ fn add_two_blocks_from_400000() {
         10,
         None,
         chain_id,
+        None
     );
 
     for (block, proof) in blocks

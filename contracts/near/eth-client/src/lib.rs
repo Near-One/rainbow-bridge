@@ -117,6 +117,8 @@ pub struct EthClient {
     epoch_header: H256,
     /// chain id
     chain_id: u64,
+
+    current_validators: Option<Vec<u8>>,
 }
 
 #[near_bindgen]
@@ -161,6 +163,7 @@ impl EthClient {
             paused: old_contract.paused,
             epoch_header: H256([0; 32].into()),
             chain_id: 0,
+            current_validators: Some(vec![]),
         }
     }
 
@@ -176,6 +179,7 @@ impl EthClient {
         #[serializer(borsh)] num_confirmations: u64,
         #[serializer(borsh)] trusted_signer: Option<AccountId>,
         #[serializer(borsh)] chain_id: u64,
+        #[serializer(borsh)] current_validators: Option<Vec<u8>>,
     ) -> Self {
         assert!(!Self::initialized(), "Already initialized");
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
@@ -208,6 +212,7 @@ impl EthClient {
             paused: Mask::default(),
             validate_header,
             chain_id,
+            current_validators
         };
         res.canonical_header_hashes
             .insert(&header_number, &header_hash);
@@ -575,20 +580,20 @@ impl EthClient {
     // check if the author address is valid and is in the validator set.
     #[cfg(feature = "bsc")]
     fn bsc_is_validator(&self, header: &BlockHeader) -> bool {
-        let (extra_vanity, extra_seal, address_size) = (32, 65, 20);
+        let (_extra_vanity, _extra_seal, address_size) = (32, 65, 20);
 
-        let epoch_header = self.bsc_get_epoch_header();
-
-        if !self.bsc_is_in_validator_set(&epoch_header, header.author) {
+        //let _epoch_header = self.bsc_get_epoch_header();
+        let validators= self.current_validators.as_ref().unwrap();
+        if !self.bsc_is_in_validator_set(&validators, header.author) {
             return false;
         }
 
         // skip difficulty verification
         if self.validate_header {
             // Ensure that the difficulty corresponds to the turn-ness of the signer
-            let validators = epoch_header.extra_data
-                [extra_vanity..(epoch_header.extra_data.len() - extra_seal)]
-                .to_vec();
+            // let validators = epoch_header.extra_data
+            //     [extra_vanity..(epoch_header.extra_data.len() - extra_seal)]
+            //     .to_vec();
 
             // Get validator offset position.
             let offset = (header.number % ((validators.len() / address_size) as u64)) as usize;
@@ -682,14 +687,10 @@ impl EthClient {
 
     // check if the author is in the validators set.
     #[cfg(feature = "bsc")]
-    fn bsc_is_in_validator_set(&self, epoch_header: &BlockHeader, add: Address) -> bool {
-        let (extra_vanity, extra_seal, address_size) = (32, 65, 20);
-        let validators = epoch_header.extra_data
-            [extra_vanity..(epoch_header.extra_data.len() - extra_seal)]
-            .to_vec();
-
-        for x in 0..(validators.len() / address_size) {
-            let value = &validators[(x * address_size)..((x + 1) * address_size)];
+    fn bsc_is_in_validator_set(&self, current_validators: &Vec<u8>, add: Address) -> bool {
+        let (_extra_vanity, _extra_seal, address_size) = (32, 65, 20);
+        for x in 0..(current_validators.len() / address_size) {
+            let value = &current_validators[(x * address_size)..((x + 1) * address_size)];
             let _add: Address = Address::from(value);
             if _add == add {
                 return true;
