@@ -151,7 +151,7 @@ fn rlp_append<TX>(header: &Block<TX>, stream: &mut RlpStream) {
 
 // TESTS
 
-use near_sdk::{testing_env, MockedBlockchain, VMContext};
+use near_sdk::{testing_env, MockedBlockchain, VMContext, VMConfig};
 
 lazy_static! {
     static ref WEB3RS: web3::Web3<web3::transports::Http> = {
@@ -585,9 +585,13 @@ fn bsc_validate_headers() {
 #[test]
 #[cfg_attr(not(feature = "bsc"), ignore)]
 fn bsc_validate_headers_bulbul() {
-    testing_env!(get_context(vec![], false));
+    let mut conf:VMConfig = Default::default();//VMConfig { ext_costs: todo!(), grow_mem_cost: todo!(), regular_op_cost: todo!(), limit_config: todo!() };
+    conf.limit_config.max_number_logs = 1000000000000000;
+    conf.limit_config.max_total_log_length = 1000000000000000;
+    conf.limit_config.max_gas_burnt = 1000000000000000;
+    testing_env!(get_context(vec![], false), conf, Default::default());
 
-    for start_block in (15_180_200..15_725_370).step_by(200) {
+     for start_block in (15_180_200..15_213_200).step_by(200) {
         println!("Process block {}", start_block);
         let (blocks_from_previus_epoch, _hashes) = get_blocks(&BSC_WEB3RS, start_block - 200, start_block - 199);
         let chain_id = 97;
@@ -599,7 +603,7 @@ fn bsc_validate_headers_bulbul() {
         .to_vec();
 
         let num_of_validators = validators.len() / address_size;
-        let num_of_blocks_to_add = num_of_validators / 2 + 1;
+        let num_of_blocks_to_add = num_of_validators / 2;
 
         println!("Num of blocks to add {}", num_of_blocks_to_add);
         let (blocks, hashes) = get_blocks(&BSC_WEB3RS, start_block, start_block + num_of_blocks_to_add);
