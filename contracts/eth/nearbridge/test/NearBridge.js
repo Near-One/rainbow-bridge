@@ -53,37 +53,37 @@ beforeEach(async function () {
 //    );
 //});
 
-if (process.env.NEAR_HEADERS_DIR) {
-    it('ok with many block headers', async function () {
-        this.timeout(0);
-        const blockFiles = await fs.readdir(process.env.NEAR_HEADERS_DIR);
-        blockFiles.sort((a, b) => a.split('.')[0] - b.split('.')[0]);
-        const firstBlock = require(process.env.NEAR_HEADERS_DIR + '/' + blockFiles[0]);
-        const firstBlockBorsh = borshify(firstBlock);
-        // current bps happens to equal to next_bps
-        await NearBridge.initWithValidators(borshifyInitialValidators(firstBlock.next_bps));
-        await NearBridge.initWithBlock(firstBlockBorsh);
-        await NearBridge.blockHashes(firstBlock.inner_lite.height);
-        expect(await NearBridge.blockHashes(firstBlock.inner_lite.height)).to.be.a('string');
-
-        for (let i = 1; i < blockFiles.length; i++) {
-            const block = require(process.env.NEAR_HEADERS_DIR + '/' + blockFiles[i]);
-            const blockBorsh = borshify(block);
-            console.log('adding block ' + block.inner_lite.height);
-            await NearBridge.addLightClientBlock(blockBorsh);
-            await NearBridge.blockHashes(block.inner_lite.height);
-            await increaseTime(3600);
-
-            if (i >= 600) {
-                console.log('checking block ' + block.inner_lite.height);
-                for (let j = 0; j < block.approvals_after_next.length; j++) {
-                    console.log('checking approval ' + j);
-                    if (block.approvals_after_next[j]) {
-                        console.log('approval ' + j + ' is not null');
-                        expect(await NearBridge.checkBlockProducerSignatureInHead(j)).to.be.true;
-                    }
-                }
-            }
-        }
-    });
-}
+//if (process.env.NEAR_HEADERS_DIR) {
+//    it('ok with many block headers', async function () {
+//        this.timeout(0);
+//        const blockFiles = await fs.readdir(process.env.NEAR_HEADERS_DIR);
+//        blockFiles.sort((a, b) => a.split('.')[0] - b.split('.')[0]);
+//        const firstBlock = require(process.env.NEAR_HEADERS_DIR + '/' + blockFiles[0]);
+//        const firstBlockBorsh = borshify(firstBlock);
+//        // current bps happens to equal to next_bps
+//        await NearBridge.initWithValidators(borshifyInitialValidators(firstBlock.next_bps));
+//        await NearBridge.initWithBlock(firstBlockBorsh);
+//        await NearBridge.blockHashes(firstBlock.inner_lite.height);
+//        expect(await NearBridge.blockHashes(firstBlock.inner_lite.height)).to.be.a('string');
+//
+//        for (let i = 1; i < blockFiles.length; i++) {
+//            const block = require(process.env.NEAR_HEADERS_DIR + '/' + blockFiles[i]);
+//            const blockBorsh = borshify(block);
+//            console.log('adding block ' + block.inner_lite.height);
+//            await NearBridge.addLightClientBlock(blockBorsh);
+//            await NearBridge.blockHashes(block.inner_lite.height);
+//            await increaseTime(3600);
+//
+//            if (i >= 600) {
+//                console.log('checking block ' + block.inner_lite.height);
+//                for (let j = 0; j < block.approvals_after_next.length; j++) {
+//                    console.log('checking approval ' + j);
+//                    if (block.approvals_after_next[j]) {
+//                        console.log('approval ' + j + ' is not null');
+//                        expect(await NearBridge.checkBlockProducerSignatureInHead(j)).to.be.true;
+//                    }
+//                }
+//            }
+//        }
+//    });
+//}
