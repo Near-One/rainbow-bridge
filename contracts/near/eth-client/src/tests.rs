@@ -261,6 +261,7 @@ fn add_dags_merkle_roots() {
         0,
         read_roots_collection().dag_merkle_roots,
         blocks[0].clone(),
+        vec![],
         30,
         10,
         10,
@@ -296,6 +297,7 @@ fn add_blocks_2_and_3() {
         0,
         read_roots_collection().dag_merkle_roots,
         blocks[0].clone(),
+        vec![],
         30,
         10,
         10,
@@ -340,6 +342,7 @@ fn add_blocks_before_and_after_istanbul_fork() {
         0,
         read_roots_collection().dag_merkle_roots,
         blocks[0].clone(),
+        vec![],
         30,
         10,
         10,
@@ -402,6 +405,7 @@ fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
         0,
         read_roots_collection().dag_merkle_roots,
         blocks[0].clone(),
+        vec![],
         30,
         10,
         10,
@@ -449,6 +453,7 @@ fn add_block_diverged_until_ethashproof_dataset_fix() {
         0,
         read_roots_collection().dag_merkle_roots,
         blocks[0].clone(),
+        vec![],
         90000,
         500,
         20,
@@ -488,6 +493,7 @@ fn add_400000_block_only() {
         400_000 / 30000,
         vec![block_with_proof.merkle_root],
         blocks[0].clone(),
+        vec![],
         30,
         10,
         10,
@@ -526,6 +532,7 @@ fn add_two_blocks_from_8996776() {
         0,
         read_roots_collection().dag_merkle_roots,
         blocks[0].clone(),
+        vec![],
         30,
         10,
         10,
@@ -551,7 +558,8 @@ fn add_two_blocks_from_8996776() {
 #[cfg_attr(not(feature = "bsc"), ignore)]
 fn bsc_validate_headers() {
     testing_env!(get_context(vec![], false));
-    let (blocks, hashes) = get_blocks(&BSC_WEB3RS, 12_058_400, 12_058_410);
+    let (prev_blocks, _) = get_blocks(&BSC_WEB3RS, 15_180_000, 15_180_001);
+    let (blocks, hashes) = get_blocks(&BSC_WEB3RS, 15_180_200 , 15_180_210);
     let chain_id = 97;
     
     let mut contract = EthClient::init(
@@ -560,6 +568,7 @@ fn bsc_validate_headers() {
         0,
         vec![],
         blocks[0].clone(),
+        prev_blocks[0].clone(),
         210,
         210,
         210,
@@ -571,7 +580,7 @@ fn bsc_validate_headers() {
         contract.add_block_header(block, vec![]);
     }
     assert!(hashes[0] == contract.epoch_header);
-    assert!(contract.headers.len() == 10);
+    assert!(contract.headers.len() == 11);
 }
 
 // Test init bsc bridge.
@@ -579,6 +588,7 @@ fn bsc_validate_headers() {
 #[cfg_attr(not(feature = "bsc"), ignore)]
 fn bsc_add_epoch_header() {
     testing_env!(get_context(vec![], false));
+    let (prev_blocks, _) = get_blocks(&BSC_WEB3RS, 10_161_400, 10_161_401);
     let (blocks, hashes) = get_blocks(&BSC_WEB3RS, 10_161_600, 10_161_601);
     let chain_id = 97;
     let contract = EthClient::init(
@@ -587,6 +597,7 @@ fn bsc_add_epoch_header() {
         0,
         read_roots_collection().dag_merkle_roots,
         blocks[0].clone(),
+        prev_blocks[0].clone(),
         30,
         10,
         10,
@@ -609,6 +620,7 @@ fn bsc_validate_epoch_headers_validator() {
     while current <= end {
         println!("Current block {}", current);
 
+        let (prev_blocks, _) = get_blocks(&BSC_WEB3RS, current - 400, current -400 +1);
         let (blocks, _) = get_blocks(&BSC_WEB3RS, current - 200, current -200 +1);
         let contract = EthClient::init(
             true,
@@ -616,6 +628,7 @@ fn bsc_validate_epoch_headers_validator() {
             0,
             vec![],
             blocks[0].clone(),
+            prev_blocks[0].clone(),
             30,
             201,
             201,
@@ -660,6 +673,7 @@ fn add_two_blocks_from_400000() {
         400_000 / 30000,
         vec![blocks_with_proofs.first().unwrap().merkle_root],
         blocks[0].clone(),
+        vec![],
         30,
         10,
         10,
@@ -720,6 +734,7 @@ fn predumped_block_can_be_added() {
         start_block_height / 30000,
         vec![first_block_with_proof.merkle_root],
         first_block_with_proof.header_rlp.0.clone(),
+        vec![],
         30,
         10,
         10,

@@ -85,6 +85,7 @@ const borshSchema = {
       ['dags_start_epoch', 'u64'],
       ['dags_merkle_roots', ['H128']],
       ['first_header', ['u8']],
+      ['prev_epoch_header', ['u8']],
       ['hashes_gc_threshold', 'u64'],
       ['finalized_gc_threshold', 'u64'],
       ['num_confirmations', 'u64'],
@@ -198,11 +199,17 @@ class EthOnNearClientContract extends BorshContract {
       console.log('EthOnNearClient is not initialized, initializing...')
       let lastBlockNumber = await robustWeb3.getBlockNumber()
       let blockData
+      let prevBlockData
+      let prevBlockRlp = []
 
       // if validateHeaderMode is bsc(POSA) we have to get the last epoch header
-      if (validateHeaderMode === 'bsc' && lastBlockNumber % 200 !== 0) {
-        lastBlockNumber = lastBlockNumber - lastBlockNumber % 200
+      if (validateHeaderMode === 'bsc') {
+        lastBlockNumber = lastBlockNumber % 200 !== 0
+          ? lastBlockNumber - lastBlockNumber % 200
+          : lastBlockNumber
         blockData = await robustWeb3.getBlock(lastBlockNumber)
+        prevBlockData = await robustWeb3.getBlock(lastBlockNumber - 200)
+        prevBlockRlp = web3BlockToRlp(prevBlockData, bridgeId, validateHeaderMode)
       } else {
         blockData = await getEthBlock(lastBlockNumber, robustWeb3)
       }
@@ -216,6 +223,7 @@ class EthOnNearClientContract extends BorshContract {
           dags_start_epoch: 0,
           dags_merkle_roots: roots.dag_merkle_roots,
           first_header: blockRlp,
+          prev_epoch_header: prevBlockRlp,
           hashes_gc_threshold: hashesGcThreshold,
           finalized_gc_threshold: finalizedGcThreshold,
           num_confirmations: numConfirmations,
