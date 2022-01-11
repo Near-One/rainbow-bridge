@@ -187,6 +187,7 @@ impl EthClient {
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
         let header_hash = header.hash.unwrap().clone();
         let header_number = header.number;
+
         // check if the current mode is bsc POSA, then store the epoch header.
         #[cfg(feature = "bsc")]
         if validate_header_mode == String::from("bsc") {
@@ -337,6 +338,7 @@ impl EthClient {
         }
 
         if EthClient::is_epoch(header.number) && self.validate_header_mode == String::from("bsc") {
+            self.prev_epoch_header = self.epoch_header;
             self.epoch_header = header.hash.unwrap();
         }
         let parent_info = self
