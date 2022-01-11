@@ -2,6 +2,9 @@ use futures::future::join_all;
 use std::panic;
 
 use crate::{DoubleNodeWithMerkleProof, EthClient};
+#[cfg(feature = "bsc")]
+use crate::bsc_constants::BSC_EPOCH_SIZE;
+
 use eth_types::*;
 use hex::FromHex;
 use rlp::RlpStream;
@@ -553,7 +556,7 @@ fn bsc_validate_headers() {
     testing_env!(get_context(vec![], false));
     let (blocks, hashes) = get_blocks(&BSC_WEB3RS, 12_058_400, 12_058_410);
     let chain_id = 97;
-    
+
     let mut contract = EthClient::init(
         true,
         String::from("bsc"),
@@ -604,12 +607,12 @@ fn bsc_validate_epoch_headers_validator() {
     let start = 10_160_000;
     let end = 10_165_000;
     let mut current = start;
-    
+
     testing_env!(get_context(vec![], false));
     while current <= end {
         println!("Current block {}", current);
 
-        let (blocks, _) = get_blocks(&BSC_WEB3RS, current - 200, current -200 +1);
+        let (blocks, _) = get_blocks(&BSC_WEB3RS, current - BSC_EPOCH_SIZE, current - BSC_EPOCH_SIZE + 1);
         let contract = EthClient::init(
             true,
             String::from("bsc"),
@@ -626,7 +629,7 @@ fn bsc_validate_epoch_headers_validator() {
             let header: BlockHeader = rlp::decode(block.as_slice()).unwrap();
             contract.bsc_is_validator(&header);
         }
-        current += 200;
+        current += BSC_EPOCH_SIZE;
     }
 }
 
