@@ -88,8 +88,6 @@ pub struct EthClient {
     /// Whether client validates the PoW or POSA when accepting the header. Should only be set to `false`
     /// for debugging, testing, diagnostic purposes when used with Ganache or in PoA testnets
     validate_header: bool,
-    /// Validate header mode to switch between ethash (POW) and bsc (POSA)
-    validate_header_mode: String,
     /// The epoch from which the DAG merkle roots start.
     dags_start_epoch: u64,
     /// DAG merkle roots for the next several years.
@@ -126,10 +124,12 @@ pub struct EthClient {
     trusted_signer: Option<AccountId>,
     /// Mask determining all paused functions
     paused: Mask,
-    /// Store the bsc epoch header key
-    epoch_header: H256,
     /// chain id
     chain_id: u64,
+    /// Store the current bsc epoch header key
+    epoch_header: H256,
+    /// Store the previous bsc epoch header key
+    prev_epoch_header: H256,
 }
 
 #[near_bindgen]
@@ -159,7 +159,6 @@ impl EthClient {
         let old_contract: OldEthClient = env::state_read().expect("Old state doesn't exist");
         Self {
             validate_header: old_contract.validate_ethash,
-            validate_header_mode: String::from(""),
             dags_start_epoch: old_contract.dags_start_epoch,
             dags_merkle_roots: old_contract.dags_merkle_roots,
             best_header_hash: old_contract.best_header_hash,
@@ -174,13 +173,13 @@ impl EthClient {
             paused: old_contract.paused,
             epoch_header: H256([0; 32].into()),
             chain_id: 0,
+            prev_epoch_header: H256([0; 32].into()),
         }
     }
 
     #[init]
     pub fn init(
         #[serializer(borsh)] validate_header: bool,
-        #[serializer(borsh)] validate_header_mode: String,
         #[serializer(borsh)] dags_start_epoch: u64,
         #[serializer(borsh)] dags_merkle_roots: Vec<H128>,
         #[serializer(borsh)] first_header: Vec<u8>,
@@ -189,25 +188,23 @@ impl EthClient {
         #[serializer(borsh)] num_confirmations: u64,
         #[serializer(borsh)] trusted_signer: Option<AccountId>,
         #[serializer(borsh)] chain_id: u64,
+        #[serializer(borsh)] prev_epoch_header: Vec<u8>,
     ) -> Self {
         assert!(!Self::initialized(), "Already initialized");
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
         let header_hash = header.hash.unwrap().clone();
         let header_number = header.number;
-        let mut epoch_header: H256 = H256([0; 32].into());
 
-        // check if the current mode is bsc POSA, then store the epoch header.
         #[cfg(feature = "bsc")]
-        if validate_header_mode == String::from("bsc") {
-            if !EthClient::bsc_is_epoch(header.number) {
-                panic!("The initial header for POSA have to be an epoch header");
-            }
-            epoch_header = header.hash.unwrap();
+        if !EthClient::bsc_is_epoch(header.number) {
+            panic!("The initial header for POSA have to be an epoch header");
         }
 
+        let epoch_header_hash: H256 = header.hash.unwrap().clone();
+        let decoded_prev_epoch_header: BlockHeader = rlp::decode(prev_epoch_header.as_slice()).unwrap();
+        let prev_epoch_header_hash: H256 = decoded_prev_epoch_header.hash.unwrap();
+
         let mut res = Self {
-            validate_header_mode,
-            epoch_header: epoch_header,
             dags_start_epoch,
             dags_merkle_roots,
             best_header_hash: header_hash.clone(),
@@ -221,6 +218,8 @@ impl EthClient {
             trusted_signer,
             paused: Mask::default(),
             validate_header,
+            epoch_header: epoch_header_hash,
+            prev_epoch_header: prev_epoch_header_hash,
             chain_id,
         };
         res.canonical_header_hashes
@@ -236,6 +235,7 @@ impl EthClient {
                 number: header_number,
             },
         );
+        res.headers.insert(&prev_epoch_header_hash, &decoded_prev_epoch_header);
         res
     }
 
@@ -337,7 +337,8 @@ impl EthClient {
         }
 
         #[cfg(feature = "bsc")]
-        if EthClient::bsc_is_epoch(header.number) && self.validate_header_mode == String::from("bsc") {
+        if EthClient::bsc_is_epoch(header.number) {
+            self.prev_epoch_header = self.epoch_header;
             self.epoch_header = header.hash.unwrap();
         }
 
@@ -460,12 +461,10 @@ impl EthClient {
         prev: &BlockHeader,
         dag_nodes: &[DoubleNodeWithMerkleProof],
     ) -> bool {
-        match &self.validate_header_mode[..] {
-            "ethash" => return self.ethash_verify_header(&header, &prev, &dag_nodes),
-            #[cfg(feature = "bsc")]
-            "bsc" => return self.bsc_verify_header(&header, &prev),
-            _ => return false,
-        }
+        #[cfg(feature = "bsc")]
+        return self.bsc_verify_header(&header, &prev);
+
+        return self.ethash_verify_header(&header, &prev, &dag_nodes);
     }
 
     fn verify_basic(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
@@ -583,26 +582,39 @@ impl EthClient {
     }
 
     #[cfg(feature = "bsc")]
-    fn bsc_get_epoch_header(&self) -> BlockHeader {
-        self.headers.get(&self.epoch_header).unwrap()
+    fn bsc_get_validator_set_form_block(header: &BlockHeader) -> Vec<u8> {
+        header.extra_data[BSC_EXTRA_VANITY..(header.extra_data.len() - BSC_EXTRA_SEAL)].to_vec()
+    }
+
+    #[cfg(feature = "bsc")]
+    fn bsc_get_validator_set_len(header: &BlockHeader) -> u64 {
+        (EthClient::bsc_get_validator_set_form_block(header).len() / BSC_VALIDATOR_BYTES_SIZE) as u64
+    }
+
+    #[cfg(feature = "bsc")]
+    fn bsc_get_current_validators(&self, header: &BlockHeader) -> Vec<u8> {
+        let prev_epoch_header = self.headers.get(&self.prev_epoch_header).unwrap();
+        let is_from_prev_epoch = header.number
+        <= header.number - (header.number % 200) + (EthClient::bsc_get_validator_set_len(&prev_epoch_header) / 2);
+
+        match is_from_prev_epoch {
+            false => EthClient::bsc_get_validator_set_form_block(&self.headers.get(&self.epoch_header).unwrap()),
+            true => EthClient::bsc_get_validator_set_form_block(&prev_epoch_header),
+        }
     }
 
     // check if the author address is valid and is in the validator set.
     #[cfg(feature = "bsc")]
     fn bsc_is_validator(&self, header: &BlockHeader) -> bool {
-        let epoch_header = self.bsc_get_epoch_header();
+        let validators = self.bsc_get_current_validators(header);
 
-        if !self.bsc_is_in_validator_set(&epoch_header, header.author) {
+        if !self.bsc_is_in_validator_set(&validators, header.author) {
             return false;
         }
 
         // skip difficulty verification
         if self.validate_header {
             // Ensure that the difficulty corresponds to the turn-ness of the signer
-            let validators = epoch_header.extra_data
-                [BSC_EXTRA_VANITY..(epoch_header.extra_data.len() - BSC_EXTRA_SEAL)]
-                .to_vec();
-
             // Get validator offset position.
             let offset =
                 (header.number % ((validators.len() / BSC_VALIDATOR_BYTES_SIZE) as u64)) as usize;
@@ -701,11 +713,7 @@ impl EthClient {
 
     // check if the author is in the validators set.
     #[cfg(feature = "bsc")]
-    fn bsc_is_in_validator_set(&self, epoch_header: &BlockHeader, add: Address) -> bool {
-        let validators = epoch_header.extra_data
-            [BSC_EXTRA_VANITY..(epoch_header.extra_data.len() - BSC_EXTRA_SEAL)]
-            .to_vec();
-
+    fn bsc_is_in_validator_set(&self, validators: &Vec<u8>, add: Address) -> bool {
         for x in 0..(validators.len() / BSC_VALIDATOR_BYTES_SIZE) {
             let value =
                 &validators[(x * BSC_VALIDATOR_BYTES_SIZE)..((x + 1) * BSC_VALIDATOR_BYTES_SIZE)];
