@@ -126,10 +126,8 @@ pub struct EthClient {
     paused: Mask,
     /// chain id
     chain_id: u64,
-    /// Store the current bsc epoch header key
-    epoch_header: H256,
-    /// Store the previous bsc epoch header key
-    prev_epoch_header: H256,
+    /// Store the last final bsc epoch header key for validation
+    final_epoch_header_hash: H256,
 }
 
 #[near_bindgen]
@@ -171,9 +169,8 @@ impl EthClient {
             infos: old_contract.infos,
             trusted_signer: old_contract.trusted_signer,
             paused: old_contract.paused,
-            epoch_header: H256([0; 32].into()),
+            final_epoch_header_hash: H256([0; 32].into()),
             chain_id: 0,
-            prev_epoch_header: H256([0; 32].into()),
         }
     }
 
@@ -194,15 +191,13 @@ impl EthClient {
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
         let header_hash = header.hash.unwrap().clone();
         let header_number = header.number;
-
-        #[cfg(feature = "bsc")]
-        if !EthClient::bsc_is_epoch(header.number) {
-            panic!("The initial header for POSA have to be an epoch header");
-        }
-
-        let epoch_header_hash: H256 = header.hash.unwrap().clone();
         let decoded_prev_epoch_header: BlockHeader = rlp::decode(prev_epoch_header.as_slice()).unwrap();
         let prev_epoch_header_hash: H256 = decoded_prev_epoch_header.hash.unwrap();
+
+        #[cfg(feature = "bsc")]
+        if !EthClient::bsc_is_epoch(header.number) || !EthClient::bsc_is_epoch(decoded_prev_epoch_header.number){
+            panic!("The initial headers for POSA have to be an epoch header");
+        }
 
         let mut res = Self {
             dags_start_epoch,
@@ -218,8 +213,7 @@ impl EthClient {
             trusted_signer,
             paused: Mask::default(),
             validate_header,
-            epoch_header: epoch_header_hash,
-            prev_epoch_header: prev_epoch_header_hash,
+            final_epoch_header_hash: prev_epoch_header_hash,
             chain_id,
         };
         res.canonical_header_hashes
@@ -312,7 +306,12 @@ impl EthClient {
             );
         }
 
-        self.record_header(header);
+        if cfg!(feature = "bsc") {
+            #[cfg(feature = "bsc")]
+            self.bsc_record_header(header)
+        } else {
+            self.record_header(header);
+        }
     }
 
     pub fn update_trusted_signer(&mut self, trusted_signer: Option<AccountId>) {
@@ -334,12 +333,6 @@ impl EthClient {
         let header_number = header.number;
         if header_number + self.finalized_gc_threshold < best_info.number {
             panic!("Header is too old to have a chance to appear on the canonical chain.");
-        }
-
-        #[cfg(feature = "bsc")]
-        if EthClient::bsc_is_epoch(header.number) {
-            self.prev_epoch_header = self.epoch_header;
-            self.epoch_header = header.hash.unwrap();
         }
 
         let parent_info = self
@@ -417,6 +410,97 @@ impl EthClient {
         }
     }
 
+    #[cfg(feature = "bsc")]
+    fn bsc_record_header(&mut self, header: BlockHeader) {
+        env::log("Record header".as_bytes());
+        let best_info = self.infos.get(&self.best_header_hash).unwrap();
+        let header_hash = header.hash.unwrap();
+        let header_number = header.number;
+        if header_number + self.finalized_gc_threshold < best_info.number {
+            panic!("Header is too old to have a chance to appear on the canonical chain.");
+        }
+
+        let parent_info = self
+            .infos
+            .get(&header.parent_hash)
+            .expect("Header has unknown parent. Parent should be submitted first.");
+
+        // Record this header in `all_hashes`.
+        let mut all_hashes = self
+            .all_header_hashes
+            .get(&header_number)
+            .unwrap_or_default();
+        assert!(
+            all_hashes.iter().find(|x| **x == header_hash).is_none(),
+            "Header is already known. Number: {}",
+            header_number
+        );
+        all_hashes.push(header_hash);
+        self.all_header_hashes.insert(&header_number, &all_hashes);
+
+        env::log("Inserting header".as_bytes());
+        // Record full information about this header.
+        self.headers.insert(&header_hash, &header);
+        let info = HeaderInfo {
+            total_difficulty: parent_info.total_difficulty + header.difficulty,
+            parent_hash: header.parent_hash.clone(),
+            number: header_number,
+        };
+        self.infos.insert(&header_hash, &info);
+        env::log("Inserted".as_bytes());
+
+        let mut final_epoch_block = self.bsc_get_final_epoch_block();
+        let (_validators, validators_len) = EthClient::bsc_get_validator_set_from_block(&final_epoch_block);
+
+        let finality_threshold = validators_len / 2;
+        let num_of_blocks_to_final = header_number - best_info.number;
+
+        // Check if canonical chain needs to be updated.
+        if num_of_blocks_to_final >= finality_threshold {
+            env::log("Canonical chain needs to be updated.".as_bytes());
+            let mut current_block_hash = info.parent_hash;
+            let mut current_block_number = header_number - 1;
+            let last_final_block_hash = self.best_header_hash;
+            // Update the final epoch to cover the edge case when the update run the first time after init
+            if EthClient::bsc_is_epoch(best_info.number) {
+                self.final_epoch_header_hash = last_final_block_hash;
+                final_epoch_block = self.bsc_get_final_epoch_block();
+            }
+
+            while current_block_hash != last_final_block_hash {
+                let current_block_info = self
+                .infos
+                .get(&current_block_hash)
+                .expect("Block has unknown parent.");
+
+                if header_number - current_block_info.number >= finality_threshold {
+                    self.canonical_header_hashes.insert(&current_block_number, &current_block_hash);
+                    if EthClient::bsc_is_epoch(current_block_info.number) && current_block_info.number > final_epoch_block.number {
+                        // Update final epoch block (New validator set will be applied)
+                        self.final_epoch_header_hash = current_block_hash;
+                        final_epoch_block = self.bsc_get_final_epoch_block();
+                    }
+
+                    if current_block_info.number > best_info.number {
+                        // Update the final block
+                        self.best_header_hash = current_block_hash;
+                    }
+                }
+
+                current_block_hash = current_block_info.parent_hash;
+                current_block_number -= 1;
+            }
+
+            if current_block_number >= self.hashes_gc_threshold {
+                self.gc_canonical_chain(current_block_number - self.hashes_gc_threshold);
+            }
+
+            if current_block_number >= self.finalized_gc_threshold {
+                self.gc_headers(current_block_number - self.finalized_gc_threshold);
+            }
+        }
+    }
+
     /// Remove hashes from the canonical chain that are at least as old as the given header number.
     fn gc_canonical_chain(&mut self, mut header_number: u64) {
         loop {
@@ -461,8 +545,10 @@ impl EthClient {
         prev: &BlockHeader,
         dag_nodes: &[DoubleNodeWithMerkleProof],
     ) -> bool {
-        #[cfg(feature = "bsc")]
-        return self.bsc_verify_header(&header, &prev);
+        if cfg!(feature = "bsc") {
+            #[cfg(feature = "bsc")]
+            return self.bsc_verify_header(&header, &prev);
+        }
 
         return self.ethash_verify_header(&header, &prev, &dag_nodes);
     }
@@ -539,6 +625,11 @@ impl EthClient {
         self.bsc_is_validator(&header)
     }
 
+    #[cfg(feature = "bsc")]
+    fn bsc_get_final_epoch_block(&self) -> BlockHeader {
+        self.headers.get(&self.final_epoch_header_hash).unwrap()
+    }
+
     // check if the block is an epoch header.
     #[cfg(feature = "bsc")]
     fn bsc_is_epoch(number: u64) -> bool {
@@ -582,31 +673,21 @@ impl EthClient {
     }
 
     #[cfg(feature = "bsc")]
-    fn bsc_get_validator_set_form_block(header: &BlockHeader) -> Vec<u8> {
-        header.extra_data[BSC_EXTRA_VANITY..(header.extra_data.len() - BSC_EXTRA_SEAL)].to_vec()
+    fn bsc_get_validator_set_from_block(header: &BlockHeader) -> (Vec<u8>, u64) {
+        let validators = header.extra_data[BSC_EXTRA_VANITY..(header.extra_data.len() - BSC_EXTRA_SEAL)].to_vec();
+        let validators_len = (validators.len() / BSC_VALIDATOR_BYTES_SIZE) as u64;
+        (validators, validators_len)
     }
 
     #[cfg(feature = "bsc")]
-    fn bsc_get_validator_set_len(header: &BlockHeader) -> u64 {
-        (EthClient::bsc_get_validator_set_form_block(header).len() / BSC_VALIDATOR_BYTES_SIZE) as u64
-    }
-
-    #[cfg(feature = "bsc")]
-    fn bsc_get_current_validators(&self, header: &BlockHeader) -> Vec<u8> {
-        let prev_epoch_header = self.headers.get(&self.prev_epoch_header).unwrap();
-        let is_from_prev_epoch = header.number
-        <= header.number - (header.number % 200) + (EthClient::bsc_get_validator_set_len(&prev_epoch_header) / 2);
-
-        match is_from_prev_epoch {
-            false => EthClient::bsc_get_validator_set_form_block(&self.headers.get(&self.epoch_header).unwrap()),
-            true => EthClient::bsc_get_validator_set_form_block(&prev_epoch_header),
-        }
+    fn bsc_get_current_validators(&self) -> (Vec<u8>, u64) {
+        EthClient::bsc_get_validator_set_from_block(&self.headers.get(&self.final_epoch_header_hash).unwrap())
     }
 
     // check if the author address is valid and is in the validator set.
     #[cfg(feature = "bsc")]
     fn bsc_is_validator(&self, header: &BlockHeader) -> bool {
-        let validators = self.bsc_get_current_validators(header);
+        let (validators, validators_len) = self.bsc_get_current_validators();
 
         if !self.bsc_is_in_validator_set(&validators, header.author) {
             return false;
@@ -616,8 +697,7 @@ impl EthClient {
         if self.validate_header {
             // Ensure that the difficulty corresponds to the turn-ness of the signer
             // Get validator offset position.
-            let offset =
-                (header.number % ((validators.len() / BSC_VALIDATOR_BYTES_SIZE) as u64)) as usize;
+            let offset = (header.number % validators_len) as usize;
 
             // validate the current author if it's turn with the difficulty.
             let expected_validator_in_turn = Address::from(
