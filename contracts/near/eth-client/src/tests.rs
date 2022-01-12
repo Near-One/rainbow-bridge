@@ -257,7 +257,6 @@ fn assert_hashes_equal_to_contract_hashes(
 fn add_dags_merkle_roots() {
     testing_env!(get_context(vec![], false));
     let (blocks, _) = get_blocks(&WEB3RS, 400_000, 400_001);
-    let chain_id = 3;
     let dmr = read_roots_collection();
     let contract = EthClient::init(
         true,
@@ -268,8 +267,8 @@ fn add_dags_merkle_roots() {
         10,
         10,
         None,
-        chain_id,
-        vec![]
+        None,
+        None
     );
 
     assert_eq!(dmr.dag_merkle_roots[0], contract.dag_merkle_root(0));
@@ -293,7 +292,6 @@ fn add_blocks_2_and_3() {
         .iter()
         .map(|filename| read_block((&filename).to_string()))
         .collect();
-    let chain_id = 3;
     let mut contract = EthClient::init(
         true,
         0,
@@ -303,8 +301,8 @@ fn add_blocks_2_and_3() {
         10,
         10,
         None,
-        chain_id,
-        vec![]
+        None,
+        None
     );
 
     for (block, proof) in blocks
@@ -337,7 +335,6 @@ fn add_blocks_before_and_after_istanbul_fork() {
     .iter()
     .map(|filename| read_block((&filename).to_string()))
     .collect();
-    let chain_id = 3;
     let mut contract = EthClient::init(
         true,
         0,
@@ -347,8 +344,8 @@ fn add_blocks_before_and_after_istanbul_fork() {
         10,
         10,
         None,
-        chain_id,
-        vec![]
+        None,
+        None
     );
 
     for (block, proof) in blocks
@@ -399,7 +396,6 @@ fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
     .iter()
     .map(|filename| read_block((&filename).to_string()))
     .collect();
-    let chain_id = 3;
     let mut contract = EthClient::init(
         true,
         0,
@@ -409,8 +405,8 @@ fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
         10,
         10,
         None,
-        chain_id,
-        vec![],
+        None,
+        None,
     );
 
     for (block, proof) in blocks
@@ -446,7 +442,6 @@ fn add_block_diverged_until_ethashproof_dataset_fix() {
         "./src/data/proof_block_{}.json",
         HEIGHT_DIVERGED_BLOCK
     ));
-    let chain_id = 3;
     let mut contract = EthClient::init(
         true,
         0,
@@ -456,8 +451,8 @@ fn add_block_diverged_until_ethashproof_dataset_fix() {
         500,
         20,
         None,
-        chain_id,
-        vec![],
+        None,
+        None,
     );
 
     contract.add_block_header(
@@ -484,7 +479,6 @@ fn add_400000_block_only() {
     // ethash result: 0x00000000000ca599ebe9913fa00da78a4d1dd2fa154c4fd2aad10ccbca52a2a1
     // Proof length: 24
     // [400000.json]
-    let chain_id = 3;
     let block_with_proof = read_block(format!("./src/data/{}.json", block_height));
     let mut contract = EthClient::init(
         true,
@@ -495,8 +489,8 @@ fn add_400000_block_only() {
         10,
         10,
         None,
-        chain_id,
-        vec![],
+        None,
+        None,
     );
     contract.add_block_header(
         blocks[1].clone(),
@@ -522,7 +516,6 @@ fn add_two_blocks_from_8996776() {
     .iter()
     .map(|filename| read_block((&filename).to_string()))
     .collect();
-    let chain_id = 3;
 
     let mut contract = EthClient::init(
         true,
@@ -533,8 +526,8 @@ fn add_two_blocks_from_8996776() {
         10,
         10,
         None,
-        chain_id,
-        vec![],
+        None,
+        None,
     );
 
     for (block, proof) in blocks
@@ -552,6 +545,7 @@ fn add_two_blocks_from_8996776() {
 }
 
 #[test]
+#[cfg(feature = "bsc")]
 fn bsc_validate_headers() {
     testing_env!(get_context(vec![], false));
     let start_block_number = 15_180_200;
@@ -569,14 +563,14 @@ fn bsc_validate_headers() {
         210,
         210,
         None,
-        chain_id,
-        prev_blocks[0].clone()
+        Some(chain_id),
+        Some(prev_blocks[0].clone()),
     );
 
     for block in blocks.into_iter().skip(1) {
         contract.add_block_header(block, vec![]);
     }
-    assert!(hashes[0] == contract.final_epoch_header_hash);
+    assert!(hashes[0] == contract.bsc_final_epoch_header_hash.unwrap());
     assert!(contract.headers.len() == num_of_blocks as u64 + 1);
 
     let (_validators,validators_len) = contract.bsc_get_current_validators();
@@ -589,7 +583,7 @@ fn bsc_validate_headers() {
 fn bsc_add_epoch_header() {
     testing_env!(get_context(vec![], false));
     let start_block_number = 10_161_600;
-    let (prev_blocks, _) = get_blocks(&BSC_WEB3RS, start_block_number - BSC_EPOCH_SIZE, start_block_number - BSC_EPOCH_SIZE + 1);
+    let (prev_blocks, prev_hashes) = get_blocks(&BSC_WEB3RS, start_block_number - BSC_EPOCH_SIZE, start_block_number - BSC_EPOCH_SIZE + 1);
     let (blocks, hashes) = get_blocks(&BSC_WEB3RS, start_block_number, start_block_number + 1);
     let chain_id = 97;
     let contract = EthClient::init(
@@ -601,11 +595,11 @@ fn bsc_add_epoch_header() {
         10,
         10,
         None,
-        chain_id,
-        prev_blocks[0].clone(),
+        Some(chain_id),
+        Some(prev_blocks[0].clone()),
     );
 
-    assert!(hashes[0] == contract.final_epoch_header_hash)
+    assert!(prev_hashes[0] == contract.bsc_final_epoch_header_hash.unwrap())
 }
 
 #[test]
@@ -631,8 +625,8 @@ fn bsc_validate_epoch_headers_validator() {
             201,
             201,
             None,
-            chain_id,
-            prev_blocks[0].clone(),
+            Some(chain_id),
+            Some(prev_blocks[0].clone()),
         );
         for block in blocks.into_iter() {
             let header: BlockHeader = rlp::decode(block.as_slice()).unwrap();
@@ -664,7 +658,6 @@ fn add_two_blocks_from_400000() {
     .iter()
     .map(|filename| read_block((&filename).to_string()))
     .collect();
-    let chain_id = 3;
 
     let mut contract = EthClient::init(
         true,
@@ -675,8 +668,8 @@ fn add_two_blocks_from_400000() {
         10,
         10,
         None,
-        chain_id,
-        vec![]
+        None,
+        None
     );
 
     for (block, proof) in blocks
@@ -734,7 +727,7 @@ fn predumped_block_can_be_added() {
         10,
         10,
         None,
-        chain_id,
+        Some(chain_id),
         vec![]
     );
 
