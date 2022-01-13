@@ -314,12 +314,7 @@ impl EthClient {
             );
         }
 
-        if cfg!(feature = "bsc") {
-            #[cfg(feature = "bsc")]
-            self.bsc_record_header(header)
-        } else {
-            self.record_header(header);
-        }
+        self.record_header(header);
     }
 
     pub fn update_trusted_signer(&mut self, trusted_signer: Option<AccountId>) {
@@ -337,9 +332,7 @@ impl EthClient {
     fn record_header(&mut self, header: BlockHeader) {
         env::log("Record header".as_bytes());
         let best_info = self.infos.get(&self.best_header_hash).unwrap();
-        let header_hash = header.hash.unwrap();
-        let header_number = header.number;
-        if header_number + self.finalized_gc_threshold < best_info.number {
+        if header.number + self.finalized_gc_threshold < best_info.number {
             panic!("Header is too old to have a chance to appear on the canonical chain.");
         }
 
@@ -351,27 +344,35 @@ impl EthClient {
         // Record this header in `all_hashes`.
         let mut all_hashes = self
             .all_header_hashes
-            .get(&header_number)
+            .get(&header.number)
             .unwrap_or_default();
         assert!(
-            all_hashes.iter().find(|x| **x == header_hash).is_none(),
+            all_hashes.iter().find(|x| **x == header.hash.unwrap()).is_none(),
             "Header is already known. Number: {}",
-            header_number
-        );
-        all_hashes.push(header_hash);
-        self.all_header_hashes.insert(&header_number, &all_hashes);
+            header.number        );
+        all_hashes.push(header.hash.unwrap());
+        self.all_header_hashes.insert(&header.number, &all_hashes);
 
         env::log("Inserting header".as_bytes());
         // Record full information about this header.
-        self.headers.insert(&header_hash, &header);
+        self.headers.insert(&header.hash.unwrap(), &header);
         let info = HeaderInfo {
             total_difficulty: parent_info.total_difficulty + header.difficulty,
             parent_hash: header.parent_hash.clone(),
-            number: header_number,
+            number: header.number,
         };
-        self.infos.insert(&header_hash, &info);
+        self.infos.insert(&header.hash.unwrap(), &info);
         env::log("Inserted".as_bytes());
 
+        if cfg!(feature = "bsc") {
+            #[cfg(feature = "bsc")]
+            self.bsc_update_canonical_chain(header, info, best_info);
+        } else {
+            self.update_canonical_chain(header, info, best_info);
+        }
+    }
+
+    fn update_canonical_chain(&mut self, header: BlockHeader, info: HeaderInfo, best_info: HeaderInfo) {
         // Check if canonical chain needs to be updated.
         if info.total_difficulty > best_info.total_difficulty
             || (info.total_difficulty == best_info.total_difficulty
@@ -386,9 +387,9 @@ impl EthClient {
                 }
             }
             // Replacing the global best header hash.
-            self.best_header_hash = header_hash;
+            self.best_header_hash = header.hash.unwrap();
             self.canonical_header_hashes
-                .insert(&header_number, &header_hash);
+                .insert(&header.number, &header.hash.unwrap());
 
             // Replacing past hashes until we converge into the same parent.
             // Starting from the parent hash.
@@ -409,65 +410,28 @@ impl EthClient {
                 }
                 number -= 1;
             }
-            if header_number >= self.hashes_gc_threshold {
-                self.gc_canonical_chain(header_number - self.hashes_gc_threshold);
+            if header.number >= self.hashes_gc_threshold {
+                self.gc_canonical_chain(header.number - self.hashes_gc_threshold);
             }
-            if header_number >= self.finalized_gc_threshold {
-                self.gc_headers(header_number - self.finalized_gc_threshold);
+            if header.number >= self.finalized_gc_threshold {
+                self.gc_headers(header.number - self.finalized_gc_threshold);
             }
         }
     }
 
     #[cfg(feature = "bsc")]
-    fn bsc_record_header(&mut self, header: BlockHeader) {
-        env::log("Record header".as_bytes());
-        let best_info = self.infos.get(&self.best_header_hash).unwrap();
-        let header_hash = header.hash.unwrap();
-        let header_number = header.number;
-        if header_number + self.finalized_gc_threshold < best_info.number {
-            panic!("Header is too old to have a chance to appear on the canonical chain.");
-        }
-
-        let parent_info = self
-            .infos
-            .get(&header.parent_hash)
-            .expect("Header has unknown parent. Parent should be submitted first.");
-
-        // Record this header in `all_hashes`.
-        let mut all_hashes = self
-            .all_header_hashes
-            .get(&header_number)
-            .unwrap_or_default();
-        assert!(
-            all_hashes.iter().find(|x| **x == header_hash).is_none(),
-            "Header is already known. Number: {}",
-            header_number
-        );
-        all_hashes.push(header_hash);
-        self.all_header_hashes.insert(&header_number, &all_hashes);
-
-        env::log("Inserting header".as_bytes());
-        // Record full information about this header.
-        self.headers.insert(&header_hash, &header);
-        let info = HeaderInfo {
-            total_difficulty: parent_info.total_difficulty + header.difficulty,
-            parent_hash: header.parent_hash.clone(),
-            number: header_number,
-        };
-        self.infos.insert(&header_hash, &info);
-        env::log("Inserted".as_bytes());
-
+    fn bsc_update_canonical_chain(&mut self, header: BlockHeader, info: HeaderInfo, best_info: HeaderInfo) {
         let mut final_epoch_block = self.bsc_get_final_epoch_block();
         let (_validators, validators_len) = EthClient::bsc_get_validator_set_from_block(&final_epoch_block);
 
         let finality_threshold = validators_len / 2;
-        let num_of_blocks_to_final = header_number - best_info.number;
+        let num_of_blocks_to_final = header.number - best_info.number;
 
         // Check if canonical chain needs to be updated.
         if num_of_blocks_to_final >= finality_threshold {
             env::log("Canonical chain needs to be updated.".as_bytes());
             let mut current_block_hash = info.parent_hash;
-            let mut current_block_number = header_number - 1;
+            let mut current_block_number = header.number - 1;
             let last_final_block_hash = self.best_header_hash;
             // Update the final epoch to cover the edge case when the update run the first time after init
             if EthClient::bsc_is_epoch(best_info.number) {
@@ -481,7 +445,7 @@ impl EthClient {
                 .get(&current_block_hash)
                 .expect("Block has unknown parent.");
 
-                if header_number - current_block_info.number >= finality_threshold {
+                if header.number - current_block_info.number >= finality_threshold {
                     self.canonical_header_hashes.insert(&current_block_number, &current_block_hash);
                     if EthClient::bsc_is_epoch(current_block_info.number) && current_block_info.number > final_epoch_block.number {
                         // Update final epoch block (New validator set will be applied)
