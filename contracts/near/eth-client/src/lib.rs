@@ -124,10 +124,15 @@ pub struct EthClient {
     trusted_signer: Option<AccountId>,
     /// Mask determining all paused functions
     paused: Mask,
+    #[cfg(feature = "bsc")]
     /// BSC chain id
-    bsc_chain_id: Option<u64>,
+    bsc_chain_id: u64,
+    #[cfg(feature = "bsc")]
     /// Store the last final bsc epoch header key for validation
-    bsc_final_epoch_header_hash: Option<H256>,
+    bsc_final_epoch_header_hash: H256,
+    #[cfg(feature = "bsc")]
+    // Flag to update final epoch from final block
+    bsc_is_update_final_epoch: bool,
 }
 
 #[near_bindgen]
@@ -169,8 +174,12 @@ impl EthClient {
             infos: old_contract.infos,
             trusted_signer: old_contract.trusted_signer,
             paused: old_contract.paused,
-            bsc_final_epoch_header_hash: Some(H256([0; 32].into())),
-            bsc_chain_id: Some(0),
+            #[cfg(feature = "bsc")]
+            bsc_final_epoch_header_hash: H256([0; 32].into()),
+            #[cfg(feature = "bsc")]
+            bsc_chain_id: 0,
+            #[cfg(feature = "bsc")]
+            bsc_is_update_final_epoch: false,
         }
     }
 
@@ -220,8 +229,12 @@ impl EthClient {
             trusted_signer,
             paused: Mask::default(),
             validate_header,
-            bsc_final_epoch_header_hash: Some(prev_epoch_header_hash),
-            bsc_chain_id: chain_id,
+            #[cfg(feature = "bsc")]
+            bsc_final_epoch_header_hash: prev_epoch_header_hash,
+            #[cfg(feature = "bsc")]
+            bsc_chain_id: chain_id.unwrap(),
+            #[cfg(feature = "bsc")]
+            bsc_is_update_final_epoch: true
         };
         res.canonical_header_hashes
             .insert(&header_number, &header_hash);
@@ -434,9 +447,10 @@ impl EthClient {
             let mut current_block_number = header.number - 1;
             let last_final_block_hash = self.best_header_hash;
             // Update the final epoch to cover the edge case when the update run the first time after init
-            if EthClient::bsc_is_epoch(best_info.number) {
-                self.bsc_final_epoch_header_hash = Some(last_final_block_hash);
+            if self.bsc_is_update_final_epoch && EthClient::bsc_is_epoch(best_info.number) {
+                self.bsc_final_epoch_header_hash = last_final_block_hash;
                 final_epoch_block = self.bsc_get_final_epoch_block();
+                self.bsc_is_update_final_epoch = false;
             }
 
             while current_block_hash != last_final_block_hash {
@@ -449,7 +463,7 @@ impl EthClient {
                     self.canonical_header_hashes.insert(&current_block_number, &current_block_hash);
                     if EthClient::bsc_is_epoch(current_block_info.number) && current_block_info.number > final_epoch_block.number {
                         // Update final epoch block (New validator set will be applied)
-                        self.bsc_final_epoch_header_hash = Some(current_block_hash);
+                        self.bsc_final_epoch_header_hash = current_block_hash;
                         final_epoch_block = self.bsc_get_final_epoch_block();
                     }
 
@@ -599,7 +613,7 @@ impl EthClient {
 
     #[cfg(feature = "bsc")]
     fn bsc_get_final_epoch_block(&self) -> BlockHeader {
-        self.headers.get(&self.bsc_final_epoch_header_hash.unwrap()).unwrap()
+        self.headers.get(&self.bsc_final_epoch_header_hash).unwrap()
     }
 
     // check if the block is an epoch header.
@@ -611,7 +625,7 @@ impl EthClient {
     // check if the author is the signer.
     #[cfg(feature = "bsc")]
     fn bsc_is_author(&self, header: &BlockHeader) -> bool {
-        let seal_hash = self.bsc_seal_hash(header, U256(self.bsc_chain_id.unwrap().into()));
+        let seal_hash = self.bsc_seal_hash(header, U256(self.bsc_chain_id.into()));
 
         // get the signature from header extra_data
         let signature = header.extra_data[header.extra_data.len() - BSC_EXTRA_SEAL..].to_vec();
@@ -653,7 +667,7 @@ impl EthClient {
 
     #[cfg(feature = "bsc")]
     fn bsc_get_current_validators(&self) -> (Vec<u8>, u64) {
-        EthClient::bsc_get_validator_set_from_block(&self.headers.get(&self.bsc_final_epoch_header_hash.unwrap()).unwrap())
+        EthClient::bsc_get_validator_set_from_block(&self.headers.get(&self.bsc_final_epoch_header_hash).unwrap())
     }
 
     // check if the author address is valid and is in the validator set.
