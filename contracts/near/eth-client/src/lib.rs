@@ -250,7 +250,10 @@ impl EthClient {
             },
         );
         #[cfg(feature = "bsc")]
-        res.headers.insert(&prev_epoch_header_hash, &bsc_prev_epoch_block);
+        {
+            res.canonical_header_hashes.insert(&bsc_prev_epoch_block.number, &prev_epoch_header_hash);
+            res.headers.insert(&prev_epoch_header_hash, &bsc_prev_epoch_block);
+        }
         res
     }
 
@@ -666,14 +669,25 @@ impl EthClient {
     }
 
     #[cfg(feature = "bsc")]
-    fn bsc_get_current_validators(&self) -> (Vec<u8>, u64) {
-        EthClient::bsc_get_validator_set_from_block(&self.headers.get(&self.bsc_final_epoch_header_hash).unwrap())
+    fn bsc_get_current_validators(&self, header: &BlockHeader) -> (Vec<u8>, u64) {
+        let epoch_block_number = header.number - (header.number % BSC_EPOCH_SIZE as u64);
+        let prev_epoch_hash = self.canonical_header_hashes.get(&(epoch_block_number - BSC_EPOCH_SIZE as u64)).unwrap();
+        let prev_epoch_block = self.headers.get(&prev_epoch_hash).unwrap();
+        let (prev_validators, prev_validators_len) = EthClient::bsc_get_validator_set_from_block(&prev_epoch_block);
+
+        let is_from_prev_epoch = header.number <= header.number - (header.number % BSC_EPOCH_SIZE as u64) + (prev_validators_len) / 2;
+        if is_from_prev_epoch {
+            return (prev_validators, prev_validators_len);
+        }
+
+        let epoch_header = self.canonical_header_hashes.get(&(epoch_block_number)).unwrap();
+        return EthClient::bsc_get_validator_set_from_block(&self.headers.get(&epoch_header).unwrap());
     }
 
     // check if the author address is valid and is in the validator set.
     #[cfg(feature = "bsc")]
     fn bsc_is_validator(&self, header: &BlockHeader) -> bool {
-        let (validators, validators_len) = self.bsc_get_current_validators();
+        let (validators, validators_len) = self.bsc_get_current_validators(header);
 
         if !self.bsc_is_in_validator_set(&validators, header.author) {
             return false;
