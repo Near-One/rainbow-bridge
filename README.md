@@ -45,7 +45,7 @@ rustup default stable
 rustup target add wasm32-unknown-unknown
 ```
 
-- Then install dependencies needed for the compilation of nearcore, [see](https://docs.near.org/docs/local-setup/running-testnet#compiling-and-running-official-node-without-docker).
+- Then install dependencies needed for the compilation of nearcore, [see](https://docs.near.org/docs/develop/node/validator/running-a-node#compiling-and-running-a-node-without-docker).
 - python3 pip , for nearup
 
 #### Install nearup

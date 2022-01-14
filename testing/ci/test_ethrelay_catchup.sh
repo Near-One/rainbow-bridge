@@ -15,7 +15,9 @@ else
   node index.js prepare
 fi
 node index.js start near-node --archival true
-export GANACHE_BLOCK_TIME=3
+if [[ -z GANACHE_BLOCK_TIME ]]; then
+  export GANACHE_BLOCK_TIME=3
+fi
 node index.js start ganache
 # Wait for the local node to start
 while ! curl localhost:3030; do

@@ -81,7 +81,6 @@ const borshSchema = {
     kind: 'struct',
     fields: [
       ['validate_header', 'bool'],
-      ['validate_header_mode', 'string'],
       ['dags_start_epoch', 'u64'],
       ['dags_merkle_roots', ['H128']],
       ['first_header', ['u8']],
@@ -89,7 +88,8 @@ const borshSchema = {
       ['finalized_gc_threshold', 'u64'],
       ['num_confirmations', 'u64'],
       ['trusted_signer', '?AccountId'],
-      ['chain_id', 'u64']
+      ['chain_id', 'u64'],
+      ['previous_epoch_header', ['u8']]
     ]
   },
   dagMerkleRootInput: {
@@ -197,22 +197,25 @@ class EthOnNearClientContract extends BorshContract {
     if (!initialized) {
       console.log('EthOnNearClient is not initialized, initializing...')
       let lastBlockNumber = await robustWeb3.getBlockNumber()
-      let blockData
+      let previousBlockData
+      let previousBlockRlp = []
+      let lastBlockData
 
       // if validateHeaderMode is bsc(POSA) we have to get the last epoch header
-      if (validateHeaderMode === 'bsc' && lastBlockNumber % 200 !== 0) {
-        lastBlockNumber = lastBlockNumber - lastBlockNumber % 200
-        blockData = await robustWeb3.getBlock(lastBlockNumber)
+      if (validateHeaderMode === 'bsc') {
+        lastBlockNumber = lastBlockNumber % 200 === 0 ? lastBlockNumber : lastBlockNumber - lastBlockNumber % 200
+        lastBlockData = await robustWeb3.getBlock(lastBlockNumber)
+        previousBlockData = await robustWeb3.getBlock(lastBlockNumber - 200)
+        previousBlockRlp = web3BlockToRlp(previousBlockData, bridgeId, validateHeaderMode)
       } else {
-        blockData = await getEthBlock(lastBlockNumber, robustWeb3)
+        lastBlockData = await getEthBlock(lastBlockNumber, robustWeb3)
       }
 
-      const blockRlp = web3BlockToRlp(blockData, bridgeId, validateHeaderMode)
+      const blockRlp = web3BlockToRlp(lastBlockData, bridgeId, validateHeaderMode)
       console.log(blockRlp)
       await this.init(
         {
           validate_header: validateHeader,
-          validate_header_mode: validateHeaderMode,
           dags_start_epoch: 0,
           dags_merkle_roots: roots.dag_merkle_roots,
           first_header: blockRlp,
@@ -220,7 +223,8 @@ class EthOnNearClientContract extends BorshContract {
           finalized_gc_threshold: finalizedGcThreshold,
           num_confirmations: numConfirmations,
           trusted_signer: trustedSigner,
-          chain_id: chainID
+          chain_id: chainID,
+          previous_epoch_header: previousBlockRlp
         },
         new BN('300000000000000')
       )
