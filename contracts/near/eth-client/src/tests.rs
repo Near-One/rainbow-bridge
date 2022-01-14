@@ -559,9 +559,9 @@ fn bsc_validate_headers() {
         0,
         vec![],
         blocks[0].clone(),
-        210,
-        210,
-        210,
+        250,
+        250,
+        250,
         None,
         Some(chain_id),
         Some(prev_blocks[0].clone()),
@@ -570,11 +570,11 @@ fn bsc_validate_headers() {
     for block in blocks.into_iter().skip(1) {
         contract.add_block_header(block, vec![]);
     }
-    assert!(hashes[0] == contract.bsc_final_epoch_header_hash.unwrap());
     assert!(contract.headers.len() == num_of_blocks as u64 + 1);
 
-    let (_validators,validators_len) = contract.bsc_get_current_validators();
-    assert!((num_of_blocks as u64 - contract.canonical_header_hashes.len()) == validators_len / 2);
+    let first_block = contract.headers.get(&(hashes[0])).unwrap();
+    let (_validators,validators_len) = contract.bsc_get_current_validators(&first_block);
+    assert!((num_of_blocks as u64 - contract.canonical_header_hashes.len() + 1) == validators_len / 2);
 }
 
 // Test init bsc bridge.
@@ -584,22 +584,22 @@ fn bsc_add_epoch_header() {
     testing_env!(get_context(vec![], false));
     let start_block_number = 10_161_600;
     let (prev_blocks, prev_hashes) = get_blocks(&BSC_WEB3RS, start_block_number - BSC_EPOCH_SIZE, start_block_number - BSC_EPOCH_SIZE + 1);
-    let (blocks, hashes) = get_blocks(&BSC_WEB3RS, start_block_number, start_block_number + 1);
+    let (blocks, _hashes) = get_blocks(&BSC_WEB3RS, start_block_number, start_block_number + 1);
     let chain_id = 97;
     let contract = EthClient::init(
         true,
         0,
-        read_roots_collection().dag_merkle_roots,
+        vec![],
         blocks[0].clone(),
-        30,
-        10,
-        10,
+        250,
+        250,
+        250,
         None,
         Some(chain_id),
         Some(prev_blocks[0].clone()),
     );
 
-    assert!(prev_hashes[0] == contract.bsc_final_epoch_header_hash.unwrap())
+    assert!(prev_hashes[0] == contract.canonical_header_hashes.get(&((start_block_number - BSC_EPOCH_SIZE) as u64)).unwrap());
 }
 
 #[test]

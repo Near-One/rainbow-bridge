@@ -127,12 +127,6 @@ pub struct EthClient {
     #[cfg(feature = "bsc")]
     /// BSC chain id
     bsc_chain_id: u64,
-    #[cfg(feature = "bsc")]
-    /// Store the last final bsc epoch header key for validation
-    bsc_final_epoch_header_hash: H256,
-    #[cfg(feature = "bsc")]
-    // Flag to update final epoch from final block
-    bsc_is_update_final_epoch: bool,
 }
 
 #[near_bindgen]
@@ -175,11 +169,7 @@ impl EthClient {
             trusted_signer: old_contract.trusted_signer,
             paused: old_contract.paused,
             #[cfg(feature = "bsc")]
-            bsc_final_epoch_header_hash: H256([0; 32].into()),
-            #[cfg(feature = "bsc")]
             bsc_chain_id: 0,
-            #[cfg(feature = "bsc")]
-            bsc_is_update_final_epoch: false,
         }
     }
 
@@ -201,20 +191,6 @@ impl EthClient {
         let header_hash = header.hash.unwrap().clone();
         let header_number = header.number;
 
-        let bsc_prev_epoch_block: BlockHeader;
-        let prev_epoch_header_hash: H256;
-        #[cfg(feature = "bsc")]
-        {
-            bsc_prev_epoch_block = rlp::decode(bsc_prev_epoch_header.unwrap().as_slice()).unwrap();
-            prev_epoch_header_hash = bsc_prev_epoch_block.hash.unwrap();
-            if !EthClient::bsc_is_epoch(header.number) || !EthClient::bsc_is_epoch(bsc_prev_epoch_block.number){
-                panic!("The initial headers for POSA have to be an epoch header");
-            }
-    
-            assert!(header.number / BSC_EPOCH_SIZE as u64 - 1 == bsc_prev_epoch_block.number / BSC_EPOCH_SIZE as u64, 
-                "The previous epoch number is incorrect");
-        }
-
         let mut res = Self {
             dags_start_epoch,
             dags_merkle_roots,
@@ -230,11 +206,7 @@ impl EthClient {
             paused: Mask::default(),
             validate_header,
             #[cfg(feature = "bsc")]
-            bsc_final_epoch_header_hash: prev_epoch_header_hash,
-            #[cfg(feature = "bsc")]
             bsc_chain_id: chain_id.unwrap(),
-            #[cfg(feature = "bsc")]
-            bsc_is_update_final_epoch: true
         };
         res.canonical_header_hashes
             .insert(&header_number, &header_hash);
@@ -251,6 +223,14 @@ impl EthClient {
         );
         #[cfg(feature = "bsc")]
         {
+            let bsc_prev_epoch_block: BlockHeader = rlp::decode(bsc_prev_epoch_header.unwrap().as_slice()).unwrap();
+            let prev_epoch_header_hash = bsc_prev_epoch_block.hash.unwrap();
+            if !EthClient::bsc_is_epoch(header.number) || !EthClient::bsc_is_epoch(bsc_prev_epoch_block.number){
+                panic!("The initial headers for POSA have to be an epoch header");
+            }
+    
+            assert!(header.number / BSC_EPOCH_SIZE as u64 - 1 == bsc_prev_epoch_block.number / BSC_EPOCH_SIZE as u64, 
+                "The previous epoch number is incorrect");
             res.canonical_header_hashes.insert(&bsc_prev_epoch_block.number, &prev_epoch_header_hash);
             res.headers.insert(&prev_epoch_header_hash, &bsc_prev_epoch_block);
         }
@@ -437,9 +417,7 @@ impl EthClient {
 
     #[cfg(feature = "bsc")]
     fn bsc_update_canonical_chain(&mut self, header: BlockHeader, info: HeaderInfo, best_info: HeaderInfo) {
-        let mut final_epoch_block = self.bsc_get_final_epoch_block();
-        let (_validators, validators_len) = EthClient::bsc_get_validator_set_from_block(&final_epoch_block);
-
+        let (_validators, validators_len) = self.bsc_get_current_validators(&header);
         let finality_threshold = validators_len / 2;
         let num_of_blocks_to_final = header.number - best_info.number;
 
@@ -449,12 +427,6 @@ impl EthClient {
             let mut current_block_hash = info.parent_hash;
             let mut current_block_number = header.number - 1;
             let last_final_block_hash = self.best_header_hash;
-            // Update the final epoch to cover the edge case when the update run the first time after init
-            if self.bsc_is_update_final_epoch && EthClient::bsc_is_epoch(best_info.number) {
-                self.bsc_final_epoch_header_hash = last_final_block_hash;
-                final_epoch_block = self.bsc_get_final_epoch_block();
-                self.bsc_is_update_final_epoch = false;
-            }
 
             while current_block_hash != last_final_block_hash {
                 let current_block_info = self
@@ -464,12 +436,6 @@ impl EthClient {
 
                 if header.number - current_block_info.number >= finality_threshold {
                     self.canonical_header_hashes.insert(&current_block_number, &current_block_hash);
-                    if EthClient::bsc_is_epoch(current_block_info.number) && current_block_info.number > final_epoch_block.number {
-                        // Update final epoch block (New validator set will be applied)
-                        self.bsc_final_epoch_header_hash = current_block_hash;
-                        final_epoch_block = self.bsc_get_final_epoch_block();
-                    }
-
                     if current_block_info.number > best_info.number {
                         // Update the final block
                         self.best_header_hash = current_block_hash;
@@ -612,11 +578,6 @@ impl EthClient {
         }
 
         self.bsc_is_validator(&header)
-    }
-
-    #[cfg(feature = "bsc")]
-    fn bsc_get_final_epoch_block(&self) -> BlockHeader {
-        self.headers.get(&self.bsc_final_epoch_header_hash).unwrap()
     }
 
     // check if the block is an epoch header.
