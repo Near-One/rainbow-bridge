@@ -560,8 +560,8 @@ fn bsc_validate_headers() {
         0,
         vec![],
         blocks[0].clone(),
-        250,
-        250,
+        400,
+        400,
         250,
         None,
         Some(BSC_CHAIN_ID),
@@ -592,8 +592,8 @@ fn bsc_validate_headers_zero_block_number() {
         0,
         vec![],
         blocks[0].clone(),
-        250,
-        250,
+        400,
+        400,
         250,
         None,
         Some(BSC_CHAIN_ID),
@@ -622,8 +622,8 @@ fn bsc_validate_headers_invalid_gas_limit() {
         0,
         vec![],
         blocks[0].clone(),
-        250,
-        250,
+        400,
+        400,
         250,
         None,
         Some(BSC_CHAIN_ID),
@@ -650,8 +650,8 @@ fn bsc_add_epoch_header() {
         0,
         vec![],
         blocks[0].clone(),
-        250,
-        250,
+        400,
+        400,
         250,
         None,
         Some(BSC_CHAIN_ID),
@@ -679,8 +679,8 @@ fn bsc_validate_epoch_headers_validator() {
             0,
             vec![],
             blocks[0].clone(),
-            30,
-            201,
+            400,
+            400,
             201,
             None,
             Some(BSC_CHAIN_ID),
@@ -692,6 +692,42 @@ fn bsc_validate_epoch_headers_validator() {
         }
         current += BSC_EPOCH_SIZE;
     }
+}
+
+#[test]
+#[cfg(feature = "bsc")]
+fn bsc_gc_test() {
+    use near_sdk::VMConfig;
+
+    let mut vm_config = VMConfig::free();
+    vm_config.limit_config.max_number_logs = u64::MAX;
+    vm_config.limit_config.max_total_log_length = u64::MAX;
+    testing_env!(get_context(vec![], false), vm_config, Default::default());
+
+    let start_block_number = 15_180_200;
+    let num_of_epochs = 10;
+    let num_of_blocks = BSC_EPOCH_SIZE * num_of_epochs;
+    let (prev_blocks, _) = get_blocks(&BSC_WEB3RS, start_block_number - BSC_EPOCH_SIZE, start_block_number - BSC_EPOCH_SIZE + 1);
+    let (blocks, _hashes) = get_blocks(&BSC_WEB3RS, start_block_number, start_block_number + num_of_blocks);
+    let gc_threshold = 400;
+    let mut contract = EthClient::init(
+        true,
+        0,
+        vec![],
+        blocks[0].clone(),
+        gc_threshold,
+        gc_threshold,
+        210,
+        None,
+        Some(BSC_CHAIN_ID),
+        Some(prev_blocks[0].clone()),
+    );
+
+    for block in blocks.into_iter().skip(1) {
+        contract.add_block_header(block, vec![]);
+    }
+
+    assert_eq!(contract.canonical_header_hashes.len(), gc_threshold + 1);
 }
 
 #[test]
@@ -786,7 +822,7 @@ fn predumped_block_can_be_added() {
         10,
         None,
         Some(BSC_CHAIN_ID),
-        vec![]
+        None
     );
 
     let bar = ProgressBar::new(blocks_with_proofs.len() as _);
