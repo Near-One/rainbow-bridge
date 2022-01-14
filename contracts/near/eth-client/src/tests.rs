@@ -173,6 +173,8 @@ lazy_static! {
     };
 }
 
+static BSC_CHAIN_ID: u64 = 97;
+
 fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
     VMContext {
         current_account_id: "alice.near".to_string(),
@@ -552,7 +554,6 @@ fn bsc_validate_headers() {
     let num_of_blocks = 15;
     let (prev_blocks, _) = get_blocks(&BSC_WEB3RS, start_block_number - BSC_EPOCH_SIZE, start_block_number - BSC_EPOCH_SIZE + 1);
     let (blocks, hashes) = get_blocks(&BSC_WEB3RS, start_block_number, start_block_number + num_of_blocks);
-    let chain_id = 97;
 
     let mut contract = EthClient::init(
         true,
@@ -563,7 +564,7 @@ fn bsc_validate_headers() {
         250,
         250,
         None,
-        Some(chain_id),
+        Some(BSC_CHAIN_ID),
         Some(prev_blocks[0].clone()),
     );
 
@@ -578,79 +579,55 @@ fn bsc_validate_headers() {
 }
 
 #[test]
-#[cfg_attr(not(feature = "bsc"), ignore)]
-fn bsc_validate_headers_genesis() {
-    testing_env!(get_context(vec![], false));
-    let (blocks, hashes) = get_blocks(&BSC_WEB3RS, 0, 10);
-    let chain_id = 97;
-    
-    let mut contract = EthClient::init(
-        true,
-        String::from("bsc"),
-        0,
-        vec![],
-        blocks[0].clone(),
-        210,
-        210,
-        210,
-        None,
-        chain_id,
-    );
-
-    for block in blocks.into_iter().skip(1) {
-        contract.add_block_header(block, vec![]);
-    }
-    assert!(hashes[0] == contract.epoch_header);
-    assert!(contract.headers.len() == 10);
-}
-
-#[test]
-#[cfg_attr(not(feature = "bsc"), ignore)]
+#[cfg(feature = "bsc")]
 #[should_panic(expected = "should be valid")]
 fn bsc_validate_headers_zero_block_number() {
     testing_env!(get_context(vec![], false));
-    let (blocks, _hashes) = get_blocks(&BSC_WEB3RS, 12_058_400, 12_058_402);
-    let chain_id = 97;
+    let start_block_number = 12_058_400;
+    let (prev_blocks, _prev_hashes) = get_blocks(&BSC_WEB3RS, start_block_number - BSC_EPOCH_SIZE, start_block_number - BSC_EPOCH_SIZE + 1);
+    let (blocks, _hashes) = get_blocks(&BSC_WEB3RS, start_block_number, start_block_number + 2);
     
     let mut contract = EthClient::init(
         true,
-        String::from("bsc"),
         0,
         vec![],
         blocks[0].clone(),
-        210,
-        210,
-        210,
+        250,
+        250,
+        250,
         None,
-        chain_id,
+        Some(BSC_CHAIN_ID),
+        Some(prev_blocks[0].clone()),
     );
 
     for block in blocks.into_iter().skip(1) {
         let mut header: BlockHeader = rlp::decode(block.as_slice()).unwrap();
         header.number = 0;
+        header.gas_limit = U256((0x8fffffffffffffff as u64).into());
         contract.add_block_header(rlp::encode(&header), vec![]);
     }
 }
 
 #[test]
-#[cfg_attr(not(feature = "bsc"), ignore)]
+#[cfg(feature = "bsc")]
 #[should_panic(expected = "should be valid")]
 fn bsc_validate_headers_invalid_gas_limit() {
     testing_env!(get_context(vec![], false));
-    let (blocks, _hashes) = get_blocks(&BSC_WEB3RS, 12_058_400, 12_058_402);
-    let chain_id = 97;
+    let start_block_number = 12_058_400;
+    let (prev_blocks, _prev_hashes) = get_blocks(&BSC_WEB3RS, start_block_number - BSC_EPOCH_SIZE, start_block_number - BSC_EPOCH_SIZE + 1);
+    let (blocks, _hashes) = get_blocks(&BSC_WEB3RS, start_block_number, start_block_number + 2);
     
     let mut contract = EthClient::init(
         true,
-        String::from("bsc"),
         0,
         vec![],
         blocks[0].clone(),
-        210,
-        210,
-        210,
+        250,
+        250,
+        250,
         None,
-        chain_id,
+        Some(BSC_CHAIN_ID),
+        Some(prev_blocks[0].clone()),
     );
 
     for block in blocks.into_iter().skip(1) {
@@ -668,7 +645,6 @@ fn bsc_add_epoch_header() {
     let start_block_number = 10_161_600;
     let (prev_blocks, prev_hashes) = get_blocks(&BSC_WEB3RS, start_block_number - BSC_EPOCH_SIZE, start_block_number - BSC_EPOCH_SIZE + 1);
     let (blocks, _hashes) = get_blocks(&BSC_WEB3RS, start_block_number, start_block_number + 1);
-    let chain_id = 97;
     let contract = EthClient::init(
         true,
         0,
@@ -678,7 +654,7 @@ fn bsc_add_epoch_header() {
         250,
         250,
         None,
-        Some(chain_id),
+        Some(BSC_CHAIN_ID),
         Some(prev_blocks[0].clone()),
     );
 
@@ -688,7 +664,6 @@ fn bsc_add_epoch_header() {
 #[test]
 #[cfg(feature = "bsc")]
 fn bsc_validate_epoch_headers_validator() {
-    let chain_id = 97;
     let start = 10_160_000;
     let end = 10_165_000;
     let mut current = start;
@@ -708,7 +683,7 @@ fn bsc_validate_epoch_headers_validator() {
             201,
             201,
             None,
-            Some(chain_id),
+            Some(BSC_CHAIN_ID),
             Some(prev_blocks[0].clone()),
         );
         for block in blocks.into_iter() {
@@ -810,7 +785,7 @@ fn predumped_block_can_be_added() {
         10,
         10,
         None,
-        Some(chain_id),
+        Some(BSC_CHAIN_ID),
         vec![]
     );
 
