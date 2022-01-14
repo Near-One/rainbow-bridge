@@ -675,7 +675,7 @@ impl EthClient {
         let prev_epoch_block = self.headers.get(&prev_epoch_hash).unwrap();
         let (prev_validators, prev_validators_len) = EthClient::bsc_get_validator_set_from_block(&prev_epoch_block);
 
-        let is_from_prev_epoch = header.number <= header.number - (header.number % BSC_EPOCH_SIZE as u64) + (prev_validators_len) / 2;
+        let is_from_prev_epoch = header.number <= epoch_block_number + (prev_validators_len) / 2;
         if is_from_prev_epoch {
             return (prev_validators, prev_validators_len);
         }
