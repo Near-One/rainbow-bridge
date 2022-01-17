@@ -88,8 +88,8 @@ const borshSchema = {
       ['finalized_gc_threshold', 'u64'],
       ['num_confirmations', 'u64'],
       ['trusted_signer', '?AccountId'],
-      ['chain_id', 'u64'],
-      ['previous_epoch_header', ['u8']]
+      ['chain_id', '?ChainId'],
+      ['previous_epoch_header', '?PrevEpochHeader']
     ]
   },
   dagMerkleRootInput: {
@@ -132,6 +132,14 @@ const borshSchema = {
   '?AccountId': {
     kind: 'option',
     type: 'string'
+  },
+  '?ChainId': {
+    kind: 'option',
+    type: 'u64'
+  },
+  '?PrevEpochHeader': {
+    kind: 'option',
+    type: ['u8']
   }
 }
 
