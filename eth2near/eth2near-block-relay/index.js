@@ -161,6 +161,18 @@ class Eth2NearRelay {
         }
       }
 
+      const isBlockAlreadySubmitted = async (chainBlock) => {
+        try {
+          const clientHashes = await this.ethClientContract.known_hashes(
+            chainBlock.number
+          )
+          return clientHashes.find((x) => x === chainBlock.hash)
+        } catch (e) {
+          console.error(e)
+          return await isBlockAlreadySubmitted(chainBlock)
+        }
+      }
+
       const estimatedValued = (previousBlockNumber === undefined) ? 0 : clientBlockNumber - (previousBlockNumber + this.totalSubmitBlock)
 
       /// In case there exist a fork, find how many steps should go backward (delta) to the first block
@@ -173,46 +185,50 @@ class Eth2NearRelay {
         try {
           // Submit add_block txns
           const blockPromises = []
-          let endBlock = Math.min(
+          let endBlockNumber = Math.min(
             clientBlockNumber + this.totalSubmitBlock,
             chainBlockNumber
           )
           if (clientBlockNumber < 5) {
             // Initially, do not add block concurrently
-            endBlock = clientBlockNumber + 1
+            endBlockNumber = clientBlockNumber + 1
           }
-          for (let i = clientBlockNumber + 1; i <= endBlock; i++) {
+          for (let i = clientBlockNumber + 1; i <= endBlockNumber; i++) {
             if (this.validateHeaderMode === 'bsc') {
               const block = await this.robustWeb3.getBlock(i)
-              blockPromises.push({ header_rlp: block })
+              if (await isBlockAlreadySubmitted(block)) {
+                if (endBlockNumber < chainBlockNumber) {
+                  endBlockNumber++
+                }
+              } else {
+                blockPromises.push({ header_rlp: block })
+              }
             } else {
               blockPromises.push(this.getParseBlock(i))
             }
           }
 
           const blocks = await Promise.all(blockPromises)
+          const firstBlock = blocks[0].header_rlp
           console.log(
-            `Got and parsed block ${clientBlockNumber + 1} to block ${endBlock}`
+            `Got and parsed block ${firstBlock.number} to block ${endBlockNumber}`
           )
 
           // Send all transactions in a single batch, so they are processed in order.
           const actions = []
-          for (let i = clientBlockNumber + 1, j = 0; i <= endBlock; i++, j++) {
-            const action = this.submitBlock(blocks[j], i)
+          for (const block of blocks) {
+            const action = this.submitBlock(block)
             actions.push(action)
           }
 
           const task = this.ethClientContract.account.signAndSendTransaction(this.ethClientContract.contractId, actions)
 
-          console.log(
-            `Submit txn to add block ${clientBlockNumber + 1
-            } to block ${endBlock}`
-          )
+          console.log(`Submit txn to add block ${firstBlock.number} to block ${endBlockNumber}`)
 
           await task
 
           console.log(
-            `Success added block ${clientBlockNumber + 1} to block ${endBlock}. Chain block number: ${chainBlockNumber}`
+            `Success added block ${firstBlock.number} to block ${endBlockNumber}. Chain block number: ${chainBlockNumber}`
           )
         } catch (e) {
           errorsOnSubmitCounter.inc(1)
@@ -239,7 +255,7 @@ class Eth2NearRelay {
     }
   }
 
-  submitBlock (block, blockNumber) {
+  submitBlock (block) {
     let args
     if (this.validateHeaderMode === 'bsc') {
       args = {
