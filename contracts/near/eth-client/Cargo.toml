@@ -33,5 +33,6 @@ indicatif = "0.14"
 
 [features]
 default = ["eip1559"]
+pol = []
 expensive_tests = []
 eip1559 = ["eth-types/eip1559"]

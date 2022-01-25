@@ -162,6 +162,13 @@ lazy_static! {
         eloop.into_remote();
         web3::Web3::new(transport)
     };
+
+    static ref POL_WEB3RS: web3::Web3<web3::transports::Http> = {
+        let (eloop, transport) =
+            web3::transports::Http::new("https://rpc-mainnet.maticvigil.com").unwrap();
+        eloop.into_remote();
+        web3::Web3::new(transport)
+    };
 }
 
 fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
@@ -242,6 +249,8 @@ fn assert_hashes_equal_to_contract_hashes(contract: &EthClient, heights: &[u64],
 }
 
 #[test]
+#[cfg_attr(not(feature = "eip1559"), ignore)]
+#[cfg(not(feature = "pol"))]
 fn add_dags_merkle_roots() {
     testing_env!(get_context(vec![], false));
     let (blocks, _) = get_blocks(&WEB3RS, 400_000, 400_001);
@@ -267,6 +276,7 @@ fn add_dags_merkle_roots() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "eip1559"), ignore)]
 fn add_blocks_2_and_3() {
     testing_env!(get_context(vec![], false));
 
@@ -305,6 +315,7 @@ fn add_blocks_2_and_3() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "eip1559"), ignore)]
 fn add_blocks_before_and_after_istanbul_fork() {
     testing_env!(get_context(vec![], false));
 
@@ -355,6 +366,7 @@ fn add_blocks_before_and_after_istanbul_fork() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "eip1559"), ignore)]
 fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
     testing_env!(get_context(vec![], false));
 
@@ -404,6 +416,7 @@ fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "eip1559"), ignore)]
 fn add_block_diverged_until_ethashproof_dataset_fix() {
     testing_env!(get_context(vec![], false));
 
@@ -428,6 +441,7 @@ fn add_block_diverged_until_ethashproof_dataset_fix() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "eip1559"), ignore)]
 fn add_400000_block_only() {
     testing_env!(get_context(vec![], false));
 
@@ -457,6 +471,7 @@ fn add_400000_block_only() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "eip1559"), ignore)]
 fn add_two_blocks_from_8996776() {
     testing_env!(get_context(vec![], false));
 
@@ -502,6 +517,7 @@ fn add_two_blocks_from_8996776() {
 }
 
 #[test]
+#[cfg_attr(not(feature = "eip1559"), ignore)]
 fn add_two_blocks_from_400000() {
     testing_env!(get_context(vec![], false));
 
@@ -613,4 +629,31 @@ fn predumped_block_can_be_added() {
         bar.inc(1);
     }
     bar.finish();
+}
+
+#[test]
+#[cfg(feature = "pol")]
+fn pol_add_headers() {
+    testing_env!(get_context(vec![], false));
+    let start_block_number = 24_157_312;
+    let num_of_blocks = 15;
+    let (blocks, _hashes) = get_blocks(&POL_WEB3RS, start_block_number - 1, start_block_number + num_of_blocks);
+
+    let mut contract = EthClient::init(
+        true,
+        0,
+        vec![],
+        blocks[0].clone(),
+        400,
+        400,
+        250,
+        None
+    );
+
+    format!("{:?}", blocks[0].clone());
+    // for block in blocks.into_iter().skip(1) {
+    //     contract.add_block_header(block, vec![]);
+    // }
+
+    // assert!(contract.headers.len() == num_of_blocks as u64);
 }

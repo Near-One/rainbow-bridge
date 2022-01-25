@@ -8,6 +8,19 @@ use near_sdk::{env, near_bindgen, PanicOnDefault};
 #[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "pol")]
+mod pol_constants {
+    pub const POL_SPRINT_LENGTH: usize = 64;
+    pub const POL_EXTRA_VANITY: usize = 32;
+    pub const POL_EXTRA_SEAL: usize = 65;
+    pub const POL_VALIDATOR_BYTES_SIZE: usize = 20;
+    pub const POL_DIFFICULTY_IN_TURN: usize = 2;
+    pub const POL_DIFFICULTY_NO_TURN: usize = 1;
+}
+
+#[cfg(feature = "pol")]
+use pol_constants::*;
+
 near_sdk::setup_alloc!();
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -68,7 +81,7 @@ const PAUSE_ADD_BLOCK_HEADER: Mask = 1;
 pub struct EthClient {
     /// Whether client validates the PoW when accepting the header. Should only be set to `false`
     /// for debugging, testing, diagnostic purposes when used with Ganache or in PoA testnets
-    validate_ethash: bool,
+    validate_header: bool,
     /// The epoch from which the DAG merkle roots start.
     dags_start_epoch: u64,
     /// DAG merkle roots for the next several years.
@@ -111,7 +124,7 @@ pub struct EthClient {
 impl EthClient {
     #[init]
     pub fn init(
-        #[serializer(borsh)] validate_ethash: bool,
+        #[serializer(borsh)] validate_header: bool,
         #[serializer(borsh)] dags_start_epoch: u64,
         #[serializer(borsh)] dags_merkle_roots: Vec<H128>,
         #[serializer(borsh)] first_header: Vec<u8>,
@@ -125,7 +138,7 @@ impl EthClient {
         let header_hash = header.hash.unwrap().clone();
         let header_number = header.number;
         let mut res = Self {
-            validate_ethash,
+            validate_header,
             dags_start_epoch,
             dags_merkle_roots,
             best_header_hash: header_hash.clone(),
@@ -281,6 +294,20 @@ impl EthClient {
         self.infos.insert(&header_hash, &info);
         env::log("Inserted".as_bytes());
 
+        if cfg!(feature = "pol") {
+            #[cfg(feature = "pol")]
+            self.pol_update_canonical_chain(header, info, best_info);
+        } else {
+            self.update_canonical_chain(header, info, best_info);
+        }
+    }
+
+    fn update_canonical_chain(
+        &mut self,
+        header: BlockHeader,
+        info: HeaderInfo,
+        best_info: HeaderInfo,
+    ) {
         // Check if canonical chain needs to be updated.
         if info.total_difficulty > best_info.total_difficulty
             || (info.total_difficulty == best_info.total_difficulty
@@ -295,9 +322,9 @@ impl EthClient {
                 }
             }
             // Replacing the global best header hash.
-            self.best_header_hash = header_hash;
+            self.best_header_hash = header.hash.unwrap();
             self.canonical_header_hashes
-                .insert(&header_number, &header_hash);
+                .insert(&header.number, &header.hash.unwrap());
 
             // Replacing past hashes until we converge into the same parent.
             // Starting from the parent hash.
@@ -318,13 +345,22 @@ impl EthClient {
                 }
                 number -= 1;
             }
-            if header_number >= self.hashes_gc_threshold {
-                self.gc_canonical_chain(header_number - self.hashes_gc_threshold);
+            if header.number >= self.hashes_gc_threshold {
+                self.gc_canonical_chain(header.number - self.hashes_gc_threshold);
             }
-            if header_number >= self.finalized_gc_threshold {
-                self.gc_headers(header_number - self.finalized_gc_threshold);
+            if header.number >= self.finalized_gc_threshold {
+                self.gc_headers(header.number - self.finalized_gc_threshold);
             }
         }
+    }
+
+    #[cfg(feature = "pol")]
+    fn pol_update_canonical_chain(
+        &mut self,
+        header: BlockHeader,
+        info: HeaderInfo,
+        best_info: HeaderInfo,
+    ) {
     }
 
     /// Remove hashes from the canonical chain that are at least as old as the given header number.
@@ -365,8 +401,46 @@ impl EthClient {
         env::log(format!("Finish headers GC. Used gas: {}", env::used_gas()).as_bytes());
     }
 
-    /// Verify PoW of the header.
     fn verify_header(
+        &self,
+        header: &BlockHeader,
+        prev: &BlockHeader,
+        dag_nodes: &[DoubleNodeWithMerkleProof],
+    ) -> bool {
+        if cfg!(feature = "pol") {
+            #[cfg(feature = "pol")]
+            return self.pol_verify_header(&header, &prev);
+        }
+
+        return self.ethash_verify_header(&header, &prev, &dag_nodes);
+    }
+
+    fn verify_basic(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
+        header.gas_used <= header.gas_limit
+            && header.gas_limit >= U256(5000.into())
+            && header.timestamp > prev.timestamp
+            && header.number == prev.number + 1
+            && header.parent_hash == prev.hash.unwrap()
+    }
+
+    //  Verify polygon chain header.
+    #[cfg(feature = "pol")]
+    fn pol_verify_header(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
+        self.pol_verify_cascading_field(header, prev)
+    }
+
+    #[cfg(feature = "pol")]
+    fn pol_verify_cascading_field(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
+        self.pol_verify_seal(header, prev)
+    }
+
+    #[cfg(feature = "pol")]
+    fn pol_verify_seal(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
+        true
+    }
+
+    //// Verify PoW of the header.
+    fn ethash_verify_header(
         &self,
         header: &BlockHeader,
         prev: &BlockHeader,
@@ -385,16 +459,12 @@ impl EthClient {
         // 2. Added condition: header.parent_hash() == prev.hash()
         //
         U256((result.0).0.into()) < U256(ethash::cross_boundary(header.difficulty.0))
-            && (!self.validate_ethash
+            && (!self.validate_header
                 || (header.difficulty < prev.difficulty * 101 / 100
                     && header.difficulty > prev.difficulty * 99 / 100))
-            && header.gas_used <= header.gas_limit
             && header.gas_limit < prev.gas_limit * 1025 / 1024
             && header.gas_limit > prev.gas_limit * 1023 / 1024
-            && header.gas_limit >= U256(5000.into())
-            && header.timestamp > prev.timestamp
-            && header.number == prev.number + 1
-            && header.parent_hash == prev.hash.unwrap()
+            && self.verify_basic(header, prev)
             && header.extra_data.len() <= 32
     }
 
@@ -422,7 +492,7 @@ impl EthClient {
 
                 // Each two nodes are packed into single 128 bytes with Merkle proof
                 let node = &nodes[idx / 2];
-                if idx % 2 == 0 && self.validate_ethash {
+                if idx % 2 == 0 && self.validate_header {
                     // Divide by 2 to adjust offset for 64-byte words instead of 128-byte
                     assert_eq!(merkle_root, node.apply_merkle_proof((offset / 2) as u64));
                 };
