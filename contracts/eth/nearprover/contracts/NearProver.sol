@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8;
 
-import "nearbridge/contracts/AdminControlled.sol";
-import "nearbridge/contracts/INearBridge.sol";
-import "nearbridge/contracts/NearDecoder.sol";
+import "rainbow-bridge-sol/nearbridge/contracts/AdminControlled.sol";
+import "rainbow-bridge-sol/nearbridge/contracts/INearBridge.sol";
+import "rainbow-bridge-sol/nearbridge/contracts/NearDecoder.sol";
 import "./ProofDecoder.sol";
 import "./INearProver.sol";
 
