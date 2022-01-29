@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8;
 
-import "nearbridge/contracts/Borsh.sol";
-import "nearbridge/contracts/NearDecoder.sol";
+import "rainbow-bridge-sol/nearbridge/contracts/Borsh.sol";
+import "rainbow-bridge-sol/nearbridge/contracts/NearDecoder.sol";
 
 library ProofDecoder {
     using Borsh for Borsh.Data;
