@@ -60,7 +60,6 @@ library ProofDecoder {
         if (executionStatus.enumIndex == 0) {
             executionStatus.unknown = true;
         } else if (executionStatus.enumIndex == 1) {
-            //revert("NearDecoder: decodeExecutionStatus failure case not implemented yet");
             // Can avoid revert since ExecutionStatus is latest field in all parent structures
             executionStatus.failed = true;
         } else if (executionStatus.enumIndex == 2) {
