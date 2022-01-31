@@ -42,7 +42,7 @@ contract AdminControlled {
         }
     }
 
-    function verifyAdminAddress(address newAdmin) view internal onlyAdmin {
+    function verifyAdminAddress(address newAdmin) internal view onlyAdmin {
         require(newAdmin != admin, "Nominated admin is the same as the current");
         // Zero address shouldn't be allowed as a security measure.
         // If it's needed to remove the admin consider using address with all "1" digits.
