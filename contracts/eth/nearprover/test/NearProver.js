@@ -49,7 +49,7 @@ if (process.env['NEAR_PROOFS_DIR']) {
 }
 
 describe('NearProver with admin access', () => {
-    const BRIDGE_ADDRESS_SLOT = 2;
+    const BRIDGE_ADDRESS_SLOT = 3;
 
     beforeEach(async () => {
         [deployerAccount] = await ethers.getSigners();

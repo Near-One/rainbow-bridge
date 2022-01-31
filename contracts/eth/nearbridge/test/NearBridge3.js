@@ -220,17 +220,24 @@ describe('NearBridge with admin access', () => {
 
         it('should not accept the new admin twice', async () => {
             const initialAdminAddress = await nearBridge.admin();
-            const newAdminAddress = '0x0123456789abcdefcafedeadbeefbea77a1de456';
-            expect(newAdminAddress)
+            const newAdmin = userAccount2;
+            expect(newAdmin.address)
                 .not
                 .equal(initialAdminAddress);
 
-            await nearBridge.nominateAdmin(newAdminAddress);
-            await nearBridge.acceptAdmin(newAdminAddress);
-            await expect(nearBridge.acceptAdmin(newAdminAddress))
+            await nearBridge.nominateAdmin(newAdmin.address);
+            await nearBridge.acceptAdmin(newAdmin.address);
+            expect((await nearBridge.admin()).toLowerCase())
+                .to
+                .equal(newAdmin.address.toLowerCase());
+            await expect(
+                nearBridge
+                    .connect(newAdmin)
+                    .acceptAdmin(newAdmin.address)
+            )
                 .to
                 .be
-                .revertedWith('Nominated admin shouldn\'t be zero address');
+                .revertedWith('Nominated admin is the same as the current');
         });
 
         it('should not nominate the same admin', async () => {
