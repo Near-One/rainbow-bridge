@@ -476,3 +476,150 @@ pub fn near_keccak512(data: &[u8]) -> [u8; 64] {
     buffer.copy_from_slice(&near_sdk::env::keccak512(data).as_slice());
     buffer
 }
+
+// Pol
+#[cfg(feature = "pol")]
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+pub struct PolValidator {
+    #[serde(default, rename = "ID")]
+    pub id: u64,
+    #[serde(default, rename = "signer")]
+    pub address: Address,
+    #[serde(default, rename = "power")]
+    pub voting_power: u64,
+    #[serde(default, rename = "accum")]
+    pub proposer_priority: i64,
+}
+
+#[cfg(feature = "pol")]
+impl PolValidator {
+    fn stream_rlp(&self, stream: &mut RlpStream, partial: bool) {
+        stream.begin_list(4);
+        stream.append(&self.id);
+        stream.append(&self.address);
+        stream.append(&self.voting_power);
+        stream.append(&self.proposer_priority.to_ne_bytes().to_vec());
+    }
+}
+
+#[cfg(feature = "pol")]
+impl RlpEncodable for PolValidator {
+    fn rlp_append(&self, stream: &mut RlpStream) {
+        self.stream_rlp(stream, false);
+    }
+}
+
+#[cfg(feature = "pol")]
+impl RlpDecodable for PolValidator {
+    fn decode(serialized: &Rlp) -> Result<Self, RlpDecoderError> {
+        let v: Vec<u8> = serialized.val_at(3)?;
+        let mut r = [0u8; 8];
+        r.copy_from_slice(&v[0..8]);
+        Ok(PolValidator {
+            id: serialized.val_at(0)?,
+            address: serialized.val_at(1)?,
+            voting_power: serialized.val_at(2)?,
+            proposer_priority: i64::from_ne_bytes(r),
+        })
+    }
+}
+
+#[cfg(feature = "pol")]
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+pub struct PolValidatorSet {
+    pub proposer: u64,
+    pub validator_set: Vec<PolValidator>,
+    pub total_voting_power: u64
+}
+
+#[cfg(feature = "pol")]
+impl PolValidatorSet {
+    fn stream_rlp(&self, stream: &mut RlpStream, partial: bool) {
+        stream.begin_list(self.validator_set.len() + 3);
+        stream.append(&self.proposer);
+        stream.append(&self.total_voting_power);
+        stream.append(&self.validator_set.len());
+        for val in &self.validator_set {
+            stream.append(val);
+        }
+    }
+}
+
+#[cfg(feature = "pol")]
+impl RlpEncodable for PolValidatorSet {
+    fn rlp_append(&self, stream: &mut RlpStream) {
+        self.stream_rlp(stream, false);
+    }
+}
+
+#[cfg(feature = "pol")]
+impl RlpDecodable for PolValidatorSet {
+    fn decode(serialized: &Rlp) -> Result<Self, RlpDecoderError> {
+        let proposer: u64 = serialized.val_at(0)?;
+        let total_voting_power: u64 = serialized.val_at(1)?;
+        let validator_set_length: u64 = serialized.val_at(2)?;
+        let mut validator_set: Vec<PolValidator> = Vec::new();
+
+        for i in 3..validator_set_length {
+            let val: Result<PolValidator, DecoderError> = serialized.val_at(i as usize);
+            match val {
+                Ok(v) => validator_set.push(v),
+                Err(e) => return Err(e)
+            }
+        }
+
+        Ok(PolValidatorSet {
+            validator_set: validator_set,
+            proposer: proposer,
+            total_voting_power: total_voting_power,
+        })
+    }
+}
+
+// SealData struct used by pol to encode header to rlp and hash using keccak256.
+#[cfg(feature = "pol")]
+pub struct SealData<'s> {
+    pub header: &'s BlockHeader,
+}
+
+#[cfg(feature = "pol")]
+impl<'s> SealData<'s> {
+    // hash using keccak256 an RLP encoded header.
+    pub fn seal_hash(&self) -> [u8; 32] {
+        near_keccak256(&self.rlp_bytes())
+    }
+}
+
+// implement RlpEncodable for SealData.
+#[cfg(feature = "pol")]
+impl<'s> RlpEncodable for SealData<'s> {
+    fn rlp_append(&self, stream: &mut RlpStream) {
+        stream.begin_list(16);
+        stream.append(&self.header.parent_hash);
+        stream.append(&self.header.uncles_hash);
+        stream.append(&self.header.author);
+        stream.append(&self.header.state_root);
+        stream.append(&self.header.transactions_root);
+        stream.append(&self.header.receipts_root);
+        stream.append(&self.header.log_bloom);
+        stream.append(&self.header.difficulty);
+        stream.append(&self.header.number);
+        stream.append(&self.header.gas_limit);
+        stream.append(&self.header.gas_used);
+        stream.append(&self.header.timestamp);
+        stream.append(&self.header.extra_data[0..&self.header.extra_data.len() - 65].to_vec());
+        stream.append(&self.header.mix_hash);
+        stream.append(&self.header.nonce);
+    
+        #[cfg(feature = "eip1559")]
+        stream.append(&self.header.base_fee_per_gas);
+    }
+
+    fn rlp_bytes(&self) -> Vec<u8> {
+        let mut s = RlpStream::new();
+        self.rlp_append(&mut s);
+        s.out()
+    }
+}
