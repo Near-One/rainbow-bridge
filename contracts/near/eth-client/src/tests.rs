@@ -1,6 +1,8 @@
 use futures::future::join_all;
 use std::panic;
-
+use reqwest;
+use hyper;
+// use std::io::Read;
 use crate::{DoubleNodeWithMerkleProof, EthClient};
 use eth_types::*;
 use hex::FromHex;
@@ -277,6 +279,7 @@ fn add_dags_merkle_roots() {
 
 #[test]
 #[cfg_attr(not(feature = "eip1559"), ignore)]
+#[cfg_attr(any(feature = "pol"), ignore)]
 fn add_blocks_2_and_3() {
     testing_env!(get_context(vec![], false));
 
@@ -298,6 +301,7 @@ fn add_blocks_2_and_3() {
         10,
         10,
         None,
+        vec![],
     );
 
     for (block, proof) in blocks
@@ -316,6 +320,7 @@ fn add_blocks_2_and_3() {
 
 #[test]
 #[cfg_attr(not(feature = "eip1559"), ignore)]
+#[cfg_attr(any(feature = "pol"), ignore)]
 fn add_blocks_before_and_after_istanbul_fork() {
     testing_env!(get_context(vec![], false));
 
@@ -344,6 +349,7 @@ fn add_blocks_before_and_after_istanbul_fork() {
         10,
         10,
         None,
+        vec![],
     );
 
     for (block, proof) in blocks
@@ -367,6 +373,7 @@ fn add_blocks_before_and_after_istanbul_fork() {
 
 #[test]
 #[cfg_attr(not(feature = "eip1559"), ignore)]
+#[cfg_attr(any(feature = "pol"), ignore)]
 fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
     testing_env!(get_context(vec![], false));
 
@@ -396,6 +403,7 @@ fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
         10,
         10,
         None,
+        vec![],
     );
 
     for (block, proof) in blocks
@@ -417,6 +425,7 @@ fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
 
 #[test]
 #[cfg_attr(not(feature = "eip1559"), ignore)]
+#[cfg_attr(any(feature = "pol"), ignore)]
 fn add_block_diverged_until_ethashproof_dataset_fix() {
     testing_env!(get_context(vec![], false));
 
@@ -434,6 +443,7 @@ fn add_block_diverged_until_ethashproof_dataset_fix() {
         500,
         20,
         None,
+        vec![],
     );
 
     contract.add_block_header(blocks[1].clone(), block_with_proof.to_double_node_with_merkle_proof_vec());
@@ -442,6 +452,7 @@ fn add_block_diverged_until_ethashproof_dataset_fix() {
 
 #[test]
 #[cfg_attr(not(feature = "eip1559"), ignore)]
+#[cfg_attr(any(feature = "pol"), ignore)]
 fn add_400000_block_only() {
     testing_env!(get_context(vec![], false));
 
@@ -465,6 +476,7 @@ fn add_400000_block_only() {
         10,
         10,
         None,
+        vec![],
     );
     contract.add_block_header(blocks[1].clone(), block_with_proof.to_double_node_with_merkle_proof_vec());
     assert_eq!(hashes[1], contract.block_hash(block_height as u64).unwrap());
@@ -472,6 +484,7 @@ fn add_400000_block_only() {
 
 #[test]
 #[cfg_attr(not(feature = "eip1559"), ignore)]
+#[cfg_attr(any(feature = "pol"), ignore)]
 fn add_two_blocks_from_8996776() {
     testing_env!(get_context(vec![], false));
 
@@ -497,6 +510,7 @@ fn add_two_blocks_from_8996776() {
         10,
         10,
         None,
+        vec![],
     );
 
     for (block, proof) in blocks
@@ -518,6 +532,7 @@ fn add_two_blocks_from_8996776() {
 
 #[test]
 #[cfg_attr(not(feature = "eip1559"), ignore)]
+#[cfg_attr(any(feature = "pol"), ignore)]
 fn add_two_blocks_from_400000() {
     testing_env!(get_context(vec![], false));
 
@@ -548,6 +563,7 @@ fn add_two_blocks_from_400000() {
         10,
         10,
         None,
+        vec![],
     );
 
     for (block, proof) in blocks
@@ -568,6 +584,7 @@ fn add_two_blocks_from_400000() {
 }
 
 #[cfg(feature = "expensive_tests")]
+#[cfg_attr(any(feature = "pol"), ignore)]
 #[test]
 fn predumped_block_can_be_added() {
     use indicatif::{ProgressBar, ProgressStyle};
@@ -609,6 +626,7 @@ fn predumped_block_can_be_added() {
         10,
         10,
         None,
+        vec![],
     );
 
     let bar = ProgressBar::new(blocks_with_proofs.len() as _);
@@ -631,14 +649,37 @@ fn predumped_block_can_be_added() {
     bar.finish();
 }
 
+#[derive(Debug, Deserialize)]
+struct ValidatorSet {
+    pub ID: u64, 
+    pub signer: Address,
+    pub power: u64,
+    pub accum: i64
+}
+
+fn read_validator_set(filename: String) -> Vec<PolValidator> {
+    read_validator_set_raw(filename).into()
+}
+
+fn read_validator_set_raw(filename: String) -> Vec<PolValidator> {
+    serde_json::from_reader(std::fs::File::open(std::path::Path::new(&filename)).unwrap()).unwrap()
+}
+
 #[test]
 #[cfg(feature = "pol")]
-fn pol_add_headers() {
+fn pol_init() {
+    let validator_set: Vec<PolValidator> = read_validator_set(String::from("./src/data/po_validator_set.json"));
+    let pol_validator_set: PolValidatorSet = PolValidatorSet{
+        proposer: 1,
+        validator_set: validator_set,
+        total_voting_power: 100
+    };
+    let pol_validator_set_data = rlp::encode(&pol_validator_set);
+
     testing_env!(get_context(vec![], false));
     let start_block_number = 24_157_312;
-    let num_of_blocks = 15;
-    let (blocks, _hashes) = get_blocks(&POL_WEB3RS, start_block_number - 1, start_block_number + num_of_blocks);
-
+    let (blocks, _hashes) = get_blocks(&POL_WEB3RS, start_block_number - 1, start_block_number);
+    
     let mut contract = EthClient::init(
         true,
         0,
@@ -647,13 +688,12 @@ fn pol_add_headers() {
         400,
         400,
         250,
-        None
+        None,
+        pol_validator_set_data,
     );
 
-    format!("{:?}", blocks[0].clone());
-    // for block in blocks.into_iter().skip(1) {
-    //     contract.add_block_header(block, vec![]);
-    // }
-
-    // assert!(contract.headers.len() == num_of_blocks as u64);
+    for block in blocks.into_iter().skip(1) {
+        contract.add_block_header(block, vec![]);
+    }
+    assert!(contract.headers.len() == 1 as u64);
 }

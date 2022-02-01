@@ -5,6 +5,12 @@ use near_sdk::collections::UnorderedMap;
 use near_sdk::{assert_self, AccountId};
 use near_sdk::{env, near_bindgen, PanicOnDefault};
 
+#[cfg(feature = "pol")]
+use libsecp256k1::{recover, Message, RecoveryId, Signature};
+
+#[cfg(feature = "pol")]
+use tiny_keccak::{Hasher, Keccak};
+
 #[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
 
@@ -13,7 +19,7 @@ mod pol_constants {
     pub const POL_SPRINT_LENGTH: usize = 64;
     pub const POL_EXTRA_VANITY: usize = 32;
     pub const POL_EXTRA_SEAL: usize = 65;
-    pub const POL_VALIDATOR_BYTES_SIZE: usize = 20;
+    pub const POL_VALIDATOR_BYTES_SIZE: usize = 40;
     pub const POL_DIFFICULTY_IN_TURN: usize = 2;
     pub const POL_DIFFICULTY_NO_TURN: usize = 1;
 }
@@ -118,6 +124,8 @@ pub struct EthClient {
     trusted_signer: Option<AccountId>,
     /// Mask determining all paused functions
     paused: Mask,
+    #[cfg(feature = "pol")]
+    pol_validator_set: PolValidatorSet
 }
 
 #[near_bindgen]
@@ -132,11 +140,16 @@ impl EthClient {
         #[serializer(borsh)] finalized_gc_threshold: u64,
         #[serializer(borsh)] num_confirmations: u64,
         #[serializer(borsh)] trusted_signer: Option<AccountId>,
+        #[serializer(borsh)] pol_validator_set: Vec<u8>,
     ) -> Self {
         assert!(!Self::initialized(), "Already initialized");
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
         let header_hash = header.hash.unwrap().clone();
         let header_number = header.number;
+        
+        #[cfg(feature = "pol")]
+        let pol_validators: PolValidatorSet = rlp::decode(&pol_validator_set).unwrap();
+
         let mut res = Self {
             validate_header,
             dags_start_epoch,
@@ -151,6 +164,8 @@ impl EthClient {
             infos: UnorderedMap::new(b"i".to_vec()),
             trusted_signer,
             paused: Mask::default(),
+            #[cfg(feature = "pol")]
+            pol_validator_set: pol_validators
         };
         res.canonical_header_hashes
             .insert(&header_number, &header_hash);
@@ -411,16 +426,25 @@ impl EthClient {
             #[cfg(feature = "pol")]
             return self.pol_verify_header(&header, &prev);
         }
-
         return self.ethash_verify_header(&header, &prev, &dag_nodes);
     }
 
     fn verify_basic(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
-        header.gas_used <= header.gas_limit
+        header.gas_used <= header.gas_limit//
             && header.gas_limit >= U256(5000.into())
             && header.timestamp > prev.timestamp
-            && header.number == prev.number + 1
-            && header.parent_hash == prev.hash.unwrap()
+            && header.number == prev.number + 1 //
+            && header.parent_hash == prev.hash.unwrap() //
+    }
+
+    #[cfg(feature = "pol")]
+    fn pol_is_sprint(number: usize) -> bool {
+        (number + 1) % POL_SPRINT_LENGTH == 0
+    }
+
+    #[cfg(feature = "pol")]
+    fn is_sprint_start(number: u64) -> bool {
+        number as usize %POL_SPRINT_LENGTH == 0
     }
 
     //  Verify polygon chain header.
@@ -435,11 +459,44 @@ impl EthClient {
     }
 
     #[cfg(feature = "pol")]
+    fn pol_get_validator_set_from_block(header: &BlockHeader) -> (Vec<u8>, u64) {
+        let validators = header.extra_data[POL_EXTRA_VANITY..(header.extra_data.len() - POL_EXTRA_SEAL)].to_vec();
+        let validators_len = (validators.len() / POL_VALIDATOR_BYTES_SIZE) as u64;
+        (validators, validators_len)
+    }
+
+    #[cfg(feature = "pol")]
+    fn pol_get_current_validators(&self, number: u64) -> (Vec<u8>, u64) {
+        let sprint_block_number = number - 1 - (number % POL_SPRINT_LENGTH as u64);
+        let sprint_epoch_hash = self.canonical_header_hashes.get(&(sprint_block_number - POL_SPRINT_LENGTH as u64)).unwrap();
+        let sprint_epoch_block = self.headers.get(&sprint_epoch_hash).unwrap();
+        EthClient::pol_get_validator_set_from_block(&sprint_epoch_block)
+    }
+
+    #[cfg(feature = "pol")]
     fn pol_verify_seal(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
+        let (validators, validators_len) = self.pol_get_current_validators(header.number.clone());
+        if !self.pol_is_in_validator_set(&validators, header.author) {
+            return false;
+        }
         true
     }
 
-    //// Verify PoW of the header.
+     // check if the author is in the validators set.
+     #[cfg(feature = "pol")]
+     fn pol_is_in_validator_set(&self, validators: &Vec<u8>, add: Address) -> bool {
+         for x in 0..(validators.len() / POL_VALIDATOR_BYTES_SIZE) {
+             let value =
+                 &validators[(x * POL_VALIDATOR_BYTES_SIZE)..((x + 1) * POL_VALIDATOR_BYTES_SIZE - 20)];
+             let _add: Address = Address::from(value);
+             if _add == add {
+                 return true;
+             }
+         }
+         false
+     }
+
+    // Verify PoW of the header.
     fn ethash_verify_header(
         &self,
         header: &BlockHeader,
