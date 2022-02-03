@@ -6,7 +6,7 @@ on:
 name: Sigma Prime security testing
 jobs:
   sigma-prime:
-    runs-on: self-hosted
+    runs-on: [self-hosted, heavy]
     name: Sigma Prime security testing
     steps:
 
@@ -18,6 +18,23 @@ jobs:
         with:
           repository: aurora-is-near/sigma-prime-security-testing
           ssh-key: ${{ secrets.SIGMA_PRIME_REPO_SSH_KEY }}
-          path: sigma-prime
+          path: sigma-prime/tests
 
-      - run: ls -la
+      - name: Build docker-image
+        run: |
+          docker build \
+            -f sigma-prime/tests/Dockerfile \
+            -t "sigma-prime-testing-${RUNNER_NAME}" \
+            ./sigma-prime
+
+      - name: Run tests
+        run: |
+          docker run \
+            --rm \
+            -v "$(pwd)/.:/repo/rainbow-bridge" \
+            -e SOME_VARIABLE=SOME_VALUE \
+            "sigma-prime-testing-${RUNNER_NAME}"
+
+      - name: Remove docker image
+        if: ${{ always() }}
+        run: docker rmi "sigma-prime-testing-${RUNNER_NAME}" || true
