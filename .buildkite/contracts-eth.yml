@@ -12,6 +12,7 @@ steps:
       command: |
           source testing/ci/e2e_ci_prepare_env.sh
           cd contracts/eth/nearprover
+          yarn --cwd ../
           yarn
           yarn test
       agents:
