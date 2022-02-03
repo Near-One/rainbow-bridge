@@ -481,6 +481,9 @@ impl EthClient {
             return false;
         }
 
+        if !self.pol_is_author(header) {
+            return false;
+        }
         self.pol_verify_seal(header, prev)
     }
 
@@ -511,6 +514,42 @@ impl EthClient {
             return false;
         }
         true
+    }
+
+    // check if the author is the signer.
+    #[cfg(feature = "pol")]
+    fn pol_is_author(&self, header: &BlockHeader) -> bool {
+        let seal_hash = self.pol_seal_hash(header);
+        // get the signature from header extra_data
+        let signature = header.extra_data[header.extra_data.len() - POL_EXTRA_SEAL..].to_vec();
+        let mut sig = [0u8; 65];
+        sig.copy_from_slice(&signature[..]);
+        let v = sig[64];
+        let mut r = [0u8; 32];
+        let mut s = [0u8; 32];
+        r.copy_from_slice(&signature[0..32]);
+        s.copy_from_slice(&signature[32..64]);
+        let rec_id = RecoveryId::parse(v).unwrap();
+        let mut data = [0u8; 64];
+        data[0..32].copy_from_slice(&r[..]);
+        data[32..64].copy_from_slice(&s[..]);
+        let sig = Signature::parse_standard(&data).unwrap();
+        let msg = Message::parse_slice(&seal_hash).unwrap();
+        let public_key = recover(&msg, &sig, &rec_id).unwrap();
+        let mut keccak = Keccak::v256();
+        let mut result = [0u8; 32];
+        keccak.update(&public_key.serialize()[1..]);
+        keccak.finalize(&mut result);
+        let mut address = [0u8; 20];
+        address.copy_from_slice(&result[12..]);
+        H160(address.into()) == self.pol_validator_set.get_proposer()
+    }
+
+    // seal and hash pol header.
+    #[cfg(feature = "pol")]
+    fn pol_seal_hash(&self, header: &BlockHeader) -> [u8; 32] {
+        let d = SealData { header };
+        d.seal_hash()
     }
 
     // check if the author is in the validators set.
