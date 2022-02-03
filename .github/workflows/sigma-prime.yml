@@ -1,0 +1,20 @@
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+name: Sigma Prime security testing
+jobs:
+  sigma-prime:
+    runs-on: self-hosted
+    name: Sigma Prime security testing
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v2
+      - run: pwd
+      - name: Clone sigma prime security testing repository
+        uses: actions/checkout@v2
+        with:
+          repository: aurora-is-near/sigma-prime-security-testing
+          ssh-key: ${{ secrets.SIGMA_PRIME_REPO_SSH_KEY }}
+      - run: pwd
