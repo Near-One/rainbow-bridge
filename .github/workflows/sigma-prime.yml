@@ -20,4 +20,4 @@ jobs:
           ssh-key: ${{ secrets.SIGMA_PRIME_REPO_SSH_KEY }}
           path: sigma-prime
 
-      - run: pwd
+      - run: ls -la
