@@ -477,7 +477,9 @@ pub fn near_keccak512(data: &[u8]) -> [u8; 64] {
     buffer
 }
 
-// Pol
+// Polygon
+pub const priority_window_size_factor: u64 = 2;
+
 #[cfg(feature = "pol")]
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
@@ -544,6 +546,52 @@ impl PolValidatorSet {
         for val in &self.validator_set {
             stream.append(val);
         }
+    }
+
+    fn calculate_total_voting_power(&mut self) -> u64 {
+        let mut new_total_voting_power = 0;
+        for val in self.validator_set.clone() {
+            new_total_voting_power += val.voting_power;
+        }
+        self.total_voting_power = new_total_voting_power;
+        return new_total_voting_power;
+    }
+
+    fn get_proposer(&mut self) {
+        let total_voting_power: u64 = self.calculate_total_voting_power();
+        let diff_max: u64 = priority_window_size_factor * total_voting_power;
+        self.rescale_priorities(diff_max as i64);
+    }
+
+    fn rescale_priorities(&mut self, diff_max: i64) {
+        let diff = self.compute_max_min_priority_diff(1) - self.compute_max_min_priority_diff(-1);
+        let ratio: i64 = (diff + diff_max as i64 - 1) / diff_max as i64;
+        if diff > diff_max {
+            for val in &mut self.validator_set {
+                val.proposer_priority /= ratio;
+            }    
+        }
+    }
+
+    fn compute_max_min_priority_diff(&self, mode: i64) -> i64 {
+        let mut extr: i64 =  self.validator_set.clone()[0].proposer_priority;
+
+        for val in self.validator_set.clone() {
+            if (val.proposer_priority - extr) * mode > 0 {
+                extr = val.proposer_priority;
+            }
+        }
+        extr
+    }
+
+    fn compute_avg_proposer_priority(&self) {
+        let mut sum: i64 = 0;
+        for val in self.validator_set.clone() {
+        }
+    }
+
+    fn shift_by_avg_proposer_priority(&self) {
+
     }
 }
 
