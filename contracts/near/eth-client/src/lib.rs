@@ -125,7 +125,7 @@ pub struct EthClient {
     /// Mask determining all paused functions
     paused: Mask,
     #[cfg(feature = "pol")]
-    pol_validator_set: PolValidatorSet
+    pol_validator_set: PolValidatorSet,
 }
 
 #[near_bindgen]
@@ -146,7 +146,6 @@ impl EthClient {
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
         let header_hash = header.hash.unwrap().clone();
         let header_number = header.number;
-        
         #[cfg(feature = "pol")]
         let pol_validators: PolValidatorSet = rlp::decode(&pol_validator_set).unwrap();
 
@@ -165,7 +164,7 @@ impl EthClient {
             trusted_signer,
             paused: Mask::default(),
             #[cfg(feature = "pol")]
-            pol_validator_set: pol_validators
+            pol_validator_set: pol_validators,
         };
         res.canonical_header_hashes
             .insert(&header_number, &header_hash);
@@ -430,11 +429,11 @@ impl EthClient {
     }
 
     fn verify_basic(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
-        header.gas_used <= header.gas_limit//
+        header.gas_used <= header.gas_limit
             && header.gas_limit >= U256(5000.into())
             && header.timestamp > prev.timestamp
-            && header.number == prev.number + 1 //
-            && header.parent_hash == prev.hash.unwrap() //
+            && header.number == prev.number + 1
+            && header.parent_hash == prev.hash.unwrap()
     }
 
     #[cfg(feature = "pol")]
@@ -442,25 +441,54 @@ impl EthClient {
         (number + 1) % POL_SPRINT_LENGTH == 0
     }
 
-    #[cfg(feature = "pol")]
-    fn is_sprint_start(number: u64) -> bool {
-        number as usize %POL_SPRINT_LENGTH == 0
-    }
-
     //  Verify polygon chain header.
     #[cfg(feature = "pol")]
     fn pol_verify_header(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
-        self.pol_verify_cascading_field(header, prev)
-    }
+        // verify basic header properties.
+        if !self.verify_basic(header, prev) {
+            return false;
+        }
 
-    #[cfg(feature = "pol")]
-    fn pol_verify_cascading_field(&self, header: &BlockHeader, prev: &BlockHeader) -> bool {
+        let is_sprint = EthClient::pol_is_sprint(header.number as usize);
+        let signers_bytes = header.extra_data.len() - (POL_EXTRA_VANITY + POL_EXTRA_SEAL);
+        // check it is not a sprint header but contains the signers.
+        if !is_sprint && signers_bytes != 0 {
+            return false;
+        }
+
+        // check if it is a sprint header and contains the signers.
+        if is_sprint && signers_bytes % POL_VALIDATOR_BYTES_SIZE != 0 {
+            return false;
+        }
+
+        // Ensure that the mix digest is zero as we don't have fork protection currently
+        if header.mix_hash != H256([0; 32].into()) {
+            return false;
+        }
+
+        // Verify that the gas limit is <= 2^63-1
+        if header.gas_limit > U256((0x7fffffffffffffff as u64).into()) {
+            return false;
+        }
+
+        let prev_gas_limit = format!("{}", prev.gas_limit).parse::<i64>().unwrap();
+        let header_gas_limit = format!("{}", header.gas_limit).parse::<i64>().unwrap();
+        let diff = (prev_gas_limit - header_gas_limit).abs();
+        let limit = prev_gas_limit / 256;
+
+        // Verify that the gas limit remains within allowed bounds
+        if diff >= limit {
+            return false;
+        }
+
         self.pol_verify_seal(header, prev)
     }
 
     #[cfg(feature = "pol")]
     fn pol_get_validator_set_from_block(header: &BlockHeader) -> (Vec<u8>, u64) {
-        let validators = header.extra_data[POL_EXTRA_VANITY..(header.extra_data.len() - POL_EXTRA_SEAL)].to_vec();
+        let validators = header.extra_data
+            [POL_EXTRA_VANITY..(header.extra_data.len() - POL_EXTRA_SEAL)]
+            .to_vec();
         let validators_len = (validators.len() / POL_VALIDATOR_BYTES_SIZE) as u64;
         (validators, validators_len)
     }
@@ -468,9 +496,12 @@ impl EthClient {
     #[cfg(feature = "pol")]
     fn pol_get_current_validators(&self, number: u64) -> (Vec<u8>, u64) {
         let sprint_block_number = number - 1 - (number % POL_SPRINT_LENGTH as u64);
-        let sprint_epoch_hash = self.canonical_header_hashes.get(&(sprint_block_number - POL_SPRINT_LENGTH as u64)).unwrap();
-        let sprint_epoch_block = self.headers.get(&sprint_epoch_hash).unwrap();
-        EthClient::pol_get_validator_set_from_block(&sprint_epoch_block)
+        let sprint_hash = self
+            .canonical_header_hashes
+            .get(&(sprint_block_number - POL_SPRINT_LENGTH as u64))
+            .unwrap();
+        let sprint_block = self.headers.get(&sprint_hash).unwrap();
+        EthClient::pol_get_validator_set_from_block(&sprint_block)
     }
 
     #[cfg(feature = "pol")]
@@ -482,19 +513,19 @@ impl EthClient {
         true
     }
 
-     // check if the author is in the validators set.
-     #[cfg(feature = "pol")]
-     fn pol_is_in_validator_set(&self, validators: &Vec<u8>, add: Address) -> bool {
-         for x in 0..(validators.len() / POL_VALIDATOR_BYTES_SIZE) {
-             let value =
-                 &validators[(x * POL_VALIDATOR_BYTES_SIZE)..((x + 1) * POL_VALIDATOR_BYTES_SIZE - 20)];
-             let _add: Address = Address::from(value);
-             if _add == add {
-                 return true;
-             }
-         }
-         false
-     }
+    // check if the author is in the validators set.
+    #[cfg(feature = "pol")]
+    fn pol_is_in_validator_set(&self, validators: &Vec<u8>, add: Address) -> bool {
+        for x in 0..(validators.len() / POL_VALIDATOR_BYTES_SIZE) {
+            let value = &validators
+                [(x * POL_VALIDATOR_BYTES_SIZE)..((x + 1) * POL_VALIDATOR_BYTES_SIZE - 20)];
+            let _add: Address = Address::from(value);
+            if _add == add {
+                return true;
+            }
+        }
+        false
+    }
 
     // Verify PoW of the header.
     fn ethash_verify_header(
