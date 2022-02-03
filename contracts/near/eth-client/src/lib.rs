@@ -4,6 +4,7 @@ use eth_types::*;
 use near_sdk::collections::UnorderedMap;
 use near_sdk::{assert_self, AccountId};
 use near_sdk::{env, near_bindgen, PanicOnDefault};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[cfg(feature = "pol")]
 use libsecp256k1::{recover, Message, RecoveryId, Signature};
@@ -421,6 +422,7 @@ impl EthClient {
         prev: &BlockHeader,
         dag_nodes: &[DoubleNodeWithMerkleProof],
     ) -> bool {
+        if header.
         if cfg!(feature = "pol") {
             #[cfg(feature = "pol")]
             return self.pol_verify_header(&header, &prev);
@@ -434,6 +436,14 @@ impl EthClient {
             && header.timestamp > prev.timestamp
             && header.number == prev.number + 1
             && header.parent_hash == prev.hash.unwrap()
+            && header.timestamp.duration_since(UNIX_EPOCH).unwrap().as_millis() <= self.get_epoch_ms()
+    }
+
+    fn get_epoch_ms(&self) -> u128 {
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis()
     }
 
     #[cfg(feature = "pol")]
