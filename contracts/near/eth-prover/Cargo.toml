@@ -16,7 +16,7 @@ near-sdk = "4.0.0-pre.5"
 borsh = "0.9"
 rlp = "0.4.2"
 hex = "0.4.2"
-near-plugins = { git = "https://github.com/mfornet/near-plugins" }
+near-plugins = { git = "https://github.com/mfornet/near-plugins", rev="b095f1f1" }
 
 [dev-dependencies]
 hex = "0.4.2"
