@@ -10,8 +10,8 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 eth-types =  { path = "../eth-types" }
 admin-controlled =  { path = "../admin-controlled" }
-near-sdk = { git = "https://github.com/near/near-sdk-rs", rev = "613adcab6322e4f830efb4d5bde2a810ae642158" }
-borsh = "0.8.1"
+near-sdk = "4.0.0-pre.5"
+borsh = "0.9"
 wee_alloc = { version = "0.4.5", default-features = false, features = [] }
 rlp = "0.4.2"
 futures = "0.1.26"
@@ -20,6 +20,7 @@ arrutil = "0.1.2"
 ethash = { git = "https://github.com/nearprotocol/rust-ethash" }
 hex = "0.4.0"
 rustc-hex = "2.1.0"
+near-plugins = { git = "https://github.com/mfornet/near-plugins" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # serde's Serialize and Deserialize traits are required for `near_bindgen` macro for non-wasm32 targets
