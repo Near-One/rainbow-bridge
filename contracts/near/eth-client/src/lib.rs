@@ -1,8 +1,8 @@
-use admin_controlled::Mask;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
+use near_plugins::{only, pause, FullAccessKeyFallback, Ownable, Pausable, Upgradable};
 use near_sdk::collections::UnorderedMap;
-use near_sdk::{assert_self, AccountId};
+use near_sdk::AccountId;
 use near_sdk::{env, near_bindgen, PanicOnDefault};
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -59,10 +59,16 @@ pub struct HeaderInfo {
     pub number: u64,
 }
 
-const PAUSE_ADD_BLOCK_HEADER: Mask = 1;
-
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[derive(
+    BorshDeserialize,
+    BorshSerialize,
+    PanicOnDefault,
+    Ownable,
+    Pausable,
+    Upgradable,
+    FullAccessKeyFallback,
+)]
 pub struct EthClient {
     /// Whether client validates the PoW when accepting the header. Should only be set to `false`
     /// for debugging, testing, diagnostic purposes when used with Ganache or in PoA testnets
@@ -101,9 +107,8 @@ pub struct EthClient {
     /// If set, block header added by trusted signer will skip validation and added by
     /// others will be immediately rejected, used in PoA testnets
     trusted_signer: Option<AccountId>,
-    // TODO: Mark field as deprecated.
-    /// Mask determining all paused functions
-    paused: Mask,
+    // Deprecated field. Requires migration to be removed.
+    __paused: u128,
 }
 
 #[near_bindgen]
@@ -119,7 +124,6 @@ impl EthClient {
         #[serializer(borsh)] num_confirmations: u64,
         #[serializer(borsh)] trusted_signer: Option<AccountId>,
     ) -> Self {
-        assert!(!Self::initialized(), "Already initialized");
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
         let header_hash = header.hash.unwrap().clone();
         let header_number = header.number;
@@ -136,7 +140,7 @@ impl EthClient {
             headers: UnorderedMap::new(b"h".to_vec()),
             infos: UnorderedMap::new(b"i".to_vec()),
             trusted_signer,
-            paused: Mask::default(),
+            __paused: Default::default(),
         };
         res.canonical_header_hashes
             .insert(&header_number, &header_hash);
@@ -199,6 +203,7 @@ impl EthClient {
     /// Add the block header to the client.
     /// `block_header` -- RLP-encoded Ethereum header;
     /// `dag_nodes` -- dag nodes with their merkle proofs.
+    #[pause]
     #[result_serializer(borsh)]
     pub fn add_block_header(
         &mut self,
@@ -206,7 +211,6 @@ impl EthClient {
         #[serializer(borsh)] dag_nodes: Vec<DoubleNodeWithMerkleProof>,
     ) {
         env::log_str("Add block header");
-        self.check_not_paused(PAUSE_ADD_BLOCK_HEADER);
         let header: BlockHeader = rlp::decode(block_header.as_slice()).unwrap();
 
         if let Some(trusted_signer) = &self.trusted_signer {
@@ -230,8 +234,8 @@ impl EthClient {
         self.record_header(header);
     }
 
+    #[only(owner)]
     pub fn update_trusted_signer(&mut self, trusted_signer: Option<AccountId>) {
-        assert_self();
         self.trusted_signer = trusted_signer;
     }
 
@@ -439,5 +443,3 @@ impl EthClient {
         (H256(pair.0), H256(pair.1))
     }
 }
-
-admin_controlled::impl_admin_controlled!(EthClient, paused);

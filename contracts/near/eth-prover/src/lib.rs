@@ -1,4 +1,3 @@
-use admin_controlled::Mask;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::{near_keccak256, BlockHeader, LogEntry, Receipt, H256};
 use near_plugins::{only, pause, FullAccessKeyFallback, Ownable, Pausable, Upgradable};
@@ -24,7 +23,7 @@ const ON_BLOCK_HASH_GAS: Gas = Gas(5 * Gas::ONE_TERA.0);
 pub struct EthProver {
     bridge_smart_contract: AccountId,
     // Deprecated field. Requires migration to be removed.
-    __paused: Mask,
+    __paused: u128,
 }
 
 /// Defines an interface to call EthProver back as a callback with the result from the
@@ -60,7 +59,7 @@ impl EthProver {
         );
         Self {
             bridge_smart_contract,
-            ..Default::default()
+            __paused: Default::default(),
         }
     }
 

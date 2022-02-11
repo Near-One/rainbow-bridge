@@ -880,7 +880,6 @@ dependencies = [
 name = "eth-client"
 version = "0.1.0"
 dependencies = [
- "admin-controlled",
  "arrutil",
  "borsh 0.9.3",
  "eth-types",
@@ -904,7 +903,6 @@ dependencies = [
 name = "eth-prover"
 version = "0.1.0"
 dependencies = [
- "admin-controlled",
  "borsh 0.9.3",
  "eth-types",
  "hex",
