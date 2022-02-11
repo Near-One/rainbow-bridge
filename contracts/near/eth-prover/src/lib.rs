@@ -1,6 +1,7 @@
 use admin_controlled::Mask;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::{near_keccak256, BlockHeader, LogEntry, Receipt, H256};
+use near_plugins::{only, pause, FullAccessKeyFallback, Ownable, Pausable, Upgradable};
 use near_sdk::{env, ext_contract, near_bindgen, AccountId, Gas, PanicOnDefault, PromiseOrValue};
 use rlp::Rlp;
 
@@ -11,14 +12,19 @@ const BLOCK_HASH_SAFE_GAS: Gas = Gas(10 * Gas::ONE_TERA.0);
 const ON_BLOCK_HASH_GAS: Gas = Gas(5 * Gas::ONE_TERA.0);
 
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[derive(
+    BorshDeserialize,
+    BorshSerialize,
+    PanicOnDefault,
+    Ownable,
+    Pausable,
+    Upgradable,
+    FullAccessKeyFallback,
+)]
 pub struct EthProver {
     bridge_smart_contract: AccountId,
-    paused: Mask,
-}
-
-fn assert_self() {
-    assert_eq!(env::current_account_id(), env::predecessor_account_id());
+    // Deprecated field. Requires migration to be removed.
+    __paused: Mask,
 }
 
 /// Defines an interface to call EthProver back as a callback with the result from the
@@ -44,8 +50,6 @@ fn get_vec(data: &Rlp, pos: usize) -> Vec<u8> {
     data.at(pos).unwrap().as_val::<Vec<u8>>().unwrap()
 }
 
-const PAUSE_VERIFY: Mask = 1;
-
 #[near_bindgen]
 impl EthProver {
     #[init]
@@ -56,7 +60,7 @@ impl EthProver {
         );
         Self {
             bridge_smart_contract,
-            paused: Mask::default(),
+            ..Default::default()
         }
     }
 
@@ -64,6 +68,7 @@ impl EthProver {
     /// This method can only be called by the EthProver contract itself (e.g. as callback).
     /// - `block_hash` is the actual data from the EthClient call
     /// - `expected_block_hash` is the block hash that we expect to be passed by us.
+    #[only(self)]
     #[result_serializer(borsh)]
     pub fn on_block_hash(
         &self,
@@ -72,7 +77,6 @@ impl EthProver {
         block_hash: Option<H256>,
         #[serializer(borsh)] expected_block_hash: H256,
     ) -> bool {
-        assert_self();
         return block_hash == Some(expected_block_hash);
     }
 
@@ -100,6 +104,7 @@ impl EthProver {
         .into()
     }
 
+    #[pause]
     #[result_serializer(borsh)]
     pub fn verify_log_entry(
         &self,
@@ -111,7 +116,6 @@ impl EthProver {
         #[serializer(borsh)] proof: Vec<Vec<u8>>,
         #[serializer(borsh)] skip_bridge_call: bool,
     ) -> PromiseOrValue<bool> {
-        self.check_not_paused(PAUSE_VERIFY);
         let log_entry: LogEntry = rlp::decode(log_entry_data.as_slice()).unwrap();
         let receipt: Receipt = rlp::decode(receipt_data.as_slice()).unwrap();
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
@@ -243,8 +247,8 @@ impl EthProver {
         }
     }
 
+    #[only(owner)]
     pub fn set_bridge(&mut self, bridge: AccountId) {
-        assert_self();
         env::log_str(
             format!(
                 "Old bridge account: {} New bridge account {}",
@@ -255,8 +259,6 @@ impl EthProver {
         self.bridge_smart_contract = bridge;
     }
 }
-
-admin_controlled::impl_admin_controlled!(EthProver, paused);
 
 #[cfg(test)]
 mod tests;
