@@ -1,4 +1,5 @@
 /* eslint-env jest */
+/* eslint-disable indent */
 require('dotenv').config()
 const { Eth2NearRelay } = require('./index')
 const os = require('os')
@@ -10,8 +11,8 @@ test('Computing Ethasproof epochs in advance ', async () => {
     const config = {
       ethNodeUrl: process.env.WEB3_RPC_ENDPOINT,
       totalSubmitBlock: 0,
-      gasPerTransaction:  1,
-      nearNetworkId: "testnet",
+      gasPerTransaction: 1,
+      nearNetworkId: 'testnet',
       metricsPort: 0
     }
 
