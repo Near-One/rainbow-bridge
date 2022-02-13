@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const BN = require("bn.js");
 const bs58 = require('bs58');
+const {ethers} = require("hardhat");
 
 function computeMerkleRoot(proof) {
     const inner_lite_hash = blockHeaderInnerLiteHash(proof.block_header_lite.inner_lite)
@@ -40,4 +41,25 @@ function blockHeaderInnerLiteHash(data) {
     return crypto.createHash('sha256').update(buffer).digest()
 }
 
-exports.computeMerkleRoot = computeMerkleRoot
+async function upgradeAddressAtSlotLegacy (provider, signer, adminControlled, newAddress, addressSlot) {
+    // Mask matches only on the latest 20 bytes (to store the address)
+    const mask = ethers.BigNumber.from('0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff');
+    console.log(`Used mask: ${mask}`);
+
+    const options = {
+        gasLimit: 50000,
+        gasPrice: 150000000000, // 150 Gwei
+    };
+    const tx = await adminControlled
+        .connect(signer)
+        .populateTransaction
+        .adminSstoreWithMask(addressSlot, newAddress, mask, options);
+    tx.nonce = await provider.getTransactionCount(tx.from);
+    console.log(tx);
+    const signedTx = await signer.signTransaction(tx);
+    console.log(signedTx);
+    return provider.sendTransaction(signedTx);
+}
+
+exports.upgradeAddressAtSlotLegacy = upgradeAddressAtSlotLegacy;
+exports.computeMerkleRoot = computeMerkleRoot;

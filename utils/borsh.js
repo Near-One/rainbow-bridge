@@ -11,6 +11,9 @@ const {
   signAndSendTransaction
 } = require('./robust')
 
+const VALIDATOR_STAKE_V1 = 0
+const VALIDATOR_STAKE_V2 = 1
+
 class BorshError extends Error {
   constructor (message) {
     super(message)
@@ -404,6 +407,9 @@ function borshify (block) {
     Buffer.concat(
       block.next_bps.map((nextBp) =>
         Buffer.concat([
+          Object.prototype.hasOwnProperty.call(nextBp, 'validator_stake_struct_version') && nextBp.validator_stake_struct_version === 'V2'
+            ? Buffer.from([VALIDATOR_STAKE_V2])
+            : Buffer.from([VALIDATOR_STAKE_V1]),
           Web3.utils.toBN(nextBp.account_id.length).toBuffer('le', 4),
           Buffer.from(nextBp.account_id),
           nextBp.public_key.substr(0, 8) === 'ed25519:'
@@ -438,6 +444,9 @@ function borshifyInitialValidators (initialValidators) {
     Buffer.concat(
       initialValidators.map((nextBp) =>
         Buffer.concat([
+          Object.prototype.hasOwnProperty.call(nextBp, 'validator_stake_struct_version') && nextBp.validator_stake_struct_version === 'V2'
+            ? Buffer.from([VALIDATOR_STAKE_V2])
+            : Buffer.from([VALIDATOR_STAKE_V1]),
           Web3.utils.toBN(nextBp.account_id.length).toBuffer('le', 4),
           Buffer.from(nextBp.account_id),
           nextBp.public_key.substr(0, 8) === 'ed25519:'

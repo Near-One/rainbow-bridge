@@ -10,7 +10,7 @@ contract AdminControlled {
         paused = flags;
     }
 
-    modifier onlyAdmin {
+    modifier onlyAdmin() {
         require(msg.sender == admin);
         _;
     }
