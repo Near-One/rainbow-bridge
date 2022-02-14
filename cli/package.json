@@ -26,7 +26,7 @@
     "eth-object": "https://github.com/near/eth-object#383b6ea68c7050bea4cab6950c1d5a7fa553e72b",
     "eth-util-lite": "near/eth-util-lite#master",
     "ethereumjs-util": "^6.2.0",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.7",
     "pm2": "^4.4.0",
     "pm2-promise": "^2.0.1",
     "rainbow-bridge-utils": "1.0.0",
