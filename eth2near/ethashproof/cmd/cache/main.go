@@ -48,8 +48,6 @@ func main() {
 		epoch = getEpoch(epochIdx)
 		cacheDir = getCacheDir(cacheDirIdx)
 	}
-	// fmt.Printf("Epoch: %d\n", epoch)
-	// fmt.Printf("CacheDir: %s\n", cacheDir)
 
 	root, err := ethashproof.CalculateDatasetMerkleRoot(uint64(epoch), true, cacheDir)
 	if err != nil {
