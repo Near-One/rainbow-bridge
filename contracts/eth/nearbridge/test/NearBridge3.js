@@ -33,12 +33,21 @@ describe('New tests', () => {
 
 describe('NearBridge with admin access', () => {
     const ADMIN_ADDRESS_SLOT = 0;
+    const UNPAUSED_ALL = 0;
+    const PAUSED_DEPOSIT = 1 << 0;
+    const PAUSED_WITHDRAW = 1 << 1;
+    const PAUSED_ADD_BLOCK = 1 << 2;
+    const PAUSED_CHALLENGE = 1 << 3;
+    const PAUSED_VERIFY = 1 << 4;
+
     let nearBridge;
     let adminAccount;
+    let userAccount1;
+    let userAccount2;
 
     beforeEach(async () => {
         ed25519 = await (await ethers.getContractFactory('Ed25519')).deploy();
-        [deployerAccount] = await ethers.getSigners();
+        [deployerAccount, userAccount1, userAccount2] = await ethers.getSigners();
 
         // Make the deployer admin
         adminAccount = deployerAccount;
@@ -53,8 +62,119 @@ describe('NearBridge with admin access', () => {
         );
     });
 
-    describe('Upgradability', async () => {
-        it('should upgrade the admin address from the provided hex string', async () => {
+    describe('AdminControlled', async () => {
+        it('Admin account matches', async() => {
+            expect(
+                await nearBridge.admin()
+            )
+                .to
+                .be
+                .equal(adminAccount.address);
+        });
+
+        it('regular user can not perform admin functions', async() => {
+            const recipientBalanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(userAccount2.address));
+            const contractBalanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(nearBridge.address));
+
+            const amountToTransfer = 4000; // wei
+            // user1 tries to perform `adminSendEth()` to replenish user2 balance
+            await expect(
+                nearBridge
+                    .connect(userAccount1)
+                    .adminSendEth(userAccount2.address, amountToTransfer)
+            )
+                .to
+                .be
+                .reverted;
+
+            const recipientBalanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(userAccount2.address));
+            const contractBalanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(nearBridge.address));
+
+            expect(recipientBalanceAfter)
+                .to
+                .be
+                .equal(recipientBalanceBefore);
+            expect(contractBalanceAfter)
+                .to
+                .be
+                .equal(contractBalanceBefore);
+
+            // Try to pause and unpause
+            await expect(nearBridge.connect(userAccount1).adminPause(PAUSED_DEPOSIT)).to.be.reverted;
+            await expect(nearBridge.connect(userAccount1).adminPause(PAUSED_WITHDRAW)).to.be.reverted;
+            await expect(nearBridge.connect(userAccount1).adminPause(PAUSED_ADD_BLOCK)).to.be.reverted;
+            await expect(nearBridge.connect(userAccount1).adminPause(PAUSED_CHALLENGE)).to.be.reverted;
+            await expect(nearBridge.connect(userAccount1).adminPause(PAUSED_VERIFY)).to.be.reverted;
+            await expect(nearBridge.connect(userAccount1).adminPause(UNPAUSED_ALL)).to.be.reverted;
+            // ------------------------------------------
+
+            // Try to use adminSstore
+            await expect(
+                nearBridge
+                    .connect(userAccount1)
+                    .adminSstore(0, 1)
+            )
+                .to
+                .be
+                .reverted;
+
+            // Try to use adminSstoreWithMask
+            await expect(
+                nearBridge
+                    .connect(userAccount1)
+                    .adminSstoreWithMask(0, 1, ethers.BigNumber.from('0x0000ffff'))
+            )
+                .to
+                .be
+                .reverted;
+
+            await expect(
+                nearBridge
+                    .connect(userAccount1)
+                    .adminDelegatecall(ethers.constants.AddressZero, ethers.utils.arrayify("0xabcdcafe"))
+            )
+                .to
+                .be
+                .reverted;
+        });
+
+        it('admin receive eth and transfer eth', async () => {
+            const replenishBalanceValue = 1_500_000;
+
+            const options = { value: replenishBalanceValue };
+            await nearBridge
+                .connect(adminAccount)
+                .adminReceiveEth(options);
+
+            const recipientBalanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(userAccount2.address));
+            const contractBalanceBefore = ethers.BigNumber.from(await ethers.provider.getBalance(nearBridge.address));
+
+            // Check the contract has the specified balance available
+            expect(contractBalanceBefore)
+                .to
+                .be
+                .equal(replenishBalanceValue);
+
+            // Send eth using admin access
+            const amountToTransfer = 4000; // wei
+            await nearBridge
+                .connect(adminAccount)
+                .adminSendEth(userAccount2.address, amountToTransfer);
+
+            const recipientBalanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(userAccount2.address));
+            const contractBalanceAfter = ethers.BigNumber.from(await ethers.provider.getBalance(nearBridge.address));
+
+            expect(recipientBalanceAfter)
+                .to
+                .be
+                .equal(recipientBalanceBefore.add(amountToTransfer));
+            expect(contractBalanceAfter)
+                .to
+                .be
+                .equal(contractBalanceBefore.sub(amountToTransfer));
+        });
+
+        it('should upgrade the admin address from the provided hex string using (using `adminSstoreWithMask()`)', async () => {
             const initialAdminAddress = await nearBridge.admin();
             expect(initialAdminAddress)
                 .to
@@ -67,11 +187,116 @@ describe('NearBridge with admin access', () => {
 
             // Mask matches only on the latest 20 bytes (to store the address)
             const mask = ethers.BigNumber.from("0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff");
-            nearBridge.adminSstoreWithMask(ADMIN_ADDRESS_SLOT, newAdminAddress, mask);
+            await nearBridge.adminSstoreWithMask(ADMIN_ADDRESS_SLOT, newAdminAddress, mask);
 
             expect((await nearBridge.admin()).toLowerCase())
                 .to
                 .equal(newAdminAddress);
+        });
+
+        it('should nominate and accept the new admin', async () => {
+            const initialAdminAddress = await nearBridge.admin();
+            const newAdminAddress = '0x0123456789abcdefcafedeadbeefbea77a1de456';
+            expect(newAdminAddress)
+                .not
+                .equal(initialAdminAddress);
+
+            await nearBridge.nominateAdmin(newAdminAddress);
+            expect(await nearBridge.admin())
+                .to
+                .equal(initialAdminAddress);
+            expect((await nearBridge.nominatedAdmin()).toLowerCase())
+                .to
+                .equal(newAdminAddress);
+
+            await nearBridge.acceptAdmin(newAdminAddress);
+            expect((await nearBridge.admin()).toLowerCase())
+                .to
+                .equal(newAdminAddress);
+            expect(await nearBridge.nominatedAdmin())
+                .to
+                .equal(ethers.constants.AddressZero);
+        });
+
+        it('should not accept the new admin twice', async () => {
+            const initialAdminAddress = await nearBridge.admin();
+            const newAdmin = userAccount2;
+            expect(newAdmin.address)
+                .not
+                .equal(initialAdminAddress);
+
+            await nearBridge.nominateAdmin(newAdmin.address);
+            await nearBridge.acceptAdmin(newAdmin.address);
+            expect((await nearBridge.admin()).toLowerCase())
+                .to
+                .equal(newAdmin.address.toLowerCase());
+            await expect(
+                nearBridge
+                    .connect(newAdmin)
+                    .acceptAdmin(newAdmin.address)
+            )
+                .to
+                .be
+                .revertedWith('Nominated admin is the same as the current');
+        });
+
+        it('should not nominate the same admin', async () => {
+            const initialAdminAddress = await nearBridge.admin();
+            await expect(nearBridge.nominateAdmin(initialAdminAddress))
+                .to
+                .be
+                .revertedWith('Nominated admin is the same as the current');
+        });
+
+        it('should not nominate zero address as an admin', async () => {
+            await expect(nearBridge.nominateAdmin(ethers.constants.AddressZero))
+                .to
+                .be
+                .revertedWith('Nominated admin shouldn\'t be zero address');
+        });
+
+        it('should reject the nominated admin', async () => {
+            const newAdminAddress = '0x0123456789abcdefcafedeadbeefbea77a1de456';
+            await nearBridge.nominateAdmin(newAdminAddress);
+            expect((await nearBridge.nominatedAdmin()).toLowerCase())
+                .to
+                .equal(newAdminAddress);
+
+            await nearBridge.rejectNominatedAdmin();
+            expect(await nearBridge.nominatedAdmin())
+                .to
+                .equal(ethers.constants.AddressZero);
+        });
+
+        it('should not accept any other admin than the nominated one', async () => {
+            const initialAdminAddress = await nearBridge.admin();
+            const newAdminAddress = '0x0123456789abcdefcafedeadbeefbea77a1de456';
+            expect(newAdminAddress)
+                .not
+                .equal(initialAdminAddress);
+
+            await nearBridge.nominateAdmin(newAdminAddress);
+
+            const otherNewAdminAddress = '0xabcd0000abcd0000abcd0000abcd0000abcd0000';
+            await expect(nearBridge.acceptAdmin(otherNewAdminAddress))
+                .to
+                .be
+                .revertedWith('The provided admin address doesn\'t match the nominated one');
+        });
+
+        it('should not accept the same admin', async () => {
+            const initialAdminAddress = await nearBridge.admin();
+            await expect(nearBridge.acceptAdmin(initialAdminAddress))
+                .to
+                .be
+                .revertedWith('Nominated admin is the same as the current');
+        });
+
+        it('should not accept the zero address admin', async () => {
+            await expect(nearBridge.acceptAdmin(ethers.constants.AddressZero))
+                .to
+                .be
+                .revertedWith('Nominated admin shouldn\'t be zero address');
         });
     });
 });
