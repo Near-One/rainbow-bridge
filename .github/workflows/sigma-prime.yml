@@ -38,7 +38,6 @@ jobs:
           docker run \
             --rm \
             -v "$(pwd)/.:/repo/rainbow-bridge" \
-            -e SOME_VARIABLE=SOME_VALUE \
             "$TESTING_IMAGE_NAME"
 
       - name: Remove docker image
