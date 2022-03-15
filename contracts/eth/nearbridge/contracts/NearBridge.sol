@@ -21,8 +21,6 @@ contract NearBridge is INearBridge, AdminControlled {
         uint256 stakeThreshold;
     }
 
-    // Whether the contract was initialized.
-    bool public initialized;
     uint256 public lockEthAmount;
     // lockDuration and replaceDuration shouldn't be extremely big, so adding them to an uint64 timestamp should not overflow uint256.
     uint256 public lockDuration;
@@ -30,24 +28,28 @@ contract NearBridge is INearBridge, AdminControlled {
     uint256 public replaceDuration;
     Ed25519 immutable edwards;
 
-    Epoch[3] epochs;
-    uint curEpoch;
-    uint64 curHeight;
+    // End of challenge period. If zero, untrusted* fields and lastSubmitter are not meaningful.
+    uint256 public lastValidAt;
 
+    uint64 curHeight;
     // The most recently added block. May still be in its challenge period, so should not be trusted.
     uint64 untrustedHeight;
-    uint256 untrustedTimestamp;
+
+    // Address of the account which submitted the last block.
+    address lastSubmitter;
+
+    // Whether the contract was initialized.
+    bool public initialized;
     bool untrustedNextEpoch;
     bytes32 untrustedHash;
     bytes32 untrustedMerkleRoot;
     bytes32 untrustedNextHash;
+    uint256 untrustedTimestamp;
     uint256 untrustedSignatureSet;
     NearDecoder.Signature[MAX_BLOCK_PRODUCERS] untrustedSignatures;
 
-    // Address of the account which submitted the last block.
-    address lastSubmitter;
-    // End of challenge period. If zero, untrusted* fields and lastSubmitter are not meaningful.
-    uint public lastValidAt;
+    Epoch[3] epochs;
+    uint256 curEpoch;
 
     mapping(uint64 => bytes32) blockHashes_;
     mapping(uint64 => bytes32) blockMerkleRoots_;
