@@ -34,7 +34,7 @@ jobs:
 
       - name: Install nearup
         run: |
-          pip3 install nearup --upgrade --user
+          pip3 install nearup==1.2.1 --upgrade --user
           echo "$(python3 -m site --user-base)/bin" >> $GITHUB_PATH
 
       - name: Clean pm2 log
