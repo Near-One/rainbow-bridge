@@ -24,7 +24,7 @@ touch $RAINBOW_DIR/logs/eth2near-relay/err.log
 touch $RAINBOW_DIR/logs/watchdog/out.log
 touch $RAINBOW_DIR/logs/watchdog/err.log
 
-pip3 install git+https://github.com/near/nearup.git@2c0604655770da9cfe684808bd5e235f3b16b9d7 --upgrade --user
+pip3 install git+https://github.com/near/nearup.git@9ef8666476a6e15818abf7e09649d1bb7d0d712c --upgrade --user
 
 unameOut="$(uname -s)"
 case "${unameOut}" in
