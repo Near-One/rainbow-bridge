@@ -48,6 +48,8 @@ func processDuringRead(f *os.File, startIn128Res int, fullSizeIn128Res uint32, m
 // 4. Return merkle root
 func CalculateDatasetMerkleRoot(epoch uint64, saveCache bool) (mtree.Hash, error) {
 	blockno := epoch * 30000
+	path := ethash.PathToDAG(epoch, ethash.DefaultDir)
+	os.Remove(path)
 	fmt.Printf("Make the dag\n")
 	ethash.MakeDAG(blockno, ethash.DefaultDir)
 
@@ -71,8 +73,7 @@ func CalculateDatasetMerkleRoot(epoch uint64, saveCache bool) (mtree.Hash, error
 		dt.RegisterIndex(indices...)
 	}
 
-	path := ethash.PathToDAG(uint64(blockno/30000), ethash.DefaultDir)
-	fmt.Printf("Calculating the proofs...\n")
+	fmt.Printf("Calculating the proofs... Path to dag:%s\n", path)
 	f, err := os.Open(path)
 	if err != nil {
 		return mtree.Hash{}, err

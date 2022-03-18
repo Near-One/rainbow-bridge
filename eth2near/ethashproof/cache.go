@@ -70,3 +70,7 @@ func LoadCache(epoch int) (*DatasetMerkleTreeCache, error) {
 	}
 	return result, nil
 }
+
+func PathToCache(epoch uint64) string {
+	return filepath.Join(getHomeDir(), ".ethashproof", fmt.Sprintf("%d.json", epoch))
+}

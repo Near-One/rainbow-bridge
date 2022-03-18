@@ -21,6 +21,7 @@ jobs:
           - job-name: nearprover test
             cmd: |
               cd contracts/eth/nearprover
+              yarn --cwd ../
               yarn
               yarn test
             timeout-minutes: 40

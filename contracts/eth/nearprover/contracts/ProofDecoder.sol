@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8;
 
-import "./bridge/Borsh.sol";
-import "./bridge/NearDecoder.sol";
+import "rainbow-bridge-sol/nearbridge/contracts/Borsh.sol";
+import "rainbow-bridge-sol/nearbridge/contracts/NearDecoder.sol";
 
 library ProofDecoder {
     using Borsh for Borsh.Data;
@@ -60,7 +60,6 @@ library ProofDecoder {
         if (executionStatus.enumIndex == 0) {
             executionStatus.unknown = true;
         } else if (executionStatus.enumIndex == 1) {
-            //revert("NearDecoder: decodeExecutionStatus failure case not implemented yet");
             // Can avoid revert since ExecutionStatus is latest field in all parent structures
             executionStatus.failed = true;
         } else if (executionStatus.enumIndex == 2) {
