@@ -24,7 +24,7 @@ touch $RAINBOW_DIR/logs/eth2near-relay/err.log
 touch $RAINBOW_DIR/logs/watchdog/out.log
 touch $RAINBOW_DIR/logs/watchdog/err.log
 
-pip3 install nearup --upgrade --user
+pip3 install nearup==1.2.1 --upgrade --user
 
 unameOut="$(uname -s)"
 case "${unameOut}" in
