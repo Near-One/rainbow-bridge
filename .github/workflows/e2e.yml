@@ -34,7 +34,7 @@ jobs:
 
       - name: Install nearup
         run: |
-          pip3 install git+https://github.com/near/nearup.git@7c0a37a92c5d843626c534d79d85951522b72125 --upgrade --user
+          pip3 install git+https://github.com/near/nearup.git@5e676b2dc800501b84a5da53eb42e3e370128447 --upgrade --user
           echo "$(python3 -m site --user-base)/bin" >> $GITHUB_PATH
 
       - name: Clean pm2 log
