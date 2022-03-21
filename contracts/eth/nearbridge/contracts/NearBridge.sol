@@ -8,7 +8,6 @@ import "./INearBridge.sol";
 import "./NearDecoder.sol";
 import "./Ed25519.sol";
 
-
 contract NearBridge is INearBridge, AdminControlled, ReentrancyGuard {
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
