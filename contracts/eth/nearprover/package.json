@@ -39,8 +39,5 @@
         "lint:sol:fix": "solium -d . --fix",
         "lint": "yarn lint:js && yarn lint:sol",
         "lint:fix": "yarn lint:js:fix && yarn lint:sol:fix"
-    },
-    "dependencies": {
-        "@openzeppelin/contracts": "^4.5.0"
     }
 }

@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
 import "./AdminControlled.sol";
 import "./INearBridge.sol";
 import "./NearDecoder.sol";
 import "./Ed25519.sol";
 
-contract NearBridge is INearBridge, AdminControlled, ReentrancyGuard {
+contract NearBridge is INearBridge, AdminControlled {
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
 
@@ -93,7 +91,6 @@ contract NearBridge is INearBridge, AdminControlled, ReentrancyGuard {
     function challenge(address payable receiver, uint signatureIndex)
         external
         override
-        nonReentrant
         pausable(PAUSED_CHALLENGE)
     {
         require(block.timestamp < lastValidAt, "No block can be challenged at this time");
