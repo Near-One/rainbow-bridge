@@ -90,13 +90,13 @@ contract NearBridge is INearBridge, AdminControlled {
         payable(msg.sender).transfer(amount);
     }
 
-    function challenge(address payable receiver, uint signatureIndex) public override pausable(PAUSED_CHALLENGE) {
+    function challenge(address payable receiver, uint signatureIndex) external override pausable(PAUSED_CHALLENGE) {
         require(block.timestamp < lastValidAt, "No block can be challenged at this time");
         require(!checkBlockProducerSignatureInHead(signatureIndex), "Can't challenge valid signature");
 
         balanceOf[lastSubmitter] = balanceOf[lastSubmitter] - lockEthAmount;
-        receiver.transfer(lockEthAmount / 2);
         lastValidAt = 0;
+        receiver.call{value: lockEthAmount / 2}("");
     }
 
     function checkBlockProducerSignatureInHead(uint signatureIndex) public view override returns (bool) {
