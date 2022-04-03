@@ -1,0 +1,45 @@
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+name: Sigma Prime security testing
+jobs:
+  sigma-prime:
+    runs-on: [self-hosted, heavy]
+    name: Sigma Prime security testing
+    steps:
+
+      - name: Clone the repository
+        uses: actions/checkout@v2
+
+      - name: Clone sigma prime security testing repository
+        uses: actions/checkout@v2
+        with:
+          repository: aurora-is-near/sigma-prime-security-testing
+          ssh-key: ${{ secrets.SIGMA_PRIME_REPO_SSH_KEY }}
+          path: sigma-prime/tests
+
+      - name: Construct docker image name
+        run: |
+          runner_name_lower=$(echo $RUNNER_NAME | tr '[:upper:]' '[:lower:]')
+          testing_image_name="sigma-prime-testing-${runner_name_lower}"
+          echo "TESTING_IMAGE_NAME=${testing_image_name}" >> $GITHUB_ENV
+
+      - name: Build docker image
+        run: |
+          docker build \
+            -f sigma-prime/tests/Dockerfile \
+            -t "$TESTING_IMAGE_NAME" \
+            ./sigma-prime
+
+      - name: Run tests
+        run: |
+          docker run \
+            --rm \
+            -v "$(pwd)/.:/repo/rainbow-bridge" \
+            "$TESTING_IMAGE_NAME"
+
+      - name: Remove docker image
+        if: ${{ always() }}
+        run: docker rmi "$TESTING_IMAGE_NAME" || true
