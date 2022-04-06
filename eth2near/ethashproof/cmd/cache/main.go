@@ -32,21 +32,21 @@ func getCacheDir(idx int) string {
 }
 
 func main() {
-	parcnt := len(os.Args)
-	epochIdx := 1
-	var epoch int
-	cacheDirIdx := 2
+	argsCount := len(os.Args)
+	epochArgIdx := 1
+	cacheDirArgIdx := 2
+        var epoch int
 	var cacheDir string
 
-	switch parcnt {
+	switch argsCount {
 	case 1:
 		usage("Error: Epoch number param is missing\n")
 	case 2:
-		epoch = getEpoch(epochIdx)
+		epoch = getEpoch(epochArgIdx)
 		cacheDir = "|default|"
 	case 3:
-		epoch = getEpoch(epochIdx)
-		cacheDir = getCacheDir(cacheDirIdx)
+		epoch = getEpoch(epochArgIdx)
+		cacheDir = getCacheDir(cacheDirArgIdx)
 	}
 
 	root, err := ethashproof.CalculateDatasetMerkleRoot(uint64(epoch), true, cacheDir)
