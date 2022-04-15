@@ -58,5 +58,6 @@ cli/index.js start near2eth-relay \
     --near-network-id testnet \
     --eth-client-address 0xe7f1725e7734ce288f8367e1bb143e90bb3f0512 \
     --near2eth-relay-max-delay 10 \
+    --near2eth-relay-select-duration 30 \
     --daemon false
 ```

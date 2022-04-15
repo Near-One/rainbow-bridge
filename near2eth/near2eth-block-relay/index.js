@@ -174,6 +174,7 @@ class Near2EthRelay {
     near2ethRelayMinDelay,
     near2ethRelayMaxDelay,
     near2ethRelayErrorDelay,
+    near2ethRelaySelectDuration,
     ethGasMultiplier
   }) {
     const clientContract = this.clientContract
@@ -186,10 +187,34 @@ class Near2EthRelay {
     const maxDelay = Number(near2ethRelayMaxDelay)
     const errorDelay = Number(near2ethRelayErrorDelay)
 
+    const selectDuration = web3.utils.toBN(Number(near2ethRelaySelectDuration) * 1000_000_000)
+
     const httpPrometheus = new HttpPrometheus(this.metricsPort, 'near_bridge_near2eth_')
     const clientHeightGauge = httpPrometheus.gauge('client_height', 'amount of block client processed')
     const chainHeightGauge = httpPrometheus.gauge('chain_height', 'current chain height')
 
+    let firstSeenBlockTimestamp = null
+    const nextBlockSelection = {
+      borshBlock: null,
+      height: 0,
+      set: function ({ borshBlock, lightClientBlock }) {
+        this.borshBlock = borshBlock
+        this.height = lightClientBlock.inner_lite.height
+        console.log(`The new optimal block is found. Height: ${this.height}. Size: ${this.borshBlock.length} bytes`)
+      },
+      clean: function () {
+        this.borshBlock = null
+        this.height = 0
+      },
+      isEmpty: function () {
+        return !this.borshBlock
+      },
+      isSuitable: function ({ borshBlock, lightClientBlock }) {
+        return !this.isEmpty() &&
+               this.height !== lightClientBlock.inner_lite.height &&
+               this.borshBlock.length >= borshBlock.length
+      }
+    }
     while (true) {
       try {
         // Determine the next action: sleep or attempt an update.
@@ -207,18 +232,54 @@ class Near2EthRelay {
           await clientContract.methods.replaceDuration().call()
         )
         const nextValidAt = web3.utils.toBN(bridgeState.nextValidAt)
-        let replaceDelay
+        let replaceDelay = web3.utils.toBN(0)
         if (!nextValidAt.isZero()) {
           replaceDelay = web3.utils
             .toBN(bridgeState.nextTimestamp)
             .add(replaceDuration)
             .sub(web3.utils.toBN(lastBlock.inner_lite.timestamp))
         }
+        firstSeenBlockTimestamp = firstSeenBlockTimestamp || lastBlock.inner_lite.timestamp
         // console.log({bridgeState, currentBlockHash, lastBlock, replaceDuration}) // DEBUG
         if (bridgeState.currentHeight < lastBlock.inner_lite.height) {
           if (nextValidAt.isZero() || replaceDelay.cmpn(0) <= 0) {
+            // Serialize once here to avoid multiple 'borshify(...)' function calls
+            const blockCouple = {
+              lightClientBlock: lastBlock,
+              borshBlock: borshify(lastBlock)
+            }
+
+            // Describe the selection logic here so as not to complicate the reading of the code
+            if (nextBlockSelection.isEmpty()) {
+              console.log('The selection of the optimal block has begun.')
+              nextBlockSelection.set(blockCouple)
+            } else if (nextBlockSelection.isSuitable(blockCouple)) {
+              nextBlockSelection.set(blockCouple)
+            }
+
+            // Calculation of selection delay starting from the first block seen after service restart
+            let selectDelay = selectDuration
+              .add(web3.utils.toBN(firstSeenBlockTimestamp))
+              .sub(web3.utils.toBN(lastBlock.inner_lite.timestamp))
+            if (!nextValidAt.isZero()) {
+              // Make sure that every time after restarting the service we have a delay for block selection
+              selectDelay = web3.utils.BN.max(
+                selectDelay,
+                selectDuration.add(replaceDelay)
+              )
+            }
+            if (selectDelay.cmpn(0) > 0) {
+              const selectDelaySeconds = selectDelay.div(web3.utils.toBN(1000_000_000))
+              console.log(`Last light client block: ${lastBlock.inner_lite.height}`)
+              console.log(`Time left to make a decision: ${selectDelaySeconds.toString()} seconds`)
+              await sleep(1000) // Block creation time is approximately one second, is an additional cli argument needed here?
+              continue
+            } else {
+              console.log('Time to make a decision is over!')
+            }
+
             console.log(
-              `Trying to submit new block at height ${lastBlock.inner_lite.height}.`
+              `Trying to submit new block at height ${nextBlockSelection.height}`
             )
 
             // Check whether master account has enough balance at stake.
@@ -242,17 +303,16 @@ class Near2EthRelay {
               console.log('Transferred.')
             }
 
-            const borshBlock = borshify(lastBlock)
             if (submitInvalidBlock) {
               console.log('Mutate block by one byte')
-              console.log(borshBlock)
-              borshBlock[Math.floor(borshBlock.length * Math.random())] += 1
+              console.log(nextBlockSelection.borshBlock)
+              nextBlockSelection.borshBlock[Math.floor(nextBlockSelection.borshBlock.length * Math.random())] += 1
             }
 
             const gasPrice = new BN(await web3.eth.getGasPrice())
             console.log('Gas price:', gasPrice.toNumber())
 
-            await clientContract.methods.addLightClientBlock(borshBlock).send({
+            await clientContract.methods.addLightClientBlock(nextBlockSelection.borshBlock).send({
               from: ethMasterAccount,
               gas: 10000000,
               handleRevert: true,
@@ -265,6 +325,7 @@ class Near2EthRelay {
             }
 
             console.log('Submitted.')
+            nextBlockSelection.clean()
             await sleep(240000) // To prevent submitting the same block again
             continue
           }

@@ -278,6 +278,11 @@ RainbowConfig.declareOption(
   '1'
 )
 RainbowConfig.declareOption(
+  'near2eth-relay-select-duration',
+  'Number of seconds to select the optimal block to submit.',
+  '300'
+)
+RainbowConfig.declareOption(
   'watchdog-delay',
   'Number of seconds to wait after validating all signatures.',
   '300'
@@ -365,6 +370,7 @@ RainbowConfig.addOptions(
     'near2eth-relay-min-delay',
     'near2eth-relay-max-delay',
     'near2eth-relay-error-delay',
+    'near2eth-relay-select-duration',
     'eth-gas-multiplier',
     'daemon',
     'metrics-port'
