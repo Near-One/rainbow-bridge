@@ -13,6 +13,7 @@ class StartNear2EthRelayCommand {
     ethClientArtifactPath,
     ethClientAddress,
     ethGasMultiplier,
+    ethUseEip1559,
     near2ethRelayMinDelay,
     near2ethRelayMaxDelay,
     near2ethRelayErrorDelay,
@@ -42,6 +43,7 @@ class StartNear2EthRelayCommand {
             '--eth-client-artifact-path', ethClientArtifactPath,
             '--eth-client-address', ethClientAddress,
             '--eth-gas-multiplier', ethGasMultiplier,
+            '--eth-use-eip-1559', ethUseEip1559,
             '--near2eth-relay-min-delay', near2ethRelayMinDelay,
             '--near2eth-relay-max-delay', near2ethRelayMaxDelay,
             '--near2eth-relay-error-delay', near2ethRelayErrorDelay,
@@ -71,7 +73,8 @@ class StartNear2EthRelayCommand {
         near2ethRelayMaxDelay,
         near2ethRelayErrorDelay,
         near2ethRelaySelectDuration,
-        ethGasMultiplier
+        ethGasMultiplier,
+        ethUseEip1559
       })
     }
   }

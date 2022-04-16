@@ -36,7 +36,7 @@ cli/index.js init-eth-ed25519 \
 ```
 Address of deployed contract: `0x5fbdb2315678afecb367f032d93f642f64180aa3`
 
-**NOTE:** The private key specified here is the key of the first account created by Hardhat and is publicly known.
+**NOTE:** The private key specified here is the key of the first account created by [Hardhat](https://hardhat.org/hardhat-network/#running-stand-alone-in-order-to-support-wallets-and-other-software) and is publicly known.
 
 Deploy and initialize EthClient contracts:
 ```bash
@@ -57,6 +57,7 @@ cli/index.js start near2eth-relay \
     --near-node-url https://rpc.testnet.near.org/ \
     --near-network-id testnet \
     --eth-client-address 0xe7f1725e7734ce288f8367e1bb143e90bb3f0512 \
+    --eth-use-eip-1559 true \
     --near2eth-relay-max-delay 10 \
     --near2eth-relay-select-duration 30 \
     --daemon false

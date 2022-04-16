@@ -157,6 +157,11 @@ RainbowConfig.declareOption(
   '1'
 )
 RainbowConfig.declareOption(
+  'eth-use-eip-1559',
+  'Allow submitting transactions using the EIP-1559 way.',
+  'false'
+)
+RainbowConfig.declareOption(
   'metrics-port',
   'On which port to expose metrics for corresponding relayer, if not provided no metrics exposed',
   null
@@ -372,6 +377,7 @@ RainbowConfig.addOptions(
     'near2eth-relay-error-delay',
     'near2eth-relay-select-duration',
     'eth-gas-multiplier',
+    'eth-use-eip-1559',
     'daemon',
     'metrics-port'
   ]

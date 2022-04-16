@@ -175,7 +175,8 @@ class Near2EthRelay {
     near2ethRelayMaxDelay,
     near2ethRelayErrorDelay,
     near2ethRelaySelectDuration,
-    ethGasMultiplier
+    ethGasMultiplier,
+    ethUseEip1559
   }) {
     const clientContract = this.clientContract
     const robustWeb3 = this.robustWeb3
@@ -188,6 +189,9 @@ class Near2EthRelay {
     const errorDelay = Number(near2ethRelayErrorDelay)
 
     const selectDuration = web3.utils.toBN(Number(near2ethRelaySelectDuration) * 1000_000_000)
+
+    ethGasMultiplier = Number(ethGasMultiplier)
+    ethUseEip1559 = ethUseEip1559 === 'true'
 
     const httpPrometheus = new HttpPrometheus(this.metricsPort, 'near_bridge_near2eth_')
     const clientHeightGauge = httpPrometheus.gauge('client_height', 'amount of block client processed')
@@ -214,6 +218,18 @@ class Near2EthRelay {
                this.height !== lightClientBlock.inner_lite.height &&
                this.borshBlock.length >= borshBlock.length
       }
+    }
+    const getGasOptions = async (useEip1559, gasMultiplier) => {
+      const gasOptions = {}
+      if (useEip1559) {
+        const feeData = await robustWeb3.getFeeData(gasMultiplier)
+        gasOptions.maxPriorityFeePerGas = feeData.maxPriorityFeePerGas
+        gasOptions.maxFeePerGas = feeData.maxFeePerGas
+      } else {
+        const gasPrice = new BN(await web3.eth.getGasPrice())
+        gasOptions.gasPrice = gasPrice.mul(new BN(gasMultiplier))
+      }
+      return gasOptions
     }
     while (true) {
       try {
@@ -293,12 +309,13 @@ class Near2EthRelay {
               console.log(
                 `The sender account does not have enough stake. Transferring ${lockEthAmount} wei.`
               )
+              const gasOptions = await getGasOptions(ethUseEip1559, ethGasMultiplier)
               await clientContract.methods.deposit().send({
                 from: ethMasterAccount,
                 gas: 1000000,
                 handleRevert: true,
                 value: new BN(lockEthAmount),
-                gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(ethGasMultiplier))
+                ...gasOptions
               })
               console.log('Transferred.')
             }
@@ -309,14 +326,12 @@ class Near2EthRelay {
               nextBlockSelection.borshBlock[Math.floor(nextBlockSelection.borshBlock.length * Math.random())] += 1
             }
 
-            const gasPrice = new BN(await web3.eth.getGasPrice())
-            console.log('Gas price:', gasPrice.toNumber())
-
+            const gasOptions = await getGasOptions(ethUseEip1559, ethGasMultiplier)
             await clientContract.methods.addLightClientBlock(nextBlockSelection.borshBlock).send({
               from: ethMasterAccount,
               gas: 10000000,
               handleRevert: true,
-              gasPrice: gasPrice.mul(new BN(ethGasMultiplier))
+              ...gasOptions
             })
 
             if (submitInvalidBlock) {
