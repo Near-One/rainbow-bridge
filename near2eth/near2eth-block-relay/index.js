@@ -197,16 +197,20 @@ class Near2EthRelay {
     const clientHeightGauge = httpPrometheus.gauge('client_height', 'amount of block client processed')
     const chainHeightGauge = httpPrometheus.gauge('chain_height', 'current chain height')
 
-    let firstSeenBlockTimestamp = null
     const nextBlockSelection = {
+      startedAt: 0,
       borshBlock: null,
       height: 0,
       set: function ({ borshBlock, lightClientBlock }) {
+        if (this.isEmpty()) {
+          this.startedAt = lightClientBlock.inner_lite.timestamp
+        }
         this.borshBlock = borshBlock
         this.height = lightClientBlock.inner_lite.height
         console.log(`The new optimal block is found. Height: ${this.height}. Size: ${this.borshBlock.length} bytes`)
       },
       clean: function () {
+        this.startedAt = 0
         this.borshBlock = null
         this.height = 0
       },
@@ -255,7 +259,6 @@ class Near2EthRelay {
             .add(replaceDuration)
             .sub(web3.utils.toBN(lastBlock.inner_lite.timestamp))
         }
-        firstSeenBlockTimestamp = firstSeenBlockTimestamp || lastBlock.inner_lite.timestamp
         // console.log({bridgeState, currentBlockHash, lastBlock, replaceDuration}) // DEBUG
         if (bridgeState.currentHeight < lastBlock.inner_lite.height) {
           if (nextValidAt.isZero() || replaceDelay.cmpn(0) <= 0) {
@@ -273,17 +276,9 @@ class Near2EthRelay {
               nextBlockSelection.set(blockCouple)
             }
 
-            // Calculation of selection delay starting from the first block seen after service restart
-            let selectDelay = selectDuration
-              .add(web3.utils.toBN(firstSeenBlockTimestamp))
+            const selectDelay = selectDuration
+              .add(web3.utils.toBN(nextBlockSelection.startedAt))
               .sub(web3.utils.toBN(lastBlock.inner_lite.timestamp))
-            if (!nextValidAt.isZero()) {
-              // Make sure that every time after restarting the service we have a delay for block selection
-              selectDelay = web3.utils.BN.max(
-                selectDelay,
-                selectDuration.add(replaceDelay)
-              )
-            }
             if (selectDelay.cmpn(0) > 0) {
               const selectDelaySeconds = selectDelay.div(web3.utils.toBN(1000_000_000))
               console.log(`Last light client block: ${lastBlock.inner_lite.height}`)
