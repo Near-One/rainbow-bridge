@@ -174,6 +174,7 @@ class Near2EthRelay {
     near2ethRelayMinDelay,
     near2ethRelayMaxDelay,
     near2ethRelayErrorDelay,
+    near2ethRelayAfterSubmitDelayMs,
     ethGasMultiplier
   }) {
     const clientContract = this.clientContract
@@ -185,6 +186,7 @@ class Near2EthRelay {
     const minDelay = Number(near2ethRelayMinDelay)
     const maxDelay = Number(near2ethRelayMaxDelay)
     const errorDelay = Number(near2ethRelayErrorDelay)
+    const afterSubmitDelayMs = Number(near2ethRelayAfterSubmitDelayMs)
 
     const httpPrometheus = new HttpPrometheus(this.metricsPort, 'near_bridge_near2eth_')
     const clientHeightGauge = httpPrometheus.gauge('client_height', 'amount of block client processed')
@@ -265,7 +267,7 @@ class Near2EthRelay {
             }
 
             console.log('Submitted.')
-            await sleep(240000) // To prevent submitting the same block again
+            await sleep(afterSubmitDelayMs) // To prevent submitting the same block again
             continue
           }
         }
