@@ -242,7 +242,7 @@ contract NearBridge is INearBridge, AdminControlled {
             untrustedNextHash = nearBlock.next_hash;
 
             uint256 signatureSet = 0;
-            for ((uint i, uint cnt) = (0, thisEpoch.numBPs); i < cnt; i++) {
+            for ((uint i, uint cnt) = (0, thisEpoch.numBPs); i < cnt; ++i) {
                 NearDecoder.OptionalSignature memory approval = nearBlock.approvals_after_next[i];
                 if (approval.some) {
                     signatureSet |= 1 << i;
@@ -269,11 +269,11 @@ contract NearBridge is INearBridge, AdminControlled {
         );
         epoch.numBPs = cnt;
         unchecked {
-            for (uint i = 0; i < cnt; i++) {
+            for (uint i; i < cnt; ++i) {
                 epoch.keys[i] = src[i].publicKey.k;
             }
             uint256 totalStake = 0; // Sum of uint128, can't be too big.
-            for (uint i = 0; i != cnt; ++i) {
+            for (uint i; i != cnt; ++i) {
                 uint128 stake1 = src[i].stake;
                 totalStake += stake1;
                 if (++i == cnt) {
