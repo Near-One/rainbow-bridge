@@ -44,7 +44,7 @@ node index.js init-near-token-factory
 yarn run pm2 ping
 sleep 5
 yarn run pm2 list
-node index.js start near2eth-relay
+node index.js start near2eth-relay --near2eth-relay-max-delay 30
 sleep 5
 yarn run pm2 list
 node index.js start eth2near-relay
