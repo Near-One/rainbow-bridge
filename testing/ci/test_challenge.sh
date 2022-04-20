@@ -36,7 +36,7 @@ yarn
 yarn build)
 node index.js init-eth-ed25519
 # Use short lockup time for tests
-node index.js init-eth-client --eth-client-lock-eth-amount 1000000000000000000 --eth-client-lock-duration 30
+node index.js init-eth-client --eth-client-lock-eth-amount 1000000000000000000 --eth-client-lock-duration 30 --eth-client-replace-duration 60
 node index.js init-eth-prover
 node index.js init-eth-erc20
 node index.js init-eth-locker
@@ -44,7 +44,7 @@ node index.js init-near-token-factory
 
 sleep 5
 yarn run pm2 list
-node index.js start near2eth-relay --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
+node index.js start near2eth-relay --near2eth-relay-min-delay 1 --near2eth-relay-max-delay 30 --eth-master-sk 0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201
 sleep 5
 yarn run pm2 list
 node index.js start eth2near-relay
