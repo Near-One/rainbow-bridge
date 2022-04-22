@@ -288,6 +288,11 @@ RainbowConfig.declareOption(
   '300'
 )
 RainbowConfig.declareOption(
+  'near2eth-relay-after-submit-delay-ms',
+  'Number of ms to wait after successfully submitting light client block to prevent submitting the same block again.',
+  '240000'
+)
+RainbowConfig.declareOption(
   'watchdog-delay',
   'Number of seconds to wait after validating all signatures.',
   '300'
@@ -376,6 +381,7 @@ RainbowConfig.addOptions(
     'near2eth-relay-max-delay',
     'near2eth-relay-error-delay',
     'near2eth-relay-select-duration',
+    'near2eth-relay-after-submit-delay-ms',
     'eth-gas-multiplier',
     'eth-use-eip-1559',
     'daemon',

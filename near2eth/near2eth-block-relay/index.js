@@ -175,6 +175,7 @@ class Near2EthRelay {
     near2ethRelayMaxDelay,
     near2ethRelayErrorDelay,
     near2ethRelaySelectDuration,
+    near2ethRelayAfterSubmitDelayMs,
     ethGasMultiplier,
     ethUseEip1559
   }) {
@@ -187,6 +188,7 @@ class Near2EthRelay {
     const minDelay = Number(near2ethRelayMinDelay)
     const maxDelay = Number(near2ethRelayMaxDelay)
     const errorDelay = Number(near2ethRelayErrorDelay)
+    const afterSubmitDelayMs = Number(near2ethRelayAfterSubmitDelayMs)
 
     const selectDuration = web3.utils.toBN(Number(near2ethRelaySelectDuration) * 1000_000_000)
 
@@ -336,7 +338,7 @@ class Near2EthRelay {
 
             console.log('Submitted.')
             nextBlockSelection.clean()
-            await sleep(240000) // To prevent submitting the same block again
+            await sleep(afterSubmitDelayMs) // To prevent submitting the same block again
             continue
           }
         }
