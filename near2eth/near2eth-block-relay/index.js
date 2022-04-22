@@ -174,7 +174,7 @@ class Near2EthRelay {
     near2ethRelayMinDelay,
     near2ethRelayMaxDelay,
     near2ethRelayErrorDelay,
-    near2ethRelaySelectDuration,
+    near2ethRelayBlockSelectDuration,
     near2ethRelayAfterSubmitDelayMs,
     ethGasMultiplier,
     ethUseEip1559
@@ -190,7 +190,7 @@ class Near2EthRelay {
     const errorDelay = Number(near2ethRelayErrorDelay)
     const afterSubmitDelayMs = Number(near2ethRelayAfterSubmitDelayMs)
 
-    const selectDuration = web3.utils.toBN(Number(near2ethRelaySelectDuration) * 1000_000_000)
+    const selectDuration = web3.utils.toBN(Number(near2ethRelayBlockSelectDuration) * 1000_000_000)
 
     ethGasMultiplier = Number(ethGasMultiplier)
     ethUseEip1559 = ethUseEip1559 === 'true'

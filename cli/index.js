@@ -158,7 +158,7 @@ RainbowConfig.declareOption(
 )
 RainbowConfig.declareOption(
   'eth-use-eip-1559',
-  'Allow submitting transactions using the EIP-1559 way.',
+  'Allow submitting transactions using the EIP-1559 pricing mechanism.',
   'false'
 )
 RainbowConfig.declareOption(
@@ -283,7 +283,7 @@ RainbowConfig.declareOption(
   '1'
 )
 RainbowConfig.declareOption(
-  'near2eth-relay-select-duration',
+  'near2eth-relay-block-select-duration',
   'Number of seconds to select the optimal block to submit.',
   '300'
 )
@@ -380,7 +380,7 @@ RainbowConfig.addOptions(
     'near2eth-relay-min-delay',
     'near2eth-relay-max-delay',
     'near2eth-relay-error-delay',
-    'near2eth-relay-select-duration',
+    'near2eth-relay-block-select-duration',
     'near2eth-relay-after-submit-delay-ms',
     'eth-gas-multiplier',
     'eth-use-eip-1559',

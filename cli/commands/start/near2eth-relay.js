@@ -17,7 +17,7 @@ class StartNear2EthRelayCommand {
     near2ethRelayMinDelay,
     near2ethRelayMaxDelay,
     near2ethRelayErrorDelay,
-    near2ethRelaySelectDuration,
+    near2ethRelayBlockSelectDuration,
     near2ethRelayAfterSubmitDelayMs,
     metricsPort
   }) {
@@ -48,7 +48,7 @@ class StartNear2EthRelayCommand {
             '--near2eth-relay-min-delay', near2ethRelayMinDelay,
             '--near2eth-relay-max-delay', near2ethRelayMaxDelay,
             '--near2eth-relay-error-delay', near2ethRelayErrorDelay,
-            '--near2eth-relay-select-duration', near2ethRelaySelectDuration,
+            '--near2eth-relay-block-select-duration', near2ethRelayBlockSelectDuration,
             '--near2eth-relay-after-submit-delay-ms', near2ethRelayAfterSubmitDelayMs,
             '--daemon', 'false',
             '--metrics-port', metricsPort
@@ -74,7 +74,7 @@ class StartNear2EthRelayCommand {
         near2ethRelayMinDelay,
         near2ethRelayMaxDelay,
         near2ethRelayErrorDelay,
-        near2ethRelaySelectDuration,
+        near2ethRelayBlockSelectDuration,
         near2ethRelayAfterSubmitDelayMs,
         ethGasMultiplier,
         ethUseEip1559
