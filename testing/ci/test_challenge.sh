@@ -56,7 +56,7 @@ yarn run pm2 list
 
 sleep 30
 node index.js stop near2eth-relay
-node index.js DANGER submit_invalid_near_block
+node index.js DANGER submit_invalid_near_block --near2eth-relay-block-select-duration 5
 sleep 30
 node index.js start near2eth-relay --near2eth-relay-min-delay 1 --near2eth-relay-max-delay 30 --near2eth-relay-after-submit-delay-ms 45000 --near2eth-relay-block-select-duration 5
 

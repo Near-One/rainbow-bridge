@@ -883,7 +883,10 @@ RainbowConfig.addOptions(
     'near2eth-relay-min-delay',
     'near2eth-relay-max-delay',
     'near2eth-relay-error-delay',
-    'eth-gas-multiplier'
+    'near2eth-relay-block-select-duration',
+    'near2eth-relay-after-submit-delay-ms',
+    'eth-gas-multiplier',
+    'eth-use-eip-1559'
   ]
 )
 
