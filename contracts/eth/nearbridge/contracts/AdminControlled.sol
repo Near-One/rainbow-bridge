@@ -54,8 +54,10 @@ contract AdminControlled {
         nominatedAdmin = newAdmin;
     }
 
-    function acceptAdmin(address newAdmin) public onlyAdmin {
+    function acceptAdmin(address newAdmin) public {
         verifyAdminAddress(newAdmin);
+        // Only nominated admin could accept its admin rights
+        require(msg.sender == nominatedAdmin, "Caller must be the nominated admin");
         // Check that the new expected admin is the same as a nominated one
         require(newAdmin == nominatedAdmin, "The provided admin address doesn't match the nominated one");
 
