@@ -175,9 +175,11 @@ class Near2EthRelay {
     near2ethRelayMaxDelay,
     near2ethRelayErrorDelay,
     near2ethRelayBlockSelectDuration,
+    near2ethRelayNextBlockSelectDelayMs,
     near2ethRelayAfterSubmitDelayMs,
     ethGasMultiplier,
-    ethUseEip1559
+    ethUseEip1559,
+    logVerbose
   }) {
     const clientContract = this.clientContract
     const robustWeb3 = this.robustWeb3
@@ -191,9 +193,11 @@ class Near2EthRelay {
     const afterSubmitDelayMs = Number(near2ethRelayAfterSubmitDelayMs)
 
     const selectDurationNs = web3.utils.toBN(Number(near2ethRelayBlockSelectDuration) * 1000_000_000)
+    const nextBlockSelectDelayMs = Number(near2ethRelayNextBlockSelectDelayMs)
 
     ethGasMultiplier = Number(ethGasMultiplier)
     ethUseEip1559 = ethUseEip1559 === 'true'
+    logVerbose = logVerbose === 'true'
 
     const httpPrometheus = new HttpPrometheus(this.metricsPort, 'near_bridge_near2eth_')
     const clientHeightGauge = httpPrometheus.gauge('client_height', 'amount of block client processed')
@@ -220,10 +224,10 @@ class Near2EthRelay {
         return !this.borshBlock
       },
       isSuitable: function ({ borshBlock, lightClientBlock }) {
-        return this.isEmpty()
-               || (!this.isEmpty()
-                 && this.height !== lightClientBlock.inner_lite.height
-                 && this.borshBlock.length >= borshBlock.length)
+        return this.isEmpty() ||
+               (!this.isEmpty() &&
+                 this.height !== lightClientBlock.inner_lite.height &&
+                 this.borshBlock.length >= borshBlock.length)
       }
     }
     const getGasOptions = async (useEip1559, gasMultiplier) => {
@@ -279,9 +283,11 @@ class Near2EthRelay {
               .add(web3.utils.toBN(nextBlockSelection.startedAt))
               .sub(web3.utils.toBN(lastBlock.inner_lite.timestamp))
             if (selectDelayNs.cmpn(0) > 0) {
-              const selectDelaySeconds = selectDelayNs.div(web3.utils.toBN(1000_000_000))
-              console.log(`Last block height ${lastBlock.inner_lite.height}, ${blockCouple.borshBlock.length} bytes, ${selectDelaySeconds.toString()}s left`)
-              await sleep(1000) // Block creation time is approximately one second, is an additional cli argument needed here?
+              if (logVerbose) {
+                const selectDelaySeconds = selectDelayNs.div(web3.utils.toBN(1000_000_000))
+                console.log(`Last block height ${lastBlock.inner_lite.height}, ${blockCouple.borshBlock.length} bytes, ${selectDelaySeconds.toString()}s left`)
+              }
+              await sleep(nextBlockSelectDelayMs)
               continue
             }
 

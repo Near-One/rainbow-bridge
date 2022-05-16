@@ -61,5 +61,6 @@ cli/index.js start near2eth-relay \
     --near2eth-relay-max-delay 10 \
     --near2eth-relay-block-select-duration 30 \
     --near2eth-relay-after-submit-delay-ms 1000 \
+    --log-verbose true \
     --daemon false
 ```

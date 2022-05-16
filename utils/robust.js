@@ -46,8 +46,8 @@ class RobustWeb3 {
       // Providers such as Infura and Alchemy have implemented eth_maxPriorityFeePerGas,
       // however not all pure eth clients or testing tools like Hardhat support it.
       value = await this.web3.extended.maxPriorityFeePerGas()
-    } catch (e) {
-      console.warn('Fallback maxPriorityFeePerGas calculation.', e.toString())
+    } catch {
+      console.warn('Fallback maxPriorityFeePerGas calculation.')
       const baseFeePerGas = (await this.getBlock('latest')).baseFeePerGas
       const gasPrice = await this.web3.eth.getGasPrice()
       value = this.web3.utils.toBN(gasPrice)

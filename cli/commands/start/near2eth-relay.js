@@ -18,8 +18,10 @@ class StartNear2EthRelayCommand {
     near2ethRelayMaxDelay,
     near2ethRelayErrorDelay,
     near2ethRelayBlockSelectDuration,
+    near2ethRelayNextBlockSelectDelayMs,
     near2ethRelayAfterSubmitDelayMs,
-    metricsPort
+    metricsPort,
+    logVerbose
   }) {
     if (daemon === 'true') {
       ProcessManager.connect((err) => {
@@ -49,9 +51,11 @@ class StartNear2EthRelayCommand {
             '--near2eth-relay-max-delay', near2ethRelayMaxDelay,
             '--near2eth-relay-error-delay', near2ethRelayErrorDelay,
             '--near2eth-relay-block-select-duration', near2ethRelayBlockSelectDuration,
+            '--near2eth-relay-next-block-select-delay-ms', near2ethRelayNextBlockSelectDelayMs,
             '--near2eth-relay-after-submit-delay-ms', near2ethRelayAfterSubmitDelayMs,
             '--daemon', 'false',
-            '--metrics-port', metricsPort
+            '--metrics-port', metricsPort,
+            '--log-verbose', logVerbose
           ],
           wait_ready: true,
           kill_timeout: 60000,
@@ -75,9 +79,11 @@ class StartNear2EthRelayCommand {
         near2ethRelayMaxDelay,
         near2ethRelayErrorDelay,
         near2ethRelayBlockSelectDuration,
+        near2ethRelayNextBlockSelectDelayMs,
         near2ethRelayAfterSubmitDelayMs,
         ethGasMultiplier,
-        ethUseEip1559
+        ethUseEip1559,
+        logVerbose
       })
     }
   }
