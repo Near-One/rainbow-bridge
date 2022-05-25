@@ -54,12 +54,10 @@ contract AdminControlled {
         nominatedAdmin = newAdmin;
     }
 
-    function acceptAdmin(address newAdmin) public {
-        verifyAdminAddress(newAdmin);
+    function acceptAdmin() public {
+        verifyAdminAddress(nominatedAdmin);
         // Only nominated admin could accept its admin rights
         require(msg.sender == nominatedAdmin, "Caller must be the nominated admin");
-        // Check that the new expected admin is the same as a nominated one
-        require(newAdmin == nominatedAdmin, "The provided admin address doesn't match the nominated one");
 
         admin = nominatedAdmin;
         // Explicitly set not allowed zero address for `nominatedAdmin` so it's impossible to accidentally change
