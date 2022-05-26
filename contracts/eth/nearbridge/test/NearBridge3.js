@@ -197,7 +197,6 @@ describe('NearBridge with admin access', () => {
 
         it('should nominate and accept the new admin', async () => {
             const initialAdminAddress = await nearBridge.admin();
-            //const newAdminAddress = '0x0123456789abcdefcafedeadbeefbea77a1de456';
             const newAdminAddress = newAdminAccount.address;
             expect(newAdminAddress)
                 .not
