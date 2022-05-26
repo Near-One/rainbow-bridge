@@ -42,7 +42,7 @@ contract AdminControlled {
         }
     }
 
-    function verifyAdminAddress(address newAdmin) internal view onlyAdmin {
+    function verifyAdminAddress(address newAdmin) internal view {
         require(newAdmin != admin, "Nominated admin is the same as the current");
         // Zero address shouldn't be allowed as a security measure.
         // If it's needed to remove the admin consider using address with all "1" digits.
@@ -54,10 +54,10 @@ contract AdminControlled {
         nominatedAdmin = newAdmin;
     }
 
-    function acceptAdmin(address newAdmin) public onlyAdmin {
-        verifyAdminAddress(newAdmin);
-        // Check that the new expected admin is the same as a nominated one
-        require(newAdmin == nominatedAdmin, "The provided admin address doesn't match the nominated one");
+    function acceptAdmin() public {
+        verifyAdminAddress(nominatedAdmin);
+        // Only nominated admin could accept its admin rights
+        require(msg.sender == nominatedAdmin, "Caller must be the nominated admin");
 
         admin = nominatedAdmin;
         // Explicitly set not allowed zero address for `nominatedAdmin` so it's impossible to accidentally change
