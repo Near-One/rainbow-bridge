@@ -70,7 +70,7 @@ contract AdminControlled {
     }
 
     function adminSendEth(address payable destination, uint amount) public onlyAdmin {
-        destination.transfer(amount);
+        destination.call{value: amount}("");
     }
 
     function adminReceiveEth() public payable onlyAdmin {}
