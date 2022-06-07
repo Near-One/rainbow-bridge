@@ -1,0 +1,12 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: rainbow-bridge-public
+  description: Public Rainbow Bridge repository
+spec:
+  targets:
+    - ./contracts/eth/nearbridge/.catalog-info.yaml
+    - ./contracts/eth/nearprover/.catalog-info.yaml
+    - ./contracts/near/eth-client/.catalog-info.yaml
+    - ./contracts/near/eth-prover/.catalog-info.yaml
