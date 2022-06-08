@@ -8,6 +8,7 @@ node_modules
 target
 testdata
 vendor
+.history
 
 # Ignore ethashproof binaries
 eth2near/ethashproof/cmd/cache/cache

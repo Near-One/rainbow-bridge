@@ -299,11 +299,10 @@ impl From<BlockHeaderPreLondon> for BlockHeader {
 
 impl BorshDeserialize for BlockHeader {
     fn deserialize(buf: &mut &[u8]) -> std::io::Result<Self> {
-        if let Ok(header) = BlockHeaderLondon::deserialize(buf) {
-            Ok(header.into())
-        } else {
-            BlockHeaderPreLondon::deserialize(buf).map(Into::into)
-        }
+        #[cfg(feature = "eip1559")]
+        return BlockHeaderLondon::deserialize(buf).map(Into::into);
+        #[cfg(not(feature = "eip1559"))]
+        return BlockHeaderPreLondon::deserialize(buf).map(Into::into);
     }
 }
 
@@ -315,7 +314,12 @@ impl BlockHeader {
     }
 
     fn stream_rlp(&self, stream: &mut RlpStream, partial: bool) {
-        stream.begin_list(13 + if !partial { 2 } else { 0 });
+        #[cfg(feature = "eip1559")]
+        let list_size = 14 + if !partial { 2 } else { 0 };
+        #[cfg(not(feature = "eip1559"))]
+        let list_size = 13 + if !partial { 2 } else { 0 };
+
+        stream.begin_list(list_size);
 
         stream.append(&self.parent_hash);
         stream.append(&self.uncles_hash);
