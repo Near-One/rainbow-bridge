@@ -74,6 +74,8 @@ Note, you can use environment variables to pass sensitive data which will not le
 
 ## Security
 
+* [Guide](near2eth/watchdog/README.md) on how to quickly configure the watchdog for Mainnet
+
 Bridge is secure as long as majority (1/2) of Etherem mining power is honest and supermajority (2/3) of NEAR stake is honest.
 There are no additional security requirements, except that Ethereum should be able to accept 1 transaction within 4 hour period even in the worst congestion scenario.
 
