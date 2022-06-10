@@ -57,7 +57,7 @@ $ pm2 list
 
 Check `pm2` logs for the watchdog (usually the watchdog will be running at index `0`):
 ```
-$ pm2 logs 0
+$ pm2 logs bridge-watchdog
 ```
 
 
