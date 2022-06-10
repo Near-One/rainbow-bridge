@@ -55,7 +55,7 @@ Ensure the watchdog is in the list of processes in `pm2` and running:
 $ pm2 list
 ```
 
-Check `pm2` logs for the watchdog (usually the watchdog will be running at index `0`):
+Check `pm2` logs for the watchdog
 ```
 $ pm2 logs bridge-watchdog
 ```
