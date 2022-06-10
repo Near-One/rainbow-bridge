@@ -174,6 +174,11 @@ class EthOnNearClientContract extends BorshContract {
           methodName: 'add_block_header',
           inputFieldType: 'addBlockHeaderInput',
           outputFieldType: null
+        },
+        {
+          methodName: 'update_dags_merkle_roots',
+          inputFieldType: ['H128'],
+          outputFieldType: null
         }
       ]
     })
@@ -223,6 +228,38 @@ class EthOnNearClientContract extends BorshContract {
     ) {
       console.log(
         `EthOnNearClient initialization error! The first and last roots are ${firstRoot} and ${lastRoot}`
+      )
+      process.exit(1)
+    }
+  }
+
+  async updateDagMerkleRoots () {
+    await this.accessKeyInit()
+    await this.update_dags_merkle_roots(
+      roots.dag_merkle_roots,
+      new BN('300000000000000')
+    )
+    console.log('Dags merkel roots updated')
+
+    console.log('Checking EthOnNearClient initialization.')
+    const firstRoot = await this.dag_merkle_root({
+      epoch: 0
+    })
+    const lastRoot = await this.dag_merkle_root({
+      epoch: 509
+    })
+
+    console.log(
+      `The first and last roots are ${firstRoot} and ${lastRoot}`
+    )
+    if (
+      !(
+        firstRoot === '0x55b891e842e58f58956a847cbbf67821' &&
+        lastRoot === '0x7a9010568819de327a24fa495029adcb'
+      )
+    ) {
+      console.log(
+        `EthOnNearClient update merkel roots error! The first and last roots are ${firstRoot} and ${lastRoot}`
       )
       process.exit(1)
     }
