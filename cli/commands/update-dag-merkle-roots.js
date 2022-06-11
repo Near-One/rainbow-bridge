@@ -3,6 +3,7 @@ const { EthOnNearClientContract } = require('rainbow-bridge-eth2near-block-relay
 
 class UpdateDagMerkleRoots {
   static async execute ({
+    dagsStartEpoch,
     nearClientAccount,
     nearClientSk,
     nearNodeUrl,
@@ -36,7 +37,7 @@ class UpdateDagMerkleRoots {
       new nearAPI.Account(near.connection, nearClientAccount),
       nearClientAccount
     )
-    await clientContract.updateDagMerkleRoots()
+    await clientContract.updateDagMerkleRoots(dagsStartEpoch)
   }
 }
 

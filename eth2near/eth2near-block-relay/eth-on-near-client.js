@@ -103,6 +103,13 @@ const borshSchema = {
       ['proof', ['H128']]
     ]
   },
+  updateDagMerkleRootInput: {
+    kind: 'struct',
+    fields: [
+      ['dags_start_epoch', 'u64'],
+      ['dags_merkle_roots', ['H128']]
+    ]
+  },
   H128: {
     kind: 'function',
     ser: hexToBuffer,
@@ -177,7 +184,7 @@ class EthOnNearClientContract extends BorshContract {
         },
         {
           methodName: 'update_dags_merkle_roots',
-          inputFieldType: ['H128'],
+          inputFieldType: 'updateDagMerkleRootInput',
           outputFieldType: null
         }
       ]
@@ -233,17 +240,21 @@ class EthOnNearClientContract extends BorshContract {
     }
   }
 
-  async updateDagMerkleRoots () {
+  async updateDagMerkleRoots (dagsStartEpoch) {
+    const trimedRoots = roots.dag_merkle_roots.slice(dagsStartEpoch)
     await this.accessKeyInit()
     await this.update_dags_merkle_roots(
-      roots.dag_merkle_roots,
+      {
+        dags_start_epoch: dagsStartEpoch,
+        dags_merkle_roots: trimedRoots
+      },
       new BN('300000000000000')
     )
     console.log('Dags merkel roots updated')
 
-    console.log('Checking EthOnNearClient initialization.')
+    console.log('Checking EthOnNearClient update merkel roots.')
     const firstRoot = await this.dag_merkle_root({
-      epoch: 0
+      epoch: dagsStartEpoch
     })
     const lastRoot = await this.dag_merkle_root({
       epoch: 699
@@ -252,9 +263,10 @@ class EthOnNearClientContract extends BorshContract {
     console.log(
       `The first and last roots are ${firstRoot} and ${lastRoot}`
     )
+
     if (
       !(
-        firstRoot === '0x55b891e842e58f58956a847cbbf67821' &&
+        firstRoot === trimedRoots[0] &&
         lastRoot === '0xddff7537a9babc2e0d77f8bcce955753'
       )
     ) {
