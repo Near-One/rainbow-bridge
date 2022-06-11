@@ -218,12 +218,12 @@ class EthOnNearClientContract extends BorshContract {
       epoch: 0
     })
     const lastRoot = await this.dag_merkle_root({
-      epoch: 511
+      epoch: 699
     })
     if (
       !(
         firstRoot === '0x55b891e842e58f58956a847cbbf67821' &&
-        lastRoot === '0x7a9010568819de327a24fa495029adcb'
+        lastRoot === '0xddff7537a9babc2e0d77f8bcce955753'
       )
     ) {
       console.log(
@@ -246,7 +246,7 @@ class EthOnNearClientContract extends BorshContract {
       epoch: 0
     })
     const lastRoot = await this.dag_merkle_root({
-      epoch: 509
+      epoch: 699
     })
 
     console.log(
@@ -255,7 +255,7 @@ class EthOnNearClientContract extends BorshContract {
     if (
       !(
         firstRoot === '0x55b891e842e58f58956a847cbbf67821' &&
-        lastRoot === '0x7a9010568819de327a24fa495029adcb'
+        lastRoot === '0xddff7537a9babc2e0d77f8bcce955753'
       )
     ) {
       console.log(
