@@ -5,7 +5,7 @@ metadata:
   name: prover-on-ethereum
   title: "Prover on Ethereum"
   description: |-
-    Takes proof of a Receipt from NEAR blockchain and check it is valid and included on chain.
+    Takes proof of a Receipt from NEAR blockchain and checks if it's valid and included on-chain.
   tags:
     - contract
     - ethereum
@@ -19,4 +19,5 @@ spec:
   system: bridge-protocol
   deployedAt:
     - contract:ethereum/mainnet/0x051ad3f020274910065dcb421629cd2e6e5b46c4
-  interactsWith: []
+  interactsWith:
+    - contract:ethereum/mainnet/0x3be7df8db39996a837041bb8ee0dadf60f767038

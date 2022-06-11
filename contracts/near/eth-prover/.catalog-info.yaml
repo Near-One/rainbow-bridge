@@ -17,4 +17,5 @@ spec:
   system: bridge-protocol
   deployedAt:
     - contract:near/mainnet/prover.bridge.near
-  interactsWith: []
+  interactsWith:
+    - contract:near/mainnet/client.bridge.near

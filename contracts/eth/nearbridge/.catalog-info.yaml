@@ -28,7 +28,7 @@ metadata:
   name: near-light-client-on-ethereum
   title: "NEAR Light Client on Ethereum"
   description: |-
-    Implementation of NEAR Light Client in Ethereum. API: add_block To add blocks from NEAR into this contrac. And blockHashes(index) return the block at this height. Only one block per epoch (12 hours) is required.
+    Implementation of NEAR Light Client in Ethereum. API: add_block To add blocks from NEAR into this contract. And blockHashes(index) return the block at this height. Only one block per epoch (12 hours) is required.
   tags:
     - contract
     - ethereum
