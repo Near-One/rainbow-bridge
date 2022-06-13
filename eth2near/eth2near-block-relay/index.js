@@ -11,7 +11,8 @@ const {
   web3BlockToRlp,
   EthOnNearClientContract,
   borshSchema,
-  getEthBlock
+  getEthBlock,
+  dagMerkleRoots
 } = require('./eth-on-near-client')
 const {
   EthOnNearProverContract
@@ -310,3 +311,4 @@ exports.EthOnNearProverContract = EthOnNearProverContract
 exports.logFromWeb3 = logFromWeb3
 exports.receiptFromWeb3 = receiptFromWeb3
 exports.ethToNearFindProof = ethToNearFindProof
+exports.dagMerkleRoots = dagMerkleRoots

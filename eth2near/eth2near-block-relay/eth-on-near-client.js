@@ -252,7 +252,7 @@ class EthOnNearClientContract extends BorshContract {
     )
     console.log('Dags merkel roots updated')
 
-    console.log('Checking EthOnNearClient update merkel roots.')
+    console.log('Checking the EthOnNearClient merkel roots.')
     const firstRoot = await this.dag_merkle_root({
       epoch: dagsStartEpoch
     })
@@ -278,6 +278,7 @@ class EthOnNearClientContract extends BorshContract {
   }
 }
 
+exports.dagMerkleRoots = roots
 exports.EthOnNearClientContract = EthOnNearClientContract
 exports.web3BlockToRlp = web3BlockToRlp
 exports.getEthBlock = getEthBlock
