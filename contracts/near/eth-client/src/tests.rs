@@ -262,8 +262,46 @@ fn add_dags_merkle_roots() {
     assert_eq!(dmr.dag_merkle_roots[0], contract.dag_merkle_root(0));
     assert_eq!(dmr.dag_merkle_roots[10], contract.dag_merkle_root(10));
     assert_eq!(dmr.dag_merkle_roots[511], contract.dag_merkle_root(511));
+    assert_eq!(dmr.dag_merkle_roots[699], contract.dag_merkle_root(699));
 
-    let result = catch_unwind_silent(|| contract.dag_merkle_root(512));
+    let result = catch_unwind_silent(|| contract.dag_merkle_root(700));
+    assert!(result.is_err());
+}
+
+#[test]
+#[cfg_attr(feature = "eip1559", ignore)]
+fn update_dags_merkle_roots() {
+    let mut context = get_context(vec![], false);
+    context.predecessor_account_id = context.current_account_id.clone();
+    testing_env!(context.clone());
+    let (blocks, _) = get_blocks(&WEB3RS, 400_000, 400_001);
+
+    let dmr = read_roots_collection();
+    let mut contract = EthClient::init(
+        true,
+        0,
+        read_roots_collection().dag_merkle_roots,
+        blocks[0].clone(),
+        30,
+        10,
+        10,
+        None,
+    );
+
+    contract.update_dags_merkle_roots(0, dmr.dag_merkle_roots.clone());
+    assert_eq!(dmr.dag_merkle_roots[0], contract.dag_merkle_root(0));
+    assert_eq!(dmr.dag_merkle_roots[10], contract.dag_merkle_root(10));
+    assert_eq!(dmr.dag_merkle_roots[511], contract.dag_merkle_root(511));
+    assert_eq!(dmr.dag_merkle_roots[699], contract.dag_merkle_root(699));
+    let result = catch_unwind_silent(|| contract.dag_merkle_root(700));
+    assert!(result.is_err());
+
+    // Test with offset
+    contract.update_dags_merkle_roots(490, dmr.dag_merkle_roots[490..].to_vec());
+    assert_eq!(dmr.dag_merkle_roots[490], contract.dag_merkle_root(490));
+    assert_eq!(dmr.dag_merkle_roots[550], contract.dag_merkle_root(550));
+    assert_eq!(dmr.dag_merkle_roots[699], contract.dag_merkle_root(699));
+    let result = catch_unwind_silent(|| contract.dag_merkle_root(489));
     assert!(result.is_err());
 }
 
