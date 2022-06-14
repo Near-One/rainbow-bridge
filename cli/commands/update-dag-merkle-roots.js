@@ -33,17 +33,17 @@ class UpdateDagMerkleRoots {
       }
     })
 
-    console.log(`Dag merkle roots hash: ${sha256(JSON.stringify(dagMerkleRoots, null, 2))}`)
+    console.log(`DAG Merkle roots SHA256-checksum: ${sha256(JSON.stringify(dagMerkleRoots, null, 2))}`)
     console.log(`Start epoch: ${dagsStartEpoch}`)
     console.log(`Client account: ${nearClientAccount}`)
 
-    const inputResult = readlineSync.question('Do you confirm that you want to update the dag merkle roots? Enter CONFIRM if yes: ')
+    const inputResult = readlineSync.question('Please verify the data above. Do you confirm that you want to update the DAG Merkle roots? Enter CONFIRM if yes: ')
     if (inputResult.toUpperCase() !== 'CONFIRM') {
       console.error('The task was aborted')
       return
     }
 
-    console.log('Update dag merkle roots for client contract.')
+    console.log('Update DAG Merkle roots for the client contract.')
     const clientContract = new EthOnNearClientContract(
       new nearAPI.Account(near.connection, nearClientAccount),
       nearClientAccount

@@ -921,7 +921,7 @@ RainbowConfig.addOptions(
   program
     .command('eth-on-near-client-update-dag-merkle-roots <dags_start_epoch>')
     .description(
-      'Update dag merkle roots for Eth on Near Client'
+      'Update DAG Merkle roots for Eth on Near Client'
     ),
   async (dagsStartEpoch, args) => {
     await UpdateDagMerkleRoots.execute({ dagsStartEpoch, ...args })

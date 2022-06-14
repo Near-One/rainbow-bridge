@@ -103,7 +103,7 @@ const borshSchema = {
       ['proof', ['H128']]
     ]
   },
-  updateDagMerkleRootInput: {
+  updateDagMerkleRootsInput: {
     kind: 'struct',
     fields: [
       ['dags_start_epoch', 'u64'],
@@ -135,6 +135,7 @@ const borshSchema = {
   }
 }
 
+const LAST_DAG_ROOT_OF_EPOCH_699 = '0xddff7537a9babc2e0d77f8bcce955753'
 class EthOnNearClientContract extends BorshContract {
   constructor (account, contractId) {
     super(borshSchema, account, contractId, {
@@ -184,7 +185,7 @@ class EthOnNearClientContract extends BorshContract {
         },
         {
           methodName: 'update_dags_merkle_roots',
-          inputFieldType: 'updateDagMerkleRootInput',
+          inputFieldType: 'updateDagMerkleRootsInput',
           outputFieldType: null
         }
       ]
@@ -230,7 +231,7 @@ class EthOnNearClientContract extends BorshContract {
     if (
       !(
         firstRoot === '0x55b891e842e58f58956a847cbbf67821' &&
-        lastRoot === '0xddff7537a9babc2e0d77f8bcce955753'
+        lastRoot === LAST_DAG_ROOT_OF_EPOCH_699
       )
     ) {
       console.log(
@@ -241,18 +242,23 @@ class EthOnNearClientContract extends BorshContract {
   }
 
   async updateDagMerkleRoots (dagsStartEpoch) {
-    const trimedRoots = roots.dag_merkle_roots.slice(dagsStartEpoch)
+    if (dagsStartEpoch <= 0 || dagsStartEpoch >= roots.dag_merkle_roots.length) {
+      console.error('Invalid start epoch')
+      process.exit(1)
+    }
+
+    const trimmedRoots = roots.dag_merkle_roots.slice(dagsStartEpoch)
     await this.accessKeyInit()
     await this.update_dags_merkle_roots(
       {
         dags_start_epoch: dagsStartEpoch,
-        dags_merkle_roots: trimedRoots
+        dags_merkle_roots: trimmedRoots
       },
       new BN('300000000000000')
     )
-    console.log('Dags merkel roots updated')
+    console.log('DAG Merkle roots are updated')
 
-    console.log('Checking the EthOnNearClient merkel roots.')
+    console.log('Checking DAG Merkle roots for EthOnNearClient')
     const firstRoot = await this.dag_merkle_root({
       epoch: dagsStartEpoch
     })
@@ -261,17 +267,20 @@ class EthOnNearClientContract extends BorshContract {
     })
 
     console.log(
-      `The first and last roots are ${firstRoot} and ${lastRoot}`
+      `The first and the last roots are ${firstRoot} and ${lastRoot}`
     )
+
+    const expectedFirstRoot = trimmedRoots[0]
+    const expectedLastRoot = LAST_DAG_ROOT_OF_EPOCH_699
 
     if (
       !(
-        firstRoot === trimedRoots[0] &&
-        lastRoot === '0xddff7537a9babc2e0d77f8bcce955753'
+        firstRoot === expectedFirstRoot &&
+        lastRoot === expectedLastRoot
       )
     ) {
       console.log(
-        `EthOnNearClient update merkel roots error! The first and last roots are ${firstRoot} and ${lastRoot}`
+        'EthOnNearClient DAG Merkle roots were updated incorrectly! \nFirst root: expected {expectedFirstRoot}, got {firstRoot}. \nLast root: expected {expectedLastRoot}, got: {lastRoot}'
       )
       process.exit(1)
     }
