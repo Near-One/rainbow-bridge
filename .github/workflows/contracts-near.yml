@@ -28,7 +28,6 @@ jobs:
           - job-name: test eth-client
             cmd: |
               cd contracts/near/eth-client
-              ./build.sh
               ./test.sh
             timeout-minutes: 40
 
