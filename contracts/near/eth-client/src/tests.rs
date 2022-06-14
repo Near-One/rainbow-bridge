@@ -269,19 +269,19 @@ fn add_dags_merkle_roots() {
 }
 
 #[test]
-#[cfg_attr(feature = "eip1559", ignore)]
+#[cfg(feature = "eip1559")]
 fn update_dags_merkle_roots() {
+    let block = read_block(format!("./src/data/{}.json", 12_965_000).to_string());
     let mut context = get_context(vec![], false);
     context.predecessor_account_id = context.current_account_id.clone();
     testing_env!(context.clone());
-    let (blocks, _) = get_blocks(&WEB3RS, 400_000, 400_001);
 
     let dmr = read_roots_collection();
     let mut contract = EthClient::init(
         true,
         0,
         read_roots_collection().dag_merkle_roots,
-        blocks[0].clone(),
+        block.header_rlp.0,
         30,
         10,
         10,
