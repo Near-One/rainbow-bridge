@@ -280,7 +280,7 @@ class EthOnNearClientContract extends BorshContract {
       )
     ) {
       console.log(
-        'EthOnNearClient DAG Merkle roots were updated incorrectly! \nFirst root: expected {expectedFirstRoot}, got {firstRoot}. \nLast root: expected {expectedLastRoot}, got: {lastRoot}'
+        `EthOnNearClient DAG Merkle roots were updated incorrectly! \nFirst root: expected ${expectedFirstRoot}, got ${firstRoot}. \nLast root: expected ${expectedLastRoot}, got: ${lastRoot}`
       )
       process.exit(1)
     }
