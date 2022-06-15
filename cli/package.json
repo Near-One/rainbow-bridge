@@ -35,6 +35,7 @@
     "rainbow-bridge-watchdog": "1.0.0",
     "rainbow-bridge-testing": "1.0.0",
     "rainbow-token-connector": "near/rainbow-token-connector#134b3b6ad900d90c6f993c52f4e3edf985aec61a",
-    "request": "^2.88.2"
+    "request": "^2.88.2",
+    "readline-sync": "^1.4.10"
   }
 }

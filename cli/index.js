@@ -39,6 +39,7 @@ const { ETHDump } = require('./commands/eth-dump')
 const { NearDump } = require('./commands/near-dump')
 const { ethToNearFindProof } = require('rainbow-bridge-eth2near-block-relay')
 const { RainbowConfig } = require('rainbow-bridge-utils')
+const { UpdateDagMerkleRoots } = require('./commands/update-dag-merkle-roots')
 const {
   InitNearContracts,
   InitNearTokenFactory,
@@ -916,6 +917,23 @@ RainbowConfig.addOptions(
   ['near-node-url']
 )
 
+RainbowConfig.addOptions(
+  program
+    .command('eth-on-near-client-update-dag-merkle-roots <dags_start_epoch>')
+    .description(
+      'Update DAG Merkle roots for Eth on Near Client'
+    ),
+  async (dagsStartEpoch, args) => {
+    await UpdateDagMerkleRoots.execute({ dagsStartEpoch, ...args })
+  },
+  [
+    'near-network-id',
+    'near-node-url',
+    'eth-node-url',
+    'near-client-account',
+    'near-client-sk'
+  ]
+)
 ; (async () => {
   await program.parseAsync(process.argv)
 })()

@@ -239,6 +239,16 @@ impl EthClient {
     pub fn get_trusted_signer(&self) -> Option<AccountId> {
         self.trusted_signer.clone()
     }
+
+    pub fn update_dags_merkle_roots(
+        &mut self,
+        #[serializer(borsh)] dags_start_epoch: u64,
+        #[serializer(borsh)] dags_merkle_roots: Vec<H128>,
+    ) {
+        assert_self();
+        self.dags_start_epoch = dags_start_epoch;
+        self.dags_merkle_roots = dags_merkle_roots;
+    }
 }
 
 impl EthClient {

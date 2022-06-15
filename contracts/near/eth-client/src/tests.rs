@@ -259,11 +259,52 @@ fn add_dags_merkle_roots() {
         None,
     );
 
-    assert_eq!(dmr.dag_merkle_roots[0], contract.dag_merkle_root(0));
-    assert_eq!(dmr.dag_merkle_roots[10], contract.dag_merkle_root(10));
-    assert_eq!(dmr.dag_merkle_roots[511], contract.dag_merkle_root(511));
+    for i in 0..699 {
+        assert_eq!(dmr.dag_merkle_roots[i], contract.dag_merkle_root(i as u64));
+    }
 
-    let result = catch_unwind_silent(|| contract.dag_merkle_root(512));
+    // Get non-existing DAG Merkle root
+    let result = catch_unwind_silent(|| contract.dag_merkle_root(700));
+    assert!(result.is_err());
+}
+
+#[test]
+#[cfg(feature = "eip1559")]
+fn update_dags_merkle_roots() {
+    let block = read_block(format!("./src/data/{}.json", 12_965_000).to_string());
+    let mut context = get_context(vec![], false);
+    context.predecessor_account_id = context.current_account_id.clone();
+    testing_env!(context.clone());
+
+    let dmr = read_roots_collection();
+    let mut contract = EthClient::init(
+        true,
+        0,
+        read_roots_collection().dag_merkle_roots,
+        block.header_rlp.0,
+        30,
+        10,
+        10,
+        None,
+    );
+
+    contract.update_dags_merkle_roots(0, dmr.dag_merkle_roots.clone());
+    
+    for i in 0..699 {
+        assert_eq!(dmr.dag_merkle_roots[i], contract.dag_merkle_root(i as u64));
+    }
+
+    // Get non-existing DAG Merkle root
+    let result = catch_unwind_silent(|| contract.dag_merkle_root(700));
+    assert!(result.is_err());
+
+    // Test with the starting offset for DAG Merkle roots
+    let start_epoch: usize = 490;
+    contract.update_dags_merkle_roots(start_epoch as u64, dmr.dag_merkle_roots[start_epoch..].to_vec());
+    for i in start_epoch..699 {
+        assert_eq!(dmr.dag_merkle_roots[i], contract.dag_merkle_root(i as u64));
+    }
+    let result = catch_unwind_silent(|| contract.dag_merkle_root((start_epoch - 1) as u64));
     assert!(result.is_err());
 }
 
