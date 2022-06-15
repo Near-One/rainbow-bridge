@@ -259,11 +259,11 @@ fn add_dags_merkle_roots() {
         None,
     );
 
-    assert_eq!(dmr.dag_merkle_roots[0], contract.dag_merkle_root(0));
-    assert_eq!(dmr.dag_merkle_roots[10], contract.dag_merkle_root(10));
-    assert_eq!(dmr.dag_merkle_roots[511], contract.dag_merkle_root(511));
-    assert_eq!(dmr.dag_merkle_roots[699], contract.dag_merkle_root(699));
+    for i in 0..699 {
+        assert_eq!(dmr.dag_merkle_roots[i], contract.dag_merkle_root(i as u64));
+    }
 
+    // Get non-existing DAG Merkle root
     let result = catch_unwind_silent(|| contract.dag_merkle_root(700));
     assert!(result.is_err());
 }
@@ -293,6 +293,8 @@ fn update_dags_merkle_roots() {
     for i in 0..699 {
         assert_eq!(dmr.dag_merkle_roots[i], contract.dag_merkle_root(i as u64));
     }
+
+    // Get non-existing DAG Merkle root
     let result = catch_unwind_silent(|| contract.dag_merkle_root(700));
     assert!(result.is_err());
 
