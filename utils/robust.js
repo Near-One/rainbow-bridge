@@ -27,6 +27,49 @@ class RobustWeb3 {
   constructor (ethNodeUrl) {
     this.ethNodeUrl = ethNodeUrl
     this.web3 = new Web3(ethNodeUrl)
+
+    // The eth_maxPriorityFeePerGas method is not part of the Ethereum specification.
+    // This method was added by the Geth team and is not yet supported everywhere.
+    this.web3.extend({
+      property: 'extended',
+      methods: [{
+        name: 'maxPriorityFeePerGas',
+        call: 'eth_maxPriorityFeePerGas',
+        outputFormatter: this.web3.utils.hexToNumberString
+      }]
+    })
+  }
+
+  async maxPriorityFeePerGas () {
+    let value = '1500000000' // satisfactory default value
+    try {
+      // Providers such as Infura and Alchemy have implemented eth_maxPriorityFeePerGas,
+      // however not all pure eth clients or testing tools like Hardhat support it.
+      value = await this.web3.extended.maxPriorityFeePerGas()
+    } catch {
+      console.warn('Fallback maxPriorityFeePerGas calculation.')
+      const baseFeePerGas = (await this.getBlock('latest')).baseFeePerGas
+      const gasPrice = await this.web3.eth.getGasPrice()
+      value = this.web3.utils.toBN(gasPrice)
+        .sub(this.web3.utils.toBN(baseFeePerGas))
+        .toString()
+    }
+
+    return value
+  }
+
+  // Use the method name 'getFeeData' with similar functionality of ethers.js library
+  // https://docs.ethers.io/v5/api/providers/provider/#Provider-getFeeData
+  async getFeeData (multiplier = 1) {
+    const baseFeePerGas = this.web3.utils.toBN((await this.getBlock('latest')).baseFeePerGas)
+    const maxPriorityFeePerGas = this.web3.utils.toBN(await this.maxPriorityFeePerGas())
+      // Multiplying by an integer number can lead to overpayment, consider to implement a fee estimator
+      .mul(this.web3.utils.toBN(Math.max(1, multiplier)))
+    // Default: maxFeePerGas = maxPriorityFeePerGas + 2 * baseFeePerGas
+    const maxFeePerGas = this.web3.utils.toBN(2)
+      .mul(baseFeePerGas)
+      .add(maxPriorityFeePerGas)
+    return { baseFeePerGas, maxPriorityFeePerGas, maxFeePerGas }
   }
 
   async getBlockNumber () {

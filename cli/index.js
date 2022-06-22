@@ -158,9 +158,19 @@ RainbowConfig.declareOption(
   '1'
 )
 RainbowConfig.declareOption(
+  'eth-use-eip-1559',
+  'Allow submitting transactions using the EIP-1559 pricing mechanism.',
+  'false'
+)
+RainbowConfig.declareOption(
   'metrics-port',
   'On which port to expose metrics for corresponding relayer, if not provided no metrics exposed',
   null
+)
+RainbowConfig.declareOption(
+  'log-verbose',
+  'Log more information than the standard logging process.',
+  'false'
 )
 
 // User-specific arguments.
@@ -279,6 +289,16 @@ RainbowConfig.declareOption(
   '1'
 )
 RainbowConfig.declareOption(
+  'near2eth-relay-block-select-duration',
+  'Number of seconds to select the optimal block to submit.',
+  '300'
+)
+RainbowConfig.declareOption(
+  'near2eth-relay-next-block-select-delay-ms',
+  'Number of ms until the next request in the optimal block selection algorithm.',
+  '1200'
+)
+RainbowConfig.declareOption(
   'near2eth-relay-after-submit-delay-ms',
   'Number of ms to wait after successfully submitting light client block to prevent submitting the same block again.',
   '240000'
@@ -371,10 +391,14 @@ RainbowConfig.addOptions(
     'near2eth-relay-min-delay',
     'near2eth-relay-max-delay',
     'near2eth-relay-error-delay',
+    'near2eth-relay-block-select-duration',
+    'near2eth-relay-next-block-select-delay-ms',
     'near2eth-relay-after-submit-delay-ms',
     'eth-gas-multiplier',
+    'eth-use-eip-1559',
     'daemon',
-    'metrics-port'
+    'metrics-port',
+    'log-verbose'
   ]
 )
 
@@ -872,7 +896,12 @@ RainbowConfig.addOptions(
     'near2eth-relay-min-delay',
     'near2eth-relay-max-delay',
     'near2eth-relay-error-delay',
-    'eth-gas-multiplier'
+    'near2eth-relay-block-select-duration',
+    'near2eth-relay-next-block-select-delay-ms',
+    'near2eth-relay-after-submit-delay-ms',
+    'eth-gas-multiplier',
+    'eth-use-eip-1559',
+    'log-verbose'
   ]
 )
 
