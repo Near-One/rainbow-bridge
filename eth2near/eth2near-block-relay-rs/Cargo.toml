@@ -1,0 +1,23 @@
+[package]
+name = "eth2_to_near_relay"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+types =  { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
+tree_hash = { git = "https://github.com/sigp/lighthouse",  tag = "v2.3.1" }
+merkle_proof = { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
+serde_json = "1.0.74"
+ethereum-types = "0.12.1"
+reqwest = "*"
+
+[dev-dependencies]
+tokio-test = "*"
+
+[patch]
+[patch.crates-io]
+eth2_ssz = { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
+eth2_ssz_types = { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
+eth2_hashing = { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
+tree_hash = { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
+eth2_serde_utils = { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
