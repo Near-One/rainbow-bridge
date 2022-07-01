@@ -382,12 +382,14 @@ impl EthClient {
         prev: &BlockHeader,
         dag_nodes: &[DoubleNodeWithMerkleProof],
     ) -> bool {
-        let (_mix_hash, result) = self.hashimoto_merkle(
+        let (mix_hash, result) = self.hashimoto_merkle(
             &header.partial_hash.unwrap(),
             &header.nonce,
             header.number,
             dag_nodes,
         );
+
+        assert_eq!(mix_hash, header.mix_hash, "Invalid mix_hash");
 
         //
         // See YellowPaper formula (50) in section 4.3.4

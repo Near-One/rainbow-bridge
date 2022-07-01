@@ -335,13 +335,13 @@ impl BlockHeader {
         stream.append(&self.timestamp);
         stream.append(&self.extra_data);
 
-        #[cfg(feature = "eip1559")]
-        stream.append(&self.base_fee_per_gas);
-
         if !partial {
             stream.append(&self.mix_hash);
             stream.append(&self.nonce);
         }
+
+        #[cfg(feature = "eip1559")]
+        stream.append(&self.base_fee_per_gas);
     }
 }
 
@@ -371,9 +371,22 @@ impl RlpDecodable for BlockHeader {
             nonce: serialized.val_at(14)?,
             #[cfg(feature = "eip1559")]
             base_fee_per_gas: serialized.val_at(15)?,
-            hash: Some(near_keccak256(serialized.as_raw()).into()),
+            hash: None,
             partial_hash: None,
         };
+
+        block_header.hash =  Some(
+            near_keccak256({
+                let mut stream = RlpStream::new();
+                block_header.stream_rlp(&mut stream, false);
+                stream.out().as_slice()
+            })
+            .into(),
+        );
+
+        if block_header.hash.unwrap() != near_keccak256(serialized.as_raw()).into() {
+            return Err(RlpDecoderError::RlpInconsistentLengthAndData);
+        }
 
         block_header.partial_hash = Some(
             near_keccak256({
