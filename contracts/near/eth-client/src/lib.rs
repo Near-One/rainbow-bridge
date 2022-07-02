@@ -389,7 +389,11 @@ impl EthClient {
             dag_nodes,
         );
 
-        assert_eq!(mix_hash, header.mix_hash, "Invalid mix_hash");
+        if header.difficulty > U256(1.into()) {
+            assert_eq!(header.mix_hash, mix_hash, "Invalid mix_hash");
+        } else {
+            assert_eq!(header.mix_hash, H256::from(&[0u8; 32]), "Invalid mix_hash");
+        }
 
         //
         // See YellowPaper formula (50) in section 4.3.4
