@@ -23,7 +23,6 @@
         "eth-gas-reporter": "^0.2.11",
         "ethers": "5.2.0",
         "hardhat": "^2.1.1",
-        "rainbow-bridge-lib": "^2.0.0",
         "readline-sync": "^1.4.10",
         "solc": "0.8.3",
         "solidity-coverage": "^0.7.16",
