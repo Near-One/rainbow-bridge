@@ -13,6 +13,7 @@ eth2_hashing = { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
 ethereum-types = "0.12.1"
 reqwest = "*"
 eth-types = { path = "../../contracts/near/eth-types/" }
+clap = { version = "3.1.6", features = ["derive"] }
 
 [dev-dependencies]
 tokio-test = "*"
