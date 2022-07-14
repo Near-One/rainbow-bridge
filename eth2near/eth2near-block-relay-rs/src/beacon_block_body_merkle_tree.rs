@@ -1,7 +1,7 @@
 use ethereum_types::H256;
 use merkle_proof::MerkleTree;
 use tree_hash::TreeHash;
-use types::{BeaconBlockBody, BeaconStateError, ExecutionPayload, MainnetEthSpec};
+use types::{BeaconBlockBody, ExecutionPayload, MainnetEthSpec};
 
 /// `BeaconBlockBodyMerkleTree` is built on the `BeaconBlockBody` data structure,
 /// where the leaves of the Merkle Tree are the hashes of the
@@ -13,9 +13,7 @@ impl BeaconBlockBodyMerkleTree {
     pub const BEACON_BLOCK_BODY_TREE_NUM_LEAVES: usize = 10;
     pub const BEACON_BLOCK_BODY_TREE_DEPTH: usize = 4;
 
-    pub fn new(
-        beacon_block_body: &BeaconBlockBody<MainnetEthSpec>,
-    ) -> Result<Self, BeaconStateError> {
+    pub fn new(beacon_block_body: &BeaconBlockBody<MainnetEthSpec>) -> Self {
         let leaves: [H256; Self::BEACON_BLOCK_BODY_TREE_NUM_LEAVES] = [
             beacon_block_body.randao_reveal().tree_hash_root(),
             beacon_block_body.eth1_data().tree_hash_root(),
@@ -25,14 +23,22 @@ impl BeaconBlockBodyMerkleTree {
             beacon_block_body.attestations().tree_hash_root(),
             beacon_block_body.deposits().tree_hash_root(),
             beacon_block_body.voluntary_exits().tree_hash_root(),
-            beacon_block_body.sync_aggregate()?.tree_hash_root(),
-            beacon_block_body.execution_payload()?.tree_hash_root(),
+            if let Ok(sync_aggregate) = beacon_block_body.sync_aggregate() {
+                sync_aggregate.tree_hash_root()
+            } else {
+                H256::zero()
+            },
+            if let Ok(execution_payload) = beacon_block_body.execution_payload() {
+                execution_payload.tree_hash_root()
+            } else {
+                H256::zero()
+            },
         ];
 
-        Ok(Self(MerkleTree::create(
+        Self(MerkleTree::create(
             &leaves,
             Self::BEACON_BLOCK_BODY_TREE_DEPTH,
-        )))
+        ))
     }
 }
 
@@ -85,7 +91,7 @@ mod tests {
         let beacon_block_body: BeaconBlockBody<MainnetEthSpec> =
             serde_json::from_str(&json_str).unwrap();
 
-        let merkle_tree = BeaconBlockBodyMerkleTree::new(&beacon_block_body).unwrap();
+        let merkle_tree = BeaconBlockBodyMerkleTree::new(&beacon_block_body);
         assert_eq!(
             format!("{:?}", merkle_tree.0.hash()),
             "0xd7f1c80baaceb9a1d3301e4f740fe8b5de9970153dc2ab254a4be39fe054addc"
@@ -99,7 +105,7 @@ mod tests {
         let json_str = read_json_file_from_data_dir("beacon_block_body_kiln_slot_741888.json");
         let beacon_block_body: BeaconBlockBody<MainnetEthSpec> =
             serde_json::from_str(&json_str).unwrap();
-        let beacon_block_body_merkle_tree = BeaconBlockBodyMerkleTree::new(&beacon_block_body).unwrap();
+        let beacon_block_body_merkle_tree = BeaconBlockBodyMerkleTree::new(&beacon_block_body);
         let execution_payload_merkle_tree = ExecutionPayloadMerkleTree::new(&beacon_block_body.execution_payload().unwrap().execution_payload);
 
         assert_eq!(beacon_block_body.execution_payload().unwrap().tree_hash_root(),
