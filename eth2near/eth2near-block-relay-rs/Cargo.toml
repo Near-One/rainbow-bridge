@@ -8,6 +8,7 @@ types =  { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
 tree_hash = { git = "https://github.com/sigp/lighthouse",  tag = "v2.3.1" }
 merkle_proof = { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
 serde_json = "1.0.74"
+serde = { version = "1.0", features = ["derive"] }
 eth2_hashing = { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
 ethereum-types = "0.12.1"
 reqwest = "*"
