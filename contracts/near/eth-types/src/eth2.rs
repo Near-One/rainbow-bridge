@@ -6,8 +6,7 @@ use tree_hash::MerkleHasher;
 #[cfg(not(target_arch = "wasm32"))]
 use {
     hex::FromHex,
-    serde::{Deserialize, Deserializer, Serialize},
-    serde_big_array::BigArray,
+    serde::{Deserialize, Deserializer, Serialize, Serializer},
 };
 
 pub const PUBLIC_KEY_BYTES_LEN: usize = 48;
@@ -20,22 +19,11 @@ pub type ForkVersion = [u8; 4];
 pub type DomainType = [u8; 4];
 
 #[derive(Debug, Clone)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize))]
-pub struct PublicKeyBytes(
-    #[cfg_attr(not(target_arch = "wasm32"), serde(with = "BigArray"))]
-    pub  [u8; PUBLIC_KEY_BYTES_LEN],
-);
+pub struct PublicKeyBytes(pub [u8; PUBLIC_KEY_BYTES_LEN]);
 #[derive(Debug, Clone)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize))]
-pub struct SignatureBytes(
-    #[cfg_attr(not(target_arch = "wasm32"), serde(with = "BigArray"))] pub [u8; SIGNATURE_BYTES_LEN],
-);
+pub struct SignatureBytes(pub [u8; SIGNATURE_BYTES_LEN]);
 #[derive(Debug, Clone)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize))]
-pub struct SyncCommitteeBits(
-    #[cfg_attr(not(target_arch = "wasm32"), serde(with = "BigArray"))]
-    pub  [u8; SYNC_COMMITTEE_BITS_SIZE_IN_BYTES],
-);
+pub struct SyncCommitteeBits(pub [u8; SYNC_COMMITTEE_BITS_SIZE]);
 
 arr_wrapper_impl_tree_hash_and_borsh!(PublicKeyBytes, PUBLIC_KEY_BYTES_LEN);
 arr_wrapper_impl_tree_hash_and_borsh!(SignatureBytes, SIGNATURE_BYTES_LEN);
