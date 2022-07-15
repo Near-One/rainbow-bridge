@@ -9,17 +9,21 @@ struct Arguments {
     /// endpoint to full node of Eth2 Beacon chain with Light Client API
     eth_node_url: String,
 
+    #[clap(long="total-submit-headers", default_value_t = 32)]
+    /// the max number of headers submitted in one bunch to eth client
+    total_submit_headers: u64,
+
     #[clap(long, default_value_t = 823648)]
-    ///Tmp flag TODO: remove
+    /// Tmp flag TODO: remove
     start_slot: u64,
 
     #[clap(long, default_value_t = String::from("./light_client_updates_out"))]
-    ///Tmp output dir TODO remove
+    /// Tmp output dir TODO remove
     output_dir: String,
 }
 
 fn main() {
     let args = Arguments::parse();
-    let mut eth2near_relay = Eth2NearRelay::init(&args.eth_node_url, args.start_slot, args.output_dir);
+    let mut eth2near_relay = Eth2NearRelay::init(&args.eth_node_url, args.start_slot, args.output_dir, args.total_submit_headers);
     eth2near_relay.run();
 }
