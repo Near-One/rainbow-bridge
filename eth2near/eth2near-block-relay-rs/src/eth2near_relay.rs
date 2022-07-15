@@ -19,12 +19,12 @@ impl Eth2NearRelay {
         }
     }
 
-    pub async fn run(&mut self) {
+    pub fn run(&mut self) {
         loop {
             let last_eth2_slot_on_near : u64 = self.eth_client_contract.get_last_slot();
             let mut last_eth2_slot_on_eth_chain : u64 = 0;
 
-            if let Ok(slot) = self.beacon_rpc_client.get_last_finalized_slot_number().await {
+            if let Ok(slot) = self.beacon_rpc_client.get_last_finalized_slot_number() {
                 last_eth2_slot_on_eth_chain = slot.as_u64();
             } else {
                 continue
@@ -43,8 +43,8 @@ impl Eth2NearRelay {
                     println!("slot={}", i);
                     let mut count = 0;
                     loop {
-                        if let Ok(beacon_block_header) = (self.beacon_rpc_client.get_beacon_block_header_for_block_id(&format!("{}", i))).await {
-                            if let Ok(beacon_block_body) = (self.beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", i))).await {
+                        if let Ok(beacon_block_header) = self.beacon_rpc_client.get_beacon_block_header_for_block_id(&format!("{}", i)) {
+                            if let Ok(beacon_block_body) = self.beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", i)) {
                                 if let Ok(beacon_block_header_with_execution_data) = BeaconBlockHeaderWithExecutionData::new(beacon_block_header, &beacon_block_body) {
                                     headers.push(beacon_block_header_with_execution_data);
                                 }

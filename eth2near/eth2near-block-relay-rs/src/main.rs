@@ -1,8 +1,6 @@
 use clap::Parser;
 use std::string::String;
 use eth2_to_near_relay::eth2near_relay::Eth2NearRelay;
-use futures;
-use tokio;
 
 #[derive(Parser,Default,Debug)]
 #[clap(version, about="Eth2 to Near Relay")]
@@ -12,10 +10,8 @@ struct Arguments {
     eth_node_url: String,
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let args = Arguments::parse();
     let mut eth2near_relay = Eth2NearRelay::init(&args.eth_node_url);
-    let future_relay = eth2near_relay.run();
-    futures::executor::block_on(future_relay);
+    eth2near_relay.run();
 }
