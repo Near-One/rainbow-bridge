@@ -6,7 +6,7 @@ pub struct EthClientContract {}
 
 impl EthClientContract {
     pub fn get_last_slot(&self) -> u64 {
-        return 0;
+        return 823661;
     }
 
     pub fn send_light_client_update(& mut self, light_client_update: LightClientUpdate) {}

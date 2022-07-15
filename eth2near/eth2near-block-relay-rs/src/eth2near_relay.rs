@@ -40,13 +40,21 @@ impl Eth2NearRelay {
 
                 let mut headers: Vec<BeaconBlockHeaderWithExecutionData> = vec![];
                 for i in last_eth2_slot_on_near + 1 ..=end_slot {
-                    let beacon_block_header = self.beacon_rpc_client.get_beacon_block_header_for_block_id(&format!("{}", i)).await.unwrap();
-                    let beacon_block_body = self.beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", i)).await.unwrap();
-
-                    if let Ok(beacon_block_header_with_execution_data) = BeaconBlockHeaderWithExecutionData::new(beacon_block_header, &beacon_block_body) {
-                        headers.push(beacon_block_header_with_execution_data);
-                    } else {
-                        continue;
+                    println!("slot={}", i);
+                    let mut count = 0;
+                    loop {
+                        if let Ok(beacon_block_header) = (self.beacon_rpc_client.get_beacon_block_header_for_block_id(&format!("{}", i))).await {
+                            if let Ok(beacon_block_body) = (self.beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", i))).await {
+                                if let Ok(beacon_block_header_with_execution_data) = BeaconBlockHeaderWithExecutionData::new(beacon_block_header, &beacon_block_body) {
+                                    headers.push(beacon_block_header_with_execution_data);
+                                }
+                                break;
+                            }
+                        }
+                        count += 1;
+                        if count > 2 {
+                            break;
+                        }
                     }
                 }
                 self.eth_client_contract.send_headers(headers);
