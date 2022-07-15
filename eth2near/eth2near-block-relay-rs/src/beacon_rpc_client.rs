@@ -12,6 +12,7 @@ use std::error::Error;
 use std::fmt;
 use std::fmt::Display;
 use std::string::String;
+use reqwest::Client;
 use types::BeaconBlockBody;
 use types::MainnetEthSpec;
 
@@ -39,15 +40,12 @@ impl Display for MissSyncAggregationError {
 
 impl Error for MissSyncAggregationError {}
 
-async fn get_json_from_raw_request(url: &str) -> Result<String, reqwest::Error> {
-    reqwest::get(url).await?.text().await
-}
-
 /// `BeaconRPCClient` allows getting beacon block body, beacon block header
 /// and light client updates
 /// using Beacon RPC API (https://ethereum.github.io/beacon-APIs/)
 pub struct BeaconRPCClient {
     endpoint_url: String,
+    client: Client,
 }
 
 impl BeaconRPCClient {
@@ -62,6 +60,7 @@ impl BeaconRPCClient {
     pub fn new(endpoint_url: &str) -> Self {
         Self {
             endpoint_url: endpoint_url.to_string(),
+            client: Client::new(),
         }
     }
 
@@ -78,7 +77,7 @@ impl BeaconRPCClient {
     ) -> Result<BeaconBlockBody<MainnetEthSpec>, Box<dyn Error>> {
         let url = format!("{}/{}/{}", self.endpoint_url, Self::URL_BODY_PATH, block_id);
         let body_json =
-            &Self::get_body_json_from_rpc_result(&get_json_from_raw_request(&url).await?)?;
+            &Self::get_body_json_from_rpc_result(&self.get_json_from_raw_request(&url).await?)?;
         Ok(serde_json::from_str(body_json)?)
     }
 
@@ -100,7 +99,7 @@ impl BeaconRPCClient {
             block_id
         );
         let json_str =
-            Self::get_header_json_from_rpc_result(&get_json_from_raw_request(&url).await?)?;
+            Self::get_header_json_from_rpc_result(&self.get_json_from_raw_request(&url).await?)?;
         Ok(serde_json::from_str(&json_str)?)
     }
 
@@ -112,7 +111,7 @@ impl BeaconRPCClient {
     /// In Mainnet one period consist of 256 epochs and one epoch from 32 slots
     pub async fn get_light_client_update(&self, period: u64) -> Result<LightClientUpdate, Box<dyn Error>> {
         let url = format!("{}/{}?start_period={}&count=1", self.endpoint_url, Self::GET_LIGHT_CLIENT_UPDATE_API, period);
-        let light_client_update_json_str = get_json_from_raw_request(&url).await?;
+        let light_client_update_json_str = self.get_json_from_raw_request(&url).await?;
 
         Ok(LightClientUpdate {
             attested_header: Self::get_attested_header_from_light_client_update_json_str(&light_client_update_json_str)?,
@@ -126,6 +125,10 @@ impl BeaconRPCClient {
     /// Return the last finalized slot in the Beacon chain
     pub async fn get_last_finalized_slot_number(&self) -> Result<types::Slot, Box<dyn Error>> {
         Ok(self.get_beacon_block_header_for_block_id("finalized").await?.slot)
+    }
+
+    async fn get_json_from_raw_request(&self, url: &str) -> Result<String, reqwest::Error> {
+        self.client.get(url).send().await?.text().await
     }
 
     fn get_body_json_from_rpc_result(
@@ -309,7 +312,8 @@ mod tests {
         let file_json_str = read_json_file_from_data_dir("beacon_block_kiln_slot_741888.json");
 
         let url = "https://lodestar-kiln.chainsafe.io/eth/v2/beacon/blocks/741888";
-        let rpc_json_str = aw!(crate::beacon_rpc_client::get_json_from_raw_request(url));
+        let beacon_rpc_client = BeaconRPCClient::new(url);
+        let rpc_json_str = aw!(beacon_rpc_client.get_json_from_raw_request(url));
 
         assert_eq!(rpc_json_str.unwrap(), file_json_str.trim());
     }
