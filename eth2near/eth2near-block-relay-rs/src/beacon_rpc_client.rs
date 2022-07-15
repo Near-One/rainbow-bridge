@@ -127,6 +127,11 @@ impl BeaconRPCClient {
         Ok(self.get_beacon_block_header_for_block_id("finalized")?.slot)
     }
 
+    /// Return the last finalized slot in the Beacon chain
+    pub fn get_last_slot_number(&self) -> Result<types::Slot, Box<dyn Error>> {
+        Ok(self.get_beacon_block_header_for_block_id("head")?.slot)
+    }
+
     fn get_json_from_raw_request(&self, url: &str) -> Result<String, reqwest::Error> {
         self.client.get(url).send()?.text()
     }
