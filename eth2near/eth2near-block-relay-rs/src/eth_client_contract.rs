@@ -19,8 +19,8 @@ impl EthClientContract {
         let last_period = last_slot/(32*256) - 1;
 
         EthClientContract {
-            last_slot,
-            last_period,
+            last_slot: last_slot,
+            last_period: last_period,
             dir_path,
         }
     }

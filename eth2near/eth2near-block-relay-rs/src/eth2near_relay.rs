@@ -11,11 +11,13 @@ pub struct Eth2NearRelay {
 }
 
 impl Eth2NearRelay {
-    pub fn init(eth_node_url: &str, start_slot: u64, out_dir: String, max_submitted_headers: u64) -> Self {
+    pub fn init(eth_node_url: &str, start_slot: u64, out_dir: String, max_submitted_headers: u32,
+                near_endpoint: &str, signer_account_id: &str,
+                path_to_signer_secret_key: &str, contract_account_id: &str) -> Self {
         Eth2NearRelay {
             beacon_rpc_client: BeaconRPCClient::new(eth_node_url),
             eth_client_contract: EthClientContract::new(start_slot, out_dir),
-            max_submitted_headers,
+            max_submitted_headers: max_submitted_headers as u64,
         }
     }
 

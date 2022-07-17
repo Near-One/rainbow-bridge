@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{arg, Parser};
 use eth2_to_near_relay::eth2near_relay::Eth2NearRelay;
 use near_jsonrpc_client::{methods, JsonRpcClient};
 use near_jsonrpc_primitives::types::query::QueryResponseKind;
@@ -199,14 +199,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         signed_transaction: transaction.sign(&signer),
     };
 
-    let response =  handle.block_on(client.call(request))?;
+    //let response =  handle.block_on(client.call(request))?;
 
     //println!("response: {:#?}", response);
 
     //init_contract(&signer, &args, &client)?;
 
+    let mut eth2near_relay = Eth2NearRelay::init(&args.eth_endpoint, args.start_slot,
+                                                 args.output_dir, args.total_submit_headers,
+                                                  &args.near_endpoint, &args.signer_account_id,
+                                                  &args.path_to_signer_secret_key, &args.contract_account_id);
+    //Ok(eth2near_relay.run())
     Ok(())
-
-    //let mut eth2near_relay = Eth2NearRelay::init(&args.eth_endpoint, args.start_slot, args.output_dir, args.total_submit_headers);
-    //eth2near_relay.run();
 }
