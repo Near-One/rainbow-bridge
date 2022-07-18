@@ -2,12 +2,12 @@ use clap::{arg, Parser};
 use eth2_to_near_relay::eth2near_relay::Eth2NearRelay;
 use near_jsonrpc_client::{methods, JsonRpcClient};
 use near_jsonrpc_primitives::types::query::QueryResponseKind;
-use near_primitives::types::BlockReference;
+use near_primitives::types::{BlockReference, Finality, FunctionArgs};
 use near_primitives::views::QueryRequest;
 use near_primitives::transaction::{Action, FunctionCallAction, Transaction};
 use near_primitives::borsh::BorshSerialize;
 use near_primitives::types::AccountId;
-use serde_json::Value;
+use serde_json::{from_slice, Value};
 use serde_json::json;
 use std::string::String;
 use env_logger::init;
@@ -199,9 +199,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         signed_transaction: transaction.sign(&signer),
     };
 
-    //let response =  handle.block_on(client.call(request))?;
+    let response =  handle.block_on(client.call(request))?;
 
-    //println!("response: {:#?}", response);
+    println!("response: {:#?}", response);
+    let contract_account = args.contract_account_id.parse().unwrap();
 
     //init_contract(&signer, &args, &client)?;
 

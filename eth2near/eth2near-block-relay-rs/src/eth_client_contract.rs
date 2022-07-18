@@ -6,11 +6,20 @@ use std::vec::Vec;
 use std::string::String;
 use std::path::Path;
 use std::io::Write;
+use borsh::BorshDeserialize;
+use eth_types::H256;
 use near_crypto::InMemorySigner;
 use near_jsonrpc_client::JsonRpcClient;
-use near_sdk::AccountId;
-use serde_json::Value;
+use near_jsonrpc_primitives::types::query::QueryResponseKind;
+use near_jsonrpc_client::methods;
+use near_primitives::transaction::{Action, FunctionCallAction, Transaction};
+use near_primitives::types::{AccountId, BlockReference, Finality, FunctionArgs, Nonce};
+use serde::de::Error;
+use serde_json::{json, Value};
 use tokio::runtime::Handle;
+use tokio::runtime::Runtime;
+use near_primitives::borsh::BorshSerialize;
+use near_primitives::views::QueryRequest;
 
 pub struct EthClientContract {
     last_slot: u64,
@@ -67,6 +76,67 @@ impl EthClientContract {
         file.write_all(light_client_update_json_str.as_bytes()).unwrap();
 
         self.last_period = last_period;
+
+        let rt = Runtime::new().unwrap();
+        let handle = rt.handle();
+
+        let access_key_query_response = handle.block_on(self.client
+            .call(methods::query::RpcQueryRequest {
+                block_reference: BlockReference::latest(),
+                request: near_primitives::views::QueryRequest::ViewAccessKey {
+                    account_id: self.signer.account_id.clone(),
+                    public_key: self.signer.public_key.clone(),
+                },
+            })).unwrap();
+
+        let current_nonce = self.get_current_nonce();
+        let transaction = Transaction {
+            signer_id: self.signer.account_id.clone(),
+            public_key: self.signer.public_key.clone(),
+            nonce: current_nonce + 1,
+            receiver_id: self.contract_account.clone(),
+            block_hash: access_key_query_response.block_hash,
+            actions: vec![Action::FunctionCall(FunctionCallAction {
+                method_name: "submit_update".to_string(),
+                args: light_client_update.try_to_vec().unwrap(),
+                gas: 100_000_000_000_000, // 100 TeraGas
+                deposit: 0,
+            })],
+        };
+
+        let request = methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest {
+            signed_transaction: transaction.sign(&self.signer),
+        };
+
+        let response = handle.block_on(self.client.call(request)).unwrap();
+        println!("response: {:#?}", response);
+    }
+
+    pub fn is_last_finalized_header_root(&self, last_finalized_block_root: H256) -> bool {
+        let request = methods::query::RpcQueryRequest {
+            block_reference: BlockReference::Finality(Finality::Final),
+            request: QueryRequest::CallFunction {
+                account_id: contract_account,
+                method_name: "finalized_beacon_header_root".to_string(),
+                args: FunctionArgs::from(
+                    json!({})
+                        .to_string()
+                        .into_bytes(),
+                ),
+            },
+        };
+
+        let response =  handle.block_on(client.call(request))?;
+        println!("response: {:#?}", response);
+
+        if let QueryResponseKind::CallResult(result) = response.kind {
+            let last_finalized_block_root_on_near : H256 = H256::try_from_slice(&result.result).unwrap();
+            if last_finalized_block_root == last_finalized_block_root_on_near {
+                return true;
+            }
+        }
+
+        false
     }
 
     pub fn send_headers(& mut self, headers: Vec<BeaconBlockHeaderWithExecutionData>) {
@@ -86,5 +156,26 @@ impl EthClientContract {
         file.write_all(headers_json_str.as_bytes()).unwrap();
 
         self.last_slot = headers[headers.len() - 1].header.slot.as_u64();
+    }
+
+    fn get_current_nonce(& self) -> Nonce {
+        let rt = Runtime::new().unwrap();
+        let handle = rt.handle();
+
+        let access_key_query_response = handle.block_on(self.client
+            .call(methods::query::RpcQueryRequest {
+                block_reference: BlockReference::latest(),
+                request: near_primitives::views::QueryRequest::ViewAccessKey {
+                    account_id: self.signer.account_id.clone(),
+                    public_key: self.signer.public_key.clone(),
+                },
+            })).unwrap();
+
+        let current_nonce = match access_key_query_response.kind {
+            QueryResponseKind::AccessKey(access_key) => access_key.nonce,
+            _ => Err("failed to extract current nonce").unwrap(),
+        };
+
+        current_nonce
     }
 }
