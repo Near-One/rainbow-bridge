@@ -16,7 +16,9 @@ impl Eth2NearRelay {
                 path_to_signer_secret_key: &str, contract_account_id: &str) -> Self {
         Eth2NearRelay {
             beacon_rpc_client: BeaconRPCClient::new(eth_node_url),
-            eth_client_contract: EthClientContract::new(start_slot, out_dir),
+            eth_client_contract: EthClientContract::new(near_endpoint, signer_account_id,
+                                                        path_to_signer_secret_key, contract_account_id,
+                                                        start_slot, out_dir),
             max_submitted_headers: max_submitted_headers as u64,
         }
     }
