@@ -25,6 +25,10 @@ struct Arguments {
     /// endpoint to full node of Eth2 Beacon chain with Light Client API
     eth_endpoint: String,
 
+    #[clap(long, default_value_t = String::from("https://rpc.kiln.themerge.dev"))]
+    /// endpoint for the ethereum full node which support Eth1 RPC API
+    eth1_endpoint: String,
+
     #[clap(long="total-submit-headers", default_value_t = 4)]
     /// the max number of headers submitted in one bunch to eth client
     total_submit_headers: u32,
@@ -202,11 +206,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let response =  handle.block_on(client.call(request))?;
 
     println!("response: {:#?}", response);
-    let contract_account = args.contract_account_id.parse().unwrap();
+    //let contract_account = args.contract_account_id.parse().unwrap();
 
-    //init_contract(&signer, &args, &client)?;
+    //init_contract(&signer, &argsg , &client)?;
 
-    let mut eth2near_relay = Eth2NearRelay::init(&args.eth_endpoint, args.start_slot,
+    let mut eth2near_relay = Eth2NearRelay::init(&args.eth_endpoint, &args.eth1_endpoint, args.start_slot,
                                                  args.output_dir, args.total_submit_headers,
                                                   &args.near_endpoint, &args.signer_account_id,
                                                   &args.path_to_signer_secret_key, &args.contract_account_id);

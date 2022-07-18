@@ -113,10 +113,13 @@ impl EthClientContract {
     }
 
     pub fn is_last_finalized_header_root(&self, last_finalized_block_root: H256) -> bool {
+        let rt = Runtime::new().unwrap();
+        let handle = rt.handle();
+
         let request = methods::query::RpcQueryRequest {
             block_reference: BlockReference::Finality(Finality::Final),
             request: QueryRequest::CallFunction {
-                account_id: contract_account,
+                account_id: self.contract_account.clone(),
                 method_name: "finalized_beacon_header_root".to_string(),
                 args: FunctionArgs::from(
                     json!({})
@@ -126,7 +129,7 @@ impl EthClientContract {
             },
         };
 
-        let response =  handle.block_on(client.call(request))?;
+        let response =  handle.block_on(self.client.call(request)).unwrap();
         println!("response: {:#?}", response);
 
         if let QueryResponseKind::CallResult(result) = response.kind {

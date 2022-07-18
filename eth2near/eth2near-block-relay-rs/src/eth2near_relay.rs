@@ -11,7 +11,7 @@ pub struct Eth2NearRelay {
 }
 
 impl Eth2NearRelay {
-    pub fn init(eth_node_url: &str, start_slot: u64, out_dir: String, max_submitted_headers: u32,
+    pub fn init(eth_node_url: &str, eth1_endpoint: &str, start_slot: u64, out_dir: String, max_submitted_headers: u32,
                 near_endpoint: &str, signer_account_id: &str,
                 path_to_signer_secret_key: &str, contract_account_id: &str) -> Self {
         Eth2NearRelay {
