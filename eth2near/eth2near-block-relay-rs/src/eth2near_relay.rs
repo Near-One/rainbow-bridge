@@ -3,9 +3,12 @@ use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::eth_client_contract::EthClientContract;
 use std::cmp::min;
 use std::vec::Vec;
+use eth_types::BlockHeader;
+use crate::eth1_rpc_client::Eth1RPCClient;
 
 pub struct Eth2NearRelay {
     beacon_rpc_client: BeaconRPCClient,
+    eth1_rpc_client: Eth1RPCClient,
     eth_client_contract: EthClientContract,
     max_submitted_headers: u64,
 }
@@ -16,6 +19,7 @@ impl Eth2NearRelay {
                 path_to_signer_secret_key: &str, contract_account_id: &str) -> Self {
         Eth2NearRelay {
             beacon_rpc_client: BeaconRPCClient::new(eth_node_url),
+            eth1_rpc_client: Eth1RPCClient::new(eth1_endpoint),
             eth_client_contract: EthClientContract::new(near_endpoint, signer_account_id,
                                                         path_to_signer_secret_key, contract_account_id,
                                                         start_slot, out_dir),
@@ -42,16 +46,14 @@ impl Eth2NearRelay {
                     end_slot = last_eth2_slot_on_near + 1;
                 }
 
-                let mut headers: Vec<BeaconBlockHeaderWithExecutionData> = vec![];
+                let mut headers: Vec<BlockHeader> = vec![];
                 for i in last_eth2_slot_on_near + 1 ..=end_slot {
                     println!("slot={}", i);
                     let mut count = 0;
                     loop {
-                        if let Ok(beacon_block_header) = self.beacon_rpc_client.get_beacon_block_header_for_block_id(&format!("{}", i)) {
-                            if let Ok(beacon_block_body) = self.beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", i)) {
-                                if let Ok(beacon_block_header_with_execution_data) = BeaconBlockHeaderWithExecutionData::new(beacon_block_header, &beacon_block_body) {
-                                    headers.push(beacon_block_header_with_execution_data);
-                                }
+                        if let Ok(block_number) = self.beacon_rpc_client.get_block_number_for_slot(types::Slot::new(i)) {
+                            if let Ok(eth1_header) = self.eth1_rpc_client.get_block_header_by_number(block_number) {
+                                headers.push(eth1_header);
                                 break;
                             }
                         }
@@ -61,7 +63,7 @@ impl Eth2NearRelay {
                         }
                     }
                 }
-                self.eth_client_contract.send_headers(headers);
+                self.eth_client_contract.send_headers(headers, last_eth2_slot_on_eth_chain + 1, end_slot);
                 self.send_light_client_updates(end_slot, last_eth2_slot_on_eth_chain);
                 //println!("Is finlized block: {}", self.eth_client_contract.is_last_finalized_header_root());
             }

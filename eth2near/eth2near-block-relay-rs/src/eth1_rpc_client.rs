@@ -59,7 +59,7 @@ impl Eth1RPCClient {
         println!("block_json: {}", block_json);
         let block_header: BlockHeader = serde_json::from_str(&block_json).unwrap();
         println!("block_heade: {:?}", block_header);
-        Ok(BlockHeader)
+        Ok(block_header)
     }
 }
 

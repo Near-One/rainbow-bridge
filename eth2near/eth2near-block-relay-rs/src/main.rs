@@ -214,6 +214,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                                  args.output_dir, args.total_submit_headers,
                                                   &args.near_endpoint, &args.signer_account_id,
                                                   &args.path_to_signer_secret_key, &args.contract_account_id);
-    //Ok(eth2near_relay.run())
-    Ok(())
+    Ok(eth2near_relay.run())
+    //Ok(())
 }

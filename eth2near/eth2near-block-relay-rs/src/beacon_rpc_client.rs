@@ -132,6 +132,11 @@ impl BeaconRPCClient {
         Ok(self.get_beacon_block_header_for_block_id("head")?.slot)
     }
 
+    pub fn get_block_number_for_slot(&self, slot: types::Slot) -> Result<u64, Box<dyn Error>> {
+        let beacon_block_body = self.get_beacon_block_body_for_block_id(&slot.to_string()).unwrap();
+        Ok(beacon_block_body.execution_payload().unwrap().execution_payload.block_number)
+    }
+
     fn get_json_from_raw_request(&self, url: &str) -> Result<String, reqwest::Error> {
         self.client.get(url).send()?.text()
     }

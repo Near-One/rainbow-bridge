@@ -7,7 +7,7 @@ use std::string::String;
 use std::path::Path;
 use std::io::Write;
 use borsh::BorshDeserialize;
-use eth_types::H256;
+use eth_types::{BlockHeader, H256};
 use near_crypto::InMemorySigner;
 use near_jsonrpc_client::JsonRpcClient;
 use near_jsonrpc_primitives::types::query::QueryResponseKind;
@@ -142,7 +142,7 @@ impl EthClientContract {
         false
     }
 
-    pub fn send_headers(& mut self, headers: Vec<BeaconBlockHeaderWithExecutionData>) {
+    pub fn send_headers(& mut self, headers: Vec<BlockHeader>, st_slot: u64, end_slot: u64) {
         println!("Send headers, #headers = {} ", headers.len());
 
         if headers.len() == 0 {
@@ -150,15 +150,52 @@ impl EthClientContract {
         }
 
         let headers_filename = format!("headers_slots_{}_{}.json",
-                                       headers[0].header.slot.as_u64(),
-                                       headers[headers.len() - 1].header.slot.as_u64());
+                                       st_slot,
+                                       end_slot);
         let header_path = Path::new(&self.dir_path).join(headers_filename);
         let headers_json_str = serde_json::to_string(&headers).unwrap();
 
         let mut file = File::create(header_path).unwrap();
         file.write_all(headers_json_str.as_bytes()).unwrap();
 
-        self.last_slot = headers[headers.len() - 1].header.slot.as_u64();
+        self.last_slot = end_slot;
+
+        for header in headers {
+            let rt = Runtime::new().unwrap();
+            let handle = rt.handle();
+
+            let access_key_query_response = handle.block_on(self.client
+                .call(methods::query::RpcQueryRequest {
+                    block_reference: BlockReference::latest(),
+                    request: near_primitives::views::QueryRequest::ViewAccessKey {
+                        account_id: self.signer.account_id.clone(),
+                        public_key: self.signer.public_key.clone(),
+                    },
+                })).unwrap();
+
+            let current_nonce = self.get_current_nonce();
+            let transaction = Transaction {
+                signer_id: self.signer.account_id.clone(),
+                public_key: self.signer.public_key.clone(),
+                nonce: current_nonce + 1,
+                receiver_id: self.contract_account.clone(),
+                block_hash: access_key_query_response.block_hash,
+                actions: vec![Action::FunctionCall(FunctionCallAction {
+                    method_name: "submit_header".to_string(),
+                    args: header.try_to_vec().unwrap(),
+                    gas: 100_000_000_000_000, // 100 TeraGas
+                    deposit: 0,
+                })],
+            };
+
+            println!("{:?}", header);
+
+            let request = methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest {
+                signed_transaction: transaction.sign(&self.signer),
+            };
+
+            let response = handle.block_on(self.client.call(request)).unwrap();
+        }
     }
 
     fn get_current_nonce(& self) -> Nonce {
