@@ -6,3 +6,4 @@ pub mod eth_client_contract;
 pub mod execution_block_proof;
 pub mod test_utils;
 pub mod eth1_rpc_client;
+pub mod init_contract;
