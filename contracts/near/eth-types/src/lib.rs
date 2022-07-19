@@ -144,16 +144,11 @@ pub struct BlockHeader {
     pub extra_data: Vec<u8>,
     pub mix_hash: H256,
     pub nonce: H64,
-<<<<<<< HEAD
     #[cfg(feature = "eip1559")]
     #[cfg_attr(
         not(target_arch = "wasm32"),
         serde(with = "eth2_serde_utils::u64_hex_be")
     )]
-=======
-    //#[cfg(feature = "eip1559")]
-    #[cfg_attr(not(target_arch = "wasm32"), serde(with = "eth2_serde_utils::u64_hex_be"))]
->>>>>>> eba768a... submit header
     pub base_fee_per_gas: u64,
 
     pub hash: Option<H256>,
@@ -201,7 +196,7 @@ impl From<BlockHeaderLondon> for BlockHeader {
             extra_data: header.extra_data,
             mix_hash: header.mix_hash,
             nonce: header.nonce,
-            //#[cfg(feature = "eip1559")]
+            #[cfg(feature = "eip1559")]
             base_fee_per_gas: header.base_fee_per_gas,
             hash: header.hash,
             partial_hash: header.partial_hash,
@@ -249,7 +244,7 @@ impl From<BlockHeaderPreLondon> for BlockHeader {
             extra_data: header.extra_data,
             mix_hash: header.mix_hash,
             nonce: header.nonce,
-            //#[cfg(feature = "eip1559")]
+            #[cfg(feature = "eip1559")]
             base_fee_per_gas: 7,
             hash: header.hash,
             partial_hash: header.partial_hash,
@@ -338,7 +333,7 @@ impl RlpDecodable for BlockHeader {
             extra_data: serialized.val_at(12)?,
             mix_hash: serialized.val_at(13)?,
             nonce: serialized.val_at(14)?,
-            //#[cfg(feature = "eip1559")]
+            #[cfg(feature = "eip1559")]
             base_fee_per_gas: serialized.val_at(15)?,
             hash: Some(near_keccak256(serialized.as_raw()).into()),
             partial_hash: None,
