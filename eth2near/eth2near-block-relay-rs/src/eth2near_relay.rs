@@ -1,4 +1,3 @@
-use crate::beacon_block_header_with_execution_data::BeaconBlockHeaderWithExecutionData;
 use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::eth_client_contract::EthClientContract;
 use std::cmp::min;

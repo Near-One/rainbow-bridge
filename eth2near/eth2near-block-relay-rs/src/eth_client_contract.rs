@@ -1,7 +1,6 @@
 use std::fs;
 use std::fs::File;
 use eth_types::eth2::LightClientUpdate;
-use crate::beacon_block_header_with_execution_data::BeaconBlockHeaderWithExecutionData;
 use std::vec::Vec;
 use std::string::String;
 use std::path::Path;
@@ -14,12 +13,10 @@ use near_jsonrpc_primitives::types::query::QueryResponseKind;
 use near_jsonrpc_client::methods;
 use near_primitives::transaction::{Action, FunctionCallAction, Transaction};
 use near_primitives::types::{AccountId, BlockReference, Finality, FunctionArgs, Nonce};
-use serde::de::Error;
 use serde_json::{json, Value};
-use tokio::runtime::Handle;
 use tokio::runtime::Runtime;
 use near_primitives::borsh::BorshSerialize;
-use near_primitives::views::{CallResult, QueryRequest};
+use near_primitives::views::QueryRequest;
 use std::option::Option;
 
 pub struct EthClientContract {

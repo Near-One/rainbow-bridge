@@ -1,6 +1,4 @@
-use std::collections::HashMap;
 use std::error::Error;
-use std::fmt::format;
 use eth_types::BlockHeader;
 use reqwest::blocking::Client;
 use serde_json::Value;
@@ -22,23 +20,20 @@ impl Eth1RPCClient {
         &self,
         number: u64,
     ) -> Result<BlockHeader, Box<dyn Error>> {
-        let mut map = HashMap::new();
-        map.insert("id", 0);
-
-        let mut json_str = format!("{}\"id\": 0,\
+        let json_str = format!("{}\"id\": 0,\
         \"jsonrpc\": \"2.0\",\
         \"method\": \"eth_getBlockByNumber\",\
         \"params\": [\"0x{:x}\",false]\
         {}", "{", number, "}");
         println!("json_str: {}", json_str);
 
-        let mut value: Value = serde_json::from_str(&json_str).unwrap();
+        let value: Value = serde_json::from_str(&json_str).unwrap();
         println!("value: {:?}", value);
 
         let res = self.client.post(&self.endpoint_url).json(&value).send()?.text().unwrap();
         println!("res: {:?}", res);
 
-        let mut val: Value = serde_json::from_str(&res).unwrap();
+        let val: Value = serde_json::from_str(&res).unwrap();
         let mut block_json = serde_json::to_string(&val["result"]).unwrap();
 
         block_json = block_json.replace("baseFeePerGas", "base_fee_per_gas");

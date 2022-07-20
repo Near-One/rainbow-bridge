@@ -1,22 +1,6 @@
-use clap::{arg, Parser, ArgAction};
+use clap::{Parser, ArgAction};
 use eth2_to_near_relay::eth2near_relay::Eth2NearRelay;
-use near_jsonrpc_client::{methods, JsonRpcClient};
-use near_jsonrpc_primitives::types::query::QueryResponseKind;
-use near_primitives::types::{BlockReference, Finality, FunctionArgs};
-use near_primitives::views::QueryRequest;
-use near_primitives::transaction::{Action, FunctionCallAction, Transaction};
-use near_primitives::borsh::BorshSerialize;
-use near_primitives::types::AccountId;
-use serde_json::{from_slice, Value};
-use serde_json::json;
 use std::string::String;
-use env_logger::init;
-use eth_types::eth2::ExtendedBeaconBlockHeader;
-use near_crypto::InMemorySigner;
-use types::SecretKey;
-use eth2_to_near_relay::beacon_rpc_client::BeaconRPCClient;
-use tokio::runtime::Runtime;
-use eth_types::eth2::SyncCommittee;
 use eth2_to_near_relay::init_contract::init_contract;
 
 #[derive(Parser,Default,Debug)]
