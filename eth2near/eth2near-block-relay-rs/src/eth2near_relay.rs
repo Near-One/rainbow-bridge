@@ -63,9 +63,12 @@ impl Eth2NearRelay {
                         }
                     }
                 }
-                self.eth_client_contract.send_headers(headers, last_eth2_slot_on_eth_chain + 1, end_slot);
+                for _ in 1..5 {
+                    if let Ok(()) = self.eth_client_contract.send_headers(&headers, last_eth2_slot_on_eth_chain + 1, end_slot) {
+                        break;
+                    }
+                }
                 self.send_light_client_updates(end_slot, last_eth2_slot_on_eth_chain);
-                //println!("Is finlized block: {}", self.eth_client_contract.is_last_finalized_header_root());
             }
         }
     }

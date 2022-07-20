@@ -1,4 +1,4 @@
-use clap::{arg, Parser};
+use clap::{arg, Parser, ArgAction};
 use eth2_to_near_relay::eth2near_relay::Eth2NearRelay;
 use near_jsonrpc_client::{methods, JsonRpcClient};
 use near_jsonrpc_primitives::types::query::QueryResponseKind;
@@ -46,7 +46,7 @@ struct Arguments {
     /// Path to the file with secret key for signer account
     path_to_signer_secret_key: String,
 
-    #[clap(long, default_value_t = false)]
+    #[clap(long, action = ArgAction::SetTrue)]
     /// The eth contract on Near will be initialized
     init_contract: bool,
 
@@ -54,7 +54,7 @@ struct Arguments {
     /// Eth client on NEAR account id
     contract_account_id: String,
 
-    #[clap(long, default_value_t = 812544)]
+    #[clap(long, default_value_t = 818528)]
     /// Tmp flag TODO: remove
     start_slot: u64,
 
@@ -66,7 +66,9 @@ struct Arguments {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Arguments::parse();
 
-    if args.init_contract {
+    println!("{}", args.init_contract);
+
+    if args.init_contract == true {
         init_contract(&args.near_endpoint, &args.signer_account_id, &args.path_to_signer_secret_key, &args.contract_account_id)?;
     }
 

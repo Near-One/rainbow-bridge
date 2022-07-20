@@ -40,6 +40,19 @@ impl Display for MissSyncAggregationError {
 
 impl Error for MissSyncAggregationError {}
 
+#[derive(Debug)]
+pub struct ExecutionPayloadError();
+
+impl Display for ExecutionPayloadError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Execution Payload not found. \
+        Beacon Block Body in this blockchain variant doesn't contain execution payload. \
+        Please use The Merge variants")
+    }
+}
+
+impl Error for ExecutionPayloadError {}
+
 /// `BeaconRPCClient` allows getting beacon block body, beacon block header
 /// and light client updates
 /// using Beacon RPC API (https://ethereum.github.io/beacon-APIs/)
@@ -133,8 +146,8 @@ impl BeaconRPCClient {
     }
 
     pub fn get_block_number_for_slot(&self, slot: types::Slot) -> Result<u64, Box<dyn Error>> {
-        let beacon_block_body = self.get_beacon_block_body_for_block_id(&slot.to_string()).unwrap();
-        Ok(beacon_block_body.execution_payload().unwrap().execution_payload.block_number)
+        let beacon_block_body = self.get_beacon_block_body_for_block_id(&slot.to_string())?;
+        Ok(beacon_block_body.execution_payload().map_err(|_| {ExecutionPayloadError()})?.execution_payload.block_number)
     }
 
     fn get_json_from_raw_request(&self, url: &str) -> Result<String, reqwest::Error> {

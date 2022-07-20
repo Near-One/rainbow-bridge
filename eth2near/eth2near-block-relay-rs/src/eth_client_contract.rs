@@ -142,37 +142,38 @@ impl EthClientContract {
         false
     }
 
-    pub fn send_headers(& mut self, headers: Vec<BlockHeader>, st_slot: u64, end_slot: u64) {
+    pub fn send_headers(& mut self, headers: &Vec<BlockHeader>, st_slot: u64, end_slot: u64) -> Result<(), Box<dyn std::error::Error>>{
         println!("Send headers, #headers = {} ", headers.len());
 
         if headers.len() == 0 {
-            return;
+            self.last_slot = end_slot;
+            return Ok(());
         }
 
         let headers_filename = format!("headers_slots_{}_{}.json",
                                        st_slot,
                                        end_slot);
         let header_path = Path::new(&self.dir_path).join(headers_filename);
-        let headers_json_str = serde_json::to_string(&headers).unwrap();
+        let headers_json_str = serde_json::to_string(&headers)?;
 
-        let mut file = File::create(header_path).unwrap();
-        file.write_all(headers_json_str.as_bytes()).unwrap();
+        let mut file = File::create(header_path)?;
+        file.write_all(headers_json_str.as_bytes())?;
+
+        let rt = Runtime::new()?;
+        let handle = rt.handle();
 
         self.last_slot = end_slot;
 
+        let access_key_query_response = handle.block_on(self.client
+            .call(methods::query::RpcQueryRequest {
+                block_reference: BlockReference::latest(),
+                request: near_primitives::views::QueryRequest::ViewAccessKey {
+                    account_id: self.signer.account_id.clone(),
+                    public_key: self.signer.public_key.clone(),
+                },
+            }))?;
+
         for header in headers {
-            let rt = Runtime::new().unwrap();
-            let handle = rt.handle();
-
-            let access_key_query_response = handle.block_on(self.client
-                .call(methods::query::RpcQueryRequest {
-                    block_reference: BlockReference::latest(),
-                    request: near_primitives::views::QueryRequest::ViewAccessKey {
-                        account_id: self.signer.account_id.clone(),
-                        public_key: self.signer.public_key.clone(),
-                    },
-                })).unwrap();
-
             let current_nonce = self.get_current_nonce();
             let transaction = Transaction {
                 signer_id: self.signer.account_id.clone(),
@@ -194,8 +195,14 @@ impl EthClientContract {
                 signed_transaction: transaction.sign(&self.signer),
             };
 
-            let response = handle.block_on(self.client.call(request)).unwrap();
+            for _ in 1..5 {
+                if let Ok(_response) = handle.block_on(self.client.call(&request)) {
+                    break;
+                }
+            }
         }
+
+        Ok(())
     }
 
     fn get_current_nonce(& self) -> Nonce {
