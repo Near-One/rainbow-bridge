@@ -30,7 +30,7 @@ struct Arguments {
     /// endpoint for the ethereum full node which support Eth1 RPC API
     eth1_endpoint: String,
 
-    #[clap(long="total-submit-headers", default_value_t = 4)]
+    #[clap(long="total-submit-headers", default_value_t = 1)]
     /// the max number of headers submitted in one bunch to eth client
     total_submit_headers: u32,
 
@@ -54,7 +54,7 @@ struct Arguments {
     /// Eth client on NEAR account id
     contract_account_id: String,
 
-    #[clap(long, default_value_t = 818528)]
+    #[clap(long, default_value_t = 817376)]
     /// Tmp flag TODO: remove
     start_slot: u64,
 
@@ -65,8 +65,6 @@ struct Arguments {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Arguments::parse();
-
-    println!("{}", args.init_contract);
 
     if args.init_contract == true {
         init_contract(&args.near_endpoint, &args.signer_account_id, &args.path_to_signer_secret_key, &args.contract_account_id)?;

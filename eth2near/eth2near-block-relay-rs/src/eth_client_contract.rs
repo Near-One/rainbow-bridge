@@ -19,7 +19,8 @@ use serde_json::{json, Value};
 use tokio::runtime::Handle;
 use tokio::runtime::Runtime;
 use near_primitives::borsh::BorshSerialize;
-use near_primitives::views::QueryRequest;
+use near_primitives::views::{CallResult, QueryRequest};
+use std::option::Option;
 
 pub struct EthClientContract {
     last_slot: u64,
@@ -57,8 +58,15 @@ impl EthClientContract {
         }
     }
 
-    pub fn get_last_slot(&self) -> u64 {
+    pub fn get_last_submitted_slot(&self) -> u64 {
         return self.last_slot;
+    }
+
+    pub fn is_known_block(&self, execution_block_hash: &H256) -> bool {
+        let result = self.call_view_function("is_known_execution_header".to_string(), execution_block_hash.try_to_vec().unwrap()).unwrap();
+        println!("result: {:?}", result);
+        let is_known: bool = bool::try_from_slice(&result).unwrap();
+        is_known
     }
 
     pub fn get_last_period(&self) -> u64 {
@@ -108,8 +116,7 @@ impl EthClientContract {
             signed_transaction: transaction.sign(&self.signer),
         };
 
-        let response = handle.block_on(self.client.call(request)).unwrap();
-        println!("response: {:#?}", response);
+        handle.block_on(self.client.call(request)).unwrap();
     }
 
     pub fn is_last_finalized_header_root(&self, last_finalized_block_root: H256) -> bool {
@@ -140,6 +147,29 @@ impl EthClientContract {
         }
 
         false
+    }
+
+    fn call_view_function(&self, method_name: String, args: Vec<u8>) -> Option<Vec<u8>> {
+        let rt = Runtime::new().unwrap();
+        let handle = rt.handle();
+
+        let request = methods::query::RpcQueryRequest {
+            block_reference: BlockReference::Finality(Finality::Final),
+            request: QueryRequest::CallFunction {
+                account_id: self.contract_account.clone(),
+                method_name,
+                args: FunctionArgs::from(args),
+            },
+        };
+
+        let response =  handle.block_on(self.client.call(request)).unwrap();
+        println!("response: {:#?}", response);
+
+        if let QueryResponseKind::CallResult(result) = response.kind {
+            return Some(result.result)
+        }
+
+        Option::<Vec<u8>>::None
     }
 
     pub fn send_headers(& mut self, headers: &Vec<BlockHeader>, st_slot: u64, end_slot: u64) -> Result<(), Box<dyn std::error::Error>>{

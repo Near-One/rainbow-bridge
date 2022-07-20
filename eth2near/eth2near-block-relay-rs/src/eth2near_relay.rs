@@ -3,7 +3,7 @@ use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::eth_client_contract::EthClientContract;
 use std::cmp::min;
 use std::vec::Vec;
-use eth_types::BlockHeader;
+use eth_types::{BlockHeader, H256};
 use crate::eth1_rpc_client::Eth1RPCClient;
 
 pub struct Eth2NearRelay {
@@ -29,7 +29,7 @@ impl Eth2NearRelay {
 
     pub fn run(&mut self) {
         loop {
-            let last_eth2_slot_on_near : u64 = self.eth_client_contract.get_last_slot();
+            let last_eth2_slot_on_near : u64 = self.get_last_slot();
             let last_eth2_slot_on_eth_chain : u64;
 
             if let Ok(slot) = self.beacon_rpc_client.get_last_finalized_slot_number() {
@@ -47,11 +47,12 @@ impl Eth2NearRelay {
                 }
 
                 let mut headers: Vec<BlockHeader> = vec![];
-                for i in last_eth2_slot_on_near + 1 ..=end_slot {
-                    println!("slot={}", i);
+                let mut current_slot = last_eth2_slot_on_near + 1;
+                while headers.len() < self.max_submitted_headers as usize && current_slot <= last_eth2_slot_on_eth_chain {
+                    println!("slot={}, headers len={}", current_slot, headers.len());
                     let mut count = 0;
                     loop {
-                        if let Ok(block_number) = self.beacon_rpc_client.get_block_number_for_slot(types::Slot::new(i)) {
+                        if let Ok(block_number) = self.beacon_rpc_client.get_block_number_for_slot(types::Slot::new(current_slot)) {
                             if let Ok(eth1_header) = self.eth1_rpc_client.get_block_header_by_number(block_number) {
                                 headers.push(eth1_header);
                                 break;
@@ -62,15 +63,34 @@ impl Eth2NearRelay {
                             break;
                         }
                     }
+                    current_slot += 1;
                 }
+
                 for _ in 1..5 {
-                    if let Ok(()) = self.eth_client_contract.send_headers(&headers, last_eth2_slot_on_eth_chain + 1, end_slot) {
+                    if let Ok(()) = self.eth_client_contract.send_headers(&headers, last_eth2_slot_on_eth_chain + 1, current_slot - 1) {
                         break;
                     }
                 }
                 self.send_light_client_updates(end_slot, last_eth2_slot_on_eth_chain);
             }
         }
+    }
+
+    fn get_last_slot(& mut self) -> u64 {
+        let mut slot = self.eth_client_contract.get_last_submitted_slot();
+
+        loop {
+            println!("search last slot; current slot={}", slot);
+            if let Ok(beacon_block_body) = self.beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", slot)) {
+                let hash: H256 = H256::from(beacon_block_body.execution_payload().unwrap().execution_payload.block_hash.into_root().as_bytes());
+                if self.eth_client_contract.is_known_block(&hash) == true {
+                    break;
+                }
+            }
+            slot -= 1;
+        }
+
+        return slot;
     }
 
     fn send_light_client_updates(&mut self, end_slot: u64, last_eth2_slot_on_eth: u64) {
