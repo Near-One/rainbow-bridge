@@ -7,12 +7,13 @@ use eth_types::eth2::Slot;
 use eth_types::eth2::SyncCommittee;
 use eth_types::eth2::SyncCommitteeUpdate;
 use eth_types::eth2::SyncAggregate;
-use serde_json::Value;
+use serde_json::{Value};
 use reqwest::blocking::Client;
 use std::error::Error;
 use std::fmt;
 use std::fmt::Display;
 use std::string::String;
+use eth_types::H256;
 use types::BeaconBlockBody;
 use types::MainnetEthSpec;
 
@@ -143,6 +144,19 @@ impl BeaconRPCClient {
     /// Return the last finalized slot in the Beacon chain
     pub fn get_last_slot_number(&self) -> Result<types::Slot, Box<dyn Error>> {
         Ok(self.get_beacon_block_header_for_block_id("head")?.slot)
+    }
+
+    pub fn get_slot_by_beacon_block_root(&self, beacon_block_hash: H256) -> Result<u64, Box<dyn Error>> {
+        let beacon_block_hash_str: String = serde_json::to_string(&beacon_block_hash)?;
+        let beacon_block_hash_str = &beacon_block_hash_str[1..beacon_block_hash_str.len() - 1];
+
+        let url = format!("{}/{}/{}", self.endpoint_url, Self::URL_BODY_PATH, beacon_block_hash_str);
+        let block_json_str = &self.get_json_from_raw_request(&url)?;
+        let v: Value = serde_json::from_str(block_json_str)?;
+        let slot = v["data"]["message"]["slot"].to_string();
+        let slot = slot[1..slot.len() - 1].parse::<u64>().unwrap();
+
+        Ok(slot)
     }
 
     pub fn get_block_number_for_slot(&self, slot: types::Slot) -> Result<u64, Box<dyn Error>> {

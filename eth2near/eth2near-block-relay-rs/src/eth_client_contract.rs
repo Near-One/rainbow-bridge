@@ -61,7 +61,6 @@ impl EthClientContract {
 
     pub fn is_known_block(&self, execution_block_hash: &H256) -> bool {
         let result = self.call_view_function("is_known_execution_header".to_string(), execution_block_hash.try_to_vec().unwrap()).unwrap();
-        println!("result: {:?}", result);
         let is_known: bool = bool::try_from_slice(&result).unwrap();
         is_known
     }
@@ -116,34 +115,10 @@ impl EthClientContract {
         handle.block_on(self.client.call(request)).unwrap();
     }
 
-    pub fn is_last_finalized_header_root(&self, last_finalized_block_root: H256) -> bool {
-        let rt = Runtime::new().unwrap();
-        let handle = rt.handle();
-
-        let request = methods::query::RpcQueryRequest {
-            block_reference: BlockReference::Finality(Finality::Final),
-            request: QueryRequest::CallFunction {
-                account_id: self.contract_account.clone(),
-                method_name: "finalized_beacon_header_root".to_string(),
-                args: FunctionArgs::from(
-                    json!({})
-                        .to_string()
-                        .into_bytes(),
-                ),
-            },
-        };
-
-        let response =  handle.block_on(self.client.call(request)).unwrap();
-        println!("response: {:#?}", response);
-
-        if let QueryResponseKind::CallResult(result) = response.kind {
-            let last_finalized_block_root_on_near : H256 = H256::try_from_slice(&result.result).unwrap();
-            if last_finalized_block_root == last_finalized_block_root_on_near {
-                return true;
-            }
-        }
-
-        false
+    pub fn get_finalized_beacon_block_hash(&self) -> H256 {
+        let result = self.call_view_function("finalized_beacon_header_root".to_string(), json!({}).to_string().into_bytes()).unwrap();
+        let beacon_block_hash: H256 = H256::try_from_slice(&result).unwrap();
+        beacon_block_hash
     }
 
     fn call_view_function(&self, method_name: String, args: Vec<u8>) -> Option<Vec<u8>> {

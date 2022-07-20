@@ -1,6 +1,6 @@
 use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::eth_client_contract::EthClientContract;
-use std::cmp::min;
+use std::cmp::{max, min};
 use std::vec::Vec;
 use eth_types::{BlockHeader, H256};
 use crate::eth1_rpc_client::Eth1RPCClient;
@@ -77,8 +77,12 @@ impl Eth2NearRelay {
 
     fn get_last_slot(& mut self) -> u64 {
         let mut slot = self.eth_client_contract.get_last_submitted_slot();
+        let finalized_block_hash = self.eth_client_contract.get_finalized_beacon_block_hash();
+        let finalized_slot = self.beacon_rpc_client.get_slot_by_beacon_block_root(finalized_block_hash).unwrap();
 
-        loop {
+        slot = max(finalized_slot, slot);
+
+        while slot > finalized_slot {
             println!("search last slot; current slot={}", slot);
             if let Ok(beacon_block_body) = self.beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", slot)) {
                 let hash: H256 = H256::from(beacon_block_body.execution_payload().unwrap().execution_payload.block_hash.into_root().as_bytes());
