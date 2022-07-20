@@ -97,15 +97,21 @@ impl Eth2NearRelay {
     }
 
     fn send_light_client_updates(&mut self, end_slot: u64, last_eth2_slot_on_eth: u64) {
-        let last_eth2_period_on_near_chain = self.eth_client_contract.get_last_period();
+        let finalized_block_hash = self.eth_client_contract.get_finalized_beacon_block_hash();
+        let last_finalized_slot_on_near = self.beacon_rpc_client.get_slot_by_beacon_block_root(finalized_block_hash).unwrap();
+
+        let last_eth2_period_on_near_chain = BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near);
         let last_eth2_period_on_eth_chain = BeaconRPCClient::get_period_for_slot(last_eth2_slot_on_eth);
 
         let end_period = BeaconRPCClient::get_period_for_slot(end_slot);
 
-        for period in last_eth2_period_on_near_chain + 1..=min(last_eth2_period_on_eth_chain - 1, end_period) {
+        for period in last_eth2_period_on_near_chain..=end_period {
             for _ in 0..5 {
                 if let Ok(light_client_update) = self.beacon_rpc_client.get_light_client_update(period) {
-                    self.eth_client_contract.send_light_client_update(light_client_update, period);
+                    if light_client_update.finality_update.header_update.header.slot > last_finalized_slot_on_near &&
+                        self.eth_client_contract.is_known_block(&light_client_update.finality_update.header_update.execution_block_hash) {
+                        self.eth_client_contract.send_light_client_update(light_client_update, period);
+                    }
                     break;
                 }
             }
