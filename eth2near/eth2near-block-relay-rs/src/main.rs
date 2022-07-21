@@ -38,7 +38,11 @@ struct Arguments {
     /// Eth client on NEAR account id
     contract_account_id: String,
 
-    #[clap(long, default_value_t = 942297)]
+    #[clap(long, default_value_t = String::from("kiln"))]
+    /// The ethereum network name (main, kiln)
+    network: String,
+
+    #[clap(long, default_value_t = 942484)]
     /// Tmp flag TODO: remove
     start_slot: u64,
 
@@ -51,7 +55,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Arguments::parse();
 
     if args.init_contract == true {
-        init_contract(&args.near_endpoint, &args.signer_account_id, &args.path_to_signer_secret_key, &args.contract_account_id, args.start_slot)?;
+        init_contract(&args.near_endpoint, &args.signer_account_id, &args.path_to_signer_secret_key,
+                      &args.contract_account_id, args.start_slot, &args.output_dir,
+                      &args.eth_endpoint, &args.eth1_endpoint, &args.network)?;
     }
 
     let mut eth2near_relay = Eth2NearRelay::init(&args.eth_endpoint, &args.eth1_endpoint, args.start_slot,

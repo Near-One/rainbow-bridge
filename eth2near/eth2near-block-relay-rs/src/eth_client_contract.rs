@@ -1,6 +1,6 @@
 use std::fs;
 use std::fs::File;
-use eth_types::eth2::LightClientUpdate;
+use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
 use std::vec::Vec;
 use std::string::String;
 use std::path::Path;
@@ -12,7 +12,7 @@ use near_jsonrpc_client::JsonRpcClient;
 use near_jsonrpc_primitives::types::query::QueryResponseKind;
 use near_jsonrpc_client::methods;
 use near_primitives::transaction::{Action, FunctionCallAction, Transaction};
-use near_primitives::types::{AccountId, BlockReference, Finality, FunctionArgs, Nonce};
+use near_primitives::types::{AccountId, BlockReference, Finality, FunctionArgs};
 use serde_json::{json, Value};
 use tokio::runtime::Runtime;
 use near_primitives::borsh::BorshSerialize;
@@ -22,7 +22,6 @@ use near_sdk::{Balance, ONE_NEAR};
 
 pub struct EthClientContract {
     last_slot: u64,
-    last_period: u64,
     dir_path: String,
     client: JsonRpcClient,
     contract_account: AccountId,
@@ -35,7 +34,6 @@ impl EthClientContract {
                path_to_signer_secret_key: &str, contract_account_id: &str,
                last_slot: u64, dir_path: String) -> Self {
         fs::create_dir_all(&dir_path).unwrap();
-        let last_period = last_slot/(32*256) - 1;
 
         let client = JsonRpcClient::connect(near_endpoint);
         let contract_account = contract_account_id.parse().unwrap();
@@ -49,7 +47,6 @@ impl EthClientContract {
 
         EthClientContract {
             last_slot: last_slot,
-            last_period: last_period,
             dir_path,
             client,
             contract_account,
@@ -68,10 +65,6 @@ impl EthClientContract {
         is_known
     }
 
-    pub fn get_last_period(&self) -> u64 {
-        return self.last_period;
-    }
-
     pub fn send_light_client_update(& mut self, light_client_update: LightClientUpdate, last_period: u64) {
         println!("Send light client update for period={}", last_period);
 
@@ -81,8 +74,6 @@ impl EthClientContract {
 
         let mut file = File::create(light_client_update_out_path).unwrap();
         file.write_all(light_client_update_json_str.as_bytes()).unwrap();
-
-        self.last_period = last_period;
 
         self.call_change_method("submit_update".to_string(), light_client_update.try_to_vec().unwrap(), 0).unwrap();
     }
@@ -124,6 +115,40 @@ impl EthClientContract {
         self.call_change_method("register_submitter".to_string(), json!({
             "account_id": self.account_id,
         }).to_string().into_bytes(), 10*ONE_NEAR).unwrap();
+    }
+
+    pub fn init_contract(&self, network: String, finalized_execution_header: BlockHeader,
+                         finalized_beacon_header: ExtendedBeaconBlockHeader,
+                         current_sync_committee: SyncCommittee,
+                         next_sync_committee: SyncCommittee) {
+        #[derive(BorshSerialize)]
+        pub struct InitInput {
+            pub network: String,
+            pub finalized_execution_header: BlockHeader,
+            pub finalized_beacon_header: ExtendedBeaconBlockHeader,
+            pub current_sync_committee: SyncCommittee,
+            pub next_sync_committee: SyncCommittee,
+            pub validate_updates: bool,
+            pub verify_bls_signatures: bool,
+            pub hashes_gc_threshold: u64,
+            pub max_submitted_blocks_by_account: u32,
+            pub trusted_signer: Option<AccountId>,
+        }
+
+        let init_input = InitInput {
+            network,
+            finalized_execution_header,
+            finalized_beacon_header,
+            current_sync_committee,
+            next_sync_committee,
+            validate_updates: true,
+            verify_bls_signatures: false,
+            hashes_gc_threshold: 51000,
+            max_submitted_blocks_by_account: 8000,
+            trusted_signer: Option::<AccountId>::None,
+        };
+
+        self.call_change_method("init".to_string(), init_input.try_to_vec().unwrap(), 0).unwrap();
     }
 
     fn call_view_function(&self, method_name: String, args: Vec<u8>) -> Option<Vec<u8>> {

@@ -72,7 +72,7 @@ impl Eth2NearRelay {
                         break;
                     }
                 }
-                self.send_light_client_updates(end_slot, last_eth2_slot_on_eth_chain);
+                self.send_light_client_updates(end_slot);
             }
         }
     }
@@ -98,11 +98,10 @@ impl Eth2NearRelay {
         return slot;
     }
 
-    fn send_light_client_updates(&mut self, end_slot: u64, last_eth2_slot_on_eth: u64) {
+    fn send_light_client_updates(&mut self, end_slot: u64) {
         let finalized_block_hash = self.eth_client_contract.get_finalized_beacon_block_hash();
         if let Ok(last_finalized_slot_on_near) = self.beacon_rpc_client.get_slot_by_beacon_block_root(finalized_block_hash) {
             let last_eth2_period_on_near_chain = BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near);
-            let last_eth2_period_on_eth_chain = BeaconRPCClient::get_period_for_slot(last_eth2_slot_on_eth);
 
             let end_period = BeaconRPCClient::get_period_for_slot(end_slot);
 
