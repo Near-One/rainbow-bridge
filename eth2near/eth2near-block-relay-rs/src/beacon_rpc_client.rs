@@ -66,6 +66,7 @@ impl BeaconRPCClient {
     const URL_HEADER_PATH: &'static str = "eth/v1/beacon/headers";
     const URL_BODY_PATH: &'static str = "eth/v2/beacon/blocks";
     const GET_LIGHT_CLIENT_UPDATE_API: &'static str = "eth/v1/light_client/updates";
+    const URL_FINALITY_LIGHT_CLIENT_UPDATE_PATH: &'static str = "eth/v1/light_client/finality_update/";
 
     const SLOTS_PER_EPOCH: u64 = 32;
     const EPOCHS_PER_PERIOD: u64 = 256;
@@ -162,6 +163,36 @@ impl BeaconRPCClient {
     pub fn get_block_number_for_slot(&self, slot: types::Slot) -> Result<u64, Box<dyn Error>> {
         let beacon_block_body = self.get_beacon_block_body_for_block_id(&slot.to_string())?;
         Ok(beacon_block_body.execution_payload().map_err(|_| {ExecutionPayloadError()})?.execution_payload.block_number)
+    }
+
+    pub fn get_finality_light_client_update(&self) -> Result<LightClientUpdate, Box<dyn Error>> {
+        let url = format!("{}/{}", self.endpoint_url, Self::URL_FINALITY_LIGHT_CLIENT_UPDATE_PATH);
+
+        let light_client_update_json_str = self.get_json_from_raw_request(&url)?;
+
+        Ok(LightClientUpdate {
+            attested_header: Self::get_attested_header_from_light_client_update_json_str(&light_client_update_json_str)?,
+            sync_aggregate: Self::get_sync_aggregate_from_light_client_update_json_str(&light_client_update_json_str)?,
+            signature_slot: self.get_signature_slot(&light_client_update_json_str)?,
+            finality_update: self.get_finality_update_from_light_client_update_json_str(&light_client_update_json_str)?,
+            sync_committee_update: None::<SyncCommitteeUpdate>,
+        })
+    }
+
+    pub fn get_finality_light_client_update_with_sync_commity_update(&self) -> Result<LightClientUpdate, Box<dyn Error>> {
+        let url_finality = format!("{}/{}", self.endpoint_url, Self::URL_FINALITY_LIGHT_CLIENT_UPDATE_PATH);
+        let last_period = Self::get_period_for_slot(self.get_last_slot_number()?.as_u64());
+        let url_update = format!("{}/{}?start_period={}&count=1", self.endpoint_url, Self::GET_LIGHT_CLIENT_UPDATE_API, last_period);
+        let finality_light_client_update_json_str = self.get_json_from_raw_request(&url_finality)?;
+        let light_client_update_json_str = self.get_json_from_raw_request(&url_update)?;
+
+        Ok(LightClientUpdate {
+            attested_header: Self::get_attested_header_from_light_client_update_json_str(&finality_light_client_update_json_str)?,
+            sync_aggregate: Self::get_sync_aggregate_from_light_client_update_json_str(&finality_light_client_update_json_str)?,
+            signature_slot: self.get_signature_slot(&finality_light_client_update_json_str)?,
+            finality_update: self.get_finality_update_from_light_client_update_json_str(&finality_light_client_update_json_str)?,
+            sync_committee_update: Some(Self::get_sync_committee_update_from_light_lient_update_json_str(&light_client_update_json_str)?),
+        })
     }
 
     fn get_json_from_raw_request(&self, url: &str) -> Result<String, reqwest::Error> {
