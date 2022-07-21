@@ -38,7 +38,7 @@ struct Arguments {
     /// Eth client on NEAR account id
     contract_account_id: String,
 
-    #[clap(long, default_value_t = 818482)]
+    #[clap(long, default_value_t = 820579)]
     /// Tmp flag TODO: remove
     start_slot: u64,
 
