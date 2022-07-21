@@ -1,3 +1,4 @@
+use eth_types::BlockHeader;
 use eth_types::eth2::ExtendedBeaconBlockHeader;
 use eth_types::eth2::SyncCommittee;
 use near_jsonrpc_client::{JsonRpcClient, methods};
@@ -8,23 +9,27 @@ use near_primitives::borsh::BorshSerialize;
 use near_sdk::AccountId;
 use serde_json::Value;
 use tokio::runtime::Runtime;
+use types::BeaconBlockBody;
 use crate::beacon_rpc_client::BeaconRPCClient;
+use crate::eth1_rpc_client::Eth1RPCClient;
 
 #[derive(BorshSerialize)]
 pub struct InitInput {
     pub network: String,
-    pub finalized_header: ExtendedBeaconBlockHeader,
+    pub finalized_execution_header: BlockHeader,
+    pub finalized_beacon_header: ExtendedBeaconBlockHeader,
     pub current_sync_committee: SyncCommittee,
     pub next_sync_committee: SyncCommittee,
     pub validate_updates: bool,
     pub verify_bls_signatures: bool,
     pub hashes_gc_threshold: u64,
-    //pub max_submitted_blocks_by_account: u32,
-    //pub min_storage_balance_for_submitter: near_sdk::Balance,
+    pub max_submitted_blocks_by_account: u32,
     pub trusted_signer: Option<AccountId>,
 }
 
-pub fn init_contract(near_endpoint: &str, signer_account_id: &str, path_to_signer_secret_key: &str, contract_account_id: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn init_contract(near_endpoint: &str, signer_account_id: &str, path_to_signer_secret_key: &str, contract_account_id: &str, start_slot: u64) -> Result<(), Box<dyn std::error::Error>> {
+    let period = BeaconRPCClient::get_period_for_slot(start_slot);
+
     let client = JsonRpcClient::connect(near_endpoint);
 
     let signer_account_id = signer_account_id.parse().unwrap();
@@ -59,29 +64,35 @@ pub fn init_contract(near_endpoint: &str, signer_account_id: &str, path_to_signe
 
     let beacon_rpc_client = BeaconRPCClient::default();
     println!("beacon rpc client");
-    let light_client_update = beacon_rpc_client.get_light_client_update(99)?;
+    let light_client_update = beacon_rpc_client.get_light_client_update(period)?;
     println!("light client update: {:?}", light_client_update);
 
+    let eth1_rpc_client = Eth1RPCClient::default();
+
+    let block_id = format!("{}", light_client_update.finality_update.header_update.header.slot);
     let finalized_header : ExtendedBeaconBlockHeader = ExtendedBeaconBlockHeader::from(light_client_update.finality_update.header_update);
+    let finalized_body = beacon_rpc_client.get_beacon_block_body_for_block_id(&block_id).unwrap();
+
+    let finalized_execution_header: BlockHeader = eth1_rpc_client.get_block_header_by_number(finalized_body.execution_payload().unwrap().execution_payload.block_number).unwrap();
 
     println!("finalized header: {:?}", finalized_header);
 
     let next_sync_committee = light_client_update.sync_committee_update.unwrap().next_sync_committee;
 
-    let prev_light_client_update = beacon_rpc_client.get_light_client_update(98)?;
+    let prev_light_client_update = beacon_rpc_client.get_light_client_update(period - 1)?;
     let current_sync_committee = prev_light_client_update.sync_committee_update.unwrap().next_sync_committee;
 
     println!("Before transactions");
     let init_input = InitInput {
         network: String::from("kiln"),
-        finalized_header: finalized_header,
+        finalized_execution_header: finalized_execution_header,
+        finalized_beacon_header: finalized_header,
         current_sync_committee: current_sync_committee,
         next_sync_committee: next_sync_committee,
         validate_updates: true,
         verify_bls_signatures: false,
         hashes_gc_threshold: 51000,
-        //max_submitted_blocks_by_account: 30000,
-        //min_storage_balance_for_submitter: near_sdk::ONE_NEAR,
+        max_submitted_blocks_by_account: 8000,
         trusted_signer: Option::<AccountId>::None,
     };
 

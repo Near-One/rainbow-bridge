@@ -141,7 +141,7 @@ impl BeaconRPCClient {
         Ok(self.get_beacon_block_header_for_block_id("finalized")?.slot)
     }
 
-    /// Return the last finalized slot in the Beacon chain
+    /// Return the last slot in the Beacon chain
     pub fn get_last_slot_number(&self) -> Result<types::Slot, Box<dyn Error>> {
         Ok(self.get_beacon_block_header_for_block_id("head")?.slot)
     }
@@ -461,7 +461,7 @@ mod tests {
     #[ignore]
     fn show_get_light_client_update() {
         let light_client_update_fetcher = BeaconRPCClient::default();
-        let period = 99;//get_period_for_slot(aw!(get_head_slot()));
+        let period = BeaconRPCClient::get_period_for_slot(light_client_update_fetcher.get_last_slot_number().unwrap().as_u64());
 
         let light_client_update = light_client_update_fetcher.get_light_client_update(period).unwrap();
         let light_client_update_json_str = serde_json::to_string(&light_client_update).unwrap();
