@@ -117,15 +117,6 @@ impl Eth2NearRelay {
                     }
                 }
             }
-
-            if end_period == last_eth2_period_on_eth_chain {
-                for _ in 0..5 {
-                    if let Ok(light_client_update) = self.beacon_rpc_client.get_light_client_update(end_period) {
-                        self.eth_client_contract.send_light_client_update(light_client_update, end_period);
-                        break;
-                    }
-                }
-            }
         }
     }
 }
