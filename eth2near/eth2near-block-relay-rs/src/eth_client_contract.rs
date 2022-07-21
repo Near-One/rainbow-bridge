@@ -18,6 +18,7 @@ use tokio::runtime::Runtime;
 use near_primitives::borsh::BorshSerialize;
 use near_primitives::views::QueryRequest;
 use std::option::Option;
+use near_sdk::{Balance, ONE_NEAR};
 
 pub struct EthClientContract {
     last_slot: u64,
@@ -26,10 +27,11 @@ pub struct EthClientContract {
     client: JsonRpcClient,
     contract_account: AccountId,
     signer: InMemorySigner,
+    account_id: String,
 }
 
 impl EthClientContract {
-    pub fn new(near_endpoint: &str, signer_account_id: &str,
+    pub fn new(near_endpoint: &str, account_id: &str,
                path_to_signer_secret_key: &str, contract_account_id: &str,
                last_slot: u64, dir_path: String) -> Self {
         fs::create_dir_all(&dir_path).unwrap();
@@ -38,7 +40,7 @@ impl EthClientContract {
         let client = JsonRpcClient::connect(near_endpoint);
         let contract_account = contract_account_id.parse().unwrap();
 
-        let signer_account_id = signer_account_id.parse().unwrap();
+        let signer_account_id = account_id.parse().unwrap();
         let v: Value = serde_json::from_str(&std::fs::read_to_string(path_to_signer_secret_key).expect("Unable to read file")).unwrap();
         let signer_secret_key = serde_json::to_string(&v["private_key"]).unwrap();
         let signer_secret_key = &signer_secret_key[1..signer_secret_key.len() - 1];
@@ -52,6 +54,7 @@ impl EthClientContract {
             client,
             contract_account,
             signer,
+            account_id: account_id.to_string(),
         }
     }
 
@@ -81,11 +84,11 @@ impl EthClientContract {
 
         self.last_period = last_period;
 
-        self.call_change_method("submit_update".to_string(), light_client_update.try_to_vec().unwrap()).unwrap();
+        self.call_change_method("submit_update".to_string(), light_client_update.try_to_vec().unwrap(), 0).unwrap();
     }
 
     pub fn get_finalized_beacon_block_hash(&self) -> H256 {
-        let result = self.call_view_function("finalized_beacon_header_root".to_string(), json!({}).to_string().into_bytes()).unwrap();
+        let result = self.call_view_function("finalized_beacon_block_root".to_string(), json!({}).to_string().into_bytes()).unwrap();
         let beacon_block_hash: H256 = H256::try_from_slice(&result).unwrap();
         beacon_block_hash
     }
@@ -110,11 +113,17 @@ impl EthClientContract {
         self.last_slot = end_slot;
 
         for header in headers {
-            self.call_change_method("submit_header".to_string(), header.try_to_vec().unwrap()).unwrap();
+            self.call_change_method("submit_header".to_string(), header.try_to_vec().unwrap(), 0).unwrap();
             println!("{:?}", header);
         }
 
         Ok(())
+    }
+
+    pub fn register(&self) {
+        self.call_change_method("register_submitter".to_string(), json!({
+            "account_id": self.account_id,
+        }).to_string().into_bytes(), 10*ONE_NEAR).unwrap();
     }
 
     fn call_view_function(&self, method_name: String, args: Vec<u8>) -> Option<Vec<u8>> {
@@ -140,7 +149,7 @@ impl EthClientContract {
         Option::<Vec<u8>>::None
     }
 
-    fn call_change_method(&self, method_name: String, args: Vec<u8>) -> Result<(), Box<dyn std::error::Error>> {
+    fn call_change_method(&self, method_name: String, args: Vec<u8>, deposit: Balance) -> Result<(), Box<dyn std::error::Error>> {
         let rt = Runtime::new().unwrap();
         let handle = rt.handle();
 
@@ -168,7 +177,7 @@ impl EthClientContract {
                 method_name,
                 args,
                 gas: 100_000_000_000_000, // 100 TeraGas
-                deposit: 0,
+                deposit,
             })],
         };
 

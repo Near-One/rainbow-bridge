@@ -16,14 +16,16 @@ impl Eth2NearRelay {
     pub fn init(eth_node_url: &str, eth1_endpoint: &str, start_slot: u64, out_dir: String, max_submitted_headers: u32,
                 near_endpoint: &str, signer_account_id: &str,
                 path_to_signer_secret_key: &str, contract_account_id: &str) -> Self {
-        Eth2NearRelay {
+        let eth2near_relay = Eth2NearRelay {
             beacon_rpc_client: BeaconRPCClient::new(eth_node_url),
             eth1_rpc_client: Eth1RPCClient::new(eth1_endpoint),
             eth_client_contract: EthClientContract::new(near_endpoint, signer_account_id,
                                                         path_to_signer_secret_key, contract_account_id,
                                                         start_slot, out_dir),
             max_submitted_headers: max_submitted_headers as u64,
-        }
+        };
+        eth2near_relay.eth_client_contract.register();
+        eth2near_relay
     }
 
     pub fn run(&mut self) {
