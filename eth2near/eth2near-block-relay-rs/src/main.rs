@@ -42,7 +42,7 @@ struct Arguments {
     /// The ethereum network name (main, kiln)
     network: String,
 
-    #[clap(long, default_value_t = 942484)]
+    #[clap(long, default_value_t = 944038)]
     /// Tmp flag TODO: remove
     start_slot: u64,
 

@@ -40,13 +40,6 @@ impl Eth2NearRelay {
             }
 
             if last_eth2_slot_on_near < last_eth2_slot_on_eth_chain {
-                let mut end_slot = min(last_eth2_slot_on_eth_chain,
-                                       last_eth2_slot_on_near + self.max_submitted_headers);
-
-                if last_eth2_slot_on_near < 5 {
-                    end_slot = last_eth2_slot_on_near + 1;
-                }
-
                 let mut headers: Vec<BlockHeader> = vec![];
                 let mut current_slot = last_eth2_slot_on_near + 1;
                 while headers.len() < self.max_submitted_headers as usize && current_slot <= last_eth2_slot_on_eth_chain {
@@ -72,7 +65,7 @@ impl Eth2NearRelay {
                         break;
                     }
                 }
-                self.send_light_client_updates(end_slot);
+                self.send_light_client_updates();
             }
         }
     }
@@ -98,21 +91,28 @@ impl Eth2NearRelay {
         return slot;
     }
 
-    fn send_light_client_updates(&mut self, end_slot: u64) {
+    fn send_light_client_updates(&mut self) {
         let finalized_block_hash = self.eth_client_contract.get_finalized_beacon_block_hash();
         if let Ok(last_finalized_slot_on_near) = self.beacon_rpc_client.get_slot_by_beacon_block_root(finalized_block_hash) {
             let last_eth2_period_on_near_chain = BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near);
+            if let Ok(end_slot) = self.beacon_rpc_client.get_last_finalized_slot_number() {
+                let end_period = BeaconRPCClient::get_period_for_slot(end_slot.as_u64());
 
-            let end_period = BeaconRPCClient::get_period_for_slot(end_slot);
+                if end_slot <= last_finalized_slot_on_near {
+                    return;
+                }
 
-            for period in last_eth2_period_on_near_chain..=end_period {
-                for _ in 0..5 {
-                    if let Ok(light_client_update) = self.beacon_rpc_client.get_light_client_update(period) {
-                        if light_client_update.finality_update.header_update.header.slot > last_finalized_slot_on_near &&
-                            self.eth_client_contract.is_known_block(&light_client_update.finality_update.header_update.execution_block_hash) {
-                            self.eth_client_contract.send_light_client_update(light_client_update, period);
+                if end_period == last_eth2_period_on_near_chain {
+                    if let Ok(light_client_update) = self.beacon_rpc_client.get_finality_light_client_update() {
+                        if self.eth_client_contract.is_known_block(&light_client_update.finality_update.header_update.execution_block_hash) {
+                            self.eth_client_contract.send_light_client_update(light_client_update, end_period);
                         }
-                        break;
+                    }
+                } else {
+                    if let Ok(light_client_update) = self.beacon_rpc_client.get_finality_light_client_update_with_sync_commity_update() {
+                        if self.eth_client_contract.is_known_block(&light_client_update.finality_update.header_update.execution_block_hash) {
+                            self.eth_client_contract.send_light_client_update(light_client_update, end_period);
+                        }
                     }
                 }
             }
