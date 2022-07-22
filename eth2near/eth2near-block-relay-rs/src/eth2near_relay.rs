@@ -148,43 +148,54 @@ impl Eth2NearRelay {
     fn send_light_client_updates(&mut self) {
         info!(target: "relay", "= Sending light client update =");
 
-        if let Ok(finalized_block_hash) = self.eth_client_contract.get_finalized_beacon_block_hash() {
-            if let Ok(last_finalized_slot_on_near) = self.beacon_rpc_client.get_slot_by_beacon_block_root(finalized_block_hash) {
-                let last_eth2_period_on_near_chain = BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near);
-                info!(target: "relay", "Last finalized slot/period on near={}/{}", last_finalized_slot_on_near, last_eth2_period_on_near_chain);
-
-                if let Ok(end_slot) = self.beacon_rpc_client.get_last_finalized_slot_number() {
-                    let end_period = BeaconRPCClient::get_period_for_slot(end_slot.as_u64());
-                    info!(target: "relay", "Last finalized slot/period on ethereum={}/{}", end_slot, end_period);
-
-                    if end_slot <= last_finalized_slot_on_near {
-                        info!(target: "relay", "Last finalized slot on Eth equal to last finalized slot on NEAR. Skipping sending light client update.");
-                        return;
-                    }
-
-                    if end_period == last_eth2_period_on_near_chain {
-                        info!(target: "relay", "Finalized period on Eth and Near are equal. Don't fetch sync commity update");
-                        if let Ok(light_client_update) = self.beacon_rpc_client.get_finality_light_client_update() {
-                            self.send_specific_light_cleint_update(light_client_update);
-                        } else {
-                            warn!(target: "relay", "Error on getting light client update. Skipping sending light client update");
-                        }
-                    } else {
-                        info!(target: "relay", "Finalized period on Eth and Near are different. Fetching sync commity update");
-                        if let Ok(light_client_update) = self.beacon_rpc_client.get_finality_light_client_update_with_sync_commity_update() {
-                            self.send_specific_light_cleint_update(light_client_update);
-                        } else {
-                            warn!(target: "relay", "Error on getting light client update. Skipping sending light client update");
-                        }
-                    }
-                } else {
-                    warn!(target: "relay", "Error on getting last finalized slot number on Ethereum. Skipping sending light client update");
-                }
-            } else {
-                warn!(target: "relay", "Error on getting slot for finalized block hash. Skipping sending light client update");
-            }
+        let finalized_block_hash: H256;
+        if let Ok(block_hash) = self.eth_client_contract.get_finalized_beacon_block_hash() {
+            finalized_block_hash = block_hash;
         } else {
             warn!(target: "relay", "Error on getting finalized block hash. Skipping sending light client update");
+            return;
+        }
+
+        let last_finalized_slot_on_near: u64;
+        if let Ok(last_finalized_slot) = self.beacon_rpc_client.get_slot_by_beacon_block_root(finalized_block_hash) {
+            last_finalized_slot_on_near = last_finalized_slot;
+        } else {
+            warn!(target: "relay", "Error on getting slot for finalized block hash. Skipping sending light client update");
+            return;
+        }
+        let last_eth2_period_on_near_chain = BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near);
+        info!(target: "relay", "Last finalized slot/period on near={}/{}", last_finalized_slot_on_near, last_eth2_period_on_near_chain);
+
+        let last_finalized_slot_on_eth: u64;
+        if let Ok(end_slot) = self.beacon_rpc_client.get_last_finalized_slot_number() {
+            last_finalized_slot_on_eth = end_slot.as_u64();
+        } else {
+            warn!(target: "relay", "Error on getting last finalized slot number on Ethereum. Skipping sending light client update");
+            return;
+        }
+
+        let end_period = BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_eth);
+        info!(target: "relay", "Last finalized slot/period on ethereum={}/{}", last_finalized_slot_on_eth, end_period);
+
+        if last_finalized_slot_on_eth <= last_finalized_slot_on_near {
+            info!(target: "relay", "Last finalized slot on Eth equal to last finalized slot on NEAR. Skipping sending light client update.");
+            return;
+        }
+
+        if end_period == last_eth2_period_on_near_chain {
+            info!(target: "relay", "Finalized period on Eth and Near are equal. Don't fetch sync commity update");
+            if let Ok(light_client_update) = self.beacon_rpc_client.get_finality_light_client_update() {
+                self.send_specific_light_cleint_update(light_client_update);
+            } else {
+                warn!(target: "relay", "Error on getting light client update. Skipping sending light client update");
+            }
+        } else {
+            info!(target: "relay", "Finalized period on Eth and Near are different. Fetching sync commity update");
+            if let Ok(light_client_update) = self.beacon_rpc_client.get_finality_light_client_update_with_sync_commity_update() {
+                self.send_specific_light_cleint_update(light_client_update);
+            } else {
+                warn!(target: "relay", "Error on getting light client update. Skipping sending light client update");
+            }
         }
     }
 }
