@@ -66,8 +66,6 @@ impl EthClientContract {
     }
 
     pub fn send_light_client_update(& mut self, light_client_update: LightClientUpdate, last_period: u64) {
-        println!("Send light client update for period={}", last_period);
-
         let filename = format!("light_client_update_period_{}_attested_slot_{}.json", last_period, light_client_update.attested_header.slot);
         let light_client_update_out_path = Path::new(&self.dir_path).join(filename);
         let light_client_update_json_str = serde_json::to_string(&light_client_update).unwrap();
@@ -85,8 +83,6 @@ impl EthClientContract {
     }
 
     pub fn send_headers(& mut self, headers: &Vec<BlockHeader>, st_slot: u64, end_slot: u64) -> Result<(), Box<dyn std::error::Error>> {
-        println!("Send headers, #headers = {} ", headers.len());
-
         if headers.len() == 0 {
             self.last_slot = end_slot;
             return Ok(());
@@ -105,7 +101,6 @@ impl EthClientContract {
 
         for header in headers {
             self.call_change_method("submit_header".to_string(), header.try_to_vec().unwrap(), 0).unwrap();
-            println!("{:?}", header);
         }
 
         Ok(())
@@ -165,7 +160,6 @@ impl EthClientContract {
         };
 
         let response =  handle.block_on(self.client.call(request)).unwrap();
-        println!("response: {:#?}", response);
 
         if let QueryResponseKind::CallResult(result) = response.kind {
             return Some(result.result)

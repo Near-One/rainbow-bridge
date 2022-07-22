@@ -25,13 +25,9 @@ impl Eth1RPCClient {
         \"method\": \"eth_getBlockByNumber\",\
         \"params\": [\"0x{:x}\",false]\
         {}", "{", number, "}");
-        println!("json_str: {}", json_str);
 
         let value: Value = serde_json::from_str(&json_str).unwrap();
-        println!("value: {:?}", value);
-
         let res = self.client.post(&self.endpoint_url).json(&value).send()?.text().unwrap();
-        println!("res: {:?}", res);
 
         let val: Value = serde_json::from_str(&res).unwrap();
         let mut block_json = serde_json::to_string(&val["result"]).unwrap();
@@ -51,9 +47,7 @@ impl Eth1RPCClient {
         block_json = block_json.replace("parentHash", "parent_hash");
         block_json = block_json.replace("miner", "author");
 
-        println!("block_json: {}", block_json);
         let block_header: BlockHeader = serde_json::from_str(&block_json).unwrap();
-        println!("block_heade: {:?}", block_header);
         Ok(block_header)
     }
 }

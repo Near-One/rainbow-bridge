@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+log = { version = "0.4", features = ["std", "serde"] }
 types =  { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
 tree_hash = { git = "https://github.com/sigp/lighthouse",  tag = "v2.3.1" }
 merkle_proof = { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }

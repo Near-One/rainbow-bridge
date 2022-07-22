@@ -1,7 +1,9 @@
 use clap::{Parser, ArgAction};
 use eth2_to_near_relay::eth2near_relay::Eth2NearRelay;
 use std::string::String;
+use log::{LevelFilter};
 use eth2_to_near_relay::init_contract::init_contract;
+use eth2_to_near_relay::logger::SimpleLogger;
 
 #[derive(Parser,Default,Debug)]
 #[clap(version, about="Eth2 to Near Relay")]
@@ -42,7 +44,7 @@ struct Arguments {
     /// The ethereum network name (main, kiln)
     network: String,
 
-    #[clap(long, default_value_t = 954944)]
+    #[clap(long, default_value_t = 955236)]
     /// Tmp flag TODO: remove
     start_slot: u64,
 
@@ -52,6 +54,8 @@ struct Arguments {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    log::set_boxed_logger(Box::new(SimpleLogger)).map(|()| log::set_max_level(LevelFilter::Info));
+
     let args = Arguments::parse();
 
     if args.init_contract == true {
