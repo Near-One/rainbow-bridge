@@ -34,7 +34,7 @@ struct Arguments {
     /// The eth contract on Near will be initialized
     init_contract: bool,
 
-    #[clap(long, default_value_t = String::from("dev-1658421547548-32724612097311"))]
+    #[clap(long, default_value_t = String::from("dev-1658468323738-12104377473860"))]
     /// Eth client on NEAR account id
     contract_account_id: String,
 
@@ -42,7 +42,7 @@ struct Arguments {
     /// The ethereum network name (main, kiln)
     network: String,
 
-    #[clap(long, default_value_t = 954848)]
+    #[clap(long, default_value_t = 954944)]
     /// Tmp flag TODO: remove
     start_slot: u64,
 
