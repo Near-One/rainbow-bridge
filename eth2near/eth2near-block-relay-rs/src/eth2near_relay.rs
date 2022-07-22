@@ -4,6 +4,7 @@ use std::cmp::max;
 use std::error::Error;
 use std::vec::Vec;
 use eth_types::{BlockHeader, H256};
+use eth_types::eth2::LightClientUpdate;
 use crate::eth1_rpc_client::Eth1RPCClient;
 use log::{info, warn};
 
@@ -127,6 +128,23 @@ impl Eth2NearRelay {
         Ok(slot)
     }
 
+    fn send_specific_light_cleint_update(&mut self, light_client_update: LightClientUpdate) {
+        if let Ok(is_known_block) = self.eth_client_contract.is_known_block(&light_client_update.finality_update.header_update.execution_block_hash) {
+            if is_known_block {
+                info!(target: "relay", "Sending light client update");
+                if let Ok(()) = self.eth_client_contract.send_light_client_update(light_client_update) {
+                    info!(target: "relay", "Successful light client update submission!");
+                } else {
+                    warn!(target: "relay", "Fail to send light client update");
+                }
+            } else {
+                warn!(target: "relay", "Finalized block for light client update is not found on NEAR. Skipping send light client update");
+            }
+        } else {
+            warn!(target: "relay", "Fail on the is_known_block method. Skipping sending light client update");
+        }
+    }
+
     fn send_light_client_updates(&mut self) {
         info!(target: "relay", "= Sending light client update =");
 
@@ -147,40 +165,14 @@ impl Eth2NearRelay {
                     if end_period == last_eth2_period_on_near_chain {
                         info!(target: "relay", "Finalized period on Eth and Near are equal. Don't fetch sync commity update");
                         if let Ok(light_client_update) = self.beacon_rpc_client.get_finality_light_client_update() {
-                            if let Ok(is_known_block) = self.eth_client_contract.is_known_block(&light_client_update.finality_update.header_update.execution_block_hash) {
-                                if is_known_block {
-                                    info!(target: "relay", "Sending light client update");
-                                    if let Ok(()) = self.eth_client_contract.send_light_client_update(light_client_update) {
-                                        info!(target: "relay", "Successful light client update submission!");
-                                    } else {
-                                        warn!(target: "relay", "Fail to send light client update");
-                                    }
-                                } else {
-                                    warn!(target: "relay", "Finalized block for light client update is not found on NEAR. Skipping send light client update");
-                                }
-                            } else {
-                                warn!(target: "relay", "Fail on the is_known_block method. Skipping sending light client update");
-                            }
+                            self.send_specific_light_cleint_update(light_client_update);
                         } else {
                             warn!(target: "relay", "Error on getting light client update. Skipping sending light client update");
                         }
                     } else {
                         info!(target: "relay", "Finalized period on Eth and Near are different. Fetching sync commity update");
                         if let Ok(light_client_update) = self.beacon_rpc_client.get_finality_light_client_update_with_sync_commity_update() {
-                            if let Ok(is_known_block) = self.eth_client_contract.is_known_block(&light_client_update.finality_update.header_update.execution_block_hash) {
-                                if is_known_block {
-                                    info!(target: "relay", "Sending light client update");
-                                    if let Ok(()) = self.eth_client_contract.send_light_client_update(light_client_update) {
-                                        info!(target: "relay", "Successful light client update submission!");
-                                    } else {
-                                        warn!(target: "relay", "Fail to send light client update");
-                                    }
-                                } else {
-                                    warn!(target: "relay", "Finalized block for light client update is not found on NEAR. Skipping send light client update");
-                                }
-                            } else {
-                                warn!(target: "relay", "Fail on the is_known_block method. Skipping sending light client update");
-                            }
+                            self.send_specific_light_cleint_update(light_client_update);
                         } else {
                             warn!(target: "relay", "Error on getting light client update. Skipping sending light client update");
                         }
