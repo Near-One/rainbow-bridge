@@ -26,11 +26,11 @@ impl Eth1RPCClient {
         \"params\": [\"0x{:x}\",false]\
         {}", "{", number, "}");
 
-        let value: Value = serde_json::from_str(&json_str).unwrap();
-        let res = self.client.post(&self.endpoint_url).json(&value).send()?.text().unwrap();
+        let value: Value = serde_json::from_str(&json_str)?;
+        let res = self.client.post(&self.endpoint_url).json(&value).send()?.text()?;
 
-        let val: Value = serde_json::from_str(&res).unwrap();
-        let mut block_json = serde_json::to_string(&val["result"]).unwrap();
+        let val: Value = serde_json::from_str(&res)?;
+        let mut block_json = serde_json::to_string(&val["result"])?;
 
         block_json = block_json.replace("baseFeePerGas", "base_fee_per_gas");
         block_json = block_json.replace("extraData", "extra_data");
@@ -47,7 +47,7 @@ impl Eth1RPCClient {
         block_json = block_json.replace("parentHash", "parent_hash");
         block_json = block_json.replace("miner", "author");
 
-        let block_header: BlockHeader = serde_json::from_str(&block_json).unwrap();
+        let block_header: BlockHeader = serde_json::from_str(&block_json)?;
         Ok(block_header)
     }
 }

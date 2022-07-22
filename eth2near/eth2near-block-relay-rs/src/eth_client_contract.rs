@@ -1,3 +1,4 @@
+use std::error::Error;
 use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
 use std::vec::Vec;
 use std::string::String;
@@ -51,36 +52,36 @@ impl EthClientContract {
         return self.last_slot;
     }
 
-    pub fn is_known_block(&self, execution_block_hash: &H256) -> bool {
-        let result = self.call_view_function("is_known_execution_header".to_string(), execution_block_hash.try_to_vec().unwrap()).unwrap();
-        let is_known: bool = bool::try_from_slice(&result).unwrap();
-        is_known
+    pub fn is_known_block(&self, execution_block_hash: &H256) -> Result<bool, Box<dyn Error>> {
+        let result = self.call_view_function("is_known_execution_header".to_string(), execution_block_hash.try_to_vec()?)?;
+        let is_known: bool = bool::try_from_slice(&result)?;
+        Ok(is_known)
     }
 
-    pub fn send_light_client_update(& mut self, light_client_update: LightClientUpdate) {
-        self.call_change_method("submit_update".to_string(), light_client_update.try_to_vec().unwrap(), 0).unwrap();
+    pub fn send_light_client_update(& mut self, light_client_update: LightClientUpdate) -> Result<(), Box<dyn Error>> {
+        self.call_change_method("submit_update".to_string(), light_client_update.try_to_vec()?, 0)
     }
 
-    pub fn get_finalized_beacon_block_hash(&self) -> H256 {
-        let result = self.call_view_function("finalized_beacon_block_root".to_string(), json!({}).to_string().into_bytes()).unwrap();
-        let beacon_block_hash: H256 = H256::try_from_slice(&result).unwrap();
-        beacon_block_hash
+    pub fn get_finalized_beacon_block_hash(&self) -> Result<H256, Box<dyn Error>> {
+        let result = self.call_view_function("finalized_beacon_block_root".to_string(), json!({}).to_string().into_bytes())?;
+        let beacon_block_hash: H256 = H256::try_from_slice(&result)?;
+        Ok(beacon_block_hash)
     }
 
     pub fn send_headers(& mut self, headers: &Vec<BlockHeader>, end_slot: u64) -> Result<(), Box<dyn std::error::Error>> {
         self.last_slot = end_slot;
 
         for header in headers {
-            self.call_change_method("submit_header".to_string(), header.try_to_vec().unwrap(), 0).unwrap();
+            self.call_change_method("submit_header".to_string(), header.try_to_vec()?, 0)?;
         }
 
         Ok(())
     }
 
-    pub fn register(&self) {
+    pub fn register(&self) -> Result<(), Box<dyn Error>> {
         self.call_change_method("register_submitter".to_string(), json!({
             "account_id": self.account_id,
-        }).to_string().into_bytes(), 10*ONE_NEAR).unwrap();
+        }).to_string().into_bytes(), 10*ONE_NEAR)
     }
 
     pub fn init_contract(&self, network: String, finalized_execution_header: BlockHeader,
@@ -117,8 +118,8 @@ impl EthClientContract {
         self.call_change_method("init".to_string(), init_input.try_to_vec().unwrap(), 0).unwrap();
     }
 
-    fn call_view_function(&self, method_name: String, args: Vec<u8>) -> Option<Vec<u8>> {
-        let rt = Runtime::new().unwrap();
+    fn call_view_function(&self, method_name: String, args: Vec<u8>) -> Result<Vec<u8>, Box<dyn Error>> {
+        let rt = Runtime::new()?;
         let handle = rt.handle();
 
         let request = methods::query::RpcQueryRequest {
@@ -130,17 +131,17 @@ impl EthClientContract {
             },
         };
 
-        let response =  handle.block_on(self.client.call(request)).unwrap();
+        let response =  handle.block_on(self.client.call(request))?;
 
         if let QueryResponseKind::CallResult(result) = response.kind {
-            return Some(result.result)
+            return Ok(result.result)
+        } else {
+            return Err("view method doesn't return any result")?;
         }
-
-        Option::<Vec<u8>>::None
     }
 
     fn call_change_method(&self, method_name: String, args: Vec<u8>, deposit: Balance) -> Result<(), Box<dyn std::error::Error>> {
-        let rt = Runtime::new().unwrap();
+        let rt = Runtime::new()?;
         let handle = rt.handle();
 
         let access_key_query_response = handle.block_on(self.client
@@ -150,11 +151,11 @@ impl EthClientContract {
                     account_id: self.signer.account_id.clone(),
                     public_key: self.signer.public_key.clone(),
                 },
-            })).unwrap();
+            }))?;
 
         let current_nonce = match access_key_query_response.kind {
             QueryResponseKind::AccessKey(access_key) => access_key.nonce,
-            _ => Err("failed to extract current nonce").unwrap(),
+            _ => Err("failed to extract current nonce")?,
         };
 
         let transaction = Transaction {

@@ -155,7 +155,7 @@ impl BeaconRPCClient {
         let block_json_str = &self.get_json_from_raw_request(&url)?;
         let v: Value = serde_json::from_str(block_json_str)?;
         let slot = v["data"]["message"]["slot"].to_string();
-        let slot = slot[1..slot.len() - 1].parse::<u64>().unwrap();
+        let slot = slot[1..slot.len() - 1].parse::<u64>()?;
 
         Ok(slot)
     }
