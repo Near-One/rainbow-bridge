@@ -7,7 +7,7 @@ use eth_types::eth2::Slot;
 use eth_types::eth2::SyncCommittee;
 use eth_types::eth2::SyncCommitteeUpdate;
 use eth_types::eth2::SyncAggregate;
-use serde_json::{Value};
+use serde_json::{json, Value};
 use reqwest::blocking::Client;
 use std::error::Error;
 use std::fmt;
@@ -169,6 +169,9 @@ impl BeaconRPCClient {
         let url = format!("{}/{}", self.endpoint_url, Self::URL_FINALITY_LIGHT_CLIENT_UPDATE_PATH);
 
         let light_client_update_json_str = self.get_json_from_raw_request(&url)?;
+        let v: Value = serde_json::from_str(&light_client_update_json_str)?;
+        let light_client_update_json_str = serde_json::to_string(&json!({"data": [v["data"]]}))?;
+
 
         Ok(LightClientUpdate {
             attested_header: Self::get_attested_header_from_light_client_update_json_str(&light_client_update_json_str)?,
@@ -185,6 +188,9 @@ impl BeaconRPCClient {
         let url_update = format!("{}/{}?start_period={}&count=1", self.endpoint_url, Self::GET_LIGHT_CLIENT_UPDATE_API, last_period);
         let finality_light_client_update_json_str = self.get_json_from_raw_request(&url_finality)?;
         let light_client_update_json_str = self.get_json_from_raw_request(&url_update)?;
+
+        let v: Value = serde_json::from_str(&finality_light_client_update_json_str)?;
+        let finality_light_client_update_json_str = serde_json::to_string(&json!({"data": [v["data"]]}))?;
 
         Ok(LightClientUpdate {
             attested_header: Self::get_attested_header_from_light_client_update_json_str(&finality_light_client_update_json_str)?,

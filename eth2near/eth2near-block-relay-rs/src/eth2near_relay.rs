@@ -74,8 +74,11 @@ impl Eth2NearRelay {
         let mut slot = self.eth_client_contract.get_last_submitted_slot();
         let finalized_block_hash = self.eth_client_contract.get_finalized_beacon_block_hash();
         let finalized_slot = self.beacon_rpc_client.get_slot_by_beacon_block_root(finalized_block_hash).unwrap();
+        println!("finalized_slot = {}", finalized_slot);
 
         slot = max(finalized_slot, slot);
+
+        println!("init last slot={}", slot);
 
         while slot > finalized_slot {
             println!("search last slot; current slot={}", slot);

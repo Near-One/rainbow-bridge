@@ -14,7 +14,7 @@ struct Arguments {
     /// endpoint for the ethereum full node which support Eth1 RPC API
     eth1_endpoint: String,
 
-    #[clap(long="total-submit-headers", default_value_t = 1)]
+    #[clap(long="total-submit-headers", default_value_t = 4)]
     /// the max number of headers submitted in one bunch to eth client
     total_submit_headers: u32,
 
@@ -34,7 +34,7 @@ struct Arguments {
     /// The eth contract on Near will be initialized
     init_contract: bool,
 
-    #[clap(long, default_value_t = String::from("eth2_2.test1-dev.testnet"))]
+    #[clap(long, default_value_t = String::from("dev-1658421547548-32724612097311"))]
     /// Eth client on NEAR account id
     contract_account_id: String,
 
@@ -42,7 +42,7 @@ struct Arguments {
     /// The ethereum network name (main, kiln)
     network: String,
 
-    #[clap(long, default_value_t = 944038)]
+    #[clap(long, default_value_t = 954848)]
     /// Tmp flag TODO: remove
     start_slot: u64,
 
@@ -57,7 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if args.init_contract == true {
         init_contract(&args.near_endpoint, &args.signer_account_id, &args.path_to_signer_secret_key,
                       &args.contract_account_id, args.start_slot, &args.output_dir,
-                      &args.eth_endpoint, &args.eth1_endpoint, &args.network)?;
+                      &args.eth_endpoint, &args.eth1_endpoint, &args.network).unwrap();
     }
 
     let mut eth2near_relay = Eth2NearRelay::init(&args.eth_endpoint, &args.eth1_endpoint, args.start_slot,
