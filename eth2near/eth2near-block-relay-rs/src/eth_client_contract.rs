@@ -1,10 +1,6 @@
-use std::fs;
-use std::fs::File;
 use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
 use std::vec::Vec;
 use std::string::String;
-use std::path::Path;
-use std::io::Write;
 use borsh::BorshDeserialize;
 use eth_types::{BlockHeader, H256};
 use near_crypto::InMemorySigner;
@@ -22,7 +18,6 @@ use near_sdk::{Balance, ONE_NEAR};
 
 pub struct EthClientContract {
     last_slot: u64,
-    dir_path: String,
     client: JsonRpcClient,
     contract_account: AccountId,
     signer: InMemorySigner,
@@ -32,9 +27,7 @@ pub struct EthClientContract {
 impl EthClientContract {
     pub fn new(near_endpoint: &str, account_id: &str,
                path_to_signer_secret_key: &str, contract_account_id: &str,
-               last_slot: u64, dir_path: String) -> Self {
-        fs::create_dir_all(&dir_path).unwrap();
-
+               last_slot: u64) -> Self {
         let client = JsonRpcClient::connect(near_endpoint);
         let contract_account = contract_account_id.parse().unwrap();
 
@@ -47,7 +40,6 @@ impl EthClientContract {
 
         EthClientContract {
             last_slot: last_slot,
-            dir_path,
             client,
             contract_account,
             signer,
@@ -65,14 +57,7 @@ impl EthClientContract {
         is_known
     }
 
-    pub fn send_light_client_update(& mut self, light_client_update: LightClientUpdate, last_period: u64) {
-        let filename = format!("light_client_update_period_{}_attested_slot_{}.json", last_period, light_client_update.attested_header.slot);
-        let light_client_update_out_path = Path::new(&self.dir_path).join(filename);
-        let light_client_update_json_str = serde_json::to_string(&light_client_update).unwrap();
-
-        let mut file = File::create(light_client_update_out_path).unwrap();
-        file.write_all(light_client_update_json_str.as_bytes()).unwrap();
-
+    pub fn send_light_client_update(& mut self, light_client_update: LightClientUpdate) {
         self.call_change_method("submit_update".to_string(), light_client_update.try_to_vec().unwrap(), 0).unwrap();
     }
 
@@ -82,21 +67,7 @@ impl EthClientContract {
         beacon_block_hash
     }
 
-    pub fn send_headers(& mut self, headers: &Vec<BlockHeader>, st_slot: u64, end_slot: u64) -> Result<(), Box<dyn std::error::Error>> {
-        if headers.len() == 0 {
-            self.last_slot = end_slot;
-            return Ok(());
-        }
-
-        let headers_filename = format!("headers_slots_{}_{}.json",
-                                       st_slot,
-                                       end_slot);
-        let header_path = Path::new(&self.dir_path).join(headers_filename);
-        let headers_json_str = serde_json::to_string(&headers)?;
-
-        let mut file = File::create(header_path)?;
-        file.write_all(headers_json_str.as_bytes())?;
-
+    pub fn send_headers(& mut self, headers: &Vec<BlockHeader>, end_slot: u64) -> Result<(), Box<dyn std::error::Error>> {
         self.last_slot = end_slot;
 
         for header in headers {

@@ -44,28 +44,24 @@ struct Arguments {
     /// The ethereum network name (main, kiln)
     network: String,
 
-    #[clap(long, default_value_t = 955236)]
+    #[clap(long, default_value_t = 955709)]
     /// Tmp flag TODO: remove
     start_slot: u64,
-
-    #[clap(long, default_value_t = String::from("./light_client_updates_out"))]
-    /// Tmp output dir TODO remove
-    output_dir: String,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    log::set_boxed_logger(Box::new(SimpleLogger)).map(|()| log::set_max_level(LevelFilter::Info));
+    log::set_boxed_logger(Box::new(SimpleLogger)).map(|()| log::set_max_level(LevelFilter::Info)).unwrap();
 
     let args = Arguments::parse();
 
     if args.init_contract == true {
         init_contract(&args.near_endpoint, &args.signer_account_id, &args.path_to_signer_secret_key,
-                      &args.contract_account_id, args.start_slot, &args.output_dir,
+                      &args.contract_account_id, args.start_slot,
                       &args.eth_endpoint, &args.eth1_endpoint, &args.network).unwrap();
     }
 
     let mut eth2near_relay = Eth2NearRelay::init(&args.eth_endpoint, &args.eth1_endpoint, args.start_slot,
-                                                 args.output_dir, args.total_submit_headers,
+                                                 args.total_submit_headers,
                                                   &args.near_endpoint, &args.signer_account_id,
                                                   &args.path_to_signer_secret_key, &args.contract_account_id);
     Ok(eth2near_relay.run())

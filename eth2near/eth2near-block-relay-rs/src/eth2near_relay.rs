@@ -14,7 +14,7 @@ pub struct Eth2NearRelay {
 }
 
 impl Eth2NearRelay {
-    pub fn init(eth_node_url: &str, eth1_endpoint: &str, start_slot: u64, out_dir: String, max_submitted_headers: u32,
+    pub fn init(eth_node_url: &str, eth1_endpoint: &str, start_slot: u64, max_submitted_headers: u32,
                 near_endpoint: &str, signer_account_id: &str,
                 path_to_signer_secret_key: &str, contract_account_id: &str) -> Self {
         info!(target: "relay", "=== Relay initialization === ");
@@ -24,7 +24,7 @@ impl Eth2NearRelay {
             eth1_rpc_client: Eth1RPCClient::new(eth1_endpoint),
             eth_client_contract: EthClientContract::new(near_endpoint, signer_account_id,
                                                         path_to_signer_secret_key, contract_account_id,
-                                                        start_slot, out_dir),
+                                                        start_slot),
             max_submitted_headers: max_submitted_headers as u64,
         };
         eth2near_relay.eth_client_contract.register();
@@ -75,8 +75,8 @@ impl Eth2NearRelay {
                 }
 
                 for _ in 1..5 {
-                    info!(target: "relay", "Try submit headers from slot={} to {} to NEAR", last_eth2_slot_on_near_chain + 1, current_slot - 1);
-                    if let Ok(()) = self.eth_client_contract.send_headers(&headers, last_eth2_slot_on_near_chain + 1, current_slot - 1) {
+                    info!(target: "relay", "Try submit headers from slot={} to {} to NEAR", last_eth2_slot_on_near + 1, current_slot - 1);
+                    if let Ok(()) = self.eth_client_contract.send_headers(&headers, current_slot - 1) {
                         info!(target: "relay", "Success headers submission!");
                         break;
                     } else {
@@ -140,7 +140,7 @@ impl Eth2NearRelay {
                     if let Ok(light_client_update) = self.beacon_rpc_client.get_finality_light_client_update() {
                         if self.eth_client_contract.is_known_block(&light_client_update.finality_update.header_update.execution_block_hash) {
                             info!(target: "relay", "Sending light client update");
-                            self.eth_client_contract.send_light_client_update(light_client_update, end_period);
+                            self.eth_client_contract.send_light_client_update(light_client_update);
                         } else {
                             warn!(target: "relay", "Finalized block for light client update is not found on NEAR. Skipping send light client update");
                         }
@@ -152,7 +152,7 @@ impl Eth2NearRelay {
                     if let Ok(light_client_update) = self.beacon_rpc_client.get_finality_light_client_update_with_sync_commity_update() {
                         if self.eth_client_contract.is_known_block(&light_client_update.finality_update.header_update.execution_block_hash) {
                             info!(target: "relay", "Sending light client update");
-                            self.eth_client_contract.send_light_client_update(light_client_update, end_period);
+                            self.eth_client_contract.send_light_client_update(light_client_update);
                         } else {
 
                             warn!(target: "relay", "Finalized block for light client update is not found on NEAR. Skipping send light client update");

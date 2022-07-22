@@ -1,4 +1,3 @@
-use std::fs::metadata;
 use log::{Record, Level, Metadata};
 
 pub struct SimpleLogger;

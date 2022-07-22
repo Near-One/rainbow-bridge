@@ -7,10 +7,10 @@ use crate::eth_client_contract::EthClientContract;
 
 
 pub fn init_contract(near_endpoint: &str, signer_account_id: &str, path_to_signer_secret_key: &str,
-                     contract_account_id: &str, start_slot: u64, output_dir: &str,
+                     contract_account_id: &str, start_slot: u64,
                      beacon_rpc_endpoint: &str, eth1_rpc_endpoint: &str, network: &str) -> Result<(), Box<dyn std::error::Error>> {
     info!(target: "relay", "=== Contract initialization ===");
-    let eth_client_contract = EthClientContract::new(near_endpoint, signer_account_id, path_to_signer_secret_key, contract_account_id, start_slot, output_dir.to_string());
+    let eth_client_contract = EthClientContract::new(near_endpoint, signer_account_id, path_to_signer_secret_key, contract_account_id, start_slot);
     let period = BeaconRPCClient::get_period_for_slot(start_slot);
 
     let beacon_rpc_client = BeaconRPCClient::new(&beacon_rpc_endpoint);
