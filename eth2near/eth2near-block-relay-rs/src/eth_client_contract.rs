@@ -59,7 +59,7 @@ impl EthClientContract {
     }
 
     pub fn send_light_client_update(& mut self, light_client_update: LightClientUpdate) -> Result<(), Box<dyn Error>> {
-        self.call_change_method("submit_update".to_string(), light_client_update.try_to_vec()?, 0)
+        self.call_change_method(vec!["submit_update".to_string()], vec![light_client_update.try_to_vec()?], vec![0])
     }
 
     pub fn get_finalized_beacon_block_hash(&self) -> Result<H256, Box<dyn Error>> {
@@ -71,17 +71,21 @@ impl EthClientContract {
     pub fn send_headers(& mut self, headers: &Vec<BlockHeader>, end_slot: u64) -> Result<(), Box<dyn std::error::Error>> {
         self.last_slot = end_slot;
 
-        for header in headers {
-            self.call_change_method("submit_header".to_string(), header.try_to_vec()?, 0)?;
-        }
+        let method_names = vec!["submit_header".to_string(); headers.len()];
+        let mut args = Vec::new();
+        let deposits = vec![0 as u128; headers.len()];
 
+        for header in headers {
+            args.push(header.try_to_vec()?);
+        }
+        self.call_change_method(method_names, args, deposits)?;
         Ok(())
     }
 
     pub fn register(&self) -> Result<(), Box<dyn Error>> {
-        self.call_change_method("register_submitter".to_string(), json!({
+        self.call_change_method(vec!["register_submitter".to_string()], vec![json!({
             "account_id": self.account_id,
-        }).to_string().into_bytes(), 10*ONE_NEAR)
+        }).to_string().into_bytes()], vec![10*ONE_NEAR])
     }
 
     pub fn init_contract(&self, network: String, finalized_execution_header: BlockHeader,
@@ -115,7 +119,7 @@ impl EthClientContract {
             trusted_signer: Option::<AccountId>::None,
         };
 
-        self.call_change_method("init".to_string(), init_input.try_to_vec().unwrap(), 0).unwrap();
+        self.call_change_method(vec!["init".to_string()], vec![init_input.try_to_vec().unwrap()], vec![0]).unwrap();
     }
 
     fn call_view_function(&self, method_name: String, args: Vec<u8>) -> Result<Vec<u8>, Box<dyn Error>> {
@@ -140,7 +144,7 @@ impl EthClientContract {
         }
     }
 
-    fn call_change_method(&self, method_name: String, args: Vec<u8>, deposit: Balance) -> Result<(), Box<dyn std::error::Error>> {
+    fn call_change_method(&self, method_name: Vec<String>, args: Vec<Vec<u8>>, deposit: Vec<Balance>) -> Result<(), Box<dyn std::error::Error>> {
         let rt = Runtime::new()?;
         let handle = rt.handle();
 
@@ -158,30 +162,32 @@ impl EthClientContract {
             _ => Err("failed to extract current nonce")?,
         };
 
+        let mut actions = Vec::new();
+        for i in 0..method_name.len() {
+            actions.push(
+                Action::FunctionCall(FunctionCallAction{
+                    method_name: method_name[i].clone(),
+                    args: args[i].clone(),
+                    gas: 75_000_000_000_000, // 75 TeraGas
+                    deposit: deposit[i].clone(),
+                })
+            );
+        }
+
         let transaction = Transaction {
             signer_id: self.signer.account_id.clone(),
             public_key: self.signer.public_key.clone(),
             nonce: current_nonce + 1,
             receiver_id: self.contract_account.clone(),
             block_hash: access_key_query_response.block_hash,
-            actions: vec![Action::FunctionCall(FunctionCallAction {
-                method_name,
-                args,
-                gas: 100_000_000_000_000, // 100 TeraGas
-                deposit,
-            })],
+            actions,
         };
 
         let request = methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest {
             signed_transaction: transaction.sign(&self.signer),
         };
-
-        for _ in 1..5 {
-            if let Ok(_response) = handle.block_on(self.client.call(&request)) {
-                break;
-            }
-        }
-
+        
+        handle.block_on(self.client.call(&request))?;
         Ok(())
     }
 }

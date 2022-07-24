@@ -58,7 +58,7 @@ impl Eth2NearRelay {
                   last_eth2_slot_on_near, last_eth2_slot_on_eth_chain);
 
             if last_eth2_slot_on_near < last_eth2_slot_on_eth_chain {
-                info!(target: "relay", "= Creating headers bunch =");
+                info!(target: "relay", "= Creating headers batch =");
                 let mut headers: Vec<BlockHeader> = vec![];
                 let mut current_slot = last_eth2_slot_on_near + 1;
                 while headers.len() < self.max_submitted_headers as usize && current_slot <= last_eth2_slot_on_eth_chain {

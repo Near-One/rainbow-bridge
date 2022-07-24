@@ -17,7 +17,7 @@ struct Arguments {
     eth1_endpoint: String,
 
     #[clap(long="total-submit-headers", default_value_t = 4)]
-    /// the max number of headers submitted in one bunch to eth client
+    /// the max number of headers submitted in one batch to eth client
     total_submit_headers: u32,
 
     #[clap(long, default_value_t = String::from("https://rpc.testnet.near.org"))]
@@ -37,14 +37,14 @@ struct Arguments {
     init_contract: bool,
 
     #[clap(long, default_value_t = String::from("dev-1658468323738-12104377473860"))]
-    /// Eth client on NEAR account id
+    /// Account id for eth client contract on NEAR
     contract_account_id: String,
 
     #[clap(long, default_value_t = String::from("kiln"))]
     /// The ethereum network name (main, kiln)
     network: String,
 
-    #[clap(long, default_value_t = 955709)]
+    #[clap(long, default_value_t = 956937)]
     /// Tmp flag TODO: remove
     start_slot: u64,
 }
