@@ -14,6 +14,7 @@ use std::fmt;
 use std::fmt::Display;
 use std::string::String;
 use eth_types::H256;
+use hex::FromHex;
 use types::BeaconBlockBody;
 use types::MainnetEthSpec;
 
@@ -199,6 +200,16 @@ impl BeaconRPCClient {
             finality_update: self.get_finality_update_from_light_client_update_json_str(&finality_light_client_update_json_str)?,
             sync_committee_update: Some(Self::get_sync_committee_update_from_light_lient_update_json_str(&light_client_update_json_str)?),
         })
+    }
+
+    pub fn get_finality_checkpoint_root(&self, attested_slot: u64) -> Result<H256, Box<dyn Error>> {
+        let url_request = format!("{}/eth/v1/beacon/states/{}/finality_checkpoints", self.endpoint_url, attested_slot);
+
+        let json_str = self.get_json_from_raw_request(&url_request)?;
+        let v: Value = serde_json::from_str(&json_str)?;
+        let v_u8_vec = Vec::from_hex(v["finalized"]["root"].as_str().unwrap())?;
+
+        Ok(H256::from(&v_u8_vec))
     }
 
     fn get_json_from_raw_request(&self, url: &str) -> Result<String, reqwest::Error> {

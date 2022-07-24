@@ -21,6 +21,7 @@ borsh = "0.9.3"
 near-sdk = "4.0.0"
 futures = "0.3.21"
 async-std = "1.12.0"
+hex = "*"
 
 near-jsonrpc-client = "0.4.0-beta.0"
 near-crypto = "0.14.0"

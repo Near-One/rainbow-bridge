@@ -8,6 +8,8 @@ impl HandMadeFinalityLightClientUpdate {
     pub fn get_finality_light_client_update(beacon_rpc_client: &BeaconRPCClient,
                                             attested_slot: u64) -> Result<LightClientUpdate, Box<dyn Error>> {
         let attested_header = beacon_rpc_client.get_beacon_block_header_for_block_id(&format!("{}", attested_slot))?;
+        let finality_hash = beacon_rpc_client.get_finality_checkpoint_root(attested_slot)?;
+        let finality_header = beacon_rpc_client.get_beacon_block_header_for_block_id(&serde_json::to_string(&finality_hash)?);
         Err("not implemented")?
     }
 }
