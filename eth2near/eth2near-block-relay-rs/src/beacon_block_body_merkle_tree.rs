@@ -80,7 +80,7 @@ impl ExecutionPayloadMerkleTree {
 pub struct BeaconStateMerkleTree(pub MerkleTree);
 
 impl BeaconStateMerkleTree {
-    pub const TREE_NUM_LEAVES: usize = 24;
+    pub const TREE_NUM_LEAVES: usize = 25;
     pub const TREE_DEPTH: usize = 5;
 
     pub fn new(beacon_state: &BeaconState<MainnetEthSpec>) -> Self {
@@ -101,14 +101,19 @@ impl BeaconStateMerkleTree {
             beacon_state.randao_mixes().tree_hash_root(),
             beacon_state.slashings().tree_hash_root(),
             beacon_state.previous_epoch_participation().unwrap().tree_hash_root(),
+
+
             beacon_state.current_epoch_participation().unwrap().tree_hash_root(),
             beacon_state.justification_bits().tree_hash_root(),
             beacon_state.previous_justified_checkpoint().tree_hash_root(),
             beacon_state.current_justified_checkpoint().tree_hash_root(),
+
             beacon_state.finalized_checkpoint().tree_hash_root(),
             beacon_state.inactivity_scores().unwrap().tree_hash_root(),
             beacon_state.current_sync_committee().unwrap().tree_hash_root(),
             beacon_state.next_sync_committee().unwrap().tree_hash_root(),
+
+            beacon_state.latest_execution_payload_header().unwrap().tree_hash_root(),
         ];
 
         Self(MerkleTree::create(&leaves, Self::TREE_DEPTH))

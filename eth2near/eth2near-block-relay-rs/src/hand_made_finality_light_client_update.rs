@@ -80,6 +80,12 @@ mod tests {
     #[test]
     fn test_hand_made_finality_light_client_update() {
         let beacon_rpc_client = BeaconRPCClient::default();
-        HandMadeFinalityLightClientUpdate::get_finality_light_client_update(&beacon_rpc_client, ATTESTED_HEADER_SLOT).unwrap();
+        let hand_made_light_client_update = HandMadeFinalityLightClientUpdate::get_finality_light_client_update(&beacon_rpc_client, ATTESTED_HEADER_SLOT).unwrap();
+        let light_client_update = beacon_rpc_client.get_light_client_update(99).unwrap();
+
+        assert_eq!(serde_json::to_string(&hand_made_light_client_update.finality_update).unwrap(), serde_json::to_string(&light_client_update.finality_update).unwrap());
+        assert_eq!(serde_json::to_string(&hand_made_light_client_update.signature_slot).unwrap(), serde_json::to_string(&light_client_update.signature_slot).unwrap());
+        assert_eq!(serde_json::to_string(&hand_made_light_client_update.attested_beacon_header).unwrap(), serde_json::to_string(&light_client_update.attested_beacon_header).unwrap());
+        assert_eq!(serde_json::to_string(&hand_made_light_client_update.sync_aggregate).unwrap(), serde_json::to_string(&light_client_update.sync_aggregate).unwrap());
     }
 }
