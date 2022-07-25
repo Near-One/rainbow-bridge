@@ -13,9 +13,10 @@ use std::error::Error;
 use std::fmt;
 use std::fmt::Display;
 use std::string::String;
+use std::time::Duration;
 use eth_types::H256;
 use hex::FromHex;
-use types::BeaconBlockBody;
+use types::{BeaconBlockBody, BeaconState};
 use types::MainnetEthSpec;
 
 #[derive(Debug)]
@@ -68,6 +69,7 @@ impl BeaconRPCClient {
     const URL_BODY_PATH: &'static str = "eth/v2/beacon/blocks";
     const GET_LIGHT_CLIENT_UPDATE_API: &'static str = "eth/v1/light_client/updates";
     const URL_FINALITY_LIGHT_CLIENT_UPDATE_PATH: &'static str = "eth/v1/light_client/finality_update/";
+    const URL_STATE_PATH: &'static str = "eth/v2/debug/beacon/states";
 
     const SLOTS_PER_EPOCH: u64 = 32;
     const EPOCHS_PER_PERIOD: u64 = 256;
@@ -76,7 +78,7 @@ impl BeaconRPCClient {
     pub fn new(endpoint_url: &str) -> Self {
         Self {
             endpoint_url: endpoint_url.to_string(),
-            client: reqwest::blocking::Client::new(),
+            client: reqwest::blocking::Client::builder().timeout(Duration::from_secs(180)).build().unwrap(),
         }
     }
 
@@ -211,6 +213,16 @@ impl BeaconRPCClient {
         let v_u8_vec = Vec::from_hex(v["finalized"]["root"].as_str().unwrap())?;
 
         Ok(H256::from(&v_u8_vec))
+    }
+
+    pub fn get_beacon_state(&self, state_id: &str) -> Result<BeaconState<MainnetEthSpec>, Box<dyn Error>> {
+        let url_request = format!("{}/{}/{}", self.endpoint_url, Self::URL_STATE_PATH, state_id);
+        let json_str = self.get_json_from_raw_request(&url_request)?;
+
+        let v: Value = serde_json::from_str(&json_str)?;
+        let state_json_str = serde_json::to_string(&v["data"])?;
+
+        Ok(serde_json::from_str(&state_json_str)?)
     }
 
     fn get_json_from_raw_request(&self, url: &str) -> Result<String, reqwest::Error> {
@@ -480,11 +492,11 @@ mod tests {
         let light_client_update = beacon_rpc_client.get_light_client_update(PERIOD).unwrap();
 
         // check attested_header
-        assert_eq!(light_client_update.attested_header.slot, 823724);
-        assert_eq!(light_client_update.attested_header.proposer_index, 105744);
-        assert_eq!(serde_json::to_string(&light_client_update.attested_header.parent_root).unwrap(), "\"0xb059eecb214d18b7ee03e73a4094bce92e2e302b91f542a0412508fd5fd7b4fe\"");
-        assert_eq!(serde_json::to_string(&light_client_update.attested_header.state_root).unwrap(), "\"0x2cb304118032eb9c26dcfbf0217c3e4b4bf6bbd531193e9dea5f310c373bb482\"");
-        assert_eq!(serde_json::to_string(&light_client_update.attested_header.body_root).unwrap(), "\"0x19bbc81a1aaf030cb5773c0370af542f9d6a2c5d13280427ddb8dbcca7dcdcb9\"");
+        assert_eq!(light_client_update.attested_beacon_header.slot, 823724);
+        assert_eq!(light_client_update.attested_beacon_header.proposer_index, 105744);
+        assert_eq!(serde_json::to_string(&light_client_update.attested_beacon_header.parent_root).unwrap(), "\"0xb059eecb214d18b7ee03e73a4094bce92e2e302b91f542a0412508fd5fd7b4fe\"");
+        assert_eq!(serde_json::to_string(&light_client_update.attested_beacon_header.state_root).unwrap(), "\"0x2cb304118032eb9c26dcfbf0217c3e4b4bf6bbd531193e9dea5f310c373bb482\"");
+        assert_eq!(serde_json::to_string(&light_client_update.attested_beacon_header.body_root).unwrap(), "\"0x19bbc81a1aaf030cb5773c0370af542f9d6a2c5d13280427ddb8dbcca7dcdcb9\"");
 
         // check sync_aggregate
         assert_eq!(serde_json::to_string(&light_client_update.sync_aggregate.sync_committee_signature).unwrap(), "\"0x884ed0aeeac15090bd8ea39bcdb30e6586a53fd4d51237840e8f0c457942410b374cd2328c9d8c777b076fe79c0cc477048ad1ec7c4542f88f9e033752a2ea36ba2d39f6ef788381040e553e914fcf09d3cc5106d708c36478bc34e0370d1e41\"");
@@ -495,8 +507,8 @@ mod tests {
 
         // check finality_update
         let finality_update = light_client_update.finality_update;
-        assert_eq!(finality_update.header_update.header.slot, 823648);
-        assert_eq!(serde_json::to_string(&finality_update.header_update.header.body_root).unwrap(), "\"0x44c9d4b7b97a9e147cff85f90e68f8c30dae846fd6b969e6b8298e4d8311769e\"");
+        assert_eq!(finality_update.header_update.beacon_header.slot, 823648);
+        assert_eq!(serde_json::to_string(&finality_update.header_update.beacon_header.body_root).unwrap(), "\"0x44c9d4b7b97a9e147cff85f90e68f8c30dae846fd6b969e6b8298e4d8311769e\"");
         assert_eq!(serde_json::to_string(&finality_update.finality_branch[1]).unwrap(), "\"0xf6c4677e9f110179f08f4eb6ad73e8a8b7d74a46f3956c66e4eb01ce6b70e5c4\"");
 
         // check sync_committe_update
