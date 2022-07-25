@@ -207,6 +207,7 @@ impl BeaconRPCClient {
 
         let json_str = self.get_json_from_raw_request(&url_request)?;
         let v: Value = serde_json::from_str(&json_str)?;
+        println!("value: {:?}", v);
         let v_u8_vec = Vec::from_hex(v["finalized"]["root"].as_str().unwrap())?;
 
         Ok(H256::from(&v_u8_vec))
