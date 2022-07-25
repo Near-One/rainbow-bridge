@@ -1,6 +1,5 @@
 use std::error::Error;
 use eth_types::eth2::{FinalizedHeaderUpdate, HeaderUpdate, LightClientUpdate, SignatureBytes, SyncCommitteeBits, SyncCommitteeUpdate};
-use eth_types::H256;
 use tree_hash::TreeHash;
 use crate::beacon_block_body_merkle_tree::BeaconStateMerkleTree;
 use crate::beacon_rpc_client::BeaconRPCClient;

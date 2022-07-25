@@ -168,7 +168,7 @@ impl EthClientContract {
                 Action::FunctionCall(FunctionCallAction{
                     method_name: method_name[i].clone(),
                     args: args[i].clone(),
-                    gas: 75_000_000_000_000, // 75 TeraGas
+                    gas: 300_000_000_000_000/method_name.len() as u64, // 300 TeraGas
                     deposit: deposit[i].clone(),
                 })
             );
