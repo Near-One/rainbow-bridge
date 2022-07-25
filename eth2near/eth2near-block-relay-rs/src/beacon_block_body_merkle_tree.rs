@@ -1,7 +1,7 @@
 use ethereum_types::H256;
 use merkle_proof::MerkleTree;
 use tree_hash::TreeHash;
-use types::{BeaconBlockBody, ExecutionPayload, MainnetEthSpec};
+use types::{BeaconBlockBody, BeaconState, ExecutionPayload, MainnetEthSpec};
 
 /// `BeaconBlockBodyMerkleTree` is built on the `BeaconBlockBody` data structure,
 /// where the leaves of the Merkle Tree are the hashes of the
@@ -71,6 +71,44 @@ impl ExecutionPayloadMerkleTree {
             execution_payload.base_fee_per_gas.tree_hash_root(),
             execution_payload.block_hash.tree_hash_root(),
             execution_payload.transactions.tree_hash_root(),
+        ];
+
+        Self(MerkleTree::create(&leaves, Self::TREE_DEPTH))
+    }
+}
+
+pub struct BeaconStateMerkleTree(pub MerkleTree);
+
+impl BeaconStateMerkleTree {
+    pub const TREE_NUM_LEAVES: usize = 24;
+    pub const TREE_DEPTH: usize = 5;
+
+    pub fn new(beacon_state: &BeaconState<MainnetEthSpec>) -> Self {
+        let leaves: [H256; Self::TREE_NUM_LEAVES] = [
+            beacon_state.genesis_time().tree_hash_root(),
+            beacon_state.genesis_validators_root().tree_hash_root(),
+            beacon_state.slot().tree_hash_root(),
+            beacon_state.fork().tree_hash_root(),
+            beacon_state.latest_block_header().tree_hash_root(),
+            beacon_state.block_roots().tree_hash_root(),
+            beacon_state.state_roots().tree_hash_root(),
+            beacon_state.historical_roots().tree_hash_root(),
+            beacon_state.eth1_data().tree_hash_root(),
+            beacon_state.eth1_data_votes().tree_hash_root(),
+            beacon_state.eth1_deposit_index().tree_hash_root(),
+            beacon_state.validators().tree_hash_root(),
+            beacon_state.balances().tree_hash_root(),
+            beacon_state.randao_mixes().tree_hash_root(),
+            beacon_state.slashings().tree_hash_root(),
+            beacon_state.previous_epoch_participation().unwrap().tree_hash_root(),
+            beacon_state.current_epoch_participation().unwrap().tree_hash_root(),
+            beacon_state.justification_bits().tree_hash_root(),
+            beacon_state.previous_justified_checkpoint().tree_hash_root(),
+            beacon_state.current_justified_checkpoint().tree_hash_root(),
+            beacon_state.finalized_checkpoint().tree_hash_root(),
+            beacon_state.inactivity_scores().unwrap().tree_hash_root(),
+            beacon_state.current_sync_committee().unwrap().tree_hash_root(),
+            beacon_state.next_sync_committee().unwrap().tree_hash_root(),
         ];
 
         Self(MerkleTree::create(&leaves, Self::TREE_DEPTH))

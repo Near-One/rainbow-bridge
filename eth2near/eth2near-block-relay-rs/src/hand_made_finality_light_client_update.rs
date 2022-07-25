@@ -1,5 +1,7 @@
 use std::error::Error;
 use eth_types::eth2::LightClientUpdate;
+use tree_hash::TreeHash;
+use crate::beacon_block_body_merkle_tree::BeaconStateMerkleTree;
 use crate::beacon_rpc_client::BeaconRPCClient;
 
 pub struct HandMadeFinalityLightClientUpdate {}
@@ -15,6 +17,16 @@ impl HandMadeFinalityLightClientUpdate {
         println!("finality_checkpoint: {:?}", beacon_state.finalized_checkpoint());
         println!("finality_hash: {:?}", finality_hash);
         println!("finality header: {:?}", finality_header);
+
+        let beacon_state_merkle_tree = BeaconStateMerkleTree::new(&beacon_state);
+        let mut proof = beacon_state_merkle_tree.0.generate_proof(20, 5);
+
+        println!("Proof: {:?}", proof);
+
+        let mut finality_branch = vec![beacon_state.finalized_checkpoint().epoch.tree_hash_root()];
+        finality_branch.append(&mut proof.1);
+        println!("Finality branch: {:?}", finality_branch);
+
         Err("not implemented")?
     }
 }
