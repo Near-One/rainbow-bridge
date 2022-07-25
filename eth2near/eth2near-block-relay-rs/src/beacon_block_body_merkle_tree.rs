@@ -100,20 +100,40 @@ impl BeaconStateMerkleTree {
             beacon_state.balances().tree_hash_root(),
             beacon_state.randao_mixes().tree_hash_root(),
             beacon_state.slashings().tree_hash_root(),
-            beacon_state.previous_epoch_participation().unwrap().tree_hash_root(),
-
-
-            beacon_state.current_epoch_participation().unwrap().tree_hash_root(),
+            if let Ok(previous_epoch_participation) = beacon_state.previous_epoch_participation() {
+                previous_epoch_participation.tree_hash_root()
+            } else {
+                H256::zero()
+            },
+            if let Ok(current_epoch_participation) = beacon_state.current_epoch_participation() {
+                current_epoch_participation.tree_hash_root()
+            } else {
+                H256::zero()
+            },
             beacon_state.justification_bits().tree_hash_root(),
             beacon_state.previous_justified_checkpoint().tree_hash_root(),
             beacon_state.current_justified_checkpoint().tree_hash_root(),
-
             beacon_state.finalized_checkpoint().tree_hash_root(),
-            beacon_state.inactivity_scores().unwrap().tree_hash_root(),
-            beacon_state.current_sync_committee().unwrap().tree_hash_root(),
-            beacon_state.next_sync_committee().unwrap().tree_hash_root(),
-
-            beacon_state.latest_execution_payload_header().unwrap().tree_hash_root(),
+            if let Ok(inactivity_scores) = beacon_state.inactivity_scores() {
+                inactivity_scores.tree_hash_root()
+            } else {
+                H256::zero()
+            },
+            if let Ok(current_sync_committee) = beacon_state.current_sync_committee() {
+                current_sync_committee.tree_hash_root()
+            } else {
+                H256::zero()
+            },
+            if let Ok(next_sync_committee) = beacon_state.next_sync_committee() {
+                next_sync_committee.tree_hash_root()
+            } else {
+                H256::zero()
+            },
+            if let Ok(latest_execution_payload_header) = beacon_state.latest_execution_payload_header() {
+                latest_execution_payload_header.tree_hash_root()
+            } else {
+                H256::zero()
+            },
         ];
 
         Self(MerkleTree::create(&leaves, Self::TREE_DEPTH))
