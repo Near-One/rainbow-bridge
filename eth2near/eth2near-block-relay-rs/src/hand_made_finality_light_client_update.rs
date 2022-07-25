@@ -1,8 +1,10 @@
 use std::error::Error;
-use eth_types::eth2::LightClientUpdate;
+use eth_types::eth2::{FinalizedHeaderUpdate, HeaderUpdate, LightClientUpdate, SignatureBytes, SyncCommitteeBits, SyncCommitteeUpdate};
+use eth_types::H256;
 use tree_hash::TreeHash;
 use crate::beacon_block_body_merkle_tree::BeaconStateMerkleTree;
 use crate::beacon_rpc_client::BeaconRPCClient;
+use crate::execution_block_proof::ExecutionBlockProof;
 
 pub struct HandMadeFinalityLightClientUpdate {}
 
@@ -12,7 +14,7 @@ impl HandMadeFinalityLightClientUpdate {
         let attested_header = beacon_rpc_client.get_beacon_block_header_for_block_id(&format!("{}", attested_slot))?;
         let beacon_state = beacon_rpc_client.get_beacon_state(&format!("{}", attested_slot))?;
         let finality_hash = beacon_state.finalized_checkpoint().root;
-        let finality_header = beacon_rpc_client.get_beacon_block_header_for_block_id(&format!("{:?}", &finality_hash));
+        let finality_header = beacon_rpc_client.get_beacon_block_header_for_block_id(&format!("{:?}", &finality_hash)).unwrap();
         println!("attested_header: {:?}", attested_header);
         println!("finality_checkpoint: {:?}", beacon_state.finalized_checkpoint());
         println!("finality_hash: {:?}", finality_hash);
@@ -27,7 +29,44 @@ impl HandMadeFinalityLightClientUpdate {
         finality_branch.append(&mut proof.1);
         println!("Finality branch: {:?}", finality_branch);
 
-        Err("not implemented")?
+        let signature_slot = attested_slot + 1;
+        let beacon_body = beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", signature_slot)).unwrap();
+        let sync_committe_signature = beacon_body.sync_aggregate().unwrap();
+
+        println!("Sync Commite signature: {:?}", sync_committe_signature);
+
+        let finalized_block_body = beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{:?}", &finality_hash))?;
+        let finalized_block_eth1data_proof = ExecutionBlockProof::construct_from_beacon_block_body(&finalized_block_body)?;
+
+        Ok(LightClientUpdate{
+            attested_beacon_header: eth_types::eth2::BeaconBlockHeader{
+                slot: attested_header.slot.as_u64(),
+                proposer_index: attested_header.proposer_index,
+                parent_root: eth_types::H256::from(attested_header.parent_root.0),
+                state_root: eth_types::H256::from(attested_header.state_root.0),
+                body_root: eth_types::H256::from(attested_header.body_root.0),
+            },
+            sync_aggregate: eth_types::eth2::SyncAggregate{
+                sync_committee_bits: SyncCommitteeBits(sync_committe_signature.clone().sync_committee_bits.into_bytes().into_vec().try_into().unwrap()),
+                sync_committee_signature: serde_json::from_str::<SignatureBytes>(&serde_json::to_string(&sync_committe_signature.sync_committee_signature).unwrap()).unwrap(),
+            },
+            signature_slot,
+            finality_update: FinalizedHeaderUpdate {
+                header_update: HeaderUpdate {
+                    beacon_header: eth_types::eth2::BeaconBlockHeader{
+                        slot: finality_header.slot.as_u64(),
+                        proposer_index: finality_header.proposer_index,
+                        parent_root: eth_types::H256::from(finality_header.parent_root.0),
+                        state_root: eth_types::H256::from(finality_header.state_root.0),
+                        body_root: eth_types::H256::from(finality_header.body_root.0),
+                    },
+                    execution_block_hash: eth_types::H256::from(finalized_block_eth1data_proof.get_execution_block_hash().0.to_vec()),
+                    execution_hash_branch: finalized_block_eth1data_proof.get_proof().to_vec().into_iter().map(|x| eth_types::H256::from(x.0.to_vec())).collect(),
+                },
+                finality_branch: finality_branch.into_iter().map(|x| eth_types::H256::from(x.0.to_vec())).collect(),
+            },
+            sync_committee_update: Option::<SyncCommitteeUpdate>::None,
+        })
     }
 }
 
