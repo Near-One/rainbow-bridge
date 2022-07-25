@@ -149,11 +149,10 @@ mod tests {
 
     #[test]
     fn test_beacon_block_body_root_matches_body_root_in_header() {
-        let beacon_block_body = crate::beacon_rpc_client::BeaconRPCClient::default()
-            .get_beacon_block_body_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
+        let beacon_rpc_client = crate::beacon_rpc_client::BeaconRPCClient::default();
+        let beacon_block_body = beacon_rpc_client.get_beacon_block_body_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
         .unwrap();
-        let beacon_block_header = crate::beacon_rpc_client::BeaconRPCClient::default()
-            .get_beacon_block_header_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
+        let beacon_block_header = beacon_rpc_client.get_beacon_block_header_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
         .unwrap();
 
         let beacon_block_body_merkle_tree =

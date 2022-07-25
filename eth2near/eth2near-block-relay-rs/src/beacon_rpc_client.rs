@@ -209,7 +209,6 @@ impl BeaconRPCClient {
 
         let json_str = self.get_json_from_raw_request(&url_request)?;
         let v: Value = serde_json::from_str(&json_str)?;
-        println!("value: {:?}", v);
         let v_u8_vec = Vec::from_hex(v["finalized"]["root"].as_str().unwrap())?;
 
         Ok(H256::from(&v_u8_vec))
@@ -276,10 +275,9 @@ impl BeaconRPCClient {
         let mut signature_slot = attested_header.slot + 1;
 
         let sync_aggregate = Self::get_sync_aggregate_from_light_client_update_json_str(light_client_update_json_str)?;
-        let beacon_rpc_client = BeaconRPCClient::new(&self.endpoint_url);
 
         loop {
-            if let Ok(beacon_block_body) = beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", signature_slot)) {
+            if let Ok(beacon_block_body) = self.get_beacon_block_body_for_block_id(&format!("{}", signature_slot)) {
                 if format!("\"{:?}\"", beacon_block_body.sync_aggregate().map_err(|_| {MissSyncAggregationError()})?.sync_committee_signature)
                     == serde_json::to_string(&sync_aggregate.sync_committee_signature)? {
                     break;
@@ -306,8 +304,7 @@ impl BeaconRPCClient {
 
         let finalized_block_slot = finalized_header.slot;
 
-        let beacon_rpc_client = BeaconRPCClient::new(&self.endpoint_url);
-        let finalized_block_body = beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", finalized_block_slot))?;
+        let finalized_block_body = self.get_beacon_block_body_for_block_id(&format!("{}", finalized_block_slot))?;
         let finalized_block_eth1data_proof = ExecutionBlockProof::construct_from_beacon_block_body(&finalized_block_body)?;
 
         Ok(FinalizedHeaderUpdate {
