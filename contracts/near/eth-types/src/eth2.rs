@@ -23,7 +23,7 @@ pub struct PublicKeyBytes(pub [u8; PUBLIC_KEY_BYTES_LEN]);
 #[derive(Debug, Clone)]
 pub struct SignatureBytes(pub [u8; SIGNATURE_BYTES_LEN]);
 #[derive(Debug, Clone)]
-pub struct SyncCommitteeBits(pub [u8; SYNC_COMMITTEE_BITS_SIZE]);
+pub struct SyncCommitteeBits(pub [u8; SYNC_COMMITTEE_BITS_SIZE_IN_BYTES]);
 
 arr_wrapper_impl_tree_hash_and_borsh!(PublicKeyBytes, PUBLIC_KEY_BYTES_LEN);
 arr_wrapper_impl_tree_hash_and_borsh!(SignatureBytes, SIGNATURE_BYTES_LEN);

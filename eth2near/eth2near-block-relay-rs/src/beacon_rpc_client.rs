@@ -130,7 +130,7 @@ impl BeaconRPCClient {
         let light_client_update_json_str = self.get_json_from_raw_request(&url)?;
 
         Ok(LightClientUpdate {
-            attested_header: Self::get_attested_header_from_light_client_update_json_str(&light_client_update_json_str)?,
+            attested_beacon_header: Self::get_attested_header_from_light_client_update_json_str(&light_client_update_json_str)?,
             sync_aggregate: Self::get_sync_aggregate_from_light_client_update_json_str(&light_client_update_json_str)?,
             signature_slot: self.get_signature_slot(&light_client_update_json_str)?,
             finality_update: self.get_finality_update_from_light_client_update_json_str(&light_client_update_json_str)?,
@@ -175,7 +175,7 @@ impl BeaconRPCClient {
 
 
         Ok(LightClientUpdate {
-            attested_header: Self::get_attested_header_from_light_client_update_json_str(&light_client_update_json_str)?,
+            attested_beacon_header: Self::get_attested_header_from_light_client_update_json_str(&light_client_update_json_str)?,
             sync_aggregate: Self::get_sync_aggregate_from_light_client_update_json_str(&light_client_update_json_str)?,
             signature_slot: self.get_signature_slot(&light_client_update_json_str)?,
             finality_update: self.get_finality_update_from_light_client_update_json_str(&light_client_update_json_str)?,
@@ -194,7 +194,7 @@ impl BeaconRPCClient {
         let finality_light_client_update_json_str = serde_json::to_string(&json!({"data": [v["data"]]}))?;
 
         Ok(LightClientUpdate {
-            attested_header: Self::get_attested_header_from_light_client_update_json_str(&finality_light_client_update_json_str)?,
+            attested_beacon_header: Self::get_attested_header_from_light_client_update_json_str(&finality_light_client_update_json_str)?,
             sync_aggregate: Self::get_sync_aggregate_from_light_client_update_json_str(&finality_light_client_update_json_str)?,
             signature_slot: self.get_signature_slot(&finality_light_client_update_json_str)?,
             finality_update: self.get_finality_update_from_light_client_update_json_str(&finality_light_client_update_json_str)?,
@@ -300,7 +300,7 @@ impl BeaconRPCClient {
 
         Ok(FinalizedHeaderUpdate {
             header_update: HeaderUpdate {
-                header: finalized_header,
+                beacon_header: finalized_header,
                 execution_block_hash: eth_types::H256::from(finalized_block_eth1data_proof.get_execution_block_hash().0.to_vec()),
                 execution_hash_branch: finalized_block_eth1data_proof.get_proof().to_vec().into_iter().map(|x| eth_types::H256::from(x.0.to_vec())).collect(),},
             finality_branch: finalized_branch,

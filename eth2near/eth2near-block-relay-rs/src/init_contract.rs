@@ -17,7 +17,7 @@ pub fn init_contract(near_endpoint: &str, signer_account_id: &str, path_to_signe
     let eth1_rpc_client = Eth1RPCClient::new(&eth1_rpc_endpoint);
 
     let light_client_update = beacon_rpc_client.get_finality_light_client_update_with_sync_commity_update().unwrap();
-    let block_id = format!("{}", light_client_update.finality_update.header_update.header.slot);
+    let block_id = format!("{}", light_client_update.finality_update.header_update.beacon_header.slot);
     let finalized_header : ExtendedBeaconBlockHeader = ExtendedBeaconBlockHeader::from(light_client_update.finality_update.header_update);
     let finalized_body = beacon_rpc_client.get_beacon_block_body_for_block_id(&block_id).unwrap();
 
