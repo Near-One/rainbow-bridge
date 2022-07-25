@@ -3,7 +3,6 @@ use derive_more::{
     Add, AddAssign, Display, Div, DivAssign, From, Into, Mul, MulAssign, Rem, RemAssign, Sub,
     SubAssign,
 };
-use ethereum_types;
 use rlp::{
     Decodable as RlpDecodable, DecoderError as RlpDecoderError, DecoderError,
     Encodable as RlpEncodable, Rlp, RlpStream,
@@ -12,94 +11,37 @@ use rlp_derive::RlpDecodable as RlpDecodableDerive;
 #[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
 use std::io::{Error, Write};
+use tree_hash::{Hash256, TreeHash, TreeHashType};
 
-const ERROR_UNEXPECTED_LENGTH_OF_INPUT: &str = "Unexpected length of input";
+pub mod eth2;
+#[macro_use]
+pub mod macros;
 
-macro_rules! arr_declare_wrapper_and_serde {
-    ($name: ident, $len: expr) => {
-        #[derive(Default, Clone, Copy, Eq, PartialEq, Debug, Display, From, Into)]
-        #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
-        pub struct $name(pub ethereum_types::$name);
+arr_ethereum_types_wrapper_impl_borsh_serde_ssz!(H64, 8);
+arr_ethereum_types_wrapper_impl_borsh_serde_ssz!(H128, 16);
+arr_ethereum_types_wrapper_impl_borsh_serde_ssz!(H160, 20);
+arr_ethereum_types_wrapper_impl_borsh_serde_ssz!(H256, 32);
+arr_ethereum_types_wrapper_impl_borsh_serde_ssz!(H512, 64);
+arr_ethereum_types_wrapper_impl_borsh_serde_ssz!(H520, 65);
+arr_ethereum_types_wrapper_impl_borsh_serde_ssz!(Bloom, 256);
 
-        impl From<&[u8; $len]> for $name {
-            fn from(item: &[u8; $len]) -> Self {
-                $name(item.into())
-            }
-        }
+impl TreeHash for H256 {
+    fn tree_hash_type() -> TreeHashType {
+        TreeHashType::Vector
+    }
 
-        impl From<[u8; $len]> for $name {
-            fn from(item: [u8; $len]) -> Self {
-                (&item).into()
-            }
-        }
+    fn tree_hash_packed_encoding(&self) -> Vec<u8> {
+        self.0.as_bytes().to_vec()
+    }
 
-        impl From<&Vec<u8>> for $name {
-            fn from(item: &Vec<u8>) -> Self {
-                let mut data = [0u8; $len];
-                for i in 0..item.len() {
-                    data[$len - 1 - i] = item[item.len() - 1 - i];
-                }
-                $name(data.into())
-            }
-        }
+    fn tree_hash_packing_factor() -> usize {
+        1
+    }
 
-        impl From<Vec<u8>> for $name {
-            fn from(item: Vec<u8>) -> Self {
-                (&item).into()
-            }
-        }
-
-        impl From<&[u8]> for $name {
-            fn from(item: &[u8]) -> Self {
-                item.to_vec().into()
-            }
-        }
-
-        impl BorshSerialize for $name {
-            #[inline]
-            fn serialize<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
-                writer.write_all(&(self.0).0)?;
-                Ok(())
-            }
-        }
-
-        impl BorshDeserialize for $name {
-            #[inline]
-            fn deserialize(buf: &mut &[u8]) -> Result<Self, Error> {
-                if buf.len() < $len {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::InvalidInput,
-                        ERROR_UNEXPECTED_LENGTH_OF_INPUT,
-                    ));
-                }
-                let mut data = [0u8; $len];
-                data.copy_from_slice(&buf[..$len]);
-                *buf = &buf[$len..];
-                Ok($name(data.into()))
-            }
-        }
-
-        impl RlpEncodable for $name {
-            fn rlp_append(&self, s: &mut RlpStream) {
-                <ethereum_types::$name>::rlp_append(&self.0, s);
-            }
-        }
-
-        impl RlpDecodable for $name {
-            fn decode(rlp: &Rlp) -> Result<Self, RlpDecoderError> {
-                Ok($name(<ethereum_types::$name>::decode(rlp)?))
-            }
-        }
-    };
+    fn tree_hash_root(&self) -> Hash256 {
+        (*self).0
+    }
 }
-
-arr_declare_wrapper_and_serde!(H64, 8);
-arr_declare_wrapper_and_serde!(H128, 16);
-arr_declare_wrapper_and_serde!(H160, 20);
-arr_declare_wrapper_and_serde!(H256, 32);
-arr_declare_wrapper_and_serde!(H512, 64);
-arr_declare_wrapper_and_serde!(H520, 65);
-arr_declare_wrapper_and_serde!(Bloom, 256);
 
 macro_rules! uint_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
@@ -186,14 +128,27 @@ pub struct BlockHeader {
     pub receipts_root: H256,
     pub log_bloom: Bloom,
     pub difficulty: U256,
+    #[cfg_attr(
+        not(target_arch = "wasm32"),
+        serde(with = "eth2_serde_utils::u64_hex_be")
+    )]
     pub number: u64,
     pub gas_limit: U256,
     pub gas_used: U256,
+    #[cfg_attr(
+        not(target_arch = "wasm32"),
+        serde(with = "eth2_serde_utils::u64_hex_be")
+    )]
     pub timestamp: u64,
+    #[cfg_attr(not(target_arch = "wasm32"), serde(with = "eth2_serde_utils::hex_vec"))]
     pub extra_data: Vec<u8>,
     pub mix_hash: H256,
     pub nonce: H64,
     #[cfg(feature = "eip1559")]
+    #[cfg_attr(
+        not(target_arch = "wasm32"),
+        serde(with = "eth2_serde_utils::u64_hex_be")
+    )]
     pub base_fee_per_gas: u64,
 
     pub hash: Option<H256>,
@@ -335,13 +290,22 @@ impl BlockHeader {
         stream.append(&self.timestamp);
         stream.append(&self.extra_data);
 
-        #[cfg(feature = "eip1559")]
-        stream.append(&self.base_fee_per_gas);
-
         if !partial {
             stream.append(&self.mix_hash);
             stream.append(&self.nonce);
         }
+
+        #[cfg(feature = "eip1559")]
+        stream.append(&self.base_fee_per_gas);
+    }
+
+    pub fn calculate_hash(&self) -> H256 {
+        near_keccak256({
+            let mut stream = RlpStream::new();
+            self.stream_rlp(&mut stream, false);
+            stream.out().as_slice()
+        })
+        .into()
     }
 }
 
@@ -465,18 +429,18 @@ impl From<RlpDeriveReceipt> for Receipt {
 
 pub fn near_sha256(data: &[u8]) -> [u8; 32] {
     let mut buffer = [0u8; 32];
-    buffer.copy_from_slice(&near_sdk::env::sha256(data).as_slice());
+    buffer.copy_from_slice(near_sdk::env::sha256(data).as_slice());
     buffer
 }
 
 pub fn near_keccak256(data: &[u8]) -> [u8; 32] {
     let mut buffer = [0u8; 32];
-    buffer.copy_from_slice(&near_sdk::env::keccak256(data).as_slice());
+    buffer.copy_from_slice(near_sdk::env::keccak256(data).as_slice());
     buffer
 }
 
 pub fn near_keccak512(data: &[u8]) -> [u8; 64] {
     let mut buffer = [0u8; 64];
-    buffer.copy_from_slice(&near_sdk::env::keccak512(data).as_slice());
+    buffer.copy_from_slice(near_sdk::env::keccak512(data).as_slice());
     buffer
 }

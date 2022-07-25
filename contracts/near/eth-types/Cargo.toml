@@ -2,19 +2,28 @@
 name = "eth-types"
 version = "0.1.0"
 authors = ["Near Inc <hello@nearprotocol.com>"]
-edition = "2018"
+edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
-near-sdk = { git = "https://github.com/near/near-sdk-rs", rev = "613adcab6322e4f830efb4d5bde2a810ae642158" }
-borsh = "0.8.1"
+near-sdk = "4.0.0"
+borsh = "0.9.3"
 rlp = "0.4.2"
 rlp-derive = "0.1.0"
 ethereum-types = "0.9.2"
 derive_more = "^0.99.2"
+eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "wasm-tmp" }
+eth2_ssz_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "wasm-tmp" }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "wasm-tmp" }
+tree_hash_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "wasm-tmp" }
+eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "wasm-tmp" }
+hex = "0.4.0"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+serde-big-array = "0.4.1"
 
 [features]
 eip1559 = []

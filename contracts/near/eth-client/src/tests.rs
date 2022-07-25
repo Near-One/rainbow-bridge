@@ -151,7 +151,7 @@ fn rlp_append<TX>(header: &Block<TX>, stream: &mut RlpStream) {
 
 // TESTS
 
-use near_sdk::{testing_env, MockedBlockchain, VMContext};
+use near_sdk::{testing_env, VMContext};
 
 lazy_static! {
     static ref WEB3RS: web3::Web3<web3::transports::Http> = {
@@ -164,13 +164,15 @@ lazy_static! {
     };
 }
 
-fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
+fn get_context() -> VMContext {
     VMContext {
-        current_account_id: "alice.near".to_string(),
-        signer_account_id: "bob.near".to_string(),
-        signer_account_pk: vec![0, 1, 2],
-        predecessor_account_id: "carol.near".to_string(),
-        input,
+        current_account_id: "alice.near".parse().unwrap(),
+        signer_account_id: "bob.near".parse().unwrap(),
+        signer_account_pk: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
+            .parse()
+            .unwrap(),
+        predecessor_account_id: "carol.near".parse().unwrap(),
+        input: vec![],
         block_index: 0,
         block_timestamp: 0,
         account_balance: 0,
@@ -178,9 +180,9 @@ fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
         epoch_height: 0,
         storage_usage: 0,
         attached_deposit: 0,
-        prepaid_gas: 10u64.pow(18),
-        random_seed: vec![0, 1, 2],
-        is_view,
+        prepaid_gas: near_sdk::Gas(10u64.pow(18)),
+        random_seed: vec![1; 32].try_into().unwrap(),
+        view_config: None,
         output_data_receivers: vec![],
     }
 }
@@ -227,16 +229,17 @@ fn read_block_raw(filename: String) -> BlockWithProofsRaw {
     serde_json::from_reader(std::fs::File::open(std::path::Path::new(&filename)).unwrap()).unwrap()
 }
 
-fn assert_hashes_equal_to_contract_hashes(contract: &EthClient, heights: &[u64], real_hashes: &[H256]) {
+fn assert_hashes_equal_to_contract_hashes(
+    contract: &EthClient,
+    heights: &[u64],
+    real_hashes: &[H256],
+) {
     let hashes_from_contract: Vec<H256> = heights
         .iter()
         .map(|height| contract.block_hash(*height).unwrap())
         .collect();
 
-    for (hash, hash_from_contract) in real_hashes
-        .into_iter()
-        .zip(hashes_from_contract.iter())
-    {
+    for (hash, hash_from_contract) in real_hashes.into_iter().zip(hashes_from_contract.iter()) {
         assert_eq!(hash, hash_from_contract);
     }
 }
@@ -244,7 +247,7 @@ fn assert_hashes_equal_to_contract_hashes(contract: &EthClient, heights: &[u64],
 #[test]
 #[cfg_attr(feature = "eip1559", ignore)]
 fn add_dags_merkle_roots() {
-    testing_env!(get_context(vec![], false));
+    testing_env!(get_context());
     let (blocks, _) = get_blocks(&WEB3RS, 400_000, 400_001);
 
     let dmr = read_roots_collection();
@@ -272,7 +275,7 @@ fn add_dags_merkle_roots() {
 #[cfg(feature = "eip1559")]
 fn update_dags_merkle_roots() {
     let block = read_block(format!("./src/data/{}.json", 12_965_000).to_string());
-    let mut context = get_context(vec![], false);
+    let mut context = get_context();
     context.predecessor_account_id = context.current_account_id.clone();
     testing_env!(context.clone());
 
@@ -289,7 +292,7 @@ fn update_dags_merkle_roots() {
     );
 
     contract.update_dags_merkle_roots(0, dmr.dag_merkle_roots.clone());
-    
+
     for i in 0..699 {
         assert_eq!(dmr.dag_merkle_roots[i], contract.dag_merkle_root(i as u64));
     }
@@ -300,7 +303,10 @@ fn update_dags_merkle_roots() {
 
     // Test with the starting offset for DAG Merkle roots
     let start_epoch: usize = 490;
-    contract.update_dags_merkle_roots(start_epoch as u64, dmr.dag_merkle_roots[start_epoch..].to_vec());
+    contract.update_dags_merkle_roots(
+        start_epoch as u64,
+        dmr.dag_merkle_roots[start_epoch..].to_vec(),
+    );
     for i in start_epoch..699 {
         assert_eq!(dmr.dag_merkle_roots[i], contract.dag_merkle_root(i as u64));
     }
@@ -311,7 +317,7 @@ fn update_dags_merkle_roots() {
 #[test]
 #[cfg_attr(feature = "eip1559", ignore)]
 fn add_blocks_2_and_3() {
-    testing_env!(get_context(vec![], false));
+    testing_env!(get_context());
 
     // Check on 3 block from here: https://github.com/KyberNetwork/bridge_eos_smart_contracts/blob/master/scripts/jungle/jungle_relay_3.js
     let (blocks, hashes) = get_blocks(&WEB3RS, 1, 4);
@@ -350,23 +356,19 @@ fn add_blocks_2_and_3() {
 #[test]
 #[cfg_attr(feature = "eip1559", ignore)]
 fn add_blocks_before_and_after_istanbul_fork() {
-    testing_env!(get_context(vec![], false));
+    testing_env!(get_context());
 
     const FORK_HEIGHT_ISTANBUL: usize = 9_069_000;
-    let (blocks, hashes) = get_blocks(
-        &WEB3RS,
-        FORK_HEIGHT_ISTANBUL - 2,
-        FORK_HEIGHT_ISTANBUL + 2
-    );
+    let (blocks, hashes) = get_blocks(&WEB3RS, FORK_HEIGHT_ISTANBUL - 2, FORK_HEIGHT_ISTANBUL + 2);
 
     let blocks_with_proofs: Vec<BlockWithProofs> = [
         format!("./src/data/proof_block_{}.json", FORK_HEIGHT_ISTANBUL - 1),
         format!("./src/data/proof_block_{}.json", FORK_HEIGHT_ISTANBUL),
         format!("./src/data/proof_block_{}.json", FORK_HEIGHT_ISTANBUL + 1),
     ]
-        .iter()
-        .map(|filename| read_block((&filename).to_string()))
-        .collect();
+    .iter()
+    .map(|filename| read_block((&filename).to_string()))
+    .collect();
 
     let mut contract = EthClient::init(
         true,
@@ -387,7 +389,6 @@ fn add_blocks_before_and_after_istanbul_fork() {
         contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
     }
 
-
     let heights = [
         FORK_HEIGHT_ISTANBUL as u64 - 1,
         FORK_HEIGHT_ISTANBUL as u64,
@@ -401,24 +402,33 @@ fn add_blocks_before_and_after_istanbul_fork() {
 #[test]
 #[cfg_attr(feature = "eip1559", ignore)]
 fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
-    testing_env!(get_context(vec![], false));
+    testing_env!(get_context());
 
     const FORK_HEIGHT_UNANNOUNCED_NOV_11_2020: usize = 11_234_873;
 
     let (blocks, hashes) = get_blocks(
         &WEB3RS,
         FORK_HEIGHT_UNANNOUNCED_NOV_11_2020 - 2,
-        FORK_HEIGHT_UNANNOUNCED_NOV_11_2020 + 2
+        FORK_HEIGHT_UNANNOUNCED_NOV_11_2020 + 2,
     );
 
     let blocks_with_proofs: Vec<BlockWithProofs> = [
-        format!("./src/data/proof_block_{}.json", FORK_HEIGHT_UNANNOUNCED_NOV_11_2020 - 1),
-        format!("./src/data/proof_block_{}.json", FORK_HEIGHT_UNANNOUNCED_NOV_11_2020),
-        format!("./src/data/proof_block_{}.json", FORK_HEIGHT_UNANNOUNCED_NOV_11_2020 + 1),
+        format!(
+            "./src/data/proof_block_{}.json",
+            FORK_HEIGHT_UNANNOUNCED_NOV_11_2020 - 1
+        ),
+        format!(
+            "./src/data/proof_block_{}.json",
+            FORK_HEIGHT_UNANNOUNCED_NOV_11_2020
+        ),
+        format!(
+            "./src/data/proof_block_{}.json",
+            FORK_HEIGHT_UNANNOUNCED_NOV_11_2020 + 1
+        ),
     ]
-        .iter()
-        .map(|filename| read_block((&filename).to_string()))
-        .collect();
+    .iter()
+    .map(|filename| read_block((&filename).to_string()))
+    .collect();
 
     let mut contract = EthClient::init(
         true,
@@ -451,12 +461,19 @@ fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
 #[test]
 #[cfg_attr(feature = "eip1559", ignore)]
 fn add_block_diverged_until_ethashproof_dataset_fix() {
-    testing_env!(get_context(vec![], false));
+    testing_env!(get_context());
 
     const HEIGHT_DIVERGED_BLOCK: usize = 11_703_828;
-    let (blocks, hashes) = get_blocks(&WEB3RS, HEIGHT_DIVERGED_BLOCK - 1, HEIGHT_DIVERGED_BLOCK + 1);
+    let (blocks, hashes) = get_blocks(
+        &WEB3RS,
+        HEIGHT_DIVERGED_BLOCK - 1,
+        HEIGHT_DIVERGED_BLOCK + 1,
+    );
     // Jan 22 2021
-    let block_with_proof = read_block(format!("./src/data/proof_block_{}.json", HEIGHT_DIVERGED_BLOCK));
+    let block_with_proof = read_block(format!(
+        "./src/data/proof_block_{}.json",
+        HEIGHT_DIVERGED_BLOCK
+    ));
 
     let mut contract = EthClient::init(
         true,
@@ -469,14 +486,20 @@ fn add_block_diverged_until_ethashproof_dataset_fix() {
         None,
     );
 
-    contract.add_block_header(blocks[1].clone(), block_with_proof.to_double_node_with_merkle_proof_vec());
-    assert_eq!(hashes[1], contract.block_hash(HEIGHT_DIVERGED_BLOCK as u64).unwrap());
+    contract.add_block_header(
+        blocks[1].clone(),
+        block_with_proof.to_double_node_with_merkle_proof_vec(),
+    );
+    assert_eq!(
+        hashes[1],
+        contract.block_hash(HEIGHT_DIVERGED_BLOCK as u64).unwrap()
+    );
 }
 
 #[test]
 #[cfg_attr(feature = "eip1559", ignore)]
 fn add_400000_block_only() {
-    testing_env!(get_context(vec![], false));
+    testing_env!(get_context());
 
     // Check on 400000 block from this answer: https://ethereum.stackexchange.com/a/67333/3032
     let block_height = 400_000;
@@ -499,14 +522,17 @@ fn add_400000_block_only() {
         10,
         None,
     );
-    contract.add_block_header(blocks[1].clone(), block_with_proof.to_double_node_with_merkle_proof_vec());
+    contract.add_block_header(
+        blocks[1].clone(),
+        block_with_proof.to_double_node_with_merkle_proof_vec(),
+    );
     assert_eq!(hashes[1], contract.block_hash(block_height as u64).unwrap());
 }
 
 #[test]
 #[cfg_attr(feature = "eip1559", ignore)]
 fn add_two_blocks_from_8996776() {
-    testing_env!(get_context(vec![], false));
+    testing_env!(get_context());
 
     // Check on 8996777 block from this test: https://github.com/sorpaas/rust-ethash/blob/ac6e42bcb7f40ad2a3b89f7400a61f7baf3f0926/src/lib.rs#L318-L326
     let block_height = 8_996_776;
@@ -517,9 +543,9 @@ fn add_two_blocks_from_8996776() {
         format!("./src/data/{}.json", block_height),
         format!("./src/data/{}.json", block_height + 1),
     ]
-        .iter()
-        .map(|filename| read_block((&filename).to_string()))
-        .collect();
+    .iter()
+    .map(|filename| read_block((&filename).to_string()))
+    .collect();
 
     let mut contract = EthClient::init(
         true,
@@ -540,10 +566,7 @@ fn add_two_blocks_from_8996776() {
         contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
     }
 
-    let heights = [
-        block_height as u64,
-        block_height as u64 + 1,
-    ];
+    let heights = [block_height as u64, block_height as u64 + 1];
     // Skip parent header hash
     let hashes = &hashes[1..];
     assert_hashes_equal_to_contract_hashes(&contract, &heights, &hashes);
@@ -552,7 +575,7 @@ fn add_two_blocks_from_8996776() {
 #[test]
 #[cfg_attr(feature = "eip1559", ignore)]
 fn add_two_blocks_from_400000() {
-    testing_env!(get_context(vec![], false));
+    testing_env!(get_context());
 
     // Check on 400000 block from this answer: https://ethereum.stackexchange.com/a/67333/3032
     let block_height = 400_000;
@@ -568,9 +591,9 @@ fn add_two_blocks_from_400000() {
         format!("./src/data/{}.json", block_height),
         format!("./src/data/{}.json", block_height + 1),
     ]
-        .iter()
-        .map(|filename| read_block((&filename).to_string()))
-        .collect();
+    .iter()
+    .map(|filename| read_block((&filename).to_string()))
+    .collect();
 
     let mut contract = EthClient::init(
         true,
@@ -591,10 +614,7 @@ fn add_two_blocks_from_400000() {
         contract.add_block_header(block, proof.to_double_node_with_merkle_proof_vec());
     }
 
-    let heights = [
-        block_height as u64,
-        block_height as u64 + 1,
-    ];
+    let heights = [block_height as u64, block_height as u64 + 1];
     // Skip parent header hash
     let hashes = &hashes[1..];
     assert_hashes_equal_to_contract_hashes(&contract, &heights, &hashes);
@@ -603,7 +623,7 @@ fn add_two_blocks_from_400000() {
 #[test]
 #[cfg(feature = "eip1559")]
 fn add_blocks_from_12965000() {
-    testing_env!(get_context(vec![], false));
+    testing_env!(get_context());
 
     let block_height = 12_965_000;
 
@@ -614,9 +634,9 @@ fn add_blocks_from_12965000() {
         format!("./src/data/{}.json", block_height + 2),
         format!("./src/data/{}.json", block_height + 3),
     ]
-        .iter()
-        .map(|filename| read_block((&filename).to_string()))
-        .collect();
+    .iter()
+    .map(|filename| read_block((&filename).to_string()))
+    .collect();
 
     let mut contract = EthClient::init(
         true,
@@ -629,18 +649,15 @@ fn add_blocks_from_12965000() {
         None,
     );
 
-    for proof in blocks_with_proofs
-        .into_iter()
-        .skip(1)
-    {
-        contract.add_block_header(proof.header_rlp.0.clone(), proof.to_double_node_with_merkle_proof_vec());
+    for proof in blocks_with_proofs.into_iter().skip(1) {
+        contract.add_block_header(
+            proof.header_rlp.0.clone(),
+            proof.to_double_node_with_merkle_proof_vec(),
+        );
     }
 
     let (_blocks, hashes) = get_blocks(&WEB3RS, block_height as usize, (block_height + 3) as usize);
-    let heights = [
-        block_height as u64,
-        block_height as u64 + 1,
-    ];
+    let heights = [block_height as u64, block_height as u64 + 1];
     assert_hashes_equal_to_contract_hashes(&contract, &heights, &hashes);
 }
 

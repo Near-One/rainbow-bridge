@@ -1,0 +1,28 @@
+[package]
+name = "eth2-client"
+version = "0.1.0"
+authors = ["Aurora <hello@aurora.dev>"]
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ethereum-types = "0.9.2"
+eth-types =  { path = "../eth-types", features = ["eip1559"] }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "wasm-tmp" }
+merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "wasm-tmp" }
+bls = { git = "https://github.com/aurora-is-near/lighthouse.git", optional = true, branch = "wasm-tmp", default-features = false, features = ["milagro"]}
+admin-controlled =  { path = "../admin-controlled" }
+near-sdk = "4.0.0"
+borsh = "0.9.3"
+bitvec = "1.0.0"
+
+[dev-dependencies]
+lazy_static = "1.4.0"
+serde_json = "1.0"
+hex = "0.4.0"
+
+[features]
+default = []
+bls = ["dep:bls"]
