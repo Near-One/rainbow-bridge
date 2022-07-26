@@ -1021,6 +1021,23 @@ dependencies = [
  "bls",
  "borsh 0.9.3",
  "eth-types",
+ "eth2-utility",
+ "ethereum-types 0.9.2",
+ "hex",
+ "lazy_static",
+ "merkle_proof",
+ "near-sdk",
+ "serde_json",
+ "tree_hash",
+]
+
+[[package]]
+name = "eth2-utility"
+version = "0.1.0"
+dependencies = [
+ "bitvec 1.0.0",
+ "borsh 0.9.3",
+ "eth-types",
  "ethereum-types 0.9.2",
  "hex",
  "lazy_static",

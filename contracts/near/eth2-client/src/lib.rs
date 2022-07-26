@@ -5,6 +5,8 @@ use admin_controlled::Mask;
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use borsh::{BorshDeserialize, BorshSerialize};
+use eth2_utility::consensus::*;
+use eth2_utility::types::*;
 use eth_types::eth2::*;
 use eth_types::{BlockHeader, H256};
 use near_sdk::collections::{LookupMap, UnorderedMap};
@@ -12,9 +14,6 @@ use near_sdk::{assert_self, env, near_bindgen, AccountId, PanicOnDefault};
 use near_sdk_inner::collections::LazyOption;
 use near_sdk_inner::{Balance, BorshStorageKey, Promise};
 use tree_hash::TreeHash;
-use utility::*;
-
-pub mod utility;
 
 #[cfg(test)]
 mod tests;
@@ -74,67 +73,56 @@ pub struct EthClient {
 #[near_bindgen]
 impl EthClient {
     #[init]
-    pub fn init(
-        #[serializer(borsh)] network: String,
-        #[serializer(borsh)] finalized_execution_header: BlockHeader,
-        #[serializer(borsh)] finalized_beacon_header: ExtendedBeaconBlockHeader,
-        #[serializer(borsh)] current_sync_committee: SyncCommittee,
-        #[serializer(borsh)] next_sync_committee: SyncCommittee,
-        #[serializer(borsh)] validate_updates: bool,
-        #[serializer(borsh)] verify_bls_signatures: bool,
-        #[serializer(borsh)] hashes_gc_threshold: u64,
-        #[serializer(borsh)] max_submitted_blocks_by_account: u32,
-        #[serializer(borsh)] trusted_signer: Option<AccountId>,
-    ) -> Self {
+    pub fn init(#[serializer(borsh)] args: InitInput) -> Self {
         assert!(!Self::initialized(), "Already initialized");
         let min_storage_balance_for_submitter =
-            calculate_min_storage_balance_for_submitter(max_submitted_blocks_by_account);
+            calculate_min_storage_balance_for_submitter(args.max_submitted_blocks_by_account);
         let network =
-            Network::from_str(network.as_str()).unwrap_or_else(|e| env::panic_str(e.as_str()));
+            Network::from_str(args.network.as_str()).unwrap_or_else(|e| env::panic_str(e.as_str()));
 
         if network == Network::Mainnet {
             assert!(
-                validate_updates,
+                args.validate_updates,
                 "The updates validation can't be disabled for mainnet"
             );
         }
 
         assert_eq!(
-            finalized_execution_header.calculate_hash(),
-            finalized_beacon_header.execution_block_hash,
+            args.finalized_execution_header.calculate_hash(),
+            args.finalized_beacon_header.execution_block_hash,
             "Invalid execution block"
         );
 
         let finalized_execution_header_info = ExecutionHeaderInfo {
-            parent_hash: finalized_execution_header.parent_hash,
-            block_number: finalized_execution_header.number,
+            parent_hash: args.finalized_execution_header.parent_hash,
+            block_number: args.finalized_execution_header.number,
             submitter: env::predecessor_account_id(),
         };
 
         Self {
-            trusted_signer,
+            trusted_signer: args.trusted_signer,
             paused: Mask::default(),
-            validate_updates,
-            verify_bls_signatures,
-            hashes_gc_threshold,
+            validate_updates: args.validate_updates,
+            verify_bls_signatures: args.verify_bls_signatures,
+            hashes_gc_threshold: args.hashes_gc_threshold,
             network,
             finalized_execution_blocks: LookupMap::new(StorageKey::FinalizedExecutionBlocks),
             unfinalized_headers: UnorderedMap::new(StorageKey::UnfinalizedHeaders),
             submitters: LookupMap::new(StorageKey::Submitters),
-            max_submitted_blocks_by_account,
+            max_submitted_blocks_by_account: args.max_submitted_blocks_by_account,
             min_storage_balance_for_submitter,
-            finalized_beacon_header,
+            finalized_beacon_header: args.finalized_beacon_header,
             finalized_execution_header: LazyOption::new(
                 StorageKey::FinalizedExecutionHeader,
                 Some(&finalized_execution_header_info),
             ),
             current_sync_committee: LazyOption::new(
                 StorageKey::CurrentSyncCommittee,
-                Some(&current_sync_committee),
+                Some(&args.current_sync_committee),
             ),
             next_sync_committee: LazyOption::new(
                 StorageKey::NextSyncCommittee,
-                Some(&next_sync_committee),
+                Some(&args.next_sync_committee),
             ),
         }
     }
@@ -376,7 +364,7 @@ impl EthClient {
             config.genesis_validators_root.into(),
         );
         let signing_root = compute_signing_root(
-            eth_types::H256(update.attested_header.tree_hash_root()),
+            eth_types::H256(update.attested_beacon_header.tree_hash_root()),
             domain,
         );
 

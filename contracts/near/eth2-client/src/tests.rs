@@ -1,3 +1,4 @@
+use eth2_utility::types::InitInput;
 use eth_types::eth2::*;
 use eth_types::{BlockHeader, H256};
 use hex::FromHex;
@@ -91,29 +92,29 @@ pub fn test_submit_update_periods_100_101() {
         network, 766535, 769622
     ));
 
-    let mut contract = EthClient::init(
+    let mut contract = EthClient::init(InitInput {
         network,
-        headers[0].clone(),
-        updates[1].clone().finality_update.header_update.into(),
-        updates[0]
+        finalized_execution_header: headers[0].clone(),
+        finalized_beacon_header: updates[1].clone().finality_update.header_update.into(),
+        current_sync_committee: updates[0]
             .clone()
             .sync_committee_update
             .as_ref()
             .unwrap()
             .next_sync_committee
             .clone(),
-        updates[1]
+        next_sync_committee: updates[1]
             .sync_committee_update
             .as_ref()
             .unwrap()
             .next_sync_committee
             .clone(),
-        true,
-        true,
-        51000,
-        7000,
-        None,
-    );
+        validate_updates: true,
+        verify_bls_signatures: true,
+        hashes_gc_threshold: 51000,
+        max_submitted_blocks_by_account: 7000,
+        trusted_signer: None,
+    });
 
     assert_eq!(contract.last_block_number(), headers[0].number);
     headers.remove(0);

@@ -5,7 +5,7 @@ use bitvec::prelude::BitVec;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::eth2::*;
 use eth_types::H256;
-use near_sdk::{AccountId, Balance};
+use near_sdk::Balance;
 use tree_hash::TreeHash;
 
 pub const EPOCHS_PER_SYNC_COMMITTEE_PERIOD: u64 = 256;
@@ -145,13 +145,13 @@ pub fn get_participant_pubkeys(
     public_keys: &[PublicKeyBytes],
     sync_committee_bits: &BitVec<u8, Lsb0>,
 ) -> Vec<PublicKeyBytes> {
-    let mut resul: Vec<PublicKeyBytes> = vec![];
+    let mut result: Vec<PublicKeyBytes> = vec![];
     for (idx, bit) in sync_committee_bits.iter().by_vals().enumerate() {
         if bit {
-            resul.push(public_keys[idx].clone());
+            result.push(public_keys[idx].clone());
         }
     }
-    resul
+    result
 }
 
 pub fn convert_branch(branch: &[H256]) -> Vec<ethereum_types::H256> {
@@ -187,12 +187,4 @@ pub fn calculate_min_storage_balance_for_submitter(
         + STORAGE_BYTES_PER_ACCOUNT;
     const PRICE_PER_BYTE_IN_YOCTO_NEAR: u128 = 10_000_000_000_000_000_000;
     storage_bytes_per_account * PRICE_PER_BYTE_IN_YOCTO_NEAR
-}
-
-/// Minimal information about a header.
-#[derive(Clone, BorshDeserialize, BorshSerialize)]
-pub struct ExecutionHeaderInfo {
-    pub parent_hash: H256,
-    pub block_number: u64,
-    pub submitter: AccountId,
 }
