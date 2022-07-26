@@ -14,25 +14,16 @@ impl HandMadeFinalityLightClientUpdate {
         let beacon_state = beacon_rpc_client.get_beacon_state(&format!("{}", attested_slot))?;
         let finality_hash = beacon_state.finalized_checkpoint().root;
         let finality_header = beacon_rpc_client.get_beacon_block_header_for_block_id(&format!("{:?}", &finality_hash)).unwrap();
-        println!("attested_header: {:?}", attested_header);
-        println!("finality_checkpoint: {:?}", beacon_state.finalized_checkpoint());
-        println!("finality_hash: {:?}", finality_hash);
-        println!("finality header: {:?}", finality_header);
 
         let beacon_state_merkle_tree = BeaconStateMerkleTree::new(&beacon_state);
         let mut proof = beacon_state_merkle_tree.0.generate_proof(20, 5);
 
-        println!("Proof: {:?}", proof);
-
         let mut finality_branch = vec![beacon_state.finalized_checkpoint().epoch.tree_hash_root()];
         finality_branch.append(&mut proof.1);
-        println!("Finality branch: {:?}", finality_branch);
 
         let signature_slot = attested_slot + 1;
         let beacon_body = beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", signature_slot)).unwrap();
         let sync_committe_signature = beacon_body.sync_aggregate().unwrap();
-
-        println!("Sync Commite signature: {:?}", sync_committe_signature);
 
         let finalized_block_body = beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{:?}", &finality_hash))?;
         let finalized_block_eth1data_proof = ExecutionBlockProof::construct_from_beacon_block_body(&finalized_block_body)?;
