@@ -41,9 +41,7 @@ impl Eth2NearRelay {
             let last_eth2_slot_on_eth_chain: u64;
 
             match self.get_last_slot() {
-                Ok(slot) => {
-                    last_eth2_slot_on_near = slot;
-                }
+                Ok(slot) => last_eth2_slot_on_near = slot,
                 Err(err) => {
                     warn!(target: "relay", "Fail to get last slot on NEAR. Error: {}", err);
                     continue;
@@ -51,9 +49,7 @@ impl Eth2NearRelay {
             }
 
             match self.beacon_rpc_client.get_last_slot_number() {
-                Ok(slot) => {
-                    last_eth2_slot_on_eth_chain = slot.as_u64();
-                }
+                Ok(slot) => last_eth2_slot_on_eth_chain = slot.as_u64(),
                 Err(err) => {
                     warn!(target: "relay", "Fail to get last slot on Eth. Error: {}", err);
                     continue;
@@ -97,9 +93,7 @@ impl Eth2NearRelay {
                             info!(target: "relay", "Successful headers submission!");
                             break;
                         }
-                        Err(err) => {
-                            warn!(target: "relay", "Error {} on headers submission!", err);
-                        }
+                        Err(err) => warn!(target: "relay", "Error {} on headers submission!", err)
                     }
                 }
                 self.send_light_client_updates();
@@ -130,9 +124,7 @@ impl Eth2NearRelay {
                         info!(target: "relay", "Block with slot={} not found on Near", slot)
                     }
                 }
-                Err(err) => {
-                    warn!(target: "relay", "Error {} in getting beacon block body for slot={}", err, slot);
-                }
+                Err(err) => warn!(target: "relay", "Error {} in getting beacon block body for slot={}", err, slot)
             }
             slot -= 1;
         }
@@ -146,20 +138,14 @@ impl Eth2NearRelay {
                 if is_known_block {
                     info!(target: "relay", "Sending light client update");
                     match self.eth_client_contract.send_light_client_update(light_client_update) {
-                        Ok(()) => {
-                            info!(target: "relay", "Successful light client update submission!");
-                        }
-                        Err(err) => {
-                            warn!(target: "relay", "Fail to send light client update. Error: {}", err);
-                        }
+                        Ok(()) => info!(target: "relay", "Successful light client update submission!"),
+                        Err(err) => warn!(target: "relay", "Fail to send light client update. Error: {}", err)
                     }
                 } else {
                     warn!(target: "relay", "Finalized block for light client update is not found on NEAR. Skipping send light client update");
                 }
             }
-            Err(err) => {
-                warn!(target: "relay", "Fail on the is_known_block method. Skipping sending light client update. Error: {}", err);
-            }
+            Err(err) => warn!(target: "relay", "Fail on the is_known_block method. Skipping sending light client update. Error: {}", err)
         }
     }
 
@@ -168,9 +154,7 @@ impl Eth2NearRelay {
 
         let finalized_block_hash: H256;
         match self.eth_client_contract.get_finalized_beacon_block_hash() {
-            Ok(block_hash) => {
-                finalized_block_hash = block_hash;
-            }
+            Ok(block_hash) => finalized_block_hash = block_hash,
             Err(err) => {
                 warn!(target: "relay", "Error {} on getting finalized block hash. Skipping sending light client update", err);
                 return;
@@ -179,9 +163,7 @@ impl Eth2NearRelay {
 
         let last_finalized_slot_on_near: u64;
         match self.beacon_rpc_client.get_slot_by_beacon_block_root(finalized_block_hash) {
-            Ok(last_finalized_slot) => {
-                last_finalized_slot_on_near = last_finalized_slot;
-            }
+            Ok(last_finalized_slot) => last_finalized_slot_on_near = last_finalized_slot,
             Err(err) => {
                 warn!(target: "relay", "Error {} on getting slot for finalized block hash. Skipping sending light client update", err);
                 return;
@@ -192,9 +174,7 @@ impl Eth2NearRelay {
 
         let last_finalized_slot_on_eth: u64;
         match self.beacon_rpc_client.get_last_finalized_slot_number() {
-            Ok(end_slot) => {
-                last_finalized_slot_on_eth = end_slot.as_u64();
-            }
+            Ok(end_slot) => last_finalized_slot_on_eth = end_slot.as_u64(),
             Err(err) => {
                 warn!(target: "relay", "Error {} on getting last finalized slot number on Ethereum. Skipping sending light client update", err);
                 return;
@@ -212,22 +192,14 @@ impl Eth2NearRelay {
         if end_period == last_eth2_period_on_near_chain {
             info!(target: "relay", "Finalized period on Eth and Near are equal. Don't fetch sync commity update");
             match self.beacon_rpc_client.get_finality_light_client_update() {
-                Ok(light_client_update) => {
-                    self.send_specific_light_cleint_update(light_client_update);
-                }
-                Err(err) => {
-                    warn!(target: "relay", "Error {} on getting light client update. Skipping sending light client update", err);
-                }
+                Ok(light_client_update) => self.send_specific_light_cleint_update(light_client_update),
+                Err(err) => warn!(target: "relay", "Error {} on getting light client update. Skipping sending light client update", err)
             }
         } else {
             info!(target: "relay", "Finalized period on Eth and Near are different. Fetching sync commity update");
             match self.beacon_rpc_client.get_finality_light_client_update_with_sync_commity_update() {
-                Ok(light_client_update) => {
-                    self.send_specific_light_cleint_update(light_client_update);
-                }
-                Err(err) => {
-                    warn!(target: "relay", "Error {} on getting light client update. Skipping sending light client update", err);
-                }
+                Ok(light_client_update) => self.send_specific_light_cleint_update(light_client_update),
+                Err(err) => warn!(target: "relay", "Error {} on getting light client update. Skipping sending light client update", err)
             }
         }
     }
