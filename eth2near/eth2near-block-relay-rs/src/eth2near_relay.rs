@@ -162,11 +162,24 @@ impl Eth2NearRelay {
             return;
         }
 
-        let attested_slot = last_finalized_slot_on_near + self.current_gap_between_finalized_and_signature_slot;
-        match HandMadeFinalityLightClientUpdate::get_finality_light_client_update(&self.beacon_rpc_client, attested_slot) {
-            Ok(light_client_update) => self.send_specific_light_cleint_update(light_client_update),
+        let signature_slot = last_finalized_slot_on_near + self.current_gap_between_finalized_and_signature_slot;
+        match HandMadeFinalityLightClientUpdate::get_finality_light_client_update(&self.beacon_rpc_client, signature_slot) {
+            Ok(mut light_client_update) => {
+                let finality_update_slot = light_client_update.finality_update.header_update.beacon_header.slot;
+                if BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near) != BeaconRPCClient::get_period_for_slot(finality_update_slot) {
+                    let new_period = BeaconRPCClient::get_period_for_slot(finality_update_slot);
+                    match self.beacon_rpc_client.get_light_client_update(new_period) {
+                        Ok(light_client_update_for_period) => light_client_update.sync_committee_update = light_client_update_for_period.sync_committee_update,
+                        Err(err) => {
+                            warn!(target: "relay", "Error \"{}\" on getting light client update for period. Skipping sending light client update", err);
+                            return;
+                        }
+                    }
+                }
+                self.send_specific_light_cleint_update(light_client_update);
+            }
             Err(err) => {
-                warn!(target: "relay", "Error \"{}\" on getting hand made light client update for attested slot={}.", err, attested_slot);
+                warn!(target: "relay", "Error \"{}\" on getting hand made light client update for attested slot={}.", err, signature_slot);
                 self.current_gap_between_finalized_and_signature_slot += 1;
             }
         }
