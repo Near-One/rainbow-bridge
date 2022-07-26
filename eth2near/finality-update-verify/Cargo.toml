@@ -4,4 +4,15 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-eth-types = { path = "../../contracts/near/eth-types/", features = ["eip1559"]}
+eth-types = { path ="../../contracts/near/eth-types/", features = ["eip1559"]}
+
+[dev-dependencies]
+eth2_to_near_relay = { path = "../eth2near-block-relay-rs" }
+
+[patch]
+[patch.crates-io]
+eth2_ssz = { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
+eth2_ssz_types = { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
+eth2_hashing = { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
+tree_hash = { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
+eth2_serde_utils = { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
