@@ -169,6 +169,14 @@ impl Eth2NearRelay {
                 return;
             }
         }
+
+        let last_submitted_slot = self.eth_client_contract.get_last_submitted_slot();
+
+        if last_submitted_slot - last_finalized_slot_on_near < 32 {
+            info!(target: "relay", "Light client update were send less then epoch ago. Skipping sending light client update");
+            return;
+        }
+
         let last_eth2_period_on_near_chain = BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near);
         info!(target: "relay", "Last finalized slot/period on near={}/{}", last_finalized_slot_on_near, last_eth2_period_on_near_chain);
 
