@@ -14,7 +14,7 @@ pub struct Eth2NearRelay {
     eth1_rpc_client: Eth1RPCClient,
     eth_client_contract: EthClientContract,
     max_submitted_headers: u64,
-    current_gap_between_finalized_and_attested_slot: u64,
+    current_gap_between_finalized_and_signature_slot: u64,
 }
 
 impl Eth2NearRelay {
@@ -30,7 +30,7 @@ impl Eth2NearRelay {
                                                         path_to_signer_secret_key, contract_account_id,
                                                         start_slot),
             max_submitted_headers: max_submitted_headers as u64,
-            current_gap_between_finalized_and_attested_slot: 96,
+            current_gap_between_finalized_and_signature_slot: 96,
         };
         eth2near_relay.eth_client_contract.register().unwrap();
         eth2near_relay
@@ -143,7 +143,7 @@ impl Eth2NearRelay {
                     match self.eth_client_contract.send_light_client_update(light_client_update) {
                         Ok(()) => {
                             info!(target: "relay", "Successful light client update submission!");
-                            self.current_gap_between_finalized_and_attested_slot = 96;
+                            self.current_gap_between_finalized_and_signature_slot = 96;
                         },
                         Err(err) => warn!(target: "relay", "Fail to send light client update. Error: {}", err)
                     }
@@ -157,17 +157,17 @@ impl Eth2NearRelay {
 
     fn send_hand_made_light_client_update(&mut self, last_finalized_slot_on_near: u64) {
         let last_submitted_slot = self.eth_client_contract.get_last_submitted_slot();
-        if (last_submitted_slot as i64) - (last_finalized_slot_on_near as i64) < (self.current_gap_between_finalized_and_attested_slot as i64) {
+        if (last_submitted_slot as i64) - (last_finalized_slot_on_near as i64) < (self.current_gap_between_finalized_and_signature_slot as i64) {
             info!(target: "relay", "Waiting for sending more headers to near. Skip sending light client update.");
             return;
         }
 
-        let attested_slot = last_finalized_slot_on_near + self.current_gap_between_finalized_and_attested_slot;
+        let attested_slot = last_finalized_slot_on_near + self.current_gap_between_finalized_and_signature_slot;
         match HandMadeFinalityLightClientUpdate::get_finality_light_client_update(&self.beacon_rpc_client, attested_slot) {
             Ok(light_client_update) => self.send_specific_light_cleint_update(light_client_update),
             Err(err) => {
                 warn!(target: "relay", "Error \"{}\" on getting hand made light client update for attested slot={}.", err, attested_slot);
-                self.current_gap_between_finalized_and_attested_slot += 1;
+                self.current_gap_between_finalized_and_signature_slot += 1;
             }
         }
     }

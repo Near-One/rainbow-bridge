@@ -9,7 +9,12 @@ pub struct HandMadeFinalityLightClientUpdate {}
 
 impl HandMadeFinalityLightClientUpdate {
     pub fn get_finality_light_client_update(beacon_rpc_client: &BeaconRPCClient,
-                                            attested_slot: u64) -> Result<LightClientUpdate, Box<dyn Error>> {
+                                            signature_slot: u64) -> Result<LightClientUpdate, Box<dyn Error>> {
+        let signature_beacon_body = beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", signature_slot)).unwrap();
+        let sync_committe_signature = signature_beacon_body.sync_aggregate().unwrap();
+
+        let attested_slot = signature_beacon_body.attestations()[0].data.slot;
+        
         let attested_header = beacon_rpc_client.get_beacon_block_header_for_block_id(&format!("{}", attested_slot))?;
         let beacon_state = beacon_rpc_client.get_beacon_state(&format!("{}", attested_slot))?;
         let finality_hash = beacon_state.finalized_checkpoint().root;
@@ -20,10 +25,6 @@ impl HandMadeFinalityLightClientUpdate {
 
         let mut finality_branch = vec![beacon_state.finalized_checkpoint().epoch.tree_hash_root()];
         finality_branch.append(&mut proof.1);
-
-        let signature_slot = attested_slot + 1;
-        let beacon_body = beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", signature_slot)).unwrap();
-        let sync_committe_signature = beacon_body.sync_aggregate().unwrap();
 
         let finalized_block_body = beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{:?}", &finality_hash))?;
         let finalized_block_eth1data_proof = ExecutionBlockProof::construct_from_beacon_block_body(&finalized_block_body)?;
@@ -65,12 +66,12 @@ mod tests {
     use crate::beacon_rpc_client::BeaconRPCClient;
     use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
 
-    const ATTESTED_HEADER_SLOT: u64 = 812637;
+    const SIGNATURE_SLOT: u64 = 812638;
 
     #[test]
     fn test_hand_made_finality_light_client_update() {
         let beacon_rpc_client = BeaconRPCClient::default();
-        let hand_made_light_client_update = HandMadeFinalityLightClientUpdate::get_finality_light_client_update(&beacon_rpc_client, ATTESTED_HEADER_SLOT).unwrap();
+        let hand_made_light_client_update = HandMadeFinalityLightClientUpdate::get_finality_light_client_update(&beacon_rpc_client, SIGNATURE_SLOT).unwrap();
         let light_client_update = beacon_rpc_client.get_light_client_update(99).unwrap();
 
         assert_eq!(serde_json::to_string(&hand_made_light_client_update.finality_update).unwrap(), serde_json::to_string(&light_client_update.finality_update).unwrap());
