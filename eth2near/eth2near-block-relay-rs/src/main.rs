@@ -36,7 +36,7 @@ struct Arguments {
     /// The eth contract on Near will be initialized
     init_contract: bool,
 
-    #[clap(long, default_value_t = String::from("dev-1658811054552-77900937742143"))]
+    #[clap(long, default_value_t = String::from("dev-1658892371538-72134016605928"))]
     /// Account id for eth client contract on NEAR
     contract_account_id: String,
 
