@@ -1,6 +1,7 @@
 use eth2_client::utility::{compute_domain, compute_signing_root, DOMAIN_SYNC_COMMITTEE, get_participant_pubkeys, MIN_SYNC_COMMITTEE_PARTICIPANTS, Network, NetworkConfig};
 use eth_types::eth2::{BeaconBlockHeader, LightClientUpdate, SyncCommittee};
 use std::str::FromStr;
+use std::error::Error;
 use bls;
 use eth_types::H256;
 use types::{Hash256, Slot};
@@ -25,19 +26,19 @@ fn to_lighthouse_beacon_block_header(bridge_beacon_block_header: &BeaconBlockHea
     }
 }
 
-pub fn is_correct_finality_update(network: &str, light_client_update: LightClientUpdate, sync_committee: SyncCommittee) -> bool {
-    let network = Network::from_str(network).unwrap();
+pub fn is_correct_finality_update(network: &str, light_client_update: &LightClientUpdate, sync_committee: SyncCommittee) -> Result<bool, Box<dyn Error>> {
+    let network = Network::from_str(network)?;
     let config = NetworkConfig::new(&network);
 
     let sync_committee_bits =
         BitVec::<u8, Lsb0>::from_slice(&light_client_update.sync_aggregate.sync_committee_bits.0);
 
-    let sync_committee_bits_sum: u64 = sync_committee_bits.count_ones().try_into().unwrap();
+    let sync_committee_bits_sum: u64 = sync_committee_bits.count_ones().try_into()?;
     if sync_committee_bits_sum < MIN_SYNC_COMMITTEE_PARTICIPANTS {
-        return false;
+        return Ok(false);
     }
-    if sync_committee_bits_sum * 3 < (sync_committee_bits.len() * 2).try_into().unwrap() {
-        return false;
+    if sync_committee_bits_sum * 3 < (sync_committee_bits.len() * 2).try_into()? {
+        return Ok(false);
     }
 
     let participant_pubkeys = get_participant_pubkeys(&sync_committee.pubkeys.0, &sync_committee_bits);
@@ -57,14 +58,13 @@ pub fn is_correct_finality_update(network: &str, light_client_update: LightClien
     );
 
     let aggregate_signature =
-        bls::AggregateSignature::deserialize(&light_client_update.sync_aggregate.sync_committee_signature.0)
-            .unwrap();
+        bls::AggregateSignature::deserialize(&light_client_update.sync_aggregate.sync_committee_signature.0).unwrap();
     let pubkeys: Vec<bls::PublicKey> = participant_pubkeys
         .into_iter()
         .map(|x| bls::PublicKey::deserialize(&x.0).unwrap())
         .collect();
 
-    aggregate_signature.fast_aggregate_verify(signing_root.0, &pubkeys.iter().collect::<Vec<_>>())
+    Ok(aggregate_signature.fast_aggregate_verify(signing_root.0, &pubkeys.iter().collect::<Vec<_>>()))
 }
 
 #[cfg(test)]
