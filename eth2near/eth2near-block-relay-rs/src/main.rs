@@ -32,10 +32,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                       &config.contract_account_id, args.start_slot,
                       &config.beacon_endpoint, &config.eth1_endpoint, &config.network).unwrap();
     }
-
+    
     let mut eth2near_relay = Eth2NearRelay::init(&config.beacon_endpoint, &config.eth1_endpoint, args.start_slot,
                                                  config.total_submit_headers,
                                                   &config.near_endpoint, &config.signer_account_id,
-                                                  &config.path_to_signer_secret_key, &config.contract_account_id);
+                                                  &config.path_to_signer_secret_key, &config.contract_account_id,
+                                                  &config.network);
+
     Ok(eth2near_relay.run())
 }

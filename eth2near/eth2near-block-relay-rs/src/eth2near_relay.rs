@@ -15,12 +15,14 @@ pub struct Eth2NearRelay {
     eth_client_contract: EthClientContract,
     max_submitted_headers: u64,
     current_gap_between_finalized_and_signature_slot: u64,
+    network: String,
 }
 
 impl Eth2NearRelay {
     pub fn init(eth_node_url: &str, eth1_endpoint: &str, start_slot: u64, max_submitted_headers: u32,
                 near_endpoint: &str, signer_account_id: &str,
-                path_to_signer_secret_key: &str, contract_account_id: &str) -> Self {
+                path_to_signer_secret_key: &str, contract_account_id: &str,
+                network: &str) -> Self {
         info!(target: "relay", "=== Relay initialization === ");
 
         let eth2near_relay = Eth2NearRelay {
@@ -31,6 +33,7 @@ impl Eth2NearRelay {
                                                         start_slot),
             max_submitted_headers: max_submitted_headers as u64,
             current_gap_between_finalized_and_signature_slot: 96,
+            network: network.to_string(),
         };
         eth2near_relay.eth_client_contract.register().unwrap();
         eth2near_relay
@@ -167,7 +170,7 @@ impl Eth2NearRelay {
         let update_for_per_period = self.beacon_rpc_client.get_light_client_update(current_period - 1).unwrap();
         let sync_committee = update_for_per_period.sync_committee_update.unwrap().next_sync_committee;
 
-        finality-update-verify::is_correct_finality_update("", light_client_update, sync_committee)
+        finality_update_verify::is_correct_finality_update(&self.network, light_client_update, sync_committee);
     }
 
     fn send_specific_light_cleint_update(&mut self, light_client_update: LightClientUpdate) {
