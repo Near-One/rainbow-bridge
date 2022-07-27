@@ -1,4 +1,4 @@
-use crate::beacon_rpc_client::{BeaconRPCClient, ExecutionPayloadError};
+use crate::beacon_rpc_client::{BeaconRPCClient, ExecutionPayloadError, MissSyncCommitteeUpdate};
 use crate::eth_client_contract::EthClientContract;
 use std::cmp::max;
 use std::error::Error;
@@ -168,7 +168,7 @@ impl Eth2NearRelay {
     fn verify_bls_signature_for_finality_update(&mut self, light_client_update: &LightClientUpdate) -> Result<bool, Box<dyn Error>> {
         let current_period = BeaconRPCClient::get_period_for_slot(light_client_update.attested_beacon_header.slot);
         let update_for_per_period = self.beacon_rpc_client.get_light_client_update(current_period - 1)?;
-        let sync_committee = update_for_per_period.sync_committee_update.unwrap().next_sync_committee;
+        let sync_committee = update_for_per_period.sync_committee_update.ok_or(MissSyncCommitteeUpdate())?.next_sync_committee;
 
         finality_update_verify::is_correct_finality_update(&self.network, light_client_update, sync_committee)
     }

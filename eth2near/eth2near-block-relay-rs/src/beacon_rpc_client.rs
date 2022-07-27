@@ -55,6 +55,17 @@ impl Display for ExecutionPayloadError {
 
 impl Error for ExecutionPayloadError {}
 
+#[derive(Debug)]
+pub struct MissSyncCommitteeUpdate();
+
+impl Display for MissSyncCommitteeUpdate {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Sync Committee Update is missing for this Light Client Update")
+    }
+}
+
+impl Error for MissSyncCommitteeUpdate {}
+
 /// `BeaconRPCClient` allows getting beacon block body, beacon block header
 /// and light client updates
 /// using Beacon RPC API (https://ethereum.github.io/beacon-APIs/)
