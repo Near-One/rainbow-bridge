@@ -58,11 +58,11 @@ pub fn is_correct_finality_update(network: &str, light_client_update: &LightClie
     );
 
     let aggregate_signature =
-        bls::AggregateSignature::deserialize(&light_client_update.sync_aggregate.sync_committee_signature.0).unwrap();
-    let pubkeys: Vec<bls::PublicKey> = participant_pubkeys
-        .into_iter()
-        .map(|x| bls::PublicKey::deserialize(&x.0).unwrap())
-        .collect();
+        bls::AggregateSignature::deserialize(&light_client_update.sync_aggregate.sync_committee_signature.0).map_err(|_err| -> String {"Error on aggregate signature deserialization".to_string()})?;
+    let mut pubkeys: Vec<bls::PublicKey> = vec![];
+    for pubkey in participant_pubkeys {
+        pubkeys.push(bls::PublicKey::deserialize(&pubkey.0).map_err(|_err| -> String {"Error on public key deserialization".to_string()})?);
+    }
 
     Ok(aggregate_signature.fast_aggregate_verify(signing_root.0, &pubkeys.iter().collect::<Vec<_>>()))
 }
