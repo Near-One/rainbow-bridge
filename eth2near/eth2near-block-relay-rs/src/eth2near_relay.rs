@@ -162,10 +162,20 @@ impl Eth2NearRelay {
         }
     }
 
+    fn verify_bls_signature_for_finality_update(&mut self, light_client_update: LightClientUpdate) {
+        let current_period = BeaconRPCClient::get_period_for_slot(light_client_update.attested_beacon_header.slot);
+        let update_for_per_period = self.beacon_rpc_client.get_light_client_update(current_period - 1).unwrap();
+        let sync_committee = update_for_per_period.sync_committee_update.unwrap().next_sync_committee;
+
+        finality-update-verify::is_correct_finality_update("", light_client_update, sync_committee)
+    }
+
     fn send_specific_light_cleint_update(&mut self, light_client_update: LightClientUpdate) {
         match self.eth_client_contract.is_known_block(&light_client_update.finality_update.header_update.execution_block_hash) {
             Ok(is_known_block) => {
                 if is_known_block {
+
+
                     info!(target: "relay", "Sending light client update");
                     match self.eth_client_contract.send_light_client_update(light_client_update) {
                         Ok(()) => {
