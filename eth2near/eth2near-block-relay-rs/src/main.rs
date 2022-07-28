@@ -16,10 +16,6 @@ struct Arguments {
     #[clap(long, action = ArgAction::SetTrue)]
     /// The eth contract on Near will be initialized
     init_contract: bool,
-
-    #[clap(long, default_value_t = 956937)]
-    /// Tmp flag TODO: remove
-    start_slot: u64,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -28,10 +24,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = Config::load_from_toml(args.config.try_into().unwrap());
 
     if args.init_contract == true {
-        init_contract(&config, args.start_slot).unwrap();
+        init_contract(&config).unwrap();
     }
     
-    let mut eth2near_relay = Eth2NearRelay::init(&config, args.start_slot);
+    let mut eth2near_relay = Eth2NearRelay::init(&config);
 
     Ok(eth2near_relay.run())
 }

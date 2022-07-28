@@ -6,13 +6,16 @@ use crate::eth1_rpc_client::Eth1RPCClient;
 use crate::eth_client_contract::EthClientContract;
 use crate::config::Config;
 
-pub fn init_contract(config: &Config, start_slot: u64) -> Result<(), Box<dyn std::error::Error>> {
+pub fn init_contract(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
     info!(target: "relay", "=== Contract initialization ===");
-    let eth_client_contract = EthClientContract::new(&config.near_endpoint, &config.signer_account_id, &config.path_to_signer_secret_key, &config.contract_account_id, start_slot);
-    let period = BeaconRPCClient::get_period_for_slot(start_slot);
+    let eth_client_contract = EthClientContract::new(&config.near_endpoint, &config.signer_account_id, &config.path_to_signer_secret_key, &config.contract_account_id);
 
     let beacon_rpc_client = BeaconRPCClient::new(&config.beacon_endpoint);
     let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
+
+    let start_slot = beacon_rpc_client.get_last_finalized_slot_number().unwrap();
+    let period = BeaconRPCClient::get_period_for_slot(start_slot.as_u64());
+
 
     let light_client_update = beacon_rpc_client.get_finality_light_client_update_with_sync_commity_update().unwrap();
     let block_id = format!("{}", light_client_update.finality_update.header_update.beacon_header.slot);

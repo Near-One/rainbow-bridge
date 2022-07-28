@@ -20,10 +20,9 @@ pub struct EthClientContract {
 
 impl EthClientContract {
     pub fn new(near_endpoint: &str, account_id: &str,
-               path_to_signer_secret_key: &str, contract_account_id: &str,
-               last_slot: u64) -> Self {
+               path_to_signer_secret_key: &str, contract_account_id: &str) -> Self {
         EthClientContract {
-            last_slot: last_slot,
+            last_slot: 0,
             near_contract_wrapper: NearContractWrapper::new(near_endpoint, account_id,
                                                             path_to_signer_secret_key,
                                                             contract_account_id),
