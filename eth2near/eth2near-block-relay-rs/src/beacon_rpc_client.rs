@@ -324,12 +324,6 @@ impl BeaconRPCClient {
     }
 }
 
-impl Default for BeaconRPCClient {
-    fn default() -> Self {
-        Self::new("https://lodestar-kiln.chainsafe.io")
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::beacon_block_header_with_execution_data::BeaconBlockHeaderWithExecutionData;
@@ -340,6 +334,7 @@ mod tests {
     use types::MainnetEthSpec;
 
     const TEST_BEACON_BLOCK_ID: u32 = 741888;
+    const BEACON_ENDPOINT: &str = "https://lodestar-kiln.chainsafe.io";
 
     #[test]
     fn test_get_header_from_json() {
@@ -398,15 +393,15 @@ mod tests {
 
     #[test]
     fn test_rpc_beacon_block_body_and_header_smoke() {
-        let _beacon_block_body = BeaconRPCClient::default()
+        let _beacon_block_body = BeaconRPCClient::new(BEACON_ENDPOINT)
             .get_beacon_block_body_for_block_id(&TEST_BEACON_BLOCK_ID.to_string()).unwrap();
-        let _beacon_block_header = BeaconRPCClient::default()
+        let _beacon_block_header = BeaconRPCClient::new(BEACON_ENDPOINT)
             .get_beacon_block_header_for_block_id(&TEST_BEACON_BLOCK_ID.to_string()).unwrap();
     }
 
     #[test]
     fn test_get_beacon_block_header() {
-        let beacon_block_header = BeaconRPCClient::default()
+        let beacon_block_header = BeaconRPCClient::new(BEACON_ENDPOINT)
             .get_beacon_block_header_for_block_id(&TEST_BEACON_BLOCK_ID.to_string()).unwrap();
 
         assert_eq!(beacon_block_header.slot, 741888);
@@ -427,7 +422,7 @@ mod tests {
 
     #[test]
     fn test_get_beacon_block_body() {
-        let beacon_block_body = BeaconRPCClient::default()
+        let beacon_block_body = BeaconRPCClient::new(BEACON_ENDPOINT)
             .get_beacon_block_body_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
         .unwrap();
         assert_eq!(beacon_block_body.attestations().len(), 29);
@@ -474,7 +469,7 @@ mod tests {
     #[test]
     fn test_fetch_light_client_update() {
         const PERIOD: u64 = 100;
-        let beacon_rpc_client = BeaconRPCClient::default();
+        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
         let light_client_update = beacon_rpc_client.get_light_client_update(PERIOD).unwrap();
 
         // check attested_header
@@ -507,7 +502,7 @@ mod tests {
     #[test]
     #[ignore]
     fn show_get_light_client_update() {
-        let light_client_update_fetcher = BeaconRPCClient::default();
+        let light_client_update_fetcher = BeaconRPCClient::new(BEACON_ENDPOINT);
         let period = BeaconRPCClient::get_period_for_slot(light_client_update_fetcher.get_last_slot_number().unwrap().as_u64());
 
         let light_client_update = light_client_update_fetcher.get_light_client_update(period).unwrap();
@@ -520,7 +515,7 @@ mod tests {
     #[test]
     #[ignore]
     fn show_headers_jsons_for_light_client_update() {
-        let beacon_rpc_client = BeaconRPCClient::default();
+        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
         let mut beacon_block_ext_headers: Vec<BeaconBlockHeaderWithExecutionData> = Vec::new();
         for slot in 823648 ..=827470 {
             let mut count = 1;

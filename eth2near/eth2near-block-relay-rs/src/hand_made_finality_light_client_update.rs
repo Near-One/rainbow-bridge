@@ -67,10 +67,11 @@ mod tests {
     use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
 
     const SIGNATURE_SLOT: u64 = 812638;
+    const BEACON_ENDPOINT: &str = "https://lodestar-kiln.chainsafe.io";
 
     #[test]
     fn test_hand_made_finality_light_client_update() {
-        let beacon_rpc_client = BeaconRPCClient::default();
+        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
         let hand_made_light_client_update = HandMadeFinalityLightClientUpdate::get_finality_light_client_update(&beacon_rpc_client, SIGNATURE_SLOT).unwrap();
         let light_client_update = beacon_rpc_client.get_light_client_update(99).unwrap();
 

@@ -27,7 +27,7 @@ impl Eth1RPCClient {
             "method": "eth_getBlockByNumber",
             "params": [hex_str_number, false]
         });
-        
+
         let res = self.client.post(&self.endpoint_url).json(&json_value).send()?.text()?;
 
         let val: Value = serde_json::from_str(&res)?;
@@ -53,21 +53,16 @@ impl Eth1RPCClient {
     }
 }
 
-impl Default for Eth1RPCClient {
-    fn default() -> Self {
-        Self::new("https://rpc.kiln.themerge.dev")
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::eth1_rpc_client::Eth1RPCClient;
 
     const TEST_BEACON_BLOCK_ID: u32 = 741888;
+    const ETH1_ENDPOINT: &str = "https://rpc.kiln.themerge.dev";
 
     #[test]
     fn test_smoke_get_block_by_number() {
-        let eth1_rpc_client = Eth1RPCClient::default();
+        let eth1_rpc_client = Eth1RPCClient::new(ETH1_ENDPOINT);
         eth1_rpc_client.get_block_header_by_number(766535);
     }
 }
