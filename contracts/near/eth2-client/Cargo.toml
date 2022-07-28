@@ -25,5 +25,6 @@ serde_json = "1.0"
 hex = "0.4.0"
 
 [features]
-default = []
+default = ["logs"]
 bls = ["dep:bls"]
+logs = []

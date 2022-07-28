@@ -156,6 +156,24 @@ impl EthClient {
         self.finalized_beacon_header.beacon_block_root
     }
 
+    /// Returns finalized beacon block slot
+    #[result_serializer(borsh)]
+    pub fn finalized_beacon_block_slot(&self) -> u64 {
+        self.finalized_beacon_header.header.slot
+    }
+
+    /// Returns finalized beacon block header
+    #[result_serializer(borsh)]
+    pub fn finalized_beacon_block_header(&self) -> ExtendedBeaconBlockHeader {
+        self.finalized_beacon_header.clone()
+    }
+
+    /// Returns the minimum balance that should be attached to register a new submitter account
+    #[result_serializer(borsh)]
+    pub fn min_storage_balance_for_submitter(&self) -> Balance {
+        self.min_storage_balance_for_submitter
+    }
+
     /// Get the current light client state
     #[result_serializer(borsh)]
     pub fn get_light_client_state(&self) -> LightClientState {
@@ -222,6 +240,8 @@ impl EthClient {
 
     #[result_serializer(borsh)]
     pub fn submit_execution_header(&mut self, #[serializer(borsh)] block_header: BlockHeader) {
+        #[cfg(feature = "logs")]
+        env::log_str(format!("Submitted header number {}", block_header.number).as_str());
         if self.finalized_beacon_header.execution_block_hash != block_header.parent_hash {
             self.unfinalized_headers
                 .get(&block_header.parent_hash)
@@ -236,6 +256,9 @@ impl EthClient {
         let submitter = env::predecessor_account_id();
         self.update_submitter(&submitter, 1);
         let block_hash = block_header.calculate_hash();
+        #[cfg(feature = "logs")]
+        env::log_str(format!("Submitted header hash {:?}", block_hash).as_str());
+
         let block_info = ExecutionHeaderInfo {
             parent_hash: block_header.parent_hash,
             block_number: block_header.number,
@@ -261,6 +284,9 @@ impl EthClient {
 
 impl EthClient {
     fn validate_light_client_update(&self, update: &LightClientUpdate) {
+        #[cfg(feature = "logs")]
+        env::log_str(format!("Validate update. Used gas: {}", env::used_gas().0).as_str());
+
         let finalized_period =
             compute_sync_committee_period(self.finalized_beacon_header.header.slot);
         self.verify_finality_branch(update, finalized_period);
@@ -284,6 +310,9 @@ impl EthClient {
         if self.verify_bls_signatures {
             self.verify_bls_signatures(update, sync_committee_bits, finalized_period);
         }
+
+        #[cfg(feature = "logs")]
+        env::log_str(format!("Finish validate update. Used gas: {}", env::used_gas().0).as_str());
     }
 
     fn verify_finality_branch(&self, update: &LightClientUpdate, finalized_period: u64) {
@@ -383,10 +412,22 @@ impl EthClient {
     }
 
     fn update_finalized_header(&mut self, finalized_header: ExtendedBeaconBlockHeader) {
+        #[cfg(feature = "logs")]
+        env::log_str(format!("Update finalized header. Used gas: {}", env::used_gas().0).as_str());
         let finalized_execution_header_info = self
             .unfinalized_headers
             .get(&finalized_header.execution_block_hash)
             .expect("Unknown execution block hash");
+
+        #[cfg(feature = "logs")]
+        env::log_str(
+            format!(
+                "Current finalized slot: {}, New finalized slot: {}",
+                self.finalized_beacon_header.header.slot, finalized_header.header.slot
+            )
+            .as_str(),
+        );
+
         let mut cursor_header = finalized_execution_header_info.clone();
         let mut cursor_header_hash = finalized_header.execution_block_hash;
 
@@ -423,6 +464,15 @@ impl EthClient {
         for (submitter, num_of_removed_headers) in &submitters_update {
             self.update_submitter(submitter, -(*num_of_removed_headers as i64));
         }
+
+        #[cfg(feature = "logs")]
+        env::log_str(
+            format!(
+                "Finish update finalized header. Used gas: {}",
+                env::used_gas().0
+            )
+            .as_str(),
+        );
 
         if finalized_execution_header_info.block_number > self.hashes_gc_threshold {
             self.gc_headers(

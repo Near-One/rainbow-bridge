@@ -26,7 +26,9 @@ macro_rules! set_env {
         let mut builder = VMContextBuilder::new();
         let mut builder = &mut builder;
         builder = inner_set_env!(builder, $($key: $value),*);
-        let vm_config = VMConfig::free();
+        let mut vm_config = VMConfig::free();
+        vm_config.limit_config.max_number_logs = u64::MAX;
+        vm_config.limit_config.max_total_log_length = u64::MAX;
         testing_env!(builder.build(), vm_config);
     };
 }
