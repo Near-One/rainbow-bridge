@@ -104,6 +104,46 @@ impl Eth2NearRelay {
         }
     }
 
+    fn block_known_on_near(& self, slot: u64) -> Result<bool, Box<dyn Error>> {
+        info!(target: "relay", "Check if block with slot={} on NEAR", slot);
+        match self.beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", slot)) {
+            Ok(beacon_block_body) => {
+                let hash: H256 = H256::from(beacon_block_body.execution_payload().map_err(|_| { ExecutionPayloadError() })?.execution_payload.block_hash.into_root().as_bytes());
+                if self.eth_client_contract.is_known_block(&hash)? == true {
+                    return Ok(true);
+                } else {
+                    info!(target: "relay", "Block with slot={} not found on Near", slot);
+                    return Ok(false);
+                }
+            }
+            Err(err) => warn!(target: "relay", "Error \"{}\" in getting beacon block body for slot={}", err, slot)
+        }
+        return Ok(false);
+    }
+
+    fn search_slot_forward(&self, slot: u64) -> Result<u64, Box<dyn Error>> {
+        let mut current_step = 1;
+        while self.block_known_on_near(slot + current_step)? {
+            current_step *= 2;
+        }
+
+        return self.search_slot_backward(slot, slot + current_step);
+    }
+
+    fn search_slot_backward(&self, start_slot: u64, last_slot: u64) -> Result<u64, Box<dyn Error>> {
+        let mut start_slot = start_slot;
+        let mut last_slot = last_slot;
+        while start_slot + 1 < last_slot {
+            let mid_slot = start_slot + (last_slot - start_slot)/2;
+            if self.block_known_on_near(mid_slot)? {
+                start_slot = mid_slot;
+            } else {
+                last_slot = mid_slot;
+            }
+        }
+        return Ok(start_slot);
+    }
+
     fn get_last_slot(& mut self) -> Result<u64, Box<dyn Error>> {
         info!(target: "relay", "= Search for last slot on near =");
 
@@ -113,26 +153,13 @@ impl Eth2NearRelay {
         info!(target: "relay", "Finalized slot on near={}", finalized_slot);
 
         slot = max(finalized_slot, slot);
-
         info!(target: "relay", "Init slot for search as {}", slot);
 
-        while slot > finalized_slot {
-            info!(target: "relay", "Check if block with slot={} on NEAR", slot);
-            match self.beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", slot)) {
-                Ok(beacon_block_body) => {
-                    let hash: H256 = H256::from(beacon_block_body.execution_payload().map_err(|_| { ExecutionPayloadError() })?.execution_payload.block_hash.into_root().as_bytes());
-                    if self.eth_client_contract.is_known_block(&hash)? == true {
-                        break;
-                    } else {
-                        info!(target: "relay", "Block with slot={} not found on Near", slot)
-                    }
-                }
-                Err(err) => warn!(target: "relay", "Error \"{}\" in getting beacon block body for slot={}", err, slot)
-            }
-            slot -= 1;
+        if self.block_known_on_near(slot)? {
+            return self.search_slot_forward(slot);
+        } else {
+            return self.search_slot_backward(finalized_slot, slot);
         }
-
-        Ok(slot)
     }
 
     fn send_specific_light_cleint_update(&mut self, light_client_update: LightClientUpdate) {
