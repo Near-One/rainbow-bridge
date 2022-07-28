@@ -8,6 +8,7 @@ use eth_types::eth2::LightClientUpdate;
 use crate::eth1_rpc_client::Eth1RPCClient;
 use log::{info, warn};
 use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
+use crate::config::Config;
 
 pub struct Eth2NearRelay {
     beacon_rpc_client: BeaconRPCClient,
@@ -19,21 +20,18 @@ pub struct Eth2NearRelay {
 }
 
 impl Eth2NearRelay {
-    pub fn init(eth_node_url: &str, eth1_endpoint: &str, start_slot: u64, max_submitted_headers: u32,
-                near_endpoint: &str, signer_account_id: &str,
-                path_to_signer_secret_key: &str, contract_account_id: &str,
-                network: &str) -> Self {
+    pub fn init(config: &Config, start_slot: u64) -> Self {
         info!(target: "relay", "=== Relay initialization === ");
 
         let eth2near_relay = Eth2NearRelay {
-            beacon_rpc_client: BeaconRPCClient::new(eth_node_url),
-            eth1_rpc_client: Eth1RPCClient::new(eth1_endpoint),
-            eth_client_contract: EthClientContract::new(near_endpoint, signer_account_id,
-                                                        path_to_signer_secret_key, contract_account_id,
+            beacon_rpc_client: BeaconRPCClient::new(&config.beacon_endpoint),
+            eth1_rpc_client: Eth1RPCClient::new(&config.eth1_endpoint),
+            eth_client_contract: EthClientContract::new(&config.near_endpoint, &config.signer_account_id,
+                                                        &config.path_to_signer_secret_key, &config.contract_account_id,
                                                         start_slot),
-            max_submitted_headers: max_submitted_headers as u64,
+            max_submitted_headers: config.total_submit_headers as u64,
             current_gap_between_finalized_and_signature_slot: 96,
-            network: network.to_string(),
+            network: config.network.to_string(),
         };
         eth2near_relay.eth_client_contract.register().unwrap();
         eth2near_relay

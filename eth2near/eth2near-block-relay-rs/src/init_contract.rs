@@ -4,17 +4,15 @@ use eth_types::eth2::ExtendedBeaconBlockHeader;
 use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::eth1_rpc_client::Eth1RPCClient;
 use crate::eth_client_contract::EthClientContract;
+use crate::config::Config;
 
-
-pub fn init_contract(near_endpoint: &str, signer_account_id: &str, path_to_signer_secret_key: &str,
-                     contract_account_id: &str, start_slot: u64,
-                     beacon_rpc_endpoint: &str, eth1_rpc_endpoint: &str, network: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn init_contract(config: &Config, start_slot: u64) -> Result<(), Box<dyn std::error::Error>> {
     info!(target: "relay", "=== Contract initialization ===");
-    let eth_client_contract = EthClientContract::new(near_endpoint, signer_account_id, path_to_signer_secret_key, contract_account_id, start_slot);
+    let eth_client_contract = EthClientContract::new(&config.near_endpoint, &config.signer_account_id, &config.path_to_signer_secret_key, &config.contract_account_id, start_slot);
     let period = BeaconRPCClient::get_period_for_slot(start_slot);
 
-    let beacon_rpc_client = BeaconRPCClient::new(&beacon_rpc_endpoint);
-    let eth1_rpc_client = Eth1RPCClient::new(&eth1_rpc_endpoint);
+    let beacon_rpc_client = BeaconRPCClient::new(&config.beacon_endpoint);
+    let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
 
     let light_client_update = beacon_rpc_client.get_finality_light_client_update_with_sync_commity_update().unwrap();
     let block_id = format!("{}", light_client_update.finality_update.header_update.beacon_header.slot);
@@ -26,6 +24,6 @@ pub fn init_contract(near_endpoint: &str, signer_account_id: &str, path_to_signe
     let prev_light_client_update = beacon_rpc_client.get_light_client_update(period - 1)?;
     let current_sync_committee = prev_light_client_update.sync_committee_update.unwrap().next_sync_committee;
 
-    eth_client_contract.init_contract(network.to_string(), finalized_execution_header, finalized_header, current_sync_committee, next_sync_committee);
+    eth_client_contract.init_contract(config.network.to_string(), finalized_execution_header, finalized_header, current_sync_committee, next_sync_committee);
     Ok(())
 }

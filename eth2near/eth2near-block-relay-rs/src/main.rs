@@ -28,16 +28,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = Config::load_from_toml(args.config.try_into().unwrap());
 
     if args.init_contract == true {
-        init_contract(&config.near_endpoint, &config.signer_account_id, &config.path_to_signer_secret_key,
-                      &config.contract_account_id, args.start_slot,
-                      &config.beacon_endpoint, &config.eth1_endpoint, &config.network).unwrap();
+        init_contract(&config, args.start_slot).unwrap();
     }
     
-    let mut eth2near_relay = Eth2NearRelay::init(&config.beacon_endpoint, &config.eth1_endpoint, args.start_slot,
-                                                 config.total_submit_headers,
-                                                  &config.near_endpoint, &config.signer_account_id,
-                                                  &config.path_to_signer_secret_key, &config.contract_account_id,
-                                                  &config.network);
+    let mut eth2near_relay = Eth2NearRelay::init(&config, args.start_slot);
 
     Ok(eth2near_relay.run())
 }
