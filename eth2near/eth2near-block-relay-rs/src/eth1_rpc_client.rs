@@ -1,7 +1,7 @@
 use std::error::Error;
 use eth_types::BlockHeader;
 use reqwest::blocking::Client;
-use serde_json::Value;
+use serde_json::{json, Value};
 
 pub struct Eth1RPCClient {
     endpoint_url: String,
@@ -20,14 +20,15 @@ impl Eth1RPCClient {
         &self,
         number: u64,
     ) -> Result<BlockHeader, Box<dyn Error>> {
-        let json_str = format!("{}\"id\": 0,\
-        \"jsonrpc\": \"2.0\",\
-        \"method\": \"eth_getBlockByNumber\",\
-        \"params\": [\"0x{:x}\",false]\
-        {}", "{", number, "}");
-
-        let value: Value = serde_json::from_str(&json_str)?;
-        let res = self.client.post(&self.endpoint_url).json(&value).send()?.text()?;
+        let hex_str_number = format!("0x{:x}", number);
+        let json_value = json!({
+            "id": 0,
+            "jsonrpc": "2.0",
+            "method": "eth_getBlockByNumber",
+            "params": [hex_str_number, false]
+        });
+        
+        let res = self.client.post(&self.endpoint_url).json(&json_value).send()?.text()?;
 
         let val: Value = serde_json::from_str(&res)?;
         let mut block_json = serde_json::to_string(&val["result"])?;
