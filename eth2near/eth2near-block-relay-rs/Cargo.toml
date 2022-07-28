@@ -14,6 +14,7 @@ eth2_hashing = { git = "https://github.com/sigp/lighthouse", tag = "v2.3.1" }
 ethereum-types = "0.12.1"
 reqwest = { version = "0.11", features = ["blocking"] }
 eth-types = { path = "../../contracts/near/eth-types/", features = ["eip1559"]}
+contract_wrapper = { path = "../contract_wrapper" }
 clap = { version = "3.1.6", features = ["derive"] }
 tokio = { version = "1.1", features = ["rt", "macros"] }
 env_logger = "0.9.0"
