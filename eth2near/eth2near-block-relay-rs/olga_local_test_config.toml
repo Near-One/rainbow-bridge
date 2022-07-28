@@ -1,0 +1,8 @@
+beacon_endpoint = "https://lodestar-kiln.chainsafe.io"
+eth1_endpoint = "https://rpc.kiln.themerge.dev"
+total_submit_headers = 4
+near_endpoint = "https://rpc.testnet.near.org"
+signer_account_id = "olga24912.testnet"
+path_to_signer_secret_key = "/home/olga/.near-credentials/testnet/olga24912.testnet.json"
+contract_account_id = "dev-1658892371538-72134016605928"
+network = "kiln"

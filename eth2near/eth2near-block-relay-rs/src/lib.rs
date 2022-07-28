@@ -9,3 +9,4 @@ pub mod eth1_rpc_client;
 pub mod init_contract;
 pub mod logger;
 pub mod hand_made_finality_light_client_update;
+pub mod config;
