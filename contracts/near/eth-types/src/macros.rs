@@ -83,11 +83,7 @@ macro_rules! arr_wrapper_impl_tree_hash_and_borsh {
             where
                 S: Serializer,
             {
-                let hex = hex::encode(self.0);
-
-                let mut s = "0x".to_string();
-                s.push_str(hex.as_str());
-                serializer.serialize_str(&s)
+                serializer.serialize_str(&format!("0x{}", hex::encode(self.0)))
             }
         }
     };
