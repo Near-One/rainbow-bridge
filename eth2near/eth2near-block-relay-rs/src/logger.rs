@@ -4,7 +4,7 @@ pub struct SimpleLogger;
 
 impl log::Log for SimpleLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
-        metadata.level() <= Level::Info && metadata.target() == "relay"
+        metadata.level() <= Level::Trace && metadata.target() == "relay"
     }
 
     fn log(&self, record: &Record) {

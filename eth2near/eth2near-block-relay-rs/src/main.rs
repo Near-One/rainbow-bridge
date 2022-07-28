@@ -23,7 +23,7 @@ struct Arguments {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    log::set_boxed_logger(Box::new(SimpleLogger)).map(|()| log::set_max_level(LevelFilter::Info)).unwrap();
+    log::set_boxed_logger(Box::new(SimpleLogger)).map(|()| log::set_max_level(LevelFilter::Trace)).unwrap();
     let args = Arguments::parse();
     let config = Config::load_from_toml(args.config.try_into().unwrap());
 
