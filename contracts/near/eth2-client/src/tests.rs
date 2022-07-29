@@ -3,7 +3,7 @@ use admin_controlled::AdminControlled;
 use eth2_utility::consensus::*;
 use eth2_utility::types::InitInput;
 use eth_types::eth2::*;
-use eth_types::{BlockHeader, H256};
+use eth_types::{BlockHeader, H256, U256};
 use hex::FromHex;
 use lazy_static::lazy_static;
 use near_sdk::test_utils::{accounts, VMContextBuilder};
@@ -171,16 +171,70 @@ pub fn test_submit_update_periods_100_101() {
     contract.submit_beacon_chain_light_client_update(updates[1].clone());
 
     for header in headers.iter().skip(1) {
-        assert!(!contract.is_known_execution_header(header.calculate_hash()));
+        let header_hash = header.calculate_hash();
+        assert!(!contract.is_known_execution_header(header_hash));
         assert!(
-            contract.block_hash_safe(header.number).is_some(),
+            contract.block_hash_safe(header.number).unwrap_or_default() == header_hash,
             "Execution block hash is not finalized: {:?}",
-            header.calculate_hash()
+            header_hash
         );
     }
 
     assert_eq!(contract.last_block_number(), headers.last().unwrap().number);
+    assert!(!contract.is_known_execution_header(
+        contract
+            .finalized_beacon_block_header()
+            .execution_block_hash
+    ));
+
     contract.unregister_submitter();
+}
+
+#[test]
+pub fn test_submit_execution_block_from_fork_chain() {
+    let submitter = accounts(0);
+    let TestContext {
+        mut contract,
+        headers,
+        updates,
+    } = get_kiln_test_context(None);
+    set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
+
+    contract.register_submitter();
+    for header in headers.iter().skip(1) {
+        contract.submit_execution_header(header.clone());
+        assert!(contract.is_known_execution_header(header.calculate_hash()));
+        assert!(contract.block_hash_safe(header.number).is_none());
+    }
+
+    // Submit execution header with different hash
+    let mut fork_header = headers[5].clone();
+    fork_header.difficulty = U256::from(ethereum_types::U256::from(99));
+    contract.submit_execution_header(fork_header.clone());
+    contract.submit_beacon_chain_light_client_update(updates[1].clone());
+
+    for header in headers.iter().skip(1) {
+        let header_hash = header.calculate_hash();
+        assert!(!contract.is_known_execution_header(header_hash));
+        assert!(
+            contract.block_hash_safe(header.number).unwrap_or_default() == header_hash,
+            "Execution block hash is not finalized: {:?}",
+            header_hash
+        );
+    }
+
+    // Check that forked execution header was not finalized
+    assert!(contract.is_known_execution_header(fork_header.calculate_hash()));
+    assert!(
+        contract
+            .block_hash_safe(fork_header.number)
+            .unwrap_or_default()
+            != fork_header.calculate_hash(),
+        "The execution block {:?} should not be finalized",
+        fork_header.calculate_hash()
+    );
+
+    assert_eq!(contract.last_block_number(), headers.last().unwrap().number);
 }
 
 #[test]
@@ -211,7 +265,7 @@ pub fn test_gc_headers() {
     for header in headers.iter().skip(1).rev().take(500) {
         assert!(!contract.is_known_execution_header(header.calculate_hash()));
         assert!(
-            contract.block_hash_safe(header.number).is_some(),
+            contract.block_hash_safe(header.number).unwrap_or_default() == header.calculate_hash(),
             "Execution block hash is not finalized: {:?}",
             header.calculate_hash()
         );
@@ -340,6 +394,38 @@ pub fn test_panic_on_submit_update_with_missing_execution_blocks() {
 }
 
 #[test]
+#[should_panic(expected = "already submitted")]
+pub fn test_panic_on_submit_same_execution_blocks() {
+    let submitter = accounts(0);
+    let TestContext {
+        mut contract,
+        headers,
+        updates: _,
+    } = get_kiln_test_context(None);
+    set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
+
+    contract.register_submitter();
+    contract.submit_execution_header(headers[1].clone());
+    contract.submit_execution_header(headers[1].clone());
+}
+
+#[test]
+#[should_panic(expected = "can't submit blocks because it is not registered")]
+pub fn test_panic_on_submit_execution_block_after_unregister() {
+    let submitter = accounts(0);
+    let TestContext {
+        mut contract,
+        headers,
+        updates: _,
+    } = get_kiln_test_context(None);
+    set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
+
+    contract.register_submitter();
+    contract.unregister_submitter();
+    contract.submit_execution_header(headers[1].clone());
+}
+
+#[test]
 #[should_panic(expected = "paused")]
 pub fn test_panic_on_submit_update_paused() {
     let TestContext {
@@ -419,7 +505,7 @@ pub fn test_panic_on_unregister_submitter() {
 }
 
 #[test]
-#[should_panic(expected = "is not registered")]
+#[should_panic(expected = "can't submit blocks because it is not registered")]
 pub fn test_panic_on_skipping_register_submitter() {
     let submitter = accounts(0);
     let TestContext {
@@ -431,9 +517,35 @@ pub fn test_panic_on_skipping_register_submitter() {
 
     assert_eq!(contract.last_block_number(), headers[0].number);
 
-    for header in &headers[1..5] {
-        contract.submit_execution_header(header.clone());
-        assert!(contract.is_known_execution_header(header.calculate_hash()));
-        assert!(contract.block_hash_safe(header.number).is_none());
-    }
+    contract.submit_execution_header(headers[1].clone());
+}
+
+#[test]
+#[should_panic(expected = "Sync committee bits sum is less than 2/3 threshold, bits sum: 341")]
+pub fn test_panic_on_sync_committee_bits_is_less_than_threshold() {
+    let TestContext {
+        mut contract,
+        headers: _,
+        updates,
+    } = get_kiln_test_context(None);
+    set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
+    let mut update = updates[1].clone();
+    // 341 participants
+    let sync_committee_bits = hex::decode("fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8000000000000000000000000000000000000000000").unwrap();
+    update.sync_aggregate.sync_committee_bits = sync_committee_bits.into();
+    contract.submit_beacon_chain_light_client_update(update);
+}
+
+#[test]
+#[should_panic(expected = "The sync committee update is missed")]
+pub fn test_panic_on_missing_sync_committee_update() {
+    let TestContext {
+        mut contract,
+        headers: _,
+        updates,
+    } = get_kiln_test_context(None);
+    set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
+    let mut update = updates[1].clone();
+    update.sync_committee_update = None;
+    contract.submit_beacon_chain_light_client_update(update);
 }

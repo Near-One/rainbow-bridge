@@ -304,7 +304,8 @@ impl EthClient {
         );
         assert!(
             sync_committee_bits_sum * 3 >= (sync_committee_bits.len() * 2).try_into().unwrap(),
-            "Sync committee bits sum is less than 2/3 threshold"
+            "Sync committee bits sum is less than 2/3 threshold, bits sum: {}",
+            sync_committee_bits_sum
         );
 
         #[cfg(feature = "bls")]
@@ -359,7 +360,9 @@ impl EthClient {
         // Verify that the `next_sync_committee`, if present, actually is the next sync committee saved in the
         // state of the `active_header`
         if update_period != finalized_period {
-            let sync_committee_update = update.sync_committee_update.as_ref().unwrap();
+            let sync_committee_update = update.sync_committee_update.as_ref().unwrap_or_else(|| {
+                env::panic_str("The sync committee update is missed")
+            });
             let branch = convert_branch(&sync_committee_update.next_sync_committee_branch);
             assert!(
                 merkle_proof::verify_merkle_proof(
