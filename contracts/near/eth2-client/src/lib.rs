@@ -219,6 +219,7 @@ impl EthClient {
                 env::panic_str("Can't unregister the account with used storage")
             }
 
+            self.submitters.remove(&account_id);
             Promise::new(account_id).transfer(self.min_storage_balance_for_submitter)
         } else {
             env::panic_str("The account is not registered");
@@ -528,7 +529,7 @@ impl EthClient {
             .submitters
             .get(submitter)
             .unwrap_or_else(|| {
-                env::panic_str(format!("The account {} is not registered", &submitter).as_str())
+                env::panic_str(format!("The account {} can't submit blocks because it is not registered", &submitter).as_str())
             })
             .into();
 
