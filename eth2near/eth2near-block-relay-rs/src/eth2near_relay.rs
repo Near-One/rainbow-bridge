@@ -1,9 +1,9 @@
 use crate::beacon_rpc_client::{BeaconRPCClient, ExecutionPayloadError, MissSyncCommitteeUpdate};
-use crate::eth_client_contract::EthClientContract;
 use std::cmp::max;
 use std::error::Error;
 use std::vec::Vec;
 use contract_wrapper::contract_wrapper_trait::ContractWrapper;
+use contract_wrapper::eth_client_contract::EthClientContract;
 use eth_types::{BlockHeader, H256};
 use eth_types::eth2::LightClientUpdate;
 use crate::eth1_rpc_client::Eth1RPCClient;

@@ -9,7 +9,7 @@ use serde_json::json;
 use near_primitives::borsh::BorshSerialize;
 use std::option::Option;
 use near_sdk::ONE_NEAR;
-use contract_wrapper::contract_wrapper_trait::ContractWrapper;
+use crate::contract_wrapper_trait::ContractWrapper;
 
 pub struct EthClientContract {
     last_slot: u64,
