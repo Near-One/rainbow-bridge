@@ -3,6 +3,7 @@ use crate::eth_client_contract::EthClientContract;
 use std::cmp::max;
 use std::error::Error;
 use std::vec::Vec;
+use contract_wrapper::contract_wrapper_trait::ContractWrapper;
 use eth_types::{BlockHeader, H256};
 use eth_types::eth2::LightClientUpdate;
 use crate::eth1_rpc_client::Eth1RPCClient;
@@ -20,14 +21,13 @@ pub struct Eth2NearRelay {
 }
 
 impl Eth2NearRelay {
-    pub fn init(config: &Config) -> Self {
+    pub fn init(config: &Config, contract_wrapper: Box<dyn ContractWrapper>) -> Self {
         info!(target: "relay", "=== Relay initialization === ");
 
         let eth2near_relay = Eth2NearRelay {
             beacon_rpc_client: BeaconRPCClient::new(&config.beacon_endpoint),
             eth1_rpc_client: Eth1RPCClient::new(&config.eth1_endpoint),
-            eth_client_contract: EthClientContract::new(&config.near_endpoint, &config.signer_account_id,
-                                                        &config.path_to_signer_secret_key, &config.contract_account_id),
+            eth_client_contract: EthClientContract::new(contract_wrapper),
             max_submitted_headers: config.total_submit_headers as u64,
             current_gap_between_finalized_and_signature_slot: 96,
             network: config.network.to_string(),

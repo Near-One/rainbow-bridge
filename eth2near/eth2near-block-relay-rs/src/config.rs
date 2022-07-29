@@ -27,6 +27,9 @@ pub struct Config {
 
     // The ethereum network name (main, kiln)
     pub network: String,
+
+    // Contract type (near, dao, file)
+    pub contract_type: String,
 }
 
 impl Config {

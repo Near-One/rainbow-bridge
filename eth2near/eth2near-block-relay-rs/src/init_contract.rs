@@ -1,3 +1,4 @@
+use contract_wrapper::contract_wrapper_trait::ContractWrapper;
 use log::info;
 use eth_types::BlockHeader;
 use eth_types::eth2::ExtendedBeaconBlockHeader;
@@ -6,9 +7,9 @@ use crate::eth1_rpc_client::Eth1RPCClient;
 use crate::eth_client_contract::EthClientContract;
 use crate::config::Config;
 
-pub fn init_contract(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
+pub fn init_contract(config: &Config, contract_wrapper: Box<dyn ContractWrapper>) -> Result<(), Box<dyn std::error::Error>> {
     info!(target: "relay", "=== Contract initialization ===");
-    let eth_client_contract = EthClientContract::new(&config.near_endpoint, &config.signer_account_id, &config.path_to_signer_secret_key, &config.contract_account_id);
+    let eth_client_contract = EthClientContract::new(contract_wrapper);
 
     let beacon_rpc_client = BeaconRPCClient::new(&config.beacon_endpoint);
     let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);

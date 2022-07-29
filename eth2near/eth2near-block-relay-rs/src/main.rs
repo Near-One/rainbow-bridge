@@ -1,6 +1,10 @@
+extern crate core;
+
 use clap::{Parser, ArgAction};
 use eth2_to_near_relay::eth2near_relay::Eth2NearRelay;
 use std::string::String;
+use contract_wrapper::contract_wrapper_trait::ContractWrapper;
+use contract_wrapper::near_contract_wrapper::NearContractWrapper;
 use log::{LevelFilter};
 use eth2_to_near_relay::init_contract::init_contract;
 use eth2_to_near_relay::logger::SimpleLogger;
@@ -18,16 +22,27 @@ struct Arguments {
     init_contract: bool,
 }
 
+fn get_contract_wrapper(config: &Config) -> Box<dyn ContractWrapper> {
+    match config.contract_type.as_str() {
+        "near" => Box::new(NearContractWrapper::new(&config.near_endpoint, &config.signer_account_id,
+                                                    &config.path_to_signer_secret_key,
+                                                    &config.contract_account_id)),
+        _ => Box::new(NearContractWrapper::new(&config.near_endpoint, &config.signer_account_id,
+                                               &config.path_to_signer_secret_key,
+                                               &config.contract_account_id))
+    }
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     log::set_boxed_logger(Box::new(SimpleLogger)).map(|()| log::set_max_level(LevelFilter::Trace)).unwrap();
     let args = Arguments::parse();
     let config = Config::load_from_toml(args.config.try_into().unwrap());
 
     if args.init_contract == true {
-        init_contract(&config).unwrap();
+        init_contract(&config, get_contract_wrapper(&config)).unwrap();
     }
-    
-    let mut eth2near_relay = Eth2NearRelay::init(&config);
+
+    let mut eth2near_relay = Eth2NearRelay::init(&config, get_contract_wrapper(&config));
 
     Ok(eth2near_relay.run())
 }
