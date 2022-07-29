@@ -324,6 +324,15 @@ impl EthClient {
             "The active header slot number should be higher than the finalized slot"
         );
 
+        let update_period = compute_sync_committee_period(active_header.slot);
+        assert!(
+            update_period == finalized_period || update_period == finalized_period + 1,
+            "The acceptable update periods are '{}' and '{}' but got {}",
+            finalized_period,
+            finalized_period + 1,
+            update_period
+        );
+
         // Verify that the `finality_branch`, confirms `finalized_header`
         // to match the finalized checkpoint root saved in the state of `attested_header`.
         let branch = convert_branch(&update.finality_update.finality_branch);
@@ -345,8 +354,6 @@ impl EthClient {
             validate_beacon_block_header_update(&update.finality_update.header_update),
             "Invalid execution block hash proof"
         );
-
-        let update_period = compute_sync_committee_period(active_header.slot);
 
         // Verify that the `next_sync_committee`, if present, actually is the next sync committee saved in the
         // state of the `active_header`
