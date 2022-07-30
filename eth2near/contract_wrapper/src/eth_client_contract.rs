@@ -8,7 +8,7 @@ use near_primitives::types::AccountId;
 use serde_json::json;
 use near_primitives::borsh::BorshSerialize;
 use std::option::Option;
-use near_sdk::ONE_NEAR;
+use near_sdk::{Balance};
 use crate::contract_wrapper_trait::ContractWrapper;
 
 pub struct EthClientContract {
@@ -58,8 +58,12 @@ impl EthClientContract {
         Ok(())
     }
 
+    pub fn get_min_deposit(&self) -> Result<Balance, Box<dyn Error>> {
+        Ok(Balance::try_from_slice(&self.contract_wrapper.call_view_function("min_storage_balance_for_submitter".to_string(), json!({}).to_string().into_bytes())?)?)
+    }
+
     pub fn register(&self) -> Result<(), Box<dyn Error>> {
-        self.contract_wrapper.call_change_method(vec!["register_submitter".to_string()], vec![json!({}).to_string().into_bytes()], vec![10*ONE_NEAR])
+        self.contract_wrapper.call_change_method(vec!["register_submitter".to_string()], vec![json!({}).to_string().into_bytes()], vec![self.get_min_deposit()?])
     }
 
     pub fn init_contract(&self, network: String, finalized_execution_header: BlockHeader,
@@ -69,7 +73,7 @@ impl EthClientContract {
         #[derive(BorshSerialize)]
         pub struct InitInput {
             pub network: String,
-            pub finalized_execution_header: BlockHeader,
+            pub finalized_execution_header: eth_types::BlockHeader,
             pub finalized_beacon_header: ExtendedBeaconBlockHeader,
             pub current_sync_committee: SyncCommittee,
             pub next_sync_committee: SyncCommittee,

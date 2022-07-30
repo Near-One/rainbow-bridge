@@ -126,6 +126,7 @@ impl BeaconRPCClient {
             Self::URL_HEADER_PATH,
             block_id
         );
+
         let json_str =
             Self::get_header_json_from_rpc_result(&self.get_json_from_raw_request(&url)?)?;
         Ok(serde_json::from_str(&json_str)?)
