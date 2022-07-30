@@ -32,6 +32,7 @@ pub const EXECUTION_PROOF_SIZE: usize =
 pub enum Network {
     Mainnet,
     Kiln,
+    Ropsten,
 }
 
 impl FromStr for Network {
@@ -40,6 +41,7 @@ impl FromStr for Network {
         match input {
             "mainnet" => Ok(Network::Mainnet),
             "kiln" => Ok(Network::Kiln),
+            "ropsten" => Ok(Network::Ropsten),
             _ => Err(format!("Unknown network {}", input)),
         }
     }
@@ -71,6 +73,15 @@ impl NetworkConfig {
                 ],
                 bellatrix_fork_version: [0x70, 0x00, 0x00, 0x71],
                 bellatrix_fork_epoch: 150,
+            },
+            Network::Ropsten => Self {
+                genesis_validators_root: [
+                    0x44, 0xf1, 0xe5, 0x62, 0x83, 0xca, 0x88, 0xb3, 0x5c, 0x78, 0x9f, 0x7f, 0x44,
+                    0x9e, 0x52, 0x33, 0x9b, 0xc1, 0xfe, 0xfe, 0x3a, 0x45, 0x91, 0x3a, 0x43, 0xa6,
+                    0xd1, 0x6e, 0xdc, 0xd3, 0x3c, 0xf1,
+                ],
+                bellatrix_fork_version: [0x80, 0x00, 0x00, 0x71],
+                bellatrix_fork_epoch: 750,
             },
         }
     }
