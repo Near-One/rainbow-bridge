@@ -10,6 +10,9 @@ pub struct HandMadeFinalityLightClientUpdate {}
 impl HandMadeFinalityLightClientUpdate {
     pub fn get_finality_light_client_update(beacon_rpc_client: &BeaconRPCClient,
                                             signature_slot: u64) -> Result<LightClientUpdate, Box<dyn Error>> {
+        const BEACON_STATE_MERKLE_TREE_DEPTH: usize = 5;
+        const BEACON_STATE_FINALIZED_CHECKPOINT_INDEX: usize = 20;
+
         let signature_beacon_body = beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", signature_slot)).unwrap();
         let sync_committe_signature = signature_beacon_body.sync_aggregate().unwrap();
 
@@ -21,7 +24,7 @@ impl HandMadeFinalityLightClientUpdate {
         let finality_header = beacon_rpc_client.get_beacon_block_header_for_block_id(&format!("{:?}", &finality_hash)).unwrap();
 
         let beacon_state_merkle_tree = BeaconStateMerkleTree::new(&beacon_state);
-        let mut proof = beacon_state_merkle_tree.0.generate_proof(20, 5);
+        let mut proof = beacon_state_merkle_tree.0.generate_proof(BEACON_STATE_FINALIZED_CHECKPOINT_INDEX, BEACON_STATE_MERKLE_TREE_DEPTH);
 
         let mut finality_branch = vec![beacon_state.finalized_checkpoint().epoch.tree_hash_root()];
         finality_branch.append(&mut proof.1);
