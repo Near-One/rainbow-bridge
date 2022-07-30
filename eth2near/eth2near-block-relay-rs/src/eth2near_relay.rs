@@ -18,6 +18,7 @@ pub struct Eth2NearRelay {
     max_submitted_headers: u64,
     current_gap_between_finalized_and_signature_slot: u64,
     network: String,
+    light_client_updates_submission_frequency_in_epochs: i64,
 }
 
 impl Eth2NearRelay {
@@ -31,6 +32,7 @@ impl Eth2NearRelay {
             max_submitted_headers: config.total_submit_headers as u64,
             current_gap_between_finalized_and_signature_slot: 96,
             network: config.network.to_string(),
+            light_client_updates_submission_frequency_in_epochs: config.light_client_updates_submission_frequency_in_epochs,
         };
         eth2near_relay.eth_client_contract.register().unwrap();
         eth2near_relay
@@ -258,8 +260,8 @@ impl Eth2NearRelay {
 
         let last_submitted_slot = self.eth_client_contract.get_last_submitted_slot();
 
-        if (last_submitted_slot as i64) - (last_finalized_slot_on_near as i64) < 32 {
-            info!(target: "relay", "Light client update were send less then epoch ago. Skipping sending light client update");
+        if (last_submitted_slot as i64) - (last_finalized_slot_on_near as i64) < 32 * self.light_client_updates_submission_frequency_in_epochs {
+            info!(target: "relay", "Light client update were send less then {} epochs ago. Skipping sending light client update", self.light_client_updates_submission_frequency_in_epochs);
             return;
         }
 
