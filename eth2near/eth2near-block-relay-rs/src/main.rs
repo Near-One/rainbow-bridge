@@ -20,6 +20,10 @@ struct Arguments {
     #[clap(long, action = ArgAction::SetTrue)]
     /// The eth contract on Near will be initialized
     init_contract: bool,
+
+    #[clap(long, default_value_t = String::from("info"))]
+    /// Log level (trace, info, warn, error)
+    log_level: String, 
 }
 
 fn get_contract_wrapper(config: &Config) -> Box<dyn ContractWrapper> {
@@ -34,8 +38,15 @@ fn get_contract_wrapper(config: &Config) -> Box<dyn ContractWrapper> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    log::set_boxed_logger(Box::new(SimpleLogger)).map(|()| log::set_max_level(LevelFilter::Trace)).unwrap();
     let args = Arguments::parse();
+    let log_level_filter = match args.log_level.as_str() {
+        "trace" => LevelFilter::Trace,
+        "warn" => LevelFilter::Warn,
+        "error" => LevelFilter::Error,
+        _ => LevelFilter::Info
+    };
+
+    log::set_boxed_logger(Box::new(SimpleLogger)).map(|()| log::set_max_level(log_level_filter)).unwrap();
     let config = Config::load_from_toml(args.config.try_into().unwrap());
 
     if args.init_contract == true {
