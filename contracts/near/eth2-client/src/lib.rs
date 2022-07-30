@@ -360,9 +360,10 @@ impl EthClient {
         // Verify that the `next_sync_committee`, if present, actually is the next sync committee saved in the
         // state of the `active_header`
         if update_period != finalized_period {
-            let sync_committee_update = update.sync_committee_update.as_ref().unwrap_or_else(|| {
-                env::panic_str("The sync committee update is missed")
-            });
+            let sync_committee_update = update
+                .sync_committee_update
+                .as_ref()
+                .unwrap_or_else(|| env::panic_str("The sync committee update is missed"));
             let branch = convert_branch(&sync_committee_update.next_sync_committee_branch);
             assert!(
                 merkle_proof::verify_merkle_proof(
@@ -532,7 +533,13 @@ impl EthClient {
             .submitters
             .get(submitter)
             .unwrap_or_else(|| {
-                env::panic_str(format!("The account {} can't submit blocks because it is not registered", &submitter).as_str())
+                env::panic_str(
+                    format!(
+                        "The account {} can't submit blocks because it is not registered",
+                        &submitter
+                    )
+                    .as_str(),
+                )
             })
             .into();
 

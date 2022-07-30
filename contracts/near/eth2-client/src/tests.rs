@@ -89,7 +89,7 @@ struct TestContext<'a> {
     updates: &'a Vec<LightClientUpdate>,
 }
 
-struct InitOptions {
+pub struct InitOptions {
     pub validate_updates: bool,
     pub verify_bls_signatures: bool,
     pub hashes_gc_threshold: u64,
@@ -97,7 +97,13 @@ struct InitOptions {
     pub trusted_signer: Option<AccountId>,
 }
 
-fn get_kiln_test_context(init_options: Option<InitOptions>) -> TestContext<'static> {
+pub fn get_kiln_test_data(
+    init_options: Option<InitOptions>,
+) -> (
+    &'static Vec<BlockHeader>,
+    &'static Vec<LightClientUpdate>,
+    InitInput,
+) {
     const NETWORK: &str = "kiln";
     lazy_static! {
         static ref INIT_UPDATE: LightClientUpdate =
@@ -118,7 +124,7 @@ fn get_kiln_test_context(init_options: Option<InitOptions>) -> TestContext<'stat
         trusted_signer: None,
     });
 
-    let contract = EthClient::init(InitInput {
+    let init_input = InitInput {
         network: NETWORK.to_string(),
         finalized_execution_header: HEADERS[0].clone(),
         finalized_beacon_header: UPDATES[0].clone().finality_update.header_update.into(),
@@ -140,14 +146,19 @@ fn get_kiln_test_context(init_options: Option<InitOptions>) -> TestContext<'stat
         hashes_gc_threshold: init_options.hashes_gc_threshold,
         max_submitted_blocks_by_account: init_options.max_submitted_blocks_by_account,
         trusted_signer: init_options.trusted_signer,
-    });
+    };
 
-    assert_eq!(contract.last_block_number(), HEADERS[0].number);
+    (&HEADERS, &UPDATES, init_input)
+}
+fn get_kiln_test_context(init_options: Option<InitOptions>) -> TestContext<'static> {
+    let (headers, updates, init_input) = get_kiln_test_data(init_options);
+    let contract = EthClient::init(init_input);
+    assert_eq!(contract.last_block_number(), headers[0].number);
 
     TestContext {
         contract,
-        headers: &HEADERS,
-        updates: &UPDATES,
+        headers: &headers,
+        updates: &updates,
     }
 }
 
@@ -548,4 +559,103 @@ pub fn test_panic_on_missing_sync_committee_update() {
     let mut update = updates[1].clone();
     update.sync_committee_update = None;
     contract.submit_beacon_chain_light_client_update(update);
+}
+
+mod integration_tests {
+    use borsh::BorshSerialize;
+    use near_sdk::ONE_NEAR;
+    use near_units::*;
+    use workspaces::operations::Function;
+    use workspaces::prelude::*;
+    use workspaces::{network::Sandbox, Account, Contract, Worker};
+
+    use crate::tests::*;
+
+    const WASM_FILEPATH: &str = "../res/eth2_client.wasm";
+
+    async fn initialize_client(
+        init_input: InitInput,
+    ) -> anyhow::Result<(Account, Contract, Worker<Sandbox>)> {
+        let worker = workspaces::sandbox().await?;
+        let wasm = std::fs::read(WASM_FILEPATH)?;
+        let contract = worker.dev_deploy(&wasm).await?;
+
+        // create accounts
+        let owner = worker.root_account()?;
+        let alice = owner
+            .create_subaccount(&worker, "alice")
+            .initial_balance(parse_near!("30 N"))
+            .transact()
+            .await?
+            .into_result()?;
+
+        alice
+            .call(&worker, contract.id(), "init")
+            .args(init_input.try_to_vec()?)
+            .transact()
+            .await?;
+        Ok((alice, contract, worker))
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_gas_usage_of_submit_beacon_chain_light_client_update() -> anyhow::Result<()> {
+        let (headers, updates, init_input) = get_kiln_test_data(Some(InitOptions {
+            validate_updates: false,
+            verify_bls_signatures: false,
+            hashes_gc_threshold: 51000,
+            max_submitted_blocks_by_account: 7000,
+            trusted_signer: None,
+        }));
+        let (alice, contract, worker) = initialize_client(init_input).await?;
+
+        alice
+            .call(&worker, contract.id(), "register_submitter")
+            .deposit(10 * ONE_NEAR)
+            .transact()
+            .await?;
+
+        let num_of_blocks_to_submit = 300;
+        let headers = &headers.as_slice()[1..num_of_blocks_to_submit];
+        for headers_chunk in headers.chunks(50) {
+            let mut transaction = alice.batch(&worker, contract.id());
+            for header in headers_chunk {
+                println!("Submit header {}", header.number);
+                transaction = transaction.call(
+                    Function::new("submit_execution_header")
+                        .args(header.try_to_vec()?)
+                        .gas(parse_gas!("6 T") as u64),
+                );
+            }
+
+            transaction.transact().await?;
+        }
+
+        let mut update = updates[1].clone();
+        update.finality_update.header_update.execution_block_hash =
+            headers.last().unwrap().calculate_hash();
+        let outcome = alice
+            .call(
+                &worker,
+                contract.id(),
+                "submit_beacon_chain_light_client_update",
+            )
+            .args(update.try_to_vec()?)
+            .gas(parse_gas!("300 T") as u64)
+            .transact()
+            .await?;
+
+        for header in headers {
+            let result: Option<H256> = contract
+                .view(&worker, "block_hash_safe", header.number.try_to_vec()?)
+                .await?
+                .borsh()?;
+            assert!(result.is_some())
+        }
+        println!(
+            "Gas burnt: {}",
+            gas::to_human(outcome.total_gas_burnt as u128)
+        );
+        Ok(())
+    }
 }
