@@ -148,8 +148,8 @@ impl Eth2NearRelay {
         trace!(target: "relay", "= Search for last slot on near =");
 
         let mut slot = self.eth_client_contract.get_last_submitted_slot();
-        let finalized_block_hash = self.eth_client_contract.get_finalized_beacon_block_hash()?;
-        let finalized_slot = self.beacon_rpc_client.get_slot_by_beacon_block_root(finalized_block_hash)?;
+        
+        let finalized_slot = self.eth_client_contract.get_finalized_beacon_block_slot()?;
         trace!(target: "relay", "Finalized slot on near={}", finalized_slot);
 
         slot = max(finalized_slot, slot);

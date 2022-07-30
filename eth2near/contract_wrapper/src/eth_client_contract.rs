@@ -44,6 +44,12 @@ impl EthClientContract {
         Ok(beacon_block_hash)
     }
 
+    pub fn get_finalized_beacon_block_slot(&self) -> Result<u64, Box<dyn Error>> {
+        let result = self.contract_wrapper.call_view_function("finalized_beacon_block_slot".to_string(), json!({}).to_string().into_bytes())?;
+        let beacon_block_slot: u64 = u64::try_from_slice(&result)?;
+        Ok(beacon_block_slot)     
+    }
+
     pub fn send_headers(& mut self, headers: &Vec<BlockHeader>, end_slot: u64) -> Result<(), Box<dyn std::error::Error>> {
         self.last_slot = end_slot;
 
