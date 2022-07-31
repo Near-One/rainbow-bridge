@@ -81,13 +81,15 @@ impl ContractWrapper for NearContractWrapper {
             _ => Err("failed to extract current nonce")?,
         };
 
+        let num_blocks_in_batch = method_name.len() as u64;
+        let attached_gas_per_promise_in_batch = 300_000_000_000_000 / num_blocks_in_batch;
         let mut actions = Vec::new();
         for i in 0..method_name.len() {
             actions.push(
                 Action::FunctionCall(FunctionCallAction{
                     method_name: method_name[i].clone(),
                     args: args[i].clone(),
-                    gas: 300_000_000_000_000/method_name.len() as u64, // 300 TeraGas
+                    gas: attached_gas_per_promise_in_batch,
                     deposit: deposit[i].clone(),
                 })
             );
