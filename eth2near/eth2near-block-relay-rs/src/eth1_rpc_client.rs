@@ -59,12 +59,14 @@ impl Eth1RPCClient {
 mod tests {
     use crate::eth1_rpc_client::Eth1RPCClient;
 
-    const TEST_BEACON_BLOCK_ID: u32 = 741888;
+    const TEST_BEACON_BLOCK_ID: u32 = 766535;
     const ETH1_ENDPOINT: &str = "https://rpc.kiln.themerge.dev";
 
     #[test]
     fn test_smoke_get_block_by_number() {
         let eth1_rpc_client = Eth1RPCClient::new(ETH1_ENDPOINT);
-        eth1_rpc_client.get_block_header_by_number(766535);
+        eth1_rpc_client
+            .get_block_header_by_number(TEST_BEACON_BLOCK_ID.into())
+            .unwrap();
     }
 }
