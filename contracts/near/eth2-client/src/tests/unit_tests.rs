@@ -3,6 +3,8 @@ mod tests {
     use crate::tests::utils::*;
     use crate::{EthClient, PAUSE_SUBMIT_UPDATE};
     use admin_controlled::AdminControlled;
+    use bitvec::bitarr;
+    use bitvec::order::Lsb0;
     use eth2_utility::consensus::*;
     use eth_types::eth2::LightClientUpdate;
     use eth_types::{BlockHeader, H256, U256};
@@ -288,7 +290,24 @@ mod tests {
         } = get_test_context(None);
         set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
         let mut update = updates[1].clone();
-        update.finality_update.finality_branch[5] = H256::from(vec![]);
+        update.finality_update.finality_branch[5] = H256::from(
+            hex::decode("ac276e19c97d662b41d0c714524cdf5195c33ea31f82eb3021c45ceabb5c3e00")
+                .unwrap(),
+        );
+        contract.submit_beacon_chain_light_client_update(update);
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid finality proof")]
+    pub fn test_panic_on_empty_finality_proof() {
+        let TestContext {
+            mut contract,
+            headers: _,
+            updates,
+        } = get_test_context(None);
+        set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
+        let mut update = updates[1].clone();
+        update.finality_update.finality_branch = vec![];
         contract.submit_beacon_chain_light_client_update(update);
     }
 
@@ -302,7 +321,24 @@ mod tests {
         } = get_test_context(None);
         set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
         let mut update = updates[1].clone();
-        update.finality_update.header_update.execution_hash_branch[5] = H256::from(vec![]);
+        update.finality_update.header_update.execution_hash_branch[5] = H256::from(
+            hex::decode("a5a5fd42d16a20302798ef6ed309979b43003d2320d9f0e8ea9831a92759fb4b")
+                .unwrap(),
+        );
+        contract.submit_beacon_chain_light_client_update(update);
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid execution block hash proof")]
+    pub fn test_panic_on_empty_execution_block_proof() {
+        let TestContext {
+            mut contract,
+            headers: _,
+            updates,
+        } = get_test_context(None);
+        set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
+        let mut update = updates[1].clone();
+        update.finality_update.header_update.execution_hash_branch = vec![];
         contract.submit_beacon_chain_light_client_update(update);
     }
 
@@ -465,9 +501,12 @@ mod tests {
         } = get_test_context(None);
         set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
         let mut update = updates[1].clone();
+
+        let mut sync_committee_bits = bitarr![u8, Lsb0; 0; 512];
         // 341 participants
-        let sync_committee_bits = hex::decode("fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8000000000000000000000000000000000000000000").unwrap();
-        update.sync_aggregate.sync_committee_bits = sync_committee_bits.into();
+        sync_committee_bits.get_mut(0..341).unwrap().fill(true);
+        update.sync_aggregate.sync_committee_bits =
+            sync_committee_bits.as_raw_mut_slice().to_vec().into();
         contract.submit_beacon_chain_light_client_update(update);
     }
 
