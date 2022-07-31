@@ -291,7 +291,7 @@ mod tests {
         set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
         let mut update = updates[1].clone();
         update.finality_update.finality_branch[5] = H256::from(
-            hex::decode("ac276e19c97d662b41d0c714524cdf5195c33ea31f82eb3021c45ceabb5c3e00")
+            hex::decode("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
                 .unwrap(),
         );
         contract.submit_beacon_chain_light_client_update(update);
@@ -322,7 +322,7 @@ mod tests {
         set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
         let mut update = updates[1].clone();
         update.finality_update.header_update.execution_hash_branch[5] = H256::from(
-            hex::decode("a5a5fd42d16a20302798ef6ed309979b43003d2320d9f0e8ea9831a92759fb4b")
+            hex::decode("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
                 .unwrap(),
         );
         contract.submit_beacon_chain_light_client_update(update);
@@ -503,9 +503,18 @@ mod tests {
         let mut update = updates[1].clone();
 
         let mut sync_committee_bits = bitarr![u8, Lsb0; 0; 512];
-        // 341 participants
-        let num_of_participants: usize = (512 * 2 / 3).try_into().unwrap();
-        sync_committee_bits.get_mut(0..num_of_participants).unwrap().fill(true);
+
+        // The number of participants should satisfy the inequality:
+        // num_of_participants * 3 >= sync_committee_bits_size * 2
+        // If the sync_committee_bits_size = 512, then
+        // the minimum allowed value of num_of_participants is 342.
+
+        // Fill the sync_committee_bits with 341 participants to trigger panic
+        let num_of_participants = (((512.0 * 2.0 / 3.0) as f32).ceil() - 1.0) as usize;
+        sync_committee_bits
+            .get_mut(0..num_of_participants)
+            .unwrap()
+            .fill(true);
         update.sync_aggregate.sync_committee_bits =
             sync_committee_bits.as_raw_mut_slice().to_vec().into();
         contract.submit_beacon_chain_light_client_update(update);
