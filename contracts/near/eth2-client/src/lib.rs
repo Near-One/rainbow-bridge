@@ -88,7 +88,7 @@ impl Eth2Client {
             assert!(
                 (cfg!(feature = "bls") && args.verify_bls_signatures)
                     || args.trusted_signer.is_some(),
-                "The client can't be executed in (trustless mode) and (without bls) on mainnet."
+                "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet"
             );
         }
 

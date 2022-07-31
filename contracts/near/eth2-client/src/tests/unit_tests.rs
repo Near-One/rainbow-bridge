@@ -536,9 +536,9 @@ mod tests {
 
     #[test]
     #[should_panic(
-        expected = "The client can't be executed in (trustless mode) and (without bls) on mainnet."
+        expected = "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet"
     )]
-    pub fn test_panic_on_init_in_trusted_mode_without_bls_on_mainnet() {
+    pub fn test_panic_on_init_in_trustless_mode_without_bls_on_mainnet() {
         let (_headers, _updates, mut init_input) = get_test_data(Some(InitOptions {
             validate_updates: true,
             verify_bls_signatures: false,
@@ -553,9 +553,9 @@ mod tests {
     #[test]
     #[cfg_attr(feature = "bls", ignore)]
     #[should_panic(
-        expected = "The client can't be executed in (trustless mode) and (without bls) on mainnet."
+        expected = "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet"
     )]
-    pub fn test_panic_on_init_in_trusted_mode_without_bls_feature_flag() {
+    pub fn test_panic_on_init_in_trustless_mode_without_bls_feature_flag() {
         let (_headers, _updates, mut init_input) = get_test_data(Some(InitOptions {
             validate_updates: true,
             verify_bls_signatures: true,
