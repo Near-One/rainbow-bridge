@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 eth-types = { path ="../../contracts/near/eth-types/", features = ["eip1559"]}
 bls = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "wasm-tmp", default-features = false, features = ["milagro"]}
-eth2-client  = { path ="../../contracts/near/eth2-client"}
+eth2-utility  = { path ="../../contracts/near/eth2-utility"}
 tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v2.3.1" }
 types =  { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v2.3.1" }
 bitvec = "1.0.0"

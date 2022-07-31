@@ -1,4 +1,12 @@
-use eth2_client::utility::{compute_domain, compute_signing_root, DOMAIN_SYNC_COMMITTEE, get_participant_pubkeys, MIN_SYNC_COMMITTEE_PARTICIPANTS, Network, NetworkConfig};
+use eth2_utility::consensus::{
+    DOMAIN_SYNC_COMMITTEE,
+    MIN_SYNC_COMMITTEE_PARTICIPANTS,
+    Network,
+    NetworkConfig,
+    compute_domain,
+    compute_signing_root,
+    get_participant_pubkeys,
+};
 use eth_types::eth2::{BeaconBlockHeader, LightClientUpdate, SyncCommittee};
 use std::str::FromStr;
 use std::error::Error;
