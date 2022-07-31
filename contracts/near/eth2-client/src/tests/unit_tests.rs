@@ -222,7 +222,7 @@ mod tests {
         let TestContext {
             mut contract,
             headers,
-            updates,
+            updates: _,
         } = get_test_context(Some(InitOptions {
             validate_updates: true,
             verify_bls_signatures: true,
@@ -231,15 +231,32 @@ mod tests {
             trusted_signer: None,
         }));
         set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
-
         contract.register_submitter();
-        for header in headers.iter().skip(1) {
-            contract.submit_execution_header(header.clone());
-            assert!(contract.is_known_execution_header(header.calculate_hash()));
-            assert!(contract.block_hash_safe(header.number).is_none());
-        }
 
-        contract.submit_beacon_chain_light_client_update(updates[1].clone());
+        submit_and_check_execution_headers(&mut contract, headers.iter().skip(1).collect());
+    }
+
+    #[test]
+    pub fn test_max_submit_blocks_by_account_limit() {
+        let submitter = accounts(0);
+        let TestContext {
+            mut contract,
+            headers,
+            updates: _,
+        } = get_test_context(Some(InitOptions {
+            validate_updates: true,
+            verify_bls_signatures: true,
+            hashes_gc_threshold: 7100,
+            max_submitted_blocks_by_account: 100,
+            trusted_signer: None,
+        }));
+        set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
+        contract.register_submitter();
+
+        submit_and_check_execution_headers(
+            &mut contract,
+            headers.iter().skip(1).take(100).collect(),
+        );
     }
 
     #[test]
