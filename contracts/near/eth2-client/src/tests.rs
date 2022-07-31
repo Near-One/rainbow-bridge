@@ -173,6 +173,8 @@ pub fn test_submit_update_periods_100_101() {
     set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
 
     contract.register_submitter();
+    // After submitting the execution header, it should be present in the execution headers list
+    // but absent in canonical chain blocks (not-finalized)
     for header in headers.iter().skip(1) {
         contract.submit_execution_header(header.clone());
         assert!(contract.is_known_execution_header(header.calculate_hash()));
@@ -181,6 +183,10 @@ pub fn test_submit_update_periods_100_101() {
 
     contract.submit_beacon_chain_light_client_update(updates[1].clone());
 
+    // After Beacon Chain `LightClientUpdate` is submitted,
+    // all execution headers having a height lower than the update's height,
+    // should be removed from the execution headers list. Meantime, all these 
+    // removed execution headers should become a part of the canonical chain blocks (finalized)
     for header in headers.iter().skip(1) {
         let header_hash = header.calculate_hash();
         assert!(!contract.is_known_execution_header(header_hash));
@@ -220,6 +226,7 @@ pub fn test_submit_execution_block_from_fork_chain() {
 
     // Submit execution header with different hash
     let mut fork_header = headers[5].clone();
+    // Difficulty is modified just in order to get a different header hash. Any other field would be suitable too
     fork_header.difficulty = U256::from(ethereum_types::U256::from(99));
     contract.submit_execution_header(fork_header.clone());
     contract.submit_beacon_chain_light_client_update(updates[1].clone());
@@ -241,7 +248,7 @@ pub fn test_submit_execution_block_from_fork_chain() {
             .block_hash_safe(fork_header.number)
             .unwrap_or_default()
             != fork_header.calculate_hash(),
-        "The execution block {:?} should not be finalized",
+        "The fork's execution block header {:?} is expected not to be finalized, but it is finalized",
         fork_header.calculate_hash()
     );
 
@@ -273,6 +280,7 @@ pub fn test_gc_headers() {
 
     contract.submit_beacon_chain_light_client_update(updates[1].clone());
 
+    // Last 500 execution headers are finalized
     for header in headers.iter().skip(1).rev().take(500) {
         assert!(!contract.is_known_execution_header(header.calculate_hash()));
         assert!(
@@ -284,6 +292,7 @@ pub fn test_gc_headers() {
 
     assert_eq!(contract.last_block_number(), headers.last().unwrap().number);
 
+    // Headers older than last 500 hundred headers are both removed and are not present in execution header list
     for header in headers.iter().skip(1).rev().skip(500) {
         assert!(!contract.is_known_execution_header(header.calculate_hash()));
         assert!(
@@ -422,7 +431,7 @@ pub fn test_panic_on_submit_same_execution_blocks() {
 
 #[test]
 #[should_panic(expected = "can't submit blocks because it is not registered")]
-pub fn test_panic_on_submit_execution_block_after_unregister() {
+pub fn test_panic_on_submit_execution_block_after_submitter_unregistered() {
     let submitter = accounts(0);
     let TestContext {
         mut contract,
