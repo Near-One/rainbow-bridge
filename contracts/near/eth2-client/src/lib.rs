@@ -567,7 +567,7 @@ impl EthClient {
 
         if let Some(trusted_signer) = &self.trusted_signer {
             assert_eq!(
-                &env::signer_account_id(),
+                &env::predecessor_account_id(),
                 trusted_signer,
                 "Eth-client is deployed as trust mode, only trusted_signer can update the client"
             );
