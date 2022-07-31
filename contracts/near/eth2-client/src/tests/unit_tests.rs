@@ -533,4 +533,37 @@ mod tests {
         update.sync_committee_update = None;
         contract.submit_beacon_chain_light_client_update(update);
     }
+
+    #[test]
+    #[should_panic(
+        expected = "The client can't be executed in (trustless mode) and (without bls) on mainnet."
+    )]
+    pub fn test_panic_on_init_in_trusted_mode_without_bls_on_mainnet() {
+        let (_headers, _updates, mut init_input) = get_test_data(Some(InitOptions {
+            validate_updates: true,
+            verify_bls_signatures: false,
+            hashes_gc_threshold: 500,
+            max_submitted_blocks_by_account: 7000,
+            trusted_signer: None,
+        }));
+        init_input.network = "mainnet".to_string();
+        let contract = EthClient::init(init_input);
+    }
+
+    #[test]
+    #[cfg_attr(feature = "bls", ignore)]
+    #[should_panic(
+        expected = "The client can't be executed in (trustless mode) and (without bls) on mainnet."
+    )]
+    pub fn test_panic_on_init_in_trusted_mode_without_bls_feature_flag() {
+        let (_headers, _updates, mut init_input) = get_test_data(Some(InitOptions {
+            validate_updates: true,
+            verify_bls_signatures: true,
+            hashes_gc_threshold: 500,
+            max_submitted_blocks_by_account: 7000,
+            trusted_signer: None,
+        }));
+        init_input.network = "mainnet".to_string();
+        EthClient::init(init_input);
+    }
 }

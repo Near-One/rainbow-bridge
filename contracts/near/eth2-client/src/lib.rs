@@ -74,7 +74,6 @@ pub struct EthClient {
 impl EthClient {
     #[init]
     pub fn init(#[serializer(borsh)] args: InitInput) -> Self {
-        assert!(!Self::initialized(), "Already initialized");
         let min_storage_balance_for_submitter =
             calculate_min_storage_balance_for_submitter(args.max_submitted_blocks_by_account);
         let network =
@@ -84,6 +83,12 @@ impl EthClient {
             assert!(
                 args.validate_updates,
                 "The updates validation can't be disabled for mainnet"
+            );
+
+            assert!(
+                (cfg!(feature = "bls") && args.verify_bls_signatures)
+                    || args.trusted_signer.is_some(),
+                "The client can't be executed in (trustless mode) and (without bls) on mainnet."
             );
         }
 
