@@ -598,7 +598,6 @@ mod integration_tests {
     }
 
     #[tokio::test]
-    #[ignore]
     async fn test_gas_usage_of_submit_beacon_chain_light_client_update() -> anyhow::Result<()> {
         let (headers, updates, init_input) = get_kiln_test_data(Some(InitOptions {
             validate_updates: false,
@@ -615,12 +614,11 @@ mod integration_tests {
             .transact()
             .await?;
 
-        let num_of_blocks_to_submit = 300;
+        let num_of_blocks_to_submit = 32;
         let headers = &headers.as_slice()[1..num_of_blocks_to_submit];
         for headers_chunk in headers.chunks(50) {
             let mut transaction = alice.batch(&worker, contract.id());
             for header in headers_chunk {
-                println!("Submit header {}", header.number);
                 transaction = transaction.call(
                     Function::new("submit_execution_header")
                         .args(header.try_to_vec()?)
