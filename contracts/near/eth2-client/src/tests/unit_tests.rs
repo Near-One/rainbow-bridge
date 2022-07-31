@@ -504,7 +504,8 @@ mod tests {
 
         let mut sync_committee_bits = bitarr![u8, Lsb0; 0; 512];
         // 341 participants
-        sync_committee_bits.get_mut(0..341).unwrap().fill(true);
+        let num_of_participants: usize = (512 * 2 / 3).try_into().unwrap();
+        sync_committee_bits.get_mut(0..num_of_participants).unwrap().fill(true);
         update.sync_aggregate.sync_committee_bits =
             sync_committee_bits.as_raw_mut_slice().to_vec().into();
         contract.submit_beacon_chain_light_client_update(update);
