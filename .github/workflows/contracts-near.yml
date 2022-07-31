@@ -15,6 +15,8 @@ jobs:
             cmd: |
               cd contracts/near/eth-client
               ./build.sh
+              cd ../eth2-client
+              ./build.sh
               cd ../eth-prover
               ./build.sh
               git status
@@ -28,6 +30,12 @@ jobs:
           - job-name: test eth-client
             cmd: |
               cd contracts/near/eth-client
+              ./test.sh
+            timeout-minutes: 40
+
+          - job-name: test eth2-client
+            cmd: |
+              cd contracts/near/eth2-client
               ./test.sh
             timeout-minutes: 40
 

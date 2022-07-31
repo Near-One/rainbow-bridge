@@ -214,7 +214,7 @@ impl EthClient {
     #[payable]
     pub fn unregister_submitter(&mut self) -> Promise {
         let account_id = env::predecessor_account_id();
-        if let Some(num_of_submitted_blocks) = self.submitters.get(&account_id) {
+        if let Some(num_of_submitted_blocks) = self.submitters.remove(&account_id) {
             if num_of_submitted_blocks > 0 {
                 env::panic_str("Can't unregister the account with used storage")
             }
@@ -303,7 +303,8 @@ impl EthClient {
         );
         assert!(
             sync_committee_bits_sum * 3 >= (sync_committee_bits.len() * 2).try_into().unwrap(),
-            "Sync committee bits sum is less than 2/3 threshold"
+            "Sync committee bits sum is less than 2/3 threshold, bits sum: {}",
+            sync_committee_bits_sum
         );
 
         #[cfg(feature = "bls")]
@@ -322,6 +323,15 @@ impl EthClient {
         assert!(
             active_header.slot > self.finalized_beacon_header.header.slot,
             "The active header slot number should be higher than the finalized slot"
+        );
+
+        let update_period = compute_sync_committee_period(active_header.slot);
+        assert!(
+            update_period == finalized_period || update_period == finalized_period + 1,
+            "The acceptable update periods are '{}' and '{}' but got {}",
+            finalized_period,
+            finalized_period + 1,
+            update_period
         );
 
         // Verify that the `finality_branch`, confirms `finalized_header`
@@ -346,12 +356,13 @@ impl EthClient {
             "Invalid execution block hash proof"
         );
 
-        let update_period = compute_sync_committee_period(active_header.slot);
-
         // Verify that the `next_sync_committee`, if present, actually is the next sync committee saved in the
         // state of the `active_header`
         if update_period != finalized_period {
-            let sync_committee_update = update.sync_committee_update.as_ref().unwrap();
+            let sync_committee_update = update
+                .sync_committee_update
+                .as_ref()
+                .unwrap_or_else(|| env::panic_str("The sync committee update is missed"));
             let branch = convert_branch(&sync_committee_update.next_sync_committee_branch);
             assert!(
                 merkle_proof::verify_merkle_proof(
@@ -521,7 +532,13 @@ impl EthClient {
             .submitters
             .get(submitter)
             .unwrap_or_else(|| {
-                env::panic_str(format!("The account {} is not registered", &submitter).as_str())
+                env::panic_str(
+                    format!(
+                        "The account {} can't submit blocks because it is not registered",
+                        &submitter
+                    )
+                    .as_str(),
+                )
             })
             .into();
 

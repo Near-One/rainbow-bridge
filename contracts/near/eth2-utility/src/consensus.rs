@@ -171,6 +171,10 @@ pub fn convert_branch(branch: &[H256]) -> Vec<ethereum_types::H256> {
 
 pub fn validate_beacon_block_header_update(header_update: &HeaderUpdate) -> bool {
     let branch = convert_branch(&header_update.execution_hash_branch);
+    if branch.len() != EXECUTION_PROOF_SIZE {
+        return false;
+    }
+
     let l2_proof = &branch[0..L2_EXECUTION_PAYLOAD_PROOF_SIZE];
     let l1_proof = &branch[L2_EXECUTION_PAYLOAD_PROOF_SIZE..EXECUTION_PROOF_SIZE];
     let execution_payload_hash = merkle_proof::merkle_root_from_branch(
