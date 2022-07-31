@@ -68,7 +68,7 @@ impl EthClientContract {
         Ok(Balance::try_from_slice(&self.contract_wrapper.call_view_function("min_storage_balance_for_submitter".to_string(), json!({}).to_string().into_bytes())?)?)
     }
 
-    pub fn register(&self) -> Result<(), Box<dyn Error>> {
+    pub fn register_submitter(&self) -> Result<(), Box<dyn Error>> {
         self.contract_wrapper.call_change_method(vec!["register_submitter".to_string()], vec![json!({}).to_string().into_bytes()], vec![self.get_min_deposit()?])
     }
 
