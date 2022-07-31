@@ -32,7 +32,7 @@ enum StorageKey {
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-pub struct EthClient {
+pub struct Eth2Client {
     /// If set, only light client updates by the trusted signer will be accepted
     trusted_signer: Option<AccountId>,
     /// Mask determining all paused functions
@@ -71,7 +71,7 @@ pub struct EthClient {
 }
 
 #[near_bindgen]
-impl EthClient {
+impl Eth2Client {
     #[init]
     pub fn init(#[serializer(borsh)] args: InitInput) -> Self {
         let min_storage_balance_for_submitter =
@@ -134,7 +134,7 @@ impl EthClient {
 
     #[result_serializer(borsh)]
     pub fn initialized() -> bool {
-        env::state_read::<EthClient>().is_some()
+        env::state_read::<Eth2Client>().is_some()
     }
 
     /// Returns finalized execution block number
@@ -287,7 +287,7 @@ impl EthClient {
     }
 }
 
-impl EthClient {
+impl Eth2Client {
     fn validate_light_client_update(&self, update: &LightClientUpdate) {
         #[cfg(feature = "logs")]
         env::log_str(format!("Validate update. Used gas: {}", env::used_gas().0).as_str());
@@ -575,4 +575,4 @@ impl EthClient {
     }
 }
 
-admin_controlled::impl_admin_controlled!(EthClient, paused);
+admin_controlled::impl_admin_controlled!(Eth2Client, paused);

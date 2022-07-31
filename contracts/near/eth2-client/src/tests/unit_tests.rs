@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::tests::utils::*;
-    use crate::{EthClient, PAUSE_SUBMIT_UPDATE};
+    use crate::{Eth2Client, PAUSE_SUBMIT_UPDATE};
     use admin_controlled::AdminControlled;
     use bitvec::bitarr;
     use bitvec::order::Lsb0;
@@ -39,14 +39,14 @@ mod tests {
     }
 
     pub struct TestContext<'a> {
-        contract: EthClient,
+        contract: Eth2Client,
         headers: &'a Vec<BlockHeader>,
         updates: &'a Vec<LightClientUpdate>,
     }
 
     pub fn get_test_context(init_options: Option<InitOptions>) -> TestContext<'static> {
         let (headers, updates, init_input) = get_test_data(init_options);
-        let contract = EthClient::init(init_input);
+        let contract = Eth2Client::init(init_input);
         assert_eq!(contract.last_block_number(), headers[0].number);
 
         TestContext {
@@ -57,7 +57,7 @@ mod tests {
     }
 
     pub fn submit_and_check_execution_headers(
-        contract: &mut EthClient,
+        contract: &mut Eth2Client,
         headers: Vec<&BlockHeader>,
     ) {
         for header in headers {
@@ -547,7 +547,7 @@ mod tests {
             trusted_signer: None,
         }));
         init_input.network = "mainnet".to_string();
-        let contract = EthClient::init(init_input);
+        Eth2Client::init(init_input);
     }
 
     #[test]
@@ -564,6 +564,6 @@ mod tests {
             trusted_signer: None,
         }));
         init_input.network = "mainnet".to_string();
-        EthClient::init(init_input);
+        Eth2Client::init(init_input);
     }
 }
