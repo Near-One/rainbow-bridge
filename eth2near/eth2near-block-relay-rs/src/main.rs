@@ -57,11 +57,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap();
     let config = Config::load_from_toml(args.config.try_into().unwrap());
 
-    if args.init_contract == true {
+    if args.init_contract {
         init_contract(&config, get_contract_wrapper(&config)).unwrap();
     }
 
     let mut eth2near_relay = Eth2NearRelay::init(&config, get_contract_wrapper(&config));
 
-    Ok(eth2near_relay.run())
+    eth2near_relay.run();
+    Ok(())
 }

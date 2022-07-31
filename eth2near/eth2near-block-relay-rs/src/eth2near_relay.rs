@@ -46,24 +46,23 @@ impl Eth2NearRelay {
         info!(target: "relay", "=== Relay running ===");
         loop {
             info!(target: "relay", "== New relay loop ==");
-            let last_eth2_slot_on_near: u64;
-            let last_eth2_slot_on_eth_chain: u64;
 
-            match self.get_last_slot() {
-                Ok(slot) => last_eth2_slot_on_near = slot,
+            let last_eth2_slot_on_near: u64 = match self.get_last_slot() {
+                Ok(slot) => slot,
                 Err(err) => {
                     warn!(target: "relay", "Fail to get last slot on NEAR. Error: {}", err);
                     continue;
                 }
-            }
+            };
 
-            match self.beacon_rpc_client.get_last_slot_number() {
-                Ok(slot) => last_eth2_slot_on_eth_chain = slot.as_u64(),
-                Err(err) => {
-                    warn!(target: "relay", "Fail to get last slot on Eth. Error: {}", err);
-                    continue;
-                }
-            }
+            let last_eth2_slot_on_eth_chain: u64 =
+                match self.beacon_rpc_client.get_last_slot_number() {
+                    Ok(slot) => slot.as_u64(),
+                    Err(err) => {
+                        warn!(target: "relay", "Fail to get last slot on Eth. Error: {}", err);
+                        continue;
+                    }
+                };
 
             info!(target: "relay", "Last slot on near = {}; last slot on eth = {}",
                   last_eth2_slot_on_near, last_eth2_slot_on_eth_chain);
@@ -139,7 +138,8 @@ impl Eth2NearRelay {
                         .into_root()
                         .as_bytes(),
                 );
-                if self.eth_client_contract.is_known_block(&hash)? == true {
+
+                if self.eth_client_contract.is_known_block(&hash)? {
                     return Ok(true);
                 } else {
                     trace!(target: "relay", "Block with slot={} not found on Near", slot);
@@ -150,7 +150,8 @@ impl Eth2NearRelay {
                 trace!(target: "relay", "Error \"{}\" in getting beacon block body for slot={}", err, slot)
             }
         }
-        return Ok(false);
+
+        Ok(false)
     }
 
     fn search_slot_forward(&self, slot: u64) -> Result<u64, Box<dyn Error>> {
@@ -159,7 +160,7 @@ impl Eth2NearRelay {
             current_step *= 2;
         }
 
-        return self.search_slot_backward(slot, slot + current_step);
+        self.search_slot_backward(slot, slot + current_step)
     }
 
     fn search_slot_backward(&self, start_slot: u64, last_slot: u64) -> Result<u64, Box<dyn Error>> {
@@ -173,7 +174,8 @@ impl Eth2NearRelay {
                 last_slot = mid_slot;
             }
         }
-        return Ok(start_slot);
+
+        Ok(start_slot)
     }
 
     fn get_last_slot(&mut self) -> Result<u64, Box<dyn Error>> {
@@ -188,9 +190,9 @@ impl Eth2NearRelay {
         trace!(target: "relay", "Init slot for search as {}", slot);
 
         if self.block_known_on_near(slot)? {
-            return self.search_slot_forward(slot);
+            self.search_slot_forward(slot)
         } else {
-            return self.search_slot_backward(finalized_slot, slot);
+            self.search_slot_backward(finalized_slot, slot)
         }
     }
 
@@ -310,26 +312,27 @@ impl Eth2NearRelay {
     fn send_light_client_updates(&mut self) {
         info!(target: "relay", "= Sending light client update =");
 
-        let finalized_block_hash: H256;
-        match self.eth_client_contract.get_finalized_beacon_block_hash() {
-            Ok(block_hash) => finalized_block_hash = block_hash,
+        let finalized_block_hash: H256 = match self
+            .eth_client_contract
+            .get_finalized_beacon_block_hash()
+        {
+            Ok(block_hash) => block_hash,
             Err(err) => {
                 warn!(target: "relay", "Error \"{}\" on getting finalized block hash. Skipping sending light client update", err);
                 return;
             }
-        }
+        };
 
-        let last_finalized_slot_on_near: u64;
-        match self
+        let last_finalized_slot_on_near: u64 = match self
             .beacon_rpc_client
             .get_slot_by_beacon_block_root(finalized_block_hash)
         {
-            Ok(last_finalized_slot) => last_finalized_slot_on_near = last_finalized_slot,
+            Ok(last_finalized_slot) => last_finalized_slot,
             Err(err) => {
                 warn!(target: "relay", "Error \"{}\" on getting slot for finalized block hash. Skipping sending light client update", err);
                 return;
             }
-        }
+        };
 
         let last_submitted_slot = self.eth_client_contract.get_last_submitted_slot();
 
@@ -344,14 +347,16 @@ impl Eth2NearRelay {
             BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near);
         info!(target: "relay", "Last finalized slot/period on near={}/{}", last_finalized_slot_on_near, last_eth2_period_on_near_chain);
 
-        let last_finalized_slot_on_eth: u64;
-        match self.beacon_rpc_client.get_last_finalized_slot_number() {
-            Ok(end_slot) => last_finalized_slot_on_eth = end_slot.as_u64(),
+        let last_finalized_slot_on_eth: u64 = match self
+            .beacon_rpc_client
+            .get_last_finalized_slot_number()
+        {
+            Ok(end_slot) => end_slot.as_u64(),
             Err(err) => {
                 warn!(target: "relay", "Error \"{}\" on getting last finalized slot number on Ethereum. Skipping sending light client update", err);
                 return;
             }
-        }
+        };
 
         let end_period = BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_eth);
         info!(target: "relay", "Last finalized slot/period on ethereum={}/{}", last_finalized_slot_on_eth, end_period);

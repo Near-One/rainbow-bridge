@@ -424,8 +424,8 @@ impl BeaconRPCClient {
                 ),
                 execution_hash_branch: finalized_block_eth1data_proof
                     .get_proof()
-                    .to_vec()
-                    .into_iter()
+                    .iter()
+                    .copied()
                     .map(|x| eth_types::H256::from(x.0.to_vec()))
                     .collect(),
             },
@@ -454,7 +454,7 @@ impl BeaconRPCClient {
     }
 
     pub fn get_period_for_slot(slot: u64) -> u64 {
-        return slot / (Self::SLOTS_PER_EPOCH * Self::EPOCHS_PER_PERIOD);
+        slot / (Self::SLOTS_PER_EPOCH * Self::EPOCHS_PER_PERIOD)
     }
 }
 
