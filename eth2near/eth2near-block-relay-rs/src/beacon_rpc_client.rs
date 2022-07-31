@@ -77,7 +77,7 @@ pub struct BeaconRPCClient {
 impl BeaconRPCClient {
     const URL_HEADER_PATH: &'static str = "eth/v1/beacon/headers";
     const URL_BODY_PATH: &'static str = "eth/v2/beacon/blocks";
-    const GET_LIGHT_CLIENT_UPDATE_API: &'static str = "eth/v1/light_client/updates";
+    const URL_GET_LIGHT_CLIENT_UPDATE_API: &'static str = "eth/v1/light_client/updates";
     const URL_FINALITY_LIGHT_CLIENT_UPDATE_PATH: &'static str = "eth/v1/light_client/finality_update/";
     const URL_STATE_PATH: &'static str = "eth/v2/debug/beacon/states";
 
@@ -139,7 +139,7 @@ impl BeaconRPCClient {
     /// * `period` - period id for which `LightClientUpdate` is fetched.
     /// On Mainnet, one period consists of 256 epochs, and one epoch consists of 32 slots
     pub fn get_light_client_update(&self, period: u64) -> Result<LightClientUpdate, Box<dyn Error>> {
-        let url = format!("{}/{}?start_period={}&count=1", self.endpoint_url, Self::GET_LIGHT_CLIENT_UPDATE_API, period);
+        let url = format!("{}/{}?start_period={}&count=1", self.endpoint_url, Self::URL_GET_LIGHT_CLIENT_UPDATE_API, period);
         let light_client_update_json_str = self.get_json_from_raw_request(&url)?;
 
         Ok(LightClientUpdate {
@@ -199,7 +199,7 @@ impl BeaconRPCClient {
     pub fn get_finality_light_client_update_with_sync_commity_update(&self) -> Result<LightClientUpdate, Box<dyn Error>> {
         let url_finality = format!("{}/{}", self.endpoint_url, Self::URL_FINALITY_LIGHT_CLIENT_UPDATE_PATH);
         let last_period = Self::get_period_for_slot(self.get_last_slot_number()?.as_u64());
-        let url_update = format!("{}/{}?start_period={}&count=1", self.endpoint_url, Self::GET_LIGHT_CLIENT_UPDATE_API, last_period);
+        let url_update = format!("{}/{}?start_period={}&count=1", self.endpoint_url, Self::URL_GET_LIGHT_CLIENT_UPDATE_API, last_period);
         let finality_light_client_update_json_str = self.get_json_from_raw_request(&url_finality)?;
         let light_client_update_json_str = self.get_json_from_raw_request(&url_update)?;
 

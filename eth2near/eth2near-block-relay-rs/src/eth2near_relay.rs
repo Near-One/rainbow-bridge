@@ -34,7 +34,7 @@ impl Eth2NearRelay {
             network: config.network.to_string(),
             light_client_updates_submission_frequency_in_epochs: config.light_client_updates_submission_frequency_in_epochs,
         };
-        eth2near_relay.eth_client_contract.register().unwrap();
+        eth2near_relay.eth_client_contract.register_submitter().unwrap();
         eth2near_relay
     }
 
