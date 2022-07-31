@@ -13,11 +13,15 @@ class StartNear2EthRelayCommand {
     ethClientArtifactPath,
     ethClientAddress,
     ethGasMultiplier,
+    ethUseEip1559,
     near2ethRelayMinDelay,
     near2ethRelayMaxDelay,
     near2ethRelayErrorDelay,
+    near2ethRelayBlockSelectDuration,
+    near2ethRelayNextBlockSelectDelayMs,
     near2ethRelayAfterSubmitDelayMs,
-    metricsPort
+    metricsPort,
+    logVerbose
   }) {
     if (daemon === 'true') {
       ProcessManager.connect((err) => {
@@ -42,12 +46,16 @@ class StartNear2EthRelayCommand {
             '--eth-client-artifact-path', ethClientArtifactPath,
             '--eth-client-address', ethClientAddress,
             '--eth-gas-multiplier', ethGasMultiplier,
+            '--eth-use-eip-1559', ethUseEip1559,
             '--near2eth-relay-min-delay', near2ethRelayMinDelay,
             '--near2eth-relay-max-delay', near2ethRelayMaxDelay,
             '--near2eth-relay-error-delay', near2ethRelayErrorDelay,
+            '--near2eth-relay-block-select-duration', near2ethRelayBlockSelectDuration,
+            '--near2eth-relay-next-block-select-delay-ms', near2ethRelayNextBlockSelectDelayMs,
             '--near2eth-relay-after-submit-delay-ms', near2ethRelayAfterSubmitDelayMs,
             '--daemon', 'false',
-            '--metrics-port', metricsPort
+            '--metrics-port', metricsPort,
+            '--log-verbose', logVerbose
           ],
           wait_ready: true,
           kill_timeout: 60000,
@@ -70,8 +78,12 @@ class StartNear2EthRelayCommand {
         near2ethRelayMinDelay,
         near2ethRelayMaxDelay,
         near2ethRelayErrorDelay,
+        near2ethRelayBlockSelectDuration,
+        near2ethRelayNextBlockSelectDelayMs,
         near2ethRelayAfterSubmitDelayMs,
-        ethGasMultiplier
+        ethGasMultiplier,
+        ethUseEip1559,
+        logVerbose
       })
     }
   }

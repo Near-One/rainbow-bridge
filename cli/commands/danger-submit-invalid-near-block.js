@@ -9,9 +9,14 @@ class DangerSubmitInvalidNearBlock {
     ethClientArtifactPath,
     ethClientAddress,
     ethGasMultiplier,
+    ethUseEip1559,
     near2ethRelayMinDelay,
     near2ethRelayMaxDelay,
-    near2ethRelayErrorDelay
+    near2ethRelayErrorDelay,
+    near2ethRelayBlockSelectDuration,
+    near2ethRelayNextBlockSelectDelayMs,
+    near2ethRelayAfterSubmitDelayMs,
+    logVerbose
   }) {
     const relay = new Near2EthRelay()
     await relay.initialize({
@@ -27,7 +32,12 @@ class DangerSubmitInvalidNearBlock {
       near2ethRelayMinDelay,
       near2ethRelayMaxDelay,
       near2ethRelayErrorDelay,
-      ethGasMultiplier
+      near2ethRelayBlockSelectDuration,
+      near2ethRelayNextBlockSelectDelayMs,
+      near2ethRelayAfterSubmitDelayMs,
+      ethGasMultiplier,
+      ethUseEip1559,
+      logVerbose
     })
   }
 }

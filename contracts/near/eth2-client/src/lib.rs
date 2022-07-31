@@ -5,6 +5,8 @@ use admin_controlled::Mask;
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use borsh::{BorshDeserialize, BorshSerialize};
+use eth2_utility::consensus::*;
+use eth2_utility::types::*;
 use eth_types::eth2::*;
 use eth_types::{BlockHeader, H256};
 use near_sdk::collections::{LookupMap, UnorderedMap};
@@ -12,9 +14,6 @@ use near_sdk::{assert_self, env, near_bindgen, AccountId, PanicOnDefault};
 use near_sdk_inner::collections::LazyOption;
 use near_sdk_inner::{Balance, BorshStorageKey, Promise};
 use tree_hash::TreeHash;
-use utility::*;
-
-pub mod utility;
 
 #[cfg(test)]
 mod tests;
@@ -74,67 +73,56 @@ pub struct EthClient {
 #[near_bindgen]
 impl EthClient {
     #[init]
-    pub fn init(
-        #[serializer(borsh)] network: String,
-        #[serializer(borsh)] finalized_execution_header: BlockHeader,
-        #[serializer(borsh)] finalized_beacon_header: ExtendedBeaconBlockHeader,
-        #[serializer(borsh)] current_sync_committee: SyncCommittee,
-        #[serializer(borsh)] next_sync_committee: SyncCommittee,
-        #[serializer(borsh)] validate_updates: bool,
-        #[serializer(borsh)] verify_bls_signatures: bool,
-        #[serializer(borsh)] hashes_gc_threshold: u64,
-        #[serializer(borsh)] max_submitted_blocks_by_account: u32,
-        #[serializer(borsh)] trusted_signer: Option<AccountId>,
-    ) -> Self {
+    pub fn init(#[serializer(borsh)] args: InitInput) -> Self {
         assert!(!Self::initialized(), "Already initialized");
         let min_storage_balance_for_submitter =
-            calculate_min_storage_balance_for_submitter(max_submitted_blocks_by_account);
+            calculate_min_storage_balance_for_submitter(args.max_submitted_blocks_by_account);
         let network =
-            Network::from_str(network.as_str()).unwrap_or_else(|e| env::panic_str(e.as_str()));
+            Network::from_str(args.network.as_str()).unwrap_or_else(|e| env::panic_str(e.as_str()));
 
         if network == Network::Mainnet {
             assert!(
-                validate_updates,
+                args.validate_updates,
                 "The updates validation can't be disabled for mainnet"
             );
         }
 
         assert_eq!(
-            finalized_execution_header.calculate_hash(),
-            finalized_beacon_header.execution_block_hash,
+            args.finalized_execution_header.calculate_hash(),
+            args.finalized_beacon_header.execution_block_hash,
             "Invalid execution block"
         );
 
         let finalized_execution_header_info = ExecutionHeaderInfo {
-            parent_hash: finalized_execution_header.parent_hash,
-            block_number: finalized_execution_header.number,
+            parent_hash: args.finalized_execution_header.parent_hash,
+            block_number: args.finalized_execution_header.number,
             submitter: env::predecessor_account_id(),
         };
 
         Self {
-            trusted_signer,
+            trusted_signer: args.trusted_signer,
             paused: Mask::default(),
-            validate_updates,
-            verify_bls_signatures,
-            hashes_gc_threshold,
+            validate_updates: args.validate_updates,
+            verify_bls_signatures: args.verify_bls_signatures,
+            hashes_gc_threshold: args.hashes_gc_threshold,
             network,
             finalized_execution_blocks: LookupMap::new(StorageKey::FinalizedExecutionBlocks),
             unfinalized_headers: UnorderedMap::new(StorageKey::UnfinalizedHeaders),
             submitters: LookupMap::new(StorageKey::Submitters),
-            max_submitted_blocks_by_account,
+            max_submitted_blocks_by_account: args.max_submitted_blocks_by_account,
             min_storage_balance_for_submitter,
-            finalized_beacon_header,
+            finalized_beacon_header: args.finalized_beacon_header,
             finalized_execution_header: LazyOption::new(
                 StorageKey::FinalizedExecutionHeader,
                 Some(&finalized_execution_header_info),
             ),
             current_sync_committee: LazyOption::new(
                 StorageKey::CurrentSyncCommittee,
-                Some(&current_sync_committee),
+                Some(&args.current_sync_committee),
             ),
             next_sync_committee: LazyOption::new(
                 StorageKey::NextSyncCommittee,
-                Some(&next_sync_committee),
+                Some(&args.next_sync_committee),
             ),
         }
     }
@@ -166,6 +154,24 @@ impl EthClient {
     #[result_serializer(borsh)]
     pub fn finalized_beacon_block_root(&self) -> H256 {
         self.finalized_beacon_header.beacon_block_root
+    }
+
+    /// Returns finalized beacon block slot
+    #[result_serializer(borsh)]
+    pub fn finalized_beacon_block_slot(&self) -> u64 {
+        self.finalized_beacon_header.header.slot
+    }
+
+    /// Returns finalized beacon block header
+    #[result_serializer(borsh)]
+    pub fn finalized_beacon_block_header(&self) -> ExtendedBeaconBlockHeader {
+        self.finalized_beacon_header.clone()
+    }
+
+    /// Returns the minimum balance that should be attached to register a new submitter account
+    #[result_serializer(borsh)]
+    pub fn min_storage_balance_for_submitter(&self) -> Balance {
+        self.min_storage_balance_for_submitter
     }
 
     /// Get the current light client state
@@ -208,7 +214,7 @@ impl EthClient {
     #[payable]
     pub fn unregister_submitter(&mut self) -> Promise {
         let account_id = env::predecessor_account_id();
-        if let Some(num_of_submitted_blocks) = self.submitters.get(&account_id) {
+        if let Some(num_of_submitted_blocks) = self.submitters.remove(&account_id) {
             if num_of_submitted_blocks > 0 {
                 env::panic_str("Can't unregister the account with used storage")
             }
@@ -234,6 +240,8 @@ impl EthClient {
 
     #[result_serializer(borsh)]
     pub fn submit_execution_header(&mut self, #[serializer(borsh)] block_header: BlockHeader) {
+        #[cfg(feature = "logs")]
+        env::log_str(format!("Submitted header number {}", block_header.number).as_str());
         if self.finalized_beacon_header.execution_block_hash != block_header.parent_hash {
             self.unfinalized_headers
                 .get(&block_header.parent_hash)
@@ -248,6 +256,9 @@ impl EthClient {
         let submitter = env::predecessor_account_id();
         self.update_submitter(&submitter, 1);
         let block_hash = block_header.calculate_hash();
+        #[cfg(feature = "logs")]
+        env::log_str(format!("Submitted header hash {:?}", block_hash).as_str());
+
         let block_info = ExecutionHeaderInfo {
             parent_hash: block_header.parent_hash,
             block_number: block_header.number,
@@ -273,6 +284,9 @@ impl EthClient {
 
 impl EthClient {
     fn validate_light_client_update(&self, update: &LightClientUpdate) {
+        #[cfg(feature = "logs")]
+        env::log_str(format!("Validate update. Used gas: {}", env::used_gas().0).as_str());
+
         let finalized_period =
             compute_sync_committee_period(self.finalized_beacon_header.header.slot);
         self.verify_finality_branch(update, finalized_period);
@@ -289,13 +303,17 @@ impl EthClient {
         );
         assert!(
             sync_committee_bits_sum * 3 >= (sync_committee_bits.len() * 2).try_into().unwrap(),
-            "Sync committee bits sum is less than 2/3 threshold"
+            "Sync committee bits sum is less than 2/3 threshold, bits sum: {}",
+            sync_committee_bits_sum
         );
 
         #[cfg(feature = "bls")]
         if self.verify_bls_signatures {
             self.verify_bls_signatures(update, sync_committee_bits, finalized_period);
         }
+
+        #[cfg(feature = "logs")]
+        env::log_str(format!("Finish validate update. Used gas: {}", env::used_gas().0).as_str());
     }
 
     fn verify_finality_branch(&self, update: &LightClientUpdate, finalized_period: u64) {
@@ -305,6 +323,15 @@ impl EthClient {
         assert!(
             active_header.slot > self.finalized_beacon_header.header.slot,
             "The active header slot number should be higher than the finalized slot"
+        );
+
+        let update_period = compute_sync_committee_period(active_header.slot);
+        assert!(
+            update_period == finalized_period || update_period == finalized_period + 1,
+            "The acceptable update periods are '{}' and '{}' but got {}",
+            finalized_period,
+            finalized_period + 1,
+            update_period
         );
 
         // Verify that the `finality_branch`, confirms `finalized_header`
@@ -329,12 +356,13 @@ impl EthClient {
             "Invalid execution block hash proof"
         );
 
-        let update_period = compute_sync_committee_period(active_header.slot);
-
         // Verify that the `next_sync_committee`, if present, actually is the next sync committee saved in the
         // state of the `active_header`
         if update_period != finalized_period {
-            let sync_committee_update = update.sync_committee_update.as_ref().unwrap();
+            let sync_committee_update = update
+                .sync_committee_update
+                .as_ref()
+                .unwrap_or_else(|| env::panic_str("The sync committee update is missed"));
             let branch = convert_branch(&sync_committee_update.next_sync_committee_branch);
             assert!(
                 merkle_proof::verify_merkle_proof(
@@ -376,7 +404,7 @@ impl EthClient {
             config.genesis_validators_root.into(),
         );
         let signing_root = compute_signing_root(
-            eth_types::H256(update.attested_header.tree_hash_root()),
+            eth_types::H256(update.attested_beacon_header.tree_hash_root()),
             domain,
         );
 
@@ -395,10 +423,22 @@ impl EthClient {
     }
 
     fn update_finalized_header(&mut self, finalized_header: ExtendedBeaconBlockHeader) {
+        #[cfg(feature = "logs")]
+        env::log_str(format!("Update finalized header. Used gas: {}", env::used_gas().0).as_str());
         let finalized_execution_header_info = self
             .unfinalized_headers
             .get(&finalized_header.execution_block_hash)
             .expect("Unknown execution block hash");
+
+        #[cfg(feature = "logs")]
+        env::log_str(
+            format!(
+                "Current finalized slot: {}, New finalized slot: {}",
+                self.finalized_beacon_header.header.slot, finalized_header.header.slot
+            )
+            .as_str(),
+        );
+
         let mut cursor_header = finalized_execution_header_info.clone();
         let mut cursor_header_hash = finalized_header.execution_block_hash;
 
@@ -435,6 +475,15 @@ impl EthClient {
         for (submitter, num_of_removed_headers) in &submitters_update {
             self.update_submitter(submitter, -(*num_of_removed_headers as i64));
         }
+
+        #[cfg(feature = "logs")]
+        env::log_str(
+            format!(
+                "Finish update finalized header. Used gas: {}",
+                env::used_gas().0
+            )
+            .as_str(),
+        );
 
         if finalized_execution_header_info.block_number > self.hashes_gc_threshold {
             self.gc_headers(
@@ -483,7 +532,13 @@ impl EthClient {
             .submitters
             .get(submitter)
             .unwrap_or_else(|| {
-                env::panic_str(format!("The account {} is not registered", &submitter).as_str())
+                env::panic_str(
+                    format!(
+                        "The account {} can't submit blocks because it is not registered",
+                        &submitter
+                    )
+                    .as_str(),
+                )
             })
             .into();
 

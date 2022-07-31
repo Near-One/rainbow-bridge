@@ -5,7 +5,7 @@ use bitvec::prelude::BitVec;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::eth2::*;
 use eth_types::H256;
-use near_sdk::{AccountId, Balance};
+use near_sdk::Balance;
 use tree_hash::TreeHash;
 
 pub const EPOCHS_PER_SYNC_COMMITTEE_PERIOD: u64 = 256;
@@ -32,6 +32,7 @@ pub const EXECUTION_PROOF_SIZE: usize =
 pub enum Network {
     Mainnet,
     Kiln,
+    Ropsten,
 }
 
 impl FromStr for Network {
@@ -40,6 +41,7 @@ impl FromStr for Network {
         match input {
             "mainnet" => Ok(Network::Mainnet),
             "kiln" => Ok(Network::Kiln),
+            "ropsten" => Ok(Network::Ropsten),
             _ => Err(format!("Unknown network {}", input)),
         }
     }
@@ -71,6 +73,15 @@ impl NetworkConfig {
                 ],
                 bellatrix_fork_version: [0x70, 0x00, 0x00, 0x71],
                 bellatrix_fork_epoch: 150,
+            },
+            Network::Ropsten => Self {
+                genesis_validators_root: [
+                    0x44, 0xf1, 0xe5, 0x62, 0x83, 0xca, 0x88, 0xb3, 0x5c, 0x78, 0x9f, 0x7f, 0x44,
+                    0x9e, 0x52, 0x33, 0x9b, 0xc1, 0xfe, 0xfe, 0x3a, 0x45, 0x91, 0x3a, 0x43, 0xa6,
+                    0xd1, 0x6e, 0xdc, 0xd3, 0x3c, 0xf1,
+                ],
+                bellatrix_fork_version: [0x80, 0x00, 0x00, 0x71],
+                bellatrix_fork_epoch: 750,
             },
         }
     }
@@ -145,13 +156,13 @@ pub fn get_participant_pubkeys(
     public_keys: &[PublicKeyBytes],
     sync_committee_bits: &BitVec<u8, Lsb0>,
 ) -> Vec<PublicKeyBytes> {
-    let mut resul: Vec<PublicKeyBytes> = vec![];
+    let mut result: Vec<PublicKeyBytes> = vec![];
     for (idx, bit) in sync_committee_bits.iter().by_vals().enumerate() {
         if bit {
-            resul.push(public_keys[idx].clone());
+            result.push(public_keys[idx].clone());
         }
     }
-    resul
+    result
 }
 
 pub fn convert_branch(branch: &[H256]) -> Vec<ethereum_types::H256> {
@@ -160,6 +171,10 @@ pub fn convert_branch(branch: &[H256]) -> Vec<ethereum_types::H256> {
 
 pub fn validate_beacon_block_header_update(header_update: &HeaderUpdate) -> bool {
     let branch = convert_branch(&header_update.execution_hash_branch);
+    if branch.len() != EXECUTION_PROOF_SIZE {
+        return false;
+    }
+
     let l2_proof = &branch[0..L2_EXECUTION_PAYLOAD_PROOF_SIZE];
     let l1_proof = &branch[L2_EXECUTION_PAYLOAD_PROOF_SIZE..EXECUTION_PROOF_SIZE];
     let execution_payload_hash = merkle_proof::merkle_root_from_branch(
@@ -187,12 +202,4 @@ pub fn calculate_min_storage_balance_for_submitter(
         + STORAGE_BYTES_PER_ACCOUNT;
     const PRICE_PER_BYTE_IN_YOCTO_NEAR: u128 = 10_000_000_000_000_000_000;
     storage_bytes_per_account * PRICE_PER_BYTE_IN_YOCTO_NEAR
-}
-
-/// Minimal information about a header.
-#[derive(Clone, BorshDeserialize, BorshSerialize)]
-pub struct ExecutionHeaderInfo {
-    pub parent_hash: H256,
-    pub block_number: u64,
-    pub submitter: AccountId,
 }
