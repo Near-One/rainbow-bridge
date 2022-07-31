@@ -12,29 +12,58 @@ mod tests {
     use tree_hash::TreeHash;
 
     macro_rules! inner_set_env {
-    ($builder:ident) => {
-        $builder
-    };
+        ($builder:ident) => {
+            $builder
+        };
 
-    ($builder:ident, $key:ident:$value:expr $(,$key_tail:ident:$value_tail:expr)*) => {
-        {
-           $builder.$key($value.try_into().unwrap());
-           inner_set_env!($builder $(,$key_tail:$value_tail)*)
-        }
-    };
-}
+        ($builder:ident, $key:ident:$value:expr $(,$key_tail:ident:$value_tail:expr)*) => {
+            {
+            $builder.$key($value.try_into().unwrap());
+            inner_set_env!($builder $(,$key_tail:$value_tail)*)
+            }
+        };
+    }
 
     macro_rules! set_env {
-    ($($key:ident:$value:expr),* $(,)?) => {
-        let mut builder = VMContextBuilder::new();
-        let mut builder = &mut builder;
-        builder = inner_set_env!(builder, $($key: $value),*);
-        let mut vm_config = VMConfig::free();
-        vm_config.limit_config.max_number_logs = u64::MAX;
-        vm_config.limit_config.max_total_log_length = u64::MAX;
-        testing_env!(builder.build(), vm_config);
-    };
-}
+        ($($key:ident:$value:expr),* $(,)?) => {
+            let mut builder = VMContextBuilder::new();
+            let mut builder = &mut builder;
+            builder = inner_set_env!(builder, $($key: $value),*);
+            let mut vm_config = VMConfig::free();
+            vm_config.limit_config.max_number_logs = u64::MAX;
+            vm_config.limit_config.max_total_log_length = u64::MAX;
+            testing_env!(builder.build(), vm_config);
+        };
+    }
+
+    pub struct TestContext<'a> {
+        contract: EthClient,
+        headers: &'a Vec<BlockHeader>,
+        updates: &'a Vec<LightClientUpdate>,
+    }
+
+    pub fn get_test_context(init_options: Option<InitOptions>) -> TestContext<'static> {
+        let (headers, updates, init_input) = get_test_data(init_options);
+        let contract = EthClient::init(init_input);
+        assert_eq!(contract.last_block_number(), headers[0].number);
+
+        TestContext {
+            contract,
+            headers: &headers,
+            updates: &updates,
+        }
+    }
+
+    pub fn submit_and_check_execution_headers(
+        contract: &mut EthClient,
+        headers: Vec<&BlockHeader>,
+    ) {
+        for header in headers {
+            contract.submit_execution_header(header.clone());
+            assert!(contract.is_known_execution_header(header.calculate_hash()));
+            assert!(contract.block_hash_safe(header.number).is_none());
+        }
+    }
 
     #[test]
     pub fn test_header_root() {
@@ -56,24 +85,6 @@ mod tests {
         );
     }
 
-    pub struct TestContext<'a> {
-        contract: EthClient,
-        headers: &'a Vec<BlockHeader>,
-        updates: &'a Vec<LightClientUpdate>,
-    }
-
-    pub fn get_test_context(init_options: Option<InitOptions>) -> TestContext<'static> {
-        let (headers, updates, init_input) = get_test_data(init_options);
-        let contract = EthClient::init(init_input);
-        assert_eq!(contract.last_block_number(), headers[0].number);
-
-        TestContext {
-            contract,
-            headers: &headers,
-            updates: &updates,
-        }
-    }
-
     #[test]
     pub fn test_submit_update_two_periods() {
         let submitter = accounts(0);
@@ -87,11 +98,7 @@ mod tests {
         contract.register_submitter();
         // After submitting the execution header, it should be present in the execution headers list
         // but absent in canonical chain blocks (not-finalized)
-        for header in headers.iter().skip(1) {
-            contract.submit_execution_header(header.clone());
-            assert!(contract.is_known_execution_header(header.calculate_hash()));
-            assert!(contract.block_hash_safe(header.number).is_none());
-        }
+        submit_and_check_execution_headers(&mut contract, headers.iter().skip(1).collect());
 
         contract.submit_beacon_chain_light_client_update(updates[1].clone());
 
@@ -130,11 +137,7 @@ mod tests {
         set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
 
         contract.register_submitter();
-        for header in headers.iter().skip(1) {
-            contract.submit_execution_header(header.clone());
-            assert!(contract.is_known_execution_header(header.calculate_hash()));
-            assert!(contract.block_hash_safe(header.number).is_none());
-        }
+        submit_and_check_execution_headers(&mut contract, headers.iter().skip(1).collect());
 
         // Submit execution header with different hash
         let mut fork_header = headers[5].clone();
@@ -184,11 +187,7 @@ mod tests {
         set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
 
         contract.register_submitter();
-        for header in headers.iter().skip(1) {
-            contract.submit_execution_header(header.clone());
-            assert!(contract.is_known_execution_header(header.calculate_hash()));
-            assert!(contract.block_hash_safe(header.number).is_none());
-        }
+        submit_and_check_execution_headers(&mut contract, headers.iter().skip(1).collect());
 
         contract.submit_beacon_chain_light_client_update(updates[1].clone());
 
@@ -317,11 +316,7 @@ mod tests {
         set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
 
         contract.register_submitter();
-        for header in headers.iter().skip(1).take(5) {
-            contract.submit_execution_header(header.clone());
-            assert!(contract.is_known_execution_header(header.calculate_hash()));
-            assert!(contract.block_hash_safe(header.number).is_none());
-        }
+        submit_and_check_execution_headers(&mut contract, headers.iter().skip(1).take(5).collect());
 
         contract.submit_beacon_chain_light_client_update(updates[1].clone());
     }
@@ -402,18 +397,9 @@ mod tests {
         assert_eq!(contract.last_block_number(), headers[0].number);
         contract.register_submitter();
 
-        for header in &headers[1..5] {
-            contract.submit_execution_header(header.clone());
-            assert!(contract.is_known_execution_header(header.calculate_hash()));
-            assert!(contract.block_hash_safe(header.number).is_none());
-        }
-
-        // Skip 6th block
-        for header in &headers[7..8] {
-            contract.submit_execution_header(header.clone());
-            assert!(contract.is_known_execution_header(header.calculate_hash()));
-            assert!(contract.block_hash_safe(header.number).is_none());
-        }
+        contract.submit_execution_header(headers[1].clone());
+        // Skip 2th block
+        contract.submit_execution_header(headers[3].clone());
     }
 
     #[test]
@@ -430,11 +416,8 @@ mod tests {
         assert_eq!(contract.last_block_number(), headers[0].number);
 
         contract.register_submitter();
-        for header in &headers[1..5] {
-            contract.submit_execution_header(header.clone());
-            assert!(contract.is_known_execution_header(header.calculate_hash()));
-            assert!(contract.block_hash_safe(header.number).is_none());
-        }
+
+        submit_and_check_execution_headers(&mut contract, headers.iter().skip(1).take(5).collect());
 
         contract.unregister_submitter();
     }
