@@ -214,12 +214,11 @@ impl EthClient {
     #[payable]
     pub fn unregister_submitter(&mut self) -> Promise {
         let account_id = env::predecessor_account_id();
-        if let Some(num_of_submitted_blocks) = self.submitters.get(&account_id) {
+        if let Some(num_of_submitted_blocks) = self.submitters.remove(&account_id) {
             if num_of_submitted_blocks > 0 {
                 env::panic_str("Can't unregister the account with used storage")
             }
 
-            self.submitters.remove(&account_id);
             Promise::new(account_id).transfer(self.min_storage_balance_for_submitter)
         } else {
             env::panic_str("The account is not registered");
