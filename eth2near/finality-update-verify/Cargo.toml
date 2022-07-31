@@ -1,0 +1,23 @@
+[package]
+name = "finality-update-verify"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eth-types = { path ="../../contracts/near/eth-types/", features = ["eip1559"]}
+bls = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "wasm-tmp", default-features = false, features = ["milagro"]}
+eth2-utility  = { path ="../../contracts/near/eth2-utility"}
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v2.3.1" }
+types =  { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v2.3.1" }
+bitvec = "1.0.0"
+
+[dev-dependencies]
+eth2_to_near_relay = { path = "../eth2near-block-relay-rs" }
+
+[patch]
+[patch.crates-io]
+eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v2.3.1" }
+eth2_ssz_types = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v2.3.1" }
+eth2_hashing = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v2.3.1" }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v2.3.1" }
+eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v2.3.1" }

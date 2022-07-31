@@ -76,6 +76,16 @@ macro_rules! arr_wrapper_impl_tree_hash_and_borsh {
                 Ok(result.into())
             }
         }
+
+        #[cfg(not(target_arch = "wasm32"))]
+        impl Serialize for $name {
+            fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
+            where
+                S: Serializer,
+            {
+                serializer.serialize_str(&format!("0x{}", hex::encode(self.0)))
+            }
+        }
     };
 }
 
