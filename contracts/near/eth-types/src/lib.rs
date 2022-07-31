@@ -339,7 +339,7 @@ impl RlpDecodable for BlockHeader {
             partial_hash: None,
         };
 
-        block_header.hash =  Some(
+        block_header.hash = Some(
             near_keccak256({
                 let mut stream = RlpStream::new();
                 block_header.stream_rlp(&mut stream, false);
