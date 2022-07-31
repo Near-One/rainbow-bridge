@@ -4,28 +4,28 @@ use std::path::PathBuf;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
-    // endpoint to full node of Eth2 Beacon chain with Light Client API
+    // endpoint to a full node of Eth2 Beacon chain with Light Client API
     pub beacon_endpoint: String,
 
-    // endpoint for the ethereum full node which support Eth1 RPC API
+    // endpoint for the Ethereum full node, which supports Eth1 RPC API
     pub eth1_endpoint: String,
 
     // the max number of headers submitted in one batch to eth client
     pub total_submit_headers: u32,
 
-    // endpoint for full node on NEAR chain
+    // endpoint for a full node on the NEAR chain
     pub near_endpoint: String,
 
     // Account id from which relay make requests
     pub signer_account_id: String,
 
-    // Path to the file with secret key for signer account
+    // Path to the file with a secret key for signer account
     pub path_to_signer_secret_key: String,
 
     // Account id for eth client contract on NEAR
     pub contract_account_id: String,
 
-    // The ethereum network name (main, kiln)
+    // The Ethereum network name (main, kiln)
     pub network: String,
 
     // Contract type (near, dao, file)

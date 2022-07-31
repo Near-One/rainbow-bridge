@@ -136,8 +136,8 @@ impl BeaconRPCClient {
     ///
     /// # Arguments
     ///
-    /// * `period` - period id for which LightClientUpdate is fetched.
-    /// In Mainnet one period consist of 256 epochs and one epoch from 32 slots
+    /// * `period` - period id for which `LightClientUpdate` is fetched.
+    /// On Mainnet, one period consists of 256 epochs, and one epoch consists of 32 slots
     pub fn get_light_client_update(&self, period: u64) -> Result<LightClientUpdate, Box<dyn Error>> {
         let url = format!("{}/{}?start_period={}&count=1", self.endpoint_url, Self::GET_LIGHT_CLIENT_UPDATE_API, period);
         let light_client_update_json_str = self.get_json_from_raw_request(&url)?;
@@ -262,9 +262,9 @@ impl BeaconRPCClient {
         Ok(sync_aggregate)
     }
 
-    // signature_slot doesn't provided in current API. The slot is bruteforced
-    // until SyncAggregate in BeconBlockBody in the current slot is equal
-    // to SyncAggregate in LightClientUpdate
+    // `signature_slot` is not provided in the current API. The slot is brute-forced
+    // until `SyncAggregate` in `BeconBlockBody` in the current slot is equal
+    // to `SyncAggregate` in `LightClientUpdate`
     fn get_signature_slot(&self, light_client_update_json_str: &str) -> Result<Slot, Box<dyn Error>> {
         const CHECK_SLOTS_FORWARD_LIMIT: u64 = 10;
 
@@ -510,10 +510,10 @@ mod tests {
         assert_eq!(serde_json::to_string(&sync_committe_update.next_sync_committee_branch[1]).unwrap(), "\"0xedeb16e5754a4be920bb51e97dbf15833f838a5770e8509cc34cde12ee74422e\"");
     }
 
-    //function which print json for last LightClientUpdate
+    // a utility function which prints JSON for last `LightClientUpdate`
     #[test]
     #[ignore]
-    fn show_get_light_client_update() {
+    fn utility_show_get_light_client_update() {
         let light_client_update_fetcher = BeaconRPCClient::new(BEACON_ENDPOINT);
         let period = BeaconRPCClient::get_period_for_slot(light_client_update_fetcher.get_last_slot_number().unwrap().as_u64());
 
@@ -523,10 +523,10 @@ mod tests {
         println!("Light client update pariod={}: {}", period, light_client_update_json_str);
     }
 
-    //function which prints jsons for all BeaconBlockHeaders with Execution Data in specific range
+    // a utility function that prints JSON strings for all `BeaconBlockHeader`s with `ExecutionData` in specific range
     #[test]
     #[ignore]
-    fn show_headers_jsons_for_light_client_update() {
+    fn utility_show_headers_jsons_for_light_client_update() {
         let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
         let mut beacon_block_ext_headers: Vec<BeaconBlockHeaderWithExecutionData> = Vec::new();
         for slot in 823648 ..=827470 {

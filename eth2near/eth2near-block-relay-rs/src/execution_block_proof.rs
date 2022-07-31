@@ -5,11 +5,11 @@ use std::error::Error;
 use types::{BeaconBlockBody, MainnetEthSpec};
 
 /// `ExecutionBlockProof` contains a `block_hash` (execution block) and
-/// a proof of its inclusion in `BeaconBlockBody` tree hash.
-/// The block_hash is the 12th field in execution_payload which the 9th field in BeaconBlockBody
-/// The first 4 elements in proof correspondent to the proof of inclusion of block_hash in
-/// Merkle tree built for ExecutionPayload.
-/// The last 4 elements the proof of `ExecutionPayload` in Merkle tree is built
+/// a proof of its inclusion in the `BeaconBlockBody` tree hash.
+/// The `block_hash` is the 12th field in execution_payload, which is the 9th field in `BeaconBlockBody`
+/// The first 4 elements in proof correspondent to the proof of inclusion of `block_hash` in
+/// Merkle tree built for `ExecutionPayload`.
+/// The last 4 elements of the proof of `ExecutionPayload` in the Merkle tree are built
 /// on high-level `BeaconBlockBody` fields.
 /// The proof starts from the leaf.
 pub struct ExecutionBlockProof {
