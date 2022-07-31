@@ -1,9 +1,9 @@
 use crate::execution_block_proof::ExecutionBlockProof;
 use ethereum_types::H256;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::error::Error;
-use types::beacon_block_header::BeaconBlockHeader;
 use types::beacon_block_body::BeaconBlockBody;
+use types::beacon_block_header::BeaconBlockHeader;
 use types::MainnetEthSpec;
 
 #[derive(Serialize, Deserialize)]
@@ -14,7 +14,7 @@ pub struct BeaconBlockHeaderWithExecutionData {
 }
 
 impl BeaconBlockHeaderWithExecutionData {
-    pub fn new (
+    pub fn new(
         beacon_block_header: BeaconBlockHeader,
         beacon_block_body: &BeaconBlockBody<MainnetEthSpec>,
     ) -> Result<Self, Box<dyn Error>> {

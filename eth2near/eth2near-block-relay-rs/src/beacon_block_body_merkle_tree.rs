@@ -42,7 +42,6 @@ impl BeaconBlockBodyMerkleTree {
     }
 }
 
-
 /// `ExecutionPayloadMerkleTree` is a built on the `ExecutionPayload` data structure,
 /// where the leaves of the Merkle Tree are the hashes of the
 /// high-level fields of the `ExecutionPayload`.
@@ -111,7 +110,9 @@ impl BeaconStateMerkleTree {
                 H256::zero()
             },
             beacon_state.justification_bits().tree_hash_root(),
-            beacon_state.previous_justified_checkpoint().tree_hash_root(),
+            beacon_state
+                .previous_justified_checkpoint()
+                .tree_hash_root(),
             beacon_state.current_justified_checkpoint().tree_hash_root(),
             beacon_state.finalized_checkpoint().tree_hash_root(),
             if let Ok(inactivity_scores) = beacon_state.inactivity_scores() {
@@ -129,7 +130,9 @@ impl BeaconStateMerkleTree {
             } else {
                 H256::zero()
             },
-            if let Ok(latest_execution_payload_header) = beacon_state.latest_execution_payload_header() {
+            if let Ok(latest_execution_payload_header) =
+                beacon_state.latest_execution_payload_header()
+            {
                 latest_execution_payload_header.tree_hash_root()
             } else {
                 H256::zero()
@@ -142,7 +145,9 @@ impl BeaconStateMerkleTree {
 
 #[cfg(test)]
 mod tests {
-    use crate::beacon_block_body_merkle_tree::{BeaconBlockBodyMerkleTree, ExecutionPayloadMerkleTree};
+    use crate::beacon_block_body_merkle_tree::{
+        BeaconBlockBodyMerkleTree, ExecutionPayloadMerkleTree,
+    };
     use crate::test_utils::read_json_file_from_data_dir;
     use tree_hash::TreeHash;
     use types::BeaconBlockBody;
@@ -163,23 +168,41 @@ mod tests {
 
     #[test]
     fn test_execution_payload_merkle_tree() {
-        const EXECUTION_PAYLOAD_INDEX : usize = 9;
+        const EXECUTION_PAYLOAD_INDEX: usize = 9;
 
         let json_str = read_json_file_from_data_dir("beacon_block_body_kiln_slot_741888.json");
         let beacon_block_body: BeaconBlockBody<MainnetEthSpec> =
             serde_json::from_str(&json_str).unwrap();
         let beacon_block_body_merkle_tree = BeaconBlockBodyMerkleTree::new(&beacon_block_body);
-        let execution_payload_merkle_tree = ExecutionPayloadMerkleTree::new(&beacon_block_body.execution_payload().unwrap().execution_payload);
+        let execution_payload_merkle_tree = ExecutionPayloadMerkleTree::new(
+            &beacon_block_body
+                .execution_payload()
+                .unwrap()
+                .execution_payload,
+        );
 
-        assert_eq!(beacon_block_body.execution_payload().unwrap().tree_hash_root(),
-                   execution_payload_merkle_tree.0.hash());
+        assert_eq!(
+            beacon_block_body
+                .execution_payload()
+                .unwrap()
+                .tree_hash_root(),
+            execution_payload_merkle_tree.0.hash()
+        );
 
-        let execution_payload_proof = beacon_block_body_merkle_tree.0.generate_proof(EXECUTION_PAYLOAD_INDEX, BeaconBlockBodyMerkleTree::BEACON_BLOCK_BODY_TREE_DEPTH);
-        assert_eq!(execution_payload_proof.0, execution_payload_merkle_tree.0.hash());
-        assert!(merkle_proof::verify_merkle_proof(execution_payload_merkle_tree.0.hash(),
-                                                  &execution_payload_proof.1,
-                                                  BeaconBlockBodyMerkleTree::BEACON_BLOCK_BODY_TREE_DEPTH,
-                                                  EXECUTION_PAYLOAD_INDEX,
-                                                  beacon_block_body_merkle_tree.0.hash()));
+        let execution_payload_proof = beacon_block_body_merkle_tree.0.generate_proof(
+            EXECUTION_PAYLOAD_INDEX,
+            BeaconBlockBodyMerkleTree::BEACON_BLOCK_BODY_TREE_DEPTH,
+        );
+        assert_eq!(
+            execution_payload_proof.0,
+            execution_payload_merkle_tree.0.hash()
+        );
+        assert!(merkle_proof::verify_merkle_proof(
+            execution_payload_merkle_tree.0.hash(),
+            &execution_payload_proof.1,
+            BeaconBlockBodyMerkleTree::BEACON_BLOCK_BODY_TREE_DEPTH,
+            EXECUTION_PAYLOAD_INDEX,
+            beacon_block_body_merkle_tree.0.hash()
+        ));
     }
 }
