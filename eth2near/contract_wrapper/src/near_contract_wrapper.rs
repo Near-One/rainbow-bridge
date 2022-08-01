@@ -10,8 +10,10 @@ use near_primitives::transaction::{Action, FunctionCallAction, Transaction};
 use near_primitives::types::{AccountId, BlockReference, Finality, FunctionArgs};
 use tokio::runtime::Runtime;
 use near_primitives::views::QueryRequest;
-use near_sdk::Balance;
+use near_sdk::{Balance, Gas};
 use serde_json::Value;
+
+pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
 
 pub struct NearContractWrapper {
     client: JsonRpcClient,
@@ -82,7 +84,7 @@ impl ContractWrapper for NearContractWrapper {
         };
 
         let num_blocks_in_batch = method_name.len() as u64;
-        let attached_gas_per_promise_in_batch = 300_000_000_000_000 / num_blocks_in_batch;
+        let attached_gas_per_promise_in_batch = MAX_GAS.0 / num_blocks_in_batch;
         let mut actions = Vec::new();
         for i in 0..method_name.len() {
             actions.push(
