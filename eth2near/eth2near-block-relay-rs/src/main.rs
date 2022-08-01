@@ -22,7 +22,7 @@ struct Arguments {
     init_contract: bool,
 
     #[clap(long, default_value_t = String::from("info"))]
-    /// Log level (trace, info, warn, error)
+    /// Log level (trace, debug, info, warn, error)
     log_level: String,
 }
 
@@ -47,6 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Arguments::parse();
     let log_level_filter = match args.log_level.as_str() {
         "trace" => LevelFilter::Trace,
+        "debug" => LevelFilter::Debug,
         "warn" => LevelFilter::Warn,
         "error" => LevelFilter::Error,
         _ => LevelFilter::Info,
