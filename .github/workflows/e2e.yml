@@ -2,6 +2,7 @@ on:
   push:
     branches:
       - master
+      - the-merge
   pull_request:
 name: E2E tests
 jobs:
