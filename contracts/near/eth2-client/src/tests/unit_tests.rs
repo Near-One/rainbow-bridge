@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::tests::utils::*;
-    use crate::{EthClient, PAUSE_SUBMIT_UPDATE};
+    use crate::{Eth2Client, PAUSE_SUBMIT_UPDATE};
     use admin_controlled::AdminControlled;
     use bitvec::bitarr;
     use bitvec::order::Lsb0;
@@ -39,14 +39,14 @@ mod tests {
     }
 
     pub struct TestContext<'a> {
-        contract: EthClient,
+        contract: Eth2Client,
         headers: &'a Vec<BlockHeader>,
         updates: &'a Vec<LightClientUpdate>,
     }
 
     pub fn get_test_context(init_options: Option<InitOptions>) -> TestContext<'static> {
         let (headers, updates, init_input) = get_test_data(init_options);
-        let contract = EthClient::init(init_input);
+        let contract = Eth2Client::init(init_input);
         assert_eq!(contract.last_block_number(), headers[0].number);
 
         TestContext {
@@ -57,7 +57,7 @@ mod tests {
     }
 
     pub fn submit_and_check_execution_headers(
-        contract: &mut EthClient,
+        contract: &mut Eth2Client,
         headers: Vec<&BlockHeader>,
     ) {
         for header in headers {
@@ -532,5 +532,38 @@ mod tests {
         let mut update = updates[1].clone();
         update.sync_committee_update = None;
         contract.submit_beacon_chain_light_client_update(update);
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet"
+    )]
+    pub fn test_panic_on_init_in_trustless_mode_without_bls_on_mainnet() {
+        let (_headers, _updates, mut init_input) = get_test_data(Some(InitOptions {
+            validate_updates: true,
+            verify_bls_signatures: false,
+            hashes_gc_threshold: 500,
+            max_submitted_blocks_by_account: 7000,
+            trusted_signer: None,
+        }));
+        init_input.network = "mainnet".to_string();
+        Eth2Client::init(init_input);
+    }
+
+    #[test]
+    #[cfg_attr(feature = "bls", ignore)]
+    #[should_panic(
+        expected = "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet"
+    )]
+    pub fn test_panic_on_init_in_trustless_mode_without_bls_feature_flag() {
+        let (_headers, _updates, mut init_input) = get_test_data(Some(InitOptions {
+            validate_updates: true,
+            verify_bls_signatures: true,
+            hashes_gc_threshold: 500,
+            max_submitted_blocks_by_account: 7000,
+            trusted_signer: None,
+        }));
+        init_input.network = "mainnet".to_string();
+        Eth2Client::init(init_input);
     }
 }

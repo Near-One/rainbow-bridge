@@ -5,7 +5,7 @@ use bitvec::prelude::BitVec;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::eth2::*;
 use eth_types::H256;
-use near_sdk::Balance;
+use near_sdk::{Balance, env};
 use tree_hash::TreeHash;
 
 pub const EPOCHS_PER_SYNC_COMMITTEE_PERIOD: u64 = 256;
@@ -200,6 +200,5 @@ pub fn calculate_min_storage_balance_for_submitter(
     let storage_bytes_per_account = (STORAGE_BYTES_PER_BLOCK
         * max_submitted_blocks_by_account as u128)
         + STORAGE_BYTES_PER_ACCOUNT;
-    const PRICE_PER_BYTE_IN_YOCTO_NEAR: u128 = 10_000_000_000_000_000_000;
-    storage_bytes_per_account * PRICE_PER_BYTE_IN_YOCTO_NEAR
+    storage_bytes_per_account * env::STORAGE_PRICE_PER_BYTE
 }

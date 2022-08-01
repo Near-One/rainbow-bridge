@@ -32,7 +32,7 @@ enum StorageKey {
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-pub struct EthClient {
+pub struct Eth2Client {
     /// If set, only light client updates by the trusted signer will be accepted
     trusted_signer: Option<AccountId>,
     /// Mask determining all paused functions
@@ -71,10 +71,9 @@ pub struct EthClient {
 }
 
 #[near_bindgen]
-impl EthClient {
+impl Eth2Client {
     #[init]
     pub fn init(#[serializer(borsh)] args: InitInput) -> Self {
-        assert!(!Self::initialized(), "Already initialized");
         let min_storage_balance_for_submitter =
             calculate_min_storage_balance_for_submitter(args.max_submitted_blocks_by_account);
         let network =
@@ -84,6 +83,12 @@ impl EthClient {
             assert!(
                 args.validate_updates,
                 "The updates validation can't be disabled for mainnet"
+            );
+
+            assert!(
+                (cfg!(feature = "bls") && args.verify_bls_signatures)
+                    || args.trusted_signer.is_some(),
+                "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet"
             );
         }
 
@@ -129,7 +134,7 @@ impl EthClient {
 
     #[result_serializer(borsh)]
     pub fn initialized() -> bool {
-        env::state_read::<EthClient>().is_some()
+        env::state_read::<Eth2Client>().is_some()
     }
 
     /// Returns finalized execution block number
@@ -282,7 +287,7 @@ impl EthClient {
     }
 }
 
-impl EthClient {
+impl Eth2Client {
     fn validate_light_client_update(&self, update: &LightClientUpdate) {
         #[cfg(feature = "logs")]
         env::log_str(format!("Validate update. Used gas: {}", env::used_gas().0).as_str());
@@ -562,7 +567,7 @@ impl EthClient {
 
         if let Some(trusted_signer) = &self.trusted_signer {
             assert_eq!(
-                &env::signer_account_id(),
+                &env::predecessor_account_id(),
                 trusted_signer,
                 "Eth-client is deployed as trust mode, only trusted_signer can update the client"
             );
@@ -570,4 +575,4 @@ impl EthClient {
     }
 }
 
-admin_controlled::impl_admin_controlled!(EthClient, paused);
+admin_controlled::impl_admin_controlled!(Eth2Client, paused);
