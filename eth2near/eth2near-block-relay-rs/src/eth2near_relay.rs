@@ -208,8 +208,12 @@ impl Eth2NearRelay {
                 }
             }
         } else {
-            while slot > finalized_slot && !(self.block_known_on_near(slot)?) {
-                slot -= 1;
+            while slot > finalized_slot {
+                match self.block_known_on_near(slot) {
+                    Ok(true) => break,
+                    Ok(false) => slot -= 1,
+                    Err(_) => slot -= 1
+                }
             }
         }
         Ok(slot)
