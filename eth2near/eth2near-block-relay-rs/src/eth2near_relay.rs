@@ -23,10 +23,15 @@ pub struct Eth2NearRelay {
 }
 
 impl Eth2NearRelay {
+    fn init_current_gap_between_finalized_and_signature_slot(&mut self) {
+        self.current_gap_between_finalized_and_signature_slot =
+            self.light_client_updates_submission_frequency_in_epochs as u64 * 32 + 64 + 1;
+    }
+
     pub fn init(config: &Config, contract_wrapper: Box<dyn ContractWrapper>) -> Self {
         info!(target: "relay", "=== Relay initialization === ");
 
-        let eth2near_relay = Eth2NearRelay {
+        let mut eth2near_relay = Eth2NearRelay {
             beacon_rpc_client: BeaconRPCClient::new(&config.beacon_endpoint),
             eth1_rpc_client: Eth1RPCClient::new(&config.eth1_endpoint),
             eth_client_contract: EthClientContract::new(contract_wrapper),
@@ -37,6 +42,9 @@ impl Eth2NearRelay {
                 .light_client_updates_submission_frequency_in_epochs,
             max_blocks_for_finalization: config.max_blocks_for_finalization,
         };
+
+        eth2near_relay.init_current_gap_between_finalized_and_signature_slot();
+
         eth2near_relay
             .eth_client_contract
             .register_submitter()
@@ -259,7 +267,7 @@ impl Eth2NearRelay {
                     {
                         Ok(()) => {
                             info!(target: "relay", "Successful light client update submission!");
-                            self.current_gap_between_finalized_and_signature_slot = 97;
+                            self.init_current_gap_between_finalized_and_signature_slot();
                         }
                         Err(err) => {
                             warn!(target: "relay", "Fail to send light client update. Error: {}", err)
