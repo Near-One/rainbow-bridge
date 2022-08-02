@@ -19,6 +19,7 @@ pub struct Eth2NearRelay {
     current_gap_between_finalized_and_signature_slot: u64,
     network: String,
     light_client_updates_submission_frequency_in_epochs: i64,
+    max_blocks_for_finalization: u64,
 }
 
 impl Eth2NearRelay {
@@ -34,6 +35,7 @@ impl Eth2NearRelay {
             network: config.network.to_string(),
             light_client_updates_submission_frequency_in_epochs: config
                 .light_client_updates_submission_frequency_in_epochs,
+            max_blocks_for_finalization: config.max_blocks_for_finalization,
         };
         eth2near_relay
             .eth_client_contract
@@ -382,7 +384,7 @@ impl Eth2NearRelay {
         let end_period = BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_eth);
         info!(target: "relay", "Last finalized slot/period on ethereum={}/{}", last_finalized_slot_on_eth, end_period);
 
-        if last_finalized_slot_on_eth - last_finalized_slot_on_near >= 500 {
+        if last_finalized_slot_on_eth - last_finalized_slot_on_near >= self.max_blocks_for_finalization {
             info!(target: "relay", "Too big gap between slot of finalized block on Near and Eth. Sending hand made light client update");
             self.send_hand_made_light_client_update(last_finalized_slot_on_near);
             return;
