@@ -25,27 +25,31 @@ pub struct Eth2NearRelay {
 }
 
 impl Eth2NearRelay {
-    fn init_current_gap_between_finalized_and_signature_slot(&mut self) {
-        self.current_gap_between_finalized_and_signature_slot =
-            self.light_client_updates_submission_frequency_in_epochs as u64 * ONE_EPOCH_IN_SLOTS + 2 * ONE_EPOCH_IN_SLOTS + 1;
+    // get the slot numbers between the last submitted slot and signature slot for next update
+    // if we sending updates once in 'update_submission_frequency' epochs
+    // `update_submission_frequency * ONE_EPOCH_IN_SLOTS` -- gap in slots between two finalized
+    //  blocks in neighboring updates.
+    // `2 * ONE_EPOCH_IN_SLOTS` -- gap between finalized and attested block.
+    // `1` -- expected gap between attested block slot and signature slot
+    fn get_gap_between_finalized_and_signature_slot(update_submission_frequency: u64) -> u64 {
+        update_submission_frequency * ONE_EPOCH_IN_SLOTS + 2 * ONE_EPOCH_IN_SLOTS + 1
     }
 
     pub fn init(config: &Config, contract_wrapper: Box<dyn ContractWrapper>) -> Self {
         info!(target: "relay", "=== Relay initialization === ");
 
-        let mut eth2near_relay = Eth2NearRelay {
+        let eth2near_relay = Eth2NearRelay {
             beacon_rpc_client: BeaconRPCClient::new(&config.beacon_endpoint),
             eth1_rpc_client: Eth1RPCClient::new(&config.eth1_endpoint),
             eth_client_contract: EthClientContract::new(contract_wrapper),
             max_submitted_headers: config.total_submit_headers as u64,
-            current_gap_between_finalized_and_signature_slot: 97,
+            current_gap_between_finalized_and_signature_slot: Self::get_gap_between_finalized_and_signature_slot(
+                config.light_client_updates_submission_frequency_in_epochs as u64),
             network: config.network.to_string(),
             light_client_updates_submission_frequency_in_epochs: config
                 .light_client_updates_submission_frequency_in_epochs,
             max_blocks_for_finalization: config.max_blocks_for_finalization,
         };
-
-        eth2near_relay.init_current_gap_between_finalized_and_signature_slot();
 
         eth2near_relay
             .eth_client_contract
@@ -275,7 +279,9 @@ impl Eth2NearRelay {
                     {
                         Ok(()) => {
                             info!(target: "relay", "Successful light client update submission!");
-                            self.init_current_gap_between_finalized_and_signature_slot();
+                            self.current_gap_between_finalized_and_signature_slot =
+                                Self::get_gap_between_finalized_and_signature_slot(
+                                    self.light_client_updates_submission_frequency_in_epochs as u64);
                         }
                         Err(err) => {
                             warn!(target: "relay", "Fail to send light client update. Error: {}", err)
