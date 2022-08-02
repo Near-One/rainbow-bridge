@@ -199,8 +199,10 @@ impl Eth2NearRelay {
         slot = max(finalized_slot, slot);
         debug!(target: "relay", "Init slot for search as {}", slot);
 
+        let last_eth_slot = self.beacon_rpc_client.get_last_slot_number()?.as_u64();
+
         if slot == finalized_slot || self.block_known_on_near(slot)? {
-            loop {
+            while slot < last_eth_slot {
                 match self.block_known_on_near(slot + 1) {
                     Ok(true) => slot += 1,
                     Ok(false) => break,
