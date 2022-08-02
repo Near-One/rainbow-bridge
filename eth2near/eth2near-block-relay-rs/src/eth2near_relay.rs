@@ -1,4 +1,4 @@
-use crate::beacon_rpc_client::{BeaconRPCClient, ExecutionPayloadError, MissSyncCommitteeUpdate};
+use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
 use crate::eth1_rpc_client::Eth1RPCClient;
 use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
@@ -10,6 +10,7 @@ use log::{info, trace, debug, warn};
 use std::cmp::{max, min};
 use std::error::Error;
 use std::vec::Vec;
+use crate::relay_errors::{ExecutionPayloadError, MissSyncCommitteeUpdate};
 
 const ONE_EPOCH_IN_SLOTS: u64 = 32;
 
