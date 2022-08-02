@@ -11,6 +11,8 @@ use std::cmp::max;
 use std::error::Error;
 use std::vec::Vec;
 
+const ONE_EPOCH_IN_SLOTS: u64 = 32;
+
 pub struct Eth2NearRelay {
     beacon_rpc_client: BeaconRPCClient,
     eth1_rpc_client: Eth1RPCClient,
@@ -25,7 +27,7 @@ pub struct Eth2NearRelay {
 impl Eth2NearRelay {
     fn init_current_gap_between_finalized_and_signature_slot(&mut self) {
         self.current_gap_between_finalized_and_signature_slot =
-            self.light_client_updates_submission_frequency_in_epochs as u64 * 32 + 64 + 1;
+            self.light_client_updates_submission_frequency_in_epochs as u64 * ONE_EPOCH_IN_SLOTS + 2 * ONE_EPOCH_IN_SLOTS + 1;
     }
 
     pub fn init(config: &Config, contract_wrapper: Box<dyn ContractWrapper>) -> Self {
@@ -315,7 +317,7 @@ impl Eth2NearRelay {
 
                 if finality_update_slot <= last_finalized_slot_on_near {
                     info!(target: "relay", "Finality update slot for hand made light client update <= last finality update on near. Increment gap for signature slot and skipping light client update.");
-                    self.current_gap_between_finalized_and_signature_slot += 32;
+                    self.current_gap_between_finalized_and_signature_slot += ONE_EPOCH_IN_SLOTS;
                     return;
                 }
 
