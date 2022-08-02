@@ -131,7 +131,7 @@ impl Eth2NearRelay {
     }
 
     fn block_known_on_near(&self, slot: u64) -> Result<bool, Box<dyn Error>> {
-        debug!(target: "relay", "Check if block with slot={} on NEAR", slot);
+        trace!(target: "relay", "Check if block with slot={} on NEAR", slot);
         match self
             .beacon_rpc_client
             .get_beacon_block_body_for_block_id(&format!("{}", slot))
@@ -148,15 +148,15 @@ impl Eth2NearRelay {
                 );
 
                 if self.eth_client_contract.is_known_block(&hash)? {
-                    debug!(target: "relay", "Block with slot={} was found on NEAR", slot);
+                    trace!(target: "relay", "Block with slot={} was found on NEAR", slot);
                     Ok(true)
                 } else {
-                    debug!(target: "relay", "Block with slot={} not found on Near", slot);
+                    trace!(target: "relay", "Block with slot={} not found on Near", slot);
                     Ok(false)
                 }
             }
             Err(err) => {
-                debug!(target: "relay", "Error \"{}\" in getting beacon block body for slot={}", err, slot);
+                trace!(target: "relay", "Error \"{}\" in getting beacon block body for slot={}", err, slot);
                 Err(err)?
             }
         }
@@ -236,13 +236,13 @@ impl Eth2NearRelay {
         debug!(target: "relay", "= Search for last slot on near =");
 
         let finalized_slot = self.eth_client_contract.get_finalized_beacon_block_slot()?;
-        debug!(target: "relay", "Finalized slot on near={}", finalized_slot);
+        trace!(target: "relay", "Finalized slot on near={}", finalized_slot);
 
         let last_submitted_slot = self.eth_client_contract.get_last_submitted_slot();
-        debug!(target: "relay", "Last submitted slot={}", last_submitted_slot);
+        trace!(target: "relay", "Last submitted slot={}", last_submitted_slot);
 
         let mut slot = max(finalized_slot, last_submitted_slot);
-        debug!(target: "relay", "Init slot for search as {}", slot);
+        trace!(target: "relay", "Init slot for search as {}", slot);
 
         let last_eth_slot = self.beacon_rpc_client.get_last_slot_number()?.as_u64();
 
@@ -355,7 +355,7 @@ impl Eth2NearRelay {
 
         let signature_slot =
             last_finalized_slot_on_near + self.current_gap_between_finalized_and_signature_slot;
-        debug!(target: "relay", "Chosen signature slot {}", signature_slot);
+        trace!(target: "relay", "Chosen signature slot {}", signature_slot);
 
         match HandMadeFinalityLightClientUpdate::get_finality_light_client_update(
             &self.beacon_rpc_client,
