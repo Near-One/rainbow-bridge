@@ -7,7 +7,7 @@ use contract_wrapper::eth_client_contract::EthClientContract;
 use eth_types::eth2::LightClientUpdate;
 use eth_types::{BlockHeader, H256};
 use log::{info, trace, debug, warn};
-use std::cmp::max;
+use std::cmp::{max, min};
 use std::error::Error;
 use std::vec::Vec;
 
@@ -22,20 +22,11 @@ pub struct Eth2NearRelay {
     network: String,
     light_client_updates_submission_frequency_in_epochs: i64,
     max_blocks_for_finalization: u64,
+    enable_binsearch: bool,
 }
 
 impl Eth2NearRelay {
-    // get the slot numbers between the last submitted slot and signature slot for next update
-    // if we sending updates once in 'update_submission_frequency' epochs
-    // `update_submission_frequency * ONE_EPOCH_IN_SLOTS` -- gap in slots between two finalized
-    //  blocks in neighboring updates.
-    // `2 * ONE_EPOCH_IN_SLOTS` -- gap between finalized and attested block.
-    // `1` -- expected gap between attested block slot and signature slot
-    fn get_gap_between_finalized_and_signature_slot(update_submission_frequency: u64) -> u64 {
-        update_submission_frequency * ONE_EPOCH_IN_SLOTS + 2 * ONE_EPOCH_IN_SLOTS + 1
-    }
-
-    pub fn init(config: &Config, contract_wrapper: Box<dyn ContractWrapper>) -> Self {
+    pub fn init(config: &Config, contract_wrapper: Box<dyn ContractWrapper>, enable_binsearch: bool) -> Self {
         info!(target: "relay", "=== Relay initialization === ");
 
         let eth2near_relay = Eth2NearRelay {
@@ -49,6 +40,7 @@ impl Eth2NearRelay {
             light_client_updates_submission_frequency_in_epochs: config
                 .light_client_updates_submission_frequency_in_epochs,
             max_blocks_for_finalization: config.max_blocks_for_finalization,
+            enable_binsearch
         };
 
         eth2near_relay
@@ -170,24 +162,70 @@ impl Eth2NearRelay {
         }
     }
 
-    fn search_slot_forward(&self, slot: u64) -> Result<u64, Box<dyn Error>> {
-        let mut current_step = 1;
-        while self.block_known_on_near(slot + current_step)? {
-            current_step *= 2;
-        }
-
-        self.search_slot_backward(slot, slot + current_step)
+    // get the slot numbers between the last submitted slot and signature slot for next update
+    // if we sending updates once in 'update_submission_frequency' epochs
+    // `update_submission_frequency * ONE_EPOCH_IN_SLOTS` -- gap in slots between two finalized
+    //  blocks in neighboring updates.
+    // `2 * ONE_EPOCH_IN_SLOTS` -- gap between finalized and attested block.
+    // `1` -- expected gap between attested block slot and signature slot
+    fn get_gap_between_finalized_and_signature_slot(update_submission_frequency: u64) -> u64 {
+        update_submission_frequency * ONE_EPOCH_IN_SLOTS + 2 * ONE_EPOCH_IN_SLOTS + 1
     }
 
-    fn search_slot_backward(&self, start_slot: u64, last_slot: u64) -> Result<u64, Box<dyn Error>> {
+    fn find_left_non_error_slot(&self, slot_lft: u64, slot_rgt: u64) -> (u64, bool) {
+        let mut slot = slot_lft;
+        while slot < slot_rgt {
+            match self.block_known_on_near(slot) {
+                Ok(v) => { return (slot, v) },
+                Err(_) => slot += 1,
+            };
+        }
+
+        return (slot, false);
+    }
+
+    fn search_slot_forward(&self, slot: u64, max_slot: u64) -> Result<u64, Box<dyn Error>> {
+        let mut current_step = 1;
+        let mut prev_slot = slot;
+        while slot + current_step < max_slot {
+            match self.block_known_on_near(slot + current_step) {
+                Ok(true) =>  {
+                    prev_slot = slot + current_step;
+                    current_step = min(current_step * 2, max_slot - slot);
+                },
+                Ok(false) => break,
+                Err(_) => {
+                    let (slot_id, slot_on_near) = self.find_left_non_error_slot(slot + current_step, max_slot);
+                    if slot_on_near {
+                        prev_slot = slot_id;
+                        current_step = min(current_step * 2, max_slot - slot);
+                    } else {
+                        current_step = slot_id - slot;
+                        break;
+                    }
+                }
+            }
+        }
+
+        self.binsearch_slot_range(prev_slot, slot + current_step)
+    }
+
+    fn binsearch_slot_range(&self, start_slot: u64, last_slot: u64) -> Result<u64, Box<dyn Error>> {
         let mut start_slot = start_slot;
         let mut last_slot = last_slot;
         while start_slot + 1 < last_slot {
             let mid_slot = start_slot + (last_slot - start_slot) / 2;
-            if self.block_known_on_near(mid_slot)? {
-                start_slot = mid_slot;
-            } else {
-                last_slot = mid_slot;
+            match self.block_known_on_near(mid_slot) {
+                Ok(true) => start_slot = mid_slot,
+                Ok(false) => last_slot = mid_slot,
+                Err(_) => {
+                    let (lft_slot, val) = self.find_left_non_error_slot(mid_slot, last_slot);
+                    if val == true {
+                        start_slot = lft_slot;
+                    } else {
+                        last_slot = mid_slot;
+                    }
+                }
             }
         }
 
@@ -209,19 +247,27 @@ impl Eth2NearRelay {
         let last_eth_slot = self.beacon_rpc_client.get_last_slot_number()?.as_u64();
 
         if slot == finalized_slot || self.block_known_on_near(slot)? {
-            while slot < last_eth_slot {
-                match self.block_known_on_near(slot + 1) {
-                    Ok(true) => slot += 1,
-                    Ok(false) => break,
-                    Err(_) => slot += 1,
+            if self.enable_binsearch {
+                return self.search_slot_forward(slot, last_eth_slot + 1);
+            } else {
+                while slot < last_eth_slot {
+                    match self.block_known_on_near(slot + 1) {
+                        Ok(true) => slot += 1,
+                        Ok(false) => break,
+                        Err(_) => slot += 1,
+                    }
                 }
             }
         } else {
-            while slot > finalized_slot {
-                match self.block_known_on_near(slot) {
-                    Ok(true) => break,
-                    Ok(false) => slot -= 1,
-                    Err(_) => slot -= 1
+            if self.enable_binsearch {
+                return self.binsearch_slot_range(finalized_slot, slot);
+            } else {
+                while slot > finalized_slot {
+                    match self.block_known_on_near(slot) {
+                        Ok(true) => break,
+                        Ok(false) => slot -= 1,
+                        Err(_) => slot -= 1
+                    }
                 }
             }
         }

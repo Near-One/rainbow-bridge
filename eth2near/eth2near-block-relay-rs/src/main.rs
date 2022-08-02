@@ -24,6 +24,10 @@ struct Arguments {
     #[clap(long, default_value_t = String::from("info"))]
     /// Log level (trace, debug, info, warn, error)
     log_level: String,
+
+    #[clap(long, action = ArgAction::SetTrue)]
+    /// Enable binary search for last slot ETH block on NEAR
+    enable_binary_search: bool,
 }
 
 fn get_contract_wrapper(config: &Config) -> Box<dyn ContractWrapper> {
@@ -62,7 +66,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         init_contract(&config, get_contract_wrapper(&config)).unwrap();
     }
 
-    let mut eth2near_relay = Eth2NearRelay::init(&config, get_contract_wrapper(&config));
+    let mut eth2near_relay = Eth2NearRelay::init(&config, get_contract_wrapper(&config), args.enable_binary_search);
 
     eth2near_relay.run();
     Ok(())

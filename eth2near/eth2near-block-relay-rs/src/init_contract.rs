@@ -1,3 +1,4 @@
+use std::{thread, time};
 use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
 use crate::eth1_rpc_client::Eth1RPCClient;
@@ -63,5 +64,7 @@ pub fn init_contract(
         current_sync_committee,
         next_sync_committee,
     );
+
+    thread::sleep(time::Duration::from_secs(30));
     Ok(())
 }
