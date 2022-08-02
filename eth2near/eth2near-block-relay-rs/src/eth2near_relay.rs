@@ -197,12 +197,13 @@ impl Eth2NearRelay {
     fn get_last_slot(&mut self) -> Result<u64, Box<dyn Error>> {
         debug!(target: "relay", "= Search for last slot on near =");
 
-        let mut slot = self.eth_client_contract.get_last_submitted_slot();
-
         let finalized_slot = self.eth_client_contract.get_finalized_beacon_block_slot()?;
         debug!(target: "relay", "Finalized slot on near={}", finalized_slot);
 
-        slot = max(finalized_slot, slot);
+        let last_submitted_slot = self.eth_client_contract.get_last_submitted_slot();
+        debug!(target: "relay", "Last submitted slot={}", last_submitted_slot);
+
+        let mut slot = max(finalized_slot, last_submitted_slot);
         debug!(target: "relay", "Init slot for search as {}", slot);
 
         let last_eth_slot = self.beacon_rpc_client.get_last_slot_number()?.as_u64();
