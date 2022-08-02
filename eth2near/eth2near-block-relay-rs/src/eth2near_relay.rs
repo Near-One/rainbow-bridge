@@ -90,7 +90,7 @@ impl Eth2NearRelay {
                     let mut count = 0;
                     loop {
                         if count > 0 {
-                            debug!(target: "relay", "Error on extraction execution block header for slot = {}. Try again. Trying number {}", current_slot, count + 1);
+                            debug!(target: "relay", "Error retrieving execution block header for slot = {}. Try again. Trying number {}", current_slot, count + 1);
                         }
 
                         if let Ok(block_number) = self
