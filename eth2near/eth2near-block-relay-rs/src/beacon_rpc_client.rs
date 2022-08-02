@@ -15,8 +15,20 @@ use std::fmt;
 use std::fmt::Display;
 use std::string::String;
 use std::time::Duration;
+use log::trace;
 use types::MainnetEthSpec;
 use types::{BeaconBlockBody, BeaconState};
+
+#[derive(Debug)]
+pub struct ErrorOnUnwrapSignatureBit();
+
+impl Display for ErrorOnUnwrapSignatureBit {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Error on getting signature bits from sync aggregate!")
+    }
+}
+
+impl Error for ErrorOnUnwrapSignatureBit {}
 
 #[derive(Debug)]
 pub struct SignatureSlotNotFoundError();
@@ -309,6 +321,7 @@ impl BeaconRPCClient {
     }
 
     fn get_json_from_raw_request(&self, url: &str) -> Result<String, reqwest::Error> {
+        trace!(target: "relay", "Beacon chain request: {}", url);
         self.client.get(url).send()?.text()
     }
 

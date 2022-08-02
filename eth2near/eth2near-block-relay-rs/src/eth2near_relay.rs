@@ -140,18 +140,18 @@ impl Eth2NearRelay {
                 );
 
                 if self.eth_client_contract.is_known_block(&hash)? {
-                    return Ok(true);
+                    debug!(target: "relay", "Block with slot={} was found on NEAR", slot);
+                    Ok(true)
                 } else {
                     debug!(target: "relay", "Block with slot={} not found on Near", slot);
-                    return Ok(false);
+                    Ok(false)
                 }
             }
             Err(err) => {
-                debug!(target: "relay", "Error \"{}\" in getting beacon block body for slot={}", err, slot)
+                debug!(target: "relay", "Error \"{}\" in getting beacon block body for slot={}", err, slot);
+                Err(err)?
             }
         }
-
-        Ok(false)
     }
 
     fn search_slot_forward(&self, slot: u64) -> Result<u64, Box<dyn Error>> {
@@ -190,8 +190,12 @@ impl Eth2NearRelay {
         debug!(target: "relay", "Init slot for search as {}", slot);
 
         if slot == finalized_slot || self.block_known_on_near(slot)? {
-            while (self.block_known_on_near(slot + 1)?) {
-                slot += 1;
+            loop {
+                match self.block_known_on_near(slot + 1) {
+                    Ok(true) => slot += 1,
+                    Ok(false) => break,
+                    Err(_) => slot += 1,
+                }
             }
         } else {
             while slot > finalized_slot && !(self.block_known_on_near(slot)?) {
