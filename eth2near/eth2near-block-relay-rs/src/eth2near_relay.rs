@@ -185,7 +185,7 @@ impl Eth2NearRelay {
         return (slot, false);
     }
 
-    fn search_slot_forward(&self, slot: u64, max_slot: u64) -> Result<u64, Box<dyn Error>> {
+    fn binsearch_slot_forward(&self, slot: u64, max_slot: u64) -> Result<u64, Box<dyn Error>> {
         let mut current_step = 1;
         let mut prev_slot = slot;
         while slot + current_step < max_slot {
@@ -233,6 +233,49 @@ impl Eth2NearRelay {
         Ok(start_slot)
     }
 
+    fn linear_search_forward(&self, slot: u64, max_slot: u64) -> u64 {
+        let mut slot = slot;
+        while slot < max_slot {
+            match self.block_known_on_near(slot + 1) {
+                Ok(true) => slot += 1,
+                Ok(false) => break,
+                Err(_) => slot += 1,
+            }
+        }
+
+        slot
+    }
+
+    fn linear_search_backward(&self, start_slot: u64, last_slot: u64) -> u64 {
+        let mut slot = last_slot;
+
+        while slot > start_slot {
+            match self.block_known_on_near(slot) {
+                Ok(true) => break,
+                Ok(false) => slot -= 1,
+                Err(_) => slot -= 1
+            }
+        }
+
+        slot
+    }
+
+    fn linear_slot_search(&self, slot: u64, finalized_slot: u64, last_eth_slot: u64) -> Result<u64, Box<dyn Error>> {
+        return if slot == finalized_slot || self.block_known_on_near(slot)? {
+            Ok(self.linear_search_forward(slot, last_eth_slot))
+        } else {
+            Ok(self.linear_search_backward(finalized_slot, slot))
+        }
+    }
+
+    fn binary_slot_search(&self, slot: u64, finalized_slot: u64, last_eth_slot: u64) -> Result<u64, Box<dyn Error>> {
+        return if slot == finalized_slot || self.block_known_on_near(slot)? {
+            self.binsearch_slot_forward(slot, last_eth_slot + 1)
+        } else {
+            self.binsearch_slot_range(finalized_slot, slot)
+        }
+    }
+
     fn get_last_slot(&mut self) -> Result<u64, Box<dyn Error>> {
         debug!(target: "relay", "= Search for last slot on near =");
 
@@ -242,37 +285,16 @@ impl Eth2NearRelay {
         let last_submitted_slot = self.eth_client_contract.get_last_submitted_slot();
         trace!(target: "relay", "Last submitted slot={}", last_submitted_slot);
 
-        let mut slot = max(finalized_slot, last_submitted_slot);
+        let slot = max(finalized_slot, last_submitted_slot);
         trace!(target: "relay", "Init slot for search as {}", slot);
 
         let last_eth_slot = self.beacon_rpc_client.get_last_slot_number()?.as_u64();
 
-        if slot == finalized_slot || self.block_known_on_near(slot)? {
-            if self.enable_binsearch {
-                return self.search_slot_forward(slot, last_eth_slot + 1);
-            } else {
-                while slot < last_eth_slot {
-                    match self.block_known_on_near(slot + 1) {
-                        Ok(true) => slot += 1,
-                        Ok(false) => break,
-                        Err(_) => slot += 1,
-                    }
-                }
-            }
+        return if self.enable_binsearch {
+            self.binary_slot_search(slot, finalized_slot, last_eth_slot)
         } else {
-            if self.enable_binsearch {
-                return self.binsearch_slot_range(finalized_slot, slot);
-            } else {
-                while slot > finalized_slot {
-                    match self.block_known_on_near(slot) {
-                        Ok(true) => break,
-                        Ok(false) => slot -= 1,
-                        Err(_) => slot -= 1
-                    }
-                }
-            }
+            self.linear_slot_search(slot, finalized_slot, last_eth_slot)
         }
-        Ok(slot)
     }
 
     fn verify_bls_signature_for_finality_update(
