@@ -127,11 +127,10 @@ impl ContractWrapper for NearContractWrapper {
 
         let result = handle.block_on(self.client.call(&request))?;
 
-        if let FinalExecutionStatus::SuccessValue(result) = result.status {
-            return Ok(base64::decode(result)?);
+        match result.status {
+            FinalExecutionStatus::SuccessValue(result) => Ok(base64::decode(result)?),
+            _ => Err(format!("Execution status: {:?}", result.status).into()),
         }
-
-        Err("Invalid response status!".into())
     }
 
     fn call_change_method(
