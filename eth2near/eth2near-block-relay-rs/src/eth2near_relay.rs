@@ -435,9 +435,9 @@ impl Eth2NearRelay {
                 Ok(true) => start_slot = mid_slot,
                 Ok(false) => last_slot = mid_slot,
                 Err(_) => {
-                    let (lft_slot, val) = self.find_left_non_error_slot(mid_slot, last_slot);
-                    if val == true {
-                        start_slot = lft_slot;
+                    let (left_slot, is_left_slot_on_near) = self.find_left_non_error_slot(mid_slot, last_slot);
+                    if is_left_slot_on_near == true {
+                        start_slot = left_slot;
                     } else {
                         last_slot = mid_slot;
                     }
@@ -475,16 +475,16 @@ impl Eth2NearRelay {
         slot
     }
 
-    fn find_left_non_error_slot(&self, slot_lft: u64, slot_rgt: u64) -> (u64, bool) {
-        let mut slot = slot_lft;
-        while slot < slot_rgt {
+    fn find_left_non_error_slot(&self, left_slot: u64, right_slot: u64) -> (u64, bool) {
+        let mut slot = left_slot;
+        while slot < right_slot {
             match self.block_known_on_near(slot) {
                 Ok(v) => { return (slot, v) },
                 Err(_) => slot += 1,
             };
         }
 
-        return (slot, false);
+        (slot, false)
     }
 
     fn block_known_on_near(&self, slot: u64) -> Result<bool, Box<dyn Error>> {
