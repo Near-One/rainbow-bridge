@@ -130,20 +130,14 @@ pub enum Action {
 }
 
 pub struct DAOContract {
-    last_proposal_id: u64,
     contract_wrapper: Box<dyn ContractWrapper>,
 }
 
 impl DAOContract {
     pub fn new(contract_wrapper: Box<dyn ContractWrapper>) -> Self {
         DAOContract {
-            last_proposal_id: 0,
             contract_wrapper,
         }
-    }
-
-    pub fn get_last_added_proposal(&self) -> u64 {
-        return self.last_proposal_id;
     }
 
     pub fn get_last_proposal_id(&self) -> Result<u64, Box<dyn Error>> {
@@ -171,8 +165,7 @@ impl DAOContract {
             None,
         )?;
 
-        self.last_proposal_id = serde_json::from_slice(response.as_slice())?;
-        Ok(self.last_proposal_id)
+        Ok(serde_json::from_slice(response.as_slice())?)
     }
 
     pub fn act_proposal(&self, id: u64, action: Action) -> Result<(), Box<dyn Error>> {

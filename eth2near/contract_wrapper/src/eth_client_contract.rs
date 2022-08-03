@@ -110,7 +110,7 @@ impl EthClientContract {
             .map(|_| {})
     }
 
-    pub async fn get_light_client_state(&self) -> Result<LightClientState, Box<dyn Error>> {
+    pub fn get_light_client_state(&self) -> Result<LightClientState, Box<dyn Error>> {
         let result = self
             .contract_wrapper
             .call_view_function("get_light_client_state".to_string(), vec![])?;
