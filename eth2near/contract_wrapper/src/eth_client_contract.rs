@@ -79,14 +79,13 @@ impl EthClientContract {
         self.last_slot = end_slot;
 
         let method_names = vec!["submit_execution_header".to_string(); headers.len()];
-        let mut args = Vec::new();
-        let deposits = vec![0 as u128; headers.len()];
+        let args = headers
+            .iter()
+            .map(|header| header.try_to_vec().unwrap())
+            .collect();
 
-        for header in headers {
-            args.push(header.try_to_vec()?);
-        }
         self.contract_wrapper
-            .call_change_method_batch(method_names, args, deposits, None)?;
+            .call_change_method_batch(method_names, args, None, None)?;
         Ok(())
     }
 

@@ -80,7 +80,7 @@ impl ContractWrapper for NearContractWrapper {
         &self,
         method_name: Vec<String>,
         args: Vec<Vec<u8>>,
-        deposit: Vec<Balance>,
+        deposit: Option<Vec<Balance>>,
         gas: Option<Gas>,
     ) -> Result<Vec<u8>, Box<dyn Error>> {
         let rt = Runtime::new()?;
@@ -103,12 +103,13 @@ impl ContractWrapper for NearContractWrapper {
         let num_blocks_in_batch = method_name.len() as u64;
         let attached_gas_per_promise_in_batch = gas.unwrap_or(MAX_GAS) / num_blocks_in_batch;
         let mut actions = Vec::new();
+
         for i in 0..method_name.len() {
             actions.push(Action::FunctionCall(FunctionCallAction {
                 method_name: method_name[i].clone(),
                 args: args[i].clone(),
                 gas: attached_gas_per_promise_in_batch.0,
-                deposit: deposit[i].clone(),
+                deposit: deposit.as_ref().map(|d| d[i]).unwrap_or(0),
             }));
         }
 
@@ -143,7 +144,7 @@ impl ContractWrapper for NearContractWrapper {
         self.call_change_method_batch(
             vec![method_name],
             vec![args],
-            vec![deposit.unwrap_or(0)],
+            Some(vec![deposit.unwrap_or(0)]),
             gas,
         )
     }

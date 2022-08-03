@@ -11,7 +11,7 @@ pub trait ContractWrapper {
         &self,
         method_name: Vec<String>,
         args: Vec<Vec<u8>>,
-        deposit: Vec<Balance>,
+        deposit: Option<Vec<Balance>>,
         gas: Option<Gas>,
     ) -> Result<Vec<u8>, Box<dyn std::error::Error>>;
 

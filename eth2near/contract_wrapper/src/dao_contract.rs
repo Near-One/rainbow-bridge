@@ -135,9 +135,7 @@ pub struct DAOContract {
 
 impl DAOContract {
     pub fn new(contract_wrapper: Box<dyn ContractWrapper>) -> Self {
-        DAOContract {
-            contract_wrapper,
-        }
+        DAOContract { contract_wrapper }
     }
 
     pub fn get_last_proposal_id(&self) -> Result<u64, Box<dyn Error>> {
