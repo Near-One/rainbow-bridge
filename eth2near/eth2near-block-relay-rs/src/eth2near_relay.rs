@@ -131,38 +131,6 @@ impl Eth2NearRelay {
         }
     }
 
-    fn block_known_on_near(&self, slot: u64) -> Result<bool, Box<dyn Error>> {
-        trace!(target: "relay", "Check if block with slot={} on NEAR", slot);
-        match self
-            .beacon_rpc_client
-            .get_beacon_block_body_for_block_id(&format!("{}", slot))
-        {
-            Ok(beacon_block_body) => {
-                let hash: H256 = H256::from(
-                    beacon_block_body
-                        .execution_payload()
-                        .map_err(|_| ExecutionPayloadError())?
-                        .execution_payload
-                        .block_hash
-                        .into_root()
-                        .as_bytes(),
-                );
-
-                if self.eth_client_contract.is_known_block(&hash)? {
-                    trace!(target: "relay", "Block with slot={} was found on NEAR", slot);
-                    Ok(true)
-                } else {
-                    trace!(target: "relay", "Block with slot={} not found on Near", slot);
-                    Ok(false)
-                }
-            }
-            Err(err) => {
-                trace!(target: "relay", "Error \"{}\" in getting beacon block body for slot={}", err, slot);
-                Err(err)?
-            }
-        }
-    }
-
     // get the slot numbers between the last submitted slot and signature slot for next update
     // if we sending updates once in 'update_submission_frequency' epochs
     // `update_submission_frequency * ONE_EPOCH_IN_SLOTS` -- gap in slots between two finalized
@@ -171,130 +139,6 @@ impl Eth2NearRelay {
     // `1` -- expected gap between attested block slot and signature slot
     fn get_gap_between_finalized_and_signature_slot(update_submission_frequency: u64) -> u64 {
         update_submission_frequency * ONE_EPOCH_IN_SLOTS + 2 * ONE_EPOCH_IN_SLOTS + 1
-    }
-
-    fn find_left_non_error_slot(&self, slot_lft: u64, slot_rgt: u64) -> (u64, bool) {
-        let mut slot = slot_lft;
-        while slot < slot_rgt {
-            match self.block_known_on_near(slot) {
-                Ok(v) => { return (slot, v) },
-                Err(_) => slot += 1,
-            };
-        }
-
-        return (slot, false);
-    }
-
-    fn binsearch_slot_forward(&self, slot: u64, max_slot: u64) -> Result<u64, Box<dyn Error>> {
-        let mut current_step = 1;
-        let mut prev_slot = slot;
-        while slot + current_step < max_slot {
-            match self.block_known_on_near(slot + current_step) {
-                Ok(true) =>  {
-                    prev_slot = slot + current_step;
-                    current_step = min(current_step * 2, max_slot - slot);
-                },
-                Ok(false) => break,
-                Err(_) => {
-                    let (slot_id, slot_on_near) = self.find_left_non_error_slot(slot + current_step, max_slot);
-                    if slot_on_near {
-                        prev_slot = slot_id;
-                        current_step = min(current_step * 2, max_slot - slot);
-                    } else {
-                        current_step = slot_id - slot;
-                        break;
-                    }
-                }
-            }
-        }
-
-        self.binsearch_slot_range(prev_slot, slot + current_step)
-    }
-
-    fn binsearch_slot_range(&self, start_slot: u64, last_slot: u64) -> Result<u64, Box<dyn Error>> {
-        let mut start_slot = start_slot;
-        let mut last_slot = last_slot;
-        while start_slot + 1 < last_slot {
-            let mid_slot = start_slot + (last_slot - start_slot) / 2;
-            match self.block_known_on_near(mid_slot) {
-                Ok(true) => start_slot = mid_slot,
-                Ok(false) => last_slot = mid_slot,
-                Err(_) => {
-                    let (lft_slot, val) = self.find_left_non_error_slot(mid_slot, last_slot);
-                    if val == true {
-                        start_slot = lft_slot;
-                    } else {
-                        last_slot = mid_slot;
-                    }
-                }
-            }
-        }
-
-        Ok(start_slot)
-    }
-
-    fn linear_search_forward(&self, slot: u64, max_slot: u64) -> u64 {
-        let mut slot = slot;
-        while slot < max_slot {
-            match self.block_known_on_near(slot + 1) {
-                Ok(true) => slot += 1,
-                Ok(false) => break,
-                Err(_) => slot += 1,
-            }
-        }
-
-        slot
-    }
-
-    fn linear_search_backward(&self, start_slot: u64, last_slot: u64) -> u64 {
-        let mut slot = last_slot;
-
-        while slot > start_slot {
-            match self.block_known_on_near(slot) {
-                Ok(true) => break,
-                Ok(false) => slot -= 1,
-                Err(_) => slot -= 1
-            }
-        }
-
-        slot
-    }
-
-    fn linear_slot_search(&self, slot: u64, finalized_slot: u64, last_eth_slot: u64) -> Result<u64, Box<dyn Error>> {
-        return if slot == finalized_slot || self.block_known_on_near(slot)? {
-            Ok(self.linear_search_forward(slot, last_eth_slot))
-        } else {
-            Ok(self.linear_search_backward(finalized_slot, slot))
-        }
-    }
-
-    fn binary_slot_search(&self, slot: u64, finalized_slot: u64, last_eth_slot: u64) -> Result<u64, Box<dyn Error>> {
-        return if slot == finalized_slot || self.block_known_on_near(slot)? {
-            self.binsearch_slot_forward(slot, last_eth_slot + 1)
-        } else {
-            self.binsearch_slot_range(finalized_slot, slot)
-        }
-    }
-
-    fn get_last_slot(&mut self) -> Result<u64, Box<dyn Error>> {
-        debug!(target: "relay", "= Search for last slot on near =");
-
-        let finalized_slot = self.eth_client_contract.get_finalized_beacon_block_slot()?;
-        trace!(target: "relay", "Finalized slot on near={}", finalized_slot);
-
-        let last_submitted_slot = self.eth_client_contract.get_last_submitted_slot();
-        trace!(target: "relay", "Last submitted slot={}", last_submitted_slot);
-
-        let slot = max(finalized_slot, last_submitted_slot);
-        trace!(target: "relay", "Init slot for search as {}", slot);
-
-        let last_eth_slot = self.beacon_rpc_client.get_last_slot_number()?.as_u64();
-
-        return if self.enable_binsearch {
-            self.binary_slot_search(slot, finalized_slot, last_eth_slot)
-        } else {
-            self.linear_slot_search(slot, finalized_slot, last_eth_slot)
-        }
     }
 
     fn verify_bls_signature_for_finality_update(
@@ -317,113 +161,10 @@ impl Eth2NearRelay {
             sync_committee,
         )
     }
+}
 
-    fn send_specific_light_cleint_update(&mut self, light_client_update: LightClientUpdate) {
-        match self.eth_client_contract.is_known_block(
-            &light_client_update
-                .finality_update
-                .header_update
-                .execution_block_hash,
-        ) {
-            Ok(is_known_block) => {
-                if is_known_block {
-                    match self.verify_bls_signature_for_finality_update(&light_client_update) {
-                        Ok(verification_result) => {
-                            if verification_result {
-                                info!(target: "relay", "PASS bls signature verification!");
-                            } else {
-                                warn!(target: "relay", "NOT PASS bls signature verification. Skip sending this light client update");
-                                return;
-                            }
-                        }
-                        Err(err) => {
-                            warn!(target: "relay", "Error \"{}\" on bls verification. Skip sending the light client update.", err);
-                            return;
-                        }
-                    }
-
-                    info!(target: "relay", "Sending light client update");
-                    match self
-                        .eth_client_contract
-                        .send_light_client_update(light_client_update)
-                    {
-                        Ok(()) => {
-                            info!(target: "relay", "Successful light client update submission!");
-                            self.current_gap_between_finalized_and_signature_slot =
-                                Self::get_gap_between_finalized_and_signature_slot(
-                                    self.light_client_updates_submission_frequency_in_epochs as u64);
-                        }
-                        Err(err) => {
-                            warn!(target: "relay", "Fail to send light client update. Error: {}", err)
-                        }
-                    }
-                } else {
-                    debug!(target: "relay", "Finalized block for light client update is not found on NEAR. Skipping send light client update");
-                }
-            }
-            Err(err) => {
-                debug!(target: "relay", "Fail on the is_known_block method. Skipping sending light client update. Error: {}", err)
-            }
-        }
-    }
-
-    fn send_hand_made_light_client_update(&mut self, last_finalized_slot_on_near: u64) {
-        let last_submitted_slot = self.eth_client_contract.get_last_submitted_slot();
-        if (last_submitted_slot as i64) - (last_finalized_slot_on_near as i64)
-            < (self.current_gap_between_finalized_and_signature_slot as i64)
-        {
-            info!(target: "relay", "Waiting for sending more headers to near. Skip sending light client update.");
-            return;
-        }
-
-        let signature_slot =
-            last_finalized_slot_on_near + self.current_gap_between_finalized_and_signature_slot;
-        trace!(target: "relay", "Chosen signature slot {}", signature_slot);
-
-        match HandMadeFinalityLightClientUpdate::get_finality_light_client_update(
-            &self.beacon_rpc_client,
-            signature_slot,
-        ) {
-            Ok(mut light_client_update) => {
-                let finality_update_slot = light_client_update
-                    .finality_update
-                    .header_update
-                    .beacon_header
-                    .slot;
-
-                if finality_update_slot <= last_finalized_slot_on_near {
-                    info!(target: "relay", "Finality update slot for hand made light client update <= last finality update on near. Increment gap for signature slot and skipping light client update.");
-                    self.current_gap_between_finalized_and_signature_slot += ONE_EPOCH_IN_SLOTS;
-                    return;
-                }
-
-                if BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near)
-                    != BeaconRPCClient::get_period_for_slot(finality_update_slot)
-                {
-                    let new_period = BeaconRPCClient::get_period_for_slot(finality_update_slot);
-                    match self.beacon_rpc_client.get_light_client_update(new_period) {
-                        Ok(light_client_update_for_period) => {
-                            light_client_update.sync_committee_update =
-                                light_client_update_for_period.sync_committee_update
-                        }
-                        Err(err) => {
-                            debug!(target: "relay", "Error \"{}\" on getting light client update for period. Skipping sending light client update", err);
-                            return;
-                        }
-                    }
-                }
-
-                trace!(target: "relay", "Hand made light client update: {:?}", light_client_update);
-
-                self.send_specific_light_cleint_update(light_client_update);
-            }
-            Err(err) => {
-                debug!(target: "relay", "Error \"{}\" on getting hand made light client update for attested slot={}.", err, signature_slot);
-                self.current_gap_between_finalized_and_signature_slot += 1;
-            }
-        }
-    }
-
+// Implementation of functions for submitting light client updates
+impl Eth2NearRelay {
     fn send_light_client_updates(&mut self) {
         info!(target: "relay", "= Sending light client update =");
 
@@ -509,6 +250,271 @@ impl Eth2NearRelay {
                 Err(err) => {
                     warn!(target: "relay", "Error \"{}\" on getting light client update. Skipping sending light client update", err)
                 }
+            }
+        }
+    }
+
+    fn send_hand_made_light_client_update(&mut self, last_finalized_slot_on_near: u64) {
+        let last_submitted_slot = self.eth_client_contract.get_last_submitted_slot();
+        if (last_submitted_slot as i64) - (last_finalized_slot_on_near as i64)
+            < (self.current_gap_between_finalized_and_signature_slot as i64)
+        {
+            info!(target: "relay", "Waiting for sending more headers to near. Skip sending light client update.");
+            return;
+        }
+
+        let signature_slot =
+            last_finalized_slot_on_near + self.current_gap_between_finalized_and_signature_slot;
+        trace!(target: "relay", "Chosen signature slot {}", signature_slot);
+
+        match HandMadeFinalityLightClientUpdate::get_finality_light_client_update(
+            &self.beacon_rpc_client,
+            signature_slot,
+        ) {
+            Ok(mut light_client_update) => {
+                let finality_update_slot = light_client_update
+                    .finality_update
+                    .header_update
+                    .beacon_header
+                    .slot;
+
+                if finality_update_slot <= last_finalized_slot_on_near {
+                    info!(target: "relay", "Finality update slot for hand made light client update <= last finality update on near. Increment gap for signature slot and skipping light client update.");
+                    self.current_gap_between_finalized_and_signature_slot += ONE_EPOCH_IN_SLOTS;
+                    return;
+                }
+
+                if BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near)
+                    != BeaconRPCClient::get_period_for_slot(finality_update_slot)
+                {
+                    let new_period = BeaconRPCClient::get_period_for_slot(finality_update_slot);
+                    match self.beacon_rpc_client.get_light_client_update(new_period) {
+                        Ok(light_client_update_for_period) => {
+                            light_client_update.sync_committee_update =
+                                light_client_update_for_period.sync_committee_update
+                        }
+                        Err(err) => {
+                            debug!(target: "relay", "Error \"{}\" on getting light client update for period. Skipping sending light client update", err);
+                            return;
+                        }
+                    }
+                }
+
+                trace!(target: "relay", "Hand made light client update: {:?}", light_client_update);
+
+                self.send_specific_light_cleint_update(light_client_update);
+            }
+            Err(err) => {
+                debug!(target: "relay", "Error \"{}\" on getting hand made light client update for attested slot={}.", err, signature_slot);
+                self.current_gap_between_finalized_and_signature_slot += 1;
+            }
+        }
+    }
+
+    fn send_specific_light_cleint_update(&mut self, light_client_update: LightClientUpdate) {
+        match self.eth_client_contract.is_known_block(
+            &light_client_update
+                .finality_update
+                .header_update
+                .execution_block_hash,
+        ) {
+            Ok(is_known_block) => {
+                if is_known_block {
+                    match self.verify_bls_signature_for_finality_update(&light_client_update) {
+                        Ok(verification_result) => {
+                            if verification_result {
+                                info!(target: "relay", "PASS bls signature verification!");
+                            } else {
+                                warn!(target: "relay", "NOT PASS bls signature verification. Skip sending this light client update");
+                                return;
+                            }
+                        }
+                        Err(err) => {
+                            warn!(target: "relay", "Error \"{}\" on bls verification. Skip sending the light client update.", err);
+                            return;
+                        }
+                    }
+
+                    info!(target: "relay", "Sending light client update");
+                    match self
+                        .eth_client_contract
+                        .send_light_client_update(light_client_update)
+                    {
+                        Ok(()) => {
+                            info!(target: "relay", "Successful light client update submission!");
+                            self.current_gap_between_finalized_and_signature_slot =
+                                Self::get_gap_between_finalized_and_signature_slot(
+                                    self.light_client_updates_submission_frequency_in_epochs as u64);
+                        }
+                        Err(err) => {
+                            warn!(target: "relay", "Fail to send light client update. Error: {}", err)
+                        }
+                    }
+                } else {
+                    debug!(target: "relay", "Finalized block for light client update is not found on NEAR. Skipping send light client update");
+                }
+            }
+            Err(err) => {
+                debug!(target: "relay", "Fail on the is_known_block method. Skipping sending light client update. Error: {}", err)
+            }
+        }
+    }
+}
+
+// Implementation of functions for searching last slot on NEAR contract
+impl Eth2NearRelay {
+    fn get_last_slot(&mut self) -> Result<u64, Box<dyn Error>> {
+        debug!(target: "relay", "= Search for last slot on near =");
+
+        let finalized_slot = self.eth_client_contract.get_finalized_beacon_block_slot()?;
+        trace!(target: "relay", "Finalized slot on near={}", finalized_slot);
+
+        let last_submitted_slot = self.eth_client_contract.get_last_submitted_slot();
+        trace!(target: "relay", "Last submitted slot={}", last_submitted_slot);
+
+        let slot = max(finalized_slot, last_submitted_slot);
+        trace!(target: "relay", "Init slot for search as {}", slot);
+
+        let last_eth_slot = self.beacon_rpc_client.get_last_slot_number()?.as_u64();
+
+        return if self.enable_binsearch {
+            self.binary_slot_search(slot, finalized_slot, last_eth_slot)
+        } else {
+            self.linear_slot_search(slot, finalized_slot, last_eth_slot)
+        }
+    }
+
+    fn linear_slot_search(&self, slot: u64, finalized_slot: u64, last_eth_slot: u64) -> Result<u64, Box<dyn Error>> {
+        return if slot == finalized_slot || self.block_known_on_near(slot)? {
+            Ok(self.linear_search_forward(slot, last_eth_slot))
+        } else {
+            Ok(self.linear_search_backward(finalized_slot, slot))
+        }
+    }
+
+    fn binary_slot_search(&self, slot: u64, finalized_slot: u64, last_eth_slot: u64) -> Result<u64, Box<dyn Error>> {
+        return if slot == finalized_slot || self.block_known_on_near(slot)? {
+            self.binsearch_slot_forward(slot, last_eth_slot + 1)
+        } else {
+            self.binsearch_slot_range(finalized_slot, slot)
+        }
+    }
+
+    fn binsearch_slot_forward(&self, slot: u64, max_slot: u64) -> Result<u64, Box<dyn Error>> {
+        let mut current_step = 1;
+        let mut prev_slot = slot;
+        while slot + current_step < max_slot {
+            match self.block_known_on_near(slot + current_step) {
+                Ok(true) =>  {
+                    prev_slot = slot + current_step;
+                    current_step = min(current_step * 2, max_slot - slot);
+                },
+                Ok(false) => break,
+                Err(_) => {
+                    let (slot_id, slot_on_near) = self.find_left_non_error_slot(slot + current_step, max_slot);
+                    if slot_on_near {
+                        prev_slot = slot_id;
+                        current_step = min(current_step * 2, max_slot - slot);
+                    } else {
+                        current_step = slot_id - slot;
+                        break;
+                    }
+                }
+            }
+        }
+
+        self.binsearch_slot_range(prev_slot, slot + current_step)
+    }
+
+    fn binsearch_slot_range(&self, start_slot: u64, last_slot: u64) -> Result<u64, Box<dyn Error>> {
+        let mut start_slot = start_slot;
+        let mut last_slot = last_slot;
+        while start_slot + 1 < last_slot {
+            let mid_slot = start_slot + (last_slot - start_slot) / 2;
+            match self.block_known_on_near(mid_slot) {
+                Ok(true) => start_slot = mid_slot,
+                Ok(false) => last_slot = mid_slot,
+                Err(_) => {
+                    let (lft_slot, val) = self.find_left_non_error_slot(mid_slot, last_slot);
+                    if val == true {
+                        start_slot = lft_slot;
+                    } else {
+                        last_slot = mid_slot;
+                    }
+                }
+            }
+        }
+
+        Ok(start_slot)
+    }
+
+    fn linear_search_forward(&self, slot: u64, max_slot: u64) -> u64 {
+        let mut slot = slot;
+        while slot < max_slot {
+            match self.block_known_on_near(slot + 1) {
+                Ok(true) => slot += 1,
+                Ok(false) => break,
+                Err(_) => slot += 1,
+            }
+        }
+
+        slot
+    }
+
+    fn linear_search_backward(&self, start_slot: u64, last_slot: u64) -> u64 {
+        let mut slot = last_slot;
+
+        while slot > start_slot {
+            match self.block_known_on_near(slot) {
+                Ok(true) => break,
+                Ok(false) => slot -= 1,
+                Err(_) => slot -= 1
+            }
+        }
+
+        slot
+    }
+
+    fn find_left_non_error_slot(&self, slot_lft: u64, slot_rgt: u64) -> (u64, bool) {
+        let mut slot = slot_lft;
+        while slot < slot_rgt {
+            match self.block_known_on_near(slot) {
+                Ok(v) => { return (slot, v) },
+                Err(_) => slot += 1,
+            };
+        }
+
+        return (slot, false);
+    }
+
+    fn block_known_on_near(&self, slot: u64) -> Result<bool, Box<dyn Error>> {
+        trace!(target: "relay", "Check if block with slot={} on NEAR", slot);
+        match self
+            .beacon_rpc_client
+            .get_beacon_block_body_for_block_id(&format!("{}", slot))
+        {
+            Ok(beacon_block_body) => {
+                let hash: H256 = H256::from(
+                    beacon_block_body
+                        .execution_payload()
+                        .map_err(|_| ExecutionPayloadError())?
+                        .execution_payload
+                        .block_hash
+                        .into_root()
+                        .as_bytes(),
+                );
+
+                if self.eth_client_contract.is_known_block(&hash)? {
+                    trace!(target: "relay", "Block with slot={} was found on NEAR", slot);
+                    Ok(true)
+                } else {
+                    trace!(target: "relay", "Block with slot={} not found on Near", slot);
+                    Ok(false)
+                }
+            }
+            Err(err) => {
+                trace!(target: "relay", "Error \"{}\" in getting beacon block body for slot={}", err, slot);
+                Err(err)?
             }
         }
     }
