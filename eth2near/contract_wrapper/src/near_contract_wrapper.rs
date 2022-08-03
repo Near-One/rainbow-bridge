@@ -8,6 +8,7 @@ use near_jsonrpc_primitives::types::query::QueryResponseKind;
 use near_jsonrpc_client::methods;
 use near_primitives::transaction::{Action, FunctionCallAction, Transaction};
 use near_primitives::types::{AccountId, BlockReference, Finality, FunctionArgs};
+use near_primitives::hash::CryptoHash;
 use tokio::runtime::Runtime;
 use near_primitives::views::QueryRequest;
 use near_sdk::{Balance, Gas};
@@ -65,7 +66,7 @@ impl ContractWrapper for NearContractWrapper {
         }
     }
 
-    fn call_change_method(&self, method_name: Vec<String>, args: Vec<Vec<u8>>, deposit: Vec<Balance>) -> Result<(), Box<dyn Error>> {
+    fn call_change_method(&self, method_name: Vec<String>, args: Vec<Vec<u8>>, deposit: Vec<Balance>) -> Result<CryptoHash, Box<dyn Error>> {
         let rt = Runtime::new()?;
         let handle = rt.handle();
 
@@ -110,7 +111,6 @@ impl ContractWrapper for NearContractWrapper {
             signed_transaction: transaction.sign(&self.signer),
         };
 
-        handle.block_on(self.client.call(&request))?;
-        Ok(())
+        Ok(handle.block_on(self.client.call(&request))?.transaction.hash)
     }
 }

@@ -36,6 +36,9 @@ pub struct Config {
 
     // maximum gap in slots between submitting light client update
     pub max_blocks_for_finalization: u64,
+
+    // NEAR network name (mainnet, testnet)
+    pub near_network_id: String,
 }
 
 impl Config {
