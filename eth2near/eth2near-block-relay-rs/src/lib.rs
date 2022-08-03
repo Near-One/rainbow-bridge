@@ -8,5 +8,5 @@ pub mod execution_block_proof;
 pub mod hand_made_finality_light_client_update;
 pub mod init_contract;
 pub mod logger;
-pub mod test_utils;
 pub mod relay_errors;
+pub mod test_utils;

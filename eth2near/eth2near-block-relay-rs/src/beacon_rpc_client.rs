@@ -1,4 +1,7 @@
 use crate::execution_block_proof::ExecutionBlockProof;
+use crate::relay_errors::{
+    ExecutionPayloadError, MissSyncAggregationError, SignatureSlotNotFoundError,
+};
 use eth_types::eth2::BeaconBlockHeader;
 use eth_types::eth2::FinalizedHeaderUpdate;
 use eth_types::eth2::HeaderUpdate;
@@ -8,17 +11,14 @@ use eth_types::eth2::SyncAggregate;
 use eth_types::eth2::SyncCommittee;
 use eth_types::eth2::SyncCommitteeUpdate;
 use eth_types::H256;
-use crate::relay_errors::{ExecutionPayloadError, MissSyncAggregationError,
-                          SignatureSlotNotFoundError};
+use log::trace;
 use reqwest::blocking::Client;
 use serde_json::{json, Value};
 use std::error::Error;
 use std::string::String;
 use std::time::Duration;
-use log::trace;
 use types::MainnetEthSpec;
 use types::{BeaconBlockBody, BeaconState};
-
 
 /// `BeaconRPCClient` allows getting beacon block body, beacon block header
 /// and light client updates

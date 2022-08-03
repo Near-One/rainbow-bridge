@@ -1,4 +1,3 @@
-use std::{thread, time};
 use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
 use crate::eth1_rpc_client::Eth1RPCClient;
@@ -7,6 +6,7 @@ use contract_wrapper::eth_client_contract::EthClientContract;
 use eth_types::eth2::ExtendedBeaconBlockHeader;
 use eth_types::BlockHeader;
 use log::info;
+use std::{thread, time};
 
 pub fn init_contract(
     config: &Config,

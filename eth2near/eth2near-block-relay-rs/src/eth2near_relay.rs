@@ -2,15 +2,15 @@ use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
 use crate::eth1_rpc_client::Eth1RPCClient;
 use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
+use crate::relay_errors::{ExecutionPayloadError, MissSyncCommitteeUpdate};
 use contract_wrapper::contract_wrapper_trait::ContractWrapper;
 use contract_wrapper::eth_client_contract::EthClientContract;
 use eth_types::eth2::LightClientUpdate;
 use eth_types::{BlockHeader, H256};
-use log::{info, trace, debug, warn};
+use log::{debug, info, trace, warn};
 use std::cmp::{max, min};
 use std::error::Error;
 use std::vec::Vec;
-use crate::relay_errors::{ExecutionPayloadError, MissSyncCommitteeUpdate};
 
 const ONE_EPOCH_IN_SLOTS: u64 = 32;
 
@@ -27,7 +27,11 @@ pub struct Eth2NearRelay {
 }
 
 impl Eth2NearRelay {
-    pub fn init(config: &Config, contract_wrapper: Box<dyn ContractWrapper>, enable_binsearch: bool) -> Self {
+    pub fn init(
+        config: &Config,
+        contract_wrapper: Box<dyn ContractWrapper>,
+        enable_binsearch: bool,
+    ) -> Self {
         info!(target: "relay", "=== Relay initialization === ");
 
         let eth2near_relay = Eth2NearRelay {
@@ -35,13 +39,15 @@ impl Eth2NearRelay {
             eth1_rpc_client: Eth1RPCClient::new(&config.eth1_endpoint),
             eth_client_contract: EthClientContract::new(contract_wrapper),
             max_submitted_headers: config.total_submit_headers as u64,
-            current_gap_between_finalized_and_signature_slot: Self::get_gap_between_finalized_and_signature_slot(
-                config.light_client_updates_submission_frequency_in_epochs as u64),
+            current_gap_between_finalized_and_signature_slot:
+                Self::get_gap_between_finalized_and_signature_slot(
+                    config.light_client_updates_submission_frequency_in_epochs as u64,
+                ),
             network: config.network.to_string(),
             light_client_updates_submission_frequency_in_epochs: config
                 .light_client_updates_submission_frequency_in_epochs,
             max_blocks_for_finalization: config.max_blocks_for_finalization,
-            enable_binsearch
+            enable_binsearch,
         };
 
         eth2near_relay
@@ -217,7 +223,9 @@ impl Eth2NearRelay {
         let end_period = BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_eth);
         info!(target: "relay", "Last finalized slot/period on ethereum={}/{}", last_finalized_slot_on_eth, end_period);
 
-        if last_finalized_slot_on_eth - last_finalized_slot_on_near >= self.max_blocks_for_finalization {
+        if last_finalized_slot_on_eth - last_finalized_slot_on_near
+            >= self.max_blocks_for_finalization
+        {
             info!(target: "relay", "Too big gap between slot of finalized block on Near and Eth. Sending hand made light client update");
             self.send_hand_made_light_client_update(last_finalized_slot_on_near);
             return;
@@ -344,7 +352,8 @@ impl Eth2NearRelay {
                             info!(target: "relay", "Successful light client update submission!");
                             self.current_gap_between_finalized_and_signature_slot =
                                 Self::get_gap_between_finalized_and_signature_slot(
-                                    self.light_client_updates_submission_frequency_in_epochs as u64);
+                                    self.light_client_updates_submission_frequency_in_epochs as u64,
+                                );
                         }
                         Err(err) => {
                             warn!(target: "relay", "Fail to send light client update. Error: {}", err)
@@ -381,23 +390,33 @@ impl Eth2NearRelay {
             self.binary_slot_search(slot, finalized_slot, last_eth_slot)
         } else {
             self.linear_slot_search(slot, finalized_slot, last_eth_slot)
-        }
+        };
     }
 
-    fn linear_slot_search(&self, slot: u64, finalized_slot: u64, last_eth_slot: u64) -> Result<u64, Box<dyn Error>> {
+    fn linear_slot_search(
+        &self,
+        slot: u64,
+        finalized_slot: u64,
+        last_eth_slot: u64,
+    ) -> Result<u64, Box<dyn Error>> {
         return if slot == finalized_slot || self.block_known_on_near(slot)? {
             Ok(self.linear_search_forward(slot, last_eth_slot))
         } else {
             Ok(self.linear_search_backward(finalized_slot, slot))
-        }
+        };
     }
 
-    fn binary_slot_search(&self, slot: u64, finalized_slot: u64, last_eth_slot: u64) -> Result<u64, Box<dyn Error>> {
+    fn binary_slot_search(
+        &self,
+        slot: u64,
+        finalized_slot: u64,
+        last_eth_slot: u64,
+    ) -> Result<u64, Box<dyn Error>> {
         return if slot == finalized_slot || self.block_known_on_near(slot)? {
             self.binsearch_slot_forward(slot, last_eth_slot + 1)
         } else {
             self.binsearch_slot_range(finalized_slot, slot)
-        }
+        };
     }
 
     fn binsearch_slot_forward(&self, slot: u64, max_slot: u64) -> Result<u64, Box<dyn Error>> {
@@ -405,13 +424,14 @@ impl Eth2NearRelay {
         let mut prev_slot = slot;
         while slot + current_step < max_slot {
             match self.block_known_on_near(slot + current_step) {
-                Ok(true) =>  {
+                Ok(true) => {
                     prev_slot = slot + current_step;
                     current_step = min(current_step * 2, max_slot - slot);
-                },
+                }
                 Ok(false) => break,
                 Err(_) => {
-                    let (slot_id, slot_on_near) = self.find_left_non_error_slot(slot + current_step, max_slot);
+                    let (slot_id, slot_on_near) =
+                        self.find_left_non_error_slot(slot + current_step, max_slot);
                     if slot_on_near {
                         prev_slot = slot_id;
                         current_step = min(current_step * 2, max_slot - slot);
@@ -435,7 +455,8 @@ impl Eth2NearRelay {
                 Ok(true) => start_slot = mid_slot,
                 Ok(false) => last_slot = mid_slot,
                 Err(_) => {
-                    let (left_slot, is_left_slot_on_near) = self.find_left_non_error_slot(mid_slot, last_slot);
+                    let (left_slot, is_left_slot_on_near) =
+                        self.find_left_non_error_slot(mid_slot, last_slot);
                     if is_left_slot_on_near == true {
                         start_slot = left_slot;
                     } else {
@@ -468,7 +489,7 @@ impl Eth2NearRelay {
             match self.block_known_on_near(slot) {
                 Ok(true) => break,
                 Ok(false) => slot -= 1,
-                Err(_) => slot -= 1
+                Err(_) => slot -= 1,
             }
         }
 
@@ -479,7 +500,7 @@ impl Eth2NearRelay {
         let mut slot = left_slot;
         while slot < right_slot {
             match self.block_known_on_near(slot) {
-                Ok(v) => { return (slot, v) },
+                Ok(v) => return (slot, v),
                 Err(_) => slot += 1,
             };
         }

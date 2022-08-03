@@ -1,13 +1,13 @@
 use crate::beacon_block_body_merkle_tree::BeaconStateMerkleTree;
 use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::execution_block_proof::ExecutionBlockProof;
+use crate::relay_errors::{ErrorOnUnwrapSignatureBit, MissSyncAggregationError};
 use eth_types::eth2::{
     FinalizedHeaderUpdate, HeaderUpdate, LightClientUpdate, SignatureBytes, SyncCommitteeBits,
     SyncCommitteeUpdate,
 };
 use std::error::Error;
 use tree_hash::TreeHash;
-use crate::relay_errors::{MissSyncAggregationError, ErrorOnUnwrapSignatureBit};
 
 pub struct HandMadeFinalityLightClientUpdate {}
 
@@ -19,9 +19,11 @@ impl HandMadeFinalityLightClientUpdate {
         const BEACON_STATE_MERKLE_TREE_DEPTH: usize = 5;
         const BEACON_STATE_FINALIZED_CHECKPOINT_INDEX: usize = 20;
 
-        let signature_beacon_body = beacon_rpc_client
-            .get_beacon_block_body_for_block_id(&format!("{}", signature_slot))?;
-        let sync_committe_signature = signature_beacon_body.sync_aggregate().map_err(|_| { MissSyncAggregationError })?;
+        let signature_beacon_body =
+            beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", signature_slot))?;
+        let sync_committe_signature = signature_beacon_body
+            .sync_aggregate()
+            .map_err(|_| MissSyncAggregationError)?;
 
         let attested_slot = signature_beacon_body.attestations()[0].data.slot;
 
@@ -46,16 +48,18 @@ impl HandMadeFinalityLightClientUpdate {
         let finalized_block_eth1data_proof =
             ExecutionBlockProof::construct_from_beacon_block_body(&finalized_block_body)?;
 
-
-        let sync_committee_bits: [u8; 64] =  match sync_committe_signature
+        let sync_committee_bits: [u8; 64] = match sync_committe_signature
             .clone()
             .sync_committee_bits
             .into_bytes()
             .into_vec()
             .as_slice()
-            .try_into() {
-                Ok(ba) => ba,
-                Err(_) => { return Err(Box::new(ErrorOnUnwrapSignatureBit)); }
+            .try_into()
+        {
+            Ok(ba) => ba,
+            Err(_) => {
+                return Err(Box::new(ErrorOnUnwrapSignatureBit));
+            }
         };
 
         Ok(LightClientUpdate {

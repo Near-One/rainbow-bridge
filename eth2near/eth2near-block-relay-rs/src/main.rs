@@ -66,7 +66,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         init_contract(&config, get_contract_wrapper(&config)).unwrap();
     }
 
-    let mut eth2near_relay = Eth2NearRelay::init(&config, get_contract_wrapper(&config), args.enable_binary_search);
+    let mut eth2near_relay = Eth2NearRelay::init(
+        &config,
+        get_contract_wrapper(&config),
+        args.enable_binary_search,
+    );
 
     eth2near_relay.run();
     Ok(())
