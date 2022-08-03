@@ -31,6 +31,7 @@ impl Eth2NearRelay {
         config: &Config,
         contract_wrapper: Box<dyn ContractWrapper>,
         enable_binsearch: bool,
+        register_relay: bool,
     ) -> Self {
         info!(target: "relay", "=== Relay initialization === ");
 
@@ -50,10 +51,13 @@ impl Eth2NearRelay {
             enable_binsearch,
         };
 
-        eth2near_relay
-            .eth_client_contract
-            .register_submitter()
-            .unwrap();
+        if register_relay {
+            eth2near_relay
+                .eth_client_contract
+                .register_submitter()
+                .unwrap();
+        }
+
         eth2near_relay
     }
 

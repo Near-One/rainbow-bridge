@@ -21,6 +21,10 @@ struct Arguments {
     /// The eth contract on Near will be initialized
     init_contract: bool,
 
+    #[clap(long, action = ArgAction::SetTrue)]
+    /// Relay will be registered in contract
+    register_relay: bool,
+
     #[clap(long, default_value_t = String::from("info"))]
     /// Log level (trace, debug, info, warn, error)
     log_level: String,
@@ -70,6 +74,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         &config,
         get_contract_wrapper(&config),
         args.enable_binary_search,
+        args.register_relay,
     );
 
     eth2near_relay.run();
