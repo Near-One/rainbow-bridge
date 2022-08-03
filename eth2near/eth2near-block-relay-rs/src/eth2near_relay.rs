@@ -144,7 +144,12 @@ impl Eth2NearRelay {
     // `2 * ONE_EPOCH_IN_SLOTS` -- gap between finalized and attested block.
     // `1` -- expected gap between attested block slot and signature slot
     fn get_gap_between_finalized_and_signature_slot(update_submission_frequency: u64) -> u64 {
-        update_submission_frequency * ONE_EPOCH_IN_SLOTS + 2 * ONE_EPOCH_IN_SLOTS + 1
+        const EXPECTED_EPOCHS_BETWEEN_HEAD_AND_FINALIZED_BLOCKS: u64 = 2;
+        const EXPECTED_SLOTS_BETWEEN_ATTESTED_AND_SIGNATURE_SLOTS: u64 = 1;
+
+        update_submission_frequency * ONE_EPOCH_IN_SLOTS +
+            EXPECTED_EPOCHS_BETWEEN_HEAD_AND_FINALIZED_BLOCKS * ONE_EPOCH_IN_SLOTS +
+            EXPECTED_SLOTS_BETWEEN_ATTESTED_AND_SIGNATURE_SLOTS
     }
 
     fn verify_bls_signature_for_finality_update(
