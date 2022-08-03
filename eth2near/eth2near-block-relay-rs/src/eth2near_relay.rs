@@ -152,7 +152,7 @@ impl Eth2NearRelay {
             .get_light_client_update(current_period - 1)?;
         let sync_committee = update_for_per_period
             .sync_committee_update
-            .ok_or(MissSyncCommitteeUpdate())?
+            .ok_or(MissSyncCommitteeUpdate)?
             .next_sync_committee;
 
         finality_update_verify::is_correct_finality_update(
@@ -497,7 +497,7 @@ impl Eth2NearRelay {
                 let hash: H256 = H256::from(
                     beacon_block_body
                         .execution_payload()
-                        .map_err(|_| ExecutionPayloadError())?
+                        .map_err(|_| ExecutionPayloadError)?
                         .execution_payload
                         .block_hash
                         .into_root()

@@ -3,7 +3,7 @@ use std::fmt;
 use std::fmt::Display;
 
 #[derive(Debug)]
-pub struct ErrorOnUnwrapSignatureBit();
+pub struct ErrorOnUnwrapSignatureBit;
 
 impl Display for ErrorOnUnwrapSignatureBit {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -14,7 +14,7 @@ impl Display for ErrorOnUnwrapSignatureBit {
 impl Error for ErrorOnUnwrapSignatureBit {}
 
 #[derive(Debug)]
-pub struct SignatureSlotNotFoundError();
+pub struct SignatureSlotNotFoundError;
 
 impl Display for SignatureSlotNotFoundError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -25,7 +25,7 @@ impl Display for SignatureSlotNotFoundError {
 impl Error for SignatureSlotNotFoundError {}
 
 #[derive(Debug)]
-pub struct MissSyncAggregationError();
+pub struct MissSyncAggregationError;
 
 impl Display for MissSyncAggregationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -41,7 +41,7 @@ impl Display for MissSyncAggregationError {
 impl Error for MissSyncAggregationError {}
 
 #[derive(Debug)]
-pub struct ExecutionPayloadError();
+pub struct ExecutionPayloadError;
 
 impl Display for ExecutionPayloadError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -57,7 +57,7 @@ impl Display for ExecutionPayloadError {
 impl Error for ExecutionPayloadError {}
 
 #[derive(Debug)]
-pub struct MissSyncCommitteeUpdate();
+pub struct MissSyncCommitteeUpdate;
 
 impl Display for MissSyncCommitteeUpdate {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

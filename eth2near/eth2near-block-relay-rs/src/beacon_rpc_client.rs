@@ -162,7 +162,7 @@ impl BeaconRPCClient {
         let beacon_block_body = self.get_beacon_block_body_for_block_id(&slot.to_string())?;
         Ok(beacon_block_body
             .execution_payload()
-            .map_err(|_| ExecutionPayloadError())?
+            .map_err(|_| ExecutionPayloadError)?
             .execution_payload
             .block_number)
     }
@@ -322,7 +322,7 @@ impl BeaconRPCClient {
                     "\"{:?}\"",
                     beacon_block_body
                         .sync_aggregate()
-                        .map_err(|_| { MissSyncAggregationError() })?
+                        .map_err(|_| { MissSyncAggregationError })?
                         .sync_committee_signature
                 ) == serde_json::to_string(&sync_aggregate.sync_committee_signature)?
                 {
@@ -332,7 +332,7 @@ impl BeaconRPCClient {
 
             signature_slot += 1;
             if signature_slot - attested_header.slot > CHECK_SLOTS_FORWARD_LIMIT {
-                return Err(Box::new(SignatureSlotNotFoundError()));
+                return Err(Box::new(SignatureSlotNotFoundError));
             }
         }
 

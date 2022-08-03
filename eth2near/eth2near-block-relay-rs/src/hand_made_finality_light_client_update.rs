@@ -21,7 +21,7 @@ impl HandMadeFinalityLightClientUpdate {
 
         let signature_beacon_body = beacon_rpc_client
             .get_beacon_block_body_for_block_id(&format!("{}", signature_slot))?;
-        let sync_committe_signature = signature_beacon_body.sync_aggregate().map_err(|_| { MissSyncAggregationError() })?;
+        let sync_committe_signature = signature_beacon_body.sync_aggregate().map_err(|_| { MissSyncAggregationError })?;
 
         let attested_slot = signature_beacon_body.attestations()[0].data.slot;
 
@@ -55,7 +55,7 @@ impl HandMadeFinalityLightClientUpdate {
             .as_slice()
             .try_into() {
                 Ok(ba) => ba,
-                Err(_) => { return Err(Box::new(ErrorOnUnwrapSignatureBit())); }
+                Err(_) => { return Err(Box::new(ErrorOnUnwrapSignatureBit)); }
         };
 
         Ok(LightClientUpdate {
