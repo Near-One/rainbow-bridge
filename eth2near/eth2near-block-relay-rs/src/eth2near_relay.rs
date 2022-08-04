@@ -10,7 +10,10 @@ use eth_types::{BlockHeader, H256};
 use log::{debug, info, trace, warn};
 use std::cmp::{max, min};
 use std::error::Error;
+use std::thread::spawn;
 use std::vec::Vec;
+use crate::prometheus_metrics;
+use crate::prometheus_metrics::SUBMITTED_HEADERS;
 
 const ONE_EPOCH_IN_SLOTS: u64 = 32;
 
@@ -52,13 +55,14 @@ impl Eth2NearRelay {
             enable_binsearch,
             near_network_name: config.near_network_id.to_string(),
         };
-
         if register_relay {
             eth2near_relay
                 .eth_client_contract
                 .register_submitter()
                 .unwrap();
         }
+
+        spawn(move || {prometheus_metrics::run_prometheus_service()});
 
         eth2near_relay
     }
@@ -111,6 +115,7 @@ impl Eth2NearRelay {
                                 .get_block_header_by_number(block_number)
                             {
                                 headers.push(eth1_header);
+                                SUBMITTED_HEADERS.inc();
                                 break;
                             }
                         }
