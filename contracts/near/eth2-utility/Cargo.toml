@@ -10,8 +10,8 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 ethereum-types = "0.9.2"
 eth-types =  { path = "../eth-types" }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "wasm-tmp" }
-merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "wasm-tmp" }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b7dd45e622c35674916bf71a200891d7fc0279ec" }
+merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b7dd45e622c35674916bf71a200891d7fc0279ec" }
 near-sdk = "4.0.0"
 borsh = "0.9.3"
 bitvec = "1.0.0"

@@ -489,12 +489,13 @@ dependencies = [
 [[package]]
 name = "bls"
 version = "0.2.0"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?branch=wasm-tmp#60c9ab43b17aa0d737859419c3847ef30c589a71"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
 dependencies = [
  "eth2_hashing",
  "eth2_serde_utils",
  "eth2_ssz",
  "ethereum-types 0.9.2",
+ "getrandom 0.2.7",
  "hex 0.4.2",
  "milagro_bls",
  "rand 0.7.3",
@@ -1396,7 +1397,7 @@ dependencies = [
 [[package]]
 name = "eth2_hashing"
 version = "0.3.0"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?branch=wasm-tmp#60c9ab43b17aa0d737859419c3847ef30c589a71"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
 dependencies = [
  "lazy_static",
  "near-sdk",
@@ -1405,7 +1406,7 @@ dependencies = [
 [[package]]
 name = "eth2_serde_utils"
 version = "0.1.1"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?branch=wasm-tmp#60c9ab43b17aa0d737859419c3847ef30c589a71"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
 dependencies = [
  "ethereum-types 0.9.2",
  "hex 0.4.2",
@@ -1417,7 +1418,7 @@ dependencies = [
 [[package]]
 name = "eth2_ssz"
 version = "0.4.1"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?branch=wasm-tmp#60c9ab43b17aa0d737859419c3847ef30c589a71"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
 dependencies = [
  "ethereum-types 0.9.2",
  "smallvec 1.8.0",
@@ -1426,7 +1427,7 @@ dependencies = [
 [[package]]
 name = "eth2_ssz_derive"
 version = "0.3.0"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?branch=wasm-tmp#60c9ab43b17aa0d737859419c3847ef30c589a71"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
 dependencies = [
  "darling",
  "proc-macro2 1.0.39",
@@ -1807,8 +1808,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4eb1a864a501629691edf6c15a593b7a51eebaa1e8468e9ddc623de7c9b58ec6"
 dependencies = [
  "cfg-if 1.0.0",
+ "js-sys",
  "libc",
  "wasi 0.11.0+wasi-snapshot-preview1",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -2485,7 +2488,7 @@ checksum = "8452105ba047068f40ff7093dd1d9da90898e63dd61736462e9cdda6a90ad3c3"
 [[package]]
 name = "merkle_proof"
 version = "0.2.0"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?branch=wasm-tmp#60c9ab43b17aa0d737859419c3847ef30c589a71"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
 dependencies = [
  "eth2_hashing",
  "ethereum-types 0.9.2",
@@ -4350,7 +4353,7 @@ checksum = "71d301d4193d031abdd79ff7e3dd721168a9572ef3fe51a1517aba235bd8f86e"
 [[package]]
 name = "safe_arith"
 version = "0.1.0"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?branch=wasm-tmp#60c9ab43b17aa0d737859419c3847ef30c589a71"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
 
 [[package]]
 name = "safemem"
@@ -5271,7 +5274,7 @@ checksum = "efd1f82c56340fdf16f2a953d7bda4f8fdffba13d93b00844c25572110b26079"
 [[package]]
 name = "tree_hash"
 version = "0.4.1"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?branch=wasm-tmp#60c9ab43b17aa0d737859419c3847ef30c589a71"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
 dependencies = [
  "eth2_hashing",
  "ethereum-types 0.9.2",
@@ -5281,7 +5284,7 @@ dependencies = [
 [[package]]
 name = "tree_hash_derive"
 version = "0.4.0"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?branch=wasm-tmp#60c9ab43b17aa0d737859419c3847ef30c589a71"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
 dependencies = [
  "darling",
  "quote 1.0.18",
