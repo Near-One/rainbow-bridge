@@ -76,7 +76,7 @@ async fn metrics_handler() -> Result<impl Reply, Rejection> {
     Ok(res)
 }
 
-pub fn run_prometheus_service() {
+pub fn run_prometheus_service(port: u16) {
     register_custom_metrics();
 
     let metrics_route = warp::path!("metrics").and_then(metrics_handler);
@@ -84,6 +84,6 @@ pub fn run_prometheus_service() {
     let rt = Runtime::new().unwrap();
     let handle = rt.handle();
 
-    println!("Started on port 32221");
-    handle.block_on(warp::serve(metrics_route).run(([0, 0, 0, 0], 32221)));
+    println!("Started on port {}", port);
+    handle.block_on(warp::serve(metrics_route).run(([0, 0, 0, 0], port)));
 }

@@ -39,6 +39,9 @@ pub struct Config {
 
     // NEAR network name (mainnet, testnet)
     pub near_network_id: String,
+
+    //Port for Prometheus
+    pub prometheus_metrics_port: u16,
 }
 
 impl Config {
