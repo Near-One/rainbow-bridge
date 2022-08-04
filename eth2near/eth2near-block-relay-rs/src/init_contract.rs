@@ -6,6 +6,7 @@ use contract_wrapper::eth_client_contract::EthClientContract;
 use eth_types::eth2::ExtendedBeaconBlockHeader;
 use eth_types::BlockHeader;
 use log::info;
+use std::{thread, time};
 
 pub fn init_contract(
     config: &Config,
@@ -63,5 +64,7 @@ pub fn init_contract(
         current_sync_committee,
         next_sync_committee,
     );
+
+    thread::sleep(time::Duration::from_secs(30));
     Ok(())
 }

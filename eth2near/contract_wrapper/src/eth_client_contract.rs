@@ -9,6 +9,7 @@ use serde_json::json;
 use near_primitives::borsh::BorshSerialize;
 use std::option::Option;
 use near_sdk::{Balance};
+use near_primitives::hash::CryptoHash;
 use crate::contract_wrapper_trait::ContractWrapper;
 
 pub struct EthClientContract {
@@ -34,7 +35,7 @@ impl EthClientContract {
         Ok(is_known)
     }
 
-    pub fn send_light_client_update(& mut self, light_client_update: LightClientUpdate) -> Result<(), Box<dyn Error>> {
+    pub fn send_light_client_update(& mut self, light_client_update: LightClientUpdate) -> Result<CryptoHash, Box<dyn Error>> {
         self.contract_wrapper.call_change_method(vec!["submit_beacon_chain_light_client_update".to_string()], vec![light_client_update.try_to_vec()?], vec![0])
     }
 
@@ -50,7 +51,7 @@ impl EthClientContract {
         Ok(beacon_block_slot)     
     }
 
-    pub fn send_headers(& mut self, headers: &Vec<BlockHeader>, end_slot: u64) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn send_headers(& mut self, headers: &Vec<BlockHeader>, end_slot: u64) -> Result<CryptoHash, Box<dyn std::error::Error>> {
         self.last_slot = end_slot;
 
         let method_names = vec!["submit_execution_header".to_string(); headers.len()];
@@ -60,15 +61,14 @@ impl EthClientContract {
         for header in headers {
             args.push(header.try_to_vec()?);
         }
-        self.contract_wrapper.call_change_method(method_names, args, deposits)?;
-        Ok(())
+        self.contract_wrapper.call_change_method(method_names, args, deposits)
     }
 
     pub fn get_min_deposit(&self) -> Result<Balance, Box<dyn Error>> {
         Ok(Balance::try_from_slice(&self.contract_wrapper.call_view_function("min_storage_balance_for_submitter".to_string(), json!({}).to_string().into_bytes())?)?)
     }
 
-    pub fn register_submitter(&self) -> Result<(), Box<dyn Error>> {
+    pub fn register_submitter(&self) -> Result<CryptoHash, Box<dyn Error>> {
         self.contract_wrapper.call_change_method(vec!["register_submitter".to_string()], vec![json!({}).to_string().into_bytes()], vec![self.get_min_deposit()?])
     }
 
