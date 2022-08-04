@@ -468,7 +468,7 @@ impl Eth2NearRelay {
                 Err(_) => {
                     let (left_slot, is_left_slot_on_near) =
                         self.find_left_non_error_slot(mid_slot, last_slot);
-                    if is_left_slot_on_near == true {
+                    if is_left_slot_on_near {
                         start_slot = left_slot;
                     } else {
                         last_slot = mid_slot;
