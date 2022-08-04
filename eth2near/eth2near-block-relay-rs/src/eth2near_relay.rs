@@ -13,7 +13,10 @@ use std::error::Error;
 use std::thread::spawn;
 use std::vec::Vec;
 use crate::prometheus_metrics;
-use crate::prometheus_metrics::SUBMITTED_HEADERS;
+use crate::prometheus_metrics::{LAST_ETH_SLOT,
+                                LAST_ETH_SLOT_ON_NEAR,
+                                LAST_FINALIZED_ETH_SLOT,
+                                LAST_FINALIZED_ETH_SLOT_ON_NEAR};
 
 const ONE_EPOCH_IN_SLOTS: u64 = 32;
 
@@ -80,6 +83,8 @@ impl Eth2NearRelay {
                 }
             };
 
+            LAST_ETH_SLOT_ON_NEAR.inc_by(last_eth2_slot_on_near as i64 - LAST_ETH_SLOT_ON_NEAR.get());
+
             let last_eth2_slot_on_eth_chain: u64 =
                 match self.beacon_rpc_client.get_last_slot_number() {
                     Ok(slot) => slot.as_u64(),
@@ -88,6 +93,8 @@ impl Eth2NearRelay {
                         continue;
                     }
                 };
+
+            LAST_ETH_SLOT.inc_by(last_eth2_slot_on_eth_chain as i64 - LAST_ETH_SLOT.get());
 
             info!(target: "relay", "Last slot on near = {}; last slot on eth = {}",
                   last_eth2_slot_on_near, last_eth2_slot_on_eth_chain);
@@ -115,7 +122,6 @@ impl Eth2NearRelay {
                                 .get_block_header_by_number(block_number)
                             {
                                 headers.push(eth1_header);
-                                SUBMITTED_HEADERS.inc();
                                 break;
                             }
                         }
@@ -212,6 +218,8 @@ impl Eth2NearRelay {
             }
         };
 
+        LAST_FINALIZED_ETH_SLOT_ON_NEAR.inc_by(last_finalized_slot_on_near as i64 - LAST_FINALIZED_ETH_SLOT_ON_NEAR.get());
+
         let last_submitted_slot = self.eth_client_contract.get_last_submitted_slot();
 
         if (last_submitted_slot as i64) - (last_finalized_slot_on_near as i64)
@@ -235,6 +243,8 @@ impl Eth2NearRelay {
                 return;
             }
         };
+
+        LAST_FINALIZED_ETH_SLOT.inc_by(last_finalized_slot_on_eth as i64 - LAST_FINALIZED_ETH_SLOT.get());
 
         let end_period = BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_eth);
         info!(target: "relay", "Last finalized slot/period on ethereum={}/{}", last_finalized_slot_on_eth, end_period);

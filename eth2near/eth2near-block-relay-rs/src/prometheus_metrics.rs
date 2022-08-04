@@ -11,13 +11,34 @@ use tokio::runtime::Runtime;
 lazy_static! {
     pub static ref REGISTRY: Registry = Registry::new();
 
-    pub static ref SUBMITTED_HEADERS: IntCounter =
-        IntCounter::new("submitted_headers", "Submitted headers").expect("metric can be created");
+    pub static ref LAST_ETH_SLOT: IntCounter =
+        IntCounter::new("last_eth_slot", "Last Ethereum Slot").expect("metric can be created");
+
+    pub static ref LAST_ETH_SLOT_ON_NEAR: IntCounter =
+        IntCounter::new("last_eth_slot_on_near", "Last Ethereum Slot on NEAR").expect("metric can be created");
+
+    pub static ref LAST_FINALIZED_ETH_SLOT: IntCounter =
+        IntCounter::new("last_finalized_eth_slot", "Last Finalized Ethereum Slot").expect("metric can be created");
+
+    pub static ref LAST_FINALIZED_ETH_SLOT_ON_NEAR: IntCounter =
+        IntCounter::new("last_finalized_eth_slot_on_near", "Last Finalized Ethereum Slot on NEAR").expect("metric can be created");
 }
 
 fn register_custom_metrics() {
     REGISTRY
-        .register(Box::new(SUBMITTED_HEADERS.clone()))
+        .register(Box::new(LAST_ETH_SLOT.clone()))
+        .expect("collector can be registered");
+
+    REGISTRY
+        .register(Box::new(LAST_ETH_SLOT_ON_NEAR.clone()))
+        .expect("collector can be registered");
+
+    REGISTRY
+        .register(Box::new(LAST_FINALIZED_ETH_SLOT.clone()))
+        .expect("collector can be registered");
+
+    REGISTRY
+        .register(Box::new(LAST_FINALIZED_ETH_SLOT_ON_NEAR.clone()))
         .expect("collector can be registered");
 }
 
