@@ -159,7 +159,7 @@ impl DAOContract {
         let response = self.contract_wrapper.call_change_method(
             "add_proposal".to_string(),
             serde_json::to_string(&proposal).unwrap().into_bytes(),
-            Some(1 * near_sdk::ONE_NEAR),
+            Some(near_sdk::ONE_NEAR),
             None,
         )?;
 
@@ -178,7 +178,7 @@ impl DAOContract {
             json!({ "id": id, "action": action })
                 .to_string()
                 .into_bytes(),
-            Some(1 * near_sdk::ONE_NEAR),
+            Some(near_sdk::ONE_NEAR),
             None,
         )?;
         Ok(())
@@ -196,7 +196,7 @@ impl DAOContract {
         let action = ActionCall {
             method_name: "submit_beacon_chain_light_client_update".to_string(),
             args: Base64VecU8::from(args.try_to_vec().unwrap()),
-            deposit: (1 * near_sdk::ONE_NEAR).into(),
+            deposit: (near_sdk::ONE_NEAR).into(),
             gas: (290 * Gas::ONE_TERA.0).into(),
         };
 
