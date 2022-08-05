@@ -2,6 +2,7 @@ extern crate core;
 
 use clap::{ArgAction, Parser};
 use contract_wrapper::contract_wrapper_trait::ContractWrapper;
+use contract_wrapper::eth_client_contract;
 use contract_wrapper::near_contract_wrapper::NearContractWrapper;
 use eth2_to_near_relay::config::Config;
 use eth2_to_near_relay::eth2near_relay::Eth2NearRelay;
@@ -72,7 +73,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut eth2near_relay = Eth2NearRelay::init(
         &config,
-        get_contract_wrapper(&config),
+        Box::new(eth_client_contract::EthClientContract::new(
+            get_contract_wrapper(&config),
+        )),
         args.enable_binary_search,
         args.register_relay,
     );
