@@ -39,6 +39,9 @@ pub struct Config {
 
     // NEAR network name (mainnet, testnet)
     pub near_network_id: String,
+
+    // Account id for DAO on NEAR
+    pub dao_contract_account_id: Option<String>,
 }
 
 impl Config {
