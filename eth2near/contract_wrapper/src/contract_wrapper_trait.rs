@@ -1,7 +1,10 @@
+use near_primitives::types::AccountId;
 use near_primitives::views::FinalExecutionOutcomeView;
 use near_sdk::{Balance, Gas};
 
 pub trait ContractWrapper {
+    fn get_account_id(&self) -> AccountId;
+
     fn call_view_function(
         &self,
         method_name: String,
