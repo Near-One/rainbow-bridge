@@ -70,9 +70,9 @@ impl ContractWrapper for NearContractWrapper {
         let response = handle.block_on(self.client.call(request))?;
 
         if let QueryResponseKind::CallResult(result) = response.kind {
-            return Ok(result.result);
+            Ok(result.result)
         } else {
-            return Err("view method doesn't return any result")?;
+            Err("view method doesn't return any result")?
         }
     }
 
