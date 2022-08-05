@@ -48,6 +48,7 @@ impl DAOContract {
             json!({ "proposal": json!(proposal) })
                 .to_string()
                 .into_bytes(),
+
             Some(policy.proposal_bond.0),
             None,
         )?;

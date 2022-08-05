@@ -44,11 +44,15 @@ impl EthClientContractTrait for DaoEthClientContract {
             near_sdk::AccountId::from_str(&self.eth_client_contract.get_account_id().to_string())?,
             light_client_update,
         )?;
+
         loop {
-            let proposal_status = self.dao_contract.get_proposal(dao_trx_id)?;
-            if proposal_status.proposal.status != dao_types::ProposalStatus::InProgress {
-                break;
+            let proposal_status = self.dao_contract.get_proposal(dao_trx_id);
+            if let Ok(staus) = proposal_status {
+                if staus.proposal.status != dao_types::ProposalStatus::InProgress {
+                    break;
+                }
             }
+
             thread::sleep(Duration::from_secs(10));
         }
 
