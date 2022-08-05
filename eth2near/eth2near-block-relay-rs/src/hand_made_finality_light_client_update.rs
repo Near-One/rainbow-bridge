@@ -1,6 +1,7 @@
 use crate::beacon_block_body_merkle_tree::BeaconStateMerkleTree;
 use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::execution_block_proof::ExecutionBlockProof;
+use crate::relay_errors::{ErrorOnUnwrapSignatureBit, MissSyncAggregationError};
 use eth_types::eth2::{
     FinalizedHeaderUpdate, HeaderUpdate, LightClientUpdate, SignatureBytes, SyncCommitteeBits,
     SyncCommitteeUpdate,
@@ -18,10 +19,11 @@ impl HandMadeFinalityLightClientUpdate {
         const BEACON_STATE_MERKLE_TREE_DEPTH: usize = 5;
         const BEACON_STATE_FINALIZED_CHECKPOINT_INDEX: usize = 20;
 
-        let signature_beacon_body = beacon_rpc_client
-            .get_beacon_block_body_for_block_id(&format!("{}", signature_slot))
-            .unwrap();
-        let sync_committe_signature = signature_beacon_body.sync_aggregate().unwrap();
+        let signature_beacon_body =
+            beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", signature_slot))?;
+        let sync_committe_signature = signature_beacon_body
+            .sync_aggregate()
+            .map_err(|_| MissSyncAggregationError)?;
 
         let attested_slot = signature_beacon_body.attestations()[0].data.slot;
 
@@ -30,8 +32,7 @@ impl HandMadeFinalityLightClientUpdate {
         let beacon_state = beacon_rpc_client.get_beacon_state(&format!("{}", attested_slot))?;
         let finality_hash = beacon_state.finalized_checkpoint().root;
         let finality_header = beacon_rpc_client
-            .get_beacon_block_header_for_block_id(&format!("{:?}", &finality_hash))
-            .unwrap();
+            .get_beacon_block_header_for_block_id(&format!("{:?}", &finality_hash))?;
 
         let beacon_state_merkle_tree = BeaconStateMerkleTree::new(&beacon_state);
         let mut proof = beacon_state_merkle_tree.0.generate_proof(
@@ -47,6 +48,20 @@ impl HandMadeFinalityLightClientUpdate {
         let finalized_block_eth1data_proof =
             ExecutionBlockProof::construct_from_beacon_block_body(&finalized_block_body)?;
 
+        let sync_committee_bits: [u8; 64] = match sync_committe_signature
+            .clone()
+            .sync_committee_bits
+            .into_bytes()
+            .into_vec()
+            .as_slice()
+            .try_into()
+        {
+            Ok(ba) => ba,
+            Err(_) => {
+                return Err(Box::new(ErrorOnUnwrapSignatureBit));
+            }
+        };
+
         Ok(LightClientUpdate {
             attested_beacon_header: eth_types::eth2::BeaconBlockHeader {
                 slot: attested_header.slot.as_u64(),
@@ -56,20 +71,10 @@ impl HandMadeFinalityLightClientUpdate {
                 body_root: eth_types::H256::from(attested_header.body_root.0),
             },
             sync_aggregate: eth_types::eth2::SyncAggregate {
-                sync_committee_bits: SyncCommitteeBits(
-                    sync_committe_signature
-                        .clone()
-                        .sync_committee_bits
-                        .into_bytes()
-                        .into_vec()
-                        .try_into()
-                        .unwrap(),
-                ),
+                sync_committee_bits: SyncCommitteeBits(sync_committee_bits),
                 sync_committee_signature: serde_json::from_str::<SignatureBytes>(
-                    &serde_json::to_string(&sync_committe_signature.sync_committee_signature)
-                        .unwrap(),
-                )
-                .unwrap(),
+                    &serde_json::to_string(&sync_committe_signature.sync_committee_signature)?,
+                )?,
             },
             signature_slot,
             finality_update: FinalizedHeaderUpdate {

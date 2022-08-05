@@ -33,6 +33,12 @@ pub struct Config {
 
     // Frequency of submission light client updates. Once in N epochs.
     pub light_client_updates_submission_frequency_in_epochs: i64,
+
+    // maximum gap in slots between submitting light client update
+    pub max_blocks_for_finalization: u64,
+
+    // NEAR network name (mainnet, testnet)
+    pub near_network_id: String,
 }
 
 impl Config {

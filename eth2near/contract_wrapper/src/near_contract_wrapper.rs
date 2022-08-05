@@ -4,8 +4,8 @@ use near_jsonrpc_client::{methods, JsonRpcClient};
 use near_jsonrpc_primitives::types::query::QueryResponseKind;
 use near_primitives::transaction::{Action, FunctionCallAction, Transaction};
 use near_primitives::types::{AccountId, BlockReference, Finality, FunctionArgs};
-use near_primitives::views::{FinalExecutionStatus, QueryRequest};
-use near_sdk::{base64, Balance, Gas};
+use near_primitives::views::{FinalExecutionOutcomeView, QueryRequest};
+use near_sdk::{Balance, Gas};
 use serde_json::Value;
 use std::error::Error;
 use std::string::String;
@@ -82,7 +82,7 @@ impl ContractWrapper for NearContractWrapper {
         args: Vec<Vec<u8>>,
         deposit: Option<Vec<Balance>>,
         gas: Option<Gas>,
-    ) -> Result<Vec<u8>, Box<dyn Error>> {
+    ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
         let rt = Runtime::new()?;
         let handle = rt.handle();
 
@@ -126,12 +126,7 @@ impl ContractWrapper for NearContractWrapper {
             signed_transaction: transaction.sign(&self.signer),
         };
 
-        let result = handle.block_on(self.client.call(&request))?;
-
-        match result.status {
-            FinalExecutionStatus::SuccessValue(result) => Ok(base64::decode(result)?),
-            _ => Err(format!("Execution status: {:?}", result.status).into()),
-        }
+        Ok(handle.block_on(self.client.call(&request))?)
     }
 
     fn call_change_method(
@@ -140,7 +135,7 @@ impl ContractWrapper for NearContractWrapper {
         args: Vec<u8>,
         deposit: Option<Balance>,
         gas: Option<Gas>,
-    ) -> Result<Vec<u8>, Box<dyn Error>> {
+    ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
         self.call_change_method_batch(
             vec![method_name],
             vec![args],

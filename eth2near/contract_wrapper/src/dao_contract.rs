@@ -163,7 +163,13 @@ impl DAOContract {
             None,
         )?;
 
-        Ok(serde_json::from_slice(response.as_slice())?)
+        Ok(serde_json::from_slice(
+            response
+                .status
+                .as_success_decoded()
+                .ok_or("Failed to add proposal")?
+                .as_slice(),
+        )?)
     }
 
     pub fn act_proposal(&self, id: u64, action: Action) -> Result<(), Box<dyn Error>> {

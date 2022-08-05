@@ -1,4 +1,7 @@
 use crate::execution_block_proof::ExecutionBlockProof;
+use crate::relay_errors::{
+    ExecutionPayloadError, MissSyncAggregationError, SignatureSlotNotFoundError,
+};
 use eth_types::eth2::BeaconBlockHeader;
 use eth_types::eth2::FinalizedHeaderUpdate;
 use eth_types::eth2::HeaderUpdate;
@@ -8,72 +11,14 @@ use eth_types::eth2::SyncAggregate;
 use eth_types::eth2::SyncCommittee;
 use eth_types::eth2::SyncCommitteeUpdate;
 use eth_types::H256;
+use log::trace;
 use reqwest::blocking::Client;
 use serde_json::{json, Value};
 use std::error::Error;
-use std::fmt;
-use std::fmt::Display;
 use std::string::String;
 use std::time::Duration;
 use types::MainnetEthSpec;
 use types::{BeaconBlockBody, BeaconState};
-
-#[derive(Debug)]
-pub struct SignatureSlotNotFoundError();
-
-impl Display for SignatureSlotNotFoundError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Signature slot not found!")
-    }
-}
-
-impl Error for SignatureSlotNotFoundError {}
-
-#[derive(Debug)]
-pub struct MissSyncAggregationError();
-
-impl Display for MissSyncAggregationError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Sync Aggregation not found. \
-        Beacon Block Body in this blockchain variant doesn't contain sync aggregation. \
-        Please use Altair or The Merge variants"
-        )
-    }
-}
-
-impl Error for MissSyncAggregationError {}
-
-#[derive(Debug)]
-pub struct ExecutionPayloadError();
-
-impl Display for ExecutionPayloadError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Execution Payload not found. \
-        Beacon Block Body in this blockchain variant doesn't contain execution payload. \
-        Please use The Merge variants"
-        )
-    }
-}
-
-impl Error for ExecutionPayloadError {}
-
-#[derive(Debug)]
-pub struct MissSyncCommitteeUpdate();
-
-impl Display for MissSyncCommitteeUpdate {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Sync Committee Update is missing for this Light Client Update"
-        )
-    }
-}
-
-impl Error for MissSyncCommitteeUpdate {}
 
 /// `BeaconRPCClient` allows getting beacon block body, beacon block header
 /// and light client updates
@@ -217,7 +162,7 @@ impl BeaconRPCClient {
         let beacon_block_body = self.get_beacon_block_body_for_block_id(&slot.to_string())?;
         Ok(beacon_block_body
             .execution_payload()
-            .map_err(|_| ExecutionPayloadError())?
+            .map_err(|_| ExecutionPayloadError)?
             .execution_payload
             .block_number)
     }
@@ -309,6 +254,7 @@ impl BeaconRPCClient {
     }
 
     fn get_json_from_raw_request(&self, url: &str) -> Result<String, reqwest::Error> {
+        trace!(target: "relay", "Beacon chain request: {}", url);
         self.client.get(url).send()?.text()
     }
 
@@ -376,7 +322,7 @@ impl BeaconRPCClient {
                     "\"{:?}\"",
                     beacon_block_body
                         .sync_aggregate()
-                        .map_err(|_| { MissSyncAggregationError() })?
+                        .map_err(|_| { MissSyncAggregationError })?
                         .sync_committee_signature
                 ) == serde_json::to_string(&sync_aggregate.sync_committee_signature)?
                 {
@@ -386,7 +332,7 @@ impl BeaconRPCClient {
 
             signature_slot += 1;
             if signature_slot - attested_header.slot > CHECK_SLOTS_FORWARD_LIMIT {
-                return Err(Box::new(SignatureSlotNotFoundError()));
+                return Err(Box::new(SignatureSlotNotFoundError));
             }
         }
 

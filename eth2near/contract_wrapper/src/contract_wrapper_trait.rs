@@ -1,3 +1,4 @@
+use near_primitives::views::FinalExecutionOutcomeView;
 use near_sdk::{Balance, Gas};
 
 pub trait ContractWrapper {
@@ -13,7 +14,7 @@ pub trait ContractWrapper {
         args: Vec<Vec<u8>>,
         deposit: Option<Vec<Balance>>,
         gas: Option<Gas>,
-    ) -> Result<Vec<u8>, Box<dyn std::error::Error>>;
+    ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>>;
 
     fn call_change_method(
         &self,
@@ -21,5 +22,5 @@ pub trait ContractWrapper {
         args: Vec<u8>,
         deposit: Option<Balance>,
         gas: Option<Gas>,
-    ) -> Result<Vec<u8>, Box<dyn std::error::Error>>;
+    ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>>;
 }
