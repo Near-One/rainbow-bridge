@@ -92,9 +92,10 @@ impl DAOContract {
 
         let proposal_input = ProposalInput {
             description: json!({
-                "finalized slot": update.finality_update.header_update.beacon_header.slot.to_string(), 
-                "update_hash": update_hash.to_string() 
-            }).to_string(),
+                "finalized slot": update.finality_update.header_update.beacon_header.slot,
+                "update_hash": update_hash.to_string()
+            })
+            .to_string(),
             kind: ProposalKind::FunctionCall {
                 receiver_id,
                 actions: vec![action],

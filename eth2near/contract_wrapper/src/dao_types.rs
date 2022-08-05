@@ -1,6 +1,6 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::{Base58CryptoHash, Base64VecU8, U128, U64};
-use near_sdk::{AccountId, Balance};
+use near_sdk::AccountId;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
