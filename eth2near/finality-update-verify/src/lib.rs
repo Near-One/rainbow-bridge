@@ -72,7 +72,7 @@ pub fn is_correct_finality_update(network: &str, light_client_update: &LightClie
         pubkeys.push(bls::PublicKey::deserialize(&pubkey.0).map_err(|_err| -> String {"Error on public key deserialization".to_string()})?);
     }
 
-    Ok(aggregate_signature.fast_aggregate_verify(signing_root.0, &pubkeys.iter().collect::<Vec<_>>()))
+    Ok(aggregate_signature.fast_aggregate_verify(h256_to_hash256(signing_root), &pubkeys.iter().collect::<Vec<_>>()))
 }
 
 #[cfg(test)]
