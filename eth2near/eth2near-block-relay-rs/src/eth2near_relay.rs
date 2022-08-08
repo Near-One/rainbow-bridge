@@ -12,11 +12,9 @@ use std::cmp::{max, min};
 use std::error::Error;
 use std::thread::spawn;
 use std::vec::Vec;
+use near_primitives::views::FinalExecutionStatus;
 use crate::prometheus_metrics;
-use crate::prometheus_metrics::{LAST_ETH_SLOT,
-                                LAST_ETH_SLOT_ON_NEAR,
-                                LAST_FINALIZED_ETH_SLOT,
-                                LAST_FINALIZED_ETH_SLOT_ON_NEAR};
+use crate::prometheus_metrics::{FAILS_ON_HEADERS_SUBMISSION, FAILS_ON_UPDATES_SUBMISSION, LAST_ETH_SLOT, LAST_ETH_SLOT_ON_NEAR, LAST_FINALIZED_ETH_SLOT, LAST_FINALIZED_ETH_SLOT_ON_NEAR};
 
 const ONE_EPOCH_IN_SLOTS: u64 = 32;
 
@@ -141,7 +139,13 @@ impl Eth2NearRelay {
                         .eth_client_contract
                         .send_headers(&headers, current_slot - 1)
                     {
-                        Ok(transaction_id) => {
+                        Ok(result) => {
+                            if let FinalExecutionStatus::Failure(error_message) = result.status {
+                                FAILS_ON_HEADERS_SUBMISSION.inc();
+                                warn!(target: "relay", "FAIL status on Headers submission. Error: {:?}", error_message);
+                            }
+
+                            let transaction_id = result.transaction.hash;
                             info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}", self.near_network_name, transaction_id);
                             break;
                         }
@@ -375,7 +379,13 @@ impl Eth2NearRelay {
                         .eth_client_contract
                         .send_light_client_update(light_client_update)
                     {
-                        Ok(transaction_id) => {
+                        Ok(result) => {
+                            let transaction_id = result.transaction.hash;
+                            if let FinalExecutionStatus::Failure(error_message) = result.status{
+                                FAILS_ON_UPDATES_SUBMISSION.inc();
+                                warn!(target: "relay", "FAIL status on Light Client Update submission. Error: {:?}", error_message);
+                            }
+
                             info!(target: "relay", "Successful light client update submission! Transaction URL: https://explorer.{}.near.org/transactions/{}", self.near_network_name, transaction_id);
                             self.current_gap_between_finalized_and_signature_slot =
                                 Self::get_gap_between_finalized_and_signature_slot(

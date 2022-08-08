@@ -22,6 +22,12 @@ lazy_static! {
 
     pub static ref LAST_FINALIZED_ETH_SLOT_ON_NEAR: IntCounter =
         IntCounter::new("last_finalized_eth_slot_on_near", "Last Finalized Ethereum Slot on NEAR").expect("metric can be created");
+
+    pub static ref FAILS_ON_HEADERS_SUBMISSION: IntCounter =
+        IntCounter::new("fails_on_headers_submission", "Fails number on Headers Submission").expect("metric can be created");
+
+    pub static ref FAILS_ON_UPDATES_SUBMISSION: IntCounter =
+        IntCounter::new("fails_on_updates_submission", "Fails number on Light Client Updates Submission").expect("metric can be created");
 }
 
 fn register_custom_metrics() {
@@ -39,6 +45,14 @@ fn register_custom_metrics() {
 
     REGISTRY
         .register(Box::new(LAST_FINALIZED_ETH_SLOT_ON_NEAR.clone()))
+        .expect("collector can be registered");
+
+    REGISTRY
+        .register(Box::new(FAILS_ON_HEADERS_SUBMISSION.clone()))
+        .expect("collector can be registered");
+
+    REGISTRY
+        .register(Box::new(FAILS_ON_UPDATES_SUBMISSION.clone()))
         .expect("collector can be registered");
 }
 
