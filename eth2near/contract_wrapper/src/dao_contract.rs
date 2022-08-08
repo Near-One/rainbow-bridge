@@ -1,5 +1,6 @@
 use crate::dao_types::*;
 use eth_types::eth2::LightClientUpdate;
+use near_primitives::views::FinalExecutionOutcomeView;
 use near_sdk::borsh::BorshSerialize;
 use near_sdk::json_types::Base64VecU8;
 use near_sdk::{AccountId, Gas};
@@ -41,14 +42,16 @@ impl DAOContract {
         Ok(serde_json::from_slice(response.as_slice())?)
     }
 
-    pub fn add_proposal(&mut self, proposal: ProposalInput) -> Result<u64, Box<dyn Error>> {
+    pub fn add_proposal(
+        &mut self,
+        proposal: ProposalInput,
+    ) -> Result<(u64, FinalExecutionOutcomeView), Box<dyn Error>> {
         let policy = self.get_policy()?;
         let response = self.contract_wrapper.call_change_method(
             "add_proposal".to_string(),
             json!({ "proposal": json!(proposal) })
                 .to_string()
                 .into_bytes(),
-
             Some(policy.proposal_bond.0),
             None,
         )?;
@@ -62,7 +65,11 @@ impl DAOContract {
         )?)
     }
 
-    pub fn act_proposal(&self, id: u64, action: Action) -> Result<(), Box<dyn Error>> {
+    pub fn act_proposal(
+        &self,
+        id: u64,
+        action: Action,
+    ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
         self.contract_wrapper.call_change_method(
             "act_proposal".to_string(),
             json!({ "id": id, "action": action })
@@ -70,15 +77,14 @@ impl DAOContract {
                 .into_bytes(),
             None,
             None,
-        )?;
-        Ok(())
+        )
     }
 
     pub fn submit_light_client_update_proposal(
         &mut self,
         receiver_id: AccountId,
         update: LightClientUpdate,
-    ) -> Result<u64, Box<dyn Error>> {
+    ) -> Result<(u64, FinalExecutionOutcomeView), Box<dyn Error>> {
         let raw_update = update.try_to_vec().unwrap();
         let update_hash = near_primitives::hash::hash(&raw_update);
         let args = Base64VecU8::from(raw_update);

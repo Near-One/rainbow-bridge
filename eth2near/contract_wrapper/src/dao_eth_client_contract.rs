@@ -4,7 +4,7 @@ use crate::eth_client_contract::EthClientContract;
 use crate::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::eth2::{LightClientState, LightClientUpdate};
 use eth_types::{BlockHeader, H256};
-use near_primitives::hash::CryptoHash;
+use near_primitives::views::FinalExecutionOutcomeView;
 use near_sdk::Balance;
 use std::error::Error;
 use std::str::FromStr;
@@ -39,14 +39,17 @@ impl EthClientContractTrait for DaoEthClientContract {
     fn send_light_client_update(
         &mut self,
         light_client_update: LightClientUpdate,
-    ) -> Result<CryptoHash, Box<dyn Error>> {
-        let dao_trx_id = self.dao_contract.submit_light_client_update_proposal(
-            near_sdk::AccountId::from_str(&self.eth_client_contract.get_account_id().to_string())?,
-            light_client_update,
-        )?;
+    ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
+        let (proposal_id, execution_outcome) =
+            self.dao_contract.submit_light_client_update_proposal(
+                near_sdk::AccountId::from_str(
+                    &self.eth_client_contract.get_account_id().to_string(),
+                )?,
+                light_client_update,
+            )?;
 
         loop {
-            let proposal_status = self.dao_contract.get_proposal(dao_trx_id);
+            let proposal_status = self.dao_contract.get_proposal(proposal_id);
             if let Ok(staus) = proposal_status {
                 if staus.proposal.status != dao_types::ProposalStatus::InProgress {
                     break;
@@ -56,7 +59,7 @@ impl EthClientContractTrait for DaoEthClientContract {
             thread::sleep(Duration::from_secs(10));
         }
 
-        Ok(CryptoHash::default())
+        Ok(execution_outcome)
     }
 
     fn get_finalized_beacon_block_hash(&self) -> Result<H256, Box<dyn Error>> {
@@ -71,7 +74,7 @@ impl EthClientContractTrait for DaoEthClientContract {
         &mut self,
         headers: &Vec<BlockHeader>,
         end_slot: u64,
-    ) -> Result<CryptoHash, Box<dyn std::error::Error>> {
+    ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>> {
         self.eth_client_contract.send_headers(headers, end_slot)
     }
 
@@ -79,7 +82,7 @@ impl EthClientContractTrait for DaoEthClientContract {
         self.eth_client_contract.get_min_deposit()
     }
 
-    fn register_submitter(&self) -> Result<CryptoHash, Box<dyn Error>> {
+    fn register_submitter(&self) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
         self.eth_client_contract.register_submitter()
     }
 

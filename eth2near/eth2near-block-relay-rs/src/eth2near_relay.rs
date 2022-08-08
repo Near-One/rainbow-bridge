@@ -128,8 +128,9 @@ impl Eth2NearRelay {
                         .eth_client_contract
                         .send_headers(&headers, current_slot - 1)
                     {
-                        Ok(transaction_id) => {
-                            info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}", self.near_network_name, transaction_id);
+                        Ok(execution_outcome) => {
+                            info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}", 
+                                  self.near_network_name, execution_outcome.transaction.hash);
                             break;
                         }
                         Err(err) => {
@@ -358,8 +359,9 @@ impl Eth2NearRelay {
                         .eth_client_contract
                         .send_light_client_update(light_client_update)
                     {
-                        Ok(transaction_id) => {
-                            info!(target: "relay", "Successful light client update submission! Transaction URL: https://explorer.{}.near.org/transactions/{}", self.near_network_name, transaction_id);
+                        Ok(execution_outcome) => {
+                            info!(target: "relay", "Successful light client update submission! Transaction URL: https://explorer.{}.near.org/transactions/{}", 
+                                  self.near_network_name, execution_outcome.transaction.hash);
                             self.current_gap_between_finalized_and_signature_slot =
                                 Self::get_gap_between_finalized_and_signature_slot(
                                     self.light_client_updates_submission_frequency_in_epochs as u64,

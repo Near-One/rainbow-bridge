@@ -6,8 +6,8 @@ use eth_types::eth2::{
 };
 use eth_types::{BlockHeader, H256};
 use near_primitives::borsh::BorshSerialize;
-use near_primitives::hash::CryptoHash;
 use near_primitives::types::AccountId;
+use near_primitives::views::FinalExecutionOutcomeView;
 use near_sdk::Balance;
 use serde_json::json;
 use std::error::Error;
@@ -95,17 +95,13 @@ impl EthClientContractTrait for EthClientContract {
     fn send_light_client_update(
         &mut self,
         light_client_update: LightClientUpdate,
-    ) -> Result<CryptoHash, Box<dyn Error>> {
-        Ok(self
-            .contract_wrapper
-            .call_change_method(
-                "submit_beacon_chain_light_client_update".to_string(),
-                light_client_update.try_to_vec()?,
-                None,
-                None,
-            )?
-            .transaction
-            .hash)
+    ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
+        self.contract_wrapper.call_change_method(
+            "submit_beacon_chain_light_client_update".to_string(),
+            light_client_update.try_to_vec()?,
+            None,
+            None,
+        )
     }
 
     fn get_finalized_beacon_block_hash(&self) -> Result<H256, Box<dyn Error>> {
@@ -130,7 +126,7 @@ impl EthClientContractTrait for EthClientContract {
         &mut self,
         headers: &Vec<BlockHeader>,
         end_slot: u64,
-    ) -> Result<CryptoHash, Box<dyn std::error::Error>> {
+    ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>> {
         self.last_slot = end_slot;
 
         let method_names = vec!["submit_execution_header".to_string(); headers.len()];
@@ -139,11 +135,8 @@ impl EthClientContractTrait for EthClientContract {
             .map(|header| header.try_to_vec().unwrap())
             .collect();
 
-        Ok(self
-            .contract_wrapper
-            .call_change_method_batch(method_names, args, None, None)?
-            .transaction
-            .hash)
+        self.contract_wrapper
+            .call_change_method_batch(method_names, args, None, None)
     }
 
     fn get_min_deposit(&self) -> Result<Balance, Box<dyn Error>> {
@@ -155,17 +148,13 @@ impl EthClientContractTrait for EthClientContract {
         )?)
     }
 
-    fn register_submitter(&self) -> Result<CryptoHash, Box<dyn Error>> {
-        Ok(self
-            .contract_wrapper
-            .call_change_method(
-                "register_submitter".to_string(),
-                json!({}).to_string().into_bytes(),
-                Some(self.get_min_deposit()?),
-                None,
-            )?
-            .transaction
-            .hash)
+    fn register_submitter(&self) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
+        self.contract_wrapper.call_change_method(
+            "register_submitter".to_string(),
+            json!({}).to_string().into_bytes(),
+            Some(self.get_min_deposit()?),
+            None,
+        )
     }
 
     fn get_light_client_state(&self) -> Result<LightClientState, Box<dyn Error>> {
