@@ -68,14 +68,6 @@ impl Eth2NearRelay {
         loop {
             info!(target: "relay", "== New relay loop ==");
 
-            let last_eth2_slot_on_near: u64 = match self.get_last_slot() {
-                Ok(slot) => slot,
-                Err(err) => {
-                    warn!(target: "relay", "Fail to get last slot on NEAR. Error: {}", err);
-                    continue;
-                }
-            };
-
             let last_eth2_slot_on_eth_chain: u64 =
                 match self.beacon_rpc_client.get_last_slot_number() {
                     Ok(slot) => slot.as_u64(),
@@ -84,6 +76,15 @@ impl Eth2NearRelay {
                         continue;
                     }
                 };
+
+            let last_eth2_slot_on_near: u64 = match self.get_last_slot(last_eth2_slot_on_eth_chain)
+            {
+                Ok(slot) => slot,
+                Err(err) => {
+                    warn!(target: "relay", "Fail to get last slot on NEAR. Error: {}", err);
+                    continue;
+                }
+            };
 
             info!(target: "relay", "Last slot on near = {}; last slot on eth = {}",
                   last_eth2_slot_on_near, last_eth2_slot_on_eth_chain);
@@ -383,7 +384,7 @@ impl Eth2NearRelay {
 
 // Implementation of functions for searching last slot on NEAR contract
 impl Eth2NearRelay {
-    fn get_last_slot(&mut self) -> Result<u64, Box<dyn Error>> {
+    fn get_last_slot(&mut self, last_eth_slot: u64) -> Result<u64, Box<dyn Error>> {
         debug!(target: "relay", "= Search for last slot on near =");
 
         let finalized_slot = self.eth_client_contract.get_finalized_beacon_block_slot()?;
@@ -394,8 +395,6 @@ impl Eth2NearRelay {
 
         let slot = max(finalized_slot, last_submitted_slot);
         trace!(target: "relay", "Init slot for search as {}", slot);
-
-        let last_eth_slot = self.beacon_rpc_client.get_last_slot_number()?.as_u64();
 
         return if self.enable_binsearch {
             self.binary_slot_search(slot, finalized_slot, last_eth_slot)
@@ -442,12 +441,11 @@ impl Eth2NearRelay {
                 Ok(false) => break,
                 Err(_) => {
                     let (slot_id, slot_on_near) =
-                        self.find_left_non_error_slot(slot + current_step, max_slot);
+                        self.find_left_non_error_slot(slot + current_step + 1, max_slot);
                     if slot_on_near {
                         prev_slot = slot_id;
                         current_step = min(current_step * 2, max_slot - slot);
                     } else {
-                        current_step = slot_id - slot;
                         break;
                     }
                 }
@@ -467,7 +465,7 @@ impl Eth2NearRelay {
                 Ok(false) => last_slot = mid_slot,
                 Err(_) => {
                     let (left_slot, is_left_slot_on_near) =
-                        self.find_left_non_error_slot(mid_slot, last_slot);
+                        self.find_left_non_error_slot(mid_slot + 1, last_slot);
                     if is_left_slot_on_near {
                         start_slot = left_slot;
                     } else {
