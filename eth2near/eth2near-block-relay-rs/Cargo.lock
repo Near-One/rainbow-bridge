@@ -322,16 +322,16 @@ version = "0.2.0"
 source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec#b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec"
 dependencies = [
  "blst",
- "eth2_hashing",
- "eth2_serde_utils",
- "eth2_ssz",
+ "eth2_hashing 0.3.0 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
+ "eth2_serde_utils 0.1.1 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
+ "eth2_ssz 0.4.1 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
  "ethereum-types",
  "getrandom 0.2.7",
  "hex",
  "rand 0.7.3",
  "serde",
  "serde_derive",
- "tree_hash",
+ "tree_hash 0.4.1 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
  "zeroize",
 ]
 
@@ -456,13 +456,13 @@ name = "cached_tree_hash"
 version = "0.1.0"
 source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec#b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec"
 dependencies = [
- "eth2_hashing",
- "eth2_ssz",
+ "eth2_hashing 0.3.0 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
+ "eth2_ssz 0.4.1 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
  "eth2_ssz_derive 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "eth2_ssz_types",
  "ethereum-types",
  "smallvec",
- "tree_hash",
+ "tree_hash 0.4.1 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
 ]
 
 [[package]]
@@ -549,7 +549,6 @@ dependencies = [
 name = "compare_fields"
 version = "0.2.0"
 source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec#b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec"
-
 [[package]]
 name = "compare_fields_derive"
 version = "0.2.0"
@@ -876,9 +875,9 @@ dependencies = [
  "borsh",
  "eth-types",
  "ethereum-types",
- "merkle_proof",
+ "merkle_proof 0.2.0 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec)",
  "near-sdk",
- "tree_hash",
+ "tree_hash 0.4.1 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec)",
 ]
 
 [[package]]
@@ -893,12 +892,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "eth2_hashing"
+version = "0.3.0"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
+dependencies = [
+ "lazy_static",
+ "near-sdk",
+]
+
+[[package]]
 name = "eth2_interop_keypairs"
 version = "0.2.0"
 source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec#b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec"
 dependencies = [
  "bls",
- "eth2_hashing",
+ "eth2_hashing 0.3.0 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
  "hex",
  "lazy_static",
  "num-bigint 0.4.3",
@@ -957,12 +965,12 @@ version = "0.2.2"
 source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec#b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec"
 dependencies = [
  "derivative",
- "eth2_serde_utils",
- "eth2_ssz",
+ "eth2_serde_utils 0.1.1 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
+ "eth2_ssz 0.4.1 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
  "serde",
  "serde_derive",
  "smallvec",
- "tree_hash",
+ "tree_hash 0.4.1 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
  "typenum",
 ]
 
@@ -976,13 +984,13 @@ dependencies = [
  "contract_wrapper",
  "env_logger",
  "eth-types",
- "eth2_hashing",
+ "eth2_hashing 0.3.0 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
  "ethereum-types",
  "finality-update-verify",
  "futures",
  "hex",
  "log",
- "merkle_proof",
+ "merkle_proof 0.2.0 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
  "near-chain-configs",
  "near-crypto 0.14.0",
  "near-jsonrpc-client",
@@ -994,7 +1002,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "toml",
- "tree_hash",
+ "tree_hash 0.4.1 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
  "types",
 ]
 
@@ -1060,7 +1068,7 @@ dependencies = [
  "bls",
  "eth-types",
  "eth2-utility",
- "tree_hash",
+ "tree_hash 0.4.1 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
  "types",
 ]
 
@@ -1646,10 +1654,10 @@ name = "merkle_proof"
 version = "0.2.0"
 source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec#b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec"
 dependencies = [
- "eth2_hashing",
+ "eth2_hashing 0.3.0 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec)",
  "ethereum-types",
  "lazy_static",
- "safe_arith",
+ "safe_arith 0.1.0 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec)",
 ]
 
 [[package]]
@@ -3013,7 +3021,7 @@ name = "swap_or_not_shuffle"
 version = "0.2.0"
 source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec#b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec"
 dependencies = [
- "eth2_hashing",
+ "eth2_hashing 0.3.0 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
  "ethereum-types",
 ]
 
@@ -3256,7 +3264,7 @@ name = "tree_hash"
 version = "0.4.1"
 source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec#b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec"
 dependencies = [
- "eth2_hashing",
+ "eth2_hashing 0.3.0 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec)",
  "ethereum-types",
  "smallvec",
 ]
@@ -3304,10 +3312,10 @@ dependencies = [
  "compare_fields",
  "compare_fields_derive",
  "derivative",
- "eth2_hashing",
+ "eth2_hashing 0.3.0 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
  "eth2_interop_keypairs",
- "eth2_serde_utils",
- "eth2_ssz",
+ "eth2_serde_utils 0.1.1 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
+ "eth2_ssz 0.4.1 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
  "eth2_ssz_derive 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "eth2_ssz_types",
  "ethereum-types",
@@ -3322,7 +3330,7 @@ dependencies = [
  "rayon",
  "regex",
  "rusqlite",
- "safe_arith",
+ "safe_arith 0.1.0 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
  "serde",
  "serde_derive",
  "serde_json",
@@ -3334,7 +3342,7 @@ dependencies = [
  "swap_or_not_shuffle",
  "tempfile",
  "test_random_derive",
- "tree_hash",
+ "tree_hash 0.4.1 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8)",
  "tree_hash_derive 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
