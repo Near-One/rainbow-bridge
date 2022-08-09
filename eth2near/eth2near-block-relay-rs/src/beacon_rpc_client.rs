@@ -411,14 +411,19 @@ impl BeaconRPCClient {
 
         let mut slot = start_slot;
         for _ in 0..CHECK_SLOTS_FORWARD_LIMIT {
-            if let Ok(beacon_block_body) = self.get_beacon_block_header_for_block_id(&format!("{}", slot))
+            if let Ok(beacon_block_body) =
+                self.get_beacon_block_header_for_block_id(&format!("{}", slot))
             {
                 return Ok(beacon_block_body);
             }
             slot += 1;
         }
 
-        return Err(format!("Unable to get non empty beacon block in range (`{}`-`{}`]", start_slot, start_slot + 10))?;
+        return Err(format!(
+            "Unable to get non empty beacon block in range [`{}`-`{}`)",
+            start_slot,
+            start_slot + CHECK_SLOTS_FORWARD_LIMIT
+        ))?;
     }
 }
 

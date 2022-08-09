@@ -18,7 +18,7 @@ pub struct Eth2NearRelay {
     eth1_rpc_client: Eth1RPCClient,
     eth_client_contract: Box<dyn EthClientContractTrait>,
     max_submitted_headers: u64,
-    current_gap_between_finalized_and_signature_slot: u64,
+    current_gap_between_finalized_and_attested_slot: u64,
     network: String,
     light_client_updates_submission_frequency_in_epochs: i64,
     max_blocks_for_finalization: u64,
@@ -40,7 +40,7 @@ impl Eth2NearRelay {
             eth1_rpc_client: Eth1RPCClient::new(&config.eth1_endpoint),
             eth_client_contract: eth_contract,
             max_submitted_headers: config.total_submit_headers as u64,
-            current_gap_between_finalized_and_signature_slot:
+            current_gap_between_finalized_and_attested_slot:
                 Self::get_gap_between_finalized_and_signature_slot(
                     config.light_client_updates_submission_frequency_in_epochs as u64,
                 ),
@@ -282,14 +282,14 @@ impl Eth2NearRelay {
     ) {
         trace!(target: "relay", "last_finalized_slot_on_near {}", last_finalized_slot_on_near);
         if (last_submitted_slot as i64) - (last_finalized_slot_on_near as i64)
-            < (self.current_gap_between_finalized_and_signature_slot as i64)
+            < (self.current_gap_between_finalized_and_attested_slot as i64)
         {
             info!(target: "relay", "Waiting for sending more headers to near. Skip sending light client update.");
             return;
         }
 
         let attested_slot =
-            last_finalized_slot_on_near + self.current_gap_between_finalized_and_signature_slot;
+            last_finalized_slot_on_near + self.current_gap_between_finalized_and_attested_slot;
 
         let attested_slot: u64 = match self
             .beacon_rpc_client
@@ -317,7 +317,7 @@ impl Eth2NearRelay {
 
                 if finality_update_slot <= last_finalized_slot_on_near {
                     info!(target: "relay", "Finality update slot for hand made light client update <= last finality update on near. Increment gap for attested slot and skipping light client update.");
-                    self.current_gap_between_finalized_and_signature_slot += ONE_EPOCH_IN_SLOTS;
+                    self.current_gap_between_finalized_and_attested_slot += ONE_EPOCH_IN_SLOTS;
                     return;
                 }
 
@@ -343,7 +343,7 @@ impl Eth2NearRelay {
             }
             Err(err) => {
                 debug!(target: "relay", "Error \"{}\" on getting hand made light client update for attested slot={}.", err, attested_slot);
-                self.current_gap_between_finalized_and_signature_slot += 1;
+                self.current_gap_between_finalized_and_attested_slot += 1;
             }
         }
     }
@@ -380,7 +380,7 @@ impl Eth2NearRelay {
                         Ok(execution_outcome) => {
                             info!(target: "relay", "Successful light client update submission! Transaction URL: https://explorer.{}.near.org/transactions/{}", 
                                   self.near_network_name, execution_outcome.transaction.hash);
-                            self.current_gap_between_finalized_and_signature_slot =
+                            self.current_gap_between_finalized_and_attested_slot =
                                 Self::get_gap_between_finalized_and_signature_slot(
                                     self.light_client_updates_submission_frequency_in_epochs as u64,
                                 );
