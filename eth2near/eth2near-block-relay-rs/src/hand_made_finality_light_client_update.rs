@@ -1,10 +1,15 @@
 use crate::beacon_block_body_merkle_tree::BeaconStateMerkleTree;
 use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::execution_block_proof::ExecutionBlockProof;
-use crate::relay_errors::{ErrorOnUnwrapSignatureBit, MissSyncAggregationError};
-use eth_types::eth2::{FinalizedHeaderUpdate, HeaderUpdate, LightClientUpdate, SignatureBytes, SyncCommitteeBits, SyncCommitteeUpdate};
-use std::error::Error;
+use crate::relay_errors::{
+    ErrorOnUnwrapSignatureBit, MissNextSyncCommittee, MissSyncAggregationError,
+};
+use eth_types::eth2::{
+    FinalizedHeaderUpdate, HeaderUpdate, LightClientUpdate, SignatureBytes, SyncCommittee,
+    SyncCommitteeBits, SyncCommitteeUpdate,
+};
 use eth_types::H256;
+use std::error::Error;
 use tree_hash::TreeHash;
 use types::{BeaconBlockBody, BeaconBlockHeader, BeaconState, MainnetEthSpec};
 
@@ -14,6 +19,7 @@ impl HandMadeFinalityLightClientUpdate {
     pub fn get_finality_light_client_update(
         beacon_rpc_client: &BeaconRPCClient,
         attested_slot: u64,
+        include_next_sync_committee: bool,
     ) -> Result<LightClientUpdate, Box<dyn Error>> {
         const BEACON_STATE_MERKLE_TREE_DEPTH: usize = 5;
         const BEACON_STATE_FINALIZED_CHECKPOINT_INDEX: usize = 20;
@@ -51,14 +57,66 @@ impl HandMadeFinalityLightClientUpdate {
                 )?,
             },
             signature_slot,
-            finality_update: Self::get_finality_update(&finality_header, &beacon_state, &finalized_block_body)?,
-            sync_committee_update: Option::<SyncCommitteeUpdate>::None,
+            finality_update: Self::get_finality_update(
+                &finality_header,
+                &beacon_state,
+                &finalized_block_body,
+            )?,
+            sync_committee_update: match include_next_sync_committee {
+                false => Option::<SyncCommitteeUpdate>::None,
+                true => Some(Self::get_next_sync_committee(&beacon_state)?),
+            },
         })
     }
 }
 
 impl HandMadeFinalityLightClientUpdate {
-    fn from_lighthouse_beacon_header(beacon_header: &BeaconBlockHeader) -> eth_types::eth2::BeaconBlockHeader {
+    fn get_next_sync_committee(
+        beacon_state: &BeaconState<MainnetEthSpec>,
+    ) -> Result<SyncCommitteeUpdate, Box<dyn Error>> {
+        let next_sync_committee = beacon_state
+            .next_sync_committee()
+            .map_err(|_| MissNextSyncCommittee)?;
+
+        const BEACON_STATE_MERKLE_TREE_DEPTH: usize = 5;
+        const BEACON_STATE_NEXT_SYNC_COMMITTEE_INDEX: usize = 25;
+
+        let beacon_state_merkle_tree = BeaconStateMerkleTree::new(&beacon_state);
+        let proof = beacon_state_merkle_tree.0.generate_proof(
+            BEACON_STATE_NEXT_SYNC_COMMITTEE_INDEX,
+            BEACON_STATE_MERKLE_TREE_DEPTH,
+        );
+
+        let next_sync_committee_branch = proof.1;
+
+        let next_sync_committee_branch = next_sync_committee_branch
+            .into_iter()
+            .map(|x| eth_types::H256::from(x.0.to_vec()))
+            .collect();
+
+        let sync_committee = SyncCommittee {
+            pubkeys: eth_types::eth2::SyncCommitteePublicKeys(
+                next_sync_committee
+                    .pubkeys
+                    .to_vec()
+                    .into_iter()
+                    .map(|x| eth_types::eth2::PublicKeyBytes(x.serialize()))
+                    .collect(),
+            ),
+            aggregate_pubkey: eth_types::eth2::PublicKeyBytes(
+                next_sync_committee.aggregate_pubkey.serialize(),
+            ),
+        };
+
+        Ok(SyncCommitteeUpdate {
+            next_sync_committee: sync_committee,
+            next_sync_committee_branch,
+        })
+    }
+
+    fn from_lighthouse_beacon_header(
+        beacon_header: &BeaconBlockHeader,
+    ) -> eth_types::eth2::BeaconBlockHeader {
         eth_types::eth2::BeaconBlockHeader {
             slot: beacon_header.slot.as_u64(),
             proposer_index: beacon_header.proposer_index,
@@ -68,7 +126,9 @@ impl HandMadeFinalityLightClientUpdate {
         }
     }
 
-    fn get_sync_committee_bits(sync_committee_signature: &types::SyncAggregate<MainnetEthSpec>) -> Result<[u8; 64], Box<dyn Error>> {
+    fn get_sync_committee_bits(
+        sync_committee_signature: &types::SyncAggregate<MainnetEthSpec>,
+    ) -> Result<[u8; 64], Box<dyn Error>> {
         match sync_committee_signature
             .clone()
             .sync_committee_bits
@@ -82,7 +142,9 @@ impl HandMadeFinalityLightClientUpdate {
         }
     }
 
-    fn get_finality_branch(beacon_state: &BeaconState<MainnetEthSpec>) -> Result<Vec<H256>, Box<dyn Error>> {
+    fn get_finality_branch(
+        beacon_state: &BeaconState<MainnetEthSpec>,
+    ) -> Result<Vec<H256>, Box<dyn Error>> {
         const BEACON_STATE_MERKLE_TREE_DEPTH: usize = 5;
         const BEACON_STATE_FINALIZED_CHECKPOINT_INDEX: usize = 20;
 
@@ -101,9 +163,11 @@ impl HandMadeFinalityLightClientUpdate {
             .collect())
     }
 
-    fn get_finality_update(finality_header: &BeaconBlockHeader,
-                           beacon_state: &BeaconState<MainnetEthSpec>,
-                           finalized_block_body: &BeaconBlockBody<MainnetEthSpec>) -> Result<FinalizedHeaderUpdate, Box<dyn Error>> {
+    fn get_finality_update(
+        finality_header: &BeaconBlockHeader,
+        beacon_state: &BeaconState<MainnetEthSpec>,
+        finalized_block_body: &BeaconBlockBody<MainnetEthSpec>,
+    ) -> Result<FinalizedHeaderUpdate, Box<dyn Error>> {
         let finality_branch = Self::get_finality_branch(beacon_state)?;
         let finalized_block_eth1data_proof =
             ExecutionBlockProof::construct_from_beacon_block_body(&finalized_block_body)?;
@@ -144,6 +208,7 @@ mod tests {
             HandMadeFinalityLightClientUpdate::get_finality_light_client_update(
                 &beacon_rpc_client,
                 SIGNATURE_SLOT,
+                true,
             )
             .unwrap();
         let light_client_update = beacon_rpc_client.get_light_client_update(99).unwrap();
@@ -164,5 +229,9 @@ mod tests {
             serde_json::to_string(&hand_made_light_client_update.sync_aggregate).unwrap(),
             serde_json::to_string(&light_client_update.sync_aggregate).unwrap()
         );
+        assert_eq!(
+            serde_json::to_string(&hand_made_light_client_update.sync_committee_update).unwrap(),
+            serde_json::to_string(&light_client_update.sync_committee_update).unwrap()
+        )
     }
 }

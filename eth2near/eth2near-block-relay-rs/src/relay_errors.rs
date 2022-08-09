@@ -69,3 +69,14 @@ impl Display for MissSyncCommitteeUpdate {
 }
 
 impl Error for MissSyncCommitteeUpdate {}
+
+#[derive(Debug)]
+pub struct MissNextSyncCommittee;
+
+impl Display for MissNextSyncCommittee {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Miss next sync committee in the Beacon Block State")
+    }
+}
+
+impl Error for MissNextSyncCommittee {}

@@ -308,8 +308,10 @@ impl Eth2NearRelay {
         match HandMadeFinalityLightClientUpdate::get_finality_light_client_update(
             &self.beacon_rpc_client,
             attested_slot,
+            BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near)
+                != BeaconRPCClient::get_period_for_slot(signature_slot),
         ) {
-            Ok(mut light_client_update) => {
+            Ok(light_client_update) => {
                 let finality_update_slot = light_client_update
                     .finality_update
                     .header_update
@@ -320,22 +322,6 @@ impl Eth2NearRelay {
                     info!(target: "relay", "Finality update slot for hand made light client update <= last finality update on near. Increment gap for attested slot and skipping light client update.");
                     self.current_gap_between_finalized_and_attested_slot += ONE_EPOCH_IN_SLOTS;
                     return;
-                }
-
-                if BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near)
-                    != BeaconRPCClient::get_period_for_slot(finality_update_slot)
-                {
-                    let new_period = BeaconRPCClient::get_period_for_slot(finality_update_slot);
-                    match self.beacon_rpc_client.get_light_client_update(new_period) {
-                        Ok(light_client_update_for_period) => {
-                            light_client_update.sync_committee_update =
-                                light_client_update_for_period.sync_committee_update
-                        }
-                        Err(err) => {
-                            debug!(target: "relay", "Error \"{}\" on getting light client update for period. Skipping sending light client update", err);
-                            return;
-                        }
-                    }
                 }
 
                 trace!(target: "relay", "Hand made light client update: {:?}", light_client_update);
