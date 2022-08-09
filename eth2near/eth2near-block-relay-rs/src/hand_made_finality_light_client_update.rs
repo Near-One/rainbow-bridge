@@ -39,10 +39,12 @@ impl HandMadeFinalityLightClientUpdate {
             .get_beacon_block_header_for_block_id(&format!("{}", attested_slot))?;
 
         let beacon_state = beacon_rpc_client.get_beacon_state(&format!("{}", attested_slot))?;
-
         let finality_hash = beacon_state.finalized_checkpoint().root;
         let finality_header = beacon_rpc_client
             .get_beacon_block_header_for_block_id(&format!("{:?}", &finality_hash))?;
+
+        let beacon_state_merkle_tree = BeaconStateMerkleTree::new(&beacon_state);
+
         let finalized_block_body = beacon_rpc_client
             .get_beacon_block_body_for_block_id(&format!("{:?}", &finality_hash))?;
 
@@ -60,11 +62,12 @@ impl HandMadeFinalityLightClientUpdate {
             finality_update: Self::get_finality_update(
                 &finality_header,
                 &beacon_state,
+                &beacon_state_merkle_tree,
                 &finalized_block_body,
             )?,
             sync_committee_update: match include_next_sync_committee {
                 false => Option::<SyncCommitteeUpdate>::None,
-                true => Some(Self::get_next_sync_committee(&beacon_state)?),
+                true => Some(Self::get_next_sync_committee(&beacon_state, &beacon_state_merkle_tree)?),
             },
         })
     }
@@ -73,6 +76,7 @@ impl HandMadeFinalityLightClientUpdate {
 impl HandMadeFinalityLightClientUpdate {
     fn get_next_sync_committee(
         beacon_state: &BeaconState<MainnetEthSpec>,
+        beacon_state_merkle_tree: &BeaconStateMerkleTree,
     ) -> Result<SyncCommitteeUpdate, Box<dyn Error>> {
         let next_sync_committee = beacon_state
             .next_sync_committee()
@@ -81,7 +85,6 @@ impl HandMadeFinalityLightClientUpdate {
         const BEACON_STATE_MERKLE_TREE_DEPTH: usize = 5;
         const BEACON_STATE_NEXT_SYNC_COMMITTEE_INDEX: usize = 25;
 
-        let beacon_state_merkle_tree = BeaconStateMerkleTree::new(&beacon_state);
         let proof = beacon_state_merkle_tree.0.generate_proof(
             BEACON_STATE_NEXT_SYNC_COMMITTEE_INDEX,
             BEACON_STATE_MERKLE_TREE_DEPTH,
@@ -144,11 +147,11 @@ impl HandMadeFinalityLightClientUpdate {
 
     fn get_finality_branch(
         beacon_state: &BeaconState<MainnetEthSpec>,
+        beacon_state_merkle_tree: &BeaconStateMerkleTree,
     ) -> Result<Vec<H256>, Box<dyn Error>> {
         const BEACON_STATE_MERKLE_TREE_DEPTH: usize = 5;
         const BEACON_STATE_FINALIZED_CHECKPOINT_INDEX: usize = 20;
 
-        let beacon_state_merkle_tree = BeaconStateMerkleTree::new(&beacon_state);
         let mut proof = beacon_state_merkle_tree.0.generate_proof(
             BEACON_STATE_FINALIZED_CHECKPOINT_INDEX,
             BEACON_STATE_MERKLE_TREE_DEPTH,
@@ -166,11 +169,12 @@ impl HandMadeFinalityLightClientUpdate {
     fn get_finality_update(
         finality_header: &BeaconBlockHeader,
         beacon_state: &BeaconState<MainnetEthSpec>,
+        beacon_state_merkle_tree: &BeaconStateMerkleTree,
         finalized_block_body: &BeaconBlockBody<MainnetEthSpec>,
     ) -> Result<FinalizedHeaderUpdate, Box<dyn Error>> {
-        let finality_branch = Self::get_finality_branch(beacon_state)?;
+        let finality_branch = Self::get_finality_branch(beacon_state, beacon_state_merkle_tree)?;
         let finalized_block_eth1data_proof =
-            ExecutionBlockProof::construct_from_beacon_block_body(&finalized_block_body)?;
+            ExecutionBlockProof::construct_from_beacon_block_body(finalized_block_body)?;
 
         Ok(FinalizedHeaderUpdate {
             header_update: HeaderUpdate {
