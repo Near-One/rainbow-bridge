@@ -5,12 +5,12 @@ edition = "2021"
 
 [dependencies]
 log = { version = "0.4", features = ["std", "serde"] }
-types =  { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b9865a371ae1d830aa7af1052da09f1c7d0384af" }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "b9865a371ae1d830aa7af1052da09f1c7d0384af" }
-merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b9865a371ae1d830aa7af1052da09f1c7d0384af" }
+types =  { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b01ab64718ecbebb4bb59395d1332980804a0db8" }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "b01ab64718ecbebb4bb59395d1332980804a0db8" }
+merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b01ab64718ecbebb4bb59395d1332980804a0db8" }
 serde_json = "1.0.74"
 serde = { version = "1.0", features = ["derive"] }
-eth2_hashing = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b9865a371ae1d830aa7af1052da09f1c7d0384af" }
+eth2_hashing = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b01ab64718ecbebb4bb59395d1332980804a0db8" }
 ethereum-types = "0.9.2"
 reqwest = { version = "0.11", features = ["blocking"] }
 eth-types = { path = "../../contracts/near/eth-types/", features = ["eip1559"]}
@@ -34,8 +34,8 @@ near-jsonrpc-primitives = "0.14.0"
 
 [patch]
 [patch.crates-io]
-eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b9865a371ae1d830aa7af1052da09f1c7d0384af" }
-eth2_ssz_types = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b9865a371ae1d830aa7af1052da09f1c7d0384af" }
-eth2_hashing = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b9865a371ae1d830aa7af1052da09f1c7d0384af" }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b9865a371ae1d830aa7af1052da09f1c7d0384af" }
-eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b9865a371ae1d830aa7af1052da09f1c7d0384af" }
+eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b01ab64718ecbebb4bb59395d1332980804a0db8" }
+eth2_ssz_types = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b01ab64718ecbebb4bb59395d1332980804a0db8" }
+eth2_hashing = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b01ab64718ecbebb4bb59395d1332980804a0db8" }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b01ab64718ecbebb4bb59395d1332980804a0db8" }
+eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b01ab64718ecbebb4bb59395d1332980804a0db8" }
