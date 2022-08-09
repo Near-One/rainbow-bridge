@@ -143,4 +143,8 @@ impl ContractWrapper for NearContractWrapper {
             gas,
         )
     }
+
+    fn get_account_id(&self) -> AccountId {
+        self.contract_account.clone()
+    }
 }

@@ -3,8 +3,7 @@ use crate::config::Config;
 use crate::eth1_rpc_client::Eth1RPCClient;
 use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
 use crate::relay_errors::{ExecutionPayloadError, MissSyncCommitteeUpdate};
-use contract_wrapper::contract_wrapper_trait::ContractWrapper;
-use contract_wrapper::eth_client_contract::EthClientContract;
+use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::eth2::LightClientUpdate;
 use eth_types::{BlockHeader, H256};
 use log::{debug, info, trace, warn};
@@ -17,7 +16,7 @@ const ONE_EPOCH_IN_SLOTS: u64 = 32;
 pub struct Eth2NearRelay {
     beacon_rpc_client: BeaconRPCClient,
     eth1_rpc_client: Eth1RPCClient,
-    eth_client_contract: EthClientContract,
+    eth_client_contract: Box<dyn EthClientContractTrait>,
     max_submitted_headers: u64,
     current_gap_between_finalized_and_signature_slot: u64,
     network: String,
@@ -30,7 +29,7 @@ pub struct Eth2NearRelay {
 impl Eth2NearRelay {
     pub fn init(
         config: &Config,
-        contract_wrapper: Box<dyn ContractWrapper>,
+        eth_contract: Box<dyn EthClientContractTrait>,
         enable_binsearch: bool,
         register_relay: bool,
     ) -> Self {
@@ -39,7 +38,7 @@ impl Eth2NearRelay {
         let eth2near_relay = Eth2NearRelay {
             beacon_rpc_client: BeaconRPCClient::new(&config.beacon_endpoint),
             eth1_rpc_client: Eth1RPCClient::new(&config.eth1_endpoint),
-            eth_client_contract: EthClientContract::new(contract_wrapper),
+            eth_client_contract: eth_contract,
             max_submitted_headers: config.total_submit_headers as u64,
             current_gap_between_finalized_and_signature_slot:
                 Self::get_gap_between_finalized_and_signature_slot(
@@ -130,8 +129,9 @@ impl Eth2NearRelay {
                         .eth_client_contract
                         .send_headers(&headers, current_slot - 1)
                     {
-                        Ok(transaction_id) => {
-                            info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}", self.near_network_name, transaction_id);
+                        Ok(execution_outcome) => {
+                            info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}", 
+                                  self.near_network_name, execution_outcome.transaction.hash);
                             break;
                         }
                         Err(err) => {
@@ -360,8 +360,9 @@ impl Eth2NearRelay {
                         .eth_client_contract
                         .send_light_client_update(light_client_update)
                     {
-                        Ok(transaction_id) => {
-                            info!(target: "relay", "Successful light client update submission! Transaction URL: https://explorer.{}.near.org/transactions/{}", self.near_network_name, transaction_id);
+                        Ok(execution_outcome) => {
+                            info!(target: "relay", "Successful light client update submission! Transaction URL: https://explorer.{}.near.org/transactions/{}", 
+                                  self.near_network_name, execution_outcome.transaction.hash);
                             self.current_gap_between_finalized_and_signature_slot =
                                 Self::get_gap_between_finalized_and_signature_slot(
                                     self.light_client_updates_submission_frequency_in_epochs as u64,
