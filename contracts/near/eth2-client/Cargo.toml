@@ -11,9 +11,9 @@ crate-type = ["cdylib", "rlib"]
 ethereum-types = "0.9.2"
 eth-types =  { path = "../eth-types" }
 eth2-utility =  { path = "../eth2-utility" }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b01ab64718ecbebb4bb59395d1332980804a0db8" }
-merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b01ab64718ecbebb4bb59395d1332980804a0db8" }
-bls = { git = "https://github.com/aurora-is-near/lighthouse.git", optional = true, rev = "b01ab64718ecbebb4bb59395d1332980804a0db8", default-features = false, features = ["milagro"]}
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
+merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
+bls = { git = "https://github.com/aurora-is-near/lighthouse.git", optional = true, rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec", default-features = false, features = ["milagro"]}
 admin-controlled =  { path = "../admin-controlled" }
 near-sdk = "4.0.0"
 borsh = "0.9.3"
