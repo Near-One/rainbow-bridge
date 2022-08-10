@@ -489,7 +489,7 @@ dependencies = [
 [[package]]
 name = "bls"
 version = "0.2.0"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8#b01ab64718ecbebb4bb59395d1332980804a0db8"
 dependencies = [
  "eth2_hashing",
  "eth2_serde_utils",
@@ -1397,7 +1397,6 @@ dependencies = [
 [[package]]
 name = "eth2_hashing"
 version = "0.3.0"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
 dependencies = [
  "lazy_static",
  "near-sdk",
@@ -1406,7 +1405,7 @@ dependencies = [
 [[package]]
 name = "eth2_serde_utils"
 version = "0.1.1"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8#b01ab64718ecbebb4bb59395d1332980804a0db8"
 dependencies = [
  "ethereum-types 0.9.2",
  "hex 0.4.2",
@@ -1418,7 +1417,7 @@ dependencies = [
 [[package]]
 name = "eth2_ssz"
 version = "0.4.1"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8#b01ab64718ecbebb4bb59395d1332980804a0db8"
 dependencies = [
  "ethereum-types 0.9.2",
  "smallvec 1.8.0",
@@ -1427,7 +1426,7 @@ dependencies = [
 [[package]]
 name = "eth2_ssz_derive"
 version = "0.3.0"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8#b01ab64718ecbebb4bb59395d1332980804a0db8"
 dependencies = [
  "darling",
  "proc-macro2 1.0.39",
@@ -2488,7 +2487,7 @@ checksum = "8452105ba047068f40ff7093dd1d9da90898e63dd61736462e9cdda6a90ad3c3"
 [[package]]
 name = "merkle_proof"
 version = "0.2.0"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8#b01ab64718ecbebb4bb59395d1332980804a0db8"
 dependencies = [
  "eth2_hashing",
  "ethereum-types 0.9.2",
@@ -4353,7 +4352,7 @@ checksum = "71d301d4193d031abdd79ff7e3dd721168a9572ef3fe51a1517aba235bd8f86e"
 [[package]]
 name = "safe_arith"
 version = "0.1.0"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8#b01ab64718ecbebb4bb59395d1332980804a0db8"
 
 [[package]]
 name = "safemem"
@@ -5274,7 +5273,7 @@ checksum = "efd1f82c56340fdf16f2a953d7bda4f8fdffba13d93b00844c25572110b26079"
 [[package]]
 name = "tree_hash"
 version = "0.4.1"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8#b01ab64718ecbebb4bb59395d1332980804a0db8"
 dependencies = [
  "eth2_hashing",
  "ethereum-types 0.9.2",
@@ -5284,7 +5283,7 @@ dependencies = [
 [[package]]
 name = "tree_hash_derive"
 version = "0.4.0"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b7dd45e622c35674916bf71a200891d7fc0279ec#b7dd45e622c35674916bf71a200891d7fc0279ec"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b01ab64718ecbebb4bb59395d1332980804a0db8#b01ab64718ecbebb4bb59395d1332980804a0db8"
 dependencies = [
  "darling",
  "quote 1.0.18",

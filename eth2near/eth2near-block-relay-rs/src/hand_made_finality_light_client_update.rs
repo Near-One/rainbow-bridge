@@ -14,18 +14,20 @@ pub struct HandMadeFinalityLightClientUpdate {}
 impl HandMadeFinalityLightClientUpdate {
     pub fn get_finality_light_client_update(
         beacon_rpc_client: &BeaconRPCClient,
-        signature_slot: u64,
+        attested_slot: u64,
     ) -> Result<LightClientUpdate, Box<dyn Error>> {
         const BEACON_STATE_MERKLE_TREE_DEPTH: usize = 5;
         const BEACON_STATE_FINALIZED_CHECKPOINT_INDEX: usize = 20;
 
+        let signature_slot = beacon_rpc_client
+            .get_non_empty_beacon_block_header(attested_slot + 1)?
+            .slot
+            .into();
         let signature_beacon_body =
             beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", signature_slot))?;
         let sync_committe_signature = signature_beacon_body
             .sync_aggregate()
             .map_err(|_| MissSyncAggregationError)?;
-
-        let attested_slot = signature_beacon_body.attestations()[0].data.slot;
 
         let attested_header = beacon_rpc_client
             .get_beacon_block_header_for_block_id(&format!("{}", attested_slot))?;
