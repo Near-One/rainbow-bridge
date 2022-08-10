@@ -21,22 +21,15 @@ pub struct NearContractWrapper {
 }
 
 impl NearContractWrapper {
-    pub fn new(
+    pub fn new_with_raw_secret_key(
         near_endpoint: &str,
         account_id: &str,
-        path_to_signer_secret_key: &str,
+        signer_secret_key: &str,
         contract_account_id: &str,
     ) -> NearContractWrapper {
+        let signer_account_id = account_id.parse().unwrap();
         let client = JsonRpcClient::connect(near_endpoint);
         let contract_account = contract_account_id.parse().unwrap();
-
-        let signer_account_id = account_id.parse().unwrap();
-        let v: Value = serde_json::from_str(
-            &std::fs::read_to_string(path_to_signer_secret_key).expect("Unable to read file"),
-        )
-        .unwrap();
-        let signer_secret_key = serde_json::to_string(&v["private_key"]).unwrap();
-        let signer_secret_key = &signer_secret_key[1..signer_secret_key.len() - 1];
 
         let signer =
             InMemorySigner::from_secret_key(signer_account_id, signer_secret_key.parse().unwrap());
@@ -46,6 +39,27 @@ impl NearContractWrapper {
             contract_account,
             signer,
         }
+    }
+
+    pub fn new(
+        near_endpoint: &str,
+        account_id: &str,
+        path_to_signer_secret_key: &str,
+        contract_account_id: &str,
+    ) -> NearContractWrapper {
+        let v: Value = serde_json::from_str(
+            &std::fs::read_to_string(path_to_signer_secret_key).expect("Unable to read file"),
+        )
+        .unwrap();
+        let signer_secret_key = serde_json::to_string(&v["private_key"]).unwrap();
+        let signer_secret_key = &signer_secret_key[1..signer_secret_key.len() - 1];
+
+        Self::new_with_raw_secret_key(
+            near_endpoint,
+            account_id,
+            signer_secret_key,
+            contract_account_id,
+        )
     }
 }
 
