@@ -28,7 +28,7 @@ pub struct Config {
     // The Ethereum network name (main, kiln)
     pub network: String,
 
-    // Contract type (near, dao)
+    // Contract type (near, dao, file)
     pub contract_type: String,
 
     // Frequency of submission light client updates. Once in N epochs.
@@ -42,6 +42,9 @@ pub struct Config {
 
     // Account id for DAO on NEAR
     pub dao_contract_account_id: Option<String>,
+
+    // Path to dir for output submitted light client updates and execution blocks
+    pub output_dir: Option<String>,
 }
 
 impl Config {
