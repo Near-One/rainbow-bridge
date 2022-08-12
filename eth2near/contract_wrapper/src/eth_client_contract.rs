@@ -168,15 +168,43 @@ impl EthClientContractTrait for EthClientContract {
 
 #[cfg(test)]
 mod tests {
+    use eth_types::BlockHeader;
+    use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use near_units::*;
     use workspaces::operations::Function;
     use workspaces::prelude::*;
     use workspaces::{network::Sandbox, Account, Contract, Worker};
     use tokio::runtime::Runtime;
     use crate::eth_client_contract;
+    use crate::eth_client_contract::EthClientContract;
     use crate::sandbox_contract_wrapper::SandboxContractWrapper;
 
     const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
+
+    struct EthState {
+        pub execution_blocks: Vec<BlockHeader>,
+        pub light_client_updates: Vec<LightClientUpdate>,
+    }
+
+    impl EthState {
+        pub fn new() -> Self {
+            const PATH_TO_EXECUTION_BLOCKS: &str = "./data/execution_block_headers_kiln_1099394-1099937.json";
+            const PATH_TO_LIGHT_CLIENT_UPDATES: &str = "./data/light_client_updates_kiln_1099394-1099937.json";
+
+            let execution_blocks: Vec<BlockHeader> = serde_json::from_str(
+                &std::fs::read_to_string(PATH_TO_EXECUTION_BLOCKS).expect("Unable to read file"),
+            ).unwrap();
+
+            let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
+                &std::fs::read_to_string(PATH_TO_LIGHT_CLIENT_UPDATES).expect("Unable to read file"),
+            ).unwrap();
+
+            Self {
+                execution_blocks,
+                light_client_updates
+            }
+        }
+    }
 
     fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
         let rt = Runtime::new().unwrap();
@@ -196,13 +224,38 @@ mod tests {
         (relay_account, contract, worker)
     }
 
+    fn init_contract(eth_client_contract: EthClientContract, eth_state: EthState)  {
+        const PATH_TO_CURRENT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_133.json";
+        const PATH_TO_NEXT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_134.json";
+        const NETWORK: &str = "kiln";
+
+        let current_sync_committee: SyncCommittee = serde_json::from_str(&std::fs::read_to_string(PATH_TO_CURRENT_SYNC_COMMITTEE).expect("Unable to read file")).unwrap();
+        let next_sync_committee: SyncCommittee = serde_json::from_str(&std::fs::read_to_string(PATH_TO_NEXT_SYNC_COMMITTEE).expect("Unable to read file")).unwrap();
+
+        let finalized_beacon_header = ExtendedBeaconBlockHeader::from(eth_state.light_client_updates[0].clone().finality_update.header_update);
+
+        let finalized_hash = eth_state.light_client_updates[0].clone().finality_update.header_update.execution_block_hash;
+        let mut finalized_execution_header = None::<BlockHeader>;
+        for header in &eth_state.execution_blocks {
+            if header.hash.unwrap() == finalized_hash {
+                finalized_execution_header = Some(header.clone());
+                break;
+            }
+        }
+
+        eth_client_contract.init_contract(NETWORK.to_string(), finalized_execution_header.unwrap(), finalized_beacon_header, current_sync_committee, next_sync_committee);
+    }
+
     #[test]
     fn test_smoke_eth_client_contract_wrapper() {
         let (relay_account, contract, worker) = create_contract();
         let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
         let eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
 
-        
+        let eth_state = EthState::new();
 
+        init_contract(eth_client_contract, eth_state);
+
+        
     }
 }
