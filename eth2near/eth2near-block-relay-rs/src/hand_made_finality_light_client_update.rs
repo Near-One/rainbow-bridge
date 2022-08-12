@@ -21,9 +21,6 @@ impl HandMadeFinalityLightClientUpdate {
         attested_slot: u64,
         include_next_sync_committee: bool,
     ) -> Result<LightClientUpdate, Box<dyn Error>> {
-        const BEACON_STATE_MERKLE_TREE_DEPTH: usize = 5;
-        const BEACON_STATE_FINALIZED_CHECKPOINT_INDEX: usize = 20;
-
         let signature_slot = beacon_rpc_client
             .get_non_empty_beacon_block_header(attested_slot + 1)?
             .slot
@@ -203,7 +200,7 @@ mod tests {
     use crate::beacon_rpc_client::BeaconRPCClient;
     use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
 
-    const SIGNATURE_SLOT: u64 = 812638;
+    const ATTESTED_SLOT: u64 = 812637;
     const BEACON_ENDPOINT: &str = "https://lodestar-kiln.chainsafe.io";
 
     #[test]
@@ -212,7 +209,7 @@ mod tests {
         let hand_made_light_client_update =
             HandMadeFinalityLightClientUpdate::get_finality_light_client_update(
                 &beacon_rpc_client,
-                SIGNATURE_SLOT,
+                ATTESTED_SLOT,
                 true,
             )
             .unwrap();

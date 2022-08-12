@@ -309,7 +309,7 @@ impl Eth2NearRelay {
             &self.beacon_rpc_client,
             attested_slot,
             BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near)
-                != BeaconRPCClient::get_period_for_slot(signature_slot),
+                != BeaconRPCClient::get_period_for_slot(attested_slot),
         ) {
             Ok(light_client_update) => {
                 let finality_update_slot = light_client_update
