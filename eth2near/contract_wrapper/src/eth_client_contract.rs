@@ -177,6 +177,7 @@ mod tests {
     use tokio::runtime::Runtime;
     use crate::eth_client_contract;
     use crate::eth_client_contract::EthClientContract;
+    use crate::eth_client_contract_trait::EthClientContractTrait;
     use crate::sandbox_contract_wrapper::SandboxContractWrapper;
 
     const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
@@ -224,7 +225,7 @@ mod tests {
         (relay_account, contract, worker)
     }
 
-    fn init_contract(eth_client_contract: EthClientContract, eth_state: EthState)  {
+    fn init_contract(eth_client_contract: &EthClientContract, eth_state: EthState)  {
         const PATH_TO_CURRENT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_133.json";
         const PATH_TO_NEXT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_134.json";
         const NETWORK: &str = "kiln";
@@ -254,8 +255,10 @@ mod tests {
 
         let eth_state = EthState::new();
 
-        init_contract(eth_client_contract, eth_state);
+        init_contract(&eth_client_contract, eth_state);
+        let first_finalized_slot = eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        assert_eq!(first_finalized_slot, 1099360);
 
-        
+
     }
 }
