@@ -185,6 +185,8 @@ mod tests {
     struct EthState {
         pub execution_blocks: Vec<BlockHeader>,
         pub light_client_updates: Vec<LightClientUpdate>,
+        pub current_execution_block: usize,
+        pub current_light_client_update: usize,
     }
 
     impl EthState {
@@ -202,9 +204,22 @@ mod tests {
 
             Self {
                 execution_blocks,
-                light_client_updates
+                light_client_updates,
+                current_execution_block: 0,
+                current_light_client_update: 0,
             }
         }
+
+        pub fn submit_block(&mut self, eth_client: &mut EthClientContract) {
+            eth_client.send_headers(&vec![self.execution_blocks[self.current_execution_block].clone()], 0);
+            self.current_execution_block += 1;
+        }
+
+        pub fn submit_update(&mut self, eth_client: &mut EthClientContract) {
+            eth_client.send_light_client_update(self.light_client_updates[self.current_light_client_update].clone()).unwrap();
+            self.current_light_client_update += 1;
+        }
+
     }
 
     fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
@@ -225,7 +240,7 @@ mod tests {
         (relay_account, contract, worker)
     }
 
-    fn init_contract(eth_client_contract: &EthClientContract, eth_state: EthState)  {
+    fn init_contract(eth_client_contract: &EthClientContract, eth_state: &mut EthState)  {
         const PATH_TO_CURRENT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_133.json";
         const PATH_TO_NEXT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_134.json";
         const NETWORK: &str = "kiln";
@@ -238,6 +253,7 @@ mod tests {
         let finalized_hash = eth_state.light_client_updates[0].clone().finality_update.header_update.execution_block_hash;
         let mut finalized_execution_header = None::<BlockHeader>;
         for header in &eth_state.execution_blocks {
+            eth_state.current_execution_block += 1;
             if header.hash.unwrap() == finalized_hash {
                 finalized_execution_header = Some(header.clone());
                 break;
@@ -245,6 +261,7 @@ mod tests {
         }
 
         eth_client_contract.init_contract(NETWORK.to_string(), finalized_execution_header.unwrap(), finalized_beacon_header, current_sync_committee, next_sync_committee);
+        eth_state.current_light_client_update = 1;
     }
 
     #[test]
@@ -253,9 +270,9 @@ mod tests {
         let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
         let eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
 
-        let eth_state = EthState::new();
+        let mut eth_state = EthState::new();
 
-        init_contract(&eth_client_contract, eth_state);
+        init_contract(&eth_client_contract, &mut eth_state);
         let first_finalized_slot = eth_client_contract.get_finalized_beacon_block_slot().unwrap();
         assert_eq!(first_finalized_slot, 1099360);
 
