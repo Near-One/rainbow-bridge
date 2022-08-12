@@ -64,6 +64,10 @@ impl NearContractWrapper {
 }
 
 impl ContractWrapper for NearContractWrapper {
+    fn get_account_id(&self) -> AccountId {
+        self.contract_account.clone()
+    }
+
     fn call_view_function(
         &self,
         method_name: String,
@@ -155,9 +159,5 @@ impl ContractWrapper for NearContractWrapper {
             Some(vec![deposit.unwrap_or(0)]),
             gas,
         )
-    }
-
-    fn get_account_id(&self) -> AccountId {
-        self.contract_account.clone()
     }
 }

@@ -171,7 +171,6 @@ mod tests {
     use eth_types::BlockHeader;
     use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use near_units::*;
-    use workspaces::operations::Function;
     use workspaces::prelude::*;
     use workspaces::{network::Sandbox, Account, Contract, Worker};
     use tokio::runtime::Runtime;
@@ -211,7 +210,7 @@ mod tests {
         }
 
         pub fn submit_block(&mut self, eth_client: &mut EthClientContract) {
-            eth_client.send_headers(&vec![self.execution_blocks[self.current_execution_block].clone()], 0);
+            eth_client.send_headers(&vec![self.execution_blocks[self.current_execution_block].clone()], 0).unwrap();
             self.current_execution_block += 1;
             while self.execution_blocks[self.current_execution_block].hash == self.execution_blocks[self.current_execution_block - 1].hash {
                 self.current_execution_block += 1;

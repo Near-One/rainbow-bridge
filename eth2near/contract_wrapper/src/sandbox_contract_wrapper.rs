@@ -1,7 +1,4 @@
 use crate::contract_wrapper_trait::ContractWrapper;
-use near_units::*;
-use workspaces::operations::Function;
-use workspaces::prelude::*;
 use workspaces::{network::Sandbox, Account, Contract, Worker};
 use tokio::runtime::Runtime;
 use near_primitives::types::AccountId;
@@ -95,7 +92,7 @@ impl ContractWrapper for SandboxContractWrapper {
         };
 
         for i in 0..method_name.len() - 1 {
-            self.call_change_method(method_name[i].clone(), args[i].clone(), deposit, gas);
+            self.call_change_method(method_name[i].clone(), args[i].clone(), deposit, gas).unwrap();
         }
 
         self.call_change_method(method_name[method_name.len() - 1].clone(), args[method_name.len() - 1].clone(), deposit, gas)

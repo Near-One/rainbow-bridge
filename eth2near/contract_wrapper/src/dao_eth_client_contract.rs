@@ -180,11 +180,11 @@ mod tests {
 
         for block in &execution_blocks {
             if !dao_client.is_known_block(&block.hash.unwrap()).unwrap() {
-                dao_client.send_headers(&vec![block.clone()], 0);
+                dao_client.send_headers(&vec![block.clone()], 0).unwrap();
             }
 
             if block.hash.unwrap() == next_light_client_update.clone().unwrap().finality_update.header_update.execution_block_hash {
-                dao_client.send_light_client_update(next_light_client_update.unwrap());
+                dao_client.send_light_client_update(next_light_client_update.unwrap()).unwrap();
                 break;
             }
         }
