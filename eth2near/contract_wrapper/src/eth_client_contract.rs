@@ -165,3 +165,44 @@ impl EthClientContractTrait for EthClientContract {
         Ok(LightClientState::try_from_slice(result.as_slice())?)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use near_units::*;
+    use workspaces::operations::Function;
+    use workspaces::prelude::*;
+    use workspaces::{network::Sandbox, Account, Contract, Worker};
+    use tokio::runtime::Runtime;
+    use crate::eth_client_contract;
+    use crate::sandbox_contract_wrapper::SandboxContractWrapper;
+
+    const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
+
+    fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
+        let rt = Runtime::new().unwrap();
+
+        let worker = rt.block_on(workspaces::sandbox()).unwrap();
+        let wasm = std::fs::read(WASM_FILEPATH).unwrap();
+        let contract = rt.block_on(worker.dev_deploy(&wasm)).unwrap();
+
+        // create accounts
+        let owner = worker.root_account().unwrap();
+        let relay_account = rt.block_on(owner
+            .create_subaccount(&worker, "relay_account")
+            .initial_balance(parse_near!("30 N"))
+            .transact()).unwrap()
+            .into_result().unwrap();
+
+        (relay_account, contract, worker)
+    }
+
+    #[test]
+    fn test_smoke_eth_client_contract_wrapper() {
+        let (relay_account, contract, worker) = create_contract();
+        let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
+        let eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
+
+        
+
+    }
+}

@@ -109,6 +109,7 @@ mod tests {
         json_file_path
     }
 
+    #[ignore]
     #[test]
     fn test_smoke_dao_eth_client_contract_wrapper() {
         const PATH_TO_EXECUTION_BLOCKS: &str = "data/execution_block_headers_kiln_1099394-1099937.json";
@@ -137,6 +138,7 @@ mod tests {
         ));
 
         let eth_client = eth_client_contract::EthClientContract::new(near_contract_wrapper);
+
         let execution_blocks: Vec<BlockHeader> = serde_json::from_str(
             &std::fs::read_to_string(execution_blocks_json_file_path).expect("Unable to read file"),
         ).unwrap();

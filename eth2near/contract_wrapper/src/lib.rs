@@ -6,3 +6,4 @@ pub mod eth_client_contract;
 pub mod eth_client_contract_trait;
 pub mod near_contract_wrapper;
 pub mod file_eth_client_contract;
+pub mod sandbox_contract_wrapper;
