@@ -13,6 +13,9 @@ use near_sdk::{Balance, Gas};
 use near_primitives::views::{ExecutionOutcomeView, ExecutionOutcomeWithIdView, ExecutionStatusView, FinalExecutionOutcomeView, FinalExecutionStatus, SignedTransactionView};
 use workspaces::result::CallExecutionDetails;
 
+pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
+
+
 //https://github.com/near/workspaces-rs
 pub struct SandboxContractWrapper {
     signer_account: Account,
@@ -86,12 +89,16 @@ impl ContractWrapper for SandboxContractWrapper {
         deposit: Option<Vec<Balance>>,
         gas: Option<Gas>,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
-        let deposit = deposit.unwrap();
+        let deposit = match deposit {
+            Some(deposit) => Some(deposit[0]),
+            None => None::<Balance>
+        };
+
         for i in 0..method_name.len() - 1 {
-            self.call_change_method(method_name[i].clone(), args[i].clone(), Some(deposit[i]), gas);
+            self.call_change_method(method_name[i].clone(), args[i].clone(), deposit, gas);
         }
 
-        self.call_change_method(method_name[method_name.len() - 1].clone(), args[method_name.len() - 1].clone(), Some(deposit[method_name.len() - 1]), gas)
+        self.call_change_method(method_name[method_name.len() - 1].clone(), args[method_name.len() - 1].clone(), deposit, gas)
     }
 
     fn call_change_method(
@@ -105,6 +112,11 @@ impl ContractWrapper for SandboxContractWrapper {
 
         Ok(Self::from_call_execution_details(rt.block_on(self.signer_account
             .call(&self.worker, self.contract.id(), &method_name)
+            .deposit(match deposit { Some(deposit) => deposit, None => 0})
+            .gas(match gas {
+                Some(gas) => gas.0,
+                None => MAX_GAS.0,
+            })
             .args(args)
             .transact()).unwrap()))
     }

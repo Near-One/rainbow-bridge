@@ -213,6 +213,9 @@ mod tests {
         pub fn submit_block(&mut self, eth_client: &mut EthClientContract) {
             eth_client.send_headers(&vec![self.execution_blocks[self.current_execution_block].clone()], 0);
             self.current_execution_block += 1;
+            while self.execution_blocks[self.current_execution_block].hash == self.execution_blocks[self.current_execution_block - 1].hash {
+                self.current_execution_block += 1;
+            }
         }
 
         pub fn submit_update(&mut self, eth_client: &mut EthClientContract) {
@@ -268,7 +271,7 @@ mod tests {
     fn test_smoke_eth_client_contract_wrapper() {
         let (relay_account, contract, worker) = create_contract();
         let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
-        let eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
+        let mut eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
 
         let mut eth_state = EthState::new();
 
@@ -276,6 +279,21 @@ mod tests {
         let first_finalized_slot = eth_client_contract.get_finalized_beacon_block_slot().unwrap();
         assert_eq!(first_finalized_slot, 1099360);
 
+        eth_client_contract.register_submitter().unwrap();
 
+        let next_hash = eth_state.light_client_updates[eth_state.current_light_client_update].clone().finality_update.header_update.execution_block_hash;
+        loop {
+            let current_execution_block_hash = eth_state.execution_blocks[eth_state.current_execution_block].hash.unwrap();
+            assert!(!eth_client_contract.is_known_block(&current_execution_block_hash).unwrap());
+            eth_state.submit_block(&mut eth_client_contract);
+            assert!(eth_client_contract.is_known_block(&current_execution_block_hash).unwrap());
+
+            if current_execution_block_hash == next_hash {
+                eth_state.submit_update(&mut eth_client_contract);
+                let current_finality_slot = eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+                assert_ne!(current_finality_slot, first_finalized_slot);
+                break;
+            }
+        }
     }
 }
