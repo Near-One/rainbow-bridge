@@ -9,6 +9,7 @@ use near_sdk::{Balance, Gas};
 use serde_json::Value;
 use std::error::Error;
 use std::string::String;
+use std::time::Duration;
 use std::vec::Vec;
 use tokio::runtime::Runtime;
 
@@ -98,10 +99,9 @@ impl ContractWrapper for NearContractWrapper {
         gas: Option<Gas>,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
         let rt = Runtime::new()?;
-        let handle = rt.handle();
 
         let access_key_query_response =
-            handle.block_on(self.client.call(methods::query::RpcQueryRequest {
+            rt.block_on(self.client.call(methods::query::RpcQueryRequest {
                 block_reference: BlockReference::latest(),
                 request: near_primitives::views::QueryRequest::ViewAccessKey {
                     account_id: self.signer.account_id.clone(),
@@ -140,7 +140,7 @@ impl ContractWrapper for NearContractWrapper {
             signed_transaction: transaction.sign(&self.signer),
         };
 
-        Ok(handle.block_on(self.client.call(&request))?)
+        Ok(rt.block_on(self.client.call(&request))?)
     }
 
     fn call_change_method(
