@@ -102,18 +102,11 @@ impl Eth2NearRelay {
                             debug!(target: "relay", "Error retrieving execution block header for slot = {}. Try again. Trying number {}", current_slot, count + 1);
                         }
 
-                        if let Ok(block_number) = self
-                            .beacon_rpc_client
-                            .get_block_number_for_slot(types::Slot::new(current_slot))
-                        {
-                            if let Ok(eth1_header) = self
-                                .eth1_rpc_client
-                                .get_block_header_by_number(block_number)
-                            {
-                                headers.push(eth1_header);
-                                break;
-                            }
+                        if let Ok(eth1_header) = self.get_execution_block_by_slot(current_slot) {
+                            headers.push(eth1_header);
+                            break;
                         }
+
                         count += 1;
                         if count > 2 {
                             debug!(target: "relay", "Block header for slot={} was not extracted. Skip!", current_slot);
@@ -179,6 +172,19 @@ impl Eth2NearRelay {
             light_client_update,
             sync_committee,
         )
+    }
+
+    fn get_execution_block_by_slot(&self, slot: u64) -> Result<BlockHeader, Box<dyn Error>> {
+        match self
+            .beacon_rpc_client
+            .get_block_number_for_slot(types::Slot::new(slot)) {
+            Ok(block_number) => {
+                return self
+                    .eth1_rpc_client
+                    .get_block_header_by_number(block_number);
+            },
+            Err(err) => Err(err),
+        }
     }
 }
 
@@ -552,5 +558,107 @@ impl Eth2NearRelay {
                 Err(err)?
             }
         }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use eth_types::BlockHeader;
+    use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
+    use near_units::*;
+    use workspaces::prelude::*;
+    use workspaces::{network::Sandbox, Account, Contract, Worker};
+    use tokio::runtime::Runtime;
+    use contract_wrapper::eth_client_contract;
+    use contract_wrapper::eth_client_contract::EthClientContract;
+    use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
+    use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
+    use crate::config::Config;
+    use crate::eth2near_relay::Eth2NearRelay;
+    use crate::init_contract;
+    use crate::init_contract::init_contract;
+
+    const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
+
+    fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
+        let rt = Runtime::new().unwrap();
+
+        let worker = rt.block_on(workspaces::sandbox()).unwrap();
+        let wasm = std::fs::read(WASM_FILEPATH).unwrap();
+        let contract = rt.block_on(worker.dev_deploy(&wasm)).unwrap();
+
+        // create accounts
+        let owner = worker.root_account().unwrap();
+        let relay_account = rt.block_on(owner
+            .create_subaccount(&worker, "relay_account")
+            .initial_balance(parse_near!("30 N"))
+            .transact()).unwrap()
+            .into_result().unwrap();
+
+        (relay_account, contract, worker)
+    }
+    
+    fn get_config() -> Config {
+        Config {
+            beacon_endpoint: "https://lodestar-kiln.chainsafe.io".to_string(),
+            eth1_endpoint: "https://rpc.kiln.themerge.dev".to_string(),
+            total_submit_headers: 8,
+            near_endpoint: "NaN".to_string(),
+            signer_account_id: "NaN".to_string(),
+            path_to_signer_secret_key: "NaN".to_string(),
+            contract_account_id: "NaN".to_string(),
+            network: "kiln".to_string(),
+            contract_type: "near".to_string(),
+            light_client_updates_submission_frequency_in_epochs: 1,
+            max_blocks_for_finalization: 5000,
+            near_network_id: "testnet".to_string(),
+            dao_contract_account_id: None,
+            output_dir: None
+        }
+    }
+
+    #[test]
+    fn test_block_known_on_near() {
+        let (relay_account, contract, worker) = create_contract();
+        let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
+        let mut eth_client_contract = EthClientContract::new(contract_wrapper);
+
+        let config = get_config();
+        init_contract::init_contract(&config, &mut eth_client_contract).unwrap();
+
+        let mut eth_client_contract = Box::new(eth_client_contract);
+
+
+        let mut relay = Eth2NearRelay::init(&config, eth_client_contract, false, false);
+
+        //1060486 slot without block
+        let is_block_known = relay.block_known_on_near(1060486);
+        if let Ok(_) = is_block_known {
+            panic!();
+        }
+
+        relay.eth_client_contract.register_submitter().unwrap();
+
+        let is_block_known = relay.block_known_on_near(1099360);
+
+        match is_block_known {
+            Ok(is_block_known) => assert!(!is_block_known),
+            Err(_) => panic!(),
+        }
+
+        let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        relay.eth_client_contract.send_headers(&vec![relay.get_execution_block_by_slot(finalized_slot + 1).unwrap()], finalized_slot + 1).unwrap();
+
+        let is_block_known = relay.block_known_on_near(finalized_slot + 1);
+        match is_block_known {
+            Ok(is_block_known) => assert!(is_block_known),
+            Err(_) => panic!(),
+        }
+    }
+
+    #[test]
+    fn find_left_non_error_slot() {
+
     }
 }

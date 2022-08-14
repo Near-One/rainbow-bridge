@@ -11,6 +11,7 @@ use eth2_to_near_relay::init_contract::init_contract;
 use eth2_to_near_relay::logger::SimpleLogger;
 use log::LevelFilter;
 use std::string::String;
+use contract_wrapper::eth_client_contract::EthClientContract;
 
 #[derive(Parser, Default, Debug)]
 #[clap(version, about = "Eth2 to Near Relay")]
@@ -88,7 +89,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = Config::load_from_toml(args.config.try_into().unwrap());
 
     if args.init_contract {
-        init_contract(&config, get_eth_contract_wrapper(&config)).unwrap();
+        let mut eth_client_contract = EthClientContract::new(get_eth_contract_wrapper(&config));
+        init_contract(&config, &mut eth_client_contract).unwrap();
     }
 
     let mut eth2near_relay = Eth2NearRelay::init(

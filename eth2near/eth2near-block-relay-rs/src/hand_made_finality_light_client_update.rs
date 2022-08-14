@@ -205,6 +205,7 @@ mod tests {
     const ATTESTED_SLOT: u64 = 812637;
     const BEACON_ENDPOINT: &str = "https://lodestar-kiln.chainsafe.io";
 
+    #[ignore]
     #[test]
     fn test_hand_made_finality_light_client_update() {
         let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);

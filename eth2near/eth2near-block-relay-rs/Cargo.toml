@@ -32,6 +32,10 @@ near-primitives = "0.14.0"
 near-chain-configs = "0.14.0"
 near-jsonrpc-primitives = "0.14.0"
 
+[dev-dependencies]
+workspaces = "0.4.0"
+near-units = "0.2.0"
+
 [patch]
 [patch.crates-io]
 eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
