@@ -599,6 +599,7 @@ mod tests {
     use crate::config::Config;
     use crate::eth2near_relay::Eth2NearRelay;
     use crate::{init_contract, test_utils};
+    use crate::beacon_rpc_client::BeaconRPCClient;
     use crate::init_contract::init_contract;
 
     const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
@@ -750,6 +751,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_linear_slot_search() {
         let mut relay = get_relay();
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
@@ -777,5 +779,17 @@ mod tests {
 
         let last_block_on_near = relay.linear_slot_search(1099368, finalized_slot, 1099500).unwrap();
         assert_eq!(last_block_on_near, 1099364);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_error_on_connection_problem() {
+        let mut relay = get_relay();
+        let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        relay.eth_client_contract.send_headers(&vec![relay.get_execution_block_by_slot(finalized_slot + 1).unwrap(),
+                                                             relay.get_execution_block_by_slot(finalized_slot + 2).unwrap()], finalized_slot + 2).unwrap();
+
+        relay.beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
+        relay.linear_slot_search(finalized_slot + 1, finalized_slot, 1099500).unwrap();
     }
 }
