@@ -502,7 +502,10 @@ impl Eth2NearRelay {
         slot
     }
 
-    //
+    // Returns the rightest slot with known on NEAR block 
+    // The search range is [last_slot .. start_slot)
+    // If no such block are found the start_slot will be returned
+    // Assumption: block for start slot already submitted to NEAR
     fn linear_search_backward(&self, start_slot: u64, last_slot: u64) -> u64 {
         let mut slot = last_slot;
 
@@ -625,9 +628,7 @@ mod tests {
         }
     }
 
-    #[test]
-    #[ignore]
-    fn test_block_known_on_near() {
+    fn get_relay() -> Eth2NearRelay {
         let (relay_account, contract, worker) = create_contract();
         let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
         let mut eth_client_contract = EthClientContract::new(contract_wrapper);
@@ -638,7 +639,13 @@ mod tests {
         let mut eth_client_contract = Box::new(eth_client_contract);
 
 
-        let mut relay = Eth2NearRelay::init(&config, eth_client_contract, false, true);
+        Eth2NearRelay::init(&config, eth_client_contract, false, true)
+    }
+
+    #[test]
+    //#[ignore]
+    fn test_block_known_on_near() {
+        let mut relay = get_relay();
 
         //1060486 slot without block
         let is_block_known = relay.block_known_on_near(1060486);
@@ -664,16 +671,9 @@ mod tests {
     }
 
     #[test]
-    fn find_left_non_error_slot() {
-        let (relay_account, contract, worker) = create_contract();
-        let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
-        let mut eth_client_contract = EthClientContract::new(contract_wrapper);
-
-        let config = get_config();
-        init_contract::init_contract(&config, &mut eth_client_contract).unwrap();
-        let mut eth_client_contract = Box::new(eth_client_contract);
-
-        let mut relay = Eth2NearRelay::init(&config, eth_client_contract, false, true);
+    //#[ignore]
+    fn test_find_left_non_error_slot() {
+        let mut relay = get_relay();
 
         let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(1060528, 1060532);
         assert_eq!(left_non_empty_slot, 1060528);
@@ -697,5 +697,10 @@ mod tests {
         let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(finalized_slot + 1, finalized_slot + 2);
         assert_eq!(left_non_empty_slot, finalized_slot + 1);
         assert_eq!(is_known_block, true);
+    }
+
+    #[test]
+    fn test_linear_search_backward() {
+    
     }
 }
