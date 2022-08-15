@@ -502,6 +502,7 @@ impl Eth2NearRelay {
         slot
     }
 
+    //
     fn linear_search_backward(&self, start_slot: u64, last_slot: u64) -> u64 {
         let mut slot = last_slot;
 
@@ -516,6 +517,10 @@ impl Eth2NearRelay {
         slot
     }
 
+    // Find the leftmost non-empty slot. Search range: [left_slot, right_slot).
+    // Returns pair: (1) slot_id and (2) is this block already known on Eth client on NEAR
+    // Assume that right_slot is non-empty and it's block were submitted to NEAR,
+    // so if non correspondent block is found we return (right_slot, false)
     fn find_left_non_error_slot(&self, left_slot: u64, right_slot: u64) -> (u64, bool) {
         let mut slot = left_slot;
         while slot < right_slot {
@@ -528,6 +533,8 @@ impl Eth2NearRelay {
         (slot, false)
     }
 
+    // Check if the block for current slot in Eth2 already were submitted to NEAR
+    // Returns Error if slot doesn't contain any block
     fn block_known_on_near(&self, slot: u64) -> Result<bool, Box<dyn Error>> {
         trace!(target: "relay", "Check if block with slot={} on NEAR", slot);
         match self
@@ -619,6 +626,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_block_known_on_near() {
         let (relay_account, contract, worker) = create_contract();
         let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
@@ -630,15 +638,13 @@ mod tests {
         let mut eth_client_contract = Box::new(eth_client_contract);
 
 
-        let mut relay = Eth2NearRelay::init(&config, eth_client_contract, false, false);
+        let mut relay = Eth2NearRelay::init(&config, eth_client_contract, false, true);
 
         //1060486 slot without block
         let is_block_known = relay.block_known_on_near(1060486);
         if let Ok(_) = is_block_known {
             panic!();
         }
-
-        relay.eth_client_contract.register_submitter().unwrap();
 
         let is_block_known = relay.block_known_on_near(1099360);
 
@@ -659,6 +665,37 @@ mod tests {
 
     #[test]
     fn find_left_non_error_slot() {
+        let (relay_account, contract, worker) = create_contract();
+        let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
+        let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 
+        let config = get_config();
+        init_contract::init_contract(&config, &mut eth_client_contract).unwrap();
+        let mut eth_client_contract = Box::new(eth_client_contract);
+
+        let mut relay = Eth2NearRelay::init(&config, eth_client_contract, false, true);
+
+        let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(1060528, 1060532);
+        assert_eq!(left_non_empty_slot, 1060528);
+        assert_eq!(is_known_block, false);
+
+        let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(1060529, 1060532);
+        assert_eq!(left_non_empty_slot, 1060531);
+        assert_eq!(is_known_block, false);
+
+        let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(1060529, 1060530);
+        assert_eq!(left_non_empty_slot, 1060530);
+        assert_eq!(is_known_block, false);
+
+        let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(1060530, 1060532);
+        assert_eq!(left_non_empty_slot, 1060531);
+        assert_eq!(is_known_block, false);
+
+        let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        relay.eth_client_contract.send_headers(&vec![relay.get_execution_block_by_slot(finalized_slot + 1).unwrap()], finalized_slot + 1).unwrap();
+
+        let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(finalized_slot + 1, finalized_slot + 2);
+        assert_eq!(left_non_empty_slot, finalized_slot + 1);
+        assert_eq!(is_known_block, true);
     }
 }
