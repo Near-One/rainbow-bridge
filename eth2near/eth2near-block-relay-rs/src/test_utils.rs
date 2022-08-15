@@ -2,7 +2,6 @@ use std::{thread, time};
 use contract_wrapper::eth_client_contract::EthClientContract;
 use eth_types::BlockHeader;
 use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
-use crate::config::Config;
 
 pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
     let mut json_file_path = std::env::current_exe().unwrap();

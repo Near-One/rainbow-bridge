@@ -512,7 +512,7 @@ impl Eth2NearRelay {
         slot
     }
 
-    // Returns the rightest slot with known block on NEAR
+    // Returns the slot before the first unknown block on NEAR
     // The search range is [last_slot .. start_slot)
     // If no such block are found the start_slot will be returned
     // Assumptions:
@@ -520,16 +520,20 @@ impl Eth2NearRelay {
     //     (2) block for last_slot + 1 is not submitted to NEAR
     fn linear_search_backward(&self, start_slot: u64, last_slot: u64) -> u64 {
         let mut slot = last_slot;
+        let mut last_false_slot = slot + 1;
 
         while slot > start_slot {
             match self.block_known_on_near(slot) {
                 Ok(true) => break,
-                Ok(false) => slot -= 1,
+                Ok(false) => {
+                    last_false_slot = slot;
+                    slot -= 1
+                },
                 Err(_) => slot -= 1,
             }
         }
 
-        slot
+        last_false_slot - 1
     }
 
     // Find the leftmost non-empty slot. Search range: [left_slot, right_slot).
@@ -587,20 +591,16 @@ impl Eth2NearRelay {
 #[cfg(test)]
 mod tests {
     use eth_types::BlockHeader;
-    use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use near_units::*;
     use workspaces::prelude::*;
     use workspaces::{network::Sandbox, Account, Contract, Worker};
     use tokio::runtime::Runtime;
-    use contract_wrapper::eth_client_contract;
     use contract_wrapper::eth_client_contract::EthClientContract;
-    use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
     use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
     use crate::config::Config;
     use crate::eth2near_relay::Eth2NearRelay;
-    use crate::{init_contract, test_utils};
+    use crate::test_utils;
     use crate::beacon_rpc_client::BeaconRPCClient;
-    use crate::init_contract::init_contract;
 
     const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
 
@@ -649,7 +649,7 @@ mod tests {
         let config = get_config();
         test_utils::init_contract_from_files(&mut eth_client_contract);
 
-        let mut eth_client_contract = Box::new(eth_client_contract);
+        let eth_client_contract = Box::new(eth_client_contract);
 
         Eth2NearRelay::init(&config, eth_client_contract, false, true)
     }
@@ -763,7 +763,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_linear_slot_search() {
         let mut relay = get_relay();
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
