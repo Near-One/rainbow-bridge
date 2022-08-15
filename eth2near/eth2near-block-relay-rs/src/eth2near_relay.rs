@@ -643,7 +643,6 @@ mod tests {
     }
 
     #[test]
-    //#[ignore]
     fn test_block_known_on_near() {
         let mut relay = get_relay();
 
@@ -671,7 +670,6 @@ mod tests {
     }
 
     #[test]
-    //#[ignore]
     fn test_find_left_non_error_slot() {
         let mut relay = get_relay();
 
@@ -701,6 +699,12 @@ mod tests {
 
     #[test]
     fn test_linear_search_backward() {
-    
+        let mut relay = get_relay();
+        let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        relay.eth_client_contract.send_headers(&vec![relay.get_execution_block_by_slot(finalized_slot + 1).unwrap(),
+                                                             relay.get_execution_block_by_slot(finalized_slot + 2).unwrap()], finalized_slot + 2).unwrap();
+
+        let last_submitted_block = relay.linear_search_backward(finalized_slot + 1, finalized_slot + 10);
+        assert_eq!(last_submitted_block, finalized_slot + 2);
     }
 }
