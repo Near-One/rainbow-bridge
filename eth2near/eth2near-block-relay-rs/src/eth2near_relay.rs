@@ -712,7 +712,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_linear_search_backward() {
         let mut relay = get_relay();
         let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
@@ -721,6 +720,19 @@ mod tests {
 
         let last_submitted_block = relay.linear_search_backward(finalized_slot + 1, finalized_slot + 10);
         assert_eq!(last_submitted_block, finalized_slot + 2);
+
+        let mut slot = finalized_slot + 3;
+        let mut blocks: Vec<BlockHeader> = vec![];
+        while slot <= 1099363 {
+            if let Ok(block) = relay.get_execution_block_by_slot(slot) {
+                blocks.push(block)
+            }
+            slot += 1;
+        }
+        relay.eth_client_contract.send_headers(&blocks, 1099363).unwrap();
+
+        let last_submitted_block = relay.linear_search_backward(finalized_slot + 1, finalized_slot + 10);
+        assert_eq!(last_submitted_block, 1099364);
     }
 
     #[test]
