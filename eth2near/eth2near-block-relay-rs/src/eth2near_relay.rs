@@ -654,6 +654,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_block_known_on_near() {
         let mut relay = get_relay();
 
@@ -681,6 +682,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_find_left_non_error_slot() {
         let mut relay = get_relay();
 
@@ -709,6 +711,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_linear_search_backward() {
         let mut relay = get_relay();
         let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
@@ -720,6 +723,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_linear_search_forward() {
         let mut relay = get_relay();
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
@@ -742,6 +746,36 @@ mod tests {
         relay.eth_client_contract.send_headers(&vec![relay.get_execution_block_by_slot(1099363).unwrap()], 1099363).unwrap();
         let last_block_on_near = relay.linear_search_forward(relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap() + 1, 1099500);
 
+        assert_eq!(last_block_on_near, 1099364);
+    }
+
+    #[test]
+    fn test_linear_slot_search() {
+        let mut relay = get_relay();
+        let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        slot += 1;
+
+        let mut blocks: Vec<BlockHeader> = vec![];
+        while slot <= 1099363 {
+            if let Ok(block) = relay.get_execution_block_by_slot(slot) {
+                blocks.push(block)
+            }
+            slot += 1;
+        }
+        relay.eth_client_contract.send_headers(&blocks, 1099363).unwrap();
+
+        let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+
+        let last_block_on_near = relay.linear_slot_search(1099363, finalized_slot, 1099500).unwrap();
+        assert_eq!(last_block_on_near, 1099364);
+
+        let last_block_on_near = relay.linear_slot_search(1099364, finalized_slot, 1099500).unwrap();
+        assert_eq!(last_block_on_near, 1099364);
+
+        let last_block_on_near = relay.linear_slot_search(1099361, finalized_slot, 1099500).unwrap();
+        assert_eq!(last_block_on_near, 1099364);
+
+        let last_block_on_near = relay.linear_slot_search(1099368, finalized_slot, 1099500).unwrap();
         assert_eq!(last_block_on_near, 1099364);
     }
 }
