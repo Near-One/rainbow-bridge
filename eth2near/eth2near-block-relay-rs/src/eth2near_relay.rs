@@ -414,19 +414,6 @@ impl Eth2NearRelay {
         };
     }
 
-    fn linear_slot_search(
-        &self,
-        slot: u64,
-        finalized_slot: u64,
-        last_eth_slot: u64,
-    ) -> Result<u64, Box<dyn Error>> {
-        return if slot == finalized_slot || self.block_known_on_near(slot)? {
-            Ok(self.linear_search_forward(slot, last_eth_slot))
-        } else {
-            Ok(self.linear_search_backward(finalized_slot, slot))
-        };
-    }
-
     fn binary_slot_search(
         &self,
         slot: u64,
@@ -487,6 +474,23 @@ impl Eth2NearRelay {
         }
 
         Ok(start_slot)
+    }
+
+    // Returns the last slot known with block known on NEAR
+    // Slot -- expected last known slot
+    // finalized_slot -- last finalized slot on NEAR, assume as known slot
+    // last_eth_slot -- head slot on Eth
+    fn linear_slot_search(
+        &self,
+        slot: u64,
+        finalized_slot: u64,
+        last_eth_slot: u64,
+    ) -> Result<u64, Box<dyn Error>> {
+        return if slot == finalized_slot || self.block_known_on_near(slot)? {
+            Ok(self.linear_search_forward(slot, last_eth_slot))
+        } else {
+            Ok(self.linear_search_backward(finalized_slot, slot))
+        };
     }
 
     // Returns the slot before the first unknown block on NEAR
@@ -718,7 +722,26 @@ mod tests {
     #[test]
     fn test_linear_search_forward() {
         let mut relay = get_relay();
+        let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        slot += 1;
 
+        // Slots without blocks: [1099434, 1099438]
+        let mut blocks: Vec<BlockHeader> = vec![];
+        while slot <= 1099362 {
+            if let Ok(block) = relay.get_execution_block_by_slot(slot) {
+                blocks.push(block)
+            }
+            slot += 1;
+        }
 
+        relay.eth_client_contract.send_headers(&blocks, 1099362).unwrap();
+        let last_block_on_near = relay.linear_search_forward(relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap() + 1, 1099500);
+
+        assert_eq!(last_block_on_near, 1099362);
+
+        relay.eth_client_contract.send_headers(&vec![relay.get_execution_block_by_slot(1099363).unwrap()], 1099363).unwrap();
+        let last_block_on_near = relay.linear_search_forward(relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap() + 1, 1099500);
+
+        assert_eq!(last_block_on_near, 1099364);
     }
 }
