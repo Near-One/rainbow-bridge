@@ -489,6 +489,12 @@ impl Eth2NearRelay {
         Ok(start_slot)
     }
 
+    // Returns the slot before the first unknown block on NEAR
+    // The search range is [slot .. max_slot)
+    // If there is no unknown block in this range max_slot - 1 will be returned
+    // Assumptions:
+    //     (1) block for slot is submitted to NEAR
+    //     (2) block for max_slot is not submitted to NEAR
     fn linear_search_forward(&self, slot: u64, max_slot: u64) -> u64 {
         let mut slot = slot;
         while slot < max_slot {
@@ -502,10 +508,12 @@ impl Eth2NearRelay {
         slot
     }
 
-    // Returns the rightest slot with known on NEAR block 
+    // Returns the rightest slot with known block on NEAR
     // The search range is [last_slot .. start_slot)
     // If no such block are found the start_slot will be returned
-    // Assumption: block for start slot already submitted to NEAR
+    // Assumptions:
+    //     (1) block for start_slot is submitted to NEAR
+    //     (2) block for last_slot + 1 is not submitted to NEAR
     fn linear_search_backward(&self, start_slot: u64, last_slot: u64) -> u64 {
         let mut slot = last_slot;
 
@@ -586,7 +594,7 @@ mod tests {
     use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
     use crate::config::Config;
     use crate::eth2near_relay::Eth2NearRelay;
-    use crate::init_contract;
+    use crate::{init_contract, test_utils};
     use crate::init_contract::init_contract;
 
     const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
@@ -634,10 +642,9 @@ mod tests {
         let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 
         let config = get_config();
-        init_contract::init_contract(&config, &mut eth_client_contract).unwrap();
+        test_utils::init_contract_from_files(&mut eth_client_contract);
 
         let mut eth_client_contract = Box::new(eth_client_contract);
-
 
         Eth2NearRelay::init(&config, eth_client_contract, false, true)
     }
@@ -706,5 +713,12 @@ mod tests {
 
         let last_submitted_block = relay.linear_search_backward(finalized_slot + 1, finalized_slot + 10);
         assert_eq!(last_submitted_block, finalized_slot + 2);
+    }
+
+    #[test]
+    fn test_linear_search_forward() {
+        let mut relay = get_relay();
+
+
     }
 }
