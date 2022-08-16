@@ -439,7 +439,7 @@ impl Eth2NearRelay {
                 Ok(false) => break,
                 Err(_) => {
                     let (slot_id, slot_on_near) =
-                        self.find_left_non_error_slot(slot + current_step + 1, max_slot);
+                        self.find_left_non_error_slot(slot + current_step + 1, max_slot, 1);
                     if slot_on_near {
                         prev_slot = slot_id;
                         current_step = min(current_step * 2, max_slot - slot);
@@ -469,11 +469,11 @@ impl Eth2NearRelay {
                 Ok(false) => last_slot = mid_slot,
                 Err(_) => {
                     let (left_slot, is_left_slot_on_near) =
-                        self.find_left_non_error_slot(mid_slot + 1, last_slot);
+                        self.find_left_non_error_slot(mid_slot - 1, start_slot, -1);
                     if is_left_slot_on_near {
-                        start_slot = left_slot;
+                        start_slot = mid_slot;
                     } else {
-                        last_slot = mid_slot;
+                        last_slot = left_slot;
                     }
                 }
             }
@@ -562,16 +562,26 @@ impl Eth2NearRelay {
     // Returns pair: (1) slot_id and (2) is this block already known on Eth client on NEAR
     // Assume that right_slot is non-empty and it's block were submitted to NEAR,
     // so if non correspondent block is found we return (right_slot, false)
-    fn find_left_non_error_slot(&self, left_slot: u64, right_slot: u64) -> (u64, bool) {
+    fn find_left_non_error_slot(&self, left_slot: u64, right_slot: u64, step: i8) -> (u64, bool) {
         let mut slot = left_slot;
-        while slot < right_slot {
+        while slot != right_slot {
             match self.block_known_on_near(slot) {
                 Ok(v) => return (slot, v),
-                Err(_) => slot += 1,
+                Err(_) => {
+                    if step > 0 {
+                        slot += 1;
+                    } else {
+                        slot -= 1;
+                    }
+                },
             };
         }
 
-        (slot, false)
+        if step > 0 {
+            (slot, false)
+        } else {
+            (slot, true)
+        }
     }
 
     // Check if the block for current slot in Eth2 already were submitted to NEAR
@@ -677,6 +687,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_block_known_on_near() {
         let mut relay = get_relay();
 
@@ -704,34 +715,36 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_find_left_non_error_slot() {
         let mut relay = get_relay();
 
-        let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(1060528, 1060532);
+        let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(1060528, 1060532, 1);
         assert_eq!(left_non_empty_slot, 1060528);
         assert_eq!(is_known_block, false);
 
-        let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(1060529, 1060532);
+        let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(1060529, 1060532, 1);
         assert_eq!(left_non_empty_slot, 1060531);
         assert_eq!(is_known_block, false);
 
-        let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(1060529, 1060530);
+        let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(1060529, 1060530, 1);
         assert_eq!(left_non_empty_slot, 1060530);
         assert_eq!(is_known_block, false);
 
-        let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(1060530, 1060532);
+        let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(1060530, 1060532, 1);
         assert_eq!(left_non_empty_slot, 1060531);
         assert_eq!(is_known_block, false);
 
         let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
         relay.eth_client_contract.send_headers(&vec![relay.get_execution_block_by_slot(finalized_slot + 1).unwrap()], finalized_slot + 1).unwrap();
 
-        let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(finalized_slot + 1, finalized_slot + 2);
+        let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(finalized_slot + 1, finalized_slot + 2, 1);
         assert_eq!(left_non_empty_slot, finalized_slot + 1);
         assert_eq!(is_known_block, true);
     }
 
     #[test]
+    #[ignore]
     fn test_linear_search_backward() {
         let mut relay = get_relay();
         let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
@@ -756,6 +769,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_linear_search_forward() {
         let mut relay = get_relay();
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
@@ -782,6 +796,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_linear_slot_search() {
         let mut relay = get_relay();
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
@@ -813,6 +828,7 @@ mod tests {
 
     #[test]
     #[should_panic]
+    #[ignore]
     fn test_error_on_connection_problem() {
         let mut relay = get_relay();
         let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
@@ -844,5 +860,10 @@ mod tests {
         relay.eth_client_contract.send_headers(&vec![relay.get_execution_block_by_slot(1099363).unwrap()], 1099363).unwrap();
         let last_block_on_near = relay.binsearch_slot_range(relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap() + 1, 1099370).unwrap();
         assert_eq!(last_block_on_near, 1099364);
+
+        relay.beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
+        if let Ok(_) = relay.binsearch_slot_range(relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap() + 1, 1099370) {
+            panic!("binarysearch returns result in unworking network");
+        }
     }
 }
