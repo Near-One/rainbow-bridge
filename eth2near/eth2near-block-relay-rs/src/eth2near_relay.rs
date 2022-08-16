@@ -414,6 +414,12 @@ impl Eth2NearRelay {
         };
     }
 
+
+    // Search for the slot before the first unknown slot on NEAR
+    // Assumptions:
+    //     (1) start_slot is known on NEAR
+    //     (2) last_slot is unknown on NEAR
+    // Return error in case of problem with network connection
     fn binary_slot_search(
         &self,
         slot: u64,
@@ -914,7 +920,46 @@ mod tests {
         assert_eq!(last_block_on_near, 1099364);
 
         relay.beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
-        if let Ok(_) = relay.binsearch_slot_range(relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap() + 1, 1099370) {
+        if let Ok(_) = relay.binsearch_slot_forward(relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap() + 1, 1099370) {
+            panic!("binarysearch returns result in unworking network");
+        }
+    }
+
+    #[test]
+    fn test_binsearch_slot_search() {
+        let mut relay = get_relay();
+        let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        slot += 1;
+
+        let mut blocks: Vec<BlockHeader> = vec![];
+        while slot <= 1099362 {
+            if let Ok(block) = relay.get_execution_block_by_slot(slot) {
+                blocks.push(block)
+            }
+            slot += 1;
+        }
+
+        let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+
+        relay.eth_client_contract.send_headers(&blocks, 1099362).unwrap();
+        let last_block_on_near = relay.binary_slot_search(finalized_slot + 1, finalized_slot, 1099370).unwrap();
+        assert_eq!(last_block_on_near, 1099362);
+
+        relay.eth_client_contract.send_headers(&vec![relay.get_execution_block_by_slot(1099363).unwrap()], 1099363).unwrap();
+        let last_block_on_near = relay.binary_slot_search(finalized_slot + 1,  finalized_slot, 1099370).unwrap();
+        assert_eq!(last_block_on_near, 1099364);
+
+        let last_block_on_near = relay.binary_slot_search(finalized_slot + 1, finalized_slot, 1099364).unwrap();
+        assert_eq!(last_block_on_near, 1099364);
+
+        let last_block_on_near = relay.binary_slot_search(finalized_slot + 1, finalized_slot, 1099363).unwrap();
+        assert_eq!(last_block_on_near, 1099363);
+
+        let last_block_on_near = relay.binary_slot_search(1099364, finalized_slot,1099370).unwrap();
+        assert_eq!(last_block_on_near, 1099364);
+
+        relay.beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
+        if let Ok(_) = relay.binary_slot_search(finalized_slot + 1, finalized_slot,1099370) {
             panic!("binarysearch returns result in unworking network");
         }
     }
