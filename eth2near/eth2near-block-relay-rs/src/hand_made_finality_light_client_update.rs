@@ -62,8 +62,10 @@ impl HandMadeFinalityLightClientUpdate {
             )?,
             sync_committee_update: match include_next_sync_committee {
                 false => Option::<SyncCommitteeUpdate>::None,
-                true => Some(Self::get_next_sync_committee(finality_header.slot
-                    .as_u64(), &beacon_rpc_client)?),
+                true => Some(Self::get_next_sync_committee(
+                    finality_header.slot.as_u64(),
+                    beacon_rpc_client,
+                )?),
             },
         })
     }
@@ -100,8 +102,8 @@ impl HandMadeFinalityLightClientUpdate {
             pubkeys: eth_types::eth2::SyncCommitteePublicKeys(
                 next_sync_committee
                     .pubkeys
-                    .to_vec()
-                    .into_iter()
+                    .iter()
+                    .copied()
                     .map(|x| eth_types::eth2::PublicKeyBytes(x.serialize()))
                     .collect(),
             ),
