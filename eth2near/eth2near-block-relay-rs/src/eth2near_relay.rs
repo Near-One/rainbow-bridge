@@ -453,6 +453,12 @@ impl Eth2NearRelay {
         self.binsearch_slot_range(prev_slot, slot + current_step)
     }
 
+    
+    // Search for the slot before the first unknown slot on NEAR
+    // Assumptions: 
+    // (1) start_slot is known on NEAR
+    // (2) last_slot is unknown on NEAR
+    // Return error in case of problem with network connection
     fn binsearch_slot_range(&self, start_slot: u64, last_slot: u64) -> Result<u64, Box<dyn Error>> {
         let mut start_slot = start_slot;
         let mut last_slot = last_slot;
@@ -815,5 +821,28 @@ mod tests {
 
         relay.beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
         relay.linear_slot_search(finalized_slot + 1, finalized_slot, 1099500).unwrap();
+    }
+
+    #[test]
+    fn test_binsearch_slot_range() {
+        let mut relay = get_relay();
+        let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        slot += 1;
+
+        let mut blocks: Vec<BlockHeader> = vec![];
+        while slot <= 1099362 {
+            if let Ok(block) = relay.get_execution_block_by_slot(slot) {
+                blocks.push(block)
+            }
+            slot += 1;
+        }
+
+        relay.eth_client_contract.send_headers(&blocks, 1099362).unwrap();
+        let last_block_on_near = relay.binsearch_slot_range(relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap() + 1, 1099370).unwrap();
+        assert_eq!(last_block_on_near, 1099362);
+
+        relay.eth_client_contract.send_headers(&vec![relay.get_execution_block_by_slot(1099363).unwrap()], 1099363).unwrap();
+        let last_block_on_near = relay.binsearch_slot_range(relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap() + 1, 1099370).unwrap();
+        assert_eq!(last_block_on_near, 1099364);
     }
 }
