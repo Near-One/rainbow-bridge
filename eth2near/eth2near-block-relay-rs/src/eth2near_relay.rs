@@ -426,13 +426,27 @@ impl Eth2NearRelay {
         finalized_slot: u64,
         last_eth_slot: u64,
     ) -> Result<u64, Box<dyn Error>> {
-        return if slot == finalized_slot || self.block_known_on_near(slot)? {
-            self.binsearch_slot_forward(slot, last_eth_slot + 1)
-        } else {
-            self.binsearch_slot_range(finalized_slot, slot)
-        };
-    }
+        if slot == finalized_slot {
+            return self.binsearch_slot_forward(slot, last_eth_slot + 1);
+        }
 
+        match self.block_known_on_near(slot) {
+            Ok(true) => self.binsearch_slot_forward(slot, last_eth_slot + 1),
+            Ok(false) => self.binsearch_slot_range(finalized_slot, slot),
+            Err(err) => {
+                match err.downcast_ref::<NoBlockForSlotError>() {
+                    Some(_) => {
+                        let (left_slot, slot_on_near) = self.find_left_non_error_slot(slot + 1, last_eth_slot + 1, 1);
+                        match slot_on_near {
+                            true => self.binsearch_slot_forward(left_slot, last_eth_slot + 1),
+                            false => self.binsearch_slot_range(finalized_slot, slot),
+                        }
+                    },
+                    None => Err(err)
+                }
+            }
+        }
+    }
 
     // Search for the slot before the first unknown slot on NEAR
     // Assumptions:
@@ -449,14 +463,20 @@ impl Eth2NearRelay {
                     current_step = min(current_step * 2, max_slot - slot);
                 }
                 Ok(false) => break,
-                Err(_) => {
-                    let (slot_id, slot_on_near) =
-                        self.find_left_non_error_slot(slot + current_step + 1, max_slot, 1);
-                    if slot_on_near {
-                        prev_slot = slot_id;
-                        current_step = min(current_step * 2, max_slot - slot);
-                    } else {
-                        break;
+                Err(err) => {
+                    match err.downcast_ref::<NoBlockForSlotError>() {
+                        Some(_) => {
+                            let (slot_id, slot_on_near) =
+                                self.find_left_non_error_slot(slot + current_step - 1, prev_slot, -1);
+                            if slot_on_near {
+                                prev_slot = slot_id;
+                                current_step = min(current_step * 2, max_slot - slot);
+                            } else {
+                                current_step = slot_id - slot;
+                                break;
+                            }
+                        },
+                        None => return Err(err)
                     }
                 }
             }
@@ -956,7 +976,7 @@ mod tests {
         assert_eq!(last_block_on_near, 1099363);
 
         let last_block_on_near = relay.binary_slot_search(1099364, finalized_slot,1099370).unwrap();
-        assert_eq!(last_block_on_near, 1099364);
+        assert_eq!(last_block_on_near, 1099363);
 
         relay.beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
         if let Ok(_) = relay.binary_slot_search(finalized_slot + 1, finalized_slot,1099370) {
