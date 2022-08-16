@@ -7,7 +7,9 @@ const {
   readerToHex,
   borshifyInitialValidators,
   borshifyOutcomeProof,
-  borshify
+  borshify,
+  serialize,
+  deserialize
 } = require('./borsh')
 const {
   setupEthNear,
@@ -21,6 +23,9 @@ const {
   toWei,
   ethCallContract
 } = require('./utils')
+const {
+  HttpPrometheus
+} = require('./http-prometheus')
 const { maybeCreateAccount, verifyAccount } = require('./helpers')
 const path = require('path')
 
@@ -65,5 +70,8 @@ module.exports = {
   nearJsonContractFunctionCall,
   borshifyInitialValidators,
   borshifyOutcomeProof,
-  borshify
+  borshify,
+  serialize,
+  deserialize,
+  HttpPrometheus
 }

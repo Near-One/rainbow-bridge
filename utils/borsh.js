@@ -475,3 +475,4 @@ exports.signAndSendTransaction = signAndSendTransaction
 
 // For debugging only.
 exports.serialize = serialize
+exports.deserialize = deserialize

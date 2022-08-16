@@ -2,10 +2,11 @@ const path = require('path')
 const exec = require('child_process').exec
 const nearAPI = require('near-api-js')
 const BN = require('bn.js')
-const { serialize } = require('../../utils/borsh')
 const {
   RobustWeb3,
-  sleep
+  sleep,
+  serialize,
+  HttpPrometheus
 } = require('rainbow-bridge-utils')
 const {
   web3BlockToRlp,
@@ -23,10 +24,6 @@ const {
   receiptFromWeb3,
   ethToNearFindProof
 } = require('./eth-proof-extractor')
-
-const {
-  HttpPrometheus
-} = require('../../utils/http-prometheus.js')
 
 const BRIDGE_SRC_DIR = path.join(__dirname, '..', '..')
 const MAX_GAS_PER_BLOCK = '300000000000000'
