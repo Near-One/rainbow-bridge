@@ -80,3 +80,17 @@ impl Display for MissNextSyncCommittee {
 }
 
 impl Error for MissNextSyncCommittee {}
+
+#[derive(Debug)]
+pub struct NoBlockForSlotError;
+
+impl Display for NoBlockForSlotError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "No block found for slot"
+        )
+    }
+}
+
+impl Error for NoBlockForSlotError {}

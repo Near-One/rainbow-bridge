@@ -2,7 +2,7 @@ use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
 use crate::eth1_rpc_client::Eth1RPCClient;
 use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
-use crate::relay_errors::{ExecutionPayloadError, MissSyncCommitteeUpdate};
+use crate::relay_errors::{ExecutionPayloadError, MissSyncCommitteeUpdate, NoBlockForSlotError};
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::eth2::LightClientUpdate;
 use eth_types::{BlockHeader, H256};
@@ -486,11 +486,27 @@ impl Eth2NearRelay {
         finalized_slot: u64,
         last_eth_slot: u64,
     ) -> Result<u64, Box<dyn Error>> {
-        return if slot == finalized_slot || self.block_known_on_near(slot)? {
-            Ok(self.linear_search_forward(slot, last_eth_slot))
-        } else {
-            Ok(self.linear_search_backward(finalized_slot, slot))
-        };
+        if slot == finalized_slot {
+            return Ok(self.linear_search_forward(slot, last_eth_slot));
+        }
+
+        match self.block_known_on_near(slot) {
+            Ok(true) => Ok(self.linear_search_forward(slot, last_eth_slot)),
+            Ok(false) => Ok(self.linear_search_backward(finalized_slot, slot)),
+            Err(err) => {
+                match err.downcast_ref::<NoBlockForSlotError>() {
+                    Some(_) => {
+                        let left_slot = self.linear_search_forward(slot, last_eth_slot);
+                        return if left_slot > slot {
+                            Ok(left_slot)
+                        } else {
+                            Ok(self.linear_search_backward(finalized_slot, slot))
+                        }
+                    }
+                    None => Err(err)
+                }
+            }
+        }
     }
 
     // Returns the slot before the first unknown block on NEAR
@@ -655,7 +671,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_block_known_on_near() {
         let mut relay = get_relay();
 
@@ -683,7 +698,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_find_left_non_error_slot() {
         let mut relay = get_relay();
 
@@ -736,7 +750,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_linear_search_forward() {
         let mut relay = get_relay();
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
