@@ -467,13 +467,18 @@ impl Eth2NearRelay {
             match self.block_known_on_near(mid_slot) {
                 Ok(true) => start_slot = mid_slot,
                 Ok(false) => last_slot = mid_slot,
-                Err(_) => {
-                    let (left_slot, is_left_slot_on_near) =
-                        self.find_left_non_error_slot(mid_slot - 1, start_slot, -1);
-                    if is_left_slot_on_near {
-                        start_slot = mid_slot;
-                    } else {
-                        last_slot = left_slot;
+                Err(err) => {
+                    match err.downcast_ref::<NoBlockForSlotError>() {
+                        Some(_) => {
+                            let (left_slot, is_left_slot_on_near) =
+                                self.find_left_non_error_slot(mid_slot - 1, start_slot, -1);
+                            if is_left_slot_on_near {
+                                start_slot = mid_slot;
+                            } else {
+                                last_slot = left_slot;
+                            }
+                        },
+                        None => return Err(err),
                     }
                 }
             }
@@ -859,6 +864,12 @@ mod tests {
 
         relay.eth_client_contract.send_headers(&vec![relay.get_execution_block_by_slot(1099363).unwrap()], 1099363).unwrap();
         let last_block_on_near = relay.binsearch_slot_range(relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap() + 1, 1099370).unwrap();
+        assert_eq!(last_block_on_near, 1099364);
+
+        let last_block_on_near = relay.binsearch_slot_range(relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap() + 1, 1099364).unwrap();
+        assert_eq!(last_block_on_near, 1099363);
+
+        let last_block_on_near = relay.binsearch_slot_range(1099364, 1099370).unwrap();
         assert_eq!(last_block_on_near, 1099364);
 
         relay.beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
