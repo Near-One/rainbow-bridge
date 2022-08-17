@@ -589,6 +589,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_fetch_light_client_update() {
         const PERIOD: u64 = 100;
         let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);

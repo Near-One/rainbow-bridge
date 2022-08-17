@@ -1,7 +1,17 @@
 use std::{thread, time};
-use contract_wrapper::eth_client_contract::EthClientContract;
-use eth_types::BlockHeader;
 use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
+use eth_types::BlockHeader;
+use near_units::*;
+use workspaces::prelude::*;
+use workspaces::{network::Sandbox, Account, Contract, Worker};
+use tokio::runtime::Runtime;
+use contract_wrapper::eth_client_contract::EthClientContract;
+use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
+use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
+use crate::config::Config;
+use crate::eth2near_relay::Eth2NearRelay;
+use crate::test_utils;
+use crate::init_contract::init_contract;
 
 pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
     let mut json_file_path = std::env::current_exe().unwrap();
@@ -45,4 +55,63 @@ pub fn init_contract_from_files(eth_client_contract: &mut EthClientContract) {
 
     eth_client_contract.init_contract(NETWORK.to_string(), finalized_execution_header.unwrap(), finalized_beacon_header, current_sync_committee, next_sync_committee);
     thread::sleep(time::Duration::from_secs(30));
+}
+
+
+const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
+
+fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
+    let rt = Runtime::new().unwrap();
+
+    let worker = rt.block_on(workspaces::sandbox()).unwrap();
+    let wasm = std::fs::read(WASM_FILEPATH).unwrap();
+    let contract = rt.block_on(worker.dev_deploy(&wasm)).unwrap();
+
+    // create accounts
+    let owner = worker.root_account().unwrap();
+    let relay_account = rt.block_on(owner
+        .create_subaccount(&worker, "relay_account")
+        .initial_balance(parse_near!("30 N"))
+        .transact()).unwrap()
+        .into_result().unwrap();
+
+    (relay_account, contract, worker)
+}
+
+fn get_config() -> Config {
+    Config {
+        beacon_endpoint: "https://lodestar-kiln.chainsafe.io".to_string(),
+        eth1_endpoint: "https://rpc.kiln.themerge.dev".to_string(),
+        total_submit_headers: 8,
+        near_endpoint: "NaN".to_string(),
+        signer_account_id: "NaN".to_string(),
+        path_to_signer_secret_key: "NaN".to_string(),
+        contract_account_id: "NaN".to_string(),
+        network: "kiln".to_string(),
+        contract_type: "near".to_string(),
+        light_client_updates_submission_frequency_in_epochs: 1,
+        max_blocks_for_finalization: 5000,
+        near_network_id: "testnet".to_string(),
+        dao_contract_account_id: None,
+        output_dir: None
+    }
+}
+
+pub fn get_client_contract(from_file: bool) -> Box<dyn EthClientContractTrait> {
+    let (relay_account, contract, worker) = create_contract();
+    let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
+    let mut eth_client_contract = EthClientContract::new(contract_wrapper);
+
+    let config = get_config();
+    match from_file {
+        true => test_utils::init_contract_from_files(&mut eth_client_contract),
+        false => init_contract(&config, &mut eth_client_contract).unwrap(),
+    };
+
+    Box::new(eth_client_contract)
+}
+
+pub fn get_relay(enable_binsearch: bool, from_file: bool) -> Eth2NearRelay {
+    let config = get_config();
+    Eth2NearRelay::init(&config, get_client_contract(from_file), enable_binsearch, true)
 }
