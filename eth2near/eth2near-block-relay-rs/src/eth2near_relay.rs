@@ -127,7 +127,7 @@ impl Eth2NearRelay {
                             info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}", 
                                   self.near_network_name, execution_outcome.transaction.hash);
                             break;
-                        }
+                        },
                         Err(err) => {
                             warn!(target: "relay", "Error \"{}\" on headers submission!", err)
                         }
@@ -666,6 +666,7 @@ mod tests {
     use tokio::runtime::Runtime;
     use contract_wrapper::eth_client_contract::EthClientContract;
     use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
+    use eth_types::eth2::LightClientUpdate;
     use crate::config::Config;
     use crate::eth2near_relay::Eth2NearRelay;
     use crate::test_utils;
@@ -912,6 +913,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_binsearch_slot_forward() {
         let mut relay = get_relay(false);
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
@@ -946,6 +948,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_binsearch_slot_search() {
         let mut relay = get_relay(false);
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
@@ -985,6 +988,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_get_last_slot_binsearch() {
         let mut relay = get_relay(true);
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
@@ -1014,6 +1018,7 @@ mod tests {
 
 
     #[test]
+    #[ignore]
     fn test_get_last_slot_linearsearch() {
         let mut relay = get_relay(false);
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
@@ -1039,5 +1044,33 @@ mod tests {
         if let Ok(_) = relay.get_last_slot(1099370) {
             panic!("binarysearch returns result in unworking network");
         }
+    }
+
+    #[test]
+    fn test_send_specific_light_client_update() {
+        let mut relay = get_relay(true);
+        let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        slot += 1;
+
+        let mut blocks: Vec<BlockHeader> = vec![];
+        while slot <= 1099392 {
+            if let Ok(block) = relay.get_execution_block_by_slot(slot) {
+                blocks.push(block)
+            }
+            slot += 1;
+        }
+
+        relay.eth_client_contract.send_headers(&blocks, 1099392).unwrap();
+        let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        assert_eq!(finalized_slot, 1099360);
+
+        const PATH_TO_LIGHT_CLIENT_UPDATES: &str = "../contract_wrapper/data/light_client_updates_kiln_1099394-1099937.json";
+        let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
+            &std::fs::read_to_string(PATH_TO_LIGHT_CLIENT_UPDATES).expect("Unable to read file"),
+        ).unwrap();
+        relay.send_specific_light_cleint_update(light_client_updates[1].clone());
+
+        let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        assert_eq!(finalized_slot, 1099392);
     }
 }
