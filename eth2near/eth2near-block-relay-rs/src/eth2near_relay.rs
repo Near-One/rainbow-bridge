@@ -216,7 +216,7 @@ impl Eth2NearRelay {
         };
 
         if (last_submitted_slot as i64) - (last_finalized_slot_on_near as i64)
-            < 32 * self.light_client_updates_submission_frequency_in_epochs
+            < (ONE_EPOCH_IN_SLOTS as i64) * self.light_client_updates_submission_frequency_in_epochs
         {
             info!(target: "relay", "Light client update were send less then {} epochs ago. Skipping sending light client update", self.light_client_updates_submission_frequency_in_epochs);
             return;
@@ -288,8 +288,9 @@ impl Eth2NearRelay {
         last_submitted_slot: u64,
     ) {
         trace!(target: "relay", "last_finalized_slot_on_near {}", last_finalized_slot_on_near);
+
         if (last_submitted_slot as i64) - (last_finalized_slot_on_near as i64)
-            < (self.current_gap_between_finalized_and_attested_slot as i64)
+            < (ONE_EPOCH_IN_SLOTS as i64 * self.light_client_updates_submission_frequency_in_epochs)
         {
             info!(target: "relay", "Waiting for sending more headers to near. Skip sending light client update.");
             return;
