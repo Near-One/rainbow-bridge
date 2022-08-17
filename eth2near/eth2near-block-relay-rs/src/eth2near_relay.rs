@@ -371,7 +371,7 @@ impl Eth2NearRelay {
                         .send_light_client_update(light_client_update)
                     {
                         Ok(execution_outcome) => {
-                            info!(target: "relay", "Successful light client update submission! Transaction URL: https://explorer.{}.near.org/transactions/{}", 
+                            info!(target: "relay", "Successful light client update submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
                                   self.near_network_name, execution_outcome.transaction.hash);
                             self.current_gap_between_finalized_and_attested_slot =
                                 Self::get_gap_between_finalized_and_attested_slot(
@@ -485,9 +485,9 @@ impl Eth2NearRelay {
         self.binsearch_slot_range(prev_slot, slot + current_step)
     }
 
-    
+
     // Search for the slot before the first unknown slot on NEAR
-    // Assumptions: 
+    // Assumptions:
     // (1) start_slot is known on NEAR
     // (2) last_slot is unknown on NEAR
     // Return error in case of problem with network connection
@@ -667,10 +667,12 @@ mod tests {
     use contract_wrapper::eth_client_contract::EthClientContract;
     use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
     use eth_types::eth2::LightClientUpdate;
+    use log::LevelFilter;
     use crate::config::Config;
     use crate::eth2near_relay::Eth2NearRelay;
     use crate::test_utils;
     use crate::beacon_rpc_client::BeaconRPCClient;
+    use crate::logger::SimpleLogger;
 
     const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
 
@@ -1047,6 +1049,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_send_specific_light_client_update() {
         let mut relay = get_relay(true);
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
@@ -1069,6 +1072,35 @@ mod tests {
             &std::fs::read_to_string(PATH_TO_LIGHT_CLIENT_UPDATES).expect("Unable to read file"),
         ).unwrap();
         relay.send_specific_light_cleint_update(light_client_updates[1].clone());
+
+        let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        assert_eq!(finalized_slot, 1099392);
+    }
+
+
+    #[test]
+    fn test_hand_made_light_client_update() {
+        log::set_boxed_logger(Box::new(SimpleLogger))
+            .map(|()| log::set_max_level(LevelFilter::Trace))
+            .unwrap();
+
+        let mut relay = get_relay(true);
+        let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        slot += 1;
+
+        let mut blocks: Vec<BlockHeader> = vec![];
+        while slot <= 1099392 {
+            if let Ok(block) = relay.get_execution_block_by_slot(slot) {
+                blocks.push(block)
+            }
+            slot += 1;
+        }
+
+        relay.eth_client_contract.send_headers(&blocks, 1099392).unwrap();
+        let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        assert_eq!(finalized_slot, 1099360);
+
+        relay.send_hand_made_light_client_update(finalized_slot);
 
         let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
         assert_eq!(finalized_slot, 1099392);
