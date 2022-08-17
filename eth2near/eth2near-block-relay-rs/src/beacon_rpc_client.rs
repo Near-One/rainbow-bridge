@@ -456,7 +456,6 @@ mod tests {
     const BEACON_ENDPOINT: &str = "https://lodestar-kiln.chainsafe.io";
 
     #[test]
-    #[ignore]
     fn test_get_header_from_json() {
         let beacon_block_header_json_str = r#"
         {
@@ -488,7 +487,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_get_beacon_body_from_json() {
         let beacon_block_body_json_str =
             read_json_file_from_data_dir("beacon_block_body_kiln_slot_741888.json");
@@ -502,7 +500,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_get_json_from_raw_request() {
         let file_json_str = read_json_file_from_data_dir("beacon_block_kiln_slot_741888.json");
 
@@ -514,7 +511,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_rpc_beacon_block_body_and_header_smoke() {
         let _beacon_block_body = BeaconRPCClient::new(BEACON_ENDPOINT)
             .get_beacon_block_body_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
@@ -525,7 +521,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_get_beacon_block_header() {
         let beacon_block_header = BeaconRPCClient::new(BEACON_ENDPOINT)
             .get_beacon_block_header_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
@@ -548,7 +543,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_get_beacon_block_body() {
         let beacon_block_body = BeaconRPCClient::new(BEACON_ENDPOINT)
             .get_beacon_block_body_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
@@ -562,7 +556,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_get_header_json_from_rpc_result() {
         let beacon_block_header_response_json =
             read_json_file_from_data_dir("beacon_block_header_response_kiln_slot_741888.json");
@@ -581,7 +574,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_beacon_block_body_json_from_rpc_result() {
         let beacon_block_json = read_json_file_from_data_dir("beacon_block_kiln_slot_741888.json");
         let beacon_block_body_json =
@@ -597,7 +589,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_fetch_light_client_update() {
         const PERIOD: u64 = 100;
         let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
@@ -654,7 +645,6 @@ mod tests {
 
     // a utility function which prints JSON for last `LightClientUpdate`
     #[test]
-    #[ignore]
     fn utility_show_get_light_client_update() {
         let light_client_update_fetcher = BeaconRPCClient::new(BEACON_ENDPOINT);
         let period = BeaconRPCClient::get_period_for_slot(
@@ -677,7 +667,6 @@ mod tests {
 
     // a utility function that prints JSON strings for all `BeaconBlockHeader`s with `ExecutionData` in specific range
     #[test]
-    #[ignore]
     fn utility_show_headers_jsons_for_light_client_update() {
         let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
         let mut beacon_block_ext_headers: Vec<BeaconBlockHeaderWithExecutionData> = Vec::new();

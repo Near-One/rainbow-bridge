@@ -1,5 +1,3 @@
-extern crate core;
-
 use clap::{ArgAction, Parser};
 use contract_wrapper::contract_wrapper_trait::ContractWrapper;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;

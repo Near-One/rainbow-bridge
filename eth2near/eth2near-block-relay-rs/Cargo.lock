@@ -423,7 +423,6 @@ dependencies = [
  "ethereum-types",
  "getrandom 0.2.7",
  "hex 0.4.3",
- "milagro_bls",
  "rand 0.7.3",
  "serde",
  "serde_derive",
@@ -1940,18 +1939,6 @@ dependencies = [
  "ethereum-types",
  "lazy_static",
  "safe_arith",
-]
-
-[[package]]
-name = "milagro_bls"
-version = "1.4.2"
-source = "git+https://github.com/sigp/milagro_bls?tag=v1.4.2#16655aa033175a90c10ef02aa144e2835de23aec"
-dependencies = [
- "amcl",
- "hex 0.4.3",
- "lazy_static",
- "rand 0.7.3",
- "zeroize",
 ]
 
 [[package]]
