@@ -1141,6 +1141,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_get_execution_block_by_slot() {
         let mut relay = get_relay(true, true);
         relay.get_execution_block_by_slot(1099363).unwrap();
@@ -1160,5 +1161,20 @@ mod tests {
         } else {
             panic!("Return execution block in unworking network");
         }
+    }
+
+    #[test]
+    fn test_verify_bls_signature() {
+        let mut relay = get_relay(true, true);
+
+        const PATH_TO_LIGHT_CLIENT_UPDATES: &str = "../contract_wrapper/data/light_client_updates_kiln_1099394-1099937.json";
+        let mut light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
+            &std::fs::read_to_string(PATH_TO_LIGHT_CLIENT_UPDATES).expect("Unable to read file"),
+        ).unwrap();
+
+        assert!(relay.verify_bls_signature_for_finality_update(&light_client_updates[1]).unwrap());
+        light_client_updates[1].attested_beacon_header = light_client_updates[0].attested_beacon_header.clone();
+
+        assert!(!relay.verify_bls_signature_for_finality_update(&light_client_updates[1]).unwrap());
     }
 }
