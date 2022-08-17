@@ -673,6 +673,7 @@ mod tests {
     use crate::eth2near_relay::Eth2NearRelay;
     use crate::test_utils;
     use crate::beacon_rpc_client::BeaconRPCClient;
+    use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
     use crate::init_contract::init_contract;
     use crate::logger::SimpleLogger;
     use crate::relay_errors::NoBlockForSlotError;
@@ -1164,6 +1165,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_verify_bls_signature() {
         let mut relay = get_relay(true, true);
 
@@ -1176,5 +1178,30 @@ mod tests {
         light_client_updates[1].attested_beacon_header = light_client_updates[0].attested_beacon_header.clone();
 
         assert!(!relay.verify_bls_signature_for_finality_update(&light_client_updates[1]).unwrap());
+    }
+
+    #[test]
+    #[ignore]
+    fn test_get_gap_between_finalized_and_signature_slot() {
+        let beacon_rpc_client = BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io");
+        let gap = Eth2NearRelay::get_gap_between_finalized_and_signature_slot(1);
+        let finalized_slot = 1099488;
+        let signature_slot = finalized_slot + gap;
+
+        match HandMadeFinalityLightClientUpdate::get_finality_light_client_update(
+            &beacon_rpc_client,
+            signature_slot,
+        ) {
+            Ok(light_client_update) => {
+                let finality_update_slot = light_client_update
+                    .finality_update
+                    .header_update
+                    .beacon_header
+                    .slot;
+
+                assert!(finality_update_slot > finalized_slot);
+            },
+            Err(_) => {panic!("Error on get light client update");}
+        }
     }
 }
