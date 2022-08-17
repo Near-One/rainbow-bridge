@@ -90,31 +90,7 @@ impl Eth2NearRelay {
 
             if last_eth2_slot_on_near < last_eth2_slot_on_eth_chain {
                 info!(target: "relay", "= Creating headers batch =");
-                let mut headers: Vec<BlockHeader> = vec![];
-                let mut current_slot = last_eth2_slot_on_near + 1;
-                while headers.len() < self.max_submitted_headers as usize
-                    && current_slot <= last_eth2_slot_on_eth_chain
-                {
-                    debug!(target: "relay", "Try add block header for slot={}, headers len={}/{}", current_slot, headers.len(), self.max_submitted_headers);
-                    let mut count = 0;
-                    loop {
-                        if count > 0 {
-                            debug!(target: "relay", "Error retrieving execution block header for slot = {}. Try again. Trying number {}", current_slot, count + 1);
-                        }
-
-                        if let Ok(eth1_header) = self.get_execution_block_by_slot(current_slot) {
-                            headers.push(eth1_header);
-                            break;
-                        }
-
-                        count += 1;
-                        if count > 2 {
-                            debug!(target: "relay", "Block header for slot={} was not extracted. Skip!", current_slot);
-                            break;
-                        }
-                    }
-                    current_slot += 1;
-                }
+                let (headers, current_slot) = self.get_n_execution_blocks(last_eth2_slot_on_near + 1, last_eth2_slot_on_eth_chain);
 
                 for _ in 1..5 {
                     info!(target: "relay", "Try submit headers from slot={} to {} to NEAR", last_eth2_slot_on_near + 1, current_slot - 1);
@@ -136,6 +112,26 @@ impl Eth2NearRelay {
                 self.send_light_client_updates(last_eth2_slot_on_near);
             }
         }
+    }
+
+    fn get_n_execution_blocks(&self, start_slot: u64, last_eth2_slot_on_eth_chain: u64) -> (Vec<BlockHeader>, u64) {
+        let mut headers: Vec<BlockHeader> = vec![];
+        let mut current_slot = start_slot;
+
+        while headers.len() < self.max_submitted_headers as usize
+            && current_slot <= last_eth2_slot_on_eth_chain
+        {
+            debug!(target: "relay", "Try add block header for slot={}, headers len={}/{}", current_slot, headers.len(), self.max_submitted_headers);
+            loop {
+                if let Ok(eth1_header) = self.get_execution_block_by_slot(current_slot) {
+                    headers.push(eth1_header);
+                    break;
+                }
+            }
+            current_slot += 1;
+        }
+
+        (headers, current_slot)
     }
 
     // get the slot numbers between the last submitted slot and attested slot for next update
