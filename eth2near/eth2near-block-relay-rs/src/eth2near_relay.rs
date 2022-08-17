@@ -91,24 +91,7 @@ impl Eth2NearRelay {
             if last_eth2_slot_on_near < last_eth2_slot_on_eth_chain {
                 info!(target: "relay", "= Creating headers batch =");
                 let (headers, current_slot) = self.get_n_execution_blocks(last_eth2_slot_on_near + 1, last_eth2_slot_on_eth_chain);
-
-                for _ in 1..5 {
-                    info!(target: "relay", "Try submit headers from slot={} to {} to NEAR", last_eth2_slot_on_near + 1, current_slot - 1);
-                    match self
-                        .eth_client_contract
-                        .send_headers(&headers, current_slot - 1)
-                    {
-                        Ok(execution_outcome) => {
-                            last_eth2_slot_on_near = current_slot - 1;
-                            info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}", 
-                                  self.near_network_name, execution_outcome.transaction.hash);
-                            break;
-                        },
-                        Err(err) => {
-                            warn!(target: "relay", "Error \"{}\" on headers submission!", err)
-                        }
-                    }
-                }
+                self.submit_execution_blocks(headers, current_slot, &mut last_eth2_slot_on_near);
                 self.send_light_client_updates(last_eth2_slot_on_near);
             }
         }
@@ -132,6 +115,26 @@ impl Eth2NearRelay {
         }
 
         (headers, current_slot)
+    }
+
+    fn submit_execution_blocks(&mut self, headers: Vec<BlockHeader>, current_slot: u64, last_eth2_slot_on_near: &mut u64) {
+        for _ in 1..5 {
+            info!(target: "relay", "Try submit headers from slot={} to {} to NEAR", *last_eth2_slot_on_near + 1, current_slot - 1);
+            match self
+                .eth_client_contract
+                .send_headers(&headers, current_slot - 1)
+            {
+                Ok(execution_outcome) => {
+                    *last_eth2_slot_on_near = current_slot - 1;
+                    info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
+                                  self.near_network_name, execution_outcome.transaction.hash);
+                    break;
+                },
+                Err(err) => {
+                    warn!(target: "relay", "Error \"{}\" on headers submission!", err)
+                }
+            }
+        }
     }
 
     // get the slot numbers between the last submitted slot and attested slot for next update
