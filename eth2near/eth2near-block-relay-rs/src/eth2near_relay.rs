@@ -673,6 +673,7 @@ mod tests {
     use crate::eth2near_relay::Eth2NearRelay;
     use crate::test_utils;
     use crate::beacon_rpc_client::BeaconRPCClient;
+    use crate::init_contract::init_contract;
     use crate::logger::SimpleLogger;
 
     const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
@@ -694,7 +695,7 @@ mod tests {
 
         (relay_account, contract, worker)
     }
-    
+
     fn get_config() -> Config {
         Config {
             beacon_endpoint: "https://lodestar-kiln.chainsafe.io".to_string(),
@@ -714,13 +715,16 @@ mod tests {
         }
     }
 
-    fn get_relay(enable_binsearch: bool) -> Eth2NearRelay {
+    fn get_relay(enable_binsearch: bool, from_file: bool) -> Eth2NearRelay {
         let (relay_account, contract, worker) = create_contract();
         let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
         let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 
         let config = get_config();
-        test_utils::init_contract_from_files(&mut eth_client_contract);
+        match from_file {
+            true => test_utils::init_contract_from_files(&mut eth_client_contract),
+            false => init_contract(&config, &mut eth_client_contract).unwrap(),
+        };
 
         let eth_client_contract = Box::new(eth_client_contract);
 
@@ -730,7 +734,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_block_known_on_near() {
-        let mut relay = get_relay(false);
+        let mut relay = get_relay(false, true);
 
         //1060486 slot without block
         let is_block_known = relay.block_known_on_near(1060486);
@@ -758,7 +762,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_find_left_non_error_slot() {
-        let mut relay = get_relay(false);
+        let mut relay = get_relay(false, true);
 
         let (left_non_empty_slot, is_known_block) = relay.find_left_non_error_slot(1060528, 1060532, 1);
         assert_eq!(left_non_empty_slot, 1060528);
@@ -787,10 +791,10 @@ mod tests {
     #[test]
     #[ignore]
     fn test_linear_search_backward() {
-        let mut relay = get_relay(false);
+        let mut relay = get_relay(false, true);
         let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
         relay.eth_client_contract.send_headers(&vec![relay.get_execution_block_by_slot(finalized_slot + 1).unwrap(),
-                                                             relay.get_execution_block_by_slot(finalized_slot + 2).unwrap()], finalized_slot + 2).unwrap();
+                                                     relay.get_execution_block_by_slot(finalized_slot + 2).unwrap()], finalized_slot + 2).unwrap();
 
         let last_submitted_block = relay.linear_search_backward(finalized_slot + 1, finalized_slot + 10);
         assert_eq!(last_submitted_block, finalized_slot + 2);
@@ -812,7 +816,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_linear_search_forward() {
-        let mut relay = get_relay(false);
+        let mut relay = get_relay(false, true);
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
         slot += 1;
 
@@ -839,7 +843,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_linear_slot_search() {
-        let mut relay = get_relay(false);
+        let mut relay = get_relay(false, true);
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
         slot += 1;
 
@@ -871,10 +875,10 @@ mod tests {
     #[should_panic]
     #[ignore]
     fn test_error_on_connection_problem() {
-        let mut relay = get_relay(false);
+        let mut relay = get_relay(false, true);
         let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
         relay.eth_client_contract.send_headers(&vec![relay.get_execution_block_by_slot(finalized_slot + 1).unwrap(),
-                                                             relay.get_execution_block_by_slot(finalized_slot + 2).unwrap()], finalized_slot + 2).unwrap();
+                                                     relay.get_execution_block_by_slot(finalized_slot + 2).unwrap()], finalized_slot + 2).unwrap();
 
         relay.beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
         relay.linear_slot_search(finalized_slot + 1, finalized_slot, 1099500).unwrap();
@@ -883,7 +887,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_binsearch_slot_range() {
-        let mut relay = get_relay(false);
+        let mut relay = get_relay(false, true);
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
         slot += 1;
 
@@ -918,7 +922,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_binsearch_slot_forward() {
-        let mut relay = get_relay(false);
+        let mut relay = get_relay(false, true);
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
         slot += 1;
 
@@ -953,7 +957,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_binsearch_slot_search() {
-        let mut relay = get_relay(false);
+        let mut relay = get_relay(false, true);
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
         slot += 1;
 
@@ -972,7 +976,7 @@ mod tests {
         assert_eq!(last_block_on_near, 1099362);
 
         relay.eth_client_contract.send_headers(&vec![relay.get_execution_block_by_slot(1099363).unwrap()], 1099363).unwrap();
-        let last_block_on_near = relay.binary_slot_search(finalized_slot + 1,  finalized_slot, 1099370).unwrap();
+        let last_block_on_near = relay.binary_slot_search(finalized_slot + 1, finalized_slot, 1099370).unwrap();
         assert_eq!(last_block_on_near, 1099364);
 
         let last_block_on_near = relay.binary_slot_search(finalized_slot + 1, finalized_slot, 1099364).unwrap();
@@ -981,11 +985,11 @@ mod tests {
         let last_block_on_near = relay.binary_slot_search(finalized_slot + 1, finalized_slot, 1099363).unwrap();
         assert_eq!(last_block_on_near, 1099363);
 
-        let last_block_on_near = relay.binary_slot_search(1099364, finalized_slot,1099370).unwrap();
+        let last_block_on_near = relay.binary_slot_search(1099364, finalized_slot, 1099370).unwrap();
         assert_eq!(last_block_on_near, 1099363);
 
         relay.beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
-        if let Ok(_) = relay.binary_slot_search(finalized_slot + 1, finalized_slot,1099370) {
+        if let Ok(_) = relay.binary_slot_search(finalized_slot + 1, finalized_slot, 1099370) {
             panic!("binarysearch returns result in unworking network");
         }
     }
@@ -993,7 +997,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_get_last_slot_binsearch() {
-        let mut relay = get_relay(true);
+        let mut relay = get_relay(true, true);
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
         slot += 1;
 
@@ -1023,7 +1027,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_get_last_slot_linearsearch() {
-        let mut relay = get_relay(false);
+        let mut relay = get_relay(false, true);
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
         slot += 1;
 
@@ -1052,7 +1056,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_send_specific_light_client_update() {
-        let mut relay = get_relay(true);
+        let mut relay = get_relay(true, true);
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
         slot += 1;
 
@@ -1080,12 +1084,13 @@ mod tests {
 
 
     #[test]
+    #[ignore]
     fn test_hand_made_light_client_update() {
         log::set_boxed_logger(Box::new(SimpleLogger))
             .map(|()| log::set_max_level(LevelFilter::Trace))
             .unwrap();
 
-        let mut relay = get_relay(true);
+        let mut relay = get_relay(true, true);
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
         slot += 1;
 
@@ -1105,5 +1110,31 @@ mod tests {
 
         let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
         assert_eq!(finalized_slot, 1099392);
+    }
+
+    #[test]
+    fn test_send_light_client_update() {
+        let mut relay = get_relay(true, false);
+        let finality_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        let mut slot = finality_slot + 1;
+
+        let mut finality_slot_on_eth = relay.beacon_rpc_client.get_last_finalized_slot_number().unwrap().as_u64();
+
+        let mut blocks: Vec<BlockHeader> = vec![];
+        while finality_slot == finality_slot_on_eth || slot <= finality_slot_on_eth {
+            if let Ok(block) = relay.get_execution_block_by_slot(slot) {
+                blocks.push(block)
+            }
+            slot += 1;
+
+            finality_slot_on_eth = relay.beacon_rpc_client.get_last_finalized_slot_number().unwrap().as_u64();
+        }
+
+        relay.eth_client_contract.send_headers(&blocks, finality_slot_on_eth).unwrap();
+
+        relay.send_light_client_updates();
+
+        let new_finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        assert_ne!(finality_slot, new_finalized_slot);
     }
 }
