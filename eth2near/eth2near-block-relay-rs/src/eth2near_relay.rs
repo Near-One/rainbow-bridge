@@ -13,6 +13,30 @@ use std::vec::Vec;
 
 const ONE_EPOCH_IN_SLOTS: u64 = 32;
 
+macro_rules! skip_fail {
+    ($res:expr, $msg:expr) => {
+        match $res {
+            Ok(val) => val,
+            Err(e) => {
+                warn!(target: "relay", "{}. Error: {}", $msg, e);
+                continue;
+            }
+        }
+    };
+}
+
+macro_rules! return_on_fail {
+    ($res:expr, $msg:expr) => {
+        match $res {
+            Ok(val) => val,
+            Err(e) => {
+                warn!(target: "relay", "{}. Error: {}", $msg, e);
+                return;
+            }
+        }
+    };
+}
+
 pub struct Eth2NearRelay {
     beacon_rpc_client: BeaconRPCClient,
     eth1_rpc_client: Eth1RPCClient,
@@ -42,8 +66,7 @@ impl Eth2NearRelay {
             max_submitted_headers: config.total_submit_headers as u64,
             current_gap_between_finalized_and_attested_slot:
                 Self::get_gap_between_finalized_and_attested_slot(
-                    config.light_client_updates_submission_frequency_in_epochs as u64,
-                ),
+                    config.light_client_updates_submission_frequency_in_epochs as u64),
             network: config.network.to_string(),
             light_client_updates_submission_frequency_in_epochs: config
                 .light_client_updates_submission_frequency_in_epochs,
@@ -67,23 +90,8 @@ impl Eth2NearRelay {
         loop {
             info!(target: "relay", "== New relay loop ==");
 
-            let last_eth2_slot_on_eth_chain: u64 =
-                match self.beacon_rpc_client.get_last_slot_number() {
-                    Ok(slot) => slot.as_u64(),
-                    Err(err) => {
-                        warn!(target: "relay", "Fail to get last slot on Eth. Error: {}", err);
-                        continue;
-                    }
-                };
-
-            let mut last_eth2_slot_on_near: u64 = match self.get_last_slot(last_eth2_slot_on_eth_chain)
-            {
-                Ok(slot) => slot,
-                Err(err) => {
-                    warn!(target: "relay", "Fail to get last slot on NEAR. Error: {}", err);
-                    continue;
-                }
-            };
+            let last_eth2_slot_on_eth_chain: u64 = skip_fail!(self.beacon_rpc_client.get_last_slot_number(),  "Fail to get last slot on Eth").as_u64();
+            let mut last_eth2_slot_on_near: u64 = skip_fail!(self.get_last_slot(last_eth2_slot_on_eth_chain), "Fail to get last slot on NEAR");
 
             info!(target: "relay", "Last slot on near = {}; last slot on eth = {}",
                   last_eth2_slot_on_near, last_eth2_slot_on_eth_chain);
@@ -120,20 +128,14 @@ impl Eth2NearRelay {
     fn submit_execution_blocks(&mut self, headers: Vec<BlockHeader>, current_slot: u64, last_eth2_slot_on_near: &mut u64) {
         for _ in 1..5 {
             info!(target: "relay", "Try submit headers from slot={} to {} to NEAR", *last_eth2_slot_on_near + 1, current_slot - 1);
-            match self
+            let execution_outcome = skip_fail!(self
                 .eth_client_contract
-                .send_headers(&headers, current_slot - 1)
-            {
-                Ok(execution_outcome) => {
-                    *last_eth2_slot_on_near = current_slot - 1;
-                    info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
+                .send_headers(&headers, current_slot - 1), "Error on header submission");
+
+            *last_eth2_slot_on_near = current_slot - 1;
+            info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
                                   self.near_network_name, execution_outcome.transaction.hash);
-                    break;
-                },
-                Err(err) => {
-                    warn!(target: "relay", "Error \"{}\" on headers submission!", err)
-                }
-            }
+            break;
         }
     }
 
@@ -192,27 +194,14 @@ impl Eth2NearRelay {
     fn send_light_client_updates(&mut self, last_submitted_slot: u64) {
         info!(target: "relay", "= Sending light client update =");
 
-        let finalized_block_hash: H256 = match self
+        let finalized_block_hash: H256 = return_on_fail!(self
             .eth_client_contract
-            .get_finalized_beacon_block_hash()
-        {
-            Ok(block_hash) => block_hash,
-            Err(err) => {
-                warn!(target: "relay", "Error \"{}\" on getting finalized block hash. Skipping sending light client update", err);
-                return;
-            }
-        };
+            .get_finalized_beacon_block_hash(), "Error on getting finalized block hash. Skipping sending light client update");
 
-        let last_finalized_slot_on_near: u64 = match self
+        let last_finalized_slot_on_near: u64 = return_on_fail!(self
             .beacon_rpc_client
-            .get_slot_by_beacon_block_root(finalized_block_hash)
-        {
-            Ok(last_finalized_slot) => last_finalized_slot,
-            Err(err) => {
-                warn!(target: "relay", "Error \"{}\" on getting slot for finalized block hash. Skipping sending light client update", err);
-                return;
-            }
-        };
+            .get_slot_by_beacon_block_root(finalized_block_hash),
+            "Error on getting slot for finalized block hash. Skipping sending light client update");
 
         if (last_submitted_slot as i64) - (last_finalized_slot_on_near as i64)
             < (ONE_EPOCH_IN_SLOTS as i64) * self.light_client_updates_submission_frequency_in_epochs
@@ -225,16 +214,10 @@ impl Eth2NearRelay {
             BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near);
         info!(target: "relay", "Last finalized slot/period on near={}/{}", last_finalized_slot_on_near, last_eth2_period_on_near_chain);
 
-        let last_finalized_slot_on_eth: u64 = match self
+        let last_finalized_slot_on_eth: u64 = return_on_fail!(self
             .beacon_rpc_client
-            .get_last_finalized_slot_number()
-        {
-            Ok(end_slot) => end_slot.as_u64(),
-            Err(err) => {
-                warn!(target: "relay", "Error \"{}\" on getting last finalized slot number on Ethereum. Skipping sending light client update", err);
-                return;
-            }
-        };
+            .get_last_finalized_slot_number(),
+            "Error on getting last finalized slot number on Ethereum. Skipping sending light client update").as_u64();
 
         let end_period = BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_eth);
         info!(target: "relay", "Last finalized slot/period on ethereum={}/{}", last_finalized_slot_on_eth, end_period);
@@ -257,27 +240,17 @@ impl Eth2NearRelay {
 
         if end_period == last_eth2_period_on_near_chain {
             debug!(target: "relay", "Finalized period on Eth and Near are equal. Don't fetch sync commity update");
-            match self.beacon_rpc_client.get_finality_light_client_update() {
-                Ok(light_client_update) => {
-                    self.send_specific_light_cleint_update(light_client_update)
-                }
-                Err(err) => {
-                    warn!(target: "relay", "Error \"{}\" on getting light client update. Skipping sending light client update", err)
-                }
-            }
+            let light_client_update= return_on_fail!(self.beacon_rpc_client.get_finality_light_client_update(),
+                "Error on getting light client update. Skipping sending light client update");
+            self.send_specific_light_cleint_update(light_client_update);
         } else {
             debug!(target: "relay", "Finalized period on Eth and Near are different. Fetching sync commity update");
-            match self
+            let light_client_update = return_on_fail!(self
                 .beacon_rpc_client
-                .get_finality_light_client_update_with_sync_commity_update()
-            {
-                Ok(light_client_update) => {
-                    self.send_specific_light_cleint_update(light_client_update)
-                }
-                Err(err) => {
-                    warn!(target: "relay", "Error \"{}\" on getting light client update. Skipping sending light client update", err)
-                }
-            }
+                .get_finality_light_client_update_with_sync_commity_update(),
+                "Error on getting light client update. Skipping sending light client update"
+            );
+            self.send_specific_light_cleint_update(light_client_update);
         }
     }
 
@@ -298,16 +271,9 @@ impl Eth2NearRelay {
         let attested_slot =
             last_finalized_slot_on_near + self.current_gap_between_finalized_and_attested_slot;
 
-        let attested_slot: u64 = match self
+        let attested_slot: u64 = return_on_fail!(self
             .beacon_rpc_client
-            .get_non_empty_beacon_block_header(attested_slot)
-        {
-            Ok(header) => header.slot.into(),
-            Err(e) => {
-                warn!(target: "relay", "{}", e);
-                return;
-            }
-        };
+            .get_non_empty_beacon_block_header(attested_slot), "Error on getting attested slot").slot.into();
 
         trace!(target: "relay", "Chosen attested slot {}", attested_slot);
 
@@ -333,7 +299,7 @@ impl Eth2NearRelay {
                 trace!(target: "relay", "Hand made light client update: {:?}", light_client_update);
 
                 self.send_specific_light_cleint_update(light_client_update);
-            }
+            },
             Err(err) => {
                 debug!(target: "relay", "Error \"{}\" on getting hand made light client update for attested slot={}.", err, attested_slot);
                 self.current_gap_between_finalized_and_attested_slot += 1;
@@ -342,53 +308,35 @@ impl Eth2NearRelay {
     }
 
     fn send_specific_light_cleint_update(&mut self, light_client_update: LightClientUpdate) {
-        match self.eth_client_contract.is_known_block(
+        let is_known_block = return_on_fail!(self.eth_client_contract.is_known_block(
             &light_client_update
                 .finality_update
                 .header_update
                 .execution_block_hash,
-        ) {
-            Ok(is_known_block) => {
-                if is_known_block {
-                    match self.verify_bls_signature_for_finality_update(&light_client_update) {
-                        Ok(verification_result) => {
-                            if verification_result {
-                                info!(target: "relay", "PASS bls signature verification!");
-                            } else {
-                                warn!(target: "relay", "NOT PASS bls signature verification. Skip sending this light client update");
-                                return;
-                            }
-                        }
-                        Err(err) => {
-                            warn!(target: "relay", "Error \"{}\" on bls verification. Skip sending the light client update.", err);
-                            return;
-                        }
-                    }
+        ), "Fail on the is_known_block method. Skipping sending light client update");
 
-                    info!(target: "relay", "Sending light client update");
-                    match self
+        if is_known_block {
+            let verification_result = return_on_fail!(self.verify_bls_signature_for_finality_update(&light_client_update),  "Error on bls verification. Skip sending the light client update");
+            if verification_result {
+                info!(target: "relay", "PASS bls signature verification!");
+            } else {
+                warn!(target: "relay", "NOT PASS bls signature verification. Skip sending this light client update");
+                return;
+            }
+
+            info!(target: "relay", "Sending light client update");
+
+            let execution_outcome = return_on_fail!(self
                         .eth_client_contract
-                        .send_light_client_update(light_client_update)
-                    {
-                        Ok(execution_outcome) => {
-                            info!(target: "relay", "Successful light client update submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
+                        .send_light_client_update(light_client_update), "Fail to send light client update");
+            info!(target: "relay", "Successful light client update submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
                                   self.near_network_name, execution_outcome.transaction.hash);
-                            self.current_gap_between_finalized_and_attested_slot =
-                                Self::get_gap_between_finalized_and_attested_slot(
-                                    self.light_client_updates_submission_frequency_in_epochs as u64,
-                                );
-                        }
-                        Err(err) => {
-                            warn!(target: "relay", "Fail to send light client update. Error: {}", err)
-                        }
-                    }
-                } else {
-                    debug!(target: "relay", "Finalized block for light client update is not found on NEAR. Skipping send light client update");
-                }
-            }
-            Err(err) => {
-                debug!(target: "relay", "Fail on the is_known_block method. Skipping sending light client update. Error: {}", err)
-            }
+            self.current_gap_between_finalized_and_attested_slot =
+                Self::get_gap_between_finalized_and_attested_slot(
+                    self.light_client_updates_submission_frequency_in_epochs as u64,
+                );
+        } else {
+            debug!(target: "relay", "Finalized block for light client update is not found on NEAR. Skipping send light client update");
         }
     }
 }
@@ -1044,6 +992,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_send_specific_light_client_update() {
         let mut relay = get_relay(true, true);
         let mut slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
@@ -1073,6 +1022,7 @@ mod tests {
 
 
     #[test]
+    #[ignore]
     fn test_hand_made_light_client_update() {
         log::set_boxed_logger(Box::new(SimpleLogger))
             .map(|()| log::set_max_level(LevelFilter::Trace))
@@ -1101,6 +1051,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_send_light_client_update() {
         let mut relay = get_relay(true, false);
         let finality_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
