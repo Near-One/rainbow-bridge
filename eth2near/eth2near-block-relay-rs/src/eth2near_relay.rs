@@ -675,6 +675,7 @@ mod tests {
     use crate::beacon_rpc_client::BeaconRPCClient;
     use crate::init_contract::init_contract;
     use crate::logger::SimpleLogger;
+    use crate::relay_errors::NoBlockForSlotError;
 
     const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
 
@@ -1113,6 +1114,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_send_light_client_update() {
         let mut relay = get_relay(true, false);
         let finality_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
@@ -1136,5 +1138,27 @@ mod tests {
 
         let new_finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
         assert_ne!(finality_slot, new_finalized_slot);
+    }
+
+    #[test]
+    fn test_get_execution_block_by_slot() {
+        let mut relay = get_relay(true, true);
+        relay.get_execution_block_by_slot(1099363).unwrap();
+        if let Err(err) = relay.get_execution_block_by_slot(1099364) {
+            if let None = err.downcast_ref::<NoBlockForSlotError>() {
+                panic!("Wrong error type for slot without block");
+            }
+        } else {
+            panic!("Return execution block for slot without block");
+        }
+
+        relay.beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
+        if let Err(err) = relay.get_execution_block_by_slot(1099364) {
+            if let Some(_) = err.downcast_ref::<NoBlockForSlotError>() {
+                panic!("Wrong error type for unworking network");
+            }
+        } else {
+            panic!("Return execution block in unworking network");
+        }
     }
 }
