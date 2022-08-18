@@ -402,9 +402,9 @@ mod tests {
     use crate::eth1_rpc_client::Eth1RPCClient;
     use crate::last_slot_searcher::LastSlotSearcher;
     use crate::test_utils::get_client_contract;
+    use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
     use eth_types::BlockHeader;
     use std::error::Error;
-    use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 
     fn get_execution_block_by_slot(
         slot: u64,
@@ -417,16 +417,18 @@ mod tests {
         }
     }
 
-    fn send_execution_blocks(beacon_rpc_client: &BeaconRPCClient,
-                             eth_client_contract: &mut Box<dyn EthClientContractTrait>,
-                             eth1_rpc_client: &Eth1RPCClient,
-                             start_slot: u64,
-                             end_slot: u64) {
+    fn send_execution_blocks(
+        beacon_rpc_client: &BeaconRPCClient,
+        eth_client_contract: &mut Box<dyn EthClientContractTrait>,
+        eth1_rpc_client: &Eth1RPCClient,
+        start_slot: u64,
+        end_slot: u64,
+    ) {
         let mut slot = start_slot;
         let mut blocks: Vec<BlockHeader> = vec![];
         while slot <= end_slot {
-            if let Ok(block) =
-            get_execution_block_by_slot(slot, beacon_rpc_client, eth1_rpc_client) {
+            if let Ok(block) = get_execution_block_by_slot(slot, beacon_rpc_client, eth1_rpc_client)
+            {
                 blocks.push(block)
             }
             slot += 1;
@@ -468,11 +470,13 @@ mod tests {
             .get_finalized_beacon_block_slot()
             .unwrap();
 
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              finalized_slot + 1,
-                              finalized_slot + 1);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            finalized_slot + 1,
+            finalized_slot + 1,
+        );
 
         let is_block_known = last_slot_searcher.block_known_on_near(
             finalized_slot + 1,
@@ -537,11 +541,13 @@ mod tests {
             .get_finalized_beacon_block_slot()
             .unwrap();
 
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              finalized_slot + 1,
-                              finalized_slot + 1);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            finalized_slot + 1,
+            finalized_slot + 1,
+        );
 
         let (left_non_empty_slot, is_known_block) = last_slot_searcher.find_left_non_error_slot(
             finalized_slot + 1,
@@ -565,11 +571,13 @@ mod tests {
         let finalized_slot = eth_client_contract
             .get_finalized_beacon_block_slot()
             .unwrap();
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              finalized_slot + 1,
-                              finalized_slot + 2);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            finalized_slot + 1,
+            finalized_slot + 2,
+        );
 
         let last_submitted_block = last_slot_searcher.linear_search_backward(
             finalized_slot + 1,
@@ -579,11 +587,13 @@ mod tests {
         );
         assert_eq!(last_submitted_block, finalized_slot + 2);
 
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              finalized_slot + 3,
-                              1099363);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            finalized_slot + 3,
+            1099363,
+        );
 
         let last_submitted_block = last_slot_searcher.linear_search_backward(
             finalized_slot + 1,
@@ -607,11 +617,13 @@ mod tests {
             .unwrap();
         slot += 1;
 
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              slot,
-                              1099362);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            slot,
+            1099362,
+        );
 
         let last_block_on_near = last_slot_searcher.linear_search_forward(
             eth_client_contract
@@ -625,11 +637,13 @@ mod tests {
 
         assert_eq!(last_block_on_near, 1099362);
 
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              1099363,
-                              1099363);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            1099363,
+            1099363,
+        );
 
         let last_block_on_near = last_slot_searcher.linear_search_forward(
             eth_client_contract
@@ -656,11 +670,13 @@ mod tests {
             .get_finalized_beacon_block_slot()
             .unwrap();
         slot += 1;
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              slot,
-                              1099363);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            slot,
+            1099363,
+        );
 
         let finalized_slot = eth_client_contract
             .get_finalized_beacon_block_slot()
@@ -724,11 +740,13 @@ mod tests {
             .get_finalized_beacon_block_slot()
             .unwrap();
 
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              finalized_slot + 1,
-                              finalized_slot + 2);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            finalized_slot + 1,
+            finalized_slot + 2,
+        );
 
         beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
         last_slot_searcher
@@ -755,11 +773,13 @@ mod tests {
             .unwrap();
         slot += 1;
 
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              slot,
-                              1099362);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            slot,
+            1099362,
+        );
 
         let last_block_on_near = last_slot_searcher
             .binsearch_slot_range(
@@ -774,11 +794,13 @@ mod tests {
             .unwrap();
         assert_eq!(last_block_on_near, 1099362);
 
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              1099363,
-                              1099363);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            1099363,
+            1099363,
+        );
         let last_block_on_near = last_slot_searcher
             .binsearch_slot_range(
                 eth_client_contract
@@ -837,11 +859,13 @@ mod tests {
             .unwrap();
         slot += 1;
 
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              slot,
-                              1099362);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            slot,
+            1099362,
+        );
 
         let last_block_on_near = last_slot_searcher
             .binsearch_slot_forward(
@@ -856,11 +880,13 @@ mod tests {
             .unwrap();
         assert_eq!(last_block_on_near, 1099362);
 
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              1099363,
-                              1099363);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            1099363,
+            1099363,
+        );
 
         let last_block_on_near = last_slot_searcher
             .binsearch_slot_forward(
@@ -920,11 +946,13 @@ mod tests {
             .unwrap();
         slot += 1;
 
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              slot,
-                              1099362);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            slot,
+            1099362,
+        );
 
         let finalized_slot = eth_client_contract
             .get_finalized_beacon_block_slot()
@@ -941,11 +969,13 @@ mod tests {
             .unwrap();
         assert_eq!(last_block_on_near, 1099362);
 
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              1099363,
-                              1099363);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            1099363,
+            1099363,
+        );
 
         let last_block_on_near = last_slot_searcher
             .binary_slot_search(
@@ -1015,22 +1045,26 @@ mod tests {
             .get_finalized_beacon_block_slot()
             .unwrap();
         slot += 1;
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              slot,
-                              1099362);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            slot,
+            1099362,
+        );
 
         let last_block_on_near = last_slot_searcher
             .get_last_slot(1099370, &beacon_rpc_client, &eth_client_contract)
             .unwrap();
         assert_eq!(last_block_on_near, 1099362);
 
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              1099363,
-                              1099363);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            1099363,
+            1099363,
+        );
 
         let last_block_on_near = last_slot_searcher
             .get_last_slot(1099370, &beacon_rpc_client, &eth_client_contract)
@@ -1058,22 +1092,26 @@ mod tests {
             .unwrap();
         slot += 1;
 
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              slot,
-                              1099362);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            slot,
+            1099362,
+        );
 
         let last_block_on_near = last_slot_searcher
             .get_last_slot(1099370, &beacon_rpc_client, &eth_client_contract)
             .unwrap();
         assert_eq!(last_block_on_near, 1099362);
 
-        send_execution_blocks(&beacon_rpc_client,
-                              &mut eth_client_contract,
-                              &eth1_rpc_client,
-                              1099363,
-                              1099363);
+        send_execution_blocks(
+            &beacon_rpc_client,
+            &mut eth_client_contract,
+            &eth1_rpc_client,
+            1099363,
+            1099363,
+        );
 
         let last_block_on_near = last_slot_searcher
             .get_last_slot(1099370, &beacon_rpc_client, &eth_client_contract)
