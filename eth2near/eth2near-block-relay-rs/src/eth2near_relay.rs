@@ -608,4 +608,19 @@ mod tests {
             assert_eq!(blocks.0[i - 1].hash.unwrap(), blocks.0[i].parent_hash);
         }
     }
+
+    #[test]
+    fn test_submit_execution_blocks() {
+        let mut relay = get_relay(true, true);
+        let mut finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        let blocks = relay.get_n_execution_blocks(finalized_slot + 1, 1099500);
+        relay.submit_execution_blocks(blocks.0, blocks.1, &mut finalized_slot);
+        assert_eq!(finalized_slot, blocks.1 - 1);
+
+        let last_slot = relay.last_slot_searcher.get_last_slot(1099500, &relay.beacon_rpc_client, &relay.eth_client_contract).unwrap();
+        assert_eq!(last_slot, blocks.1);
+        if let Ok(_) = relay.get_execution_block_by_slot(last_slot) {
+            panic!("Wrong last slot");
+        }
+    }
 }
