@@ -673,8 +673,16 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
     fn get_execution_blocks_in_bed_network() {
+        let mut relay = get_relay(true, true);
+        let finalized_slot = relay
+            .eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap();
 
+        relay.beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
+        relay.get_n_execution_blocks(finalized_slot + 1, 1099500).unwrap();
     }
 
     #[test]
@@ -689,6 +697,11 @@ mod tests {
 
     #[test]
     fn test_to_often_updates() {
+
+    }
+
+    #[test]
+    fn test_run() {
 
     }
 }
