@@ -3,7 +3,7 @@ use crate::config::Config;
 use crate::eth1_rpc_client::Eth1RPCClient;
 use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
 use crate::last_slot_searcher::LastSlotSearcher;
-use crate::relay_errors::MissSyncCommitteeUpdate;
+use crate::relay_errors::{MissSyncCommitteeUpdate, NoBlockForSlotError};
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::eth2::LightClientUpdate;
 use eth_types::BlockHeader;
@@ -105,10 +105,10 @@ impl Eth2NearRelay {
 
             if last_eth2_slot_on_near < last_eth2_slot_on_eth_chain {
                 info!(target: "relay", "= Creating headers batch =");
-                let (headers, current_slot) = self.get_n_execution_blocks(
+                let (headers, current_slot) = skip_fail!(self.get_n_execution_blocks(
                     last_eth2_slot_on_near + 1,
                     last_eth2_slot_on_eth_chain,
-                );
+                ), "Network problems during fetching execution blocks");
                 self.submit_execution_blocks(headers, current_slot, &mut last_eth2_slot_on_near);
                 self.send_light_client_updates(last_eth2_slot_on_near);
             }
@@ -119,7 +119,7 @@ impl Eth2NearRelay {
         &self,
         start_slot: u64,
         last_eth2_slot_on_eth_chain: u64,
-    ) -> (Vec<BlockHeader>, u64) {
+    ) -> Result<(Vec<BlockHeader>, u64), Box<dyn Error>> {
         let mut headers: Vec<BlockHeader> = vec![];
         let mut current_slot = start_slot;
 
@@ -127,13 +127,19 @@ impl Eth2NearRelay {
             && current_slot <= last_eth2_slot_on_eth_chain
         {
             debug!(target: "relay", "Try add block header for slot={}, headers len={}/{}", current_slot, headers.len(), self.max_submitted_headers);
-            if let Ok(eth1_header) = self.get_execution_block_by_slot(current_slot) {
-                headers.push(eth1_header);
+            match self.get_execution_block_by_slot(current_slot) {
+                Ok(eth1_header) => headers.push(eth1_header),
+                Err(err) => {
+                    match err.downcast_ref::<NoBlockForSlotError>() {
+                        Some(_) => continue,
+                        None => return Err(err),
+                    }
+                }
             }
             current_slot += 1;
         }
 
-        (headers, current_slot)
+        Ok((headers, current_slot))
     }
 
     fn submit_execution_blocks(
@@ -576,7 +582,7 @@ mod tests {
             .get_finalized_beacon_block_slot()
             .unwrap();
 
-        let blocks = relay.get_n_execution_blocks(finalized_slot + 1, 1099500);
+        let blocks = relay.get_n_execution_blocks(finalized_slot + 1, 1099500).unwrap();
         assert_eq!(blocks.0.len(), relay.max_submitted_headers as usize);
 
         let first_block = relay
@@ -597,7 +603,7 @@ mod tests {
             .eth_client_contract
             .get_finalized_beacon_block_slot()
             .unwrap();
-        let blocks = relay.get_n_execution_blocks(finalized_slot + 1, 1099500);
+        let blocks = relay.get_n_execution_blocks(finalized_slot + 1, 1099500).unwrap();
         relay.submit_execution_blocks(blocks.0, blocks.1, &mut finalized_slot);
         assert_eq!(finalized_slot, blocks.1 - 1);
 
