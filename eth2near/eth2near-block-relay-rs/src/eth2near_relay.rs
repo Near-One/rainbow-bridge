@@ -730,7 +730,45 @@ mod tests {
 
     #[test]
     fn test_wrong_last_submitted_slot() {
+        let mut relay = get_relay(true, false);
+        let finality_slot = relay
+            .eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap();
+        let mut slot = finality_slot + 1;
 
+        let mut finality_slot_on_eth = relay
+            .beacon_rpc_client
+            .get_last_finalized_slot_number()
+            .unwrap()
+            .as_u64();
+
+        let mut blocks: Vec<BlockHeader> = vec![];
+        while finality_slot == finality_slot_on_eth || slot <= finality_slot_on_eth {
+            if let Ok(block) = relay.get_execution_block_by_slot(slot) {
+                blocks.push(block)
+            }
+            slot += 1;
+
+            finality_slot_on_eth = relay
+                .beacon_rpc_client
+                .get_last_finalized_slot_number()
+                .unwrap()
+                .as_u64();
+        }
+
+        relay
+            .eth_client_contract
+            .send_headers(&blocks, finality_slot_on_eth)
+            .unwrap();
+
+        relay.send_light_client_updates(finality_slot_on_eth + 1);
+
+        let new_finalized_slot = relay
+            .eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap();
+        assert_eq!(finality_slot, new_finalized_slot);
     }
 
     #[test]
