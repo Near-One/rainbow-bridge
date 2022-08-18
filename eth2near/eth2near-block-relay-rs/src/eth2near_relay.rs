@@ -405,6 +405,37 @@ mod tests {
             .unwrap();
     }
 
+    fn send_blocks_till_finalized_eth_slot(relay: &mut Eth2NearRelay, finality_slot: u64) -> u64 {
+        let mut slot = finality_slot + 1;
+
+        let mut finality_slot_on_eth = relay
+            .beacon_rpc_client
+            .get_last_finalized_slot_number()
+            .unwrap()
+            .as_u64();
+
+        let mut blocks: Vec<BlockHeader> = vec![];
+        while finality_slot == finality_slot_on_eth || slot <= finality_slot_on_eth {
+            if let Ok(block) = relay.get_execution_block_by_slot(slot) {
+                blocks.push(block)
+            }
+            slot += 1;
+
+            finality_slot_on_eth = relay
+                .beacon_rpc_client
+                .get_last_finalized_slot_number()
+                .unwrap()
+                .as_u64();
+        }
+
+        relay
+            .eth_client_contract
+            .send_headers(&blocks, finality_slot_on_eth)
+            .unwrap();
+
+        finality_slot_on_eth
+    }
+
     #[test]
     fn test_send_specific_light_client_update() {
         let mut relay = get_relay(true, true);
@@ -476,33 +507,8 @@ mod tests {
             .eth_client_contract
             .get_finalized_beacon_block_slot()
             .unwrap();
-        let mut slot = finality_slot + 1;
 
-        let mut finality_slot_on_eth = relay
-            .beacon_rpc_client
-            .get_last_finalized_slot_number()
-            .unwrap()
-            .as_u64();
-
-        let mut blocks: Vec<BlockHeader> = vec![];
-        while finality_slot == finality_slot_on_eth || slot <= finality_slot_on_eth {
-            if let Ok(block) = relay.get_execution_block_by_slot(slot) {
-                blocks.push(block)
-            }
-            slot += 1;
-
-            finality_slot_on_eth = relay
-                .beacon_rpc_client
-                .get_last_finalized_slot_number()
-                .unwrap()
-                .as_u64();
-        }
-
-        relay
-            .eth_client_contract
-            .send_headers(&blocks, finality_slot_on_eth)
-            .unwrap();
-
+        let finality_slot_on_eth = send_blocks_till_finalized_eth_slot(&mut relay, finality_slot);
         relay.send_light_client_updates(finality_slot_on_eth);
 
         let new_finalized_slot = relay
@@ -692,33 +698,7 @@ mod tests {
             .eth_client_contract
             .get_finalized_beacon_block_slot()
             .unwrap();
-        let mut slot = finality_slot + 1;
-
-        let mut finality_slot_on_eth = relay
-            .beacon_rpc_client
-            .get_last_finalized_slot_number()
-            .unwrap()
-            .as_u64();
-
-        let mut blocks: Vec<BlockHeader> = vec![];
-        while finality_slot == finality_slot_on_eth || slot <= finality_slot_on_eth {
-            if let Ok(block) = relay.get_execution_block_by_slot(slot) {
-                blocks.push(block)
-            }
-            slot += 1;
-
-            finality_slot_on_eth = relay
-                .beacon_rpc_client
-                .get_last_finalized_slot_number()
-                .unwrap()
-                .as_u64();
-        }
-
-        relay
-            .eth_client_contract
-            .send_headers(&blocks, finality_slot_on_eth)
-            .unwrap();
-
+        let finality_slot_on_eth = send_blocks_till_finalized_eth_slot(&mut relay, finality_slot);
         relay.send_regular_light_client_update(finality_slot_on_eth, finality_slot);
 
         let new_finalized_slot = relay
@@ -735,33 +715,8 @@ mod tests {
             .eth_client_contract
             .get_finalized_beacon_block_slot()
             .unwrap();
-        let mut slot = finality_slot + 1;
 
-        let mut finality_slot_on_eth = relay
-            .beacon_rpc_client
-            .get_last_finalized_slot_number()
-            .unwrap()
-            .as_u64();
-
-        let mut blocks: Vec<BlockHeader> = vec![];
-        while finality_slot == finality_slot_on_eth || slot <= finality_slot_on_eth {
-            if let Ok(block) = relay.get_execution_block_by_slot(slot) {
-                blocks.push(block)
-            }
-            slot += 1;
-
-            finality_slot_on_eth = relay
-                .beacon_rpc_client
-                .get_last_finalized_slot_number()
-                .unwrap()
-                .as_u64();
-        }
-
-        relay
-            .eth_client_contract
-            .send_headers(&blocks, finality_slot_on_eth)
-            .unwrap();
-
+        let finality_slot_on_eth = send_blocks_till_finalized_eth_slot(&mut relay, finality_slot);
         relay.send_light_client_updates(finality_slot_on_eth + 1);
 
         let new_finalized_slot = relay
@@ -773,11 +728,36 @@ mod tests {
 
     #[test]
     fn test_to_often_updates() {
+        let mut relay = get_relay(true, false);
+        relay.light_client_updates_submission_frequency_in_epochs = 2;
 
+        let finality_slot = relay
+            .eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap();
+
+        let finality_slot_on_eth = send_blocks_till_finalized_eth_slot(&mut relay, finality_slot);
+        relay.send_light_client_updates(finality_slot_on_eth);
+
+        let new_finalized_slot = relay
+            .eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap();
+        assert_eq!(finality_slot, new_finalized_slot);
     }
 
     #[test]
     fn test_run() {
+
+    }
+
+    #[test]
+    fn test_base_update_for_new_period() {
+
+    }
+
+    #[test]
+    fn test_update_new_period_without_next_sync_committee() {
 
     }
 }
