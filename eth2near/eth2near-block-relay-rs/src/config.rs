@@ -32,7 +32,7 @@ pub struct Config {
     pub contract_type: String,
 
     // Frequency of submission light client updates. Once in N epochs.
-    pub light_client_updates_submission_frequency_in_epochs: i64,
+    pub light_client_updates_submission_frequency_in_epochs: u64,
 
     // maximum gap in slots between submitting light client update
     pub max_blocks_for_finalization: u64,
