@@ -101,6 +101,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.register_relay,
     );
 
-    eth2near_relay.run();
+    eth2near_relay.run(None);
     Ok(())
 }

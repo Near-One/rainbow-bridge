@@ -81,9 +81,17 @@ impl Eth2NearRelay {
         eth2near_relay
     }
 
-    pub fn run(&mut self) {
+    pub fn run(&mut self, max_iterations: Option<u64>) {
         info!(target: "relay", "=== Relay running ===");
+        let mut iter_id = 0;
         loop {
+            iter_id += 1;
+            if let Some(max_iter) = max_iterations {
+                if iter_id > max_iter {
+                    return;
+                }
+            }
+
             info!(target: "relay", "== New relay loop ==");
 
             let last_eth2_slot_on_eth_chain: u64 = skip_fail!(
@@ -590,10 +598,6 @@ mod tests {
 
     #[test]
     fn test_get_n_execution_blocks() {
-        log::set_boxed_logger(Box::new(SimpleLogger))
-            .map(|()| log::set_max_level(Trace))
-            .unwrap();
-
         let relay = get_relay(true, true);
         let finalized_slot = relay
             .eth_client_contract
@@ -748,7 +752,23 @@ mod tests {
 
     #[test]
     fn test_run() {
+        log::set_boxed_logger(Box::new(SimpleLogger))
+            .map(|()| log::set_max_level(Trace))
+            .unwrap();
 
+        let mut relay = get_relay(true, true);
+        let finality_slot = relay.eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap();
+
+        relay.run(Some(5));
+
+        let new_finality_slot = relay
+            .eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap();
+
+        assert_ne!(finality_slot, new_finality_slot);
     }
 
     #[test]
