@@ -139,7 +139,10 @@ impl Eth2NearRelay {
                 Ok(eth1_header) => headers.push(eth1_header),
                 Err(err) => {
                     match err.downcast_ref::<NoBlockForSlotError>() {
-                        Some(_) => continue,
+                        Some(_) => {
+                            current_slot += 1;
+                            continue;
+                        },
                         None => return Err(err),
                     }
                 }
