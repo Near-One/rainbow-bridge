@@ -252,7 +252,7 @@ impl Eth2NearRelay {
             >= self.max_blocks_for_finalization
         {
             info!(target: "relay", "Too big gap between slot of finalized block on Near and Eth. Sending hand made light client update");
-            self.send_hand_made_light_client_update(last_finalized_slot_on_near, last_submitted_slot);
+            self.send_hand_made_light_client_update(last_finalized_slot_on_near);
         } else {
             self.send_regular_light_client_update(last_finalized_slot_on_eth, last_finalized_slot_on_near);
         }
@@ -286,17 +286,9 @@ impl Eth2NearRelay {
 
     fn send_hand_made_light_client_update(
         &mut self,
-        last_finalized_slot_on_near: u64,
-        last_submitted_slot: u64,
+        last_finalized_slot_on_near: u64
     ) {
         trace!(target: "relay", "last_finalized_slot_on_near {}", last_finalized_slot_on_near);
-
-        if (last_submitted_slot as i64) - (last_finalized_slot_on_near as i64)
-            < (ONE_EPOCH_IN_SLOTS as i64 * self.light_client_updates_submission_frequency_in_epochs)
-        {
-            info!(target: "relay", "Waiting for sending more headers to near. Skip sending light client update.");
-            return;
-        }
 
         let attested_slot =
             last_finalized_slot_on_near + self.current_gap_between_finalized_and_attested_slot;
@@ -357,6 +349,7 @@ impl Eth2NearRelay {
                 self.verify_bls_signature_for_finality_update(&light_client_update),
                 "Error on bls verification. Skip sending the light client update"
             );
+
             if verification_result {
                 info!(target: "relay", "PASS bls signature verification!");
             } else {
@@ -371,6 +364,7 @@ impl Eth2NearRelay {
                     .send_light_client_update(light_client_update),
                 "Fail to send light client update"
             );
+
             info!(target: "relay", "Successful light client update submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
                                   self.near_network_name, execution_outcome.transaction.hash);
             self.current_gap_between_finalized_and_attested_slot =
@@ -466,7 +460,7 @@ mod tests {
             .unwrap();
         assert_eq!(finalized_slot, 1099360);
 
-        relay.send_hand_made_light_client_update(finalized_slot, 1099392);
+        relay.send_hand_made_light_client_update(finalized_slot);
 
         let finalized_slot = relay
             .eth_client_contract
@@ -624,5 +618,31 @@ mod tests {
         if let Ok(_) = relay.get_execution_block_by_slot(last_slot) {
             panic!("Wrong last slot");
         }
+    }
+
+    #[test]
+    fn try_submit_update_with_not_enough_blocks() {
+        let mut relay = get_relay(true, true);
+        let mut slot = relay
+            .eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap();
+        slot += 1;
+
+        send_execution_blocks(&mut relay, slot, 1099391);
+
+        let finalized_slot = relay
+            .eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap();
+        assert_eq!(finalized_slot, 1099360);
+
+        relay.send_light_client_updates(1099360);
+        let finalized_slot = relay
+            .eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap();
+
+        assert_eq!(finalized_slot, 1099360);
     }
 }
