@@ -7,9 +7,9 @@ pub mod eth2near_relay;
 pub mod execution_block_proof;
 pub mod hand_made_finality_light_client_update;
 pub mod init_contract;
+pub mod last_slot_searcher;
 pub mod logger;
 pub mod relay_errors;
-pub mod last_slot_searcher;
 
 #[cfg(test)]
 pub mod test_utils;

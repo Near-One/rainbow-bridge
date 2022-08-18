@@ -86,10 +86,7 @@ pub struct NoBlockForSlotError;
 
 impl Display for NoBlockForSlotError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "No block found for slot"
-        )
+        write!(f, "No block found for slot")
     }
 }
 

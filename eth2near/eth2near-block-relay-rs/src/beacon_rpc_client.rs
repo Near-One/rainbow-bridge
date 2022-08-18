@@ -1,5 +1,8 @@
 use crate::execution_block_proof::ExecutionBlockProof;
-use crate::relay_errors::{ExecutionPayloadError, MissSyncAggregationError, NoBlockForSlotError, SignatureSlotNotFoundError};
+use crate::relay_errors::{
+    ExecutionPayloadError, MissSyncAggregationError, NoBlockForSlotError,
+    SignatureSlotNotFoundError,
+};
 use eth_types::eth2::BeaconBlockHeader;
 use eth_types::eth2::FinalizedHeaderUpdate;
 use eth_types::eth2::HeaderUpdate;
@@ -63,8 +66,7 @@ impl BeaconRPCClient {
 
         let json_str = &self.get_json_from_raw_request(&url)?;
         self.check_block_found_for_slot(json_str)?;
-        let body_json =
-            &Self::get_body_json_from_rpc_result(&json_str)?;
+        let body_json = &Self::get_body_json_from_rpc_result(&json_str)?;
 
         Ok(serde_json::from_str(body_json)?)
     }
@@ -89,8 +91,7 @@ impl BeaconRPCClient {
 
         let json_str = &self.get_json_from_raw_request(&url)?;
         self.check_block_found_for_slot(json_str)?;
-        let json_str =
-            Self::get_header_json_from_rpc_result(&json_str)?;
+        let json_str = Self::get_header_json_from_rpc_result(&json_str)?;
         Ok(serde_json::from_str(&json_str)?)
     }
 
@@ -416,7 +417,7 @@ impl BeaconRPCClient {
         let mut slot = start_slot;
         for _ in 0..CHECK_SLOTS_FORWARD_LIMIT {
             if let Ok(beacon_block_body) =
-            self.get_beacon_block_header_for_block_id(&format!("{}", slot))
+                self.get_beacon_block_header_for_block_id(&format!("{}", slot))
             {
                 return Ok(beacon_block_body);
             }
@@ -433,7 +434,7 @@ impl BeaconRPCClient {
     fn check_block_found_for_slot(&self, json_str: &str) -> Result<(), Box<dyn Error>> {
         let parse_json: Value = serde_json::from_str(json_str)?;
         if parse_json.is_object() {
-            if let Some(msg_str) = parse_json["message"].as_str(){
+            if let Some(msg_str) = parse_json["message"].as_str() {
                 if msg_str.contains("No block found for") {
                     return Err(Box::new(NoBlockForSlotError));
                 }

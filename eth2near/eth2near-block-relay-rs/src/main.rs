@@ -1,15 +1,17 @@
 use clap::{ArgAction, Parser};
 use contract_wrapper::contract_wrapper_trait::ContractWrapper;
+use contract_wrapper::eth_client_contract::EthClientContract;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use contract_wrapper::near_contract_wrapper::NearContractWrapper;
-use contract_wrapper::{dao_contract, dao_eth_client_contract, eth_client_contract, file_eth_client_contract};
+use contract_wrapper::{
+    dao_contract, dao_eth_client_contract, eth_client_contract, file_eth_client_contract,
+};
 use eth2_to_near_relay::config::Config;
 use eth2_to_near_relay::eth2near_relay::Eth2NearRelay;
 use eth2_to_near_relay::init_contract::init_contract;
 use eth2_to_near_relay::logger::SimpleLogger;
 use log::LevelFilter;
 use std::string::String;
-use contract_wrapper::eth_client_contract::EthClientContract;
 
 #[derive(Parser, Default, Debug)]
 #[clap(version, about = "Eth2 to Near Relay")]
@@ -64,8 +66,9 @@ fn get_eth_client_contract(config: &Config) -> Box<dyn EthClientContractTrait> {
             eth_client,
             dao_contract::DAOContract::new(get_dao_contract_wrapper(config)),
         )),
-        "file" => Box::new(file_eth_client_contract::FileEthClientContract::new(eth_client,
-        config.output_dir.clone().unwrap()
+        "file" => Box::new(file_eth_client_contract::FileEthClientContract::new(
+            eth_client,
+            config.output_dir.clone().unwrap(),
         )),
         _ => Box::new(eth_client),
     }

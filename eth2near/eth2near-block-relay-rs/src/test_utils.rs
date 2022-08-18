@@ -1,17 +1,17 @@
-use std::{thread, time};
-use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
-use eth_types::BlockHeader;
-use near_units::*;
-use workspaces::prelude::*;
-use workspaces::{network::Sandbox, Account, Contract, Worker};
-use tokio::runtime::Runtime;
+use crate::config::Config;
+use crate::eth2near_relay::Eth2NearRelay;
+use crate::init_contract::init_contract;
+use crate::test_utils;
 use contract_wrapper::eth_client_contract::EthClientContract;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
-use crate::config::Config;
-use crate::eth2near_relay::Eth2NearRelay;
-use crate::test_utils;
-use crate::init_contract::init_contract;
+use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
+use eth_types::BlockHeader;
+use near_units::*;
+use std::{thread, time};
+use tokio::runtime::Runtime;
+use workspaces::prelude::*;
+use workspaces::{network::Sandbox, Account, Contract, Worker};
 
 pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
     let mut json_file_path = std::env::current_exe().unwrap();
@@ -22,29 +22,48 @@ pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
     std::fs::read_to_string(json_file_path).expect("Unable to read file")
 }
 
-
 pub fn init_contract_from_files(eth_client_contract: &mut EthClientContract) {
-    const PATH_TO_CURRENT_SYNC_COMMITTEE: &str = "../contract_wrapper/data/next_sync_committee_133.json";
-    const PATH_TO_NEXT_SYNC_COMMITTEE: &str = "../contract_wrapper/data/next_sync_committee_134.json";
+    const PATH_TO_CURRENT_SYNC_COMMITTEE: &str =
+        "../contract_wrapper/data/next_sync_committee_133.json";
+    const PATH_TO_NEXT_SYNC_COMMITTEE: &str =
+        "../contract_wrapper/data/next_sync_committee_134.json";
     const NETWORK: &str = "kiln";
-    const PATH_TO_EXECUTION_BLOCKS: &str = "../contract_wrapper/data/execution_block_headers_kiln_1099394-1099937.json";
-    const PATH_TO_LIGHT_CLIENT_UPDATES: &str = "../contract_wrapper/data/light_client_updates_kiln_1099394-1099937.json";
+    const PATH_TO_EXECUTION_BLOCKS: &str =
+        "../contract_wrapper/data/execution_block_headers_kiln_1099394-1099937.json";
+    const PATH_TO_LIGHT_CLIENT_UPDATES: &str =
+        "../contract_wrapper/data/light_client_updates_kiln_1099394-1099937.json";
 
     let execution_blocks: Vec<BlockHeader> = serde_json::from_str(
         &std::fs::read_to_string(PATH_TO_EXECUTION_BLOCKS).expect("Unable to read file"),
-    ).unwrap();
+    )
+    .unwrap();
 
     let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
         &std::fs::read_to_string(PATH_TO_LIGHT_CLIENT_UPDATES).expect("Unable to read file"),
-    ).unwrap();
+    )
+    .unwrap();
 
+    let current_sync_committee: SyncCommittee = serde_json::from_str(
+        &std::fs::read_to_string(PATH_TO_CURRENT_SYNC_COMMITTEE).expect("Unable to read file"),
+    )
+    .unwrap();
+    let next_sync_committee: SyncCommittee = serde_json::from_str(
+        &std::fs::read_to_string(PATH_TO_NEXT_SYNC_COMMITTEE).expect("Unable to read file"),
+    )
+    .unwrap();
 
-    let current_sync_committee: SyncCommittee = serde_json::from_str(&std::fs::read_to_string(PATH_TO_CURRENT_SYNC_COMMITTEE).expect("Unable to read file")).unwrap();
-    let next_sync_committee: SyncCommittee = serde_json::from_str(&std::fs::read_to_string(PATH_TO_NEXT_SYNC_COMMITTEE).expect("Unable to read file")).unwrap();
+    let finalized_beacon_header = ExtendedBeaconBlockHeader::from(
+        light_client_updates[0]
+            .clone()
+            .finality_update
+            .header_update,
+    );
 
-    let finalized_beacon_header = ExtendedBeaconBlockHeader::from(light_client_updates[0].clone().finality_update.header_update);
-
-    let finalized_hash = light_client_updates[0].clone().finality_update.header_update.execution_block_hash;
+    let finalized_hash = light_client_updates[0]
+        .clone()
+        .finality_update
+        .header_update
+        .execution_block_hash;
     let mut finalized_execution_header = None::<BlockHeader>;
     for header in &execution_blocks {
         if header.hash.unwrap() == finalized_hash {
@@ -53,10 +72,15 @@ pub fn init_contract_from_files(eth_client_contract: &mut EthClientContract) {
         }
     }
 
-    eth_client_contract.init_contract(NETWORK.to_string(), finalized_execution_header.unwrap(), finalized_beacon_header, current_sync_committee, next_sync_committee);
+    eth_client_contract.init_contract(
+        NETWORK.to_string(),
+        finalized_execution_header.unwrap(),
+        finalized_beacon_header,
+        current_sync_committee,
+        next_sync_committee,
+    );
     thread::sleep(time::Duration::from_secs(30));
 }
-
 
 const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
 
@@ -69,11 +93,16 @@ fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
 
     // create accounts
     let owner = worker.root_account().unwrap();
-    let relay_account = rt.block_on(owner
-        .create_subaccount(&worker, "relay_account")
-        .initial_balance(parse_near!("30 N"))
-        .transact()).unwrap()
-        .into_result().unwrap();
+    let relay_account = rt
+        .block_on(
+            owner
+                .create_subaccount(&worker, "relay_account")
+                .initial_balance(parse_near!("30 N"))
+                .transact(),
+        )
+        .unwrap()
+        .into_result()
+        .unwrap();
 
     (relay_account, contract, worker)
 }
@@ -93,7 +122,7 @@ fn get_config() -> Config {
         max_blocks_for_finalization: 5000,
         near_network_id: "testnet".to_string(),
         dao_contract_account_id: None,
-        output_dir: None
+        output_dir: None,
     }
 }
 
@@ -113,5 +142,10 @@ pub fn get_client_contract(from_file: bool) -> Box<dyn EthClientContractTrait> {
 
 pub fn get_relay(enable_binsearch: bool, from_file: bool) -> Eth2NearRelay {
     let config = get_config();
-    Eth2NearRelay::init(&config, get_client_contract(from_file), enable_binsearch, true)
+    Eth2NearRelay::init(
+        &config,
+        get_client_contract(from_file),
+        enable_binsearch,
+        true,
+    )
 }
