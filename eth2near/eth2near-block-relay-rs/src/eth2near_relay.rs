@@ -132,11 +132,8 @@ impl Eth2NearRelay {
             && current_slot <= last_eth2_slot_on_eth_chain
         {
             debug!(target: "relay", "Try add block header for slot={}, headers len={}/{}", current_slot, headers.len(), self.max_submitted_headers);
-            loop {
-                if let Ok(eth1_header) = self.get_execution_block_by_slot(current_slot) {
-                    headers.push(eth1_header);
-                    break;
-                }
+            if let Ok(eth1_header) = self.get_execution_block_by_slot(current_slot) {
+                headers.push(eth1_header);
             }
             current_slot += 1;
         }
@@ -396,6 +393,22 @@ mod tests {
     use eth_types::BlockHeader;
     use log::LevelFilter;
 
+    fn send_execution_blocks(relay: &mut Eth2NearRelay,
+                             start_slot: u64,
+                             end_slot: u64) {
+        let mut slot = start_slot;
+        let mut blocks: Vec<BlockHeader> = vec![];
+        while slot <= end_slot {
+            if let Ok(block) =
+            relay.get_execution_block_by_slot(slot) {
+                blocks.push(block)
+            }
+            slot += 1;
+        }
+
+        relay.eth_client_contract.send_headers(&blocks, end_slot).unwrap();
+    }
+
     #[test]
     #[ignore]
     fn test_send_specific_light_client_update() {
@@ -406,18 +419,8 @@ mod tests {
             .unwrap();
         slot += 1;
 
-        let mut blocks: Vec<BlockHeader> = vec![];
-        while slot <= 1099392 {
-            if let Ok(block) = relay.get_execution_block_by_slot(slot) {
-                blocks.push(block)
-            }
-            slot += 1;
-        }
+        send_execution_blocks(&mut relay, slot, 1099392);
 
-        relay
-            .eth_client_contract
-            .send_headers(&blocks, 1099392)
-            .unwrap();
         let finalized_slot = relay
             .eth_client_contract
             .get_finalized_beacon_block_slot()
@@ -453,18 +456,8 @@ mod tests {
             .unwrap();
         slot += 1;
 
-        let mut blocks: Vec<BlockHeader> = vec![];
-        while slot <= 1099392 {
-            if let Ok(block) = relay.get_execution_block_by_slot(slot) {
-                blocks.push(block)
-            }
-            slot += 1;
-        }
+        send_execution_blocks(&mut relay, slot, 1099392);
 
-        relay
-            .eth_client_contract
-            .send_headers(&blocks, 1099392)
-            .unwrap();
         let finalized_slot = relay
             .eth_client_contract
             .get_finalized_beacon_block_slot()
@@ -592,6 +585,27 @@ mod tests {
             Err(_) => {
                 panic!("Error on get light client update");
             }
+        }
+    }
+
+    #[test]
+    fn test_get_n_execution_blocks() {
+        log::set_boxed_logger(Box::new(SimpleLogger))
+            .map(|()| log::set_max_level(LevelFilter::Trace))
+            .unwrap();
+
+        let relay = get_relay(true, true);
+        let finalized_slot = relay.eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+
+        let blocks = relay.get_n_execution_blocks(finalized_slot + 1, 1099500);
+        assert_eq!(blocks.0.len(), relay.max_submitted_headers as usize);
+
+        let first_block = relay.get_execution_block_by_slot(finalized_slot + 1).unwrap();
+        assert_eq!(blocks.0[0].hash, first_block.hash);
+
+        for i in 1..blocks.0.len() {
+            assert_ne!(blocks.0[i - 1].hash, blocks.0[i].hash);
+            assert_eq!(blocks.0[i - 1].hash.unwrap(), blocks.0[i].parent_hash);
         }
     }
 }
