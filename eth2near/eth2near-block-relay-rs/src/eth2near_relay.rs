@@ -6,7 +6,7 @@ use crate::last_slot_searcher::LastSlotSearcher;
 use crate::relay_errors::MissSyncCommitteeUpdate;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::eth2::LightClientUpdate;
-use eth_types::{BlockHeader, H256};
+use eth_types::BlockHeader;
 use log::{debug, info, trace, warn};
 use std::error::Error;
 use std::vec::Vec;
@@ -215,71 +215,73 @@ impl Eth2NearRelay {
 
 // Implementation of functions for submitting light client updates
 impl Eth2NearRelay {
-    fn send_light_client_updates(&mut self, last_submitted_slot: u64) {
-        info!(target: "relay", "= Sending light client update =");
-
-        let finalized_block_hash: H256 = return_on_fail!(
-            self.eth_client_contract.get_finalized_beacon_block_hash(),
-            "Error on getting finalized block hash. Skipping sending light client update"
-        );
-
-        let last_finalized_slot_on_near: u64 =
-            return_on_fail!(self
-            .beacon_rpc_client
-            .get_slot_by_beacon_block_root(finalized_block_hash),
-            "Error on getting slot for finalized block hash. Skipping sending light client update");
-
+    fn is_enough_blocks_for_update(&self, last_submitted_slot: u64, last_finalized_slot_on_near: u64, last_finalized_slot_on_eth: u64) -> bool {
         if (last_submitted_slot as i64) - (last_finalized_slot_on_near as i64)
             < (ONE_EPOCH_IN_SLOTS as i64) * self.light_client_updates_submission_frequency_in_epochs
         {
             info!(target: "relay", "Light client update were send less then {} epochs ago. Skipping sending light client update", self.light_client_updates_submission_frequency_in_epochs);
-            return;
+            return false;
         }
 
-        let last_eth2_period_on_near_chain =
-            BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near);
-        info!(target: "relay", "Last finalized slot/period on near={}/{}", last_finalized_slot_on_near, last_eth2_period_on_near_chain);
+        if last_finalized_slot_on_eth <= last_finalized_slot_on_near {
+            info!(target: "relay", "Last finalized slot on Eth equal to last finalized slot on NEAR. Skipping sending light client update.");
+            return false;
+        }
+
+        true
+    }
+
+    fn send_light_client_updates(&mut self, last_submitted_slot: u64) {
+        info!(target: "relay", "= Sending light client update =");
+
+        let last_finalized_slot_on_near: u64 = return_on_fail!(
+            self.eth_client_contract.get_finalized_beacon_block_slot(),
+            "Error on getting finalized block hash. Skipping sending light client update"
+        );
 
         let last_finalized_slot_on_eth: u64 = return_on_fail!(self
             .beacon_rpc_client
             .get_last_finalized_slot_number(),
             "Error on getting last finalized slot number on Ethereum. Skipping sending light client update").as_u64();
 
-        let end_period = BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_eth);
-        info!(target: "relay", "Last finalized slot/period on ethereum={}/{}", last_finalized_slot_on_eth, end_period);
+        if !self.is_enough_blocks_for_update(last_submitted_slot, last_finalized_slot_on_near, last_finalized_slot_on_eth) {
+            return;
+        }
 
         if last_finalized_slot_on_eth - last_finalized_slot_on_near
             >= self.max_blocks_for_finalization
         {
             info!(target: "relay", "Too big gap between slot of finalized block on Near and Eth. Sending hand made light client update");
-            self.send_hand_made_light_client_update(
-                last_finalized_slot_on_near,
-                last_submitted_slot,
-            );
-            return;
+            self.send_hand_made_light_client_update(last_finalized_slot_on_near, last_submitted_slot);
+        } else {
+            self.send_regular_light_client_update(last_finalized_slot_on_eth, last_finalized_slot_on_near);
         }
+    }
 
-        if last_finalized_slot_on_eth <= last_finalized_slot_on_near {
-            info!(target: "relay", "Last finalized slot on Eth equal to last finalized slot on NEAR. Skipping sending light client update.");
-            return;
-        }
+    fn send_regular_light_client_update(&mut self,
+                                        last_finalized_slot_on_eth: u64,
+                                        last_finalized_slot_on_near: u64) {
+        let last_eth2_period_on_near_chain =
+            BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near);
+        info!(target: "relay", "Last finalized slot/period on near={}/{}", last_finalized_slot_on_near, last_eth2_period_on_near_chain);
 
-        if end_period == last_eth2_period_on_near_chain {
+        let end_period = BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_eth);
+        info!(target: "relay", "Last finalized slot/period on ethereum={}/{}", last_finalized_slot_on_eth, end_period);
+
+        let light_client_update = if end_period == last_eth2_period_on_near_chain {
             debug!(target: "relay", "Finalized period on Eth and Near are equal. Don't fetch sync commity update");
-            let light_client_update = return_on_fail!(
+            return_on_fail!(
                 self.beacon_rpc_client.get_finality_light_client_update(),
-                "Error on getting light client update. Skipping sending light client update"
-            );
-            self.send_specific_light_cleint_update(light_client_update);
+                "Error on getting light client update. Skipping sending light client update")
         } else {
             debug!(target: "relay", "Finalized period on Eth and Near are different. Fetching sync commity update");
-            let light_client_update = return_on_fail!(
+            return_on_fail!(
                 self.beacon_rpc_client
                     .get_finality_light_client_update_with_sync_commity_update(),
-                "Error on getting light client update. Skipping sending light client update"
-            );
-            self.send_specific_light_cleint_update(light_client_update);
-        }
+                "Error on getting light client update. Skipping sending light client update")
+        };
+
+        self.send_specific_light_cleint_update(light_client_update);
     }
 
     fn send_hand_made_light_client_update(
