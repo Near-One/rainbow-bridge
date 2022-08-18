@@ -380,12 +380,14 @@ impl Eth2NearRelay {
 #[cfg(test)]
 mod tests {
     use crate::beacon_rpc_client::BeaconRPCClient;
-    use crate::eth2near_relay::Eth2NearRelay;
+    use crate::eth2near_relay::{Eth2NearRelay, ONE_EPOCH_IN_SLOTS};
     use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
     use crate::relay_errors::NoBlockForSlotError;
     use crate::test_utils::get_relay;
     use eth_types::eth2::LightClientUpdate;
     use eth_types::BlockHeader;
+    use log::LevelFilter::Trace;
+    use crate::logger::SimpleLogger;
 
     fn send_execution_blocks(relay: &mut Eth2NearRelay, start_slot: u64, end_slot: u64) {
         let mut slot = start_slot;
@@ -436,6 +438,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_hand_made_light_client_update() {
         let mut relay = get_relay(true, true);
         let mut slot = relay
@@ -451,6 +454,11 @@ mod tests {
             .get_finalized_beacon_block_slot()
             .unwrap();
         assert_eq!(finalized_slot, 1099360);
+
+        let attested_slot = relay.get_attested_slot(finalized_slot).unwrap();
+        if let Ok(_) = relay.get_execution_block_by_slot(attested_slot + 1) {
+            panic!("Next slot after attested_slot on chain");
+        }
 
         relay.send_hand_made_light_client_update(finalized_slot);
 
@@ -576,6 +584,10 @@ mod tests {
 
     #[test]
     fn test_get_n_execution_blocks() {
+        log::set_boxed_logger(Box::new(SimpleLogger))
+            .map(|()| log::set_max_level(Trace))
+            .unwrap();
+
         let relay = get_relay(true, true);
         let finalized_slot = relay
             .eth_client_contract
@@ -645,5 +657,38 @@ mod tests {
             .unwrap();
 
         assert_eq!(finalized_slot, 1099360);
+    }
+
+    #[test]
+    fn test_not_invalid_attested_slot() {
+        let mut relay = get_relay(true, true);
+        let finalized_slot = 1099360;
+        let possible_attested_slot = finalized_slot + ONE_EPOCH_IN_SLOTS * 2 + ONE_EPOCH_IN_SLOTS * relay.light_client_updates_submission_frequency_in_epochs;
+        if let Ok(_) = relay.get_execution_block_by_slot(possible_attested_slot) {
+            panic!("possible attested slot has execution block");
+        }
+
+        let attested_slot = relay.get_attested_slot(finalized_slot).unwrap();
+        relay.get_execution_block_by_slot(attested_slot).unwrap();
+    }
+
+    #[test]
+    fn get_execution_blocks_in_bed_network() {
+
+    }
+
+    #[test]
+    fn test_send_regular_light_client_update() {
+
+    }
+
+    #[test]
+    fn test_wrong_last_submitted_slot() {
+
+    }
+
+    #[test]
+    fn test_to_often_updates() {
+
     }
 }
