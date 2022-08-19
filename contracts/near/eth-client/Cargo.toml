@@ -8,7 +8,7 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-eth-types =  { path = "../eth-types" }
+eth-types =  { path = "../eth-types", default-features = false }
 admin-controlled =  { path = "../admin-controlled" }
 near-sdk = "4.0.0"
 borsh = "0.9.3"
