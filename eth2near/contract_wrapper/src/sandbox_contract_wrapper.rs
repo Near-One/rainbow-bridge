@@ -115,7 +115,7 @@ impl ContractWrapper for SandboxContractWrapper {
                 None => MAX_GAS.0,
             })
             .args(args)
-            .transact()).unwrap()))
+            .transact())?))
     }
 
     fn get_account_id(&self) -> AccountId {
