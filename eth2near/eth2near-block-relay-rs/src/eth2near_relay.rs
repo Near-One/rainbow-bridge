@@ -574,6 +574,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_get_attested_slot() {
         let mut relay = get_relay(true, true);
         let finalized_slot = 1099488;
@@ -647,6 +648,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn try_submit_update_with_not_enough_blocks() {
         let mut relay = get_relay(true, true);
         let mut slot = relay
@@ -754,6 +756,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_run() {
         log::set_boxed_logger(Box::new(SimpleLogger))
             .map(|()| log::set_max_level(Trace))

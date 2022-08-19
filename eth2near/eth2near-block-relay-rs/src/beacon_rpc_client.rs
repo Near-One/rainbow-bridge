@@ -446,7 +446,6 @@ impl BeaconRPCClient {
 
 #[cfg(test)]
 mod tests {
-    use crate::beacon_block_header_with_execution_data::BeaconBlockHeaderWithExecutionData;
     use crate::beacon_rpc_client::BeaconRPCClient;
     use crate::test_utils::read_json_file_from_data_dir;
     use types::BeaconBlockBody;
@@ -643,64 +642,5 @@ mod tests {
             serde_json::to_string(&sync_committe_update.next_sync_committee_branch[1]).unwrap(),
             "\"0xedeb16e5754a4be920bb51e97dbf15833f838a5770e8509cc34cde12ee74422e\""
         );
-    }
-
-    // a utility function which prints JSON for last `LightClientUpdate`
-    #[test]
-    fn utility_show_get_light_client_update() {
-        let light_client_update_fetcher = BeaconRPCClient::new(BEACON_ENDPOINT);
-        let period = BeaconRPCClient::get_period_for_slot(
-            light_client_update_fetcher
-                .get_last_slot_number()
-                .unwrap()
-                .as_u64(),
-        );
-
-        let light_client_update = light_client_update_fetcher
-            .get_light_client_update(period)
-            .unwrap();
-        let light_client_update_json_str = serde_json::to_string(&light_client_update).unwrap();
-
-        println!(
-            "Light client update pariod={}: {}",
-            period, light_client_update_json_str
-        );
-    }
-
-    // a utility function that prints JSON strings for all `BeaconBlockHeader`s with `ExecutionData` in specific range
-    #[test]
-    fn utility_show_headers_jsons_for_light_client_update() {
-        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
-        let mut beacon_block_ext_headers: Vec<BeaconBlockHeaderWithExecutionData> = Vec::new();
-        for slot in 823648..=827470 {
-            let mut count = 1;
-            loop {
-                if let Ok(beacon_header) =
-                    beacon_rpc_client.get_beacon_block_header_for_block_id(&format!("{}", slot))
-                {
-                    if let Ok(beacon_body) =
-                        beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", slot))
-                    {
-                        beacon_block_ext_headers.push(
-                            BeaconBlockHeaderWithExecutionData::new(beacon_header, &beacon_body)
-                                .unwrap(),
-                        );
-
-                        println!(
-                            "{},",
-                            serde_json::to_string(
-                                &beacon_block_ext_headers[beacon_block_ext_headers.len() - 1]
-                            )
-                            .unwrap()
-                        );
-                        break;
-                    }
-                }
-                count += 1;
-                if count > 3 {
-                    break;
-                }
-            }
-        }
     }
 }
