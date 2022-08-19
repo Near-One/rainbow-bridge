@@ -132,19 +132,19 @@ pub struct BlockHeader {
     pub log_bloom: Bloom,
     pub difficulty: U256,
     #[cfg_attr(
-        all(feature = "eth", not(target_arch = "wasm32")),
+        all(feature = "eth2", not(target_arch = "wasm32")),
         serde(with = "eth2_serde_utils::u64_hex_be")
     )]
     pub number: u64,
     pub gas_limit: U256,
     pub gas_used: U256,
     #[cfg_attr(
-        all(feature = "eth", not(target_arch = "wasm32")),
+        all(feature = "eth2", not(target_arch = "wasm32")),
         serde(with = "eth2_serde_utils::u64_hex_be")
     )]
     pub timestamp: u64,
     #[cfg_attr(
-        all(feature = "eth", not(target_arch = "wasm32")),
+        all(feature = "eth2", not(target_arch = "wasm32")),
         serde(with = "eth2_serde_utils::hex_vec")
     )]
     pub extra_data: Vec<u8>,
@@ -152,7 +152,7 @@ pub struct BlockHeader {
     pub nonce: H64,
     #[cfg(feature = "eip1559")]
     #[cfg_attr(
-        all(feature = "eth", not(target_arch = "wasm32")),
+        all(feature = "eth2", not(target_arch = "wasm32")),
         serde(with = "eth2_serde_utils::u64_hex_be")
     )]
     pub base_fee_per_gas: u64,
