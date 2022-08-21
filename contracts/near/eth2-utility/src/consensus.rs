@@ -5,7 +5,7 @@ use bitvec::prelude::BitVec;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::eth2::*;
 use eth_types::H256;
-use near_sdk::{Balance, env};
+use near_sdk::{env, Balance};
 use tree_hash::TreeHash;
 
 pub const EPOCHS_PER_SYNC_COMMITTEE_PERIOD: u64 = 256;
@@ -33,6 +33,7 @@ pub enum Network {
     Mainnet,
     Kiln,
     Ropsten,
+    Goerli,
 }
 
 impl FromStr for Network {
@@ -42,6 +43,7 @@ impl FromStr for Network {
             "mainnet" => Ok(Network::Mainnet),
             "kiln" => Ok(Network::Kiln),
             "ropsten" => Ok(Network::Ropsten),
+            "goerli" => Ok(Network::Goerli),
             _ => Err(format!("Unknown network {}", input)),
         }
     }
@@ -64,6 +66,15 @@ impl NetworkConfig {
                 ],
                 bellatrix_fork_version: [0x02, 0x00, 0x00, 0x00],
                 bellatrix_fork_epoch: 18446744073709551615,
+            },
+            Network::Goerli => Self {
+                genesis_validators_root: [
+                    0x04, 0x3d, 0xb0, 0xd9, 0xa8, 0x38, 0x13, 0x55, 0x1e, 0xe2, 0xf3, 0x34, 0x50,
+                    0xd2, 0x37, 0x97, 0x75, 0x7d, 0x43, 0x09, 0x11, 0xa9, 0x32, 0x05, 0x30, 0xad,
+                    0x8a, 0x0e, 0xab, 0xc4, 0x3e, 0xfb,
+                ],
+                bellatrix_fork_version: [0x02, 0x00, 0x10, 0x20],
+                bellatrix_fork_epoch: 112260,
             },
             Network::Kiln => Self {
                 genesis_validators_root: [
