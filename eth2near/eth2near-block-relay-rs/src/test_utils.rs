@@ -225,6 +225,19 @@ pub fn get_relay(enable_binsearch: bool, from_file: bool) -> Eth2NearRelay {
     )
 }
 
+pub fn get_relay_with_update_from_file(enable_binsearch: bool, from_file: bool) -> Eth2NearRelay {
+    let mut config = get_config();
+    config.path_to_attested_state = Some("../contract_wrapper/data/beacon_state_kiln_slot_1099459.json".to_string());
+
+    Eth2NearRelay::init(
+        &config,
+        get_client_contract(from_file),
+        enable_binsearch,
+        true,
+    )
+}
+
+
 pub fn get_relay_from_slot(enable_binsearch: bool, slot: u64) -> Eth2NearRelay {
     let config = get_config();
 

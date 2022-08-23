@@ -271,6 +271,7 @@ impl Eth2NearRelay {
         trace!(target: "relay", "last_finalized_slot on near/eth {}/{}", last_finalized_slot_on_near, last_finalized_slot_on_eth);
 
         if let Some(_) = self.next_light_client_update {
+            info!(target: "relay", "Try sending light client update from file");
             self.seng_light_client_update_from_file(last_submitted_slot);
             return;
         }
@@ -448,7 +449,7 @@ mod tests {
     use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
     use crate::logger::SimpleLogger;
     use crate::relay_errors::NoBlockForSlotError;
-    use crate::test_utils::{get_relay, get_relay_from_slot};
+    use crate::test_utils::{get_relay, get_relay_from_slot, get_relay_with_update_from_file};
     use eth_types::eth2::LightClientUpdate;
     use eth_types::BlockHeader;
     use log::LevelFilter::Trace;
@@ -924,5 +925,28 @@ mod tests {
             .unwrap();
 
         assert_eq!(1105919, new_finality_slot);
+    }
+
+    #[test]
+    fn test_send_light_client_update_from_file() {
+        log::set_boxed_logger(Box::new(SimpleLogger))
+            .map(|()| log::set_max_level(Trace))
+            .unwrap();
+
+
+        let mut relay = get_relay_with_update_from_file(true, true);
+        let finality_slot = relay
+            .eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap();
+
+        relay.run(None);
+
+        let new_finality_slot = relay
+            .eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap();
+
+        assert_ne!(finality_slot, new_finality_slot);
     }
 }
