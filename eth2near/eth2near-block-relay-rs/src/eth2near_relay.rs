@@ -60,8 +60,21 @@ impl Eth2NearRelay {
     ) -> Self {
         info!(target: "relay", "=== Relay initialization === ");
 
+        let beacon_rpc_client = BeaconRPCClient::new(&config.beacon_endpoint);
+
+        let mut next_light_client_update: Option<LightClientUpdate> = None;
+        if let Some(path_to_attested_state) = config.clone().path_to_attested_state {
+            next_light_client_update = Some(
+                HandMadeFinalityLightClientUpdate::get_finality_light_client_update_from_file(
+                    &beacon_rpc_client,
+                    &path_to_attested_state,
+                )
+                .unwrap(),
+            );
+        }
+
         let eth2near_relay = Eth2NearRelay {
-            beacon_rpc_client: BeaconRPCClient::new(&config.beacon_endpoint),
+            beacon_rpc_client,
             eth1_rpc_client: Eth1RPCClient::new(&config.eth1_endpoint),
             eth_client_contract: eth_contract,
             max_submitted_headers: config.total_submit_headers as u64,
@@ -72,7 +85,7 @@ impl Eth2NearRelay {
             near_network_name: config.near_network_id.to_string(),
             last_slot_searcher: LastSlotSearcher::new(enable_binsearch),
             terminate: false,
-            next_light_client_update: None,
+            next_light_client_update,
         };
 
         if register_relay {
