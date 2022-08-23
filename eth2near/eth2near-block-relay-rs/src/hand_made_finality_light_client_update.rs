@@ -24,11 +24,21 @@ impl HandMadeFinalityLightClientUpdate {
     ) -> Result<LightClientUpdate, Box<dyn Error>> {
         let beacon_state = beacon_rpc_client.get_beacon_state(&format!("{}", attested_slot))?;
 
+        let finality_hash = beacon_state.finalized_checkpoint().root;
+        let finality_header = beacon_rpc_client
+            .get_beacon_block_header_for_block_id(&format!("{:?}", &finality_hash))?;
+        let finality_slot = finality_header.slot.as_u64();
+
+        let finality_beacon_state = match include_next_sync_committee {
+            true => Some(beacon_rpc_client.get_beacon_state(&format!("{}", finality_slot))?),
+            false => None,
+        };
+
         Self::get_finality_light_client_update_for_state(
             beacon_rpc_client,
             attested_slot,
             beacon_state,
-            include_next_sync_committee,
+            finality_beacon_state,
         )
     }
 
@@ -36,30 +46,51 @@ impl HandMadeFinalityLightClientUpdate {
         beacon_rpc_client: &BeaconRPCClient,
         file_name: &str,
     ) -> Result<LightClientUpdate, Box<dyn Error>> {
-        let beacon_state_json: String =
-            std::fs::read_to_string(file_name).expect("Unable to read file");
-
-        let v: Value = serde_json::from_str(&beacon_state_json)?;
-        let beacon_state_json = serde_json::to_string(&v["data"])?;
-
-        let beacon_state: BeaconState<MainnetEthSpec> = serde_json::from_str(&beacon_state_json)?;
+        let beacon_state = Self::get_state_from_file(file_name)?;
         let attested_slot = beacon_state.slot().as_u64();
 
         Self::get_finality_light_client_update_for_state(
             beacon_rpc_client,
             attested_slot,
             beacon_state,
-            false,
+            None,
+        )
+    }
+
+    pub fn get_light_client_update_from_file_with_next_sync_committee(
+        beacon_rpc_client: &BeaconRPCClient,
+        attested_state_file_name: &str,
+        finality_state_file_name: &str,
+    ) -> Result<LightClientUpdate, Box<dyn Error>> {
+        let attested_beacon_state = Self::get_state_from_file(attested_state_file_name)?;
+        let attested_slot = attested_beacon_state.slot().as_u64();
+        let finality_beacon_state = Self::get_state_from_file(finality_state_file_name)?;
+
+        Self::get_finality_light_client_update_for_state(
+            beacon_rpc_client,
+            attested_slot,
+            attested_beacon_state,
+            Some(finality_beacon_state),
         )
     }
 }
 
 impl HandMadeFinalityLightClientUpdate {
+    fn get_state_from_file(file_name: &str) -> Result<BeaconState<MainnetEthSpec>, Box<dyn Error>> {
+        let beacon_state_json: String =
+            std::fs::read_to_string(file_name).expect("Unable to read file");
+
+        let v: Value = serde_json::from_str(&beacon_state_json)?;
+        let beacon_state_json = serde_json::to_string(&v["data"])?;
+
+        Ok(serde_json::from_str(&beacon_state_json)?)
+    }
+
     fn get_finality_light_client_update_for_state(
         beacon_rpc_client: &BeaconRPCClient,
         attested_slot: u64,
         beacon_state: BeaconState<MainnetEthSpec>,
-        include_next_sync_committee: bool,
+        finality_beacon_state: Option<BeaconState<MainnetEthSpec>>
     ) -> Result<LightClientUpdate, Box<dyn Error>> {
         let signature_slot = beacon_rpc_client
             .get_non_empty_beacon_block_header(attested_slot + 1)?
@@ -98,21 +129,18 @@ impl HandMadeFinalityLightClientUpdate {
                 &beacon_state,
                 &finalized_block_body,
             )?,
-            sync_committee_update: match include_next_sync_committee {
-                false => Option::<SyncCommitteeUpdate>::None,
-                true => Some(Self::get_next_sync_committee(
-                    finality_header.slot.as_u64(),
-                    beacon_rpc_client,
+            sync_committee_update: match finality_beacon_state {
+                None => Option::<SyncCommitteeUpdate>::None,
+                Some(beacon_state) => Some(Self::get_next_sync_committee(
+                    &beacon_state,
                 )?),
             },
         })
     }
 
     fn get_next_sync_committee(
-        finality_slot: u64,
-        beacon_rpc_client: &BeaconRPCClient,
+        beacon_state: &BeaconState<MainnetEthSpec>,
     ) -> Result<SyncCommitteeUpdate, Box<dyn Error>> {
-        let beacon_state = beacon_rpc_client.get_beacon_state(&format!("{}", finality_slot))?;
         let next_sync_committee = beacon_state
             .next_sync_committee()
             .map_err(|_| MissNextSyncCommittee)?;
@@ -297,5 +325,24 @@ mod tests {
         let light_client_update = beacon_rpc_client.get_light_client_update(99).unwrap();
 
         cmp_light_client_updates(&hand_made_light_client_update, &light_client_update);
+    }
+    #[test]
+    fn test_hand_made_finality_light_client_update_from_file_with_next_sync_committee() {
+        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
+        let hand_made_light_client_update =
+            HandMadeFinalityLightClientUpdate::get_light_client_update_from_file_with_next_sync_committee(
+                &beacon_rpc_client,
+                "data/beacon_state_kiln_slot_812637_period_99.json",
+                "data/beacon_state_kiln_slot_812544.json",
+            ).unwrap();
+
+        let light_client_update = beacon_rpc_client.get_light_client_update(99).unwrap();
+
+        cmp_light_client_updates(&hand_made_light_client_update, &light_client_update);
+
+        assert_eq!(
+            serde_json::to_string(&hand_made_light_client_update.sync_committee_update).unwrap(),
+            serde_json::to_string(&light_client_update.sync_committee_update).unwrap()
+        )
     }
 }
