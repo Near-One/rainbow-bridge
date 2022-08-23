@@ -1,4 +1,6 @@
+use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
+use crate::eth1_rpc_client::Eth1RPCClient;
 use crate::eth2near_relay::Eth2NearRelay;
 use crate::init_contract::init_contract;
 use crate::test_utils;
@@ -10,11 +12,9 @@ use eth_types::BlockHeader;
 use near_units::*;
 use std::{thread, time};
 use tokio::runtime::Runtime;
+use tree_hash::TreeHash;
 use workspaces::prelude::*;
 use workspaces::{network::Sandbox, Account, Contract, Worker};
-use crate::beacon_rpc_client::BeaconRPCClient;
-use crate::eth1_rpc_client::Eth1RPCClient;
-use tree_hash::TreeHash;
 
 pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
     let mut json_file_path = std::env::current_exe().unwrap();
@@ -39,21 +39,21 @@ pub fn init_contract_from_files(eth_client_contract: &mut EthClientContract) {
     let execution_blocks: Vec<BlockHeader> = serde_json::from_str(
         &std::fs::read_to_string(PATH_TO_EXECUTION_BLOCKS).expect("Unable to read file"),
     )
-        .unwrap();
+    .unwrap();
 
     let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
         &std::fs::read_to_string(PATH_TO_LIGHT_CLIENT_UPDATES).expect("Unable to read file"),
     )
-        .unwrap();
+    .unwrap();
 
     let current_sync_committee: SyncCommittee = serde_json::from_str(
         &std::fs::read_to_string(PATH_TO_CURRENT_SYNC_COMMITTEE).expect("Unable to read file"),
     )
-        .unwrap();
+    .unwrap();
     let next_sync_committee: SyncCommittee = serde_json::from_str(
         &std::fs::read_to_string(PATH_TO_NEXT_SYNC_COMMITTEE).expect("Unable to read file"),
     )
-        .unwrap();
+    .unwrap();
 
     let finalized_beacon_header = ExtendedBeaconBlockHeader::from(
         light_client_updates[0]
@@ -85,7 +85,10 @@ pub fn init_contract_from_files(eth_client_contract: &mut EthClientContract) {
     thread::sleep(time::Duration::from_secs(30));
 }
 
-pub fn init_contract_from_specific_slot(eth_client_contract: &mut EthClientContract, finality_slot: u64) {
+pub fn init_contract_from_specific_slot(
+    eth_client_contract: &mut EthClientContract,
+    finality_slot: u64,
+) {
     const PATH_TO_CURRENT_SYNC_COMMITTEE: &str =
         "../contract_wrapper/data/next_sync_committee_133.json";
     const PATH_TO_NEXT_SYNC_COMMITTEE: &str =
@@ -95,17 +98,18 @@ pub fn init_contract_from_specific_slot(eth_client_contract: &mut EthClientContr
     let current_sync_committee: SyncCommittee = serde_json::from_str(
         &std::fs::read_to_string(PATH_TO_CURRENT_SYNC_COMMITTEE).expect("Unable to read file"),
     )
-        .unwrap();
+    .unwrap();
     let next_sync_committee: SyncCommittee = serde_json::from_str(
         &std::fs::read_to_string(PATH_TO_NEXT_SYNC_COMMITTEE).expect("Unable to read file"),
     )
-        .unwrap();
+    .unwrap();
 
     let beacon_rpc_client = BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io");
     let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
 
     let finality_header = beacon_rpc_client
-        .get_beacon_block_header_for_block_id(&format!("{}", finality_slot)).unwrap();
+        .get_beacon_block_header_for_block_id(&format!("{}", finality_slot))
+        .unwrap();
 
     let finality_header = eth_types::eth2::BeaconBlockHeader {
         slot: finality_header.slot.as_u64(),
@@ -116,13 +120,19 @@ pub fn init_contract_from_specific_slot(eth_client_contract: &mut EthClientContr
     };
 
     let finalized_body = beacon_rpc_client
-        .get_beacon_block_body_for_block_id(&format!("{}",finality_slot))
+        .get_beacon_block_body_for_block_id(&format!("{}", finality_slot))
         .unwrap();
 
     let finalized_beacon_header = ExtendedBeaconBlockHeader {
         header: finality_header.clone(),
         beacon_block_root: eth_types::H256(finality_header.tree_hash_root()),
-        execution_block_hash: finalized_body.execution_payload().unwrap().execution_payload.block_hash.into_root().into(),
+        execution_block_hash: finalized_body
+            .execution_payload()
+            .unwrap()
+            .execution_payload
+            .block_hash
+            .into_root()
+            .into(),
     };
 
     let finalized_execution_header: BlockHeader = eth1_rpc_client
@@ -145,7 +155,6 @@ pub fn init_contract_from_specific_slot(eth_client_contract: &mut EthClientContr
 
     thread::sleep(time::Duration::from_secs(30));
 }
-
 
 const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
 
