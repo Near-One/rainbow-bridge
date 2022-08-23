@@ -270,6 +270,11 @@ impl Eth2NearRelay {
 
         trace!(target: "relay", "last_finalized_slot on near/eth {}/{}", last_finalized_slot_on_near, last_finalized_slot_on_eth);
 
+        if let Some(_) = self.next_light_client_update {
+            self.seng_light_client_update_from_file(last_submitted_slot);
+            return;
+        }
+
         if !self.is_enough_blocks_for_update(
             last_submitted_slot,
             last_finalized_slot_on_near,
@@ -288,6 +293,17 @@ impl Eth2NearRelay {
                 last_finalized_slot_on_eth,
                 last_finalized_slot_on_near,
             );
+        }
+    }
+
+    fn seng_light_client_update_from_file(&mut self, last_submitted_slot: u64) {
+        if let Some(light_client_update) = self.next_light_client_update.clone() {
+            if last_submitted_slot < light_client_update.attested_beacon_header.slot {
+                return;
+            }
+
+            self.send_specific_light_cleint_update(light_client_update);
+            self.terminate = true;
         }
     }
 
