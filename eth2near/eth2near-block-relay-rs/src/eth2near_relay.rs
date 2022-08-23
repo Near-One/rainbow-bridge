@@ -61,17 +61,7 @@ impl Eth2NearRelay {
         info!(target: "relay", "=== Relay initialization === ");
 
         let beacon_rpc_client = BeaconRPCClient::new(&config.beacon_endpoint);
-
-        let mut next_light_client_update: Option<LightClientUpdate> = None;
-        if let Some(path_to_attested_state) = config.clone().path_to_attested_state {
-            next_light_client_update = Some(
-                HandMadeFinalityLightClientUpdate::get_finality_light_client_update_from_file(
-                    &beacon_rpc_client,
-                    &path_to_attested_state,
-                )
-                .unwrap(),
-            );
-        }
+        let next_light_client_update = Self::get_light_client_update_from_file(config, &beacon_rpc_client).unwrap();
 
         let eth2near_relay = Eth2NearRelay {
             beacon_rpc_client,
@@ -137,6 +127,32 @@ impl Eth2NearRelay {
                 self.send_light_client_updates(last_eth2_slot_on_near);
             }
         }
+    }
+
+    fn get_light_client_update_from_file(config: &Config, beacon_rpc_client: &BeaconRPCClient) -> Result<Option<LightClientUpdate>, Box<dyn Error>> {
+        let mut next_light_client_update: Option<LightClientUpdate> = None;
+        if let Some(path_to_attested_state) = config.clone().path_to_attested_state {
+            match config.clone().path_to_finality_state {
+                Some(path_to_finality_state) => {
+                    next_light_client_update = Some(
+                        HandMadeFinalityLightClientUpdate::get_light_client_update_from_file_with_next_sync_committee(
+                            beacon_rpc_client,
+                            &path_to_attested_state,
+                            &path_to_finality_state,
+                        ).unwrap(),
+                    );
+                }
+                None => {
+                    next_light_client_update = Some(
+                        HandMadeFinalityLightClientUpdate::get_finality_light_client_update_from_file(
+                            beacon_rpc_client,
+                            &path_to_attested_state,
+                        ).unwrap(),
+                    );
+                }
+            }
+        }
+        Ok(next_light_client_update)
     }
 
     fn set_terminate(&mut self, iter_id: u64, max_iterations: Option<u64>) {
@@ -934,7 +950,30 @@ mod tests {
             .unwrap();
 
 
-        let mut relay = get_relay_with_update_from_file(true, true);
+        let mut relay = get_relay_with_update_from_file(true, true, false);
+        let finality_slot = relay
+            .eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap();
+
+        relay.run(None);
+
+        let new_finality_slot = relay
+            .eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap();
+
+        assert_ne!(finality_slot, new_finality_slot);
+    }
+
+    #[test]
+    fn test_send_light_client_update_from_file_with_next_sync_committee() {
+        log::set_boxed_logger(Box::new(SimpleLogger))
+            .map(|()| log::set_max_level(Trace))
+            .unwrap();
+
+
+        let mut relay = get_relay_with_update_from_file(true, true, true);
         let finality_slot = relay
             .eth_client_contract
             .get_finalized_beacon_block_slot()

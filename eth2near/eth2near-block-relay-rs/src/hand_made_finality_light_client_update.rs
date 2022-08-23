@@ -326,6 +326,7 @@ mod tests {
 
         cmp_light_client_updates(&hand_made_light_client_update, &light_client_update);
     }
+
     #[test]
     fn test_hand_made_finality_light_client_update_from_file_with_next_sync_committee() {
         let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);

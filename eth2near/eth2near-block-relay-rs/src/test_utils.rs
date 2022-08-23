@@ -198,6 +198,7 @@ fn get_config() -> Config {
         dao_contract_account_id: None,
         output_dir: None,
         path_to_attested_state: None,
+        path_to_finality_state: None,
     }
 }
 
@@ -225,9 +226,13 @@ pub fn get_relay(enable_binsearch: bool, from_file: bool) -> Eth2NearRelay {
     )
 }
 
-pub fn get_relay_with_update_from_file(enable_binsearch: bool, from_file: bool) -> Eth2NearRelay {
+pub fn get_relay_with_update_from_file(enable_binsearch: bool, from_file: bool, next_sync_committee: bool) -> Eth2NearRelay {
     let mut config = get_config();
     config.path_to_attested_state = Some("../contract_wrapper/data/beacon_state_kiln_slot_1099459.json".to_string());
+
+    if next_sync_committee {
+        config.path_to_finality_state = Some("../contract_wrapper/data/beacon_state_kiln_slot_1099392.json".to_string());
+    }
 
     Eth2NearRelay::init(
         &config,

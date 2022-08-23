@@ -49,6 +49,10 @@ pub struct Config {
     // Path to the json file with beacon state in the next attested slot
     // for case of short relay run
     pub path_to_attested_state: Option<String>,
+
+    // Path to the json file with beacon state in the next finality slot
+    // for case of short relay run
+    pub path_to_finality_state: Option<String>,
 }
 
 impl Config {
