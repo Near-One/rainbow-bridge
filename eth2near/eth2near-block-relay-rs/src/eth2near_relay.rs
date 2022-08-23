@@ -47,6 +47,8 @@ pub struct Eth2NearRelay {
     max_blocks_for_finalization: u64,
     near_network_name: String,
     last_slot_searcher: LastSlotSearcher,
+    terminate: bool,
+    next_light_client_update: Option<LightClientUpdate>,
 }
 
 impl Eth2NearRelay {
@@ -69,6 +71,8 @@ impl Eth2NearRelay {
             max_blocks_for_finalization: config.max_blocks_for_finalization,
             near_network_name: config.near_network_id.to_string(),
             last_slot_searcher: LastSlotSearcher::new(enable_binsearch),
+            terminate: false,
+            next_light_client_update: None,
         };
 
         if register_relay {
@@ -84,13 +88,9 @@ impl Eth2NearRelay {
     pub fn run(&mut self, max_iterations: Option<u64>) {
         info!(target: "relay", "=== Relay running ===");
         let mut iter_id = 0;
-        loop {
+        while !self.terminate {
             iter_id += 1;
-            if let Some(max_iter) = max_iterations {
-                if iter_id > max_iter {
-                    return;
-                }
-            }
+            self.set_terminate(iter_id, max_iterations);
 
             info!(target: "relay", "== New relay loop ==");
 
@@ -122,6 +122,14 @@ impl Eth2NearRelay {
                 );
                 self.submit_execution_blocks(headers, current_slot, &mut last_eth2_slot_on_near);
                 self.send_light_client_updates(last_eth2_slot_on_near);
+            }
+        }
+    }
+
+    fn set_terminate(&mut self, iter_id: u64, max_iterations: Option<u64>) {
+        if let Some(max_iter) = max_iterations {
+            if iter_id > max_iter {
+                self.terminate = true;
             }
         }
     }
