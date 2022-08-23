@@ -197,6 +197,7 @@ fn get_config() -> Config {
         near_network_id: "testnet".to_string(),
         dao_contract_account_id: None,
         output_dir: None,
+        path_to_attested_state: None,
     }
 }
 

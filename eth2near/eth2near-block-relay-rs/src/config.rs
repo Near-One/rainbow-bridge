@@ -45,6 +45,10 @@ pub struct Config {
 
     // Path to dir for output submitted light client updates and execution blocks
     pub output_dir: Option<String>,
+
+    // Path to the json file with beacon state in the next attested slot
+    // for case of short relay run
+    pub path_to_attested_state: Option<String>,
 }
 
 impl Config {
