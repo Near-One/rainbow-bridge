@@ -517,21 +517,22 @@ mod tests {
         finality_slot_on_eth
     }
 
+    fn get_finalized_slot(relay: &Eth2NearRelay) -> u64 {
+        relay
+            .eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap()
+    }
+
     #[test]
     fn test_send_specific_light_client_update() {
         let mut relay = get_relay(true, true);
-        let mut slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let mut slot = get_finalized_slot(&relay);
         slot += 1;
 
         send_execution_blocks(&mut relay, slot, 1099392);
 
-        let finalized_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, 1099360);
 
         const PATH_TO_LIGHT_CLIENT_UPDATES: &str =
@@ -542,10 +543,7 @@ mod tests {
         .unwrap();
         relay.send_specific_light_cleint_update(light_client_updates[1].clone());
 
-        let finalized_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, 1099392);
     }
 
@@ -553,26 +551,17 @@ mod tests {
     #[ignore]
     fn test_hand_made_light_client_update() {
         let mut relay = get_relay(true, true);
-        let mut slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let mut slot = get_finalized_slot(&relay);
         slot += 1;
 
         send_execution_blocks(&mut relay, slot, 1099392);
 
-        let finalized_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, 1099360);
 
         relay.send_hand_made_light_client_update(finalized_slot);
 
-        let finalized_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, 1099392);
     }
 
@@ -580,18 +569,12 @@ mod tests {
     #[ignore]
     fn test_hand_made_light_client_update_with_null_signature_slot() {
         let mut relay = get_relay(true, true);
-        let mut slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let mut slot = get_finalized_slot(&relay);
         slot += 1;
 
         send_execution_blocks(&mut relay, slot, 1099392);
 
-        let finalized_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, 1099360);
         let attested_slot = relay.get_attested_slot(finalized_slot + 4).unwrap();
         if let Ok(_) = relay.get_execution_block_by_slot(attested_slot + 1) {
@@ -600,28 +583,19 @@ mod tests {
 
         relay.send_hand_made_light_client_update(finalized_slot + 4);
 
-        let finalized_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, 1099392);
     }
 
     #[test]
     fn test_send_light_client_update() {
         let mut relay = get_relay(true, false);
-        let finality_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let finality_slot = get_finalized_slot(&relay);
 
         let finality_slot_on_eth = send_blocks_till_finalized_eth_slot(&mut relay, finality_slot);
         relay.send_light_client_updates(finality_slot_on_eth);
 
-        let new_finalized_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let new_finalized_slot = get_finalized_slot(&relay);
         assert_ne!(finality_slot, new_finalized_slot);
     }
 
@@ -699,10 +673,7 @@ mod tests {
     #[test]
     fn test_get_n_execution_blocks() {
         let relay = get_relay(true, true);
-        let finalized_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let finalized_slot = get_finalized_slot(&relay);
 
         let blocks = relay
             .get_n_execution_blocks(finalized_slot + 1, 1099500)
@@ -723,10 +694,7 @@ mod tests {
     #[test]
     fn test_submit_execution_blocks() {
         let mut relay = get_relay(true, true);
-        let mut finalized_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let mut finalized_slot = get_finalized_slot(&relay);
         let blocks = relay
             .get_n_execution_blocks(finalized_slot + 1, 1099500)
             .unwrap();
@@ -751,25 +719,16 @@ mod tests {
     #[ignore]
     fn try_submit_update_with_not_enough_blocks() {
         let mut relay = get_relay(true, true);
-        let mut slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let mut slot = get_finalized_slot(&relay);
         slot += 1;
 
         send_execution_blocks(&mut relay, slot, 1099391);
 
-        let finalized_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, 1099360);
 
         relay.send_light_client_updates(1099360);
-        let finalized_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let finalized_slot= get_finalized_slot(&relay);
 
         assert_eq!(finalized_slot, 1099360);
     }
@@ -793,10 +752,7 @@ mod tests {
     #[should_panic]
     fn get_execution_blocks_in_bed_network() {
         let mut relay = get_relay(true, true);
-        let finalized_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let finalized_slot = get_finalized_slot(&relay);
 
         relay.beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
         relay
@@ -807,35 +763,23 @@ mod tests {
     #[test]
     fn test_send_regular_light_client_update() {
         let mut relay = get_relay(true, false);
-        let finality_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let finality_slot = get_finalized_slot(&relay);
         let finality_slot_on_eth = send_blocks_till_finalized_eth_slot(&mut relay, finality_slot);
         relay.send_regular_light_client_update(finality_slot_on_eth, finality_slot);
 
-        let new_finalized_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let new_finalized_slot = get_finalized_slot(&relay);
         assert_ne!(finality_slot, new_finalized_slot);
     }
 
     #[test]
     fn test_wrong_last_submitted_slot() {
         let mut relay = get_relay(true, false);
-        let finality_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let finality_slot = get_finalized_slot(&relay);
 
         let finality_slot_on_eth = send_blocks_till_finalized_eth_slot(&mut relay, finality_slot);
         relay.send_light_client_updates(finality_slot_on_eth + 1);
 
-        let new_finalized_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let new_finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finality_slot, new_finalized_slot);
     }
 
@@ -844,18 +788,12 @@ mod tests {
         let mut relay = get_relay(true, false);
         relay.light_client_updates_submission_frequency_in_epochs = 2;
 
-        let finality_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let finality_slot = get_finalized_slot(&relay);
 
         let finality_slot_on_eth = send_blocks_till_finalized_eth_slot(&mut relay, finality_slot);
         relay.send_light_client_updates(finality_slot_on_eth);
 
-        let new_finalized_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let new_finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finality_slot, new_finalized_slot);
     }
 
@@ -867,17 +805,11 @@ mod tests {
             .unwrap();
 
         let mut relay = get_relay(true, true);
-        let finality_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let finality_slot = get_finalized_slot(&relay);
 
         relay.run(Some(5));
 
-        let new_finality_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let new_finality_slot = get_finalized_slot(&relay);
 
         assert_ne!(finality_slot, new_finality_slot);
     }
@@ -892,10 +824,7 @@ mod tests {
             .get_n_execution_blocks(1105920, 1105919 + 100)
             .unwrap();
         let mut last_slot_on_near = 1105919;
-        let finality_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let finality_slot = get_finalized_slot(&relay);
 
         assert_eq!(finality_slot, last_slot_on_near);
 
@@ -903,10 +832,7 @@ mod tests {
 
         relay.send_light_client_updates(blocks.1);
 
-        let new_finality_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let new_finality_slot = get_finalized_slot(&relay);
 
         assert_ne!(1105919, new_finality_slot);
         assert_eq!(BeaconRPCClient::get_period_for_slot(new_finality_slot), 135);
@@ -935,10 +861,7 @@ mod tests {
 
         relay.send_specific_light_cleint_update(light_client_update);
 
-        let new_finality_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
+        let new_finality_slot= get_finalized_slot(&relay);
 
         assert_eq!(1105919, new_finality_slot);
     }
@@ -948,21 +871,10 @@ mod tests {
         log::set_boxed_logger(Box::new(SimpleLogger))
             .map(|()| log::set_max_level(Trace))
             .unwrap();
-
-
         let mut relay = get_relay_with_update_from_file(true, true, false);
-        let finality_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
-
+        let finality_slot = get_finalized_slot(&relay);
         relay.run(None);
-
-        let new_finality_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
-
+        let new_finality_slot = get_finalized_slot(&relay);
         assert_ne!(finality_slot, new_finality_slot);
     }
 
@@ -972,20 +884,10 @@ mod tests {
             .map(|()| log::set_max_level(Trace))
             .unwrap();
 
-
         let mut relay = get_relay_with_update_from_file(true, true, true);
-        let finality_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
-
+        let finality_slot = get_finalized_slot(&relay);
         relay.run(None);
-
-        let new_finality_slot = relay
-            .eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .unwrap();
-
+        let new_finality_slot = get_finalized_slot(&relay);
         assert_ne!(finality_slot, new_finality_slot);
     }
 }
