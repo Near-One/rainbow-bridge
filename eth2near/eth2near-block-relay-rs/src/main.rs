@@ -74,8 +74,7 @@ fn get_eth_client_contract(config: &Config) -> Box<dyn EthClientContractTrait> {
     }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args = Arguments::parse();
+fn init_log(args: &Arguments, config: &Config) {
     let log_level_filter = match args.log_level.as_str() {
         "trace" => LevelFilter::Trace,
         "debug" => LevelFilter::Debug,
@@ -84,10 +83,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         _ => LevelFilter::Info,
     };
 
-    log::set_boxed_logger(Box::new(SimpleLogger))
+    let mut path_to_log_file = "./eth2near-relay.log".to_string();
+    if let Some(out_dir) = config.clone().output_dir {
+        path_to_log_file = out_dir.clone() + "/" + "eth2near-relay.log";
+        std::fs::create_dir_all(out_dir).unwrap();
+    }
+
+    log::set_boxed_logger(Box::new(SimpleLogger::new(path_to_log_file)))
         .map(|()| log::set_max_level(log_level_filter))
         .unwrap();
-    let config = Config::load_from_toml(args.config.try_into().unwrap());
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = Arguments::parse();
+    let config = Config::load_from_toml(args.config.clone().try_into().unwrap());
+    init_log(&args, &config);
 
     if args.init_contract {
         let mut eth_client_contract = EthClientContract::new(get_eth_contract_wrapper(&config));
