@@ -471,6 +471,8 @@ mod tests {
             slot += 1;
         }
 
+        println!("Submitted blocks: {}", blocks.len());
+
         relay
             .eth_client_contract
             .send_headers(&blocks, end_slot)
@@ -869,5 +871,50 @@ mod tests {
         relay.run(None);
         let new_finality_slot = get_finalized_slot(&relay);
         assert_ne!(finality_slot, new_finality_slot);
+    }
+
+    #[test]
+    #[ignore]
+    //Can finalize 341 blocks
+    fn test_max_finalized_blocks_7() {
+        let mut relay = get_relay(true, true);
+        relay.max_blocks_for_finalization = 10000;
+        relay.max_submitted_headers = 10000;
+
+        let finalized_slot = get_finalized_slot(&relay);
+        send_execution_blocks(&mut relay, finalized_slot + 1, 1099808);
+
+        const PATH_TO_LIGHT_CLIENT_UPDATES: &str =
+            "../contract_wrapper/data/light_client_updates_kiln_1099394-1099937.json";
+        let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
+            &std::fs::read_to_string(PATH_TO_LIGHT_CLIENT_UPDATES).expect("Unable to read file"),
+        ).unwrap();
+        relay.send_specific_light_cleint_update(light_client_updates[7].clone());
+
+        let finalized_slot = get_finalized_slot(&relay);
+        assert_eq!(finalized_slot, 1099808);
+    }
+
+    #[test]
+    #[ignore]
+    #[should_panic]
+    //Can't finalize 393 blocks
+    fn test_max_finalized_blocks_8() {
+        let mut relay = get_relay(true, true);
+        relay.max_blocks_for_finalization = 10000;
+        relay.max_submitted_headers = 10000;
+
+        let finalized_slot = get_finalized_slot(&relay);
+        send_execution_blocks(&mut relay, finalized_slot + 1, 1099872);
+
+        const PATH_TO_LIGHT_CLIENT_UPDATES: &str =
+            "../contract_wrapper/data/light_client_updates_kiln_1099394-1099937.json";
+        let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
+            &std::fs::read_to_string(PATH_TO_LIGHT_CLIENT_UPDATES).expect("Unable to read file"),
+        ).unwrap();
+        relay.send_specific_light_cleint_update(light_client_updates[8].clone());
+
+        let finalized_slot = get_finalized_slot(&relay);
+        assert_eq!(finalized_slot, 1099872);
     }
 }
