@@ -3,7 +3,7 @@ use crate::config::Config;
 use crate::eth1_rpc_client::Eth1RPCClient;
 use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
 use crate::last_slot_searcher::LastSlotSearcher;
-use crate::relay_errors::{MissSyncCommitteeUpdate, NoBlockForSlotError};
+use crate::relay_errors::{NoBlockForSlotError};
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::eth2::LightClientUpdate;
 use eth_types::BlockHeader;
@@ -216,15 +216,8 @@ impl Eth2NearRelay {
         &mut self,
         light_client_update: &LightClientUpdate,
     ) -> Result<bool, Box<dyn Error>> {
-        let current_period =
-            BeaconRPCClient::get_period_for_slot(light_client_update.attested_beacon_header.slot);
-        let update_for_per_period = self
-            .beacon_rpc_client
-            .get_light_client_update(current_period - 1)?;
-        let sync_committee = update_for_per_period
-            .sync_committee_update
-            .ok_or(MissSyncCommitteeUpdate)?
-            .next_sync_committee;
+        let light_client_state = self.eth_client_contract.get_light_client_state()?;
+        let sync_committee = light_client_state.current_sync_committee;
 
         finality_update_verify::is_correct_finality_update(
             &self.network,
@@ -463,12 +456,10 @@ mod tests {
     use crate::beacon_rpc_client::BeaconRPCClient;
     use crate::eth2near_relay::{Eth2NearRelay, ONE_EPOCH_IN_SLOTS};
     use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
-    use crate::logger::SimpleLogger;
     use crate::relay_errors::NoBlockForSlotError;
     use crate::test_utils::{get_relay, get_relay_from_slot, get_relay_with_update_from_file};
     use eth_types::eth2::LightClientUpdate;
     use eth_types::BlockHeader;
-    use log::LevelFilter::Trace;
 
     fn send_execution_blocks(relay: &mut Eth2NearRelay, start_slot: u64, end_slot: u64) {
         let mut slot = start_slot;
@@ -800,10 +791,6 @@ mod tests {
     #[test]
     #[ignore]
     fn test_run() {
-        log::set_boxed_logger(Box::new(SimpleLogger))
-            .map(|()| log::set_max_level(Trace))
-            .unwrap();
-
         let mut relay = get_relay(true, true);
         let finality_slot = get_finalized_slot(&relay);
 
@@ -868,9 +855,6 @@ mod tests {
 
     #[test]
     fn test_send_light_client_update_from_file() {
-        log::set_boxed_logger(Box::new(SimpleLogger))
-            .map(|()| log::set_max_level(Trace))
-            .unwrap();
         let mut relay = get_relay_with_update_from_file(true, true, false);
         let finality_slot = get_finalized_slot(&relay);
         relay.run(None);
@@ -880,10 +864,6 @@ mod tests {
 
     #[test]
     fn test_send_light_client_update_from_file_with_next_sync_committee() {
-        log::set_boxed_logger(Box::new(SimpleLogger))
-            .map(|()| log::set_max_level(Trace))
-            .unwrap();
-
         let mut relay = get_relay_with_update_from_file(true, true, true);
         let finality_slot = get_finalized_slot(&relay);
         relay.run(None);
