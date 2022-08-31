@@ -11,6 +11,8 @@ use std::error::Error;
 use std::string::String;
 use std::vec::Vec;
 use tokio::runtime::Runtime;
+use tokio::task;
+use std::time::Duration;
 
 pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
 
@@ -148,7 +150,10 @@ impl ContractWrapper for NearContractWrapper {
             signed_transaction: transaction.sign(&self.signer),
         };
 
-        Ok(rt.block_on(self.client.call(&request))?)
+        let request_result = rt.block_on(async_std::future::timeout(
+            std::time::Duration::from_secs(600),
+            self.client.call(&request)))?;
+        Ok(request_result?)
     }
 
     fn call_change_method(

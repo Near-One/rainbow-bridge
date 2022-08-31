@@ -469,6 +469,7 @@ mod tests {
     use eth_types::eth2::LightClientUpdate;
     use eth_types::BlockHeader;
 
+    
     fn send_execution_blocks(relay: &mut Eth2NearRelay, start_slot: u64, end_slot: u64) {
         let mut slot = start_slot;
         let mut blocks: Vec<BlockHeader> = vec![];
