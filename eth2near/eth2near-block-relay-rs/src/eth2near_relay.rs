@@ -232,9 +232,9 @@ impl Eth2NearRelay {
             .get_block_number_for_slot(types::Slot::new(slot))
         {
             Ok(block_number) => {
-                return self
+                self
                     .eth1_rpc_client
-                    .get_block_header_by_number(block_number);
+                    .get_block_header_by_number(block_number)
             }
             Err(err) => Err(err),
         }
@@ -279,7 +279,7 @@ impl Eth2NearRelay {
 
         trace!(target: "relay", "last_finalized_slot on near/eth {}/{}", last_finalized_slot_on_near, last_finalized_slot_on_eth);
 
-        if let Some(_) = self.next_light_client_update {
+        if self.next_light_client_update.is_some() {
             info!(target: "relay", "Try sending light client update from file");
             self.seng_light_client_update_from_file(last_submitted_slot);
             return;
@@ -570,7 +570,7 @@ mod tests {
         let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, 1099360);
         let attested_slot = relay.get_attested_slot(finalized_slot + 4).unwrap();
-        if let Ok(_) = relay.get_execution_block_by_slot(attested_slot + 1) {
+        if relay.get_execution_block_by_slot(attested_slot + 1).is_ok() {
             panic!("Signature slot has block {}", attested_slot + 1);
         }
 
@@ -597,7 +597,7 @@ mod tests {
         let mut relay = get_relay(true, true);
         relay.get_execution_block_by_slot(1099363).unwrap();
         if let Err(err) = relay.get_execution_block_by_slot(1099364) {
-            if let None = err.downcast_ref::<NoBlockForSlotError>() {
+            if err.downcast_ref::<NoBlockForSlotError>().is_none() {
                 panic!("Wrong error type for slot without block");
             }
         } else {
@@ -606,7 +606,7 @@ mod tests {
 
         relay.beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
         if let Err(err) = relay.get_execution_block_by_slot(1099364) {
-            if let Some(_) = err.downcast_ref::<NoBlockForSlotError>() {
+            if err.downcast_ref::<NoBlockForSlotError>().is_some() {
                 panic!("Wrong error type for unworking network");
             }
         } else {
@@ -703,7 +703,7 @@ mod tests {
             )
             .unwrap();
         assert_eq!(last_slot, blocks.1);
-        if let Ok(_) = relay.get_execution_block_by_slot(last_slot) {
+        if relay.get_execution_block_by_slot(last_slot).is_ok() {
             panic!("Wrong last slot");
         }
     }
@@ -733,7 +733,7 @@ mod tests {
         let possible_attested_slot = finalized_slot
             + ONE_EPOCH_IN_SLOTS * 2
             + ONE_EPOCH_IN_SLOTS * relay.light_client_updates_submission_frequency_in_epochs;
-        if let Ok(_) = relay.get_execution_block_by_slot(possible_attested_slot) {
+        if relay.get_execution_block_by_slot(possible_attested_slot).is_ok() {
             panic!("possible attested slot has execution block");
         }
 

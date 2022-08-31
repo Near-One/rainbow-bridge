@@ -66,7 +66,7 @@ impl BeaconRPCClient {
 
         let json_str = &self.get_json_from_raw_request(&url)?;
         self.check_block_found_for_slot(json_str)?;
-        let body_json = &Self::get_body_json_from_rpc_result(&json_str)?;
+        let body_json = &Self::get_body_json_from_rpc_result(json_str)?;
 
         Ok(serde_json::from_str(body_json)?)
     }
@@ -91,7 +91,7 @@ impl BeaconRPCClient {
 
         let json_str = &self.get_json_from_raw_request(&url)?;
         self.check_block_found_for_slot(json_str)?;
-        let json_str = Self::get_header_json_from_rpc_result(&json_str)?;
+        let json_str = Self::get_header_json_from_rpc_result(json_str)?;
         Ok(serde_json::from_str(&json_str)?)
     }
 
@@ -424,11 +424,11 @@ impl BeaconRPCClient {
             slot += 1;
         }
 
-        return Err(format!(
+        Err(format!(
             "Unable to get non empty beacon block in range [`{}`-`{}`)",
             start_slot,
             start_slot + CHECK_SLOTS_FORWARD_LIMIT
-        ))?;
+        ))?
     }
 
     fn check_block_found_for_slot(&self, json_str: &str) -> Result<(), Box<dyn Error>> {

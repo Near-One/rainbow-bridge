@@ -255,7 +255,7 @@ impl LastSlotSearcher {
                         beacon_rpc_client,
                         eth_client_contract,
                     );
-                    return if left_slot > slot {
+                    if left_slot > slot {
                         Ok(left_slot)
                     } else {
                         Ok(self.linear_search_backward(
@@ -264,7 +264,7 @@ impl LastSlotSearcher {
                             beacon_rpc_client,
                             eth_client_contract,
                         ))
-                    };
+                    }
                 }
                 None => Err(err),
             },
@@ -451,7 +451,7 @@ mod tests {
             &beacon_rpc_client,
             &eth_client_contract,
         );
-        if let Ok(_) = is_block_known {
+        if is_block_known.is_ok() {
             panic!();
         }
 
@@ -505,7 +505,7 @@ mod tests {
             &eth_client_contract,
         );
         assert_eq!(left_non_empty_slot, 1060528);
-        assert_eq!(is_known_block, false);
+        assert!(!is_known_block);
 
         let (left_non_empty_slot, is_known_block) = last_slot_searcher.find_left_non_error_slot(
             1060529,
@@ -515,7 +515,7 @@ mod tests {
             &eth_client_contract,
         );
         assert_eq!(left_non_empty_slot, 1060531);
-        assert_eq!(is_known_block, false);
+        assert!(!is_known_block);
 
         let (left_non_empty_slot, is_known_block) = last_slot_searcher.find_left_non_error_slot(
             1060529,
@@ -525,7 +525,7 @@ mod tests {
             &eth_client_contract,
         );
         assert_eq!(left_non_empty_slot, 1060530);
-        assert_eq!(is_known_block, false);
+        assert!(!is_known_block);
 
         let (left_non_empty_slot, is_known_block) = last_slot_searcher.find_left_non_error_slot(
             1060530,
@@ -535,7 +535,7 @@ mod tests {
             &eth_client_contract,
         );
         assert_eq!(left_non_empty_slot, 1060531);
-        assert_eq!(is_known_block, false);
+        assert!(!is_known_block);
 
         let finalized_slot = eth_client_contract
             .get_finalized_beacon_block_slot()
@@ -557,7 +557,7 @@ mod tests {
             &eth_client_contract,
         );
         assert_eq!(left_non_empty_slot, finalized_slot + 1);
-        assert_eq!(is_known_block, true);
+        assert!(is_known_block);
     }
 
     #[test]
@@ -833,7 +833,7 @@ mod tests {
         assert_eq!(last_block_on_near, 1099364);
 
         beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
-        if let Ok(_) = last_slot_searcher.binsearch_slot_range(
+        if last_slot_searcher.binsearch_slot_range(
             eth_client_contract
                 .get_finalized_beacon_block_slot()
                 .unwrap()
@@ -841,7 +841,7 @@ mod tests {
             1099370,
             &beacon_rpc_client,
             &eth_client_contract,
-        ) {
+        ).is_ok() {
             panic!("binarysearch returns result in unworking network");
         }
     }
@@ -920,7 +920,7 @@ mod tests {
         assert_eq!(last_block_on_near, 1099364);
 
         beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
-        if let Ok(_) = last_slot_searcher.binsearch_slot_forward(
+        if last_slot_searcher.binsearch_slot_forward(
             eth_client_contract
                 .get_finalized_beacon_block_slot()
                 .unwrap()
@@ -928,7 +928,7 @@ mod tests {
             1099370,
             &beacon_rpc_client,
             &eth_client_contract,
-        ) {
+        ).is_ok() {
             panic!("binarysearch returns result in unworking network");
         }
     }
@@ -1022,13 +1022,13 @@ mod tests {
         assert_eq!(last_block_on_near, 1099363);
 
         beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
-        if let Ok(_) = last_slot_searcher.binary_slot_search(
+        if last_slot_searcher.binary_slot_search(
             finalized_slot + 1,
             finalized_slot,
             1099370,
             &beacon_rpc_client,
             &eth_client_contract,
-        ) {
+        ).is_ok() {
             panic!("binarysearch returns result in unworking network");
         }
     }
@@ -1072,8 +1072,9 @@ mod tests {
         assert_eq!(last_block_on_near, 1099364);
 
         beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
-        if let Ok(_) =
-            last_slot_searcher.get_last_slot(1099370, &beacon_rpc_client, &eth_client_contract)
+        if last_slot_searcher
+            .get_last_slot(1099370, &beacon_rpc_client, &eth_client_contract)
+            .is_ok()
         {
             panic!("binarysearch returns result in unworking network");
         }
@@ -1119,8 +1120,9 @@ mod tests {
         assert_eq!(last_block_on_near, 1099364);
 
         beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
-        if let Ok(_) =
-            last_slot_searcher.get_last_slot(1099370, &beacon_rpc_client, &eth_client_contract)
+        if last_slot_searcher
+            .get_last_slot(1099370, &beacon_rpc_client, &eth_client_contract)
+            .is_ok()
         {
             panic!("binarysearch returns result in unworking network");
         }
