@@ -538,6 +538,18 @@ mod tests {
     }
 
     #[test]
+    fn test_submit_zero_headers() {
+        let mut relay = get_relay(true, true);
+        let mut end_slot = get_finalized_slot(&relay);
+        end_slot += 1;
+
+        let blocks: Vec<BlockHeader> = vec![];
+        if let Ok(_) = relay.eth_client_contract.send_headers(&blocks, end_slot) {
+            panic!("No error on submit 0 headers");
+        }
+    }
+
+    #[test]
     fn test_send_specific_light_client_update() {
         let mut relay = get_relay(true, true);
         let finalized_slot = get_finalized_slot(&relay);
