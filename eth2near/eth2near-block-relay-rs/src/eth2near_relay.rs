@@ -217,8 +217,16 @@ impl Eth2NearRelay {
         &mut self,
         light_client_update: &LightClientUpdate,
     ) -> Result<bool, Box<dyn Error>> {
+        let signature_slot_period = BeaconRPCClient::get_period_for_slot(light_client_update.signature_slot);
+        let finalized_slot_period = BeaconRPCClient::get_period_for_slot(self.eth_client_contract.get_finalized_beacon_block_slot()?);
+
         let light_client_state = self.eth_client_contract.get_light_client_state()?;
-        let sync_committee = light_client_state.current_sync_committee;
+
+        let sync_committee = if signature_slot_period == finalized_slot_period {
+            light_client_state.current_sync_committee
+        } else {
+            light_client_state.next_sync_committee
+        };
 
         finality_update_verify::is_correct_finality_update(
             &self.network,
