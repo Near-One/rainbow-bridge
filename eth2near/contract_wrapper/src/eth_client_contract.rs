@@ -129,6 +129,10 @@ impl EthClientContractTrait for EthClientContract {
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>> {
         self.last_slot = end_slot;
 
+        if headers.len() == 0 {
+            return Err(Box::new(crate::errors::TryToSubmitZeroHeaderError));
+        }
+
         let method_names = vec!["submit_execution_header".to_string(); headers.len()];
         let args = headers
             .iter()

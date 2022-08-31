@@ -118,6 +118,11 @@ impl ContractWrapper for NearContractWrapper {
         };
 
         let num_blocks_in_batch = method_name.len() as u64;
+
+        if num_blocks_in_batch == 0 {
+            return Err(Box::new(crate::errors::TryToSubmitZeroHeaderError));
+        }
+
         let attached_gas_per_promise_in_batch = gas.unwrap_or(MAX_GAS) / num_blocks_in_batch;
         let mut actions = Vec::new();
 
