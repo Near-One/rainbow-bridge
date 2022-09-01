@@ -5,10 +5,10 @@ use eth_types::{BlockHeader, H256};
 use near_primitives::views::FinalExecutionOutcomeView;
 use near_sdk::Balance;
 use std::error::Error;
-use std::vec::Vec;
 use std::fs::File;
-use std::path::Path;
 use std::io::Write;
+use std::path::Path;
+use std::vec::Vec;
 
 pub struct FileEthClientContract {
     eth_client_contract: EthClientContract,
@@ -43,11 +43,16 @@ impl EthClientContractTrait for FileEthClientContract {
         &mut self,
         light_client_update: LightClientUpdate,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
-        self.light_client_updates_file.write_all(serde_json::to_string(&light_client_update).unwrap().as_bytes())?;
+        self.light_client_updates_file.write_all(
+            serde_json::to_string(&light_client_update)
+                .unwrap()
+                .as_bytes(),
+        )?;
         self.light_client_updates_file.write_all(",".as_bytes())?;
         self.light_client_updates_file.flush()?;
 
-        self.eth_client_contract.send_light_client_update(light_client_update)
+        self.eth_client_contract
+            .send_light_client_update(light_client_update)
     }
 
     fn get_finalized_beacon_block_hash(&self) -> Result<H256, Box<dyn Error>> {
@@ -64,7 +69,8 @@ impl EthClientContractTrait for FileEthClientContract {
         end_slot: u64,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>> {
         for header in headers {
-            self.blocks_headers_file.write_all(serde_json::to_string(&header).unwrap().as_bytes())?;
+            self.blocks_headers_file
+                .write_all(serde_json::to_string(&header).unwrap().as_bytes())?;
             self.blocks_headers_file.write_all(",".as_bytes())?;
         }
         self.blocks_headers_file.flush()?;

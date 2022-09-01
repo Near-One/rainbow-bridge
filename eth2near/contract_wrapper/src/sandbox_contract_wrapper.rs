@@ -1,17 +1,19 @@
 use crate::contract_wrapper_trait::ContractWrapper;
-use workspaces::{network::Sandbox, Account, Contract, Worker};
-use tokio::runtime::Runtime;
-use near_primitives::types::AccountId;
-use std::error::Error;
 use near_crypto::KeyType::ED25519;
 use near_crypto::PublicKey;
 use near_primitives::errors::{ActionError, ActionErrorKind, TxExecutionError};
+use near_primitives::types::AccountId;
+use near_primitives::views::{
+    ExecutionOutcomeView, ExecutionOutcomeWithIdView, ExecutionStatusView,
+    FinalExecutionOutcomeView, FinalExecutionStatus, SignedTransactionView,
+};
 use near_sdk::{Balance, Gas};
-use near_primitives::views::{ExecutionOutcomeView, ExecutionOutcomeWithIdView, ExecutionStatusView, FinalExecutionOutcomeView, FinalExecutionStatus, SignedTransactionView};
+use std::error::Error;
+use tokio::runtime::Runtime;
 use workspaces::result::CallExecutionDetails;
+use workspaces::{network::Sandbox, Account, Contract, Worker};
 
 pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
-
 
 //https://github.com/near/workspaces-rs
 pub struct SandboxContractWrapper {
@@ -25,14 +27,21 @@ impl SandboxContractWrapper {
         SandboxContractWrapper {
             signer_account,
             contract,
-            worker
+            worker,
         }
     }
 
-    fn from_call_execution_details(call_execution_details: CallExecutionDetails) -> FinalExecutionOutcomeView {
+    fn from_call_execution_details(
+        call_execution_details: CallExecutionDetails,
+    ) -> FinalExecutionOutcomeView {
         let status = match call_execution_details.is_success() {
             true => FinalExecutionStatus::SuccessValue("".to_string()),
-            false => FinalExecutionStatus::Failure(TxExecutionError::ActionError(ActionError { index: None, kind: ActionErrorKind::AccountAlreadyExists { account_id: "fail.testnet".parse().unwrap() } })),
+            false => FinalExecutionStatus::Failure(TxExecutionError::ActionError(ActionError {
+                index: None,
+                kind: ActionErrorKind::AccountAlreadyExists {
+                    account_id: "fail.testnet".parse().unwrap(),
+                },
+            })),
         };
 
         let outcome = call_execution_details.outcome();
@@ -46,23 +55,23 @@ impl SandboxContractWrapper {
                 receiver_id: "fack_receiver_id".parse().unwrap(),
                 actions: vec![],
                 signature: Default::default(),
-                hash: Default::default()
+                hash: Default::default(),
             },
             transaction_outcome: ExecutionOutcomeWithIdView {
                 proof: vec![],
                 block_hash: Default::default(),
                 id: Default::default(),
-                outcome: ExecutionOutcomeView{
+                outcome: ExecutionOutcomeView {
                     logs: outcome.clone().logs,
                     receipt_ids: vec![],
                     gas_burnt: outcome.gas_burnt,
                     tokens_burnt: outcome.tokens_burnt,
                     executor_id: outcome.clone().executor_id,
                     status: ExecutionStatusView::Unknown,
-                    metadata: Default::default()
+                    metadata: Default::default(),
                 },
             },
-            receipts_outcome: vec![]
+            receipts_outcome: vec![],
         }
     }
 }
@@ -75,8 +84,10 @@ impl ContractWrapper for SandboxContractWrapper {
     ) -> Result<Vec<u8>, Box<dyn Error>> {
         let rt = Runtime::new()?;
 
-        Ok(rt.block_on(self.contract
-            .view(&self.worker, &method_name, args)).unwrap().result)
+        Ok(rt
+            .block_on(self.contract.view(&self.worker, &method_name, args))
+            .unwrap()
+            .result)
     }
 
     fn call_change_method_batch(
@@ -88,14 +99,20 @@ impl ContractWrapper for SandboxContractWrapper {
     ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
         let deposit = match deposit {
             Some(deposit) => Some(deposit[0]),
-            None => None::<Balance>
+            None => None::<Balance>,
         };
 
         for i in 0..method_name.len() - 1 {
-            self.call_change_method(method_name[i].clone(), args[i].clone(), deposit, gas).unwrap();
+            self.call_change_method(method_name[i].clone(), args[i].clone(), deposit, gas)
+                .unwrap();
         }
 
-        self.call_change_method(method_name[method_name.len() - 1].clone(), args[method_name.len() - 1].clone(), deposit, gas)
+        self.call_change_method(
+            method_name[method_name.len() - 1].clone(),
+            args[method_name.len() - 1].clone(),
+            deposit,
+            gas,
+        )
     }
 
     fn call_change_method(
@@ -107,15 +124,22 @@ impl ContractWrapper for SandboxContractWrapper {
     ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
         let rt = Runtime::new()?;
 
-        Ok(Self::from_call_execution_details(rt.block_on(self.signer_account
-            .call(&self.worker, self.contract.id(), &method_name)
-            .deposit(match deposit { Some(deposit) => deposit, None => 0})
-            .gas(match gas {
-                Some(gas) => gas.0,
-                None => MAX_GAS.0,
-            })
-            .args(args)
-            .transact())?))
+        Ok(Self::from_call_execution_details(
+            rt.block_on(
+                self.signer_account
+                    .call(&self.worker, self.contract.id(), &method_name)
+                    .deposit(match deposit {
+                        Some(deposit) => deposit,
+                        None => 0,
+                    })
+                    .gas(match gas {
+                        Some(gas) => gas.0,
+                        None => MAX_GAS.0,
+                    })
+                    .args(args)
+                    .transact(),
+            )?,
+        ))
     }
 
     fn get_account_id(&self) -> AccountId {

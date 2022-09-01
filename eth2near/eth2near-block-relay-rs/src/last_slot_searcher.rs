@@ -833,15 +833,18 @@ mod tests {
         assert_eq!(last_block_on_near, 1099364);
 
         beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
-        if last_slot_searcher.binsearch_slot_range(
-            eth_client_contract
-                .get_finalized_beacon_block_slot()
-                .unwrap()
-                + 1,
-            1099370,
-            &beacon_rpc_client,
-            &eth_client_contract,
-        ).is_ok() {
+        if last_slot_searcher
+            .binsearch_slot_range(
+                eth_client_contract
+                    .get_finalized_beacon_block_slot()
+                    .unwrap()
+                    + 1,
+                1099370,
+                &beacon_rpc_client,
+                &eth_client_contract,
+            )
+            .is_ok()
+        {
             panic!("binarysearch returns result in unworking network");
         }
     }
@@ -920,15 +923,18 @@ mod tests {
         assert_eq!(last_block_on_near, 1099364);
 
         beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
-        if last_slot_searcher.binsearch_slot_forward(
-            eth_client_contract
-                .get_finalized_beacon_block_slot()
-                .unwrap()
-                + 1,
-            1099370,
-            &beacon_rpc_client,
-            &eth_client_contract,
-        ).is_ok() {
+        if last_slot_searcher
+            .binsearch_slot_forward(
+                eth_client_contract
+                    .get_finalized_beacon_block_slot()
+                    .unwrap()
+                    + 1,
+                1099370,
+                &beacon_rpc_client,
+                &eth_client_contract,
+            )
+            .is_ok()
+        {
             panic!("binarysearch returns result in unworking network");
         }
     }
@@ -1022,13 +1028,16 @@ mod tests {
         assert_eq!(last_block_on_near, 1099363);
 
         beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
-        if last_slot_searcher.binary_slot_search(
-            finalized_slot + 1,
-            finalized_slot,
-            1099370,
-            &beacon_rpc_client,
-            &eth_client_contract,
-        ).is_ok() {
+        if last_slot_searcher
+            .binary_slot_search(
+                finalized_slot + 1,
+                finalized_slot,
+                1099370,
+                &beacon_rpc_client,
+                &eth_client_contract,
+            )
+            .is_ok()
+        {
             panic!("binarysearch returns result in unworking network");
         }
     }

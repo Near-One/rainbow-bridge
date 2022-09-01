@@ -168,15 +168,15 @@ impl EthClientContractTrait for EthClientContract {
 
 #[cfg(test)]
 mod tests {
-    use eth_types::BlockHeader;
-    use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
-    use workspaces::prelude::*;
-    use workspaces::{network::Sandbox, Account, Contract, Worker};
-    use tokio::runtime::Runtime;
     use crate::eth_client_contract;
     use crate::eth_client_contract::EthClientContract;
     use crate::eth_client_contract_trait::EthClientContractTrait;
     use crate::sandbox_contract_wrapper::SandboxContractWrapper;
+    use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
+    use eth_types::BlockHeader;
+    use tokio::runtime::Runtime;
+    use workspaces::prelude::*;
+    use workspaces::{network::Sandbox, Account, Contract, Worker};
 
     const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
 
@@ -189,16 +189,21 @@ mod tests {
 
     impl EthState {
         pub fn new() -> Self {
-            const PATH_TO_EXECUTION_BLOCKS: &str = "./data/execution_block_headers_kiln_1099394-1099937.json";
-            const PATH_TO_LIGHT_CLIENT_UPDATES: &str = "./data/light_client_updates_kiln_1099394-1099937.json";
+            const PATH_TO_EXECUTION_BLOCKS: &str =
+                "./data/execution_block_headers_kiln_1099394-1099937.json";
+            const PATH_TO_LIGHT_CLIENT_UPDATES: &str =
+                "./data/light_client_updates_kiln_1099394-1099937.json";
 
             let execution_blocks: Vec<BlockHeader> = serde_json::from_str(
                 &std::fs::read_to_string(PATH_TO_EXECUTION_BLOCKS).expect("Unable to read file"),
-            ).unwrap();
+            )
+            .unwrap();
 
             let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
-                &std::fs::read_to_string(PATH_TO_LIGHT_CLIENT_UPDATES).expect("Unable to read file"),
-            ).unwrap();
+                &std::fs::read_to_string(PATH_TO_LIGHT_CLIENT_UPDATES)
+                    .expect("Unable to read file"),
+            )
+            .unwrap();
 
             Self {
                 execution_blocks,
@@ -209,18 +214,28 @@ mod tests {
         }
 
         pub fn submit_block(&mut self, eth_client: &mut EthClientContract) {
-            eth_client.send_headers(&vec![self.execution_blocks[self.current_execution_block].clone()], 0).unwrap();
+            eth_client
+                .send_headers(
+                    &vec![self.execution_blocks[self.current_execution_block].clone()],
+                    0,
+                )
+                .unwrap();
             self.current_execution_block += 1;
-            while self.execution_blocks[self.current_execution_block].hash == self.execution_blocks[self.current_execution_block - 1].hash {
+            while self.execution_blocks[self.current_execution_block].hash
+                == self.execution_blocks[self.current_execution_block - 1].hash
+            {
                 self.current_execution_block += 1;
             }
         }
 
         pub fn submit_update(&mut self, eth_client: &mut EthClientContract) {
-            eth_client.send_light_client_update(self.light_client_updates[self.current_light_client_update].clone()).unwrap();
+            eth_client
+                .send_light_client_update(
+                    self.light_client_updates[self.current_light_client_update].clone(),
+                )
+                .unwrap();
             self.current_light_client_update += 1;
         }
-
     }
 
     fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
@@ -232,26 +247,46 @@ mod tests {
 
         // create accounts
         let owner = worker.root_account().unwrap();
-        let relay_account = rt.block_on(owner
-            .create_subaccount(&worker, "relay_account")
-            .initial_balance(30 * near_sdk::ONE_NEAR)
-            .transact()).unwrap()
-            .into_result().unwrap();
+        let relay_account = rt
+            .block_on(
+                owner
+                    .create_subaccount(&worker, "relay_account")
+                    .initial_balance(30 * near_sdk::ONE_NEAR)
+                    .transact(),
+            )
+            .unwrap()
+            .into_result()
+            .unwrap();
 
         (relay_account, contract, worker)
     }
 
-    fn init_contract(eth_client_contract: &EthClientContract, eth_state: &mut EthState)  {
+    fn init_contract(eth_client_contract: &EthClientContract, eth_state: &mut EthState) {
         const PATH_TO_CURRENT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_133.json";
         const PATH_TO_NEXT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_134.json";
         const NETWORK: &str = "kiln";
 
-        let current_sync_committee: SyncCommittee = serde_json::from_str(&std::fs::read_to_string(PATH_TO_CURRENT_SYNC_COMMITTEE).expect("Unable to read file")).unwrap();
-        let next_sync_committee: SyncCommittee = serde_json::from_str(&std::fs::read_to_string(PATH_TO_NEXT_SYNC_COMMITTEE).expect("Unable to read file")).unwrap();
+        let current_sync_committee: SyncCommittee = serde_json::from_str(
+            &std::fs::read_to_string(PATH_TO_CURRENT_SYNC_COMMITTEE).expect("Unable to read file"),
+        )
+        .unwrap();
+        let next_sync_committee: SyncCommittee = serde_json::from_str(
+            &std::fs::read_to_string(PATH_TO_NEXT_SYNC_COMMITTEE).expect("Unable to read file"),
+        )
+        .unwrap();
 
-        let finalized_beacon_header = ExtendedBeaconBlockHeader::from(eth_state.light_client_updates[0].clone().finality_update.header_update);
+        let finalized_beacon_header = ExtendedBeaconBlockHeader::from(
+            eth_state.light_client_updates[0]
+                .clone()
+                .finality_update
+                .header_update,
+        );
 
-        let finalized_hash = eth_state.light_client_updates[0].clone().finality_update.header_update.execution_block_hash;
+        let finalized_hash = eth_state.light_client_updates[0]
+            .clone()
+            .finality_update
+            .header_update
+            .execution_block_hash;
         let mut finalized_execution_header = None::<BlockHeader>;
         for header in &eth_state.execution_blocks {
             eth_state.current_execution_block += 1;
@@ -261,34 +296,56 @@ mod tests {
             }
         }
 
-        eth_client_contract.init_contract(NETWORK.to_string(), finalized_execution_header.unwrap(), finalized_beacon_header, current_sync_committee, next_sync_committee);
+        eth_client_contract.init_contract(
+            NETWORK.to_string(),
+            finalized_execution_header.unwrap(),
+            finalized_beacon_header,
+            current_sync_committee,
+            next_sync_committee,
+        );
         eth_state.current_light_client_update = 1;
     }
 
     #[test]
     fn test_smoke_eth_client_contract_wrapper() {
         let (relay_account, contract, worker) = create_contract();
-        let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
+        let contract_wrapper =
+            Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
         let mut eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
 
         let mut eth_state = EthState::new();
 
         init_contract(&eth_client_contract, &mut eth_state);
-        let first_finalized_slot = eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+        let first_finalized_slot = eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap();
         assert_eq!(first_finalized_slot, 1099360);
 
         eth_client_contract.register_submitter().unwrap();
 
-        let next_hash = eth_state.light_client_updates[eth_state.current_light_client_update].clone().finality_update.header_update.execution_block_hash;
+        let next_hash = eth_state.light_client_updates[eth_state.current_light_client_update]
+            .clone()
+            .finality_update
+            .header_update
+            .execution_block_hash;
         loop {
-            let current_execution_block_hash = eth_state.execution_blocks[eth_state.current_execution_block].hash.unwrap();
-            assert!(!eth_client_contract.is_known_block(&current_execution_block_hash).unwrap());
+            let current_execution_block_hash = eth_state.execution_blocks
+                [eth_state.current_execution_block]
+                .hash
+                .unwrap();
+            assert!(!eth_client_contract
+                .is_known_block(&current_execution_block_hash)
+                .unwrap());
             eth_state.submit_block(&mut eth_client_contract);
-            assert!(eth_client_contract.is_known_block(&current_execution_block_hash).unwrap());
+            assert!(eth_client_contract
+                .is_known_block(&current_execution_block_hash)
+                .unwrap());
 
             if current_execution_block_hash == next_hash {
                 eth_state.submit_update(&mut eth_client_contract);
-                let current_finality_slot = eth_client_contract.get_finalized_beacon_block_slot().unwrap();
+                let current_finality_slot = eth_client_contract
+                    .get_finalized_beacon_block_slot()
+                    .unwrap();
                 assert_ne!(current_finality_slot, first_finalized_slot);
                 break;
             }

@@ -90,7 +90,7 @@ impl HandMadeFinalityLightClientUpdate {
         beacon_rpc_client: &BeaconRPCClient,
         attested_slot: u64,
         beacon_state: BeaconState<MainnetEthSpec>,
-        finality_beacon_state: Option<BeaconState<MainnetEthSpec>>
+        finality_beacon_state: Option<BeaconState<MainnetEthSpec>>,
     ) -> Result<LightClientUpdate, Box<dyn Error>> {
         let signature_slot = beacon_rpc_client
             .get_non_empty_beacon_block_header(attested_slot + 1)?
@@ -131,9 +131,7 @@ impl HandMadeFinalityLightClientUpdate {
             )?,
             sync_committee_update: match finality_beacon_state {
                 None => Option::<SyncCommitteeUpdate>::None,
-                Some(beacon_state) => Some(Self::get_next_sync_committee(
-                    &beacon_state,
-                )?),
+                Some(beacon_state) => Some(Self::get_next_sync_committee(&beacon_state)?),
             },
         })
     }

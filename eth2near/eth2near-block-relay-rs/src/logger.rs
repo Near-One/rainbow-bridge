@@ -1,7 +1,7 @@
+use atomic_refcell::AtomicRefCell;
+use log::{Level, Metadata, Record};
 use std::fs::File;
 use std::io::Write;
-use log::{Level, Metadata, Record};
-use atomic_refcell::AtomicRefCell;
 use std::ops::DerefMut;
 
 pub struct SimpleLogger {
@@ -12,7 +12,7 @@ impl SimpleLogger {
     pub fn new(path: String) -> Self {
         let file = File::create(path).unwrap();
         Self {
-            file: AtomicRefCell::new(file)
+            file: AtomicRefCell::new(file),
         }
     }
 }
@@ -24,7 +24,12 @@ impl log::Log for SimpleLogger {
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            if let Err(err) = self.file.borrow_mut().deref_mut().write_all(format!("{}: {}\n", record.level(), record.args()).as_bytes()) {
+            if let Err(err) = self
+                .file
+                .borrow_mut()
+                .deref_mut()
+                .write_all(format!("{}: {}\n", record.level(), record.args()).as_bytes())
+            {
                 eprintln!("Error on flush: {}", err);
             }
 
