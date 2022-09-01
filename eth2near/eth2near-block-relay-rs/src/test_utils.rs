@@ -9,7 +9,6 @@ use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
 use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
 use eth_types::BlockHeader;
-use near_units::*;
 use std::{thread, time};
 use tokio::runtime::Runtime;
 use tree_hash::TreeHash;
@@ -171,7 +170,7 @@ fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
         .block_on(
             owner
                 .create_subaccount(&worker, "relay_account")
-                .initial_balance(parse_near!("30 N"))
+                .initial_balance(30 * near_sdk::ONE_NEAR)
                 .transact(),
         )
         .unwrap()

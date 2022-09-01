@@ -170,7 +170,6 @@ impl EthClientContractTrait for EthClientContract {
 mod tests {
     use eth_types::BlockHeader;
     use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
-    use near_units::*;
     use workspaces::prelude::*;
     use workspaces::{network::Sandbox, Account, Contract, Worker};
     use tokio::runtime::Runtime;
@@ -235,7 +234,7 @@ mod tests {
         let owner = worker.root_account().unwrap();
         let relay_account = rt.block_on(owner
             .create_subaccount(&worker, "relay_account")
-            .initial_balance(parse_near!("30 N"))
+            .initial_balance(30 * near_sdk::ONE_NEAR)
             .transact()).unwrap()
             .into_result().unwrap();
 
