@@ -11,8 +11,10 @@ use rlp_derive::RlpDecodable as RlpDecodableDerive;
 #[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
 use std::io::{Error, Write};
+#[cfg(feature = "eth2")]
 use tree_hash::{Hash256, TreeHash, TreeHashType};
 
+#[cfg(feature = "eth2")]
 pub mod eth2;
 #[macro_use]
 pub mod macros;
@@ -25,6 +27,7 @@ arr_ethereum_types_wrapper_impl_borsh_serde_ssz!(H512, 64);
 arr_ethereum_types_wrapper_impl_borsh_serde_ssz!(H520, 65);
 arr_ethereum_types_wrapper_impl_borsh_serde_ssz!(Bloom, 256);
 
+#[cfg(feature = "eth2")]
 impl TreeHash for H256 {
     fn tree_hash_type() -> TreeHashType {
         TreeHashType::Vector
@@ -129,24 +132,27 @@ pub struct BlockHeader {
     pub log_bloom: Bloom,
     pub difficulty: U256,
     #[cfg_attr(
-        not(target_arch = "wasm32"),
+        all(feature = "eth2", not(target_arch = "wasm32")),
         serde(with = "eth2_serde_utils::u64_hex_be")
     )]
     pub number: u64,
     pub gas_limit: U256,
     pub gas_used: U256,
     #[cfg_attr(
-        not(target_arch = "wasm32"),
+        all(feature = "eth2", not(target_arch = "wasm32")),
         serde(with = "eth2_serde_utils::u64_hex_be")
     )]
     pub timestamp: u64,
-    #[cfg_attr(not(target_arch = "wasm32"), serde(with = "eth2_serde_utils::hex_vec"))]
+    #[cfg_attr(
+        all(feature = "eth2", not(target_arch = "wasm32")),
+        serde(with = "eth2_serde_utils::hex_vec")
+    )]
     pub extra_data: Vec<u8>,
     pub mix_hash: H256,
     pub nonce: H64,
     #[cfg(feature = "eip1559")]
     #[cfg_attr(
-        not(target_arch = "wasm32"),
+        all(feature = "eth2", not(target_arch = "wasm32")),
         serde(with = "eth2_serde_utils::u64_hex_be")
     )]
     pub base_fee_per_gas: u64,
