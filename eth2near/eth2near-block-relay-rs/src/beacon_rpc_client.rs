@@ -45,7 +45,7 @@ impl BeaconRPCClient {
         Self {
             endpoint_url: endpoint_url.to_string(),
             client: reqwest::blocking::Client::builder()
-                .timeout(Duration::from_secs(180))
+                .timeout(Duration::from_secs(1800))
                 .build()
                 .unwrap(),
         }
