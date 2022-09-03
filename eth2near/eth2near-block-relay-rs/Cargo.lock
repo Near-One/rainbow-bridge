@@ -1163,6 +1163,7 @@ version = "0.1.0"
 dependencies = [
  "async-std",
  "atomic_refcell",
+ "bitvec 0.17.4",
  "borsh",
  "clap",
  "contract_wrapper",

@@ -1,9 +1,7 @@
 use crate::beacon_block_body_merkle_tree::BeaconStateMerkleTree;
 use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::execution_block_proof::ExecutionBlockProof;
-use crate::relay_errors::{
-    ErrorOnUnwrapSignatureBit, MissNextSyncCommittee, MissSyncAggregationError,
-};
+use crate::relay_errors::{ErrorOnUnwrapSignatureBit, MissNextSyncCommittee, MissSyncAggregationError, NoBlockForSlotError};
 use eth_types::eth2::{
     FinalizedHeaderUpdate, HeaderUpdate, LightClientUpdate, SignatureBytes, SyncCommittee,
     SyncCommitteeBits, SyncCommitteeUpdate,
@@ -11,6 +9,7 @@ use eth_types::eth2::{
 use eth_types::H256;
 use serde_json::Value;
 use std::error::Error;
+use log::trace;
 use tree_hash::TreeHash;
 use types::{BeaconBlockBody, BeaconBlockHeader, BeaconState, MainnetEthSpec};
 
@@ -22,6 +21,8 @@ impl HandMadeFinalityLightClientUpdate {
         attested_slot: u64,
         include_next_sync_committee: bool,
     ) -> Result<LightClientUpdate, Box<dyn Error>> {
+        let (attested_slot, signature_slot) = Self::get_attested_slot_with_enough_sync_committee_bits_sum(&beacon_rpc_client, attested_slot)?;
+        trace!(target: "relay", "New attested slot = {} and signature slot = {}", attested_slot, signature_slot);
         let beacon_state = beacon_rpc_client.get_beacon_state(&format!("{}", attested_slot))?;
 
         let finality_hash = beacon_state.finalized_checkpoint().root;
@@ -37,6 +38,7 @@ impl HandMadeFinalityLightClientUpdate {
         Self::get_finality_light_client_update_for_state(
             beacon_rpc_client,
             attested_slot,
+            signature_slot,
             beacon_state,
             finality_beacon_state,
         )
@@ -49,9 +51,15 @@ impl HandMadeFinalityLightClientUpdate {
         let beacon_state = Self::get_state_from_file(file_name)?;
         let attested_slot = beacon_state.slot().as_u64();
 
+        let signature_slot = beacon_rpc_client
+            .get_non_empty_beacon_block_header(attested_slot + 1)?
+            .slot
+            .into();
+
         Self::get_finality_light_client_update_for_state(
             beacon_rpc_client,
             attested_slot,
+            signature_slot,
             beacon_state,
             None,
         )
@@ -65,10 +73,15 @@ impl HandMadeFinalityLightClientUpdate {
         let attested_beacon_state = Self::get_state_from_file(attested_state_file_name)?;
         let attested_slot = attested_beacon_state.slot().as_u64();
         let finality_beacon_state = Self::get_state_from_file(finality_state_file_name)?;
+        let signature_slot = beacon_rpc_client
+            .get_non_empty_beacon_block_header(attested_slot + 1)?
+            .slot
+            .into();
 
         Self::get_finality_light_client_update_for_state(
             beacon_rpc_client,
             attested_slot,
+            signature_slot,
             attested_beacon_state,
             Some(finality_beacon_state),
         )
@@ -76,6 +89,44 @@ impl HandMadeFinalityLightClientUpdate {
 }
 
 impl HandMadeFinalityLightClientUpdate {
+    fn get_attested_slot_with_enough_sync_committee_bits_sum(beacon_rpc_client: &BeaconRPCClient,
+                                                              attested_slot: u64) -> Result<(u64, u64), Box<dyn Error>> {
+        let mut current_attested_slot = attested_slot;
+        loop {
+            let signature_slot = beacon_rpc_client
+                .get_non_empty_beacon_block_header(current_attested_slot + 1)?
+                .slot
+                .into();
+            let signature_beacon_body =
+                beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", signature_slot))?;
+            let sync_committe_signature = signature_beacon_body
+                .sync_aggregate()
+                .map_err(|_| MissSyncAggregationError)?;
+            let sync_committee_bits: [u8; 64] = Self::get_sync_committee_bits(sync_committe_signature)?;
+            let sync_committee_bits_sum: u32 = sync_committee_bits.into_iter().map(|x| x.count_ones()).sum();
+            if sync_committee_bits_sum * 3 < (64 * 8 * 2) {
+                current_attested_slot = signature_slot;
+                continue;
+            }
+
+            current_attested_slot = signature_beacon_body.attestations()[0].data.slot.as_u64();
+            if current_attested_slot < attested_slot {
+                current_attested_slot = signature_slot;
+                continue;
+            }
+
+            if let Err(err) = beacon_rpc_client.get_beacon_block_header_for_block_id(&format!("{}", current_attested_slot)) {
+                if let Some(_) = err.downcast_ref::<NoBlockForSlotError>() {
+                    current_attested_slot = signature_slot;
+                    continue
+                }
+                return Err(err);
+            }
+
+            return Ok((current_attested_slot, signature_slot));
+        }
+    }
+
     fn get_state_from_file(file_name: &str) -> Result<BeaconState<MainnetEthSpec>, Box<dyn Error>> {
         let beacon_state_json: String =
             std::fs::read_to_string(file_name).expect("Unable to read file");
@@ -89,19 +140,16 @@ impl HandMadeFinalityLightClientUpdate {
     fn get_finality_light_client_update_for_state(
         beacon_rpc_client: &BeaconRPCClient,
         attested_slot: u64,
+        signature_slot: u64,
         beacon_state: BeaconState<MainnetEthSpec>,
         finality_beacon_state: Option<BeaconState<MainnetEthSpec>>,
     ) -> Result<LightClientUpdate, Box<dyn Error>> {
-        let signature_slot = beacon_rpc_client
-            .get_non_empty_beacon_block_header(attested_slot + 1)?
-            .slot
-            .into();
-
         let signature_beacon_body =
             beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", signature_slot))?;
         let sync_committe_signature = signature_beacon_body
             .sync_aggregate()
             .map_err(|_| MissSyncAggregationError)?;
+        let sync_committee_bits: [u8; 64] = Self::get_sync_committee_bits(sync_committe_signature)?;
 
         let attested_header = beacon_rpc_client
             .get_beacon_block_header_for_block_id(&format!("{}", attested_slot))?;
@@ -112,8 +160,6 @@ impl HandMadeFinalityLightClientUpdate {
 
         let finalized_block_body = beacon_rpc_client
             .get_beacon_block_body_for_block_id(&format!("{:?}", &finality_hash))?;
-
-        let sync_committee_bits: [u8; 64] = Self::get_sync_committee_bits(sync_committe_signature)?;
 
         Ok(LightClientUpdate {
             attested_beacon_header: Self::from_lighthouse_beacon_header(&attested_header),
