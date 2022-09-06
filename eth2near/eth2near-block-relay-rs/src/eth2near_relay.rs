@@ -9,6 +9,8 @@ use eth_types::eth2::LightClientUpdate;
 use eth_types::BlockHeader;
 use log::{debug, info, trace, warn};
 use std::error::Error;
+use std::thread::sleep;
+use std::time::Duration;
 use std::vec::Vec;
 
 const ONE_EPOCH_IN_SLOTS: u64 = 32;
@@ -137,6 +139,9 @@ impl Eth2NearRelay {
                 );
                 self.submit_execution_blocks(headers, current_slot, &mut last_eth2_slot_on_near);
                 self.send_light_client_updates(last_eth2_slot_on_near);
+            } else {
+                info!(target: "relay", "Sync with ETH network. Sleep 20 secs");
+                sleep(Duration::from_secs(20));
             }
         }
     }
