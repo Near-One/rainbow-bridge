@@ -35,6 +35,10 @@ struct Arguments {
     #[clap(long, action = ArgAction::SetTrue)]
     /// Enable binary search for last slot ETH block on NEAR
     enable_binary_search: bool,
+
+    #[clap(long, action = ArgAction::SetTrue)]
+    /// Submit to ETH2 Client only blocks before last finalized block on NEAR
+    submit_only_finalized_blocks: bool,
 }
 
 fn get_eth_contract_wrapper(config: &Config) -> Box<dyn ContractWrapper> {
@@ -109,6 +113,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         get_eth_client_contract(&config),
         args.enable_binary_search,
         args.register_relay,
+        args.submit_only_finalized_blocks,
     );
 
     eth2near_relay.run(None);
