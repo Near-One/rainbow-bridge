@@ -48,6 +48,7 @@ pub struct Eth2NearRelay {
     near_network_name: String,
     last_slot_searcher: LastSlotSearcher,
     terminate: bool,
+    submit_only_finalized_blocks: bool,
     next_light_client_update: Option<LightClientUpdate>,
 }
 
@@ -57,6 +58,7 @@ impl Eth2NearRelay {
         eth_contract: Box<dyn EthClientContractTrait>,
         enable_binsearch: bool,
         register_relay: bool,
+        submit_only_finalized_blocks: bool,
     ) -> Self {
         info!(target: "relay", "=== Relay initialization === ");
 
@@ -76,6 +78,7 @@ impl Eth2NearRelay {
             near_network_name: config.near_network_id.to_string(),
             last_slot_searcher: LastSlotSearcher::new(enable_binsearch),
             terminate: false,
+            submit_only_finalized_blocks,
             next_light_client_update,
         };
 
@@ -98,11 +101,19 @@ impl Eth2NearRelay {
 
             info!(target: "relay", "== New relay loop ==");
 
-            let last_eth2_slot_on_eth_chain: u64 = skip_fail!(
-                self.beacon_rpc_client.get_last_slot_number(),
-                "Fail to get last slot on Eth"
-            )
-            .as_u64();
+            let last_eth2_slot_on_eth_chain: u64 = if self.submit_only_finalized_blocks {
+                skip_fail!(
+                    self.beacon_rpc_client.get_last_finalized_slot_number(),
+                    "Fail to get last finalized slot on Eth"
+                )
+                .as_u64()
+            } else {
+                skip_fail!(
+                    self.beacon_rpc_client.get_last_slot_number(),
+                    "Fail to get last slot on Eth"
+                )
+                .as_u64()
+            };
             let mut last_eth2_slot_on_near: u64 = skip_fail!(
                 self.last_slot_searcher.get_last_slot(
                     last_eth2_slot_on_eth_chain,
@@ -217,8 +228,11 @@ impl Eth2NearRelay {
         &mut self,
         light_client_update: &LightClientUpdate,
     ) -> Result<bool, Box<dyn Error>> {
-        let signature_slot_period = BeaconRPCClient::get_period_for_slot(light_client_update.signature_slot);
-        let finalized_slot_period = BeaconRPCClient::get_period_for_slot(self.eth_client_contract.get_finalized_beacon_block_slot()?);
+        let signature_slot_period =
+            BeaconRPCClient::get_period_for_slot(light_client_update.signature_slot);
+        let finalized_slot_period = BeaconRPCClient::get_period_for_slot(
+            self.eth_client_contract.get_finalized_beacon_block_slot()?,
+        );
 
         let light_client_state = self.eth_client_contract.get_light_client_state()?;
 

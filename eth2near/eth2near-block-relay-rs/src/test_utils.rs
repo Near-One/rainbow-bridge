@@ -222,6 +222,7 @@ pub fn get_relay(enable_binsearch: bool, from_file: bool) -> Eth2NearRelay {
         get_client_contract(from_file),
         enable_binsearch,
         true,
+        false
     )
 }
 
@@ -244,6 +245,7 @@ pub fn get_relay_with_update_from_file(
         get_client_contract(from_file),
         enable_binsearch,
         true,
+        false
     )
 }
 
@@ -261,5 +263,6 @@ pub fn get_relay_from_slot(enable_binsearch: bool, slot: u64) -> Eth2NearRelay {
         Box::new(eth_client_contract),
         enable_binsearch,
         true,
+        false
     )
 }
