@@ -146,35 +146,6 @@ impl Eth2NearRelay {
         }
     }
 
-    fn get_light_client_update_from_file(
-        config: &Config,
-        beacon_rpc_client: &BeaconRPCClient,
-    ) -> Result<Option<LightClientUpdate>, Box<dyn Error>> {
-        let mut next_light_client_update: Option<LightClientUpdate> = None;
-        if let Some(path_to_attested_state) = config.clone().path_to_attested_state {
-            match config.clone().path_to_finality_state {
-                Some(path_to_finality_state) => {
-                    next_light_client_update = Some(
-                        HandMadeFinalityLightClientUpdate::get_light_client_update_from_file_with_next_sync_committee(
-                            beacon_rpc_client,
-                            &path_to_attested_state,
-                            &path_to_finality_state,
-                        ).unwrap(),
-                    );
-                }
-                None => {
-                    next_light_client_update = Some(
-                        HandMadeFinalityLightClientUpdate::get_finality_light_client_update_from_file(
-                            beacon_rpc_client,
-                            &path_to_attested_state,
-                        ).unwrap(),
-                    );
-                }
-            }
-        }
-        Ok(next_light_client_update)
-    }
-
     fn set_terminate(&mut self, iter_id: u64, max_iterations: Option<u64>) {
         if let Some(max_iter) = max_iterations {
             if iter_id > max_iter {
@@ -328,13 +299,29 @@ impl Eth2NearRelay {
             >= self.max_blocks_for_finalization
         {
             info!(target: "relay", "Too big gap between slot of finalized block on Near and Eth. Sending hand made light client update");
-            self.send_hand_made_light_client_update(last_finalized_slot_on_near);
+            self.send_light_client_update_from_epoch(last_finalized_slot_on_near);
+            //self.send_hand_made_light_client_update(last_finalized_slot_on_near);
         } else {
             self.send_regular_light_client_update(
                 last_finalized_slot_on_eth,
                 last_finalized_slot_on_near,
             );
         }
+    }
+
+    fn send_light_client_update_from_epoch(&mut self, last_finalized_slot_on_near: u64) {
+        let last_epoch = last_finalized_slot_on_near / 32;
+        let next_last_epoch = last_epoch + self.light_client_updates_submission_frequency_in_epochs + 2;
+
+        debug!(target: "relay", "Fetch light client update for epoch {}", next_last_epoch);
+
+        let light_client_update =
+            return_on_fail!(
+                self.beacon_rpc_client.get_epoch_light_client_update(next_last_epoch),
+                "Error on getting light client update. Skipping sending light client update"
+            );
+
+        self.send_specific_light_cleint_update(light_client_update);
     }
 
     fn seng_light_client_update_from_file(&mut self, last_submitted_slot: u64) {
@@ -376,6 +363,35 @@ impl Eth2NearRelay {
         };
 
         self.send_specific_light_cleint_update(light_client_update);
+    }
+
+    fn get_light_client_update_from_file(
+        config: &Config,
+        beacon_rpc_client: &BeaconRPCClient,
+    ) -> Result<Option<LightClientUpdate>, Box<dyn Error>> {
+        let mut next_light_client_update: Option<LightClientUpdate> = None;
+        if let Some(path_to_attested_state) = config.clone().path_to_attested_state {
+            match config.clone().path_to_finality_state {
+                Some(path_to_finality_state) => {
+                    next_light_client_update = Some(
+                        HandMadeFinalityLightClientUpdate::get_light_client_update_from_file_with_next_sync_committee(
+                            beacon_rpc_client,
+                            &path_to_attested_state,
+                            &path_to_finality_state,
+                        ).unwrap(),
+                    );
+                }
+                None => {
+                    next_light_client_update = Some(
+                        HandMadeFinalityLightClientUpdate::get_finality_light_client_update_from_file(
+                            beacon_rpc_client,
+                            &path_to_attested_state,
+                        ).unwrap(),
+                    );
+                }
+            }
+        }
+        Ok(next_light_client_update)
     }
 
     fn get_attested_slot(

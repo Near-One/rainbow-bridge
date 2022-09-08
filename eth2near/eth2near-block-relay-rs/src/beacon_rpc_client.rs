@@ -33,6 +33,7 @@ impl BeaconRPCClient {
     const URL_HEADER_PATH: &'static str = "eth/v1/beacon/headers";
     const URL_BODY_PATH: &'static str = "eth/v2/beacon/blocks";
     const URL_GET_LIGHT_CLIENT_UPDATE_API: &'static str = "eth/v1/beacon/light_client/updates";
+    const URL_GET_EPOCH_LIGHT_CLIENT_UPDATE_API: &'static str = "eth/v1/beacon/light_client/updates_epoch";
     const URL_FINALITY_LIGHT_CLIENT_UPDATE_PATH: &'static str =
         "eth/v1/beacon/light_client/finality_update/";
     const URL_STATE_PATH: &'static str = "eth/v2/debug/beacon/states";
@@ -112,24 +113,7 @@ impl BeaconRPCClient {
             period
         );
         let light_client_update_json_str = self.get_json_from_raw_request(&url)?;
-
-        Ok(LightClientUpdate {
-            attested_beacon_header: Self::get_attested_header_from_light_client_update_json_str(
-                &light_client_update_json_str,
-            )?,
-            sync_aggregate: Self::get_sync_aggregate_from_light_client_update_json_str(
-                &light_client_update_json_str,
-            )?,
-            signature_slot: self.get_signature_slot(&light_client_update_json_str)?,
-            finality_update: self.get_finality_update_from_light_client_update_json_str(
-                &light_client_update_json_str,
-            )?,
-            sync_committee_update: Some(
-                Self::get_sync_committee_update_from_light_lient_update_json_str(
-                    &light_client_update_json_str,
-                )?,
-            ),
-        })
+        self.get_light_client_update_from_json_str(&light_client_update_json_str)
     }
 
     /// Return the last finalized slot in the Beacon chain
@@ -406,6 +390,40 @@ impl BeaconRPCClient {
 
     pub fn get_period_for_slot(slot: u64) -> u64 {
         slot / (Self::SLOTS_PER_EPOCH * Self::EPOCHS_PER_PERIOD)
+    }
+
+    pub fn get_epoch_light_client_update (
+        &self,
+        epoch: u64
+    ) -> Result<LightClientUpdate, Box<dyn Error>> {
+        let url = format!(
+            "{}/{}?start_epoch={}",
+            self.endpoint_url,
+            Self::URL_GET_EPOCH_LIGHT_CLIENT_UPDATE_API,
+            epoch
+        );
+        let light_client_update_json_str = self.get_json_from_raw_request(&url)?;
+        self.get_light_client_update_from_json_str(&light_client_update_json_str)
+    }
+
+    fn get_light_client_update_from_json_str(&self, light_client_update_json_str: &str) -> Result<LightClientUpdate, Box<dyn Error>> {
+        Ok(LightClientUpdate {
+            attested_beacon_header: Self::get_attested_header_from_light_client_update_json_str(
+                light_client_update_json_str,
+            )?,
+            sync_aggregate: Self::get_sync_aggregate_from_light_client_update_json_str(
+                light_client_update_json_str,
+            )?,
+            signature_slot: self.get_signature_slot(light_client_update_json_str)?,
+            finality_update: self.get_finality_update_from_light_client_update_json_str(
+                light_client_update_json_str,
+            )?,
+            sync_committee_update: Some(
+                Self::get_sync_committee_update_from_light_lient_update_json_str(
+                    light_client_update_json_str,
+                )?,
+            ),
+        })
     }
 
     pub fn get_non_empty_beacon_block_header(
