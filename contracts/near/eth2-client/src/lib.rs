@@ -80,7 +80,8 @@ impl Eth2Client {
         let network =
             Network::from_str(args.network.as_str()).unwrap_or_else(|e| env::panic_str(e.as_str()));
 
-        if network == Network::Mainnet {
+        #[cfg(feature = "mainnet")] 
+        {
             assert!(
                 args.validate_updates,
                 "The updates validation can't be disabled for mainnet"
