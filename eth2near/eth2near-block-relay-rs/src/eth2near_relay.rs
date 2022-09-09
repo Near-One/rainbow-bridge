@@ -52,6 +52,7 @@ pub struct Eth2NearRelay {
     terminate: bool,
     submit_only_finalized_blocks: bool,
     next_light_client_update: Option<LightClientUpdate>,
+    light_client_api_disable: bool,
 }
 
 impl Eth2NearRelay {
@@ -82,6 +83,7 @@ impl Eth2NearRelay {
             terminate: false,
             submit_only_finalized_blocks,
             next_light_client_update,
+            light_client_api_disable: config.light_client_api_disable,
         };
 
         if register_relay {
@@ -293,6 +295,11 @@ impl Eth2NearRelay {
             last_finalized_slot_on_eth,
         ) {
             return;
+        }
+
+        if self.light_client_api_disable {
+            info!(target: "relay", "Beacon endpoint doesn't support Light Client Server API. Fetching hand made light client update");
+            return self.send_hand_made_light_client_update(last_finalized_slot_on_near);
         }
 
         if last_finalized_slot_on_eth - last_finalized_slot_on_near

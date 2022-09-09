@@ -53,6 +53,9 @@ pub struct Config {
     // Path to the json file with beacon state in the next finality slot
     // for case of short relay run
     pub path_to_finality_state: Option<String>,
+
+    // True if Light Client Server API not available at beacon_endpoint
+    pub light_client_api_disable: bool,
 }
 
 impl Config {

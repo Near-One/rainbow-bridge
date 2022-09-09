@@ -403,7 +403,7 @@ impl BeaconRPCClient {
             epoch
         );
         let light_client_update_json_str = self.get_json_from_raw_request(&url)?;
-        
+
         let v: Value = serde_json::from_str(&light_client_update_json_str)?;
         let light_client_update_json_str =
             serde_json::to_string(&json!({"data": [v["data"]]}))?;
