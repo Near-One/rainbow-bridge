@@ -5,10 +5,10 @@ edition = "2021"
 
 [dependencies]
 eth-types = { path ="../../contracts/near/eth-types/", features = ["eip1559"]}
-bls = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b7dd45e622c35674916bf71a200891d7fc0279ec", default-features = false, features = ["milagro"]}
+bls = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
 eth2-utility  = { path ="../../contracts/near/eth2-utility"}
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b7dd45e622c35674916bf71a200891d7fc0279ec" }
-types =  { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b7dd45e622c35674916bf71a200891d7fc0279ec" }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
+types =  { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
 bitvec = "1.0.0"
 
 [dev-dependencies]
@@ -16,8 +16,8 @@ eth2_to_near_relay = { path = "../eth2near-block-relay-rs" }
 
 [patch]
 [patch.crates-io]
-eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b7dd45e622c35674916bf71a200891d7fc0279ec" }
-eth2_ssz_types = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b7dd45e622c35674916bf71a200891d7fc0279ec" }
-eth2_hashing = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b7dd45e622c35674916bf71a200891d7fc0279ec" }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b7dd45e622c35674916bf71a200891d7fc0279ec" }
-eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b7dd45e622c35674916bf71a200891d7fc0279ec" }
+eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
+eth2_ssz_types = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
+eth2_hashing = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
+eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }

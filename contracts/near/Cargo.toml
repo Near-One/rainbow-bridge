@@ -15,3 +15,7 @@ lto = true
 debug = false
 panic = "abort"
 overflow-checks = true
+
+[patch]
+[patch.crates-io]
+eth2_hashing = { path = "eth2_hashing" }

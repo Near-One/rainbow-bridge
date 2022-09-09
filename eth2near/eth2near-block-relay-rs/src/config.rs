@@ -28,7 +28,7 @@ pub struct Config {
     // The Ethereum network name (main, kiln)
     pub network: String,
 
-    // Contract type (near, dao, file)
+    // Contract type (near, dao)
     pub contract_type: String,
 
     // Frequency of submission light client updates. Once in N epochs.
@@ -42,6 +42,9 @@ pub struct Config {
 
     //Port for Prometheus
     pub prometheus_metrics_port: u16,
+
+    // Account id for DAO on NEAR
+    pub dao_contract_account_id: Option<String>,
 }
 
 impl Config {

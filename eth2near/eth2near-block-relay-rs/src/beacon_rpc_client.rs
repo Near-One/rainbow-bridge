@@ -402,6 +402,29 @@ impl BeaconRPCClient {
     pub fn get_period_for_slot(slot: u64) -> u64 {
         slot / (Self::SLOTS_PER_EPOCH * Self::EPOCHS_PER_PERIOD)
     }
+
+    pub fn get_non_empty_beacon_block_header(
+        &self,
+        start_slot: u64,
+    ) -> Result<types::BeaconBlockHeader, Box<dyn Error>> {
+        const CHECK_SLOTS_FORWARD_LIMIT: u64 = 32;
+
+        let mut slot = start_slot;
+        for _ in 0..CHECK_SLOTS_FORWARD_LIMIT {
+            if let Ok(beacon_block_body) =
+                self.get_beacon_block_header_for_block_id(&format!("{}", slot))
+            {
+                return Ok(beacon_block_body);
+            }
+            slot += 1;
+        }
+
+        return Err(format!(
+            "Unable to get non empty beacon block in range [`{}`-`{}`)",
+            start_slot,
+            start_slot + CHECK_SLOTS_FORWARD_LIMIT
+        ))?;
+    }
 }
 
 #[cfg(test)]

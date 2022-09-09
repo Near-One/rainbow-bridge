@@ -1,10 +1,67 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::json_types::{Base64VecU8, U128, U64};
-use near_sdk::{AccountId, Balance};
+use near_sdk::json_types::{Base58CryptoHash, Base64VecU8, U128, U64};
+use near_sdk::AccountId;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
+/// Account ID that represents a token in near-sdk v3.
+/// Need to keep it around for backward compatibility.
+pub type OldAccountId = String;
+
+/// Information recorded about claim of the bounty by given user.
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct BountyClaim {
+    /// Bounty id that was claimed.
+    bounty_id: u64,
+    /// Start time of the claim.
+    start_time: U64,
+    /// Deadline specified by claimer.
+    deadline: U64,
+    /// Completed?
+    completed: bool,
+}
+
+/// Bounty information.
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Debug))]
+#[serde(crate = "near_sdk::serde")]
+pub struct Bounty {
+    /// Description of the bounty.
+    pub description: String,
+    /// Token the bounty will be paid out.
+    /// Can be "" for $NEAR or a valid account id.
+    pub token: OldAccountId,
+    /// Amount to be paid out.
+    pub amount: U128,
+    /// How many times this bounty can be done.
+    pub times: u32,
+    /// Max deadline from claim that can be spend on this bounty.
+    pub max_deadline: U64,
+}
+
+/// Info about factory that deployed this contract and if auto-update is allowed.
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Clone, Debug))]
+#[serde(crate = "near_sdk::serde")]
+pub struct FactoryInfo {
+    pub factory_id: AccountId,
+    pub auto_update: bool,
+}
+
+/// Function call arguments.
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Clone, Debug))]
+#[serde(crate = "near_sdk::serde")]
+pub struct PolicyParameters {
+    pub proposal_bond: Option<U128>,
+    pub proposal_period: Option<U64>,
+    pub bounty_bond: Option<U128>,
+    pub bounty_forgiveness_period: Option<U64>,
+}
+
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct ProposalOutput {
     /// Id of the proposal.
@@ -43,10 +100,26 @@ pub struct ActionCall {
     pub gas: U64,
 }
 
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
+#[serde(crate = "near_sdk::serde")]
+pub struct Config {
+    /// Name of the DAO.
+    pub name: String,
+    /// Purpose of this DAO.
+    pub purpose: String,
+    /// Generic metadata. Can be used by specific UI to store additional data.
+    /// This is not used by anything in the contract.
+    pub metadata: Base64VecU8,
+}
+
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Clone, Debug))]
 #[serde(crate = "near_sdk::serde")]
 pub enum ProposalKind {
+    /// Change the DAO config.
+    ChangeConfig { config: Config },
+    /// Change the full policy.
+    ChangePolicy { policy: VersionedPolicy },
     /// Add member to given role in the policy. This is short cut to updating the whole policy.
     AddMemberToRole { member_id: AccountId, role: String },
     /// Remove member to given role in the policy. This is short cut to updating the whole policy.
@@ -57,6 +130,28 @@ pub enum ProposalKind {
         receiver_id: AccountId,
         actions: Vec<ActionCall>,
     },
+    /// Upgrade this contract with given hash from blob store.
+    UpgradeSelf { hash: Base58CryptoHash },
+    /// Upgrade another contract, by calling method with the code from given hash from blob store.
+    UpgradeRemote {
+        receiver_id: AccountId,
+        method_name: String,
+        hash: Base58CryptoHash,
+    },
+    /// Transfers given amount of `token_id` from this DAO to `receiver_id`.
+    /// If `msg` is not None, calls `ft_transfer_call` with given `msg`. Fails if this base token.
+    /// For `ft_transfer` and `ft_transfer_call` `memo` is the `description` of the proposal.
+    Transfer {
+        /// Can be "" for $NEAR or a valid account id.
+        token_id: OldAccountId,
+        receiver_id: AccountId,
+        amount: U128,
+        msg: Option<String>,
+    },
+    /// Sets staking contract. Can only be proposed if staking contract is not set yet.
+    SetStakingContract { staking_id: AccountId },
+    /// Add new bounty.
+    AddBounty { bounty: Bounty },
     /// Indicates that given bounty is done by given user.
     BountyDone {
         bounty_id: u64,
@@ -64,6 +159,16 @@ pub enum ProposalKind {
     },
     /// Just a signaling vote, with no execution.
     Vote,
+    /// Change information about factory and auto update.
+    FactoryInfoUpdate { factory_info: FactoryInfo },
+    /// Add new role to the policy. If the role already exists, update it. This is short cut to updating the whole policy.
+    ChangePolicyAddOrUpdateRole { role: RolePermission },
+    /// Remove role from the policy. This is short cut to updating the whole policy.
+    ChangePolicyRemoveRole { role: String },
+    /// Update the default vote policy from the policy. This is short cut to updating the whole policy.
+    ChangePolicyUpdateDefaultVotePolicy { vote_policy: VotePolicy },
+    /// Update the parameters from the policy. This is short cut to updating the whole policy.
+    ChangePolicyUpdateParameters { parameters: PolicyParameters },
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
@@ -88,7 +193,7 @@ pub struct Proposal {
     /// Current status of the proposal.
     pub status: ProposalStatus,
     /// Count of votes per role per decision: yes / no / spam.
-    pub vote_counts: HashMap<String, [Balance; 3]>,
+    pub vote_counts: HashMap<String, [u64; 3]>,
     /// Map of who voted and how.
     pub votes: HashMap<AccountId, Vote>,
     /// Submission time (for voting period).
@@ -177,6 +282,16 @@ pub struct VotePolicy {
     pub quorum: U128,
     /// How many votes to pass this vote.
     pub threshold: WeightOrRatio,
+}
+
+/// Versioned policy.
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Debug, PartialEq))]
+#[serde(crate = "near_sdk::serde", untagged)]
+pub enum VersionedPolicy {
+    /// Default policy with given accounts as council.
+    Default(Vec<AccountId>),
+    Current(Policy),
 }
 
 /// Direct weight or ratio to total weight, used for the voting policy.
