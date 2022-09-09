@@ -53,6 +53,7 @@ pub struct Eth2NearRelay {
     submit_only_finalized_blocks: bool,
     next_light_client_update: Option<LightClientUpdate>,
     light_client_api_disable: bool,
+    extend_light_client_api: bool,
 }
 
 impl Eth2NearRelay {
@@ -84,6 +85,7 @@ impl Eth2NearRelay {
             submit_only_finalized_blocks,
             next_light_client_update,
             light_client_api_disable: config.light_client_api_disable,
+            extend_light_client_api: config.extend_light_client_api,
         };
 
         if register_relay {
@@ -306,8 +308,11 @@ impl Eth2NearRelay {
             >= self.max_blocks_for_finalization
         {
             info!(target: "relay", "Too big gap between slot of finalized block on Near and Eth. Sending hand made light client update");
-            self.send_light_client_update_from_epoch(last_finalized_slot_on_near);
-            //self.send_hand_made_light_client_update(last_finalized_slot_on_near);
+            if self.extend_light_client_api {
+                self.send_light_client_update_from_epoch(last_finalized_slot_on_near);
+            } else {
+                self.send_hand_made_light_client_update(last_finalized_slot_on_near);
+            }
         } else {
             self.send_regular_light_client_update(
                 last_finalized_slot_on_eth,

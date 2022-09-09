@@ -56,6 +56,9 @@ pub struct Config {
 
     // True if Light Client Server API not available at beacon_endpoint
     pub light_client_api_disable: bool,
+
+    // True if beacon_endpoint support API for Light Client Update by epoch
+    pub extend_light_client_api: bool,
 }
 
 impl Config {
