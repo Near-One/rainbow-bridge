@@ -403,6 +403,11 @@ impl BeaconRPCClient {
             epoch
         );
         let light_client_update_json_str = self.get_json_from_raw_request(&url)?;
+        
+        let v: Value = serde_json::from_str(&light_client_update_json_str)?;
+        let light_client_update_json_str =
+            serde_json::to_string(&json!({"data": [v["data"]]}))?;
+
         self.get_light_client_update_from_json_str(&light_client_update_json_str)
     }
 
@@ -535,6 +540,13 @@ mod tests {
             .unwrap();
         let _beacon_block_header = BeaconRPCClient::new(BEACON_ENDPOINT)
             .get_beacon_block_header_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
+            .unwrap();
+    }
+
+    #[test]
+    fn test_get_epoch_light_client_smoke() {
+        let _light_client_update = BeaconRPCClient::new("http://127.0.0.1:9596")
+            .get_epoch_light_client_update(120106)
             .unwrap();
     }
 
