@@ -73,7 +73,6 @@ async fn metrics_handler() -> Result<impl Reply, Rejection> {
     };
     buffer.clear();
 
-    let mut buffer = Vec::new();
     if let Err(e) = encoder.encode(&prometheus::gather(), &mut buffer) {
         eprintln!("could not encode prometheus metrics: {}", e);
     };
@@ -84,7 +83,6 @@ async fn metrics_handler() -> Result<impl Reply, Rejection> {
             String::default()
         }
     };
-    buffer.clear();
 
     res.push_str(&res_custom);
     Ok(res)
