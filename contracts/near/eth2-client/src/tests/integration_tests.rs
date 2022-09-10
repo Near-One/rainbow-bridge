@@ -10,7 +10,7 @@ mod integration_tests {
     use workspaces::prelude::*;
     use workspaces::{network::Sandbox, Account, Contract, Worker};
 
-    const WASM_FILEPATH: &str = "../res/eth2_client.wasm";
+    const WASM_FILEPATH: &str = "../target/wasm32-unknown-unknown/release/eth2_client.wasm";
 
     async fn initialize_client(
         init_input: InitInput,
@@ -28,8 +28,8 @@ mod integration_tests {
             .await?
             .into_result()?;
 
-        alice
-            .call(&worker, contract.id(), "init")
+        contract
+            .call(&worker, "init")
             .args(init_input.try_to_vec()?)
             .transact()
             .await?;
