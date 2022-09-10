@@ -31,7 +31,7 @@ impl SandboxContractWrapper {
         }
     }
 
-    fn from_call_execution_details(
+    fn get_final_execution_outcome_view_from_call_execution_details(
         call_execution_details: CallExecutionDetails,
     ) -> FinalExecutionOutcomeView {
         let status = match call_execution_details.is_success() {
@@ -49,10 +49,10 @@ impl SandboxContractWrapper {
         FinalExecutionOutcomeView {
             status: status,
             transaction: SignedTransactionView {
-                signer_id: "fack_signature_id".parse().unwrap(),
+                signer_id: "fake_signature_id".parse().unwrap(),
                 public_key: PublicKey::empty(ED25519),
                 nonce: 0,
-                receiver_id: "fack_receiver_id".parse().unwrap(),
+                receiver_id: "fake_receiver_id".parse().unwrap(),
                 actions: vec![],
                 signature: Default::default(),
                 hash: Default::default(),
@@ -124,7 +124,7 @@ impl ContractWrapper for SandboxContractWrapper {
     ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
         let rt = Runtime::new()?;
 
-        Ok(Self::from_call_execution_details(
+        Ok(Self::get_final_execution_outcome_view_from_call_execution_details(
             rt.block_on(
                 self.signer_account
                     .call(&self.worker, self.contract.id(), &method_name)

@@ -118,7 +118,7 @@ impl Eth2NearRelay {
             if last_eth2_slot_on_near < last_eth2_slot_on_eth_chain {
                 info!(target: "relay", "= Creating headers batch =");
                 let (headers, current_slot) = skip_fail!(
-                    self.get_n_execution_blocks(
+                    self.get_execution_blocks_between(
                         last_eth2_slot_on_near + 1,
                         last_eth2_slot_on_eth_chain,
                     ),
@@ -167,7 +167,7 @@ impl Eth2NearRelay {
         }
     }
 
-    fn get_n_execution_blocks(
+    fn get_execution_blocks_between(
         &self,
         start_slot: u64,
         last_eth2_slot_on_eth_chain: u64,
@@ -245,7 +245,7 @@ impl Eth2NearRelay {
 
 // Implementation of functions for submitting light client updates
 impl Eth2NearRelay {
-    fn is_enough_blocks_for_update(
+    fn is_enough_blocks_for_light_client_update(
         &self,
         last_submitted_slot: u64,
         last_finalized_slot_on_near: u64,
@@ -287,7 +287,7 @@ impl Eth2NearRelay {
             return;
         }
 
-        if !self.is_enough_blocks_for_update(
+        if !self.is_enough_blocks_for_light_client_update(
             last_submitted_slot,
             last_finalized_slot_on_near,
             last_finalized_slot_on_eth,
@@ -463,7 +463,7 @@ mod tests {
     use eth_types::eth2::LightClientUpdate;
     use eth_types::BlockHeader;
 
-    fn send_execution_blocks(relay: &mut Eth2NearRelay, start_slot: u64, end_slot: u64) {
+    fn send_execution_blocks_between(relay: &mut Eth2NearRelay, start_slot: u64, end_slot: u64) {
         let mut slot = start_slot;
         let mut blocks: Vec<BlockHeader> = vec![];
         while slot <= end_slot {
@@ -522,10 +522,9 @@ mod tests {
     #[test]
     fn test_send_specific_light_client_update() {
         let mut relay = get_relay(true, true);
-        let mut slot = get_finalized_slot(&relay);
-        slot += 1;
+        let finalized_slot = get_finalized_slot(&relay);
 
-        send_execution_blocks(&mut relay, slot, 1099392);
+        send_execution_blocks_between(&mut relay, finalized_slot + 1, 1099392);
 
         let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, 1099360);
@@ -546,10 +545,9 @@ mod tests {
     #[ignore]
     fn test_hand_made_light_client_update() {
         let mut relay = get_relay(true, true);
-        let mut slot = get_finalized_slot(&relay);
-        slot += 1;
+        let finalized_slot = get_finalized_slot(&relay);
 
-        send_execution_blocks(&mut relay, slot, 1099392);
+        send_execution_blocks_between(&mut relay, finalized_slot + 1, 1099392);
 
         let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, 1099360);
@@ -564,10 +562,9 @@ mod tests {
     #[ignore]
     fn test_hand_made_light_client_update_with_null_signature_slot() {
         let mut relay = get_relay(true, true);
-        let mut slot = get_finalized_slot(&relay);
-        slot += 1;
+        let finalized_slot = get_finalized_slot(&relay);
 
-        send_execution_blocks(&mut relay, slot, 1099392);
+        send_execution_blocks_between(&mut relay, finalized_slot + 1, 1099392);
 
         let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, 1099360);
@@ -666,12 +663,12 @@ mod tests {
     }
 
     #[test]
-    fn test_get_n_execution_blocks() {
+    fn test_get_execution_blocks_between() {
         let relay = get_relay(true, true);
         let finalized_slot = get_finalized_slot(&relay);
 
         let blocks = relay
-            .get_n_execution_blocks(finalized_slot + 1, 1099500)
+            .get_execution_blocks_between(finalized_slot + 1, 1099500)
             .unwrap();
         assert_eq!(blocks.0.len(), relay.max_submitted_headers as usize);
 
@@ -691,7 +688,7 @@ mod tests {
         let mut relay = get_relay(true, true);
         let mut finalized_slot = get_finalized_slot(&relay);
         let blocks = relay
-            .get_n_execution_blocks(finalized_slot + 1, 1099500)
+            .get_execution_blocks_between(finalized_slot + 1, 1099500)
             .unwrap();
         relay.submit_execution_blocks(blocks.0, blocks.1, &mut finalized_slot);
         assert_eq!(finalized_slot, blocks.1 - 1);
@@ -705,6 +702,7 @@ mod tests {
             )
             .unwrap();
         assert_eq!(last_slot, blocks.1);
+
         if relay.get_execution_block_by_slot(last_slot).is_ok() {
             panic!("Wrong last slot");
         }
@@ -714,10 +712,9 @@ mod tests {
     #[ignore]
     fn try_submit_update_with_not_enough_blocks() {
         let mut relay = get_relay(true, true);
-        let mut slot = get_finalized_slot(&relay);
-        slot += 1;
+        let finalized slot = get_finalized_slot(&relay);
 
-        send_execution_blocks(&mut relay, slot, 1099391);
+        send_execution_blocks_between(&mut relay, finalized_slot + 1, 1099391);
 
         let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, 1099360);
@@ -748,13 +745,13 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn get_execution_blocks_in_bed_network() {
+    fn get_execution_blocks_in_bad_network() {
         let mut relay = get_relay(true, true);
         let finalized_slot = get_finalized_slot(&relay);
 
         relay.beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
         relay
-            .get_n_execution_blocks(finalized_slot + 1, 1099500)
+            .get_execution_blocks_between(finalized_slot + 1, 1099500)
             .unwrap();
     }
 
@@ -782,7 +779,7 @@ mod tests {
     }
 
     #[test]
-    fn test_to_often_updates() {
+    fn test_too_often_updates() {
         let mut relay = get_relay(true, false);
         relay.light_client_updates_submission_frequency_in_epochs = 2;
 
@@ -815,7 +812,7 @@ mod tests {
         relay.max_submitted_headers = 33;
 
         let blocks = relay
-            .get_n_execution_blocks(1105920, 1105919 + 100)
+            .get_execution_blocks_between(1105920, 1105919 + 100)
             .unwrap();
         let mut last_slot_on_near = 1105919;
         let finality_slot = get_finalized_slot(&relay);
@@ -838,7 +835,7 @@ mod tests {
         let mut relay = get_relay_from_slot(true, 1105919);
         relay.max_submitted_headers = 33;
         let blocks = relay
-            .get_n_execution_blocks(1105920, 1105919 + 100)
+            .get_execution_blocks_between(1105920, 1105919 + 100)
             .unwrap();
         let mut last_slot_on_near = 1105919;
 
@@ -865,6 +862,7 @@ mod tests {
         let mut relay = get_relay_with_update_from_file(true, true, false);
         let finality_slot = get_finalized_slot(&relay);
         relay.run(None);
+
         let new_finality_slot = get_finalized_slot(&relay);
         assert_ne!(finality_slot, new_finality_slot);
     }
@@ -874,20 +872,21 @@ mod tests {
         let mut relay = get_relay_with_update_from_file(true, true, true);
         let finality_slot = get_finalized_slot(&relay);
         relay.run(None);
+
         let new_finality_slot = get_finalized_slot(&relay);
         assert_ne!(finality_slot, new_finality_slot);
     }
 
     #[test]
     #[ignore]
-    //Can finalize 341 blocks
-    fn test_max_finalized_blocks_7() {
+    // Can finalize 341 blocks
+    fn test_max_finalized_blocks_341() {
         let mut relay = get_relay(true, true);
         relay.max_blocks_for_finalization = 10000;
         relay.max_submitted_headers = 10000;
 
         let finalized_slot = get_finalized_slot(&relay);
-        send_execution_blocks(&mut relay, finalized_slot + 1, 1099808);
+        send_execution_blocks_between(&mut relay, finalized_slot + 1, 1099808);
 
         const PATH_TO_LIGHT_CLIENT_UPDATES: &str =
             "../contract_wrapper/data/light_client_updates_kiln_1099394-1099937.json";
@@ -904,14 +903,14 @@ mod tests {
     #[test]
     #[ignore]
     #[should_panic]
-    //Can't finalize 393 blocks
-    fn test_max_finalized_blocks_8() {
+    // Can't finalize 393 blocks
+    fn test_max_finalized_blocks_393() {
         let mut relay = get_relay(true, true);
         relay.max_blocks_for_finalization = 10000;
         relay.max_submitted_headers = 10000;
 
         let finalized_slot = get_finalized_slot(&relay);
-        send_execution_blocks(&mut relay, finalized_slot + 1, 1099872);
+        send_execution_blocks_between(&mut relay, finalized_slot + 1, 1099872);
 
         const PATH_TO_LIGHT_CLIENT_UPDATES: &str =
             "../contract_wrapper/data/light_client_updates_kiln_1099394-1099937.json";
