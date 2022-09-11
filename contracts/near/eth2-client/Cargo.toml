@@ -29,6 +29,7 @@ tokio = { version = "1.18.1", features = ["full"] }
 anyhow = "1.0"
 
 [features]
-default = ["logs"]
+default = ["logs", "mainnet"]
 bls = ["dep:bls"]
 logs = []
+mainnet = []
