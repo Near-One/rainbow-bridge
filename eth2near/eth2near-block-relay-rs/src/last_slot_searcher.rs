@@ -768,7 +768,7 @@ mod tests {
         let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
         let last_slot_searcher = LastSlotSearcher::new(true);
 
-        let mut finalized_beacon_slot = eth_client_contract
+        let finalized_beacon_slot = eth_client_contract
             .get_finalized_beacon_block_slot()
             .unwrap();
 
@@ -945,7 +945,7 @@ mod tests {
         let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
         let last_slot_searcher = LastSlotSearcher::new(true);
 
-        let mut finalized_slot = eth_client_contract
+        let finalized_slot = eth_client_contract
             .get_finalized_beacon_block_slot()
             .unwrap();
 
@@ -1047,7 +1047,7 @@ mod tests {
         let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
         let mut last_slot_searcher = LastSlotSearcher::new(true);
 
-        let mut finalized_slot = eth_client_contract
+        let finalized_slot = eth_client_contract
             .get_finalized_beacon_block_slot()
             .unwrap();
         send_execution_blocks(
@@ -1093,7 +1093,7 @@ mod tests {
         let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
         let mut last_slot_searcher = LastSlotSearcher::new(true);
 
-        let mut finalized_slot = eth_client_contract
+        let finalized_slot = eth_client_contract
             .get_finalized_beacon_block_slot()
             .unwrap();
 

@@ -283,7 +283,7 @@ impl Eth2NearRelay {
 
         if self.next_light_client_update.is_some() {
             info!(target: "relay", "Try sending light client update from file");
-            self.seng_light_client_update_from_file(last_submitted_slot);
+            self.send_light_client_update_from_file(last_submitted_slot);
             return;
         }
 
@@ -308,7 +308,7 @@ impl Eth2NearRelay {
         }
     }
 
-    fn seng_light_client_update_from_file(&mut self, last_submitted_slot: u64) {
+    fn send_light_client_update_from_file(&mut self, last_submitted_slot: u64) {
         if let Some(light_client_update) = self.next_light_client_update.clone() {
             if last_submitted_slot < light_client_update.attested_beacon_header.slot {
                 return;
@@ -712,7 +712,7 @@ mod tests {
     #[ignore]
     fn try_submit_update_with_not_enough_blocks() {
         let mut relay = get_relay(true, true);
-        let finalized slot = get_finalized_slot(&relay);
+        let finalized_slot = get_finalized_slot(&relay);
 
         send_execution_blocks_between(&mut relay, finalized_slot + 1, 1099391);
 
