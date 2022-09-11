@@ -262,8 +262,8 @@ mod tests {
     }
 
     fn init_contract(eth_client_contract: &EthClientContract, eth_state: &mut EthState) {
-        const PATH_TO_CURRENT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_133.json";
-        const PATH_TO_NEXT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_134.json";
+        const PATH_TO_CURRENT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_kiln_period_133.json";
+        const PATH_TO_NEXT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_kiln_period_134.json";
         const NETWORK: &str = "kiln";
 
         let current_sync_committee: SyncCommittee = serde_json::from_str(

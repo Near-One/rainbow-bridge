@@ -118,8 +118,8 @@ mod tests {
             "data/execution_block_headers_kiln_1099394-1099937.json";
         const PATH_TO_LIGHT_CLIENT_UPDATES: &str =
             "data/light_client_updates_kiln_1099394-1099937.json";
-        const PATH_TO_CURRENT_SYNC_COMMITTEE: &str = "data/next_sync_committee_133.json";
-        const PATH_TO_NEXT_LIGHT_CLIENT_UPDATE: &str = "data/next_sync_committee_134.json";
+        const PATH_TO_CURRENT_SYNC_COMMITTEE: &str = "data/next_sync_committee_kiln_period_133.json";
+        const PATH_TO_NEXT_LIGHT_CLIENT_UPDATE: &str = "data/next_sync_committee_kiln_period_134.json";
 
         let execution_blocks_json_file_path = get_path(PATH_TO_EXECUTION_BLOCKS);
         let light_client_update_json_file_path = get_path(PATH_TO_LIGHT_CLIENT_UPDATES);

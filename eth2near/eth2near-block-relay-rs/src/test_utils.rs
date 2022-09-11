@@ -26,9 +26,9 @@ pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
 
 pub fn init_contract_from_files(eth_client_contract: &mut EthClientContract) {
     const PATH_TO_CURRENT_SYNC_COMMITTEE: &str =
-        "../contract_wrapper/data/next_sync_committee_133.json";
+        "../contract_wrapper/data/next_sync_committee_kiln_period_133.json";
     const PATH_TO_NEXT_SYNC_COMMITTEE: &str =
-        "../contract_wrapper/data/next_sync_committee_134.json";
+        "../contract_wrapper/data/next_sync_committee_kiln_period_134.json";
     const NETWORK: &str = "kiln";
     const PATH_TO_EXECUTION_BLOCKS: &str =
         "../contract_wrapper/data/execution_block_headers_kiln_1099394-1099937.json";
@@ -89,9 +89,9 @@ pub fn init_contract_from_specific_slot(
     finality_slot: u64,
 ) {
     const PATH_TO_CURRENT_SYNC_COMMITTEE: &str =
-        "../contract_wrapper/data/next_sync_committee_133.json";
+        "../contract_wrapper/data/next_sync_committee_kiln_period_133.json";
     const PATH_TO_NEXT_SYNC_COMMITTEE: &str =
-        "../contract_wrapper/data/next_sync_committee_134.json";
+        "../contract_wrapper/data/next_sync_committee_kiln_period_134.json";
     const NETWORK: &str = "kiln";
 
     let current_sync_committee: SyncCommittee = serde_json::from_str(
