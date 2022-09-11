@@ -323,17 +323,27 @@ impl Eth2NearRelay {
 
     fn send_light_client_update_from_epoch(&mut self, last_finalized_slot_on_near: u64) {
         let last_epoch = last_finalized_slot_on_near / 32;
-        let next_last_epoch = last_epoch + self.light_client_updates_submission_frequency_in_epochs + 2;
+        let mut next_last_epoch = last_epoch + self.light_client_updates_submission_frequency_in_epochs + 2;
 
         debug!(target: "relay", "Fetch light client update for epoch {}", next_last_epoch);
 
-        let light_client_update =
-            return_on_fail!(
-                self.beacon_rpc_client.get_epoch_light_client_update(next_last_epoch),
-                "Error on getting light client update. Skipping sending light client update"
-            );
+        let light_client_update = self.beacon_rpc_client.get_epoch_light_client_update(next_last_epoch);
+        if let Ok(light_client_update) = light_client_update {
+            self.send_specific_light_cleint_update(light_client_update);
+        } else {
+            if self.light_client_updates_submission_frequency_in_epochs == 1 {
+                next_last_epoch += 1;
+            } else {
+                next_last_epoch -= 1;
+            }
 
-        self.send_specific_light_cleint_update(light_client_update);
+            let light_client_update = self.beacon_rpc_client.get_epoch_light_client_update(next_last_epoch);
+            if let Ok(light_client_update) = light_client_update {
+                self.send_specific_light_cleint_update(light_client_update);
+            } else {
+                self.send_hand_made_light_client_update(last_finalized_slot_on_near);
+            }
+        }
     }
 
     fn seng_light_client_update_from_file(&mut self, last_submitted_slot: u64) {

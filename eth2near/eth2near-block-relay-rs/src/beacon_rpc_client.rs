@@ -290,7 +290,7 @@ impl BeaconRPCClient {
         &self,
         light_client_update_json_str: &str,
     ) -> Result<Slot, Box<dyn Error>> {
-        const CHECK_SLOTS_FORWARD_LIMIT: u64 = 10;
+        const CHECK_SLOTS_FORWARD_LIMIT: u64 = 100;
 
         let v: Value = serde_json::from_str(light_client_update_json_str)?;
 
@@ -408,7 +408,19 @@ impl BeaconRPCClient {
         let light_client_update_json_str =
             serde_json::to_string(&json!({"data": [v["data"]]}))?;
 
-        self.get_light_client_update_from_json_str(&light_client_update_json_str)
+        Ok(LightClientUpdate {
+            attested_beacon_header: Self::get_attested_header_from_light_client_update_json_str(
+                &light_client_update_json_str,
+            )?,
+            sync_aggregate: Self::get_sync_aggregate_from_light_client_update_json_str(
+                &light_client_update_json_str,
+            )?,
+            signature_slot: self.get_signature_slot(&light_client_update_json_str)?,
+            finality_update: self.get_finality_update_from_light_client_update_json_str(
+                &light_client_update_json_str,
+            )?,
+            sync_committee_update: None::<SyncCommitteeUpdate>,
+        })
     }
 
     fn get_light_client_update_from_json_str(&self, light_client_update_json_str: &str) -> Result<LightClientUpdate, Box<dyn Error>> {
@@ -435,7 +447,7 @@ impl BeaconRPCClient {
         &self,
         start_slot: u64,
     ) -> Result<types::BeaconBlockHeader, Box<dyn Error>> {
-        const CHECK_SLOTS_FORWARD_LIMIT: u64 = 32;
+        const CHECK_SLOTS_FORWARD_LIMIT: u64 = 100;
 
         let mut slot = start_slot;
         for _ in 0..CHECK_SLOTS_FORWARD_LIMIT {
