@@ -1,9 +1,7 @@
 use crate::beacon_block_body_merkle_tree::BeaconStateMerkleTree;
 use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::execution_block_proof::ExecutionBlockProof;
-use crate::relay_errors::{
-    ErrorOnUnwrapSignatureBit, MissNextSyncCommittee, MissSyncAggregationError, NoBlockForSlotError,
-};
+use crate::relay_errors::{ErrorOnUnwrapSignatureBit, MissNextSyncCommittee, MissSyncAggregationError, NoBlockForSlotError};
 use eth_types::eth2::{
     FinalizedHeaderUpdate, HeaderUpdate, LightClientUpdate, SignatureBytes, SyncCommittee,
     SyncCommitteeBits, SyncCommitteeUpdate,
@@ -117,6 +115,11 @@ impl HandMadeFinalityLightClientUpdate {
                 .map(|x| x.count_ones())
                 .sum();
             if sync_committee_bits_sum * 3 < (64 * 8 * 2) {
+                current_attested_slot = signature_slot;
+                continue;
+            }
+
+            if signature_beacon_body.attestations().len() == 0 {
                 current_attested_slot = signature_slot;
                 continue;
             }
