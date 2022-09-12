@@ -757,7 +757,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "504 Gateway Timeout")]
     fn get_execution_blocks_in_bad_network() {
         let mut relay = get_relay(true, true);
         let finalized_slot = get_finalized_slot(&relay);

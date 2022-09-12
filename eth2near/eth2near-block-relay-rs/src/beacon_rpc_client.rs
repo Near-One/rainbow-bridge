@@ -1,8 +1,5 @@
 use crate::execution_block_proof::ExecutionBlockProof;
-use crate::relay_errors::{
-    ExecutionPayloadError, MissSyncAggregationError, NoBlockForSlotError,
-    SignatureSlotNotFoundError,
-};
+use crate::relay_errors::{ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError, NoBlockForSlotError, SignatureSlotNotFoundError};
 use eth_types::eth2::BeaconBlockHeader;
 use eth_types::eth2::FinalizedHeaderUpdate;
 use eth_types::eth2::HeaderUpdate;
@@ -66,6 +63,7 @@ impl BeaconRPCClient {
         let url = format!("{}/{}/{}", self.endpoint_url, Self::URL_BODY_PATH, block_id);
 
         let json_str = &self.get_json_from_raw_request(&url)?;
+
         self.check_block_found_for_slot(json_str)?;
         let body_json = &Self::get_body_json_from_rpc_result(json_str)?;
 
@@ -257,9 +255,16 @@ impl BeaconRPCClient {
         Ok(serde_json::from_str(&state_json_str)?)
     }
 
-    fn get_json_from_raw_request(&self, url: &str) -> Result<String, reqwest::Error> {
+    fn get_json_from_raw_request(&self, url: &str) -> Result<String, Box<dyn Error>> {
         trace!(target: "relay", "Beacon chain request: {}", url);
-        self.client.get(url).send()?.text()
+        let json_str = self.client.get(url).send()?.text()?;
+        if let Err(_) = serde_json::from_str::<Value>(&json_str) {
+            return Err(Box::new(FailOnGettingJson {
+                response: json_str,
+            }));
+        }
+
+        Ok(json_str)
     }
 
     fn get_body_json_from_rpc_result(

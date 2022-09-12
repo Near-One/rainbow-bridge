@@ -91,3 +91,16 @@ impl Display for NoBlockForSlotError {
 }
 
 impl Error for NoBlockForSlotError {}
+
+#[derive(Debug)]
+pub struct FailOnGettingJson {
+    pub response: String
+}
+
+impl Display for FailOnGettingJson {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Fail on getting JSON, response: {}", self.response)
+    }
+}
+
+impl Error for FailOnGettingJson {}
