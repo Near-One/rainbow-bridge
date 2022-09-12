@@ -266,6 +266,10 @@ impl Eth2NearRelay {
         true
     }
 
+    fn is_shot_run_mode(&self) -> bool {
+        self.next_light_client_update.is_some()
+    }
+
     fn send_light_client_updates(&mut self, last_submitted_slot: u64) {
         info!(target: "relay", "= Sending light client update =");
 
@@ -281,7 +285,7 @@ impl Eth2NearRelay {
 
         trace!(target: "relay", "last_finalized_slot on near/eth {}/{}", last_finalized_slot_on_near, last_finalized_slot_on_eth);
 
-        if self.next_light_client_update.is_some() {
+        if self.is_shot_run_mode() {
             info!(target: "relay", "Try sending light client update from file");
             self.send_light_client_update_from_file(last_submitted_slot);
             return;
