@@ -20,6 +20,7 @@ use std::string::String;
 use std::time::Duration;
 use types::MainnetEthSpec;
 use types::{BeaconBlockBody, BeaconState};
+use contract_wrapper::utils::trim_quotes;
 
 /// `BeaconRPCClient` allows getting beacon block body, beacon block header
 /// and light client updates
@@ -146,8 +147,7 @@ impl BeaconRPCClient {
         &self,
         beacon_block_hash: H256,
     ) -> Result<u64, Box<dyn Error>> {
-        let beacon_block_hash_str: String = serde_json::to_string(&beacon_block_hash)?;
-        let beacon_block_hash_str = &beacon_block_hash_str[1..beacon_block_hash_str.len() - 1];
+        let beacon_block_hash_str: String = trim_quotes(serde_json::to_string(&beacon_block_hash)?);
 
         let url = format!(
             "{}/{}/{}",
@@ -157,8 +157,7 @@ impl BeaconRPCClient {
         );
         let block_json_str = &self.get_json_from_raw_request(&url)?;
         let v: Value = serde_json::from_str(block_json_str)?;
-        let slot = v["data"]["message"]["slot"].to_string();
-        let slot = slot[1..slot.len() - 1].parse::<u64>()?;
+        let slot = trim_quotes(v["data"]["message"]["slot"].to_string()).parse::<u64>()?;
 
         Ok(slot)
     }

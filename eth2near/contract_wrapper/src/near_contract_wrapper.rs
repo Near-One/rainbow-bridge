@@ -11,6 +11,7 @@ use std::error::Error;
 use std::string::String;
 use std::vec::Vec;
 use tokio::runtime::Runtime;
+use crate::utils::trim_quotes;
 
 pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
 
@@ -51,13 +52,12 @@ impl NearContractWrapper {
             &std::fs::read_to_string(path_to_signer_secret_key).expect("Unable to read file"),
         )
         .unwrap();
-        let signer_secret_key = serde_json::to_string(&v["private_key"]).unwrap();
-        let signer_secret_key = &signer_secret_key[1..signer_secret_key.len() - 1];
+        let signer_secret_key = trim_quotes(serde_json::to_string(&v["private_key"]).unwrap());
 
         Self::new_with_raw_secret_key(
             near_endpoint,
             account_id,
-            signer_secret_key,
+            &signer_secret_key,
             contract_account_id,
         )
     }
