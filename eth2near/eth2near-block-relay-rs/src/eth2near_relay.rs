@@ -201,19 +201,16 @@ impl Eth2NearRelay {
         current_slot: u64,
         last_eth2_slot_on_near: &mut u64,
     ) {
-        for _ in 1..5 {
-            info!(target: "relay", "Try submit headers from slot={} to {} to NEAR", *last_eth2_slot_on_near + 1, current_slot - 1);
-            let execution_outcome = skip_fail!(
+        info!(target: "relay", "Try submit headers from slot={} to {} to NEAR", *last_eth2_slot_on_near + 1, current_slot - 1);
+        let execution_outcome = return_on_fail!(
                 self.eth_client_contract
                     .send_headers(&headers, current_slot - 1),
                 "Error on header submission"
             );
 
-            *last_eth2_slot_on_near = current_slot - 1;
-            info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
+        *last_eth2_slot_on_near = current_slot - 1;
+        info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
                                   self.near_network_name, execution_outcome.transaction.hash);
-            break;
-        }
     }
 
     fn verify_bls_signature_for_finality_update(
