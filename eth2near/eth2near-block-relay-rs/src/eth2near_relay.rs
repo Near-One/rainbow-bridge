@@ -102,6 +102,7 @@ impl Eth2NearRelay {
             self.set_terminate(iter_id, max_iterations);
 
             info!(target: "relay", "== New relay loop ==");
+            sleep(Duration::from_secs(12));
 
             let last_eth2_slot_on_eth_chain: u64 = if self.submit_only_finalized_blocks {
                 skip_fail!(
@@ -138,10 +139,11 @@ impl Eth2NearRelay {
                     "Network problems during fetching execution blocks"
                 );
                 self.submit_execution_blocks(headers, current_slot, &mut last_eth2_slot_on_near);
+                sleep(Duration::from_secs(5));
                 self.send_light_client_updates(last_eth2_slot_on_near);
             } else {
-                info!(target: "relay", "Sync with ETH network. Sleep 20 secs");
-                sleep(Duration::from_secs(20));
+                info!(target: "relay", "Sync with ETH network. Sleep 30 secs");
+                sleep(Duration::from_secs(30));
             }
         }
     }
