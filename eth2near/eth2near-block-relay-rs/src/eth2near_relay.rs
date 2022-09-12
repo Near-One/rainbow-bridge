@@ -323,8 +323,8 @@ impl Eth2NearRelay {
             return;
         }
 
-        if last_finalized_slot_on_eth - last_finalized_slot_on_near
-            >= self.max_blocks_for_finalization
+        if last_finalized_slot_on_eth
+            >= last_finalized_slot_on_near + self.max_blocks_for_finalization
         {
             info!(target: "relay", "Too big gap between slot of finalized block on Near and Eth. Sending hand made light client update");
             self.send_hand_made_light_client_update(last_finalized_slot_on_near);
