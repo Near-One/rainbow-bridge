@@ -95,12 +95,12 @@ impl EthClientContractTrait for DaoEthClientContract {
 mod tests {
     use crate::eth_client_contract_trait::EthClientContractTrait;
     use crate::near_contract_wrapper::NearContractWrapper;
-    use crate::{
-        dao_contract, dao_eth_client_contract, eth_client_contract, near_contract_wrapper,
-    };
+    use crate::{dao_contract, dao_eth_client_contract, eth_client_contract, near_contract_wrapper, utils};
     use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::BlockHeader;
     use std::path::PathBuf;
+    use tokio::runtime::Runtime;
+    use workspaces::network::DevAccountDeployer;
 
     fn get_path(path: &str) -> PathBuf {
         let mut json_file_path = std::env::current_exe().unwrap();
@@ -126,9 +126,14 @@ mod tests {
         let current_sync_committee_path = get_path(PATH_TO_CURRENT_SYNC_COMMITTEE);
         let next_sync_committee_path = get_path(PATH_TO_NEXT_LIGHT_CLIENT_UPDATE);
 
+        let rt = Runtime::new().unwrap();
+
+        let worker = rt.block_on(workspaces::testnet()).unwrap();
+        let signer = rt.block_on(worker.dev_create_account()).unwrap();
+        let signer_private_key: String = utils::trim_quotes(serde_json::to_string(&signer.secret_key()).unwrap());
+        let signer_account_id: String = format!("{}", signer.id());
+
         const NEAR_ENDPOINT: &str = "https://rpc.testnet.near.org";
-        const SIGNER_PRIVATE_KEY: &str = "ed25519:2d27kd85Ndc2TxaVPjE8deTFFiAprRFLhFMZ513MEKLmyrXkZoKHz8PzEwrYSGoExWE5i7G179ngVnbnLfCVeMEA";
-        const SIGNER_ACCOUNT_ID: &str = "test_eth2near_relay.testnet";
         const CONTRACT_ACCOUNT_ID: &str = "dev-1660212590113-35162107482173";
         const DAO_CONTRACT_ACCOUNT_ID: &str = "eth2-test.sputnikv2.testnet";
 
@@ -136,8 +141,8 @@ mod tests {
 
         let near_contract_wrapper = Box::new(NearContractWrapper::new_with_raw_secret_key(
             NEAR_ENDPOINT,
-            SIGNER_ACCOUNT_ID,
-            SIGNER_PRIVATE_KEY,
+            &signer_account_id,
+            &signer_private_key,
             CONTRACT_ACCOUNT_ID,
         ));
 
@@ -194,8 +199,8 @@ mod tests {
         let dao_contract_wrapper =
             near_contract_wrapper::NearContractWrapper::new_with_raw_secret_key(
                 NEAR_ENDPOINT,
-                SIGNER_ACCOUNT_ID,
-                SIGNER_PRIVATE_KEY,
+                &signer_account_id,
+                &signer_private_key,
                 DAO_CONTRACT_ACCOUNT_ID,
             );
         let dao_contract = dao_contract::DAOContract::new(Box::new(dao_contract_wrapper));
