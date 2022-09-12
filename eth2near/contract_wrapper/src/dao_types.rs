@@ -60,7 +60,6 @@ pub struct PolicyParameters {
     pub bounty_forgiveness_period: Option<U64>,
 }
 
-
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct ProposalOutput {

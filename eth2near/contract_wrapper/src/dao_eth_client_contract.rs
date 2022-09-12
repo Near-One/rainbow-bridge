@@ -90,3 +90,155 @@ impl EthClientContractTrait for DaoEthClientContract {
         self.eth_client_contract.get_light_client_state()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::eth_client_contract_trait::EthClientContractTrait;
+    use crate::near_contract_wrapper::NearContractWrapper;
+    use crate::{dao_contract, dao_eth_client_contract, eth_client_contract, near_contract_wrapper, utils};
+    use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
+    use eth_types::BlockHeader;
+    use std::path::PathBuf;
+    use tokio::runtime::Runtime;
+    use workspaces::network::DevAccountDeployer;
+
+    fn get_path(path: &str) -> PathBuf {
+        let mut json_file_path = std::env::current_exe().unwrap();
+        json_file_path.pop();
+        json_file_path.push("../../../");
+        json_file_path.push(path);
+
+        json_file_path
+    }
+
+    #[ignore]
+    #[test]
+    fn test_smoke_dao_eth_client_contract_wrapper() {
+        const PATH_TO_EXECUTION_BLOCKS: &str =
+            "data/execution_block_headers_kiln_1099394-1099937.json";
+        const PATH_TO_LIGHT_CLIENT_UPDATES: &str =
+            "data/light_client_updates_kiln_1099394-1099937.json";
+        const PATH_TO_CURRENT_SYNC_COMMITTEE: &str = "data/next_sync_committee_kiln_period_133.json";
+        const PATH_TO_NEXT_LIGHT_CLIENT_UPDATE: &str = "data/next_sync_committee_kiln_period_134.json";
+
+        let execution_blocks_json_file_path = get_path(PATH_TO_EXECUTION_BLOCKS);
+        let light_client_update_json_file_path = get_path(PATH_TO_LIGHT_CLIENT_UPDATES);
+        let current_sync_committee_path = get_path(PATH_TO_CURRENT_SYNC_COMMITTEE);
+        let next_sync_committee_path = get_path(PATH_TO_NEXT_LIGHT_CLIENT_UPDATE);
+
+        let rt = Runtime::new().unwrap();
+
+        let worker = rt.block_on(workspaces::testnet()).unwrap();
+        let signer = rt.block_on(worker.dev_create_account()).unwrap();
+        let signer_private_key: String = utils::trim_quotes(serde_json::to_string(&signer.secret_key()).unwrap());
+        let signer_account_id: String = format!("{}", signer.id());
+
+        const NEAR_ENDPOINT: &str = "https://rpc.testnet.near.org";
+        const CONTRACT_ACCOUNT_ID: &str = "dev-1660212590113-35162107482173";
+        const DAO_CONTRACT_ACCOUNT_ID: &str = "eth2-test.sputnikv2.testnet";
+
+        const NETWORK: &str = "kiln";
+
+        let near_contract_wrapper = Box::new(NearContractWrapper::new_with_raw_secret_key(
+            NEAR_ENDPOINT,
+            &signer_account_id,
+            &signer_private_key,
+            CONTRACT_ACCOUNT_ID,
+        ));
+
+        let eth_client = eth_client_contract::EthClientContract::new(near_contract_wrapper);
+
+        let execution_blocks: Vec<BlockHeader> = serde_json::from_str(
+            &std::fs::read_to_string(execution_blocks_json_file_path).expect("Unable to read file"),
+        )
+        .unwrap();
+
+        let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
+            &std::fs::read_to_string(light_client_update_json_file_path)
+                .expect("Unable to read file"),
+        )
+        .unwrap();
+
+        let current_sync_committee: SyncCommittee = serde_json::from_str(
+            &std::fs::read_to_string(current_sync_committee_path).expect("Unable to read file"),
+        )
+        .unwrap();
+        let next_sync_committee: SyncCommittee = serde_json::from_str(
+            &std::fs::read_to_string(next_sync_committee_path).expect("Unable to read file"),
+        )
+        .unwrap();
+
+        let finalized_beacon_header = ExtendedBeaconBlockHeader::from(
+            light_client_updates[0]
+                .clone()
+                .finality_update
+                .header_update,
+        );
+
+        let finalized_hash = light_client_updates[0]
+            .clone()
+            .finality_update
+            .header_update
+            .execution_block_hash;
+        let mut finalized_execution_header = None::<BlockHeader>;
+        for header in &execution_blocks {
+            if header.hash.unwrap() == finalized_hash {
+                finalized_execution_header = Some(header.clone());
+                break;
+            }
+        }
+
+        eth_client.init_contract(
+            NETWORK.to_string(),
+            finalized_execution_header.unwrap(),
+            finalized_beacon_header,
+            current_sync_committee,
+            next_sync_committee,
+        );
+
+        let dao_contract_wrapper =
+            near_contract_wrapper::NearContractWrapper::new_with_raw_secret_key(
+                NEAR_ENDPOINT,
+                &signer_account_id,
+                &signer_private_key,
+                DAO_CONTRACT_ACCOUNT_ID,
+            );
+        let dao_contract = dao_contract::DAOContract::new(Box::new(dao_contract_wrapper));
+        let mut dao_client =
+            dao_eth_client_contract::DaoEthClientContract::new(eth_client, dao_contract);
+
+        let finalized_slot = dao_client.get_finalized_beacon_block_slot().unwrap();
+        let mut next_light_client_update = None;
+        for i in 0..light_client_updates.len() {
+            if light_client_updates[i]
+                .finality_update
+                .header_update
+                .beacon_header
+                .slot
+                == finalized_slot
+            {
+                next_light_client_update = Some(light_client_updates[i + 1].clone());
+            }
+        }
+
+        for block in &execution_blocks {
+            if !dao_client.is_known_block(&block.hash.unwrap()).unwrap() {
+                dao_client.send_headers(&vec![block.clone()], 0).unwrap();
+            }
+
+            if block.hash.unwrap()
+                == next_light_client_update
+                    .clone()
+                    .unwrap()
+                    .finality_update
+                    .header_update
+                    .execution_block_hash
+            {
+                dao_client
+                    .send_light_client_update(next_light_client_update.unwrap())
+                    .unwrap();
+                break;
+            }
+        }
+    }
+}

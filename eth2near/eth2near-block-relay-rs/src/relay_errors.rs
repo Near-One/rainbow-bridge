@@ -80,3 +80,27 @@ impl Display for MissNextSyncCommittee {
 }
 
 impl Error for MissNextSyncCommittee {}
+
+#[derive(Debug)]
+pub struct NoBlockForSlotError;
+
+impl Display for NoBlockForSlotError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "No block found for slot")
+    }
+}
+
+impl Error for NoBlockForSlotError {}
+
+#[derive(Debug)]
+pub struct FailOnGettingJson {
+    pub response: String
+}
+
+impl Display for FailOnGettingJson {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Fail on getting JSON, response: {}", self.response)
+    }
+}
+
+impl Error for FailOnGettingJson {}
