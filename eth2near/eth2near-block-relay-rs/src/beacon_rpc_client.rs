@@ -255,6 +255,17 @@ impl BeaconRPCClient {
         Ok(serde_json::from_str(&state_json_str)?)
     }
 
+    pub fn is_syncing(&self) -> Result<bool, Box<dyn Error>> {
+        let url_request = format!(
+            "{}/eth/v1/node/syncing",
+            self.endpoint_url
+        );
+        let json_str = self.get_json_from_raw_request(&url_request)?;
+
+        let v: Value = serde_json::from_str(&json_str)?;
+        Ok(v["data"]["is_syncing"].as_bool().unwrap())
+    }
+
     fn get_json_from_raw_request(&self, url: &str) -> Result<String, Box<dyn Error>> {
         trace!(target: "relay", "Beacon chain request: {}", url);
         let json_str = self.client.get(url).send()?.text()?;
@@ -557,6 +568,11 @@ mod tests {
             "0x95a8bfef2aa4b30e63647f0e8eef7352ebac10a066acf8e24c3387982faffae2"
         );
         assert_eq!(beacon_block_body.eth1_data().deposit_count, 16392);
+    }
+
+    #[test]
+    fn test_is_sync() {
+        assert!(!BeaconRPCClient::new("https://lodestar-goerli.chainsafe.io").is_syncing().unwrap());
     }
 
     #[test]
