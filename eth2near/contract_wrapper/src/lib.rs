@@ -8,3 +8,4 @@ pub mod file_eth_client_contract;
 pub mod near_contract_wrapper;
 pub mod sandbox_contract_wrapper;
 pub mod errors;
+pub mod utils;
