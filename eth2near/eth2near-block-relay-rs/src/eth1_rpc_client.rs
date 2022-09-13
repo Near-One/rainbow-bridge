@@ -53,6 +53,29 @@ impl Eth1RPCClient {
         let block_header: BlockHeader = serde_json::from_str(&block_json)?;
         Ok(block_header)
     }
+
+    pub fn is_syncing(&self) -> Result<bool, Box<dyn Error>> {
+        let json_value = json!({
+            "jsonrpc":"2.0",
+            "method":"eth_syncing",
+            "params":[],
+            "id":1});
+
+        let res = self
+            .client
+            .post(&self.endpoint_url)
+            .json(&json_value)
+            .send()?
+            .text()?;
+
+        let val: Value = serde_json::from_str(&res)?;
+        let is_sync = val["result"].as_bool();
+        if let Some(is_sync_val) = is_sync {
+            return Ok(is_sync_val);
+        } else {
+            return Ok(true);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -68,5 +91,11 @@ mod tests {
         eth1_rpc_client
             .get_block_header_by_number(TEST_BEACON_BLOCK_ID.into())
             .unwrap();
+    }
+
+    #[test]
+    fn test_is_syncing() {
+        let eth1_rpc_client = Eth1RPCClient::new(ETH1_ENDPOINT);
+        assert!(!eth1_rpc_client.is_syncing().unwrap());
     }
 }
