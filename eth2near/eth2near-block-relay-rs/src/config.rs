@@ -1,6 +1,8 @@
 use serde::Deserialize;
 use std::io::Read;
 use std::path::PathBuf;
+use std::time::Duration;
+use crate::near_rpc_client::NearRPCClient;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
@@ -66,6 +68,66 @@ impl Config {
         let mut config = std::fs::File::open(path).unwrap();
         let mut content = String::new();
         config.read_to_string(&mut content).unwrap();
-        toml::from_str(content.as_str()).unwrap()
+        let config = toml::from_str(content.as_str()).unwrap();
+
+        Self::check_urls(&config);
+        Self::check_account_id(&config);
+        Self::check_network_types(&config);
+        Self::check_update_frequency(&config);
+
+        config
     }
+
+    fn check_urls(&self) {
+        let timeout = Duration::new(5, 0);
+        let client = reqwest::blocking::Client::builder()
+            .timeout(timeout)
+            .build()
+            .unwrap();
+
+        //check beacon_endpoint
+        let response = client.head(&self.beacon_endpoint).send().unwrap();
+        if !response.status().is_success() {
+            panic!("Beacon_endpoint not available");
+        }
+
+        //check eth1_endpoint
+        let response = client.head(&self.eth1_endpoint).send().unwrap();
+        if !response.status().is_success() {
+            panic!("Eth1_endpoint not available");
+        }
+
+        //check near_endpoint
+        let response = client.head(&self.near_endpoint).send().unwrap();
+        if !response.status().is_success() {
+            panic!("Near_endpoint not available");
+        }
+    }
+
+    fn check_account_id(&self) {
+        let near_rpc_client = NearRPCClient::new(&self.near_endpoint);
+
+        //check signer_account_id
+        let _signer_account_id: near_sdk::AccountId = self.signer_account_id.parse().unwrap();
+        if near_rpc_client.check_account_exists(&self.signer_account_id).unwrap() == false {
+            panic!("Signer account id doesn't exist on NEAR network");
+        }
+
+        //check contract_account_id
+        let _contract_account_id: near_sdk::AccountId = self.contract_account_id.parse().unwrap();
+        if near_rpc_client.check_account_exists(&self.contract_account_id).unwrap() == false {
+            panic!("Contract account id doesn't exist on NEAR network");
+        }
+
+        //check dao_contract_account_id
+        if let Some(dao_contract_account_id) = self.dao_contract_account_id.clone() {
+            let _dao_contract_account_id: near_sdk::AccountId = dao_contract_account_id.parse().unwrap();
+            if near_rpc_client.check_account_exists(&dao_contract_account_id).unwrap() == false {
+                panic!("DAO account id doesn't exist on NEAR network");
+            }
+        }
+    }
+
+    fn check_network_types(&self) {}
+    fn check_update_frequency(&self) {}
 }
