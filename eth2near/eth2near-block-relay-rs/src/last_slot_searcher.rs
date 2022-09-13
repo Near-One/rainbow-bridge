@@ -410,7 +410,6 @@ mod tests {
     const SLOT_WITHOUT_BLOCK: u64 = 1099364;
     const RIGHT_BOUND_IN_SLOT_SEARCH: u64 = 1099500;
 
-
     fn get_execution_block_by_slot(
         slot: u64,
         beacon_rpc_client: &BeaconRPCClient,
@@ -834,7 +833,12 @@ mod tests {
         assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK - 1);
 
         let last_block_on_near = last_slot_searcher
-            .binsearch_slot_range(SLOT_WITHOUT_BLOCK, RIGHT_BOUND_IN_SLOT_SEARCH, &beacon_rpc_client, &eth_client_contract)
+            .binsearch_slot_range(
+                SLOT_WITHOUT_BLOCK,
+                RIGHT_BOUND_IN_SLOT_SEARCH,
+                &beacon_rpc_client,
+                &eth_client_contract,
+            )
             .unwrap();
         assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
 
@@ -923,7 +927,12 @@ mod tests {
         assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK - 1);
 
         let last_block_on_near = last_slot_searcher
-            .binsearch_slot_forward(SLOT_WITHOUT_BLOCK, RIGHT_BOUND_IN_SLOT_SEARCH, &beacon_rpc_client, &eth_client_contract)
+            .binsearch_slot_forward(
+                SLOT_WITHOUT_BLOCK,
+                RIGHT_BOUND_IN_SLOT_SEARCH,
+                &beacon_rpc_client,
+                &eth_client_contract,
+            )
             .unwrap();
         assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
 
@@ -1066,7 +1075,11 @@ mod tests {
         );
 
         let last_block_on_near = last_slot_searcher
-            .get_last_slot(RIGHT_BOUND_IN_SLOT_SEARCH, &beacon_rpc_client, &eth_client_contract)
+            .get_last_slot(
+                RIGHT_BOUND_IN_SLOT_SEARCH,
+                &beacon_rpc_client,
+                &eth_client_contract,
+            )
             .unwrap();
         assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK - 2);
 
@@ -1079,13 +1092,21 @@ mod tests {
         );
 
         let last_block_on_near = last_slot_searcher
-            .get_last_slot(RIGHT_BOUND_IN_SLOT_SEARCH, &beacon_rpc_client, &eth_client_contract)
+            .get_last_slot(
+                RIGHT_BOUND_IN_SLOT_SEARCH,
+                &beacon_rpc_client,
+                &eth_client_contract,
+            )
             .unwrap();
         assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
 
         beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
         if last_slot_searcher
-            .get_last_slot(RIGHT_BOUND_IN_SLOT_SEARCH, &beacon_rpc_client, &eth_client_contract)
+            .get_last_slot(
+                RIGHT_BOUND_IN_SLOT_SEARCH,
+                &beacon_rpc_client,
+                &eth_client_contract,
+            )
             .is_ok()
         {
             panic!("binarysearch returns result in unworking network");
@@ -1113,7 +1134,11 @@ mod tests {
         );
 
         let last_block_on_near = last_slot_searcher
-            .get_last_slot(RIGHT_BOUND_IN_SLOT_SEARCH, &beacon_rpc_client, &eth_client_contract)
+            .get_last_slot(
+                RIGHT_BOUND_IN_SLOT_SEARCH,
+                &beacon_rpc_client,
+                &eth_client_contract,
+            )
             .unwrap();
         assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK - 2);
 
@@ -1126,13 +1151,21 @@ mod tests {
         );
 
         let last_block_on_near = last_slot_searcher
-            .get_last_slot(RIGHT_BOUND_IN_SLOT_SEARCH, &beacon_rpc_client, &eth_client_contract)
+            .get_last_slot(
+                RIGHT_BOUND_IN_SLOT_SEARCH,
+                &beacon_rpc_client,
+                &eth_client_contract,
+            )
             .unwrap();
         assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
 
         beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/");
         if last_slot_searcher
-            .get_last_slot(RIGHT_BOUND_IN_SLOT_SEARCH, &beacon_rpc_client, &eth_client_contract)
+            .get_last_slot(
+                RIGHT_BOUND_IN_SLOT_SEARCH,
+                &beacon_rpc_client,
+                &eth_client_contract,
+            )
             .is_ok()
         {
             panic!("binarysearch returns result in unworking network");

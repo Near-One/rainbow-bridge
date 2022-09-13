@@ -367,7 +367,9 @@ mod tests {
                 true,
             )
             .unwrap();
-        let light_client_update = beacon_rpc_client.get_light_client_update(LIGHT_CLIENT_UPDATE_PERIOD).unwrap();
+        let light_client_update = beacon_rpc_client
+            .get_light_client_update(LIGHT_CLIENT_UPDATE_PERIOD)
+            .unwrap();
 
         cmp_light_client_updates(&hand_made_light_client_update, &light_client_update);
 
@@ -386,7 +388,9 @@ mod tests {
                 "data/beacon_state_kiln_slot_812637_period_99.json",
             )
             .unwrap();
-        let light_client_update = beacon_rpc_client.get_light_client_update(LIGHT_CLIENT_UPDATE_PERIOD).unwrap();
+        let light_client_update = beacon_rpc_client
+            .get_light_client_update(LIGHT_CLIENT_UPDATE_PERIOD)
+            .unwrap();
 
         cmp_light_client_updates(&hand_made_light_client_update, &light_client_update);
     }
@@ -401,7 +405,9 @@ mod tests {
                 "data/beacon_state_kiln_slot_812544.json",
             ).unwrap();
 
-        let light_client_update = beacon_rpc_client.get_light_client_update(LIGHT_CLIENT_UPDATE_PERIOD).unwrap();
+        let light_client_update = beacon_rpc_client
+            .get_light_client_update(LIGHT_CLIENT_UPDATE_PERIOD)
+            .unwrap();
 
         cmp_light_client_updates(&hand_made_light_client_update, &light_client_update);
 

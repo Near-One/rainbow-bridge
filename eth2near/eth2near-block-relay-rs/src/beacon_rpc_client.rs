@@ -1,5 +1,9 @@
 use crate::execution_block_proof::ExecutionBlockProof;
-use crate::relay_errors::{ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError, NoBlockForSlotError, SignatureSlotNotFoundError};
+use crate::relay_errors::{
+    ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError, NoBlockForSlotError,
+    SignatureSlotNotFoundError,
+};
+use contract_wrapper::utils::trim_quotes;
 use eth_types::eth2::BeaconBlockHeader;
 use eth_types::eth2::FinalizedHeaderUpdate;
 use eth_types::eth2::HeaderUpdate;
@@ -17,7 +21,6 @@ use std::string::String;
 use std::time::Duration;
 use types::MainnetEthSpec;
 use types::{BeaconBlockBody, BeaconState};
-use contract_wrapper::utils::trim_quotes;
 
 /// `BeaconRPCClient` allows getting beacon block body, beacon block header
 /// and light client updates
@@ -256,10 +259,7 @@ impl BeaconRPCClient {
     }
 
     pub fn is_syncing(&self) -> Result<bool, Box<dyn Error>> {
-        let url_request = format!(
-            "{}/eth/v1/node/syncing",
-            self.endpoint_url
-        );
+        let url_request = format!("{}/eth/v1/node/syncing", self.endpoint_url);
         let json_str = self.get_json_from_raw_request(&url_request)?;
 
         let v: Value = serde_json::from_str(&json_str)?;
@@ -270,9 +270,7 @@ impl BeaconRPCClient {
         trace!(target: "relay", "Beacon chain request: {}", url);
         let json_str = self.client.get(url).send()?.text()?;
         if let Err(_) = serde_json::from_str::<Value>(&json_str) {
-            return Err(Box::new(FailOnGettingJson {
-                response: json_str,
-            }));
+            return Err(Box::new(FailOnGettingJson { response: json_str }));
         }
 
         Ok(json_str)
@@ -572,7 +570,11 @@ mod tests {
 
     #[test]
     fn test_is_sync() {
-        assert!(!BeaconRPCClient::new("https://lodestar-goerli.chainsafe.io").is_syncing().unwrap());
+        assert!(
+            !BeaconRPCClient::new("https://lodestar-goerli.chainsafe.io")
+                .is_syncing()
+                .unwrap()
+        );
     }
 
     #[test]

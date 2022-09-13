@@ -100,6 +100,7 @@ impl Eth2NearRelay {
         while !self.terminate {
             iter_id += 1;
             self.set_terminate(iter_id, max_iterations);
+            skip_fail!(self.wait_for_synchronization(), "Fail to get sync status");
 
             info!(target: "relay", "== New relay loop ==");
             sleep(Duration::from_secs(12));
@@ -146,6 +147,14 @@ impl Eth2NearRelay {
                 sleep(Duration::from_secs(30));
             }
         }
+    }
+
+    fn wait_for_synchronization(&self) -> Result<(), Box<dyn Error>> {
+        while self.beacon_rpc_client.is_syncing()? || self.eth1_rpc_client.is_syncing()? {
+            info!(target: "relay", "Waiting for sync...");
+            sleep(Duration::from_secs(30));
+        }
+        Ok(())
     }
 
     fn get_light_client_update_from_file(
@@ -221,10 +230,10 @@ impl Eth2NearRelay {
     ) {
         info!(target: "relay", "Try submit headers from slot={} to {} to NEAR", *last_eth2_slot_on_near + 1, current_slot - 1);
         let execution_outcome = return_on_fail!(
-                self.eth_client_contract
-                    .send_headers(&headers, current_slot - 1),
-                "Error on header submission"
-            );
+            self.eth_client_contract
+                .send_headers(&headers, current_slot - 1),
+            "Error on header submission"
+        );
 
         *last_eth2_slot_on_near = current_slot - 1;
         info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
@@ -645,7 +654,9 @@ mod tests {
     #[test]
     fn test_get_execution_block_by_slot() {
         let mut relay = get_relay(true, true);
-        relay.get_execution_block_by_slot(SLOT_WITHOUT_BLOCK - 1).unwrap();
+        relay
+            .get_execution_block_by_slot(SLOT_WITHOUT_BLOCK - 1)
+            .unwrap();
         if let Err(err) = relay.get_execution_block_by_slot(SLOT_WITHOUT_BLOCK) {
             if err.downcast_ref::<NoBlockForSlotError>().is_none() {
                 panic!("Wrong error type for slot without block");
@@ -863,7 +874,10 @@ mod tests {
         relay.max_submitted_headers = 33;
 
         let blocks = relay
-            .get_execution_blocks_between(FINALIZED_SLOT_BEFORE_NEW_PERIOD + 1, FINALIZED_SLOT_BEFORE_NEW_PERIOD + 100)
+            .get_execution_blocks_between(
+                FINALIZED_SLOT_BEFORE_NEW_PERIOD + 1,
+                FINALIZED_SLOT_BEFORE_NEW_PERIOD + 100,
+            )
             .unwrap();
         let mut last_slot_on_near = FINALIZED_SLOT_BEFORE_NEW_PERIOD;
         let finality_slot = get_finalized_slot(&relay);
@@ -886,13 +900,18 @@ mod tests {
         let mut relay = get_relay_from_slot(true, FINALIZED_SLOT_BEFORE_NEW_PERIOD);
         relay.max_submitted_headers = 33;
         let blocks = relay
-            .get_execution_blocks_between(FINALIZED_SLOT_BEFORE_NEW_PERIOD + 1, FINALIZED_SLOT_BEFORE_NEW_PERIOD + 100)
+            .get_execution_blocks_between(
+                FINALIZED_SLOT_BEFORE_NEW_PERIOD + 1,
+                FINALIZED_SLOT_BEFORE_NEW_PERIOD + 100,
+            )
             .unwrap();
         let mut last_slot_on_near = FINALIZED_SLOT_BEFORE_NEW_PERIOD;
 
         relay.submit_execution_blocks(blocks.0, blocks.1, &mut last_slot_on_near);
 
-        let attested_slot = relay.get_attested_slot(FINALIZED_SLOT_BEFORE_NEW_PERIOD).unwrap();
+        let attested_slot = relay
+            .get_attested_slot(FINALIZED_SLOT_BEFORE_NEW_PERIOD)
+            .unwrap();
         let light_client_update =
             HandMadeFinalityLightClientUpdate::get_finality_light_client_update(
                 &relay.beacon_rpc_client,
