@@ -53,6 +53,12 @@ pub struct Config {
     // Path to the json file with beacon state in the next finality slot
     // for case of short relay run
     pub path_to_finality_state: Option<String>,
+
+    //Timeout for ETH RPC requests in secs
+    pub eth_requests_timeout: u64,
+
+    //Timeout for ETH RPC get status requests in secs
+    pub state_requests_timeout: u64,
 }
 
 impl Config {

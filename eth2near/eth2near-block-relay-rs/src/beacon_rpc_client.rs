@@ -28,6 +28,7 @@ use types::{BeaconBlockBody, BeaconState};
 pub struct BeaconRPCClient {
     endpoint_url: String,
     client: Client,
+    client_state_request: Client,
 }
 
 impl BeaconRPCClient {
@@ -42,11 +43,15 @@ impl BeaconRPCClient {
     const EPOCHS_PER_PERIOD: u64 = 256;
 
     /// Creates `BeaconRPCClient` for the given BeaconAPI `endpoint_url`
-    pub fn new(endpoint_url: &str) -> Self {
+    pub fn new(endpoint_url: &str, timeout: u64, timeout_state: u64) -> Self {
         Self {
             endpoint_url: endpoint_url.to_string(),
             client: reqwest::blocking::Client::builder()
-                .timeout(Duration::from_secs(1800))
+                .timeout(Duration::from_secs(timeout))
+                .build()
+                .unwrap(),
+            client_state_request: reqwest::blocking::Client::builder()
+                .timeout(Duration::from_secs(timeout_state))
                 .build()
                 .unwrap(),
         }
@@ -250,7 +255,7 @@ impl BeaconRPCClient {
             Self::URL_STATE_PATH,
             state_id
         );
-        let json_str = self.get_json_from_raw_request(&url_request)?;
+        let json_str = Self::get_json_from_client(&self.client_state_request, &url_request)?;
 
         let v: Value = serde_json::from_str(&json_str)?;
         let state_json_str = serde_json::to_string(&v["data"])?;
@@ -266,14 +271,18 @@ impl BeaconRPCClient {
         Ok(v["data"]["is_syncing"].as_bool().unwrap())
     }
 
-    fn get_json_from_raw_request(&self, url: &str) -> Result<String, Box<dyn Error>> {
+    fn get_json_from_client(client: &Client, url: &str) -> Result<String, Box<dyn Error>> {
         trace!(target: "relay", "Beacon chain request: {}", url);
-        let json_str = self.client.get(url).send()?.text()?;
+        let json_str = client.get(url).send()?.text()?;
         if let Err(_) = serde_json::from_str::<Value>(&json_str) {
             return Err(Box::new(FailOnGettingJson { response: json_str }));
         }
 
         Ok(json_str)
+    }
+
+    fn get_json_from_raw_request(&self, url: &str) -> Result<String, Box<dyn Error>> {
+        Self::get_json_from_client(&self.client, url)
     }
 
     fn get_body_json_from_rpc_result(
@@ -467,6 +476,8 @@ mod tests {
 
     const TEST_BEACON_BLOCK_ID: u32 = 741888;
     const BEACON_ENDPOINT: &str = "https://lodestar-kiln.chainsafe.io";
+    const TIMEOUT: u64 = 30;
+    const TIMEOUT_STATE: u64 = 1000;
 
     #[test]
     fn test_get_header_from_json() {
@@ -517,7 +528,7 @@ mod tests {
         let file_json_str = read_json_file_from_data_dir("beacon_block_kiln_slot_741888.json");
 
         let url = "https://lodestar-kiln.chainsafe.io/eth/v2/beacon/blocks/741888";
-        let beacon_rpc_client = BeaconRPCClient::new(url);
+        let beacon_rpc_client = BeaconRPCClient::new(url, TIMEOUT, TIMEOUT_STATE);
         let rpc_json_str = beacon_rpc_client.get_json_from_raw_request(url);
 
         assert_eq!(rpc_json_str.unwrap(), file_json_str.trim());
@@ -525,17 +536,17 @@ mod tests {
 
     #[test]
     fn test_rpc_beacon_block_body_and_header_smoke() {
-        let _beacon_block_body = BeaconRPCClient::new(BEACON_ENDPOINT)
+        let _beacon_block_body = BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT, TIMEOUT_STATE)
             .get_beacon_block_body_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
             .unwrap();
-        let _beacon_block_header = BeaconRPCClient::new(BEACON_ENDPOINT)
+        let _beacon_block_header = BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT, TIMEOUT_STATE)
             .get_beacon_block_header_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
             .unwrap();
     }
 
     #[test]
     fn test_get_beacon_block_header() {
-        let beacon_block_header = BeaconRPCClient::new(BEACON_ENDPOINT)
+        let beacon_block_header = BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT, TIMEOUT_STATE)
             .get_beacon_block_header_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
             .unwrap();
 
@@ -557,7 +568,7 @@ mod tests {
 
     #[test]
     fn test_get_beacon_block_body() {
-        let beacon_block_body = BeaconRPCClient::new(BEACON_ENDPOINT)
+        let beacon_block_body = BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT, TIMEOUT_STATE)
             .get_beacon_block_body_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
             .unwrap();
         assert_eq!(beacon_block_body.attestations().len(), 29);
@@ -570,11 +581,13 @@ mod tests {
 
     #[test]
     fn test_is_sync() {
-        assert!(
-            !BeaconRPCClient::new("https://lodestar-goerli.chainsafe.io")
-                .is_syncing()
-                .unwrap()
-        );
+        assert!(!BeaconRPCClient::new(
+            "https://lodestar-goerli.chainsafe.io",
+            TIMEOUT,
+            TIMEOUT_STATE
+        )
+        .is_syncing()
+        .unwrap());
     }
 
     #[test]
@@ -614,7 +627,7 @@ mod tests {
     #[ignore]
     fn test_fetch_light_client_update() {
         const PERIOD: u64 = 100;
-        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
+        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT, TIMEOUT_STATE);
         let light_client_update = beacon_rpc_client.get_light_client_update(PERIOD).unwrap();
 
         // check attested_header

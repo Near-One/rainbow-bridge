@@ -333,6 +333,8 @@ mod tests {
     const ATTESTED_SLOT: u64 = 812637;
     const BEACON_ENDPOINT: &str = "https://lodestar-kiln.chainsafe.io";
     const LIGHT_CLIENT_UPDATE_PERIOD: u64 = 99;
+    const TIMEOUT: u64 = 30;
+    const TIMEOUT_STATE: u64 = 1000;
 
     fn cmp_light_client_updates(
         hand_made_light_client_update: &LightClientUpdate,
@@ -359,7 +361,7 @@ mod tests {
     #[ignore]
     #[test]
     fn test_hand_made_finality_light_client_update() {
-        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
+        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT, TIMEOUT_STATE);
         let hand_made_light_client_update =
             HandMadeFinalityLightClientUpdate::get_finality_light_client_update(
                 &beacon_rpc_client,
@@ -381,7 +383,7 @@ mod tests {
 
     #[test]
     fn test_hand_made_finality_light_client_update_from_file() {
-        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
+        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT, TIMEOUT_STATE);
         let hand_made_light_client_update =
             HandMadeFinalityLightClientUpdate::get_finality_light_client_update_from_file(
                 &beacon_rpc_client,
@@ -397,7 +399,7 @@ mod tests {
 
     #[test]
     fn test_hand_made_finality_light_client_update_from_file_with_next_sync_committee() {
-        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
+        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT, TIMEOUT_STATE);
         let hand_made_light_client_update =
             HandMadeFinalityLightClientUpdate::get_light_client_update_from_file_with_next_sync_committee(
                 &beacon_rpc_client,
