@@ -9,7 +9,11 @@ use eth_types::eth2::LightClientUpdate;
 use eth_types::BlockHeader;
 use log::{debug, info, trace, warn};
 use std::error::Error;
+use std::thread::spawn;
 use std::vec::Vec;
+use near_primitives::views::FinalExecutionStatus;
+use crate::prometheus_metrics;
+use crate::prometheus_metrics::{FAILS_ON_HEADERS_SUBMISSION, FAILS_ON_UPDATES_SUBMISSION, LAST_ETH_SLOT, LAST_ETH_SLOT_ON_NEAR, LAST_FINALIZED_ETH_SLOT, LAST_FINALIZED_ETH_SLOT_ON_NEAR};
 
 const ONE_EPOCH_IN_SLOTS: u64 = 32;
 
@@ -78,13 +82,15 @@ impl Eth2NearRelay {
             terminate: false,
             next_light_client_update,
         };
-
         if register_relay {
             eth2near_relay
                 .eth_client_contract
                 .register_submitter()
                 .unwrap();
         }
+
+        let port = config.prometheus_metrics_port.clone();
+        spawn(move || {prometheus_metrics::run_prometheus_service(port)});
 
         eth2near_relay
     }
@@ -112,11 +118,15 @@ impl Eth2NearRelay {
                 "Fail to get last slot on NEAR"
             );
 
+            LAST_ETH_SLOT.inc_by(last_eth2_slot_on_eth_chain as i64 - LAST_ETH_SLOT.get());
+            LAST_ETH_SLOT_ON_NEAR.inc_by(last_eth2_slot_on_near as i64 - LAST_ETH_SLOT_ON_NEAR.get());
+
             info!(target: "relay", "Last slot on near = {}; last slot on eth = {}",
                   last_eth2_slot_on_near, last_eth2_slot_on_eth_chain);
 
             if last_eth2_slot_on_near < last_eth2_slot_on_eth_chain {
                 info!(target: "relay", "= Creating headers batch =");
+
                 let (headers, current_slot) = skip_fail!(
                     self.get_execution_blocks_between(
                         last_eth2_slot_on_near + 1,
@@ -208,6 +218,11 @@ impl Eth2NearRelay {
                 "Error on header submission"
             );
 
+        if let FinalExecutionStatus::Failure(error_message) = execution_outcome.status {
+            FAILS_ON_HEADERS_SUBMISSION.inc();
+            warn!(target: "relay", "FAIL status on Headers submission. Error: {:?}", error_message);
+        }
+
         *last_eth2_slot_on_near = current_slot - 1;
         info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
                                   self.near_network_name, execution_outcome.transaction.hash);
@@ -279,6 +294,9 @@ impl Eth2NearRelay {
             .beacon_rpc_client
             .get_last_finalized_slot_number(),
             "Error on getting last finalized slot number on Ethereum. Skipping sending light client update").as_u64();
+
+        LAST_FINALIZED_ETH_SLOT_ON_NEAR.inc_by(last_finalized_slot_on_near as i64 - LAST_FINALIZED_ETH_SLOT_ON_NEAR.get());
+        LAST_FINALIZED_ETH_SLOT.inc_by(last_finalized_slot_on_eth as i64 - LAST_FINALIZED_ETH_SLOT.get());
 
         trace!(target: "relay", "last_finalized_slot on near/eth {}/{}", last_finalized_slot_on_near, last_finalized_slot_on_eth);
 
@@ -445,6 +463,11 @@ impl Eth2NearRelay {
                     .send_light_client_update(light_client_update),
                 "Fail to send light client update"
             );
+
+            if let FinalExecutionStatus::Failure(error_message) = execution_outcome.status {
+                FAILS_ON_UPDATES_SUBMISSION.inc();
+                warn!(target: "relay", "FAIL status on Light Client Update submission. Error: {:?}", error_message);
+            }
 
             info!(target: "relay", "Successful light client update submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
                                   self.near_network_name, execution_outcome.transaction.hash);
