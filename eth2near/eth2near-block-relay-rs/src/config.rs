@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::io::Read;
 use std::path::PathBuf;
-use std::time::Duration;
+use reqwest::Url;
 use crate::near_rpc_client::NearRPCClient;
 
 #[derive(Deserialize, Debug, Clone)]
@@ -78,29 +78,14 @@ impl Config {
     }
 
     fn check_urls(&self) {
-        let timeout = Duration::new(5, 0);
-        let client = reqwest::blocking::Client::builder()
-            .timeout(timeout)
-            .build()
-            .unwrap();
-
         //check beacon_endpoint
-        let response = client.head(&self.beacon_endpoint).send().unwrap();
-        if !response.status().is_success() {
-            panic!("Beacon_endpoint not available");
-        }
+        Url::parse(&self.beacon_endpoint).unwrap();
 
         //check eth1_endpoint
-        let response = client.head(&self.eth1_endpoint).send().unwrap();
-        if !response.status().is_success() {
-            panic!("Eth1_endpoint not available");
-        }
+        Url::parse(&self.eth1_endpoint).unwrap();
 
         //check near_endpoint
-        let response = client.head(&self.near_endpoint).send().unwrap();
-        if !response.status().is_success() {
-            panic!("Near_endpoint not available");
-        }
+        Url::parse(&self.near_endpoint).unwrap();
     }
 
     fn check_account_id(&self) {
