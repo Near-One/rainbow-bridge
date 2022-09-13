@@ -51,11 +51,8 @@ const PAUSE_VERIFY: Mask = 1;
 #[near_bindgen]
 impl EthProver {
     #[init]
+    #[private]
     pub fn init(#[serializer(borsh)] bridge_smart_contract: AccountId) -> Self {
-        assert!(
-            env::state_read::<EthProver>().is_none(),
-            "The contract is already initialized"
-        );
         Self {
             bridge_smart_contract,
             paused: Mask::default(),

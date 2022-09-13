@@ -73,13 +73,15 @@ pub struct Eth2Client {
 #[near_bindgen]
 impl Eth2Client {
     #[init]
+    #[private]
     pub fn init(#[serializer(borsh)] args: InitInput) -> Self {
         let min_storage_balance_for_submitter =
             calculate_min_storage_balance_for_submitter(args.max_submitted_blocks_by_account);
         let network =
             Network::from_str(args.network.as_str()).unwrap_or_else(|e| env::panic_str(e.as_str()));
 
-        if network == Network::Mainnet {
+        #[cfg(feature = "mainnet")]
+        {
             assert!(
                 args.validate_updates,
                 "The updates validation can't be disabled for mainnet"

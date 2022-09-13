@@ -28,11 +28,11 @@ pub struct Config {
     // The Ethereum network name (main, kiln)
     pub network: String,
 
-    // Contract type (near, dao)
+    // Contract type (near, dao, file)
     pub contract_type: String,
 
     // Frequency of submission light client updates. Once in N epochs.
-    pub light_client_updates_submission_frequency_in_epochs: i64,
+    pub light_client_updates_submission_frequency_in_epochs: u64,
 
     // maximum gap in slots between submitting light client update
     pub max_blocks_for_finalization: u64,
@@ -45,6 +45,17 @@ pub struct Config {
 
     // Account id for DAO on NEAR
     pub dao_contract_account_id: Option<String>,
+
+    // Path to dir for output submitted light client updates and execution blocks
+    pub output_dir: Option<String>,
+
+    // Path to the json file with beacon state in the next attested slot
+    // for case of short relay run
+    pub path_to_attested_state: Option<String>,
+
+    // Path to the json file with beacon state in the next finality slot
+    // for case of short relay run
+    pub path_to_finality_state: Option<String>,
 }
 
 impl Config {

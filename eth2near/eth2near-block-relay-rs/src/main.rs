@@ -1,10 +1,11 @@
-extern crate core;
-
 use clap::{ArgAction, Parser};
 use contract_wrapper::contract_wrapper_trait::ContractWrapper;
+use contract_wrapper::eth_client_contract::EthClientContract;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use contract_wrapper::near_contract_wrapper::NearContractWrapper;
-use contract_wrapper::{dao_contract, dao_eth_client_contract, eth_client_contract};
+use contract_wrapper::{
+    dao_contract, dao_eth_client_contract, eth_client_contract, file_eth_client_contract,
+};
 use eth2_to_near_relay::config::Config;
 use eth2_to_near_relay::eth2near_relay::Eth2NearRelay;
 use eth2_to_near_relay::init_contract::init_contract;
@@ -65,12 +66,15 @@ fn get_eth_client_contract(config: &Config) -> Box<dyn EthClientContractTrait> {
             eth_client,
             dao_contract::DAOContract::new(get_dao_contract_wrapper(config)),
         )),
+        "file" => Box::new(file_eth_client_contract::FileEthClientContract::new(
+            eth_client,
+            config.output_dir.clone().unwrap(),
+        )),
         _ => Box::new(eth_client),
     }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args = Arguments::parse();
+fn init_log(args: &Arguments, config: &Config) {
     let log_level_filter = match args.log_level.as_str() {
         "trace" => LevelFilter::Trace,
         "debug" => LevelFilter::Debug,
@@ -79,13 +83,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         _ => LevelFilter::Info,
     };
 
-    log::set_boxed_logger(Box::new(SimpleLogger))
+    let mut path_to_log_file = "./eth2near-relay.log".to_string();
+    if let Some(out_dir) = config.clone().output_dir {
+        path_to_log_file = out_dir.clone() + "/" + "eth2near-relay.log";
+        std::fs::create_dir_all(out_dir).unwrap();
+    }
+
+    log::set_boxed_logger(Box::new(SimpleLogger::new(path_to_log_file)))
         .map(|()| log::set_max_level(log_level_filter))
         .unwrap();
-    let config = Config::load_from_toml(args.config.try_into().unwrap());
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = Arguments::parse();
+    let config = Config::load_from_toml(args.config.clone().try_into().unwrap());
+    init_log(&args, &config);
 
     if args.init_contract {
-        init_contract(&config, get_eth_contract_wrapper(&config)).unwrap();
+        let mut eth_client_contract = EthClientContract::new(get_eth_contract_wrapper(&config));
+        init_contract(&config, &mut eth_client_contract).unwrap();
     }
 
     let mut eth2near_relay = Eth2NearRelay::init(
@@ -95,6 +111,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         args.register_relay,
     );
 
-    eth2near_relay.run();
+    eth2near_relay.run(None);
     Ok(())
 }

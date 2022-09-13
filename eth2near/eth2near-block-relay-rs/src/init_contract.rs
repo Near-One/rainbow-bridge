@@ -1,7 +1,6 @@
 use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
 use crate::eth1_rpc_client::Eth1RPCClient;
-use contract_wrapper::contract_wrapper_trait::ContractWrapper;
 use contract_wrapper::eth_client_contract::EthClientContract;
 use eth_types::eth2::ExtendedBeaconBlockHeader;
 use eth_types::BlockHeader;
@@ -10,10 +9,9 @@ use std::{thread, time};
 
 pub fn init_contract(
     config: &Config,
-    contract_wrapper: Box<dyn ContractWrapper>,
+    eth_client_contract: &mut EthClientContract,
 ) -> Result<(), Box<dyn std::error::Error>> {
     info!(target: "relay", "=== Contract initialization ===");
-    let eth_client_contract = EthClientContract::new(contract_wrapper);
 
     let beacon_rpc_client = BeaconRPCClient::new(&config.beacon_endpoint);
     let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);

@@ -1,7 +1,5 @@
 use crate::execution_block_proof::ExecutionBlockProof;
-use crate::relay_errors::{
-    ExecutionPayloadError, MissSyncAggregationError, SignatureSlotNotFoundError,
-};
+use crate::relay_errors::{ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError, NoBlockForSlotError, SignatureSlotNotFoundError};
 use eth_types::eth2::BeaconBlockHeader;
 use eth_types::eth2::FinalizedHeaderUpdate;
 use eth_types::eth2::HeaderUpdate;
@@ -19,6 +17,7 @@ use std::string::String;
 use std::time::Duration;
 use types::MainnetEthSpec;
 use types::{BeaconBlockBody, BeaconState};
+use contract_wrapper::utils::trim_quotes;
 
 /// `BeaconRPCClient` allows getting beacon block body, beacon block header
 /// and light client updates
@@ -62,8 +61,12 @@ impl BeaconRPCClient {
         block_id: &str,
     ) -> Result<BeaconBlockBody<MainnetEthSpec>, Box<dyn Error>> {
         let url = format!("{}/{}/{}", self.endpoint_url, Self::URL_BODY_PATH, block_id);
-        let body_json =
-            &Self::get_body_json_from_rpc_result(&self.get_json_from_raw_request(&url)?)?;
+
+        let json_str = &self.get_json_from_raw_request(&url)?;
+
+        self.check_block_found_for_slot(json_str)?;
+        let body_json = &Self::get_body_json_from_rpc_result(json_str)?;
+
         Ok(serde_json::from_str(body_json)?)
     }
 
@@ -85,8 +88,9 @@ impl BeaconRPCClient {
             block_id
         );
 
-        let json_str =
-            Self::get_header_json_from_rpc_result(&self.get_json_from_raw_request(&url)?)?;
+        let json_str = &self.get_json_from_raw_request(&url)?;
+        self.check_block_found_for_slot(json_str)?;
+        let json_str = Self::get_header_json_from_rpc_result(json_str)?;
         Ok(serde_json::from_str(&json_str)?)
     }
 
@@ -141,8 +145,7 @@ impl BeaconRPCClient {
         &self,
         beacon_block_hash: H256,
     ) -> Result<u64, Box<dyn Error>> {
-        let beacon_block_hash_str: String = serde_json::to_string(&beacon_block_hash)?;
-        let beacon_block_hash_str = &beacon_block_hash_str[1..beacon_block_hash_str.len() - 1];
+        let beacon_block_hash_str: String = trim_quotes(serde_json::to_string(&beacon_block_hash)?);
 
         let url = format!(
             "{}/{}/{}",
@@ -152,8 +155,7 @@ impl BeaconRPCClient {
         );
         let block_json_str = &self.get_json_from_raw_request(&url)?;
         let v: Value = serde_json::from_str(block_json_str)?;
-        let slot = v["data"]["message"]["slot"].to_string();
-        let slot = slot[1..slot.len() - 1].parse::<u64>()?;
+        let slot = trim_quotes(v["data"]["message"]["slot"].to_string()).parse::<u64>()?;
 
         Ok(slot)
     }
@@ -253,9 +255,16 @@ impl BeaconRPCClient {
         Ok(serde_json::from_str(&state_json_str)?)
     }
 
-    fn get_json_from_raw_request(&self, url: &str) -> Result<String, reqwest::Error> {
+    fn get_json_from_raw_request(&self, url: &str) -> Result<String, Box<dyn Error>> {
         trace!(target: "relay", "Beacon chain request: {}", url);
-        self.client.get(url).send()?.text()
+        let json_str = self.client.get(url).send()?.text()?;
+        if let Err(_) = serde_json::from_str::<Value>(&json_str) {
+            return Err(Box::new(FailOnGettingJson {
+                response: json_str,
+            }));
+        }
+
+        Ok(json_str)
     }
 
     fn get_body_json_from_rpc_result(
@@ -419,17 +428,28 @@ impl BeaconRPCClient {
             slot += 1;
         }
 
-        return Err(format!(
+        Err(format!(
             "Unable to get non empty beacon block in range [`{}`-`{}`)",
             start_slot,
             start_slot + CHECK_SLOTS_FORWARD_LIMIT
-        ))?;
+        ))?
+    }
+
+    fn check_block_found_for_slot(&self, json_str: &str) -> Result<(), Box<dyn Error>> {
+        let parse_json: Value = serde_json::from_str(json_str)?;
+        if parse_json.is_object() {
+            if let Some(msg_str) = parse_json["message"].as_str() {
+                if msg_str.contains("No block found for") {
+                    return Err(Box::new(NoBlockForSlotError));
+                }
+            }
+        }
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::beacon_block_header_with_execution_data::BeaconBlockHeaderWithExecutionData;
     use crate::beacon_rpc_client::BeaconRPCClient;
     use crate::test_utils::read_json_file_from_data_dir;
     use types::BeaconBlockBody;
@@ -573,6 +593,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_fetch_light_client_update() {
         const PERIOD: u64 = 100;
         let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
@@ -625,66 +646,5 @@ mod tests {
             serde_json::to_string(&sync_committe_update.next_sync_committee_branch[1]).unwrap(),
             "\"0xedeb16e5754a4be920bb51e97dbf15833f838a5770e8509cc34cde12ee74422e\""
         );
-    }
-
-    // a utility function which prints JSON for last `LightClientUpdate`
-    #[test]
-    #[ignore]
-    fn utility_show_get_light_client_update() {
-        let light_client_update_fetcher = BeaconRPCClient::new(BEACON_ENDPOINT);
-        let period = BeaconRPCClient::get_period_for_slot(
-            light_client_update_fetcher
-                .get_last_slot_number()
-                .unwrap()
-                .as_u64(),
-        );
-
-        let light_client_update = light_client_update_fetcher
-            .get_light_client_update(period)
-            .unwrap();
-        let light_client_update_json_str = serde_json::to_string(&light_client_update).unwrap();
-
-        println!(
-            "Light client update pariod={}: {}",
-            period, light_client_update_json_str
-        );
-    }
-
-    // a utility function that prints JSON strings for all `BeaconBlockHeader`s with `ExecutionData` in specific range
-    #[test]
-    #[ignore]
-    fn utility_show_headers_jsons_for_light_client_update() {
-        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
-        let mut beacon_block_ext_headers: Vec<BeaconBlockHeaderWithExecutionData> = Vec::new();
-        for slot in 823648..=827470 {
-            let mut count = 1;
-            loop {
-                if let Ok(beacon_header) =
-                    beacon_rpc_client.get_beacon_block_header_for_block_id(&format!("{}", slot))
-                {
-                    if let Ok(beacon_body) =
-                        beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", slot))
-                    {
-                        beacon_block_ext_headers.push(
-                            BeaconBlockHeaderWithExecutionData::new(beacon_header, &beacon_body)
-                                .unwrap(),
-                        );
-
-                        println!(
-                            "{},",
-                            serde_json::to_string(
-                                &beacon_block_ext_headers[beacon_block_ext_headers.len() - 1]
-                            )
-                            .unwrap()
-                        );
-                        break;
-                    }
-                }
-                count += 1;
-                if count > 3 {
-                    break;
-                }
-            }
-        }
     }
 }

@@ -108,6 +108,7 @@ pub struct EthClient {
 #[near_bindgen]
 impl EthClient {
     #[init]
+    #[private]
     pub fn init(
         #[serializer(borsh)] validate_ethash: bool,
         #[serializer(borsh)] dags_start_epoch: u64,
@@ -118,7 +119,6 @@ impl EthClient {
         #[serializer(borsh)] num_confirmations: u64,
         #[serializer(borsh)] trusted_signer: Option<AccountId>,
     ) -> Self {
-        assert!(!Self::initialized(), "Already initialized");
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
         let header_hash = header.hash.unwrap().clone();
         let header_number = header.number;
