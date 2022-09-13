@@ -27,7 +27,7 @@ pub struct Config {
     // Account id for eth client contract on NEAR
     pub contract_account_id: String,
 
-    // The Ethereum network name (main, kiln)
+    // The Ethereum network name (main, kiln, ropsten, goerli)
     pub network: String,
 
     // Contract type (near, dao, file)
@@ -73,7 +73,6 @@ impl Config {
         Self::check_urls(&config);
         Self::check_account_id(&config);
         Self::check_network_types(&config);
-        Self::check_update_frequency(&config);
 
         config
     }
@@ -128,6 +127,27 @@ impl Config {
         }
     }
 
-    fn check_network_types(&self) {}
-    fn check_update_frequency(&self) {}
+    fn check_network_types(&self) {
+        //check network
+        if !(self.network == "main" ||
+            self.network == "kiln" ||
+            self.network == "ropsten" ||
+            self.network == "goerli") {
+            panic!("Unknown network {}", self.network);
+        }
+
+        //check contract_type
+        if !(self.contract_type == "near" ||
+            self.contract_type == "dao" ||
+            self.contract_type == "file") {
+            panic!("Unknown contract type {}", self.contract_type);
+        }
+
+        //check near_network_id
+        if !(self.near_network_id == "mainnet" ||
+             self.near_network_id == "testnet") {
+            panic!("Unknown near network id {}", self.near_network_id);
+        }
+    }
 }
+

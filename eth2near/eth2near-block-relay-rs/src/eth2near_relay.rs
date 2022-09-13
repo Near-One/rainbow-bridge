@@ -12,6 +12,7 @@ use std::error::Error;
 use std::thread::sleep;
 use std::time::Duration;
 use std::vec::Vec;
+use crate::near_rpc_client::NearRPCClient;
 
 const ONE_EPOCH_IN_SLOTS: u64 = 32;
 
@@ -42,6 +43,7 @@ macro_rules! return_on_fail {
 pub struct Eth2NearRelay {
     beacon_rpc_client: BeaconRPCClient,
     eth1_rpc_client: Eth1RPCClient,
+    near_rpc_client: NearRPCClient,
     eth_client_contract: Box<dyn EthClientContractTrait>,
     max_submitted_headers: u64,
     network: String,
@@ -76,6 +78,7 @@ impl Eth2NearRelay {
             beacon_rpc_client,
             eth1_rpc_client: Eth1RPCClient::new(&config.eth1_endpoint),
             eth_client_contract: eth_contract,
+            near_rpc_client: NearRPCClient::new(&config.near_endpoint),
             max_submitted_headers: config.total_submit_headers as u64,
             network: config.network.to_string(),
             light_client_updates_submission_frequency_in_epochs: config
@@ -154,7 +157,9 @@ impl Eth2NearRelay {
     }
 
     fn wait_for_synchronization(&self) -> Result<(), Box<dyn Error>> {
-        while self.beacon_rpc_client.is_syncing()? || self.eth1_rpc_client.is_syncing()? {
+        while self.beacon_rpc_client.is_syncing()? ||
+              self.eth1_rpc_client.is_syncing()? ||
+              self.near_rpc_client.is_syncing()? {
             info!(target: "relay", "Waiting for sync...");
             sleep(Duration::from_secs(30));
         }

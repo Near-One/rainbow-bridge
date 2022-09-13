@@ -40,14 +40,33 @@ impl NearRPCClient {
     }
 
     pub fn is_syncing(&self) -> Result<bool, Box<dyn Error>> {
-        Ok(true)
+        let json_value = json!({
+            "id": "dontcare",
+            "jsonrpc": "2.0",
+            "method": "status",
+            "params": []
+        });
+
+        let res = self
+            .client
+            .post(&self.endpoint_url)
+            .json(&json_value)
+            .send()?
+            .text()?;
+
+        let val: Value = serde_json::from_str(&res)?;
+
+        if let Some(is_sync) = val["result"]["sync_info"]["syncing"].as_bool() {
+            return Ok(is_sync);
+        }
+
+        return Ok(true);
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::near_rpc_client::NearRPCClient;
-
     const NEAR_ENDPOINT: &str = "https://rpc.testnet.near.org";
 
     #[test]
