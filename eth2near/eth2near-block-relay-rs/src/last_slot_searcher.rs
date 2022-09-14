@@ -405,12 +405,17 @@ mod tests {
     use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
     use eth_types::BlockHeader;
     use std::error::Error;
+    use crate::config_for_tests::ConfigForTests;
 
     const FIRST_SLOT: u64 = 1099360;
     const SLOT_WITHOUT_BLOCK: u64 = 1099364;
     const RIGHT_BOUND_IN_SLOT_SEARCH: u64 = 1099500;
     const TIMEOUT: u64 = 30;
     const TIMEOUT_STATE: u64 = 1000;
+
+    fn get_config() -> ConfigForTests {
+        ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
+    }
 
     fn get_execution_block_by_slot(
         slot: u64,
@@ -445,7 +450,9 @@ mod tests {
 
     #[test]
     fn test_block_known_on_near() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_config();
+
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client =
             BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
@@ -497,7 +504,8 @@ mod tests {
 
     #[test]
     fn test_find_left_non_error_slot() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client =
             BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
@@ -572,7 +580,8 @@ mod tests {
 
     #[test]
     fn test_linear_search_backward() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client =
             BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
@@ -617,7 +626,8 @@ mod tests {
 
     #[test]
     fn test_linear_search_forward() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client =
             BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
@@ -672,7 +682,8 @@ mod tests {
 
     #[test]
     fn test_linear_slot_search() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client =
             BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
@@ -743,7 +754,8 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_error_on_connection_problem() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
             BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
@@ -776,7 +788,8 @@ mod tests {
 
     #[test]
     fn test_binsearch_slot_range() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
             BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
@@ -870,7 +883,8 @@ mod tests {
 
     #[test]
     fn test_binsearch_slot_forward() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
             BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
@@ -965,7 +979,8 @@ mod tests {
 
     #[test]
     fn test_binsearch_slot_search() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
             BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
@@ -1068,7 +1083,8 @@ mod tests {
 
     #[test]
     fn test_get_last_slot_binsearch() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
             BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
@@ -1127,7 +1143,8 @@ mod tests {
 
     #[test]
     fn test_get_last_slot_linearsearch() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
             BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);

@@ -510,6 +510,7 @@ mod tests {
     use crate::test_utils::{get_relay, get_relay_from_slot, get_relay_with_update_from_file};
     use eth_types::eth2::LightClientUpdate;
     use eth_types::BlockHeader;
+    use crate::config_for_tests::ConfigForTests;
 
     const FIRST_SLOT: u64 = 1099360;
     const RIGHT_BOUND_IN_SLOT_SEARCH: u64 = 1099500;
@@ -521,6 +522,10 @@ mod tests {
     const FINALIZED_SLOT_BEFORE_NEW_PERIOD: u64 = 1105919;
     const TIMEOUT: u64 = 30;
     const TIMEOUT_STATE: u64 = 1000;
+
+    fn get_config() -> ConfigForTests {
+        ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
+    }
 
     fn send_execution_blocks_between(relay: &mut Eth2NearRelay, start_slot: u64, end_slot: u64) {
         let mut slot = start_slot;
@@ -580,7 +585,9 @@ mod tests {
 
     #[test]
     fn test_submit_zero_headers() {
-        let mut relay = get_relay(true, true);
+        let config_for_test = get_config();
+
+        let mut relay = get_relay(true, true, &config_for_test);
         let mut end_slot = get_finalized_slot(&relay);
         end_slot += 1;
 
@@ -592,7 +599,9 @@ mod tests {
 
     #[test]
     fn test_send_specific_light_client_update() {
-        let mut relay = get_relay(true, true);
+        let config_for_test = get_config();
+
+        let mut relay = get_relay(true, true, &config_for_test);
         let finalized_slot = get_finalized_slot(&relay);
 
         send_execution_blocks_between(&mut relay, finalized_slot + 1, FINALIZED_SLOT_1);
@@ -615,7 +624,9 @@ mod tests {
     #[test]
     #[ignore]
     fn test_hand_made_light_client_update() {
-        let mut relay = get_relay(true, true);
+        let config_for_test = get_config();
+
+        let mut relay = get_relay(true, true, &config_for_test);
         let finalized_slot = get_finalized_slot(&relay);
 
         send_execution_blocks_between(&mut relay, finalized_slot + 1, FINALIZED_SLOT_1);
@@ -632,7 +643,9 @@ mod tests {
     #[test]
     #[ignore]
     fn test_hand_made_light_client_update_with_null_signature_slot() {
-        let mut relay = get_relay(true, true);
+        let config_for_test = get_config();
+
+        let mut relay = get_relay(true, true, &config_for_test);
         let finalized_slot = get_finalized_slot(&relay);
 
         send_execution_blocks_between(&mut relay, finalized_slot + 1, FINALIZED_SLOT_1);
@@ -652,7 +665,9 @@ mod tests {
 
     #[test]
     fn test_send_light_client_update() {
-        let mut relay = get_relay(true, false);
+        let config_for_test = get_config();
+
+        let mut relay = get_relay(true, false, &config_for_test);
         let finality_slot = get_finalized_slot(&relay);
 
         let finality_slot_on_eth = send_blocks_till_finalized_eth_slot(&mut relay, finality_slot);
@@ -664,7 +679,9 @@ mod tests {
 
     #[test]
     fn test_get_execution_block_by_slot() {
-        let mut relay = get_relay(true, true);
+        let config_for_test = get_config();
+
+        let mut relay = get_relay(true, true, &config_for_test);
         relay
             .get_execution_block_by_slot(SLOT_WITHOUT_BLOCK - 1)
             .unwrap();
@@ -689,7 +706,9 @@ mod tests {
 
     #[test]
     fn test_verify_bls_signature() {
-        let mut relay = get_relay(true, true);
+        let config_for_test = get_config();
+
+        let mut relay = get_relay(true, true, &config_for_test);
 
         const PATH_TO_LIGHT_CLIENT_UPDATES: &str =
             "../contract_wrapper/data/light_client_updates_kiln_1099394-1099937.json";
@@ -712,7 +731,9 @@ mod tests {
     #[test]
     #[ignore]
     fn test_get_attested_slot() {
-        let mut relay = get_relay(true, true);
+        let config_for_test = get_config();
+
+        let mut relay = get_relay(true, true, &config_for_test);
         let finalized_slot = FINALIZED_SLOT_2;
         let attested_slot = relay.get_attested_slot(finalized_slot).unwrap();
 
@@ -738,7 +759,8 @@ mod tests {
 
     #[test]
     fn test_get_execution_blocks_between() {
-        let relay = get_relay(true, true);
+        let config_for_test = get_config();
+        let relay = get_relay(true, true, &config_for_test);
         let finalized_slot = get_finalized_slot(&relay);
 
         let blocks = relay
@@ -759,7 +781,8 @@ mod tests {
 
     #[test]
     fn test_submit_execution_blocks() {
-        let mut relay = get_relay(true, true);
+        let config_for_test = get_config();
+        let mut relay = get_relay(true, true, &config_for_test);
         let mut finalized_slot = get_finalized_slot(&relay);
         let blocks = relay
             .get_execution_blocks_between(finalized_slot + 1, RIGHT_BOUND_IN_SLOT_SEARCH)
@@ -785,7 +808,8 @@ mod tests {
     #[test]
     #[ignore]
     fn try_submit_update_with_not_enough_blocks() {
-        let mut relay = get_relay(true, true);
+        let config_for_test = get_config();
+        let mut relay = get_relay(true, true, &config_for_test);
         let finalized_slot = get_finalized_slot(&relay);
 
         send_execution_blocks_between(&mut relay, finalized_slot + 1, FINALIZED_SLOT_1 - 1);
@@ -801,7 +825,9 @@ mod tests {
 
     #[test]
     fn test_not_invalid_attested_slot() {
-        let mut relay = get_relay(true, true);
+        let config_for_test = get_config();
+
+        let mut relay = get_relay(true, true, &config_for_test);
         let finalized_slot = FIRST_SLOT;
         let possible_attested_slot = finalized_slot
             + ONE_EPOCH_IN_SLOTS * 2
@@ -820,7 +846,8 @@ mod tests {
     #[test]
     #[should_panic(expected = "504 Gateway Timeout")]
     fn get_execution_blocks_in_bad_network() {
-        let mut relay = get_relay(true, true);
+        let config_for_test = get_config();
+        let mut relay = get_relay(true, true, &config_for_test);
         let finalized_slot = get_finalized_slot(&relay);
 
         relay.beacon_rpc_client =
@@ -832,7 +859,8 @@ mod tests {
 
     #[test]
     fn test_send_regular_light_client_update() {
-        let mut relay = get_relay(true, false);
+        let config_for_test = get_config();
+        let mut relay = get_relay(true, false, &config_for_test);
         let finality_slot = get_finalized_slot(&relay);
         let finality_slot_on_eth = send_blocks_till_finalized_eth_slot(&mut relay, finality_slot);
         relay.send_regular_light_client_update(finality_slot_on_eth, finality_slot);
@@ -843,7 +871,8 @@ mod tests {
 
     #[test]
     fn test_wrong_last_submitted_slot() {
-        let mut relay = get_relay(true, false);
+        let config_for_test = get_config();
+        let mut relay = get_relay(true, false, &config_for_test);
         let finality_slot = get_finalized_slot(&relay);
 
         let finality_slot_on_eth = send_blocks_till_finalized_eth_slot(&mut relay, finality_slot);
@@ -855,7 +884,8 @@ mod tests {
 
     #[test]
     fn test_too_often_updates() {
-        let mut relay = get_relay(true, false);
+        let config_for_test = get_config();
+        let mut relay = get_relay(true, false, &config_for_test);
         relay.light_client_updates_submission_frequency_in_epochs = 2;
 
         let finality_slot = get_finalized_slot(&relay);
@@ -870,7 +900,8 @@ mod tests {
     #[test]
     #[ignore]
     fn test_run() {
-        let mut relay = get_relay(true, true);
+        let config_for_test = get_config();
+        let mut relay = get_relay(true, true, &config_for_test);
         let finality_slot = get_finalized_slot(&relay);
 
         relay.run(Some(5));
@@ -883,7 +914,8 @@ mod tests {
     #[test]
     #[ignore]
     fn test_base_update_for_new_period() {
-        let mut relay = get_relay_from_slot(true, FINALIZED_SLOT_BEFORE_NEW_PERIOD);
+        let config_for_test = get_config();
+        let mut relay = get_relay_from_slot(true, FINALIZED_SLOT_BEFORE_NEW_PERIOD, &config_for_test);
         relay.max_submitted_headers = 33;
 
         let blocks = relay
@@ -910,7 +942,8 @@ mod tests {
     #[test]
     #[ignore]
     fn test_update_new_period_without_next_sync_committee() {
-        let mut relay = get_relay_from_slot(true, FINALIZED_SLOT_BEFORE_NEW_PERIOD);
+        let config_for_test = get_config();
+        let mut relay = get_relay_from_slot(true, FINALIZED_SLOT_BEFORE_NEW_PERIOD, &config_for_test);
         relay.max_submitted_headers = 33;
         let blocks = relay
             .get_execution_blocks_between(
@@ -942,7 +975,8 @@ mod tests {
 
     #[test]
     fn test_send_light_client_update_from_file() {
-        let mut relay = get_relay_with_update_from_file(true, true, false);
+        let config_for_test = get_config();
+        let mut relay = get_relay_with_update_from_file(true, true, false, &config_for_test);
         let finality_slot = get_finalized_slot(&relay);
         relay.run(None);
 
@@ -952,7 +986,8 @@ mod tests {
 
     #[test]
     fn test_send_light_client_update_from_file_with_next_sync_committee() {
-        let mut relay = get_relay_with_update_from_file(true, true, true);
+        let config_for_test = get_config();
+        let mut relay = get_relay_with_update_from_file(true, true, true, &config_for_test);
         let finality_slot = get_finalized_slot(&relay);
         relay.run(None);
 
@@ -964,7 +999,8 @@ mod tests {
     #[ignore]
     // Can finalize 341 blocks
     fn test_max_finalized_blocks_341() {
-        let mut relay = get_relay(true, true);
+        let config_for_test = get_config();
+        let mut relay = get_relay(true, true, &config_for_test);
         relay.max_blocks_for_finalization = 10000;
         relay.max_submitted_headers = 10000;
 
@@ -988,7 +1024,7 @@ mod tests {
     #[should_panic]
     // Can't finalize 393 blocks
     fn test_max_finalized_blocks_393() {
-        let mut relay = get_relay(true, true);
+        let mut relay = get_relay(true, true, &get_config());
         relay.max_blocks_for_finalization = 10000;
         relay.max_submitted_headers = 10000;
 

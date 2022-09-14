@@ -1,3 +1,5 @@
+extern crate core;
+
 pub mod beacon_block_body_merkle_tree;
 pub mod beacon_rpc_client;
 pub mod config;
@@ -13,3 +15,6 @@ pub mod near_rpc_client;
 
 #[cfg(test)]
 pub mod test_utils;
+
+#[cfg(test)]
+pub mod config_for_tests;
