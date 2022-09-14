@@ -22,6 +22,8 @@ macro_rules! skip_fail {
             Ok(val) => val,
             Err(e) => {
                 warn!(target: "relay", "{}. Error: {}", $msg, e);
+                trace!(target: "relay", "Sleep 12 secs before next loop");
+                sleep(Duration::from_secs(12));
                 continue;
             }
         }
@@ -110,7 +112,6 @@ impl Eth2NearRelay {
             skip_fail!(self.wait_for_synchronization(), "Fail to get sync status");
 
             info!(target: "relay", "== New relay loop ==");
-            sleep(Duration::from_secs(12));
 
             let last_eth2_slot_on_eth_chain: u64 = if self.submit_only_finalized_blocks {
                 skip_fail!(
@@ -495,6 +496,7 @@ impl Eth2NearRelay {
 
             info!(target: "relay", "Successful light client update submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
                                   self.near_network_name, execution_outcome.transaction.hash);
+            sleep(Duration::from_secs(5));
         } else {
             debug!(target: "relay", "Finalized block for light client update is not found on NEAR. Skipping send light client update");
         }
