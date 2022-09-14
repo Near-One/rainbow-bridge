@@ -5,6 +5,8 @@ use near_sdk::{Balance, Gas};
 pub trait ContractWrapper {
     fn get_account_id(&self) -> AccountId;
 
+    fn get_signer_account_id(&self) -> AccountId;
+
     fn call_view_function(
         &self,
         method_name: String,

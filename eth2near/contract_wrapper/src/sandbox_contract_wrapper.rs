@@ -124,25 +124,31 @@ impl ContractWrapper for SandboxContractWrapper {
     ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
         let rt = Runtime::new()?;
 
-        Ok(Self::get_final_execution_outcome_view_from_call_execution_details(
-            rt.block_on(
-                self.signer_account
-                    .call(&self.worker, self.contract.id(), &method_name)
-                    .deposit(match deposit {
-                        Some(deposit) => deposit,
-                        None => 0,
-                    })
-                    .gas(match gas {
-                        Some(gas) => gas.0,
-                        None => MAX_GAS.0,
-                    })
-                    .args(args)
-                    .transact(),
-            )?,
-        ))
+        Ok(
+            Self::get_final_execution_outcome_view_from_call_execution_details(
+                rt.block_on(
+                    self.signer_account
+                        .call(&self.worker, self.contract.id(), &method_name)
+                        .deposit(match deposit {
+                            Some(deposit) => deposit,
+                            None => 0,
+                        })
+                        .gas(match gas {
+                            Some(gas) => gas.0,
+                            None => MAX_GAS.0,
+                        })
+                        .args(args)
+                        .transact(),
+                )?,
+            ),
+        )
     }
 
     fn get_account_id(&self) -> AccountId {
         self.contract.id().clone()
+    }
+
+    fn get_signer_account_id(&self) -> AccountId {
+        self.signer_account.id().to_string().parse().unwrap()
     }
 }
