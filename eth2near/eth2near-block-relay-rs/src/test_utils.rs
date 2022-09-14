@@ -145,13 +145,11 @@ pub fn init_contract_from_specific_slot(
     thread::sleep(time::Duration::from_secs(30));
 }
 
-const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
-
-fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
+fn create_contract(config_for_test: &ConfigForTests) -> (Account, Contract, Worker<Sandbox>) {
     let rt = Runtime::new().unwrap();
 
     let worker = rt.block_on(workspaces::sandbox()).unwrap();
-    let wasm = std::fs::read(WASM_FILEPATH).unwrap();
+    let wasm = std::fs::read(&config_for_test.wasm_filepath).unwrap();
     let contract = rt.block_on(worker.dev_deploy(&wasm)).unwrap();
 
     // create accounts
@@ -194,7 +192,7 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
 }
 
 pub fn get_client_contract(from_file: bool, config_for_test: &ConfigForTests) -> Box<dyn EthClientContractTrait> {
-    let (relay_account, contract, worker) = create_contract();
+    let (relay_account, contract, worker) = create_contract(config_for_test);
     let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
     let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 
@@ -245,7 +243,7 @@ pub fn get_relay_with_update_from_file(
 pub fn get_relay_from_slot(enable_binsearch: bool, slot: u64, config_for_test: &ConfigForTests) -> Eth2NearRelay {
     let config = get_config(config_for_test);
 
-    let (relay_account, contract, worker) = create_contract();
+    let (relay_account, contract, worker) = create_contract(config_for_test);
     let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
     let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 

@@ -512,9 +512,6 @@ mod tests {
     use eth_types::BlockHeader;
     use crate::config_for_tests::ConfigForTests;
 
-    const FIRST_SLOT: u64 = 1099360;
-    const RIGHT_BOUND_IN_SLOT_SEARCH: u64 = 1099500;
-    const SLOT_WITHOUT_BLOCK: u64 = 1099364;
     const FINALIZED_SLOT_1: u64 = 1099392;
     const FINALIZED_SLOT_2: u64 = 1099488;
     const FINALIZED_SLOT_7: u64 = 1099808;
@@ -604,21 +601,20 @@ mod tests {
         let mut relay = get_relay(true, true, &config_for_test);
         let finalized_slot = get_finalized_slot(&relay);
 
-        send_execution_blocks_between(&mut relay, finalized_slot + 1, FINALIZED_SLOT_1);
+        let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
+            &std::fs::read_to_string(config_for_test.path_to_light_client_updates).expect("Unable to read file"),
+        ).unwrap();
+        let finalized_slot_1 = light_client_updates[1].finality_update.header_update.beacon_header.slot;
+
+        send_execution_blocks_between(&mut relay, finalized_slot + 1, finalized_slot_1);
 
         let finalized_slot = get_finalized_slot(&relay);
-        assert_eq!(finalized_slot, FIRST_SLOT);
+        assert_eq!(finalized_slot, config_for_test.first_slot);
 
-        const PATH_TO_LIGHT_CLIENT_UPDATES: &str =
-            "../contract_wrapper/data/light_client_updates_kiln_1099394-1099937.json";
-        let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
-            &std::fs::read_to_string(PATH_TO_LIGHT_CLIENT_UPDATES).expect("Unable to read file"),
-        )
-        .unwrap();
         relay.send_specific_light_cleint_update(light_client_updates[1].clone());
 
         let finalized_slot = get_finalized_slot(&relay);
-        assert_eq!(finalized_slot, FINALIZED_SLOT_1);
+        assert_eq!(finalized_slot, finalized_slot_1);
     }
 
     #[test]
@@ -632,7 +628,7 @@ mod tests {
         send_execution_blocks_between(&mut relay, finalized_slot + 1, FINALIZED_SLOT_1);
 
         let finalized_slot = get_finalized_slot(&relay);
-        assert_eq!(finalized_slot, FIRST_SLOT);
+        assert_eq!(finalized_slot, config_for_test.first_slot);
 
         relay.send_hand_made_light_client_update(finalized_slot);
 
@@ -651,7 +647,7 @@ mod tests {
         send_execution_blocks_between(&mut relay, finalized_slot + 1, FINALIZED_SLOT_1);
 
         let finalized_slot = get_finalized_slot(&relay);
-        assert_eq!(finalized_slot, FIRST_SLOT);
+        assert_eq!(finalized_slot, config_for_test.first_slot);
         let attested_slot = relay.get_attested_slot(finalized_slot + 4).unwrap();
         if relay.get_execution_block_by_slot(attested_slot + 1).is_ok() {
             panic!("Signature slot has block {}", attested_slot + 1);
@@ -683,9 +679,9 @@ mod tests {
 
         let mut relay = get_relay(true, true, &config_for_test);
         relay
-            .get_execution_block_by_slot(SLOT_WITHOUT_BLOCK - 1)
+            .get_execution_block_by_slot(config_for_test.slot_without_block - 1)
             .unwrap();
-        if let Err(err) = relay.get_execution_block_by_slot(SLOT_WITHOUT_BLOCK) {
+        if let Err(err) = relay.get_execution_block_by_slot(config_for_test.slot_without_block) {
             if err.downcast_ref::<NoBlockForSlotError>().is_none() {
                 panic!("Wrong error type for slot without block");
             }
@@ -695,7 +691,7 @@ mod tests {
 
         relay.beacon_rpc_client =
             BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT, TIMEOUT_STATE);
-        if let Err(err) = relay.get_execution_block_by_slot(SLOT_WITHOUT_BLOCK) {
+        if let Err(err) = relay.get_execution_block_by_slot(config_for_test.slot_without_block) {
             if err.downcast_ref::<NoBlockForSlotError>().is_some() {
                 panic!("Wrong error type for unworking network");
             }
@@ -707,19 +703,16 @@ mod tests {
     #[test]
     fn test_verify_bls_signature() {
         let config_for_test = get_config();
-
         let mut relay = get_relay(true, true, &config_for_test);
-
-        const PATH_TO_LIGHT_CLIENT_UPDATES: &str =
-            "../contract_wrapper/data/light_client_updates_kiln_1099394-1099937.json";
         let mut light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
-            &std::fs::read_to_string(PATH_TO_LIGHT_CLIENT_UPDATES).expect("Unable to read file"),
+            &std::fs::read_to_string(config_for_test.path_to_light_client_updates).expect("Unable to read file"),
         )
         .unwrap();
 
         assert!(relay
             .verify_bls_signature_for_finality_update(&light_client_updates[1])
             .unwrap());
+
         light_client_updates[1].attested_beacon_header =
             light_client_updates[0].attested_beacon_header.clone();
 
@@ -764,7 +757,7 @@ mod tests {
         let finalized_slot = get_finalized_slot(&relay);
 
         let blocks = relay
-            .get_execution_blocks_between(finalized_slot + 1, RIGHT_BOUND_IN_SLOT_SEARCH)
+            .get_execution_blocks_between(finalized_slot + 1, config_for_test.right_bound_in_slot_search)
             .unwrap();
         assert_eq!(blocks.0.len(), relay.max_submitted_headers as usize);
 
@@ -785,7 +778,7 @@ mod tests {
         let mut relay = get_relay(true, true, &config_for_test);
         let mut finalized_slot = get_finalized_slot(&relay);
         let blocks = relay
-            .get_execution_blocks_between(finalized_slot + 1, RIGHT_BOUND_IN_SLOT_SEARCH)
+            .get_execution_blocks_between(finalized_slot + 1, config_for_test.right_bound_in_slot_search)
             .unwrap();
         relay.submit_execution_blocks(blocks.0, blocks.1, &mut finalized_slot);
         assert_eq!(finalized_slot, blocks.1 - 1);
@@ -793,16 +786,12 @@ mod tests {
         let last_slot = relay
             .last_slot_searcher
             .get_last_slot(
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &relay.beacon_rpc_client,
                 &relay.eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_slot, blocks.1);
-
-        if relay.get_execution_block_by_slot(last_slot).is_ok() {
-            panic!("Wrong last slot");
-        }
+        assert_eq!(last_slot, blocks.1 - 1);
     }
 
     #[test]
@@ -815,12 +804,12 @@ mod tests {
         send_execution_blocks_between(&mut relay, finalized_slot + 1, FINALIZED_SLOT_1 - 1);
 
         let finalized_slot = get_finalized_slot(&relay);
-        assert_eq!(finalized_slot, FIRST_SLOT);
+        assert_eq!(finalized_slot, config_for_test.first_slot);
 
-        relay.send_light_client_updates(FIRST_SLOT);
+        relay.send_light_client_updates(config_for_test.first_slot);
         let finalized_slot = get_finalized_slot(&relay);
 
-        assert_eq!(finalized_slot, FIRST_SLOT);
+        assert_eq!(finalized_slot, config_for_test.first_slot);
     }
 
     #[test]
@@ -828,7 +817,7 @@ mod tests {
         let config_for_test = get_config();
 
         let mut relay = get_relay(true, true, &config_for_test);
-        let finalized_slot = FIRST_SLOT;
+        let finalized_slot = config_for_test.first_slot;
         let possible_attested_slot = finalized_slot
             + ONE_EPOCH_IN_SLOTS * 2
             + ONE_EPOCH_IN_SLOTS * relay.light_client_updates_submission_frequency_in_epochs;
@@ -853,7 +842,7 @@ mod tests {
         relay.beacon_rpc_client =
             BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT, TIMEOUT_STATE);
         relay
-            .get_execution_blocks_between(finalized_slot + 1, RIGHT_BOUND_IN_SLOT_SEARCH)
+            .get_execution_blocks_between(finalized_slot + 1, config_for_test.right_bound_in_slot_search)
             .unwrap();
     }
 
