@@ -57,10 +57,10 @@ pub struct Config {
     pub path_to_finality_state: Option<String>,
 
     //Timeout for ETH RPC requests in secs
-    pub eth_requests_timeout: u64,
+    pub eth_requests_timeout_seconds: u64,
 
     //Timeout for ETH RPC get status requests in secs
-    pub state_requests_timeout: u64,
+    pub state_requests_timeout_seconds: u64,
 }
 
 impl Config {

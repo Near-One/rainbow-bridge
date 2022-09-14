@@ -68,8 +68,8 @@ impl Eth2NearRelay {
 
         let beacon_rpc_client = BeaconRPCClient::new(
             &config.beacon_endpoint,
-            config.eth_requests_timeout,
-            config.state_requests_timeout,
+            config.eth_requests_timeout_seconds,
+            config.state_requests_timeout_seconds,
         );
         let next_light_client_update =
             Self::get_light_client_update_from_file(config, &beacon_rpc_client).unwrap();
@@ -519,8 +519,8 @@ mod tests {
     const FINALIZED_SLOT_7: u64 = 1099808;
     const FINALIZED_SLOT_8: u64 = 1099872;
     const FINALIZED_SLOT_BEFORE_NEW_PERIOD: u64 = 1105919;
-    const TIMEOUT: u64 = 30;
-    const TIMEOUT_STATE: u64 = 1000;
+    const TIMEOUT_SECONDS: u64 = 30;
+    const TIMEOUT_STATE_SECONDS: u64 = 1000;
 
     fn send_execution_blocks_between(relay: &mut Eth2NearRelay, start_slot: u64, end_slot: u64) {
         let mut slot = start_slot;
@@ -677,7 +677,7 @@ mod tests {
         }
 
         relay.beacon_rpc_client =
-            BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         if let Err(err) = relay.get_execution_block_by_slot(SLOT_WITHOUT_BLOCK) {
             if err.downcast_ref::<NoBlockForSlotError>().is_some() {
                 panic!("Wrong error type for unworking network");
@@ -824,7 +824,7 @@ mod tests {
         let finalized_slot = get_finalized_slot(&relay);
 
         relay.beacon_rpc_client =
-            BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         relay
             .get_execution_blocks_between(finalized_slot + 1, RIGHT_BOUND_IN_SLOT_SEARCH)
             .unwrap();

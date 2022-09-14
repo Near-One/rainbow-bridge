@@ -129,8 +129,8 @@ mod tests {
 
     const TEST_BEACON_BLOCK_ID: u32 = 741888;
     const BEACON_ENDPOINT: &str = "https://lodestar-kiln.chainsafe.io";
-    const TIMEOUT: u64 = 30;
-    const TIMEOUT_STATE: u64 = 1000;
+    const TIMEOUT_SECONDS: u64 = 30;
+    const TIMEOUT_STATE_SECONDS: u64 = 1000;
 
     #[test]
     fn test_beacon_block_body_root_verification() {
@@ -181,7 +181,7 @@ mod tests {
     #[test]
     fn test_beacon_block_body_root_matches_body_root_in_header() {
         let beacon_rpc_client =
-            crate::beacon_rpc_client::BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT, TIMEOUT_STATE);
+            crate::beacon_rpc_client::BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let beacon_block_body = beacon_rpc_client
             .get_beacon_block_body_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
             .unwrap();

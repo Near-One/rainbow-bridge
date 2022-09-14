@@ -409,8 +409,8 @@ mod tests {
     const FIRST_SLOT: u64 = 1099360;
     const SLOT_WITHOUT_BLOCK: u64 = 1099364;
     const RIGHT_BOUND_IN_SLOT_SEARCH: u64 = 1099500;
-    const TIMEOUT: u64 = 30;
-    const TIMEOUT_STATE: u64 = 1000;
+    const TIMEOUT_SECONDS: u64 = 30;
+    const TIMEOUT_STATE_SECONDS: u64 = 1000;
 
     fn get_execution_block_by_slot(
         slot: u64,
@@ -448,7 +448,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client =
-            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -500,7 +500,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client =
-            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -575,7 +575,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client =
-            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -620,7 +620,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client =
-            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -675,7 +675,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client =
-            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -746,7 +746,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
-            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -762,7 +762,7 @@ mod tests {
             finalized_slot + 2,
         );
 
-        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT, TIMEOUT_STATE);
+        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         last_slot_searcher
             .linear_slot_search(
                 finalized_slot + 1,
@@ -779,7 +779,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
-            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -851,7 +851,7 @@ mod tests {
             .unwrap();
         assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
 
-        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT, TIMEOUT_STATE);
+        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         if last_slot_searcher
             .binsearch_slot_range(
                 eth_client_contract
@@ -873,7 +873,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
-            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -946,7 +946,7 @@ mod tests {
             .unwrap();
         assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
 
-        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT, TIMEOUT_STATE);
+        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         if last_slot_searcher
             .binsearch_slot_forward(
                 eth_client_contract
@@ -968,7 +968,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
-            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -1051,7 +1051,7 @@ mod tests {
             .unwrap();
         assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK - 1);
 
-        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT, TIMEOUT_STATE);
+        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         if last_slot_searcher
             .binary_slot_search(
                 finalized_slot + 1,
@@ -1071,7 +1071,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
-            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
         let mut last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -1112,7 +1112,7 @@ mod tests {
             .unwrap();
         assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
 
-        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT, TIMEOUT_STATE);
+        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         if last_slot_searcher
             .get_last_slot(
                 RIGHT_BOUND_IN_SLOT_SEARCH,
@@ -1130,7 +1130,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
-            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
         let mut last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -1172,7 +1172,7 @@ mod tests {
             .unwrap();
         assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
 
-        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT, TIMEOUT_STATE);
+        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         if last_slot_searcher
             .get_last_slot(
                 RIGHT_BOUND_IN_SLOT_SEARCH,
