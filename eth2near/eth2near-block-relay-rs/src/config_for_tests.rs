@@ -19,6 +19,8 @@ pub struct ConfigForTests {
     pub right_bound_in_slot_search: u64,
     pub left_empty_slot: u64,
     pub right_empty_slot: u64,
+    pub finalized_slot_before_new_period: u64,
+    pub slot_without_block_2: u64,
 }
 
 impl ConfigForTests {

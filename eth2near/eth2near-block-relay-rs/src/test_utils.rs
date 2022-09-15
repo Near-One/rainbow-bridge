@@ -173,7 +173,7 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
         beacon_endpoint: config_for_test.beacon_endpoint.to_string(),
         eth1_endpoint: config_for_test.eth1_endpoint.to_string(),
         total_submit_headers: 8,
-        near_endpoint: "NaN".to_string(),
+        near_endpoint: "https://rpc.testnet.near.org".to_string(),
         signer_account_id: "NaN".to_string(),
         path_to_signer_secret_key: "NaN".to_string(),
         contract_account_id: "NaN".to_string(),
