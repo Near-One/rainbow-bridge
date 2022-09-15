@@ -40,6 +40,25 @@ impl EthClientContractTrait for DaoEthClientContract {
         &mut self,
         light_client_update: LightClientUpdate,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
+        // Check for already submitted updates
+        let last_proposal_id = self.dao_contract.get_last_proposal_id()?;
+        let last_proposal_output = self.dao_contract.get_proposal(last_proposal_id)?;
+        if last_proposal_output.proposal.status == dao_types::ProposalStatus::InProgress
+            && last_proposal_output.proposal.proposer.to_string()
+                == self
+                    .dao_contract
+                    .contract_wrapper
+                    .get_signer_account_id()
+                    .to_string()
+        {
+            return Err(format!(
+                "A proposal {} has already been submitted by this relayer which is in progress",
+                last_proposal_id
+            )
+            .into());
+        }
+
+        // Submmit new proposal
         let (proposal_id, execution_outcome) =
             self.dao_contract.submit_light_client_update_proposal(
                 near_sdk::AccountId::from_str(
@@ -95,7 +114,9 @@ impl EthClientContractTrait for DaoEthClientContract {
 mod tests {
     use crate::eth_client_contract_trait::EthClientContractTrait;
     use crate::near_contract_wrapper::NearContractWrapper;
-    use crate::{dao_contract, dao_eth_client_contract, eth_client_contract, near_contract_wrapper, utils};
+    use crate::{
+        dao_contract, dao_eth_client_contract, eth_client_contract, near_contract_wrapper, utils,
+    };
     use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::BlockHeader;
     use std::path::PathBuf;
@@ -118,8 +139,10 @@ mod tests {
             "data/execution_block_headers_kiln_1099394-1099937.json";
         const PATH_TO_LIGHT_CLIENT_UPDATES: &str =
             "data/light_client_updates_kiln_1099394-1099937.json";
-        const PATH_TO_CURRENT_SYNC_COMMITTEE: &str = "data/next_sync_committee_kiln_period_133.json";
-        const PATH_TO_NEXT_LIGHT_CLIENT_UPDATE: &str = "data/next_sync_committee_kiln_period_134.json";
+        const PATH_TO_CURRENT_SYNC_COMMITTEE: &str =
+            "data/next_sync_committee_kiln_period_133.json";
+        const PATH_TO_NEXT_LIGHT_CLIENT_UPDATE: &str =
+            "data/next_sync_committee_kiln_period_134.json";
 
         let execution_blocks_json_file_path = get_path(PATH_TO_EXECUTION_BLOCKS);
         let light_client_update_json_file_path = get_path(PATH_TO_LIGHT_CLIENT_UPDATES);
@@ -130,7 +153,8 @@ mod tests {
 
         let worker = rt.block_on(workspaces::testnet()).unwrap();
         let signer = rt.block_on(worker.dev_create_account()).unwrap();
-        let signer_private_key: String = utils::trim_quotes(serde_json::to_string(&signer.secret_key()).unwrap());
+        let signer_private_key: String =
+            utils::trim_quotes(serde_json::to_string(&signer.secret_key()).unwrap());
         let signer_account_id: String = format!("{}", signer.id());
 
         const NEAR_ENDPOINT: &str = "https://rpc.testnet.near.org";
