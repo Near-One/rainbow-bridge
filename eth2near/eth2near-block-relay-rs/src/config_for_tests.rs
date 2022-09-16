@@ -23,6 +23,7 @@ pub struct ConfigForTests {
     pub slot_without_block_2: u64,
     pub path_to_attested_state_for_period: String,
     pub path_to_finality_state_for_period: String,
+    pub eth1_number: u64,
 }
 
 impl ConfigForTests {

@@ -17,3 +17,4 @@ right_empty_slot = 3885723
 slot_without_block_2 = 3885743
 wasm_filepath = "../../contracts/near/target/wasm32-unknown-unknown/release/eth2_client.wasm" #"../../contracts/near/res/eth2_client.wasm"
 finalized_slot_before_new_period = 3891168
+eth1_number = 0x73cb47

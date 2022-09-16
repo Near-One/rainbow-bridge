@@ -335,9 +335,7 @@ mod tests {
     use crate::beacon_rpc_client::BeaconRPCClient;
     use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
     use eth_types::eth2::LightClientUpdate;
-    use log::LevelFilter;
     use crate::config_for_tests::ConfigForTests;
-    use crate::logger::SimpleLogger;
 
     const TIMEOUT: u64 = 30;
     const TIMEOUT_STATE: u64 = 1000;
