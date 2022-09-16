@@ -126,11 +126,14 @@ mod tests {
     use crate::test_utils::read_json_file_from_data_dir;
     use types::BeaconBlockBody;
     use types::MainnetEthSpec;
+    use crate::config_for_tests::ConfigForTests;
 
-    const TEST_BEACON_BLOCK_ID: u32 = 741888;
-    const BEACON_ENDPOINT: &str = "https://lodestar-kiln.chainsafe.io";
     const TIMEOUT: u64 = 30;
     const TIMEOUT_STATE: u64 = 1000;
+
+    fn get_config() -> ConfigForTests {
+        ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
+    }
 
     #[test]
     fn test_beacon_block_body_root_verification() {
@@ -180,13 +183,16 @@ mod tests {
 
     #[test]
     fn test_beacon_block_body_root_matches_body_root_in_header() {
+        let config = get_config();
+
         let beacon_rpc_client =
-            crate::beacon_rpc_client::BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT, TIMEOUT_STATE);
+            crate::beacon_rpc_client::BeaconRPCClient::new(&config.beacon_endpoint, TIMEOUT, TIMEOUT_STATE);
+
         let beacon_block_body = beacon_rpc_client
-            .get_beacon_block_body_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
+            .get_beacon_block_body_for_block_id(&format!("{}", config.first_slot))
             .unwrap();
         let beacon_block_header = beacon_rpc_client
-            .get_beacon_block_header_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
+            .get_beacon_block_header_for_block_id(&format!("{}", config.first_slot))
             .unwrap();
 
         let beacon_block_body_merkle_tree =
