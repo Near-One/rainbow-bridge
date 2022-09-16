@@ -24,6 +24,9 @@ pub struct ConfigForTests {
     pub path_to_attested_state_for_period: String,
     pub path_to_finality_state_for_period: String,
     pub eth1_number: u64,
+    pub path_to_block: String,
+    pub path_to_header: String,
+    pub path_to_light_client_update: String,
 }
 
 impl ConfigForTests {

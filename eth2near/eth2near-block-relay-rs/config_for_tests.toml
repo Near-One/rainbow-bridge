@@ -18,3 +18,6 @@ slot_without_block_2 = 3885743
 wasm_filepath = "../../contracts/near/target/wasm32-unknown-unknown/release/eth2_client.wasm" #"../../contracts/near/res/eth2_client.wasm"
 finalized_slot_before_new_period = 3891168
 eth1_number = 0x73cb47
+path_to_block = "./data/goerli_testdata/goerli_block_3885632.json"
+path_to_header = "./data/goerli_testdata/goerli_header_3885632.json"
+path_to_light_client_update = "./data/goerli_testdata/goerli_light_client_update_period_474.json"
