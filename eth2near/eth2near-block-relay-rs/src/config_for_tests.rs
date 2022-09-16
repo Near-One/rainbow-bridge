@@ -21,6 +21,8 @@ pub struct ConfigForTests {
     pub right_empty_slot: u64,
     pub finalized_slot_before_new_period: u64,
     pub slot_without_block_2: u64,
+    pub path_to_attested_state_for_period: String,
+    pub path_to_finality_state_for_period: String,
 }
 
 impl ConfigForTests {
