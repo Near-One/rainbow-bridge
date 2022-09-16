@@ -78,32 +78,32 @@ impl Config {
     }
 
     fn check_urls(&self) {
-        //check beacon_endpoint
+        // check `beacon_endpoint`
         Url::parse(&self.beacon_endpoint).unwrap();
 
-        //check eth1_endpoint
+        // check `eth1_endpoint`
         Url::parse(&self.eth1_endpoint).unwrap();
 
-        //check near_endpoint
+        // check `near_endpoint`
         Url::parse(&self.near_endpoint).unwrap();
     }
 
     fn check_account_id(&self) {
         let near_rpc_client = NearRPCClient::new(&self.near_endpoint);
 
-        //check signer_account_id
+        // check `signer_account_id`
         let _signer_account_id: near_sdk::AccountId = self.signer_account_id.parse().unwrap();
         if near_rpc_client.check_account_exists(&self.signer_account_id).unwrap() == false {
             panic!("Signer account id doesn't exist on NEAR network");
         }
 
-        //check contract_account_id
+        // check `contract_account_id`
         let _contract_account_id: near_sdk::AccountId = self.contract_account_id.parse().unwrap();
         if near_rpc_client.check_account_exists(&self.contract_account_id).unwrap() == false {
             panic!("Contract account id doesn't exist on NEAR network");
         }
 
-        //check dao_contract_account_id
+        // check `dao_contract_account_id`
         if let Some(dao_contract_account_id) = self.dao_contract_account_id.clone() {
             let _dao_contract_account_id: near_sdk::AccountId = dao_contract_account_id.parse().unwrap();
             if near_rpc_client.check_account_exists(&dao_contract_account_id).unwrap() == false {
@@ -113,7 +113,7 @@ impl Config {
     }
 
     fn check_network_types(&self) {
-        //check network
+        // check `network`
         if !(self.network == "main" ||
             self.network == "kiln" ||
             self.network == "ropsten" ||
@@ -121,14 +121,14 @@ impl Config {
             panic!("Unknown network {}", self.network);
         }
 
-        //check contract_type
+        // check `contract_type`
         if !(self.contract_type == "near" ||
             self.contract_type == "dao" ||
             self.contract_type == "file") {
             panic!("Unknown contract type {}", self.contract_type);
         }
 
-        //check near_network_id
+        // check `near_network_id`
         if !(self.near_network_id == "mainnet" ||
              self.near_network_id == "testnet") {
             panic!("Unknown near network id {}", self.near_network_id);
