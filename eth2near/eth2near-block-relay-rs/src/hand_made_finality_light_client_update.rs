@@ -361,7 +361,8 @@ mod tests {
     #[ignore]
     #[test]
     fn test_hand_made_finality_light_client_update() {
-        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
+        let beacon_rpc_client =
+            BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let hand_made_light_client_update =
             HandMadeFinalityLightClientUpdate::get_finality_light_client_update(
                 &beacon_rpc_client,
@@ -383,7 +384,8 @@ mod tests {
 
     #[test]
     fn test_hand_made_finality_light_client_update_from_file() {
-        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
+        let beacon_rpc_client =
+            BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let hand_made_light_client_update =
             HandMadeFinalityLightClientUpdate::get_finality_light_client_update_from_file(
                 &beacon_rpc_client,
@@ -399,7 +401,8 @@ mod tests {
 
     #[test]
     fn test_hand_made_finality_light_client_update_from_file_with_next_sync_committee() {
-        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
+        let beacon_rpc_client =
+            BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let hand_made_light_client_update =
             HandMadeFinalityLightClientUpdate::get_light_client_update_from_file_with_next_sync_committee(
                 &beacon_rpc_client,

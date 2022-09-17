@@ -105,7 +105,11 @@ pub fn init_contract_from_specific_slot(
     )
     .unwrap();
 
-    let beacon_rpc_client = BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
+    let beacon_rpc_client = BeaconRPCClient::new(
+        "https://lodestar-kiln.chainsafe.io",
+        TIMEOUT_SECONDS,
+        TIMEOUT_STATE_SECONDS,
+    );
     let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
 
     let finality_header = beacon_rpc_client

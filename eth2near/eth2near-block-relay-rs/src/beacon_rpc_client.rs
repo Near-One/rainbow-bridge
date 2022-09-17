@@ -536,19 +536,22 @@ mod tests {
 
     #[test]
     fn test_rpc_beacon_block_body_and_header_smoke() {
-        let _beacon_block_body = BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS)
-            .get_beacon_block_body_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
-            .unwrap();
-        let _beacon_block_header = BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS)
-            .get_beacon_block_header_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
-            .unwrap();
+        let _beacon_block_body =
+            BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS)
+                .get_beacon_block_body_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
+                .unwrap();
+        let _beacon_block_header =
+            BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS)
+                .get_beacon_block_header_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
+                .unwrap();
     }
 
     #[test]
     fn test_get_beacon_block_header() {
-        let beacon_block_header = BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS)
-            .get_beacon_block_header_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
-            .unwrap();
+        let beacon_block_header =
+            BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS)
+                .get_beacon_block_header_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
+                .unwrap();
 
         assert_eq!(beacon_block_header.slot, 741888);
         assert_eq!(beacon_block_header.proposer_index, 5407);
@@ -568,9 +571,10 @@ mod tests {
 
     #[test]
     fn test_get_beacon_block_body() {
-        let beacon_block_body = BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS)
-            .get_beacon_block_body_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
-            .unwrap();
+        let beacon_block_body =
+            BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS)
+                .get_beacon_block_body_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
+                .unwrap();
         assert_eq!(beacon_block_body.attestations().len(), 29);
         assert_eq!(
             format!("{:?}", beacon_block_body.eth1_data().block_hash),
@@ -627,7 +631,8 @@ mod tests {
     #[ignore]
     fn test_fetch_light_client_update() {
         const PERIOD: u64 = 100;
-        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
+        let beacon_rpc_client =
+            BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let light_client_update = beacon_rpc_client.get_light_client_update(PERIOD).unwrap();
 
         // check attested_header
