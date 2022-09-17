@@ -341,6 +341,17 @@ impl Eth2Client {
             "The active header slot number should be higher than the finalized slot"
         );
 
+        require!(
+            update.attested_beacon_header.slot
+                >= update.finality_update.header_update.beacon_header.slot,
+            "The attested header slot should be equal to or higher than the finalized header slot"
+        );
+
+        require!(
+            update.signature_slot > update.attested_beacon_header.slot,
+            "The signature slot should be higher than the attested header slot"
+        );
+
         let update_period = compute_sync_committee_period(active_header.slot);
         require!(
             update_period == finalized_period || update_period == finalized_period + 1,
