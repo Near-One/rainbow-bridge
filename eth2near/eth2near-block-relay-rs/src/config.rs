@@ -42,6 +42,9 @@ pub struct Config {
     // NEAR network name (mainnet, testnet)
     pub near_network_id: String,
 
+    // Port for Prometheus
+    pub prometheus_metrics_port: u16,
+
     // Account id for DAO on NEAR
     pub dao_contract_account_id: Option<String>,
 

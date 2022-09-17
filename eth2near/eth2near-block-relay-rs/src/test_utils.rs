@@ -164,7 +164,7 @@ pub fn init_contract_from_specific_slot(
 const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
 
 fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
-    let rt = Runtime::new().unwrap();
+    let mut rt = Runtime::new().unwrap();
 
     let worker = rt.block_on(workspaces::sandbox()).unwrap();
     let wasm = std::fs::read(WASM_FILEPATH).unwrap();
@@ -200,6 +200,7 @@ fn get_config() -> Config {
         light_client_updates_submission_frequency_in_epochs: 1,
         max_blocks_for_finalization: 5000,
         near_network_id: "testnet".to_string(),
+        prometheus_metrics_port: 32221,
         dao_contract_account_id: None,
         output_dir: None,
         path_to_attested_state: None,

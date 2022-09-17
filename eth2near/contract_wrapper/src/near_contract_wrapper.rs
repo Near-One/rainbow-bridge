@@ -1,4 +1,5 @@
 use crate::contract_wrapper_trait::ContractWrapper;
+use crate::utils::trim_quotes;
 use near_crypto::InMemorySigner;
 use near_jsonrpc_client::{methods, JsonRpcClient};
 use near_jsonrpc_primitives::types::query::QueryResponseKind;
@@ -11,7 +12,6 @@ use std::error::Error;
 use std::string::String;
 use std::vec::Vec;
 use tokio::runtime::Runtime;
-use crate::utils::trim_quotes;
 
 pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
 
@@ -66,6 +66,10 @@ impl NearContractWrapper {
 impl ContractWrapper for NearContractWrapper {
     fn get_account_id(&self) -> AccountId {
         self.contract_account.clone()
+    }
+
+    fn get_signer_account_id(&self) -> AccountId {
+        self.signer.account_id.clone()
     }
 
     fn call_view_function(

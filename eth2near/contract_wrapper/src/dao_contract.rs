@@ -9,7 +9,7 @@ use std::error::Error;
 
 use crate::contract_wrapper_trait::ContractWrapper;
 pub struct DAOContract {
-    contract_wrapper: Box<dyn ContractWrapper>,
+    pub contract_wrapper: Box<dyn ContractWrapper>,
 }
 
 impl DAOContract {
@@ -93,7 +93,7 @@ impl DAOContract {
         let update_hash = near_primitives::hash::hash(&raw_update);
         let args = Base64VecU8::from(raw_update);
 
-        const GAS_FOR_SUBMIT_LIGHT_CLIENT_UPDATE: u64 = 250 * Gas::ONE_TERA.0;
+        const GAS_FOR_SUBMIT_LIGHT_CLIENT_UPDATE: u64 = 270 * Gas::ONE_TERA.0;
         let action = ActionCall {
             method_name: "submit_beacon_chain_light_client_update".to_string(),
             args,

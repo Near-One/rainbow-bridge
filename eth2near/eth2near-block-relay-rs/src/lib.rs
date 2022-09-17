@@ -13,3 +13,4 @@ pub mod relay_errors;
 
 #[cfg(test)]
 pub mod test_utils;
+pub mod prometheus_metrics;
