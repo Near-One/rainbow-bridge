@@ -517,7 +517,7 @@ impl Eth2Client {
         );
 
         if finalized_execution_header_info.block_number > self.hashes_gc_threshold {
-            self.gc_headers(
+            self.gc_finalized_execution_blocks(
                 finalized_execution_header_info.block_number - self.hashes_gc_threshold,
             );
         }
@@ -542,11 +542,9 @@ impl Eth2Client {
     }
 
     /// Remove information about the headers that are at least as old as the given block number.
-    fn gc_headers(&mut self, mut header_number: u64) {
+    fn gc_finalized_execution_blocks(&mut self, mut header_number: u64) {
         loop {
-            if self.finalized_execution_blocks.contains_key(&header_number) {
-                self.finalized_execution_blocks.remove(&header_number);
-
+            if let Some(_) = self.finalized_execution_blocks.remove(&header_number) {
                 if header_number == 0 {
                     break;
                 } else {
