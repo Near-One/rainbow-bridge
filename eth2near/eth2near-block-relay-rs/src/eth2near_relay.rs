@@ -107,8 +107,9 @@ impl Eth2NearRelay {
                 .unwrap();
         }
 
-        let port = config.prometheus_metrics_port.clone();
-        spawn(move || {prometheus_metrics::run_prometheus_service(port)});
+        if let Some(port) = config.prometheus_metrics_port {
+            spawn(move || prometheus_metrics::run_prometheus_service(port));
+        }
 
         eth2near_relay
     }
