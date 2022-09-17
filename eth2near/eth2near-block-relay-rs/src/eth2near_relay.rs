@@ -111,6 +111,7 @@ impl Eth2NearRelay {
         info!(target: "relay", "=== Relay running ===");
         let mut iter_id = 0;
         while !self.terminate {
+            let mut were_submission_on_iter: bool = false;
             iter_id += 1;
             self.set_terminate(iter_id, max_iterations);
             skip_fail!(
@@ -160,9 +161,34 @@ impl Eth2NearRelay {
                     self.sleep_time_on_sync_secs
                 );
                 self.submit_execution_blocks(headers, current_slot, &mut last_eth2_slot_on_near);
-                sleep(Duration::from_secs(self.sleep_time_after_submission_secs));
-                self.send_light_client_updates(last_eth2_slot_on_near);
-            } else {
+                were_submission_on_iter = true;
+            }
+
+            let last_finalized_slot_on_near: u64 = return_on_fail!(
+                self.eth_client_contract.get_finalized_beacon_block_slot(),
+                "Error on getting finalized block hash. Skipping sending light client update"
+            );
+            let last_finalized_slot_on_eth: u64 = return_on_fail!(self
+            .beacon_rpc_client
+            .get_last_finalized_slot_number(),
+            "Error on getting last finalized slot number on Ethereum. Skipping sending light client update").as_u64();
+
+            trace!(target: "relay", "last_finalized_slot on near/eth {}/{}", last_finalized_slot_on_near, last_finalized_slot_on_eth);
+
+            if self.is_enough_blocks_for_light_client_update(
+                last_eth2_slot_on_near,
+                last_finalized_slot_on_near,
+                last_finalized_slot_on_eth,
+            ) {
+                self.send_light_client_updates(
+                    last_eth2_slot_on_near,
+                    last_finalized_slot_on_near,
+                    last_finalized_slot_on_eth,
+                );
+                were_submission_on_iter = true;
+            }
+
+            if !were_submission_on_iter {
                 info!(target: "relay", "Sync with ETH network. Sleep {} secs", self.sleep_time_on_sync_secs);
                 sleep(Duration::from_secs(self.sleep_time_on_sync_secs));
             }
@@ -261,6 +287,7 @@ impl Eth2NearRelay {
         *last_eth2_slot_on_near = current_slot - 1;
         info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
                                   self.near_network_name, execution_outcome.transaction.hash);
+        sleep(Duration::from_secs(self.sleep_time_after_submission_secs));
     }
 
     fn verify_bls_signature_for_finality_update(
@@ -328,32 +355,17 @@ impl Eth2NearRelay {
         self.next_light_client_update.is_some()
     }
 
-    fn send_light_client_updates(&mut self, last_submitted_slot: u64) {
+    fn send_light_client_updates(
+        &mut self,
+        last_submitted_slot: u64,
+        last_finalized_slot_on_near: u64,
+        last_finalized_slot_on_eth: u64,
+    ) {
         info!(target: "relay", "= Sending light client update =");
-
-        let last_finalized_slot_on_near: u64 = return_on_fail!(
-            self.eth_client_contract.get_finalized_beacon_block_slot(),
-            "Error on getting finalized block hash. Skipping sending light client update"
-        );
-
-        let last_finalized_slot_on_eth: u64 = return_on_fail!(self
-            .beacon_rpc_client
-            .get_last_finalized_slot_number(),
-            "Error on getting last finalized slot number on Ethereum. Skipping sending light client update").as_u64();
-
-        trace!(target: "relay", "last_finalized_slot on near/eth {}/{}", last_finalized_slot_on_near, last_finalized_slot_on_eth);
 
         if self.is_shot_run_mode() {
             info!(target: "relay", "Try sending light client update from file");
             self.send_light_client_update_from_file(last_submitted_slot);
-            return;
-        }
-
-        if !self.is_enough_blocks_for_light_client_update(
-            last_submitted_slot,
-            last_finalized_slot_on_near,
-            last_finalized_slot_on_eth,
-        ) {
             return;
         }
 
