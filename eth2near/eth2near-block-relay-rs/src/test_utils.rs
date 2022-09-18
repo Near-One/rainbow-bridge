@@ -93,6 +93,8 @@ pub fn init_contract_from_specific_slot(
     const PATH_TO_NEXT_SYNC_COMMITTEE: &str =
         "../contract_wrapper/data/next_sync_committee_kiln_period_134.json";
     const NETWORK: &str = "kiln";
+    const TIMEOUT_SECONDS: u64 = 30;
+    const TIMEOUT_STATE_SECONDS: u64 = 1000;
 
     let current_sync_committee: SyncCommittee = serde_json::from_str(
         &std::fs::read_to_string(PATH_TO_CURRENT_SYNC_COMMITTEE).expect("Unable to read file"),
@@ -103,7 +105,11 @@ pub fn init_contract_from_specific_slot(
     )
     .unwrap();
 
-    let beacon_rpc_client = BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io");
+    let beacon_rpc_client = BeaconRPCClient::new(
+        "https://lodestar-kiln.chainsafe.io",
+        TIMEOUT_SECONDS,
+        TIMEOUT_STATE_SECONDS,
+    );
     let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
 
     let finality_header = beacon_rpc_client
@@ -199,6 +205,8 @@ fn get_config() -> Config {
         output_dir: None,
         path_to_attested_state: None,
         path_to_finality_state: None,
+        eth_requests_timeout_seconds: 30,
+        state_requests_timeout_seconds: 1000,
     }
 }
 
@@ -223,6 +231,7 @@ pub fn get_relay(enable_binsearch: bool, from_file: bool) -> Eth2NearRelay {
         get_client_contract(from_file),
         enable_binsearch,
         true,
+        false,
     )
 }
 
@@ -245,6 +254,7 @@ pub fn get_relay_with_update_from_file(
         get_client_contract(from_file),
         enable_binsearch,
         true,
+        false,
     )
 }
 
@@ -262,5 +272,6 @@ pub fn get_relay_from_slot(enable_binsearch: bool, slot: u64) -> Eth2NearRelay {
         Box::new(eth_client_contract),
         enable_binsearch,
         true,
+        false,
     )
 }
