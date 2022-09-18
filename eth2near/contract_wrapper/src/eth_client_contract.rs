@@ -178,7 +178,8 @@ mod tests {
     use workspaces::prelude::*;
     use workspaces::{network::Sandbox, Account, Contract, Worker};
 
-    const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
+    // TODO: use a more clean approach to include binary
+    const WASM_FILEPATH: &str = "../../contracts/near/target/wasm32-unknown-unknown/release/eth2_client.wasm";
 
     struct EthState {
         pub execution_blocks: Vec<BlockHeader>,
@@ -309,9 +310,11 @@ mod tests {
     #[test]
     fn test_smoke_eth_client_contract_wrapper() {
         let (relay_account, contract, worker) = create_contract();
+
+        // Use contract with `contract` as a signer for the `init()` call
         let contract_wrapper =
-            Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
-        let mut eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
+            Box::new(SandboxContractWrapper::new(contract.as_account(), contract.clone(), worker.clone()));
+        let eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
 
         let mut eth_state = EthState::new();
 
@@ -321,6 +324,10 @@ mod tests {
             .unwrap();
         assert_eq!(first_finalized_slot, 1099360);
 
+        // Use `relay_account` as a signer for normal operations
+        let contract_wrapper =
+            Box::new(SandboxContractWrapper::new(&relay_account, contract, worker));
+        let mut eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
         eth_client_contract.register_submitter().unwrap();
 
         let next_hash = eth_state.light_client_updates[eth_state.current_light_client_update]
