@@ -94,7 +94,7 @@ impl Error for NoBlockForSlotError {}
 
 #[derive(Debug)]
 pub struct FailOnGettingJson {
-    pub response: String
+    pub response: String,
 }
 
 impl Display for FailOnGettingJson {
