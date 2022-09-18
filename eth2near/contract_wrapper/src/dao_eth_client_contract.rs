@@ -5,6 +5,7 @@ use crate::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::eth2::{LightClientState, LightClientUpdate};
 use eth_types::{BlockHeader, H256};
 use near_primitives::views::FinalExecutionOutcomeView;
+use near_primitives::types::AccountId;
 use near_sdk::Balance;
 use std::error::Error;
 use std::str::FromStr;
@@ -105,6 +106,10 @@ impl EthClientContractTrait for DaoEthClientContract {
 
     fn register_submitter(&self) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
         self.eth_client_contract.register_submitter()
+    }
+
+    fn is_submitter_registered(&self, account_id: Option<AccountId>) -> Result<bool, Box<dyn Error>> {
+        self.eth_client_contract.is_submitter_registered(account_id)
     }
 
     fn get_light_client_state(&self) -> Result<LightClientState, Box<dyn Error>> {
