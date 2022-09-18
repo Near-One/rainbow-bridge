@@ -46,6 +46,20 @@ macro_rules! return_on_fail {
     };
 }
 
+macro_rules! return_on_fail_and_sleep {
+    ($res:expr, $msg:expr, $sleep_time:expr) => {
+        match $res {
+            Ok(val) => val,
+            Err(e) => {
+                warn!(target: "relay", "{}. Error: {}", $msg, e);
+                trace!(target: "relay", "Sleep {} secs before next loop", $sleep_time);
+                sleep(Duration::from_secs($sleep_time));
+                return;
+            }
+        }
+    };
+}
+
 pub struct Eth2NearRelay {
     beacon_rpc_client: BeaconRPCClient,
     eth1_rpc_client: Eth1RPCClient,
@@ -532,10 +546,11 @@ impl Eth2NearRelay {
 
             info!(target: "relay", "Sending light client update");
 
-            let execution_outcome = return_on_fail!(
+            let execution_outcome = return_on_fail_and_sleep!(
                 self.eth_client_contract
                     .send_light_client_update(light_client_update),
-                "Fail to send light client update"
+                "Fail to send light client update",
+                self.sleep_time_on_sync_secs
             );
 
             if let FinalExecutionStatus::Failure(error_message) = execution_outcome.status {
