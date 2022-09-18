@@ -25,7 +25,7 @@ impl HandMadeFinalityLightClientUpdate {
     ) -> Result<LightClientUpdate, Box<dyn Error>> {
         let (attested_slot, signature_slot) =
             Self::get_attested_slot_with_enough_sync_committee_bits_sum(
-                &beacon_rpc_client,
+                beacon_rpc_client,
                 attested_slot,
             )?;
         trace!(target: "relay", "New attested slot = {} and signature slot = {}", attested_slot, signature_slot);
@@ -121,7 +121,7 @@ impl HandMadeFinalityLightClientUpdate {
                 continue;
             }
 
-            if signature_beacon_body.attestations().len() == 0 {
+            if signature_beacon_body.attestations().is_empty() {
                 current_attested_slot = signature_slot;
                 continue;
             }
@@ -135,7 +135,7 @@ impl HandMadeFinalityLightClientUpdate {
             if let Err(err) = beacon_rpc_client
                 .get_beacon_block_header_for_block_id(&format!("{}", current_attested_slot))
             {
-                if let Some(_) = err.downcast_ref::<NoBlockForSlotError>() {
+                if err.downcast_ref::<NoBlockForSlotError>().is_some() {
                     current_attested_slot = signature_slot;
                     continue;
                 }

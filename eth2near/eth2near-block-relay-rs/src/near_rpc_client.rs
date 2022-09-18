@@ -36,7 +36,7 @@ impl NearRPCClient {
 
         let val: Value = serde_json::from_str(&res)?;
 
-        return Ok(val["result"].is_object());
+        Ok(val["result"].is_object())
     }
 
     pub fn is_syncing(&self) -> Result<bool, Box<dyn Error>> {
@@ -60,7 +60,7 @@ impl NearRPCClient {
             return Ok(is_sync);
         }
 
-        return Ok(true);
+        Ok(true)
     }
 }
 

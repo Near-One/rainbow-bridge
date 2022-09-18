@@ -59,16 +59,16 @@ pub struct Config {
     // for case of short relay run
     pub path_to_finality_state: Option<String>,
 
-    //Timeout for ETH RPC requests in secs
+    // Timeout for ETH RPC requests in seconds
     pub eth_requests_timeout_seconds: u64,
 
-    //Timeout for ETH RPC get status requests in secs
+    // Timeout for ETH RPC get status requests in seconds
     pub state_requests_timeout_seconds: u64,
 
-    //Sleep time in seconds when ETH client is synchronized with ETH network
+    // Sleep time in seconds when ETH client is synchronized with ETH network
     pub sleep_time_on_sync_secs: u64,
 
-    //Sleep time in seconds after blocks/light_client_update submission to client
+    // Sleep time in seconds after blocks/light_client_update submission to client
     pub sleep_time_after_submission_secs: u64,
 }
 
@@ -102,20 +102,18 @@ impl Config {
 
         // check `signer_account_id`
         let _signer_account_id: near_sdk::AccountId = self.signer_account_id.parse().unwrap();
-        if near_rpc_client
+        if !near_rpc_client
             .check_account_exists(&self.signer_account_id)
             .unwrap()
-            == false
         {
             panic!("Signer account id doesn't exist on NEAR network");
         }
 
         // check `contract_account_id`
         let _contract_account_id: near_sdk::AccountId = self.contract_account_id.parse().unwrap();
-        if near_rpc_client
+        if !near_rpc_client
             .check_account_exists(&self.contract_account_id)
             .unwrap()
-            == false
         {
             panic!("Contract account id doesn't exist on NEAR network");
         }
@@ -124,10 +122,9 @@ impl Config {
         if let Some(dao_contract_account_id) = self.dao_contract_account_id.clone() {
             let _dao_contract_account_id: near_sdk::AccountId =
                 dao_contract_account_id.parse().unwrap();
-            if near_rpc_client
+            if !near_rpc_client
                 .check_account_exists(&dao_contract_account_id)
                 .unwrap()
-                == false
             {
                 panic!("DAO account id doesn't exist on NEAR network");
             }
