@@ -154,7 +154,8 @@ impl ContractWrapper for NearContractWrapper {
 
         let request_result = rt.block_on(async_std::future::timeout(
             std::time::Duration::from_secs(600),
-            self.client.call(&request)))?;
+            self.client.call(&request),
+        ))?;
         Ok(request_result?)
     }
 

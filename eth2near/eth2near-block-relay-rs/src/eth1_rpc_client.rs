@@ -73,7 +73,7 @@ impl Eth1RPCClient {
         if let Some(is_sync_val) = is_sync {
             return Ok(is_sync_val);
         }
-        
+
         Ok(true)
     }
 }

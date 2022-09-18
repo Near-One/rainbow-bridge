@@ -212,7 +212,11 @@ fn get_config() -> Config {
 
 pub fn get_client_contract(from_file: bool) -> Box<dyn EthClientContractTrait> {
     let (relay_account, contract, worker) = create_contract();
-    let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract, worker));
+    let contract_wrapper = Box::new(SandboxContractWrapper::new(
+        &relay_account,
+        contract,
+        worker,
+    ));
     let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 
     let config = get_config();
@@ -262,7 +266,11 @@ pub fn get_relay_from_slot(enable_binsearch: bool, slot: u64) -> Eth2NearRelay {
     let config = get_config();
 
     let (relay_account, contract, worker) = create_contract();
-    let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract, worker));
+    let contract_wrapper = Box::new(SandboxContractWrapper::new(
+        &relay_account,
+        contract,
+        worker,
+    ));
     let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 
     init_contract_from_specific_slot(&mut eth_client_contract, slot);

@@ -4,19 +4,22 @@ use crate::eth1_rpc_client::Eth1RPCClient;
 use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
 use crate::last_slot_searcher::LastSlotSearcher;
 use crate::near_rpc_client::NearRPCClient;
+use crate::prometheus_metrics;
+use crate::prometheus_metrics::{
+    FAILS_ON_HEADERS_SUBMISSION, FAILS_ON_UPDATES_SUBMISSION, LAST_ETH_SLOT, LAST_ETH_SLOT_ON_NEAR,
+    LAST_FINALIZED_ETH_SLOT, LAST_FINALIZED_ETH_SLOT_ON_NEAR,
+};
 use crate::relay_errors::NoBlockForSlotError;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::eth2::LightClientUpdate;
 use eth_types::BlockHeader;
 use log::{debug, info, trace, warn};
+use near_primitives::views::FinalExecutionStatus;
 use std::error::Error;
 use std::thread::sleep;
 use std::thread::spawn;
 use std::time::Duration;
 use std::vec::Vec;
-use near_primitives::views::FinalExecutionStatus;
-use crate::prometheus_metrics;
-use crate::prometheus_metrics::{FAILS_ON_HEADERS_SUBMISSION, FAILS_ON_UPDATES_SUBMISSION, LAST_ETH_SLOT, LAST_ETH_SLOT_ON_NEAR, LAST_FINALIZED_ETH_SLOT, LAST_FINALIZED_ETH_SLOT_ON_NEAR};
 
 const ONE_EPOCH_IN_SLOTS: u64 = 32;
 
@@ -155,7 +158,8 @@ impl Eth2NearRelay {
             );
 
             LAST_ETH_SLOT.inc_by(last_eth2_slot_on_eth_chain as i64 - LAST_ETH_SLOT.get());
-            LAST_ETH_SLOT_ON_NEAR.inc_by(last_eth2_slot_on_near as i64 - LAST_ETH_SLOT_ON_NEAR.get());
+            LAST_ETH_SLOT_ON_NEAR
+                .inc_by(last_eth2_slot_on_near as i64 - LAST_ETH_SLOT_ON_NEAR.get());
 
             info!(target: "relay", "Last slot on near = {}; last slot on eth = {}",
                   last_eth2_slot_on_near, last_eth2_slot_on_eth_chain);
@@ -180,12 +184,14 @@ impl Eth2NearRelay {
                 "Error on getting finalized block hash. Skipping sending light client update"
             );
             let last_finalized_slot_on_eth: u64 = return_on_fail!(self
-            .beacon_rpc_client
-            .get_last_finalized_slot_number(),
-            "Error on getting last finalized slot number on Ethereum. Skipping sending light client update").as_u64();
+                .beacon_rpc_client
+                .get_last_finalized_slot_number(),
+                "Error on getting last finalized slot number on Ethereum. Skipping sending light client update").as_u64();
 
-            LAST_FINALIZED_ETH_SLOT_ON_NEAR.inc_by(last_finalized_slot_on_near as i64 - LAST_FINALIZED_ETH_SLOT_ON_NEAR.get());
-            LAST_FINALIZED_ETH_SLOT.inc_by(last_finalized_slot_on_eth as i64 - LAST_FINALIZED_ETH_SLOT.get());
+            LAST_FINALIZED_ETH_SLOT_ON_NEAR
+                .inc_by(last_finalized_slot_on_near as i64 - LAST_FINALIZED_ETH_SLOT_ON_NEAR.get());
+            LAST_FINALIZED_ETH_SLOT
+                .inc_by(last_finalized_slot_on_eth as i64 - LAST_FINALIZED_ETH_SLOT.get());
 
             trace!(target: "relay", "last_finalized_slot on near/eth {}/{}", last_finalized_slot_on_near, last_finalized_slot_on_eth);
 

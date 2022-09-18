@@ -1,33 +1,36 @@
-use prometheus::{
-    IntCounter, Registry,
-};
+use prometheus::{IntCounter, Registry};
 
-use warp::Rejection;
-use warp::Reply;
-use warp::Filter;
 use lazy_static::lazy_static;
 use tokio::runtime::Runtime;
+use warp::Filter;
+use warp::Rejection;
+use warp::Reply;
 
 lazy_static! {
     pub static ref REGISTRY: Registry = Registry::new();
-
     pub static ref LAST_ETH_SLOT: IntCounter =
         IntCounter::new("last_eth_slot", "Last Ethereum Slot").expect("metric can be created");
-
     pub static ref LAST_ETH_SLOT_ON_NEAR: IntCounter =
-        IntCounter::new("last_eth_slot_on_near", "Last Ethereum Slot on NEAR").expect("metric can be created");
-
+        IntCounter::new("last_eth_slot_on_near", "Last Ethereum Slot on NEAR")
+            .expect("metric can be created");
     pub static ref LAST_FINALIZED_ETH_SLOT: IntCounter =
-        IntCounter::new("last_finalized_eth_slot", "Last Finalized Ethereum Slot").expect("metric can be created");
-
-    pub static ref LAST_FINALIZED_ETH_SLOT_ON_NEAR: IntCounter =
-        IntCounter::new("last_finalized_eth_slot_on_near", "Last Finalized Ethereum Slot on NEAR").expect("metric can be created");
-
-    pub static ref FAILS_ON_HEADERS_SUBMISSION: IntCounter =
-        IntCounter::new("fails_on_headers_submission", "Fails number on Headers Submission").expect("metric can be created");
-
-    pub static ref FAILS_ON_UPDATES_SUBMISSION: IntCounter =
-        IntCounter::new("fails_on_updates_submission", "Fails number on Light Client Updates Submission").expect("metric can be created");
+        IntCounter::new("last_finalized_eth_slot", "Last Finalized Ethereum Slot")
+            .expect("metric can be created");
+    pub static ref LAST_FINALIZED_ETH_SLOT_ON_NEAR: IntCounter = IntCounter::new(
+        "last_finalized_eth_slot_on_near",
+        "Last Finalized Ethereum Slot on NEAR"
+    )
+    .expect("metric can be created");
+    pub static ref FAILS_ON_HEADERS_SUBMISSION: IntCounter = IntCounter::new(
+        "fails_on_headers_submission",
+        "Fails number on Headers Submission"
+    )
+    .expect("metric can be created");
+    pub static ref FAILS_ON_UPDATES_SUBMISSION: IntCounter = IntCounter::new(
+        "fails_on_updates_submission",
+        "Fails number on Light Client Updates Submission"
+    )
+    .expect("metric can be created");
 }
 
 fn register_custom_metrics() {
