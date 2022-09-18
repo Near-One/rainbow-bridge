@@ -123,7 +123,6 @@ mod tests {
     use eth_types::BlockHeader;
     use std::path::PathBuf;
     use tokio::runtime::Runtime;
-    use workspaces::network::DevAccountDeployer;
 
     fn get_path(path: &str) -> PathBuf {
         let mut json_file_path = std::env::current_exe().unwrap();
