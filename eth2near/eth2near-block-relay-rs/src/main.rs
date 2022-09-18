@@ -32,11 +32,11 @@ struct Arguments {
     /// Log level (trace, debug, info, warn, error)
     log_level: String,
 
-    #[clap(long, action = ArgAction::SetTrue, default_value_t = true)]
+    #[clap(long, action = ArgAction::Set, default_value_t = true)]
     /// Enable binary search for last slot ETH block on NEAR
     enable_binary_search: bool,
 
-    #[clap(long, action = ArgAction::SetTrue, default_value_t = true)]
+    #[clap(long, action = ArgAction::Set, default_value_t = true)]
     /// Submit to ETH2 Client only blocks before last finalized block on NEAR
     submit_only_finalized_blocks: bool,
 }
