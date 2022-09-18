@@ -16,7 +16,7 @@ reqwest = { version = "0.11", features = ["blocking"] }
 eth-types = { path = "../../contracts/near/eth-types/", features = ["eip1559"]}
 contract_wrapper = { path = "../contract_wrapper" }
 clap = { version = "3.1.6", features = ["derive"] }
-tokio = { version = "0.2", features = ["macros", "rt-threaded", "time"] }
+tokio = { version = "1.21", features = ["macros", "rt-threaded", "time"] }
 env_logger = "0.9.0"
 borsh = "0.9.3"
 near-sdk = "4.0.0"
