@@ -200,13 +200,15 @@ fn get_config() -> Config {
         light_client_updates_submission_frequency_in_epochs: 1,
         max_blocks_for_finalization: 5000,
         near_network_id: "testnet".to_string(),
-        prometheus_metrics_port: 32221,
+        prometheus_metrics_port: Some(32221),
         dao_contract_account_id: None,
         output_dir: None,
         path_to_attested_state: None,
         path_to_finality_state: None,
         eth_requests_timeout_seconds: 30,
         state_requests_timeout_seconds: 1000,
+        sleep_time_after_submission_secs: 5,
+        sleep_time_on_sync_secs: 30,
     }
 }
 

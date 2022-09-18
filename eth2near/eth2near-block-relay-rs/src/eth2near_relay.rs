@@ -713,7 +713,7 @@ mod tests {
         let finality_slot = get_finalized_slot(&relay);
 
         let finality_slot_on_eth = send_blocks_till_finalized_eth_slot(&mut relay, finality_slot);
-        relay.send_light_client_updates(finality_slot_on_eth);
+        relay.send_light_client_updates(FIRST_SLOT, finality_slot, finality_slot_on_eth);
 
         let new_finalized_slot = get_finalized_slot(&relay);
         assert_ne!(finality_slot, new_finalized_slot);
@@ -853,7 +853,7 @@ mod tests {
         let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, FIRST_SLOT);
 
-        relay.send_light_client_updates(FIRST_SLOT);
+        relay.send_light_client_updates(FIRST_SLOT, finalized_slot, FIRST_SLOT);
         let finalized_slot = get_finalized_slot(&relay);
 
         assert_eq!(finalized_slot, FIRST_SLOT);
@@ -910,7 +910,7 @@ mod tests {
         let finality_slot = get_finalized_slot(&relay);
 
         let finality_slot_on_eth = send_blocks_till_finalized_eth_slot(&mut relay, finality_slot);
-        relay.send_light_client_updates(finality_slot_on_eth + 1);
+        relay.send_light_client_updates(finality_slot, finality_slot, finality_slot_on_eth + 1);
 
         let new_finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finality_slot, new_finalized_slot);
@@ -924,7 +924,7 @@ mod tests {
         let finality_slot = get_finalized_slot(&relay);
 
         let finality_slot_on_eth = send_blocks_till_finalized_eth_slot(&mut relay, finality_slot);
-        relay.send_light_client_updates(finality_slot_on_eth);
+        relay.send_light_client_updates(finality_slot, finality_slot, finality_slot_on_eth);
 
         let new_finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finality_slot, new_finalized_slot);
@@ -962,7 +962,7 @@ mod tests {
 
         relay.submit_execution_blocks(blocks.0, blocks.1, &mut last_slot_on_near);
 
-        relay.send_light_client_updates(blocks.1);
+        relay.send_light_client_updates(blocks.1 - 1, last_slot_on_near, blocks.1);
 
         let new_finality_slot = get_finalized_slot(&relay);
 

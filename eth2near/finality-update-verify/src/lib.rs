@@ -96,11 +96,14 @@ mod tests {
     use eth2_to_near_relay::beacon_rpc_client::BeaconRPCClient;
 
     const BEACON_ENDPOINT: &str = "https://lodestar-kiln.chainsafe.io";
+    const TIMEOUT_SECONDS: u64 = 30;
+    const TIMEOUT_STATE_SECONDS: u64 = 1000;
 
     #[test]
     fn smoke_verify_finality_update_true() {
         let network = "kiln";
-        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
+        let beacon_rpc_client =
+            BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let light_client_update_period_99 = beacon_rpc_client.get_light_client_update(99).unwrap();
         let light_client_update_period_100 =
             beacon_rpc_client.get_light_client_update(100).unwrap();
@@ -119,7 +122,8 @@ mod tests {
     #[test]
     fn smoke_verify_finality_update_false() {
         let network = "kiln";
-        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
+        let beacon_rpc_client =
+            BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let light_client_update_period_99 = beacon_rpc_client.get_light_client_update(99).unwrap();
         let light_client_update_period_100 =
             beacon_rpc_client.get_light_client_update(100).unwrap();
