@@ -27,7 +27,7 @@ pub struct Config {
     // Account id for eth client contract on NEAR
     pub contract_account_id: String,
 
-    // The Ethereum network name (main, kiln, ropsten, goerli)
+    // The Ethereum network name (mainnet, kiln, ropsten, goerli)
     pub network: String,
 
     // Contract type (near, dao, file)
@@ -133,7 +133,7 @@ impl Config {
 
     fn check_network_types(&self) {
         // check `network`
-        if !(self.network == "main"
+        if !(self.network == "mainnet"
             || self.network == "kiln"
             || self.network == "ropsten"
             || self.network == "goerli")
