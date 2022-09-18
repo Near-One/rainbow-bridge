@@ -11,6 +11,6 @@ pub mod logger;
 pub mod near_rpc_client;
 pub mod relay_errors;
 
+pub mod prometheus_metrics;
 #[cfg(test)]
 pub mod test_utils;
-pub mod prometheus_metrics;

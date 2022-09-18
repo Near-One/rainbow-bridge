@@ -40,6 +40,24 @@ jobs:
               ./test.sh
             timeout-minutes: 40
 
+          - job-name: test eth2near/contract_wrapper
+            cmd: |
+              cd eth2near/contract_wrapper
+              ./test.sh
+            timeout-minutes: 20
+
+          - job-name: test eth2near/finality-update-verify
+            cmd: |
+              cd eth2near/finality-update-verify
+              ./test.sh
+            timeout-minutes: 20
+
+          - job-name: test eth2near/eth2-to-near-block-relay-rs
+            cmd: |
+              cd eth2near/eth2near-block-relay-rs
+              ./test.sh
+            timeout-minutes: 20
+
     name: ${{ matrix.job-name }}
     steps:
       - name: Clone the repository

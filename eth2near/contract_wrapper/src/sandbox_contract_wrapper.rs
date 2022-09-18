@@ -23,9 +23,9 @@ pub struct SandboxContractWrapper {
 }
 
 impl SandboxContractWrapper {
-    pub fn new(signer_account: Account, contract: Contract, worker: Worker<Sandbox>) -> Self {
+    pub fn new(signer_account: &Account, contract: Contract, worker: Worker<Sandbox>) -> Self {
         SandboxContractWrapper {
-            signer_account,
+            signer_account: signer_account.clone(),
             contract,
             worker,
         }
