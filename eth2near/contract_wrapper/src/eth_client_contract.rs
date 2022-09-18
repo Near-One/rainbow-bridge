@@ -179,8 +179,6 @@ mod tests {
     use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::BlockHeader;
     use tokio::runtime::Runtime;
-    use workspaces::prelude::*;
-    use workspaces::{network::Sandbox, Account, Contract, Worker};
 
     // TODO: use a more clean approach to include binary
     const WASM_FILEPATH: &str =
@@ -244,7 +242,7 @@ mod tests {
         }
     }
 
-    fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
+    fn create_contract() -> (workspaces::Account, workspaces::Contract) {
         let rt = Runtime::new().unwrap();
 
         let worker = rt.block_on(workspaces::sandbox()).unwrap();
@@ -256,7 +254,7 @@ mod tests {
         let relay_account = rt
             .block_on(
                 owner
-                    .create_subaccount(&worker, "relay_account")
+                    .create_subaccount("relay_account")
                     .initial_balance(30 * near_sdk::ONE_NEAR)
                     .transact(),
             )
@@ -264,7 +262,7 @@ mod tests {
             .into_result()
             .unwrap();
 
-        (relay_account, contract, worker)
+        (relay_account, contract)
     }
 
     fn init_contract(eth_client_contract: &EthClientContract, eth_state: &mut EthState) {
@@ -315,13 +313,12 @@ mod tests {
 
     #[test]
     fn test_smoke_eth_client_contract_wrapper() {
-        let (relay_account, contract, worker) = create_contract();
+        let (relay_account, contract) = create_contract();
 
         // Use contract with `contract` as a signer for the `init()` call
         let contract_wrapper = Box::new(SandboxContractWrapper::new(
             contract.as_account(),
             contract.clone(),
-            worker.clone(),
         ));
         let eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
 
@@ -337,7 +334,6 @@ mod tests {
         let contract_wrapper = Box::new(SandboxContractWrapper::new(
             &relay_account,
             contract,
-            worker,
         ));
         let mut eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
         eth_client_contract.register_submitter().unwrap();

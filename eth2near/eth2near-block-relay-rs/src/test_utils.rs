@@ -12,8 +12,6 @@ use eth_types::BlockHeader;
 use std::{thread, time};
 use tokio::runtime::Runtime;
 use tree_hash::TreeHash;
-use workspaces::prelude::*;
-use workspaces::{network::Sandbox, Account, Contract, Worker};
 
 pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
     let mut json_file_path = std::env::current_exe().unwrap();
@@ -163,7 +161,7 @@ pub fn init_contract_from_specific_slot(
 
 const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
 
-fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
+fn create_contract() -> (workspaces::Account, workspaces::Contract) {
     let mut rt = Runtime::new().unwrap();
 
     let worker = rt.block_on(workspaces::sandbox()).unwrap();
@@ -175,7 +173,7 @@ fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
     let relay_account = rt
         .block_on(
             owner
-                .create_subaccount(&worker, "relay_account")
+                .create_subaccount("relay_account")
                 .initial_balance(30 * near_sdk::ONE_NEAR)
                 .transact(),
         )
@@ -183,7 +181,7 @@ fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
         .into_result()
         .unwrap();
 
-    (relay_account, contract, worker)
+    (relay_account, contract)
 }
 
 fn get_config() -> Config {
@@ -213,11 +211,10 @@ fn get_config() -> Config {
 }
 
 pub fn get_client_contract(from_file: bool) -> Box<dyn EthClientContractTrait> {
-    let (relay_account, contract, worker) = create_contract();
+    let (relay_account, contract) = create_contract();
     let contract_wrapper = Box::new(SandboxContractWrapper::new(
         &relay_account,
         contract,
-        worker,
     ));
     let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 
@@ -267,11 +264,10 @@ pub fn get_relay_with_update_from_file(
 pub fn get_relay_from_slot(enable_binsearch: bool, slot: u64) -> Eth2NearRelay {
     let config = get_config();
 
-    let (relay_account, contract, worker) = create_contract();
+    let (relay_account, contract) = create_contract();
     let contract_wrapper = Box::new(SandboxContractWrapper::new(
         &relay_account,
         contract,
-        worker,
     ));
     let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 
