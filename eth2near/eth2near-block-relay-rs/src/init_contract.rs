@@ -13,7 +13,11 @@ pub fn init_contract(
 ) -> Result<(), Box<dyn std::error::Error>> {
     info!(target: "relay", "=== Contract initialization ===");
 
-    let beacon_rpc_client = BeaconRPCClient::new(&config.beacon_endpoint);
+    let beacon_rpc_client = BeaconRPCClient::new(
+        &config.beacon_endpoint,
+        config.eth_requests_timeout_seconds,
+        config.state_requests_timeout_seconds,
+    );
     let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
 
     let start_slot = beacon_rpc_client.get_last_finalized_slot_number().unwrap();

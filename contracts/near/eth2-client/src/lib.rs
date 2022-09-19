@@ -230,6 +230,20 @@ impl Eth2Client {
         }
     }
 
+    pub fn is_submitter_registered(&self, account_id: AccountId) -> bool {
+        self.submitters.contains_key(&account_id)
+    }
+
+    pub fn get_num_of_submitted_blocks_by_account(&self, account_id: AccountId) -> u32 {
+        self.submitters
+            .get(&account_id)
+            .unwrap_or_else(|| env::panic_str("The account is not registered"))
+    }
+
+    pub fn get_max_submitted_blocks_by_account(&self) -> u32 {
+        self.max_submitted_blocks_by_account
+    }
+
     pub fn submit_beacon_chain_light_client_update(
         &mut self,
         #[serializer(borsh)] update: LightClientUpdate,

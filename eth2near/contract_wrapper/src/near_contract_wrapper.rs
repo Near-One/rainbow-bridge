@@ -122,6 +122,11 @@ impl ContractWrapper for NearContractWrapper {
         };
 
         let num_blocks_in_batch = method_name.len() as u64;
+
+        if num_blocks_in_batch == 0 {
+            return Err(Box::new(crate::errors::TryToSubmitZeroHeaderError));
+        }
+
         let attached_gas_per_promise_in_batch = gas.unwrap_or(MAX_GAS) / num_blocks_in_batch;
         let mut actions = Vec::new();
 
@@ -147,7 +152,11 @@ impl ContractWrapper for NearContractWrapper {
             signed_transaction: transaction.sign(&self.signer),
         };
 
-        Ok(rt.block_on(self.client.call(&request))?)
+        let request_result = rt.block_on(async_std::future::timeout(
+            std::time::Duration::from_secs(600),
+            self.client.call(&request),
+        ))?;
+        Ok(request_result?)
     }
 
     fn call_change_method(

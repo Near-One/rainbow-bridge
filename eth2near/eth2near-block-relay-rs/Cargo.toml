@@ -26,6 +26,7 @@ hex = "*"
 toml = "0.5.9"
 finality-update-verify = { path = "../finality-update-verify" }
 atomic_refcell = "0.1.8"
+bitvec = "*"
 
 near-jsonrpc-client = "0.4.0-beta.0"
 near-crypto = "0.14.0"
@@ -39,7 +40,7 @@ warp = "0.2"
 thread = "*"
 
 [dev-dependencies]
-workspaces = "0.4.0"
+workspaces = "0.5.0"
 
 [patch]
 [patch.crates-io]

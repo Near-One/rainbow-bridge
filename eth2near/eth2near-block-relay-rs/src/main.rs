@@ -24,17 +24,17 @@ struct Arguments {
     /// The eth contract on Near will be initialized
     init_contract: bool,
 
-    #[clap(long, action = ArgAction::SetTrue)]
-    /// Relay will be registered in contract
-    register_relay: bool,
-
     #[clap(long, default_value_t = String::from("info"))]
     /// Log level (trace, debug, info, warn, error)
     log_level: String,
 
-    #[clap(long, action = ArgAction::SetTrue)]
+    #[clap(long, action = ArgAction::Set, default_value_t = true)]
     /// Enable binary search for last slot ETH block on NEAR
     enable_binary_search: bool,
+
+    #[clap(long, action = ArgAction::Set, default_value_t = true)]
+    /// Submit to ETH2 Client only blocks before last finalized block on NEAR
+    submit_only_finalized_blocks: bool,
 }
 
 fn get_eth_contract_wrapper(config: &Config) -> Box<dyn ContractWrapper> {
@@ -102,15 +102,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if args.init_contract {
         let mut eth_client_contract = EthClientContract::new(get_eth_contract_wrapper(&config));
         init_contract(&config, &mut eth_client_contract).unwrap();
+    } else {
+        let mut eth2near_relay = Eth2NearRelay::init(
+            &config,
+            get_eth_client_contract(&config),
+            args.enable_binary_search,
+            args.submit_only_finalized_blocks,
+        );
+
+        eth2near_relay.run(None);
     }
 
-    let mut eth2near_relay = Eth2NearRelay::init(
-        &config,
-        get_eth_client_contract(&config),
-        args.enable_binary_search,
-        args.register_relay,
-    );
-
-    eth2near_relay.run(None);
     Ok(())
 }

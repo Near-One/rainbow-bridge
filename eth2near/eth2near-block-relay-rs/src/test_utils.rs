@@ -12,8 +12,6 @@ use eth_types::BlockHeader;
 use std::{thread, time};
 use tokio::runtime::Runtime;
 use tree_hash::TreeHash;
-use workspaces::prelude::*;
-use workspaces::{network::Sandbox, Account, Contract, Worker};
 
 pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
     let mut json_file_path = std::env::current_exe().unwrap();
@@ -93,6 +91,8 @@ pub fn init_contract_from_specific_slot(
     const PATH_TO_NEXT_SYNC_COMMITTEE: &str =
         "../contract_wrapper/data/next_sync_committee_kiln_period_134.json";
     const NETWORK: &str = "kiln";
+    const TIMEOUT_SECONDS: u64 = 30;
+    const TIMEOUT_STATE_SECONDS: u64 = 1000;
 
     let current_sync_committee: SyncCommittee = serde_json::from_str(
         &std::fs::read_to_string(PATH_TO_CURRENT_SYNC_COMMITTEE).expect("Unable to read file"),
@@ -103,7 +103,11 @@ pub fn init_contract_from_specific_slot(
     )
     .unwrap();
 
-    let beacon_rpc_client = BeaconRPCClient::new("https://lodestar-kiln.chainsafe.io");
+    let beacon_rpc_client = BeaconRPCClient::new(
+        "https://lodestar-kiln.chainsafe.io",
+        TIMEOUT_SECONDS,
+        TIMEOUT_STATE_SECONDS,
+    );
     let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
 
     let finality_header = beacon_rpc_client
@@ -157,7 +161,7 @@ pub fn init_contract_from_specific_slot(
 
 const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
 
-fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
+fn create_contract() -> (workspaces::Account, workspaces::Contract) {
     let mut rt = Runtime::new().unwrap();
 
     let worker = rt.block_on(workspaces::sandbox()).unwrap();
@@ -169,7 +173,7 @@ fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
     let relay_account = rt
         .block_on(
             owner
-                .create_subaccount(&worker, "relay_account")
+                .create_subaccount("relay_account")
                 .initial_balance(30 * near_sdk::ONE_NEAR)
                 .transact(),
         )
@@ -177,7 +181,7 @@ fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
         .into_result()
         .unwrap();
 
-    (relay_account, contract, worker)
+    (relay_account, contract)
 }
 
 fn get_config() -> Config {
@@ -194,17 +198,24 @@ fn get_config() -> Config {
         light_client_updates_submission_frequency_in_epochs: 1,
         max_blocks_for_finalization: 5000,
         near_network_id: "testnet".to_string(),
-        prometheus_metrics_port: 32221,
+        prometheus_metrics_port: Some(32221),
         dao_contract_account_id: None,
         output_dir: None,
         path_to_attested_state: None,
         path_to_finality_state: None,
+        eth_requests_timeout_seconds: 30,
+        state_requests_timeout_seconds: 1000,
+        sleep_time_after_submission_secs: 5,
+        sleep_time_on_sync_secs: 30,
     }
 }
 
 pub fn get_client_contract(from_file: bool) -> Box<dyn EthClientContractTrait> {
-    let (relay_account, contract, worker) = create_contract();
-    let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
+    let (relay_account, contract) = create_contract();
+    let contract_wrapper = Box::new(SandboxContractWrapper::new(
+        &relay_account,
+        contract,
+    ));
     let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 
     let config = get_config();
@@ -222,7 +233,7 @@ pub fn get_relay(enable_binsearch: bool, from_file: bool) -> Eth2NearRelay {
         &config,
         get_client_contract(from_file),
         enable_binsearch,
-        true,
+        false,
     )
 }
 
@@ -244,15 +255,18 @@ pub fn get_relay_with_update_from_file(
         &config,
         get_client_contract(from_file),
         enable_binsearch,
-        true,
+        false,
     )
 }
 
 pub fn get_relay_from_slot(enable_binsearch: bool, slot: u64) -> Eth2NearRelay {
     let config = get_config();
 
-    let (relay_account, contract, worker) = create_contract();
-    let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
+    let (relay_account, contract) = create_contract();
+    let contract_wrapper = Box::new(SandboxContractWrapper::new(
+        &relay_account,
+        contract,
+    ));
     let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 
     init_contract_from_specific_slot(&mut eth_client_contract, slot);
@@ -261,6 +275,6 @@ pub fn get_relay_from_slot(enable_binsearch: bool, slot: u64) -> Eth2NearRelay {
         &config,
         Box::new(eth_client_contract),
         enable_binsearch,
-        true,
+        false,
     )
 }

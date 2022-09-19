@@ -10,29 +10,26 @@ use near_primitives::views::{
 use near_sdk::{Balance, Gas};
 use std::error::Error;
 use tokio::runtime::Runtime;
-use workspaces::result::CallExecutionDetails;
-use workspaces::{network::Sandbox, Account, Contract, Worker};
+use workspaces::{Account, Contract};
 
 pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
 
-//https://github.com/near/workspaces-rs
+// Implemented using https://github.com/near/workspaces-rs
 pub struct SandboxContractWrapper {
     signer_account: Account,
     contract: Contract,
-    worker: Worker<Sandbox>,
 }
 
 impl SandboxContractWrapper {
-    pub fn new(signer_account: Account, contract: Contract, worker: Worker<Sandbox>) -> Self {
+    pub fn new(signer_account: &Account, contract: Contract) -> Self {
         SandboxContractWrapper {
-            signer_account,
+            signer_account: signer_account.clone(),
             contract,
-            worker,
         }
     }
 
     fn get_final_execution_outcome_view_from_call_execution_details(
-        call_execution_details: CallExecutionDetails,
+        call_execution_details: workspaces::result::ExecutionFinalResult,
     ) -> FinalExecutionOutcomeView {
         let status = match call_execution_details.is_success() {
             true => FinalExecutionStatus::SuccessValue("".to_string()),
@@ -85,7 +82,7 @@ impl ContractWrapper for SandboxContractWrapper {
         let rt = Runtime::new()?;
 
         Ok(rt
-            .block_on(self.contract.view(&self.worker, &method_name, args))
+            .block_on(self.contract.view(&method_name, args))
             .unwrap()
             .result)
     }
@@ -128,7 +125,7 @@ impl ContractWrapper for SandboxContractWrapper {
             Self::get_final_execution_outcome_view_from_call_execution_details(
                 rt.block_on(
                     self.signer_account
-                        .call(&self.worker, self.contract.id(), &method_name)
+                        .call(self.contract.id(), &method_name)
                         .deposit(match deposit {
                             Some(deposit) => deposit,
                             None => 0,

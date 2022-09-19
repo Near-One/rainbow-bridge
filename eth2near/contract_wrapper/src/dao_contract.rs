@@ -178,6 +178,10 @@ mod tests {
             panic!("Unexpected request of AccountId");
         }
 
+        fn get_signer_account_id(&self) -> AccountId {
+            panic!("Unexpected request of signer AccountId");
+        }
+
         fn call_view_function(
             &self,
             method_name: String,
