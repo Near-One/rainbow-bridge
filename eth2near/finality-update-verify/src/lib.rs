@@ -1,20 +1,18 @@
-use eth2_utility::consensus::{
-    DOMAIN_SYNC_COMMITTEE,
-    MIN_SYNC_COMMITTEE_PARTICIPANTS,
-    Network,
-    NetworkConfig,
-    compute_domain,
-    compute_signing_root,
-    get_participant_pubkeys,
-};
-use eth_types::eth2::{BeaconBlockHeader, LightClientUpdate, SyncCommittee};
-use std::str::FromStr;
-use std::error::Error;
-use bls;
-use eth_types::H256;
-use types::{Hash256, Slot};
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
+use bls;
+use eth2_utility::consensus::{
+    compute_domain, compute_signing_root, get_participant_pubkeys, Network, NetworkConfig,
+    DOMAIN_SYNC_COMMITTEE, MIN_SYNC_COMMITTEE_PARTICIPANTS,
+};
+use eth_types::eth2::{BeaconBlockHeader, LightClientUpdate, SyncCommittee};
+use eth_types::H256;
+use std::error::Error;
+use std::str::FromStr;
+use types::{Hash256, Slot};
+
+#[cfg(test)]
+pub mod config_for_tests;
 
 fn h256_to_hash256(hash: H256) -> Hash256 {
     Hash256::from_slice(hash.0.as_bytes())
@@ -24,7 +22,9 @@ fn tree_hash_h256_to_eth_type_h256(hash: tree_hash::Hash256) -> eth_types::H256 
     eth_types::H256::from(hash.0.as_slice())
 }
 
-fn to_lighthouse_beacon_block_header(bridge_beacon_block_header: &BeaconBlockHeader) -> types::BeaconBlockHeader {
+fn to_lighthouse_beacon_block_header(
+    bridge_beacon_block_header: &BeaconBlockHeader,
+) -> types::BeaconBlockHeader {
     types::BeaconBlockHeader {
         slot: Slot::from(bridge_beacon_block_header.slot),
         proposer_index: bridge_beacon_block_header.proposer_index,
@@ -34,7 +34,11 @@ fn to_lighthouse_beacon_block_header(bridge_beacon_block_header: &BeaconBlockHea
     }
 }
 
-pub fn is_correct_finality_update(network: &str, light_client_update: &LightClientUpdate, sync_committee: SyncCommittee) -> Result<bool, Box<dyn Error>> {
+pub fn is_correct_finality_update(
+    network: &str,
+    light_client_update: &LightClientUpdate,
+    sync_committee: SyncCommittee,
+) -> Result<bool, Box<dyn Error>> {
     let network = Network::from_str(network)?;
     let config = NetworkConfig::new(&network);
 
@@ -49,7 +53,8 @@ pub fn is_correct_finality_update(network: &str, light_client_update: &LightClie
         return Ok(false);
     }
 
-    let participant_pubkeys = get_participant_pubkeys(&sync_committee.pubkeys.0, &sync_committee_bits);
+    let participant_pubkeys =
+        get_participant_pubkeys(&sync_committee.pubkeys.0, &sync_committee_bits);
     let fork_version = config
         .compute_fork_version_by_slot(light_client_update.signature_slot)
         .expect("Unsupported fork");
@@ -59,46 +64,83 @@ pub fn is_correct_finality_update(network: &str, light_client_update: &LightClie
         config.genesis_validators_root.into(),
     );
 
-    let attested_beacon_header_root = tree_hash::TreeHash::tree_hash_root(&to_lighthouse_beacon_block_header(&light_client_update.attested_beacon_header));
+    let attested_beacon_header_root = tree_hash::TreeHash::tree_hash_root(
+        &to_lighthouse_beacon_block_header(&light_client_update.attested_beacon_header),
+    );
     let signing_root = compute_signing_root(
         tree_hash_h256_to_eth_type_h256(attested_beacon_header_root),
         domain,
     );
 
-    let aggregate_signature =
-        bls::AggregateSignature::deserialize(&light_client_update.sync_aggregate.sync_committee_signature.0).map_err(|_err| -> String {"Error on aggregate signature deserialization".to_string()})?;
+    let aggregate_signature = bls::AggregateSignature::deserialize(
+        &light_client_update
+            .sync_aggregate
+            .sync_committee_signature
+            .0,
+    )
+    .map_err(|_err| -> String { "Error on aggregate signature deserialization".to_string() })?;
     let mut pubkeys: Vec<bls::PublicKey> = vec![];
     for pubkey in participant_pubkeys {
-        pubkeys.push(bls::PublicKey::deserialize(&pubkey.0).map_err(|_err| -> String {"Error on public key deserialization".to_string()})?);
+        pubkeys.push(
+            bls::PublicKey::deserialize(&pubkey.0)
+                .map_err(|_err| -> String { "Error on public key deserialization".to_string() })?,
+        );
     }
 
-    Ok(aggregate_signature.fast_aggregate_verify(h256_to_hash256(signing_root), &pubkeys.iter().collect::<Vec<_>>()))
+    Ok(aggregate_signature.fast_aggregate_verify(
+        h256_to_hash256(signing_root),
+        &pubkeys.iter().collect::<Vec<_>>(),
+    ))
 }
 
 #[cfg(test)]
 mod tests {
-    use eth2_to_near_relay::beacon_rpc_client::BeaconRPCClient;
     use crate::is_correct_finality_update;
+    use crate::config_for_tests::ConfigForTests;
+    use eth_types::eth2::LightClientUpdate;
+    use eth_types::eth2::SyncCommittee;
 
-    const BEACON_ENDPOINT: &str = "https://lodestar-kiln.chainsafe.io";
-
-    #[test]
-    fn smoke_verify_finality_update_true() {
-        let network = "kiln";
-        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
-        let light_client_update_period_99 = beacon_rpc_client.get_light_client_update(99).unwrap();
-        let light_client_update_period_100 = beacon_rpc_client.get_light_client_update(100).unwrap();
-
-        assert!(is_correct_finality_update(network, &light_client_update_period_100, light_client_update_period_99.sync_committee_update.unwrap().next_sync_committee).unwrap());
+    fn get_config() -> ConfigForTests {
+        ConfigForTests::load_from_toml(
+            "config_for_tests.toml"
+                .try_into()
+                .unwrap(),
+        )
     }
 
     #[test]
-    fn smoke_verify_finality_update_false() {
-        let network = "kiln";
-        let beacon_rpc_client = BeaconRPCClient::new(BEACON_ENDPOINT);
-        let light_client_update_period_99 = beacon_rpc_client.get_light_client_update(99).unwrap();
-        let light_client_update_period_100 = beacon_rpc_client.get_light_client_update(100).unwrap();
+    fn smoke_verify_finality_update() {
+        let config = get_config();
 
-        assert!(!is_correct_finality_update(network, &light_client_update_period_99, light_client_update_period_100.sync_committee_update.unwrap().next_sync_committee).unwrap());
+        let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
+            &std::fs::read_to_string(config.path_to_light_client_updates)
+                .expect("Unable to read file"),
+        )
+        .unwrap();
+
+        let current_sync_committee: SyncCommittee = serde_json::from_str(
+            &std::fs::read_to_string(config.path_to_current_sync_committee.clone())
+                .expect("Unable to read file"),
+        )
+        .unwrap();
+        let next_sync_committee: SyncCommittee = serde_json::from_str(
+            &std::fs::read_to_string(config.path_to_next_sync_committee.clone())
+                .expect("Unable to read file"),
+        )
+        .unwrap();
+
+        assert!(is_correct_finality_update(
+            &config.network_name,
+            &light_client_updates[0],
+            current_sync_committee
+        )
+        .unwrap());
+
+        assert!(!is_correct_finality_update(
+            &config.network_name,
+            &light_client_updates[0],
+            next_sync_committee
+        )
+        .unwrap());
     }
 }

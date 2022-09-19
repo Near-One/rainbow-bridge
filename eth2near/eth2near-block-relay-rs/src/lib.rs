@@ -14,7 +14,7 @@ pub mod relay_errors;
 pub mod near_rpc_client;
 
 #[cfg(test)]
-pub mod test_utils;
+pub mod config_for_tests;
 
 #[cfg(test)]
-pub mod config_for_tests;
+pub mod test_utils;
