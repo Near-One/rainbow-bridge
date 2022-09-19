@@ -1,4 +1,4 @@
-use crate::beacon_rpc_client::{BeaconRPCClient, LightClientSnapshotWithProof};
+use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
 use crate::eth1_rpc_client::Eth1RPCClient;
 use contract_wrapper::eth_client_contract::EthClientContract;
@@ -8,6 +8,7 @@ use eth_types::BlockHeader;
 use log::info;
 use std::{thread, time};
 use tree_hash::TreeHash;
+use crate::light_client_snapshot_with_proof::LightClientSnapshotWithProof;
 
 const CURRENT_SYNC_COMMITTEE_INDEX: u32 = 54;
 const CURRENT_SYNC_COMMITTEE_TREE_DEPTH: u32 = floorlog2(CURRENT_SYNC_COMMITTEE_INDEX);

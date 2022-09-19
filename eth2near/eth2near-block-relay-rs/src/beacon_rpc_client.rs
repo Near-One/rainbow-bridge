@@ -1,4 +1,5 @@
 use crate::execution_block_proof::ExecutionBlockProof;
+use crate::light_client_snapshot_with_proof::LightClientSnapshotWithProof;
 use crate::relay_errors::{
     ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError, NoBlockForSlotError,
     SignatureSlotNotFoundError,
@@ -21,12 +22,6 @@ use std::string::String;
 use std::time::Duration;
 use types::MainnetEthSpec;
 use types::{BeaconBlockBody, BeaconState};
-
-pub struct LightClientSnapshotWithProof {
-    pub beacon_header: BeaconBlockHeader,
-    pub current_sync_committee: SyncCommittee,
-    pub current_sync_committee_branch: Vec<H256>,
-}
 
 /// `BeaconRPCClient` allows getting beacon block body, beacon block header
 /// and light client updates
