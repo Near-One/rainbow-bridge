@@ -1,6 +1,7 @@
 use eth_types::eth2::{LightClientState, LightClientUpdate};
 use eth_types::{BlockHeader, H256};
 use near_primitives::views::FinalExecutionOutcomeView;
+use near_primitives::types::AccountId;
 use near_sdk::Balance;
 use std::error::Error;
 use std::vec::Vec;
@@ -23,5 +24,6 @@ pub trait EthClientContractTrait {
 
     fn get_min_deposit(&self) -> Result<Balance, Box<dyn Error>>;
     fn register_submitter(&self) -> Result<FinalExecutionOutcomeView, Box<dyn Error>>;
+    fn is_submitter_registered(&self, account_id: Option<AccountId>) -> Result<bool, Box<dyn Error>>;
     fn get_light_client_state(&self) -> Result<LightClientState, Box<dyn Error>>;
 }

@@ -161,6 +161,18 @@ impl EthClientContractTrait for EthClientContract {
         )
     }
 
+    fn is_submitter_registered(
+        &self,
+        account_id: Option<AccountId>,
+    ) -> Result<bool, Box<dyn Error>> {
+        let response = self.contract_wrapper.call_view_function(
+            "is_submitter_registered".to_string(),
+            json!({"account_id": account_id.unwrap_or(self.contract_wrapper.get_signer_account_id())}).to_string().into_bytes(),
+        )?;
+
+        Ok(serde_json::from_slice(response.as_slice())?)
+    }
+
     fn get_light_client_state(&self) -> Result<LightClientState, Box<dyn Error>> {
         let result = self
             .contract_wrapper

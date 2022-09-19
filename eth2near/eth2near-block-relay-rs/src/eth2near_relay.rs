@@ -72,7 +72,6 @@ impl Eth2NearRelay {
         config: &Config,
         eth_contract: Box<dyn EthClientContractTrait>,
         enable_binsearch: bool,
-        register_relay: bool,
         submit_only_finalized_blocks: bool,
     ) -> Self {
         info!(target: "relay", "=== Relay initialization === ");
@@ -103,7 +102,12 @@ impl Eth2NearRelay {
             sleep_time_on_sync_secs: config.sleep_time_on_sync_secs,
             sleep_time_after_submission_secs: config.sleep_time_after_submission_secs,
         };
-        if register_relay {
+
+        if !eth2near_relay
+            .eth_client_contract
+            .is_submitter_registered(None)
+            .unwrap_or_else(|e| panic!("Failed to check if the submitter registered. Err {}", e))
+        {
             eth2near_relay
                 .eth_client_contract
                 .register_submitter()
