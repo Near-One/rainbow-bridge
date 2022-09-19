@@ -149,23 +149,14 @@ fn create_contract(config_for_test: &ConfigForTests) -> (Account, Contract, Work
     let rt = Runtime::new().unwrap();
 
     let worker = rt.block_on(workspaces::sandbox()).unwrap();
-    let wasm = std::fs::read(&config_for_test.wasm_filepath).unwrap();
-    let contract = rt.block_on(worker.dev_deploy(&wasm)).unwrap();
 
     // create accounts
     let owner = worker.root_account().unwrap();
-    let relay_account = rt
-        .block_on(
-            owner
-                .create_subaccount(&worker, "relay_account")
-                .initial_balance(30 * near_sdk::ONE_NEAR)
-                .transact(),
-        )
-        .unwrap()
-        .into_result()
-        .unwrap();
 
-    (relay_account, contract, worker)
+    let wasm = std::fs::read(&config_for_test.wasm_filepath).unwrap();
+    let contract = rt.block_on(owner.deploy(&worker, &wasm)).unwrap().unwrap();
+
+    (owner, contract, worker)
 }
 
 fn get_config(config_for_test: &ConfigForTests) -> Config {

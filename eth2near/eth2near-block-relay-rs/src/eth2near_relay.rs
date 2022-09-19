@@ -675,6 +675,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_send_light_client_update() {
         let config_for_test = get_config();
 
@@ -872,6 +873,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_send_regular_light_client_update() {
         let config_for_test = get_config();
         let mut relay = get_relay(true, false, &config_for_test);
