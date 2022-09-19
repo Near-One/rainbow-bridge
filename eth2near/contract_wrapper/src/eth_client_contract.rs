@@ -179,10 +179,9 @@ mod tests {
     use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::BlockHeader;
     use tokio::runtime::Runtime;
-    use workspaces::prelude::*;
     use workspaces::{network::Sandbox, Account, Contract, Worker};
 
-    const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
+    const WASM_FILEPATH: &str = "../../contracts/near/target/wasm32-unknown-unknown/release/eth2_client.wasm";
 
     struct EthState {
         pub execution_blocks: Vec<BlockHeader>,
@@ -247,22 +246,12 @@ mod tests {
 
         let worker = rt.block_on(workspaces::sandbox()).unwrap();
         let wasm = std::fs::read(WASM_FILEPATH).unwrap();
-        let contract = rt.block_on(worker.dev_deploy(&wasm)).unwrap();
 
         // create accounts
         let owner = worker.root_account().unwrap();
-        let relay_account = rt
-            .block_on(
-                owner
-                    .create_subaccount(&worker, "relay_account")
-                    .initial_balance(30 * near_sdk::ONE_NEAR)
-                    .transact(),
-            )
-            .unwrap()
-            .into_result()
-            .unwrap();
+        let contract = rt.block_on(owner.deploy(&worker, &wasm)).unwrap().unwrap();
 
-        (relay_account, contract, worker)
+        (owner, contract, worker)
     }
 
     fn init_contract(eth_client_contract: &EthClientContract, eth_state: &mut EthState) {
