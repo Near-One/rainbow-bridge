@@ -544,7 +544,7 @@ impl Eth2Client {
     /// Remove information about the headers that are at least as old as the given block number.
     fn gc_finalized_execution_blocks(&mut self, mut header_number: u64) {
         loop {
-            if let Some(_) = self.finalized_execution_blocks.remove(&header_number) {
+            if self.finalized_execution_blocks.remove(&header_number).is_some() {
                 if header_number == 0 {
                     break;
                 } else {
