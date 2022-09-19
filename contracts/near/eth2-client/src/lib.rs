@@ -426,7 +426,7 @@ impl Eth2Client {
             get_participant_pubkeys(&sync_committee.pubkeys.0, &sync_committee_bits);
         let fork_version = config
             .compute_fork_version_by_slot(update.signature_slot)
-            .unwrap_or_else(|| env::panic_str!("Unsupported fork"));
+            .unwrap_or_else(|| env::panic_str("Unsupported fork"));
         let domain = compute_domain(
             DOMAIN_SYNC_COMMITTEE,
             fork_version,
