@@ -41,32 +41,32 @@ pub fn verify_light_client_snapshot(
 pub fn init_contract(
     config: &Config,
     eth_client_contract: &mut EthClientContract,
-    init_block_root: String,
+    mut init_block_root: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
     info!(target: "relay", "=== Contract initialization ===");
-
-    if init_block_root.is_empty() {
-        return Err("init_block_root shouldn't be empty".into());
-    }
 
     let beacon_rpc_client = BeaconRPCClient::new(
         &config.beacon_endpoint,
         config.eth_requests_timeout_seconds,
         config.state_requests_timeout_seconds,
     );
+
+    if init_block_root.is_empty() {
+        init_block_root = beacon_rpc_client.get_checkpoint_root().expect("Fail to get last checkpoint");
+    }
+
     let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
 
     let light_client_update = beacon_rpc_client
         .get_finality_light_client_update_with_sync_commity_update()
         .unwrap();
-    let block_id = format!(
-        "{}",
-        light_client_update
-            .finality_update
-            .header_update
-            .beacon_header
-            .slot
-    );
+    let finality_slot = light_client_update
+        .finality_update
+        .header_update
+        .beacon_header
+        .slot;
+
+    let block_id = format!("{}", finality_slot);
     let finalized_header: ExtendedBeaconBlockHeader =
         ExtendedBeaconBlockHeader::from(light_client_update.finality_update.header_update);
     let finalized_body = beacon_rpc_client
@@ -90,6 +90,12 @@ pub fn init_contract(
     let light_client_snapshot = beacon_rpc_client
         .get_bootstrap(init_block_root.clone())
         .expect("Unable to fetch bootstrap state");
+
+    if BeaconRPCClient::get_period_for_slot(light_client_snapshot.beacon_header.slot) !=
+        BeaconRPCClient::get_period_for_slot(finality_slot) {
+        panic!("Period for init_block_root different from current period. Please use snapshot for current period");
+    }
+
     if !verify_light_client_snapshot(init_block_root, &light_client_snapshot) {
         return Err("Invalid light client snapshot".into());
     }

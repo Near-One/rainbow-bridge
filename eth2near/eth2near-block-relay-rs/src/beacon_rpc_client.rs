@@ -171,6 +171,14 @@ impl BeaconRPCClient {
         })
     }
 
+    pub fn get_checkpoint_root(&self) -> Result<String, Box<dyn Error>> {
+        let url = format!("{}/eth/v1/beacon/states/finalized/finality_checkpoints", self.endpoint_url);
+        let checkpoint_json_str = self.get_json_from_raw_request(&url)?;
+        let parsed_json: Value = serde_json::from_str(&checkpoint_json_str)?;
+
+        Ok(parsed_json["data"]["finalized"]["root"].to_string())
+    }
+
     /// Return the last finalized slot in the Beacon chain
     pub fn get_last_finalized_slot_number(&self) -> Result<types::Slot, Box<dyn Error>> {
         Ok(self.get_beacon_block_header_for_block_id("finalized")?.slot)
