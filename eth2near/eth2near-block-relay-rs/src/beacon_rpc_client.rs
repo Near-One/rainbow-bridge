@@ -176,7 +176,7 @@ impl BeaconRPCClient {
         let checkpoint_json_str = self.get_json_from_raw_request(&url)?;
         let parsed_json: Value = serde_json::from_str(&checkpoint_json_str)?;
 
-        Ok(parsed_json["data"]["finalized"]["root"].to_string())
+        Ok(trim_quotes(parsed_json["data"]["finalized"]["root"].to_string()))
     }
 
     /// Return the last finalized slot in the Beacon chain
