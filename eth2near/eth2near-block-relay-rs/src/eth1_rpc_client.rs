@@ -74,9 +74,9 @@ impl Eth1RPCClient {
         let is_sync = val["result"].as_bool();
         if let Some(is_sync_val) = is_sync {
             return Ok(is_sync_val);
-        } else {
-            return Ok(true);
         }
+
+        Ok(true)
     }
 }
 

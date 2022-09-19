@@ -10,11 +10,12 @@ pub mod hand_made_finality_light_client_update;
 pub mod init_contract;
 pub mod last_slot_searcher;
 pub mod logger;
-pub mod relay_errors;
 pub mod near_rpc_client;
+pub mod relay_errors;
 
 #[cfg(test)]
 pub mod config_for_tests;
 
+pub mod prometheus_metrics;
 #[cfg(test)]
 pub mod test_utils;

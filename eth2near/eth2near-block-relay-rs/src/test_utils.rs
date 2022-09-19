@@ -12,8 +12,7 @@ use eth_types::BlockHeader;
 use std::{thread, time};
 use tokio::runtime::Runtime;
 use tree_hash::TreeHash;
-use workspaces::prelude::*;
-use workspaces::{network::Sandbox, Account, Contract, Worker};
+use workspaces::{Account, Contract};
 use crate::config_for_tests::ConfigForTests;
 
 pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
@@ -84,6 +83,7 @@ pub fn init_contract_from_specific_slot(
     const TIMEOUT: u64 = 30;
     const TIMEOUT_STATE: u64 = 1000;
 
+
     let current_sync_committee: SyncCommittee = serde_json::from_str(
         &std::fs::read_to_string(config_for_test.path_to_current_sync_committee.clone()).expect("Unable to read file"),
     )
@@ -145,18 +145,17 @@ pub fn init_contract_from_specific_slot(
     thread::sleep(time::Duration::from_secs(30));
 }
 
-fn create_contract(config_for_test: &ConfigForTests) -> (Account, Contract, Worker<Sandbox>) {
+fn create_contract(config_for_test: &ConfigForTests) -> (Account, Contract) {
     let rt = Runtime::new().unwrap();
-
     let worker = rt.block_on(workspaces::sandbox()).unwrap();
 
     // create accounts
     let owner = worker.root_account().unwrap();
 
     let wasm = std::fs::read(&config_for_test.wasm_filepath).unwrap();
-    let contract = rt.block_on(owner.deploy(&worker, &wasm)).unwrap().unwrap();
+    let contract = rt.block_on(owner.deploy(&wasm)).unwrap().unwrap();
 
-    (owner, contract, worker)
+    (owner, contract)
 }
 
 fn get_config(config_for_test: &ConfigForTests) -> Config {
@@ -173,18 +172,22 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
         light_client_updates_submission_frequency_in_epochs: 1,
         max_blocks_for_finalization: 5000,
         near_network_id: "testnet".to_string(),
+        prometheus_metrics_port: Some(32221),
         dao_contract_account_id: None,
         output_dir: None,
         path_to_attested_state: None,
         path_to_finality_state: None,
-        eth_requests_timeout: 30,
-        state_requests_timeout: 1000,
+        eth_requests_timeout_seconds: 30,
+        state_requests_timeout_seconds: 1000,
+        sleep_time_on_sync_secs: 0,
+        sleep_time_after_submission_secs: 5
     }
 }
 
 pub fn get_client_contract(from_file: bool, config_for_test: &ConfigForTests) -> Box<dyn EthClientContractTrait> {
-    let (relay_account, contract, worker) = create_contract(config_for_test);
-    let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
+    let (relay_account, contract) = create_contract(config_for_test);
+    let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
+
     let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 
     let config = get_config(config_for_test);
@@ -202,7 +205,6 @@ pub fn get_relay(enable_binsearch: bool, from_file: bool, config_for_test: &Conf
         &config,
         get_client_contract(from_file, config_for_test),
         enable_binsearch,
-        true,
         false,
     )
 }
@@ -226,7 +228,6 @@ pub fn get_relay_with_update_from_file(
         &config,
         get_client_contract(from_file, config_for_test),
         enable_binsearch,
-        true,
         false,
     )
 }
@@ -234,8 +235,12 @@ pub fn get_relay_with_update_from_file(
 pub fn get_relay_from_slot(enable_binsearch: bool, slot: u64, config_for_test: &ConfigForTests) -> Eth2NearRelay {
     let config = get_config(config_for_test);
 
-    let (relay_account, contract, worker) = create_contract(config_for_test);
-    let contract_wrapper = Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
+    let (relay_account, contract) = create_contract(&config_for_test);
+    let contract_wrapper = Box::new(SandboxContractWrapper::new(
+        &relay_account,
+        contract,
+    ));
+
     let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 
     init_contract_from_specific_slot(&mut eth_client_contract, slot, config_for_test);
@@ -244,7 +249,6 @@ pub fn get_relay_from_slot(enable_binsearch: bool, slot: u64, config_for_test: &
         &config,
         Box::new(eth_client_contract),
         enable_binsearch,
-        true,
         false,
     )
 }

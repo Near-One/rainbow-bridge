@@ -1,6 +1,6 @@
+use std::error::Error;
 use std::fmt::Display;
 use std::fmt::Formatter;
-use std::error::Error;
 
 #[derive(Debug)]
 pub struct TryToSubmitZeroHeaderError;

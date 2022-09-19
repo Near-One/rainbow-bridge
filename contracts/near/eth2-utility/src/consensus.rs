@@ -65,7 +65,7 @@ impl NetworkConfig {
                     0xd2, 0x7f, 0x51, 0x1b, 0xfe, 0x95,
                 ],
                 bellatrix_fork_version: [0x02, 0x00, 0x00, 0x00],
-                bellatrix_fork_epoch: 18446744073709551615,
+                bellatrix_fork_epoch: 144896,
             },
             Network::Goerli => Self {
                 genesis_validators_root: [

@@ -15,8 +15,8 @@ pub fn init_contract(
 
     let beacon_rpc_client = BeaconRPCClient::new(
         &config.beacon_endpoint,
-        config.eth_requests_timeout,
-        config.state_requests_timeout,
+        config.eth_requests_timeout_seconds,
+        config.state_requests_timeout_seconds,
     );
     let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
 

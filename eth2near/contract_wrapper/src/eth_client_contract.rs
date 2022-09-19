@@ -161,6 +161,18 @@ impl EthClientContractTrait for EthClientContract {
         )
     }
 
+    fn is_submitter_registered(
+        &self,
+        account_id: Option<AccountId>,
+    ) -> Result<bool, Box<dyn Error>> {
+        let response = self.contract_wrapper.call_view_function(
+            "is_submitter_registered".to_string(),
+            json!({"account_id": account_id.unwrap_or(self.contract_wrapper.get_signer_account_id())}).to_string().into_bytes(),
+        )?;
+
+        Ok(serde_json::from_slice(response.as_slice())?)
+    }
+
     fn get_light_client_state(&self) -> Result<LightClientState, Box<dyn Error>> {
         let result = self
             .contract_wrapper
@@ -179,9 +191,10 @@ mod tests {
     use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::BlockHeader;
     use tokio::runtime::Runtime;
-    use workspaces::{network::Sandbox, Account, Contract, Worker};
 
-    const WASM_FILEPATH: &str = "../../contracts/near/target/wasm32-unknown-unknown/release/eth2_client.wasm";
+    // TODO: use a more clean approach to include binary
+    const WASM_FILEPATH: &str =
+        "../../contracts/near/target/wasm32-unknown-unknown/release/eth2_client.wasm";
 
     struct EthState {
         pub execution_blocks: Vec<BlockHeader>,
@@ -241,7 +254,7 @@ mod tests {
         }
     }
 
-    fn create_contract() -> (Account, Contract, Worker<Sandbox>) {
+    fn create_contract() -> (workspaces::Account, workspaces::Contract) {
         let rt = Runtime::new().unwrap();
 
         let worker = rt.block_on(workspaces::sandbox()).unwrap();
@@ -249,13 +262,14 @@ mod tests {
 
         // create accounts
         let owner = worker.root_account().unwrap();
-        let contract = rt.block_on(owner.deploy(&worker, &wasm)).unwrap().unwrap();
+        let contract = rt.block_on(owner.deploy(&wasm)).unwrap().unwrap();
 
-        (owner, contract, worker)
+        (owner, contract)
     }
 
     fn init_contract(eth_client_contract: &EthClientContract, eth_state: &mut EthState) {
-        const PATH_TO_CURRENT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_kiln_period_133.json";
+        const PATH_TO_CURRENT_SYNC_COMMITTEE: &str =
+            "./data/next_sync_committee_kiln_period_133.json";
         const PATH_TO_NEXT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_kiln_period_134.json";
         const NETWORK: &str = "kiln";
 
@@ -301,10 +315,14 @@ mod tests {
 
     #[test]
     fn test_smoke_eth_client_contract_wrapper() {
-        let (relay_account, contract, worker) = create_contract();
-        let contract_wrapper =
-            Box::new(SandboxContractWrapper::new(relay_account, contract, worker));
-        let mut eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
+        let (relay_account, contract) = create_contract();
+
+        // Use contract with `contract` as a signer for the `init()` call
+        let contract_wrapper = Box::new(SandboxContractWrapper::new(
+            contract.as_account(),
+            contract.clone(),
+        ));
+        let eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
 
         let mut eth_state = EthState::new();
 
@@ -314,6 +332,12 @@ mod tests {
             .unwrap();
         assert_eq!(first_finalized_slot, 1099360);
 
+        // Use `relay_account` as a signer for normal operations
+        let contract_wrapper = Box::new(SandboxContractWrapper::new(
+            &relay_account,
+            contract,
+        ));
+        let mut eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
         eth_client_contract.register_submitter().unwrap();
 
         let next_hash = eth_state.light_client_updates[eth_state.current_light_client_update]

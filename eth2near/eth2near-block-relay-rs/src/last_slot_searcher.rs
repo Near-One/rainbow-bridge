@@ -407,8 +407,8 @@ mod tests {
     use std::error::Error;
     use crate::config_for_tests::ConfigForTests;
 
-    const TIMEOUT: u64 = 30;
-    const TIMEOUT_STATE: u64 = 1000;
+    const TIMEOUT_SECONDS: u64 = 30;
+    const TIMEOUT_STATE_SECONDS: u64 = 1000;
 
     fn get_config() -> ConfigForTests {
         ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
@@ -452,7 +452,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client =
-            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -505,7 +505,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client =
-            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -578,7 +578,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client =
-            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -624,7 +624,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client =
-            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -680,7 +680,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client =
-            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -752,7 +752,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
-            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -768,7 +768,7 @@ mod tests {
             finalized_slot + 2,
         );
 
-        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT, TIMEOUT_STATE);
+        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         last_slot_searcher
             .linear_slot_search(
                 finalized_slot + 1,
@@ -786,7 +786,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
-            BeaconRPCClient::new( &config_for_test.beacon_endpoint, TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -858,7 +858,7 @@ mod tests {
             .unwrap();
         assert_eq!(last_block_on_near, config_for_test.slot_without_block);
 
-        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT, TIMEOUT_STATE);
+        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         if last_slot_searcher
             .binsearch_slot_range(
                 eth_client_contract
@@ -881,7 +881,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
-            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -954,7 +954,7 @@ mod tests {
             .unwrap();
         assert_eq!(last_block_on_near, config_for_test.slot_without_block);
 
-        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT, TIMEOUT_STATE);
+        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         if last_slot_searcher
             .binsearch_slot_forward(
                 eth_client_contract
@@ -977,7 +977,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
-            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -1060,7 +1060,7 @@ mod tests {
             .unwrap();
         assert_eq!(last_block_on_near, config_for_test.slot_without_block - 1);
 
-        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT, TIMEOUT_STATE);
+        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         if last_slot_searcher
             .binary_slot_search(
                 finalized_slot + 1,
@@ -1081,7 +1081,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
-            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let mut last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -1122,7 +1122,7 @@ mod tests {
             .unwrap();
         assert_eq!(last_block_on_near, config_for_test.slot_without_block);
 
-        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT, TIMEOUT_STATE);
+        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         if last_slot_searcher
             .get_last_slot(
                 config_for_test.right_bound_in_slot_search,
@@ -1141,7 +1141,7 @@ mod tests {
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client =
-            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT, TIMEOUT_STATE);
+            BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let mut last_slot_searcher = LastSlotSearcher::new(true);
 
@@ -1183,7 +1183,7 @@ mod tests {
             .unwrap();
         assert_eq!(last_block_on_near, config_for_test.slot_without_block);
 
-        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT, TIMEOUT_STATE);
+        beacon_rpc_client = BeaconRPCClient::new("http://httpstat.us/504/", TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         if last_slot_searcher
             .get_last_slot(
                 config_for_test.right_bound_in_slot_search,

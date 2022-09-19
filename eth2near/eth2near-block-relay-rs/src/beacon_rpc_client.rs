@@ -43,15 +43,15 @@ impl BeaconRPCClient {
     const EPOCHS_PER_PERIOD: u64 = 256;
 
     /// Creates `BeaconRPCClient` for the given BeaconAPI `endpoint_url`
-    pub fn new(endpoint_url: &str, timeout: u64, timeout_state: u64) -> Self {
+    pub fn new(endpoint_url: &str, timeout_seconds: u64, timeout_state_seconds: u64) -> Self {
         Self {
             endpoint_url: endpoint_url.to_string(),
             client: reqwest::blocking::Client::builder()
-                .timeout(Duration::from_secs(timeout))
+                .timeout(Duration::from_secs(timeout_seconds))
                 .build()
                 .unwrap(),
             client_state_request: reqwest::blocking::Client::builder()
-                .timeout(Duration::from_secs(timeout_state))
+                .timeout(Duration::from_secs(timeout_state_seconds))
                 .build()
                 .unwrap(),
         }
@@ -477,8 +477,8 @@ mod tests {
     use types::MainnetEthSpec;
     use crate::config_for_tests::ConfigForTests;
 
-    const TIMEOUT: u64 = 30;
-    const TIMEOUT_STATE: u64 = 1000;
+    const TIMEOUT_SECONDS: u64 = 30;
+    const TIMEOUT_STATE_SECONDS: u64 = 1000;
 
     fn get_config() -> ConfigForTests {
         ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
@@ -534,9 +534,8 @@ mod tests {
         let file_json_str =std::fs::read_to_string(&config.path_to_block).expect("Unable to read file");
 
         let url = format!("{}/eth/v2/beacon/blocks/{}", config.beacon_endpoint, config.first_slot);
-        let beacon_rpc_client = BeaconRPCClient::new(&url, TIMEOUT, TIMEOUT_STATE);
+        let beacon_rpc_client = BeaconRPCClient::new(&url, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let rpc_json_str = beacon_rpc_client.get_json_from_raw_request(&url);
-
         assert_eq!(rpc_json_str.unwrap(), file_json_str.trim());
     }
 
@@ -544,10 +543,10 @@ mod tests {
     fn test_rpc_beacon_block_body_and_header_smoke() {
         let config = get_config();
 
-        let _beacon_block_body = BeaconRPCClient::new(&config.beacon_endpoint, TIMEOUT, TIMEOUT_STATE)
+        let _beacon_block_body = BeaconRPCClient::new(&config.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS)
             .get_beacon_block_body_for_block_id(&config.first_slot.to_string())
             .unwrap();
-        let _beacon_block_header = BeaconRPCClient::new(&config.beacon_endpoint, TIMEOUT, TIMEOUT_STATE)
+        let _beacon_block_header = BeaconRPCClient::new(&config.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS)
             .get_beacon_block_header_for_block_id(&config.first_slot.to_string())
             .unwrap();
     }
@@ -555,7 +554,7 @@ mod tests {
     #[test]
     fn test_get_beacon_block_header() {
         let config = get_config();
-        let beacon_block_header = BeaconRPCClient::new(&config.beacon_endpoint, TIMEOUT, TIMEOUT_STATE)
+        let beacon_block_header = BeaconRPCClient::new(&config.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS)
             .get_beacon_block_header_for_block_id(&format!("{}", config.first_slot))
             .unwrap();
 
@@ -582,7 +581,7 @@ mod tests {
     fn test_get_beacon_block_body() {
         let config = get_config();
 
-        let beacon_block_body = BeaconRPCClient::new(&config.beacon_endpoint, TIMEOUT, TIMEOUT_STATE)
+        let beacon_block_body = BeaconRPCClient::new(&config.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS)
             .get_beacon_block_body_for_block_id(&config.first_slot.to_string())
             .unwrap();
 
@@ -599,8 +598,8 @@ mod tests {
     fn test_is_sync() {
         assert!(!BeaconRPCClient::new(
             "https://lodestar-goerli.chainsafe.io",
-            TIMEOUT,
-            TIMEOUT_STATE
+            TIMEOUT_SECONDS,
+            TIMEOUT_STATE_SECONDS
         )
         .is_syncing()
         .unwrap());
@@ -643,7 +642,7 @@ mod tests {
     fn test_fetch_light_client_update() {
         let config = get_config();
 
-        let beacon_rpc_client = BeaconRPCClient::new(&config.beacon_endpoint, TIMEOUT, TIMEOUT_STATE);
+        let beacon_rpc_client = BeaconRPCClient::new(&config.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let file_json_str = std::fs::read_to_string(&config.path_to_light_client_update).expect("Unable to read file");
         let v: Value = serde_json::from_str(&file_json_str).unwrap();
 
