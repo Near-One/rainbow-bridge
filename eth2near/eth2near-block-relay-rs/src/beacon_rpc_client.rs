@@ -22,6 +22,12 @@ use std::time::Duration;
 use types::MainnetEthSpec;
 use types::{BeaconBlockBody, BeaconState};
 
+pub struct LightClientSnapshotWithProof {
+    pub beacon_header: BeaconBlockHeader,
+    pub current_sync_committee: SyncCommittee,
+    pub current_sync_committee_branch: Vec<H256>,
+}
+
 /// `BeaconRPCClient` allows getting beacon block body, beacon block header
 /// and light client updates
 /// using Beacon RPC API (https://ethereum.github.io/beacon-APIs/)
@@ -37,6 +43,7 @@ impl BeaconRPCClient {
     const URL_GET_LIGHT_CLIENT_UPDATE_API: &'static str = "eth/v1/beacon/light_client/updates";
     const URL_FINALITY_LIGHT_CLIENT_UPDATE_PATH: &'static str =
         "eth/v1/beacon/light_client/finality_update/";
+    const URL_GET_BOOTSTRAP: &'static str = "eth/v1/beacon/light_client/bootstrap";
     const URL_STATE_PATH: &'static str = "eth/v2/debug/beacon/states";
 
     const SLOTS_PER_EPOCH: u64 = 32;
@@ -136,6 +143,36 @@ impl BeaconRPCClient {
                     &light_client_update_json_str,
                 )?,
             ),
+        })
+    }
+
+    // Fetch a bootstrapping state with a proof to a trusted block root.
+    // The trusted block root should be fetched with similar means to a weak subjectivity checkpoint.
+    // Only block roots for checkpoints are guaranteed to be available.
+    pub fn get_bootstrap(
+        &self,
+        block_root: String,
+    ) -> Result<LightClientSnapshotWithProof, Box<dyn Error>> {
+        let url = format!(
+            "{}/{}/{}",
+            self.endpoint_url,
+            Self::URL_GET_BOOTSTRAP,
+            block_root
+        );
+
+        let light_client_snapshot_json_str = self.get_json_from_raw_request(&url)?;
+        let parsed_json: Value = serde_json::from_str(&light_client_snapshot_json_str)?;
+        let beacon_header: BeaconBlockHeader =
+            serde_json::from_value(parsed_json["data"]["header"].clone())?;
+        let current_sync_committee: SyncCommittee =
+            serde_json::from_value(parsed_json["data"]["current_sync_committee"].clone())?;
+        let current_sync_committee_branch: Vec<H256> =
+            serde_json::from_value(parsed_json["data"]["current_sync_committee_branch"].clone())?;
+
+        Ok(LightClientSnapshotWithProof {
+            beacon_header,
+            current_sync_committee,
+            current_sync_committee_branch,
         })
     }
 

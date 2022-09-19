@@ -1215,6 +1215,7 @@ dependencies = [
  "contract_wrapper",
  "env_logger",
  "eth-types",
+ "eth2-utility",
  "eth2_hashing",
  "ethereum-types",
  "finality-update-verify",
