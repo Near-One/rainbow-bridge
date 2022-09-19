@@ -358,6 +358,9 @@ mod tests {
             let mut update = updates[1].clone();
             update.finality_update.header_update.beacon_header.slot =
                 update.signature_slot + EPOCHS_PER_SYNC_COMMITTEE_PERIOD * SLOTS_PER_EPOCH * 10;
+            update.attested_beacon_header.slot =
+                update.finality_update.header_update.beacon_header.slot;
+            update.signature_slot = update.attested_beacon_header.slot + 1;
             contract.submit_beacon_chain_light_client_update(update);
         }
 
