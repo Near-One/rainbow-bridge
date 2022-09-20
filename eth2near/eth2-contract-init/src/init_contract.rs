@@ -64,6 +64,11 @@ pub fn init_contract(
         trusted_signature = Option::Some(trusted_signature_name.parse().unwrap());
     }
 
+    if  config.near_network_id == "mainnet" {
+        assert!(config.validate_updates, "The updates validation can't be disabled for mainnet");
+        assert!(config.verify_bls_signatures || config.trusted_signer.is_some(), "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet");
+    }
+
     eth_client_contract.init_contract(
         config.network.to_string(),
         finalized_execution_header,
