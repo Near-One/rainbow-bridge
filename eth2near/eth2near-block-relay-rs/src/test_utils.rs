@@ -1,5 +1,6 @@
 use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
+use crate::config_for_tests::ConfigForTests;
 use crate::eth1_rpc_client::Eth1RPCClient;
 use crate::eth2near_relay::Eth2NearRelay;
 use crate::init_contract::init_contract;
@@ -13,7 +14,6 @@ use std::{thread, time};
 use tokio::runtime::Runtime;
 use tree_hash::TreeHash;
 use workspaces::{Account, Contract};
-use crate::config_for_tests::ConfigForTests;
 
 pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
     let mut json_file_path = std::env::current_exe().unwrap();
@@ -24,24 +24,30 @@ pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
     std::fs::read_to_string(json_file_path).expect("Unable to read file")
 }
 
-pub fn init_contract_from_files(eth_client_contract: &mut EthClientContract,
-                                config_for_test: &ConfigForTests) {
+pub fn init_contract_from_files(
+    eth_client_contract: &mut EthClientContract,
+    config_for_test: &ConfigForTests,
+) {
     let execution_blocks: Vec<BlockHeader> = serde_json::from_str(
-        &std::fs::read_to_string(config_for_test.path_to_execution_blocks_headers.clone()).expect("Unable to read file"),
+        &std::fs::read_to_string(config_for_test.path_to_execution_blocks_headers.clone())
+            .expect("Unable to read file"),
     )
     .unwrap();
 
     let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
-        &std::fs::read_to_string(config_for_test.path_to_light_client_updates.clone()).expect("Unable to read file"),
+        &std::fs::read_to_string(config_for_test.path_to_light_client_updates.clone())
+            .expect("Unable to read file"),
     )
     .unwrap();
 
     let current_sync_committee: SyncCommittee = serde_json::from_str(
-        &std::fs::read_to_string(config_for_test.path_to_current_sync_committee.clone()).expect("Unable to read file"),
+        &std::fs::read_to_string(config_for_test.path_to_current_sync_committee.clone())
+            .expect("Unable to read file"),
     )
     .unwrap();
     let next_sync_committee: SyncCommittee = serde_json::from_str(
-        &std::fs::read_to_string(config_for_test.path_to_next_sync_committee.clone()).expect("Unable to read file"),
+        &std::fs::read_to_string(config_for_test.path_to_next_sync_committee.clone())
+            .expect("Unable to read file"),
     )
     .unwrap();
 
@@ -78,22 +84,24 @@ pub fn init_contract_from_files(eth_client_contract: &mut EthClientContract,
 pub fn init_contract_from_specific_slot(
     eth_client_contract: &mut EthClientContract,
     finality_slot: u64,
-    config_for_test: &ConfigForTests
+    config_for_test: &ConfigForTests,
 ) {
     const TIMEOUT: u64 = 30;
     const TIMEOUT_STATE: u64 = 1000;
 
-
     let current_sync_committee: SyncCommittee = serde_json::from_str(
-        &std::fs::read_to_string(config_for_test.path_to_current_sync_committee.clone()).expect("Unable to read file"),
+        &std::fs::read_to_string(config_for_test.path_to_current_sync_committee.clone())
+            .expect("Unable to read file"),
     )
     .unwrap();
     let next_sync_committee: SyncCommittee = serde_json::from_str(
-        &std::fs::read_to_string(config_for_test.path_to_next_sync_committee.clone()).expect("Unable to read file"),
+        &std::fs::read_to_string(config_for_test.path_to_next_sync_committee.clone())
+            .expect("Unable to read file"),
     )
     .unwrap();
 
-    let beacon_rpc_client = BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT, TIMEOUT_STATE);
+    let beacon_rpc_client =
+        BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT, TIMEOUT_STATE);
     let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
 
     let finality_header = beacon_rpc_client
@@ -180,11 +188,14 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
         eth_requests_timeout_seconds: 30,
         state_requests_timeout_seconds: 1000,
         sleep_time_on_sync_secs: 0,
-        sleep_time_after_submission_secs: 5
+        sleep_time_after_submission_secs: 5,
     }
 }
 
-pub fn get_client_contract(from_file: bool, config_for_test: &ConfigForTests) -> Box<dyn EthClientContractTrait> {
+pub fn get_client_contract(
+    from_file: bool,
+    config_for_test: &ConfigForTests,
+) -> Box<dyn EthClientContractTrait> {
     let (relay_account, contract) = create_contract(config_for_test);
     let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
 
@@ -199,7 +210,11 @@ pub fn get_client_contract(from_file: bool, config_for_test: &ConfigForTests) ->
     Box::new(eth_client_contract)
 }
 
-pub fn get_relay(enable_binsearch: bool, from_file: bool, config_for_test: &ConfigForTests) -> Eth2NearRelay {
+pub fn get_relay(
+    enable_binsearch: bool,
+    from_file: bool,
+    config_for_test: &ConfigForTests,
+) -> Eth2NearRelay {
     let config = get_config(config_for_test);
     Eth2NearRelay::init(
         &config,
@@ -213,15 +228,13 @@ pub fn get_relay_with_update_from_file(
     enable_binsearch: bool,
     from_file: bool,
     next_sync_committee: bool,
-    config_for_test: &ConfigForTests
+    config_for_test: &ConfigForTests,
 ) -> Eth2NearRelay {
     let mut config = get_config(config_for_test);
-    config.path_to_attested_state =
-        Some(config_for_test.path_to_attested_state.to_string());
+    config.path_to_attested_state = Some(config_for_test.path_to_attested_state.to_string());
 
     if next_sync_committee {
-        config.path_to_finality_state =
-            Some(config_for_test.path_to_finality_state.to_string());
+        config.path_to_finality_state = Some(config_for_test.path_to_finality_state.to_string());
     }
 
     Eth2NearRelay::init(
@@ -232,14 +245,15 @@ pub fn get_relay_with_update_from_file(
     )
 }
 
-pub fn get_relay_from_slot(enable_binsearch: bool, slot: u64, config_for_test: &ConfigForTests) -> Eth2NearRelay {
+pub fn get_relay_from_slot(
+    enable_binsearch: bool,
+    slot: u64,
+    config_for_test: &ConfigForTests,
+) -> Eth2NearRelay {
     let config = get_config(config_for_test);
 
     let (relay_account, contract) = create_contract(&config_for_test);
-    let contract_wrapper = Box::new(SandboxContractWrapper::new(
-        &relay_account,
-        contract,
-    ));
+    let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
 
     let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 

@@ -123,10 +123,10 @@ impl ExecutionBlockProof {
 
 #[cfg(test)]
 mod tests {
+    use crate::config_for_tests::ConfigForTests;
     use crate::test_utils::read_json_file_from_data_dir;
     use types::BeaconBlockBody;
     use types::MainnetEthSpec;
-    use crate::config_for_tests::ConfigForTests;
 
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000;
@@ -185,8 +185,11 @@ mod tests {
     fn test_beacon_block_body_root_matches_body_root_in_header() {
         let config = get_config();
 
-        let beacon_rpc_client =
-            crate::beacon_rpc_client::BeaconRPCClient::new(&config.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
+        let beacon_rpc_client = crate::beacon_rpc_client::BeaconRPCClient::new(
+            &config.beacon_endpoint,
+            TIMEOUT_SECONDS,
+            TIMEOUT_STATE_SECONDS,
+        );
 
         let beacon_block_body = beacon_rpc_client
             .get_beacon_block_body_for_block_id(&format!("{}", config.first_slot))

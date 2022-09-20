@@ -126,13 +126,17 @@ impl HandMadeFinalityLightClientUpdate {
                 continue;
             }
 
-            let mut attested_slots: Vec<u64> = signature_beacon_body.attestations().into_iter().map(|attestation| attestation.data.slot.as_u64()).collect();
+            let mut attested_slots: Vec<u64> = signature_beacon_body
+                .attestations()
+                .into_iter()
+                .map(|attestation| attestation.data.slot.as_u64())
+                .collect();
             attested_slots.sort();
 
             for i in (0..attested_slots.len()).rev() {
-                if (i == attested_slots.len() - 1 ||
-                    attested_slots[i + 1] != attested_slots[i]) &&
-                    attested_slots[i] >= attested_slot {
+                if (i == attested_slots.len() - 1 || attested_slots[i + 1] != attested_slots[i])
+                    && attested_slots[i] >= attested_slot
+                {
                     current_attested_slot = attested_slots[i];
 
                     if let Err(err) = beacon_rpc_client
@@ -332,9 +336,9 @@ impl HandMadeFinalityLightClientUpdate {
 #[cfg(test)]
 mod tests {
     use crate::beacon_rpc_client::BeaconRPCClient;
+    use crate::config_for_tests::ConfigForTests;
     use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
     use eth_types::eth2::LightClientUpdate;
-    use crate::config_for_tests::ConfigForTests;
 
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000;
@@ -369,13 +373,20 @@ mod tests {
     #[test]
     fn test_hand_made_finality_light_client_update() {
         let config = get_config();
-        let beacon_rpc_client = BeaconRPCClient::new(&config.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
+        let beacon_rpc_client = BeaconRPCClient::new(
+            &config.beacon_endpoint,
+            TIMEOUT_SECONDS,
+            TIMEOUT_STATE_SECONDS,
+        );
 
         let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
-            &std::fs::read_to_string(config.path_to_light_client_updates).expect("Unable to read file"),
-        ).unwrap();
+            &std::fs::read_to_string(config.path_to_light_client_updates)
+                .expect("Unable to read file"),
+        )
+        .unwrap();
 
-        let light_client_period = BeaconRPCClient::get_period_for_slot(light_client_updates[0].signature_slot);
+        let light_client_period =
+            BeaconRPCClient::get_period_for_slot(light_client_updates[0].signature_slot);
 
         let light_client_update = beacon_rpc_client
             .get_light_client_update(light_client_period)
@@ -402,7 +413,11 @@ mod tests {
     #[test]
     fn test_hand_made_finality_light_client_update_from_file() {
         let config = get_config();
-        let beacon_rpc_client = BeaconRPCClient::new(&config.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
+        let beacon_rpc_client = BeaconRPCClient::new(
+            &config.beacon_endpoint,
+            TIMEOUT_SECONDS,
+            TIMEOUT_STATE_SECONDS,
+        );
         let hand_made_light_client_update =
             HandMadeFinalityLightClientUpdate::get_finality_light_client_update_from_file(
                 &beacon_rpc_client,
@@ -411,8 +426,10 @@ mod tests {
             .unwrap();
 
         let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
-            &std::fs::read_to_string(config.path_to_light_client_updates).expect("Unable to read file"),
-        ).unwrap();
+            &std::fs::read_to_string(config.path_to_light_client_updates)
+                .expect("Unable to read file"),
+        )
+        .unwrap();
 
         cmp_light_client_updates(&hand_made_light_client_update, &light_client_updates[1]);
     }
@@ -420,7 +437,11 @@ mod tests {
     #[test]
     fn test_hand_made_finality_light_client_update_from_file_with_next_sync_committee() {
         let config = get_config();
-        let beacon_rpc_client = BeaconRPCClient::new(&config.beacon_endpoint, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
+        let beacon_rpc_client = BeaconRPCClient::new(
+            &config.beacon_endpoint,
+            TIMEOUT_SECONDS,
+            TIMEOUT_STATE_SECONDS,
+        );
         let hand_made_light_client_update =
             HandMadeFinalityLightClientUpdate::get_light_client_update_from_file_with_next_sync_committee(
                 &beacon_rpc_client,
@@ -429,10 +450,13 @@ mod tests {
             ).unwrap();
 
         let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
-            &std::fs::read_to_string(config.path_to_light_client_updates).expect("Unable to read file"),
-        ).unwrap();
+            &std::fs::read_to_string(config.path_to_light_client_updates)
+                .expect("Unable to read file"),
+        )
+        .unwrap();
 
-        let light_client_period = BeaconRPCClient::get_period_for_slot(light_client_updates[0].signature_slot);
+        let light_client_period =
+            BeaconRPCClient::get_period_for_slot(light_client_updates[0].signature_slot);
         let light_client_update = beacon_rpc_client
             .get_light_client_update(light_client_period)
             .unwrap();

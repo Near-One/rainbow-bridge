@@ -4,7 +4,6 @@ use serde::Deserialize;
 use std::io::Read;
 use std::path::PathBuf;
 
-
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
     // endpoint to a full node of Eth2 Beacon chain with Light Client API
@@ -156,4 +155,3 @@ impl Config {
         }
     }
 }
-
