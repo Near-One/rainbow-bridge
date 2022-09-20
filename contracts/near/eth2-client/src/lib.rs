@@ -10,7 +10,7 @@ use eth2_utility::types::*;
 use eth_types::eth2::*;
 use eth_types::{BlockHeader, H256};
 use near_sdk::collections::{LookupMap, UnorderedMap};
-use near_sdk::{assert_self, env, near_bindgen, AccountId, PanicOnDefault};
+use near_sdk::{assert_self, env, near_bindgen, require, AccountId, PanicOnDefault};
 use near_sdk_inner::collections::LazyOption;
 use near_sdk_inner::{Balance, BorshStorageKey, Promise};
 use tree_hash::TreeHash;
@@ -82,21 +82,21 @@ impl Eth2Client {
 
         #[cfg(feature = "mainnet")]
         {
-            assert!(
+            require!(
                 args.validate_updates,
                 "The updates validation can't be disabled for mainnet"
             );
 
-            assert!(
+            require!(
                 (cfg!(feature = "bls") && args.verify_bls_signatures)
                     || args.trusted_signer.is_some(),
                 "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet"
             );
         }
 
-        assert_eq!(
-            args.finalized_execution_header.calculate_hash(),
-            args.finalized_beacon_header.execution_block_hash,
+        require!(
+            args.finalized_execution_header.calculate_hash()
+                == args.finalized_beacon_header.execution_block_hash,
             "Invalid execution block"
         );
 
@@ -194,15 +194,14 @@ impl Eth2Client {
     #[payable]
     pub fn register_submitter(&mut self) {
         let account_id = env::predecessor_account_id();
-        assert!(
+        require!(
             !self.submitters.contains_key(&account_id),
             "The account is already registered"
         );
 
         let amount = env::attached_deposit();
-        assert!(
+        require!(
             amount >= self.min_storage_balance_for_submitter,
-            "{}",
             format!(
                 "The attached deposit {} is less than the minimum required storage balance {}",
                 amount, self.min_storage_balance_for_submitter
@@ -218,7 +217,6 @@ impl Eth2Client {
         }
     }
 
-    #[payable]
     pub fn unregister_submitter(&mut self) -> Promise {
         let account_id = env::predecessor_account_id();
         if let Some(num_of_submitted_blocks) = self.submitters.remove(&account_id) {
@@ -261,15 +259,16 @@ impl Eth2Client {
 
     #[result_serializer(borsh)]
     pub fn submit_execution_header(&mut self, #[serializer(borsh)] block_header: BlockHeader) {
-        #[cfg(feature = "logs")]
-        env::log_str(format!("Submitted header number {}", block_header.number).as_str());
         if self.finalized_beacon_header.execution_block_hash != block_header.parent_hash {
             self.unfinalized_headers
                 .get(&block_header.parent_hash)
                 .unwrap_or_else(|| {
-                    panic!(
-                        "Header has unknown parent {:?}. Parent should be submitted first.",
-                        block_header.parent_hash
+                    env::panic_str(
+                        format!(
+                            "Header has unknown parent {:?}. Parent should be submitted first.",
+                            block_header.parent_hash
+                        )
+                        .as_str(),
                     )
                 });
         }
@@ -278,7 +277,13 @@ impl Eth2Client {
         self.update_submitter(&submitter, 1);
         let block_hash = block_header.calculate_hash();
         #[cfg(feature = "logs")]
-        env::log_str(format!("Submitted header hash {:?}", block_hash).as_str());
+        env::log_str(
+            format!(
+                "Submitted header number {}, hash {:?}",
+                block_header.number, block_hash
+            )
+            .as_str(),
+        );
 
         let block_info = ExecutionHeaderInfo {
             parent_hash: block_header.parent_hash,
@@ -286,10 +291,9 @@ impl Eth2Client {
             submitter,
         };
         let insert_result = self.unfinalized_headers.insert(&block_hash, &block_info);
-        assert!(
+        require!(
             insert_result.is_none(),
-            "The block {} already submitted!",
-            &block_hash
+            format!("The block {} already submitted!", &block_hash)
         );
     }
 
@@ -317,15 +321,20 @@ impl Eth2Client {
             BitVec::<u8, Lsb0>::from_slice(&update.sync_aggregate.sync_committee_bits.0);
         let sync_committee_bits_sum: u64 = sync_committee_bits.count_ones().try_into().unwrap();
 
-        assert!(
+        require!(
             sync_committee_bits_sum >= MIN_SYNC_COMMITTEE_PARTICIPANTS,
-            "Invalid sync committee bits sum: {}",
-            sync_committee_bits_sum
+            format!(
+                "Invalid sync committee bits sum: {}",
+                sync_committee_bits_sum
+            )
         );
-        assert!(
+
+        require!(
             sync_committee_bits_sum * 3 >= (sync_committee_bits.len() * 2).try_into().unwrap(),
-            "Sync committee bits sum is less than 2/3 threshold, bits sum: {}",
-            sync_committee_bits_sum
+            format!(
+                "Sync committee bits sum is less than 2/3 threshold, bits sum: {}",
+                sync_committee_bits_sum
+            )
         );
 
         #[cfg(feature = "bls")]
@@ -341,24 +350,37 @@ impl Eth2Client {
         // The active header will always be the finalized header because we don't accept updates without the finality update.
         let active_header = &update.finality_update.header_update.beacon_header;
 
-        assert!(
+        require!(
             active_header.slot > self.finalized_beacon_header.header.slot,
             "The active header slot number should be higher than the finalized slot"
         );
 
+        require!(
+            update.attested_beacon_header.slot
+                >= update.finality_update.header_update.beacon_header.slot,
+            "The attested header slot should be equal to or higher than the finalized header slot"
+        );
+
+        require!(
+            update.signature_slot > update.attested_beacon_header.slot,
+            "The signature slot should be higher than the attested header slot"
+        );
+
         let update_period = compute_sync_committee_period(active_header.slot);
-        assert!(
+        require!(
             update_period == finalized_period || update_period == finalized_period + 1,
-            "The acceptable update periods are '{}' and '{}' but got {}",
-            finalized_period,
-            finalized_period + 1,
-            update_period
+            format!(
+                "The acceptable update periods are '{}' and '{}' but got {}",
+                finalized_period,
+                finalized_period + 1,
+                update_period
+            )
         );
 
         // Verify that the `finality_branch`, confirms `finalized_header`
         // to match the finalized checkpoint root saved in the state of `attested_header`.
         let branch = convert_branch(&update.finality_update.finality_branch);
-        assert!(
+        require!(
             merkle_proof::verify_merkle_proof(
                 update
                     .finality_update
@@ -372,7 +394,7 @@ impl Eth2Client {
             ),
             "Invalid finality proof"
         );
-        assert!(
+        require!(
             validate_beacon_block_header_update(&update.finality_update.header_update),
             "Invalid execution block hash proof"
         );
@@ -385,7 +407,7 @@ impl Eth2Client {
                 .as_ref()
                 .unwrap_or_else(|| env::panic_str("The sync committee update is missed"));
             let branch = convert_branch(&sync_committee_update.next_sync_committee_branch);
-            assert!(
+            require!(
                 merkle_proof::verify_merkle_proof(
                     sync_committee_update.next_sync_committee.tree_hash_root(),
                     &branch,
@@ -418,7 +440,7 @@ impl Eth2Client {
             get_participant_pubkeys(&sync_committee.pubkeys.0, &sync_committee_bits);
         let fork_version = config
             .compute_fork_version_by_slot(update.signature_slot)
-            .expect("Unsupported fork");
+            .unwrap_or_else(|| env::panic_str("Unsupported fork"));
         let domain = compute_domain(
             DOMAIN_SYNC_COMMITTEE,
             fork_version,
@@ -436,7 +458,7 @@ impl Eth2Client {
             .into_iter()
             .map(|x| bls::PublicKey::deserialize(&x.0).unwrap())
             .collect();
-        assert!(
+        require!(
             aggregate_signature
                 .fast_aggregate_verify(signing_root.0, &pubkeys.iter().collect::<Vec<_>>()),
             "Failed to verify the bls signature"
@@ -449,8 +471,7 @@ impl Eth2Client {
         let finalized_execution_header_info = self
             .unfinalized_headers
             .get(&finalized_header.execution_block_hash)
-            .expect("Unknown execution block hash");
-
+            .unwrap_or_else(|| env::panic_str("Unknown execution block hash"));
         #[cfg(feature = "logs")]
         env::log_str(
             format!(
@@ -483,9 +504,12 @@ impl Eth2Client {
                 .unfinalized_headers
                 .get(&cursor_header.parent_hash)
                 .unwrap_or_else(|| {
-                    panic!(
-                        "Header has unknown parent {:?}. Parent should be submitted first.",
-                        cursor_header.parent_hash
+                    env::panic_str(
+                        format!(
+                            "Header has unknown parent {:?}. Parent should be submitted first.",
+                            cursor_header.parent_hash
+                        )
+                        .as_str(),
                     )
                 });
         }
@@ -507,7 +531,7 @@ impl Eth2Client {
         );
 
         if finalized_execution_header_info.block_number > self.hashes_gc_threshold {
-            self.gc_headers(
+            self.gc_finalized_execution_blocks(
                 finalized_execution_header_info.block_number - self.hashes_gc_threshold,
             );
         }
@@ -532,11 +556,9 @@ impl Eth2Client {
     }
 
     /// Remove information about the headers that are at least as old as the given block number.
-    fn gc_headers(&mut self, mut header_number: u64) {
+    fn gc_finalized_execution_blocks(&mut self, mut header_number: u64) {
         loop {
-            if self.finalized_execution_blocks.contains_key(&header_number) {
-                self.finalized_execution_blocks.remove(&header_number);
-
+            if self.finalized_execution_blocks.remove(&header_number).is_some() {
                 if header_number == 0 {
                     break;
                 } else {
@@ -553,25 +575,15 @@ impl Eth2Client {
             .submitters
             .get(submitter)
             .unwrap_or_else(|| {
-                env::panic_str(
-                    format!(
-                        "The account {} can't submit blocks because it is not registered",
-                        &submitter
-                    )
-                    .as_str(),
-                )
+                env::panic_str("The account can't submit blocks because it is not registered")
             })
             .into();
 
         num_of_submitted_headers += value;
 
-        assert!(
+        require!(
             num_of_submitted_headers <= self.max_submitted_blocks_by_account.into(),
-            "{}",
-            format!(
-                "The submitter {} exhausted the limit of blocks ({})",
-                &submitter, self.max_submitted_blocks_by_account
-            ),
+            "The submitter exhausted the limit of blocks"
         );
 
         self.submitters
@@ -582,9 +594,8 @@ impl Eth2Client {
         self.check_not_paused(PAUSE_SUBMIT_UPDATE);
 
         if let Some(trusted_signer) = &self.trusted_signer {
-            assert_eq!(
-                &env::predecessor_account_id(),
-                trusted_signer,
+            require!(
+                &env::predecessor_account_id() == trusted_signer,
                 "Eth-client is deployed as trust mode, only trusted_signer can update the client"
             );
         }
