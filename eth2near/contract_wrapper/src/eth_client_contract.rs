@@ -60,7 +60,7 @@ impl EthClientContract {
             verify_bls_signatures: false,
             hashes_gc_threshold: 51000,
             max_submitted_blocks_by_account: 8000,
-            trusted_signer: Option::<AccountId>::None,
+            trusted_signer: Option::<AccountId>::Some(self.contract_wrapper.get_signer_account_id()),
         };
 
         self.contract_wrapper
@@ -194,7 +194,7 @@ mod tests {
 
     // TODO: use a more clean approach to include binary
     const WASM_FILEPATH: &str =
-        "../../contracts/near/target/wasm32-unknown-unknown/release/eth2_client.wasm";
+        "../../contracts/near/res/eth2_client.wasm";
 
     struct EthState {
         pub execution_blocks: Vec<BlockHeader>,
