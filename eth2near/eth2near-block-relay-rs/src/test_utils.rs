@@ -3,11 +3,11 @@ use crate::config::Config;
 use crate::config_for_tests::ConfigForTests;
 use crate::eth1_rpc_client::Eth1RPCClient;
 use crate::eth2near_relay::Eth2NearRelay;
-use crate::init_contract::init_contract;
 use crate::test_utils;
 use contract_wrapper::eth_client_contract::EthClientContract;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
+use eth2_contract_init::init_contract::init_contract;
 use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
 use eth_types::BlockHeader;
 use std::{thread, time};
@@ -192,6 +192,21 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
     }
 }
 
+fn get_init_config(config_for_test: &ConfigForTests) -> eth2_contract_init::config::Config {
+    eth2_contract_init::config::Config {
+        beacon_endpoint: config_for_test.beacon_endpoint.to_string(),
+        eth1_endpoint: config_for_test.eth1_endpoint.to_string(),
+        near_endpoint: "https://rpc.testnet.near.org".to_string(),
+        signer_account_id: "NaN".to_string(),
+        path_to_signer_secret_key: "NaN".to_string(),
+        contract_account_id: "NaN".to_string(),
+        network: config_for_test.network_name.to_string(),
+        near_network_id: "testnet".to_string(),
+        output_dir: None,
+        eth_requests_timeout_seconds: 30,
+    }
+}
+
 pub fn get_client_contract(
     from_file: bool,
     config_for_test: &ConfigForTests,
@@ -201,7 +216,7 @@ pub fn get_client_contract(
 
     let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 
-    let config = get_config(config_for_test);
+    let config = get_init_config(config_for_test);
     match from_file {
         true => test_utils::init_contract_from_files(&mut eth_client_contract, config_for_test),
         false => init_contract(&config, &mut eth_client_contract).unwrap(),

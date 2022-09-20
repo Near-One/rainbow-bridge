@@ -1,6 +1,5 @@
 use clap::{ArgAction, Parser};
 use contract_wrapper::contract_wrapper_trait::ContractWrapper;
-use contract_wrapper::eth_client_contract::EthClientContract;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use contract_wrapper::near_contract_wrapper::NearContractWrapper;
 use contract_wrapper::{
@@ -8,7 +7,6 @@ use contract_wrapper::{
 };
 use eth2_to_near_relay::config::Config;
 use eth2_to_near_relay::eth2near_relay::Eth2NearRelay;
-use eth2_to_near_relay::init_contract::init_contract;
 use eth2_to_near_relay::logger::SimpleLogger;
 use log::LevelFilter;
 use std::string::String;
@@ -19,10 +17,6 @@ struct Arguments {
     #[clap(short, long)]
     /// Path to config file
     config: String,
-
-    #[clap(long, action = ArgAction::SetTrue)]
-    /// The eth contract on Near will be initialized
-    init_contract: bool,
 
     #[clap(long, default_value_t = String::from("info"))]
     /// Log level (trace, debug, info, warn, error)
@@ -99,19 +93,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = Config::load_from_toml(args.config.clone().try_into().unwrap());
     init_log(&args, &config);
 
-    if args.init_contract {
-        let mut eth_client_contract = EthClientContract::new(get_eth_contract_wrapper(&config));
-        init_contract(&config, &mut eth_client_contract).unwrap();
-    } else {
-        let mut eth2near_relay = Eth2NearRelay::init(
-            &config,
-            get_eth_client_contract(&config),
-            args.enable_binary_search,
-            args.submit_only_finalized_blocks,
-        );
+    let mut eth2near_relay = Eth2NearRelay::init(
+        &config,
+        get_eth_client_contract(&config),
+        args.enable_binary_search,
+        args.submit_only_finalized_blocks,
+    );
 
-        eth2near_relay.run(None);
-    }
-
+    eth2near_relay.run(None);
     Ok(())
 }

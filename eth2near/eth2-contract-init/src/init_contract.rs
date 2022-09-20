@@ -1,11 +1,11 @@
-use crate::beacon_rpc_client::BeaconRPCClient;
-use crate::config::Config;
-use crate::eth1_rpc_client::Eth1RPCClient;
 use contract_wrapper::eth_client_contract::EthClientContract;
+use eth2_to_near_relay::beacon_rpc_client::BeaconRPCClient;
+use eth2_to_near_relay::eth1_rpc_client::Eth1RPCClient;
 use eth_types::eth2::ExtendedBeaconBlockHeader;
 use eth_types::BlockHeader;
 use log::info;
 use std::{thread, time};
+use crate::config::Config;
 
 pub fn init_contract(
     config: &Config,
@@ -16,7 +16,7 @@ pub fn init_contract(
     let beacon_rpc_client = BeaconRPCClient::new(
         &config.beacon_endpoint,
         config.eth_requests_timeout_seconds,
-        config.state_requests_timeout_seconds,
+        config.eth_requests_timeout_seconds,
     );
     let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
 
