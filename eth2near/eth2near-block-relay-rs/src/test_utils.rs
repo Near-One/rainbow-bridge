@@ -14,6 +14,7 @@ use std::{thread, time};
 use tokio::runtime::Runtime;
 use tree_hash::TreeHash;
 use workspaces::{Account, Contract};
+use crate::contract_type::ContractType;
 
 pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
     let mut json_file_path = std::env::current_exe().unwrap();
@@ -81,7 +82,7 @@ pub fn init_contract_from_files(
         false,
         51000,
         8000,
-        Some(eth_client_contract.get_signer_account_id())
+        Some(eth_client_contract.get_signer_account_id()),
     );
     thread::sleep(time::Duration::from_secs(30));
 }
@@ -157,7 +158,7 @@ pub fn init_contract_from_specific_slot(
         false,
         51000,
         8000,
-        Some(eth_client_contract.get_signer_account_id())
+        Some(eth_client_contract.get_signer_account_id()),
     );
 
     thread::sleep(time::Duration::from_secs(30));
@@ -186,7 +187,7 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
         path_to_signer_secret_key: "NaN".to_string(),
         contract_account_id: "NaN".to_string(),
         network: config_for_test.network_name.to_string(),
-        contract_type: "near".to_string(),
+        contract_type: ContractType::Near,
         light_client_updates_submission_frequency_in_epochs: 1,
         max_blocks_for_finalization: 5000,
         near_network_id: "testnet".to_string(),
@@ -202,7 +203,10 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
     }
 }
 
-fn get_init_config(config_for_test: &ConfigForTests, eth_client_contract: &EthClientContract) -> eth2_contract_init::config::Config {
+fn get_init_config(
+    config_for_test: &ConfigForTests,
+    eth_client_contract: &EthClientContract,
+) -> eth2_contract_init::config::Config {
     eth2_contract_init::config::Config {
         beacon_endpoint: config_for_test.beacon_endpoint.to_string(),
         eth1_endpoint: config_for_test.eth1_endpoint.to_string(),
@@ -218,7 +222,7 @@ fn get_init_config(config_for_test: &ConfigForTests, eth_client_contract: &EthCl
         verify_bls_signature: false,
         hashes_gc_threshold: 51000,
         max_submitted_blocks_by_account: 8000,
-        trusted_signature: Some(eth_client_contract.get_signer_account_id().to_string())
+        trusted_signature: Some(eth_client_contract.get_signer_account_id().to_string()),
     }
 }
 

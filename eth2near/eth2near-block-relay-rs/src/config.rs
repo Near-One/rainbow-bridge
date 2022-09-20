@@ -1,3 +1,4 @@
+use crate::contract_type::ContractType;
 use crate::near_rpc_client::NearRPCClient;
 use reqwest::Url;
 use serde::Deserialize;
@@ -31,7 +32,7 @@ pub struct Config {
     pub network: String,
 
     // Contract type (near, dao, file)
-    pub contract_type: String,
+    pub contract_type: ContractType,
 
     // Frequency of submission light client updates. Once in N epochs.
     pub light_client_updates_submission_frequency_in_epochs: u64,
@@ -139,14 +140,6 @@ impl Config {
             || self.network == "goerli")
         {
             panic!("Unknown network {}", self.network);
-        }
-
-        // check `contract_type`
-        if !(self.contract_type == "near"
-            || self.contract_type == "dao"
-            || self.contract_type == "file")
-        {
-            panic!("Unknown contract type {}", self.contract_type);
         }
 
         // check `near_network_id`

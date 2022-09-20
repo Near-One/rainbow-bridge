@@ -3,6 +3,7 @@ extern crate core;
 pub mod beacon_block_body_merkle_tree;
 pub mod beacon_rpc_client;
 pub mod config;
+mod contract_type;
 pub mod eth1_rpc_client;
 pub mod eth2near_relay;
 pub mod execution_block_proof;
