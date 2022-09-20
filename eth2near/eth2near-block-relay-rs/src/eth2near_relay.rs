@@ -1192,6 +1192,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_send_light_client_update_from_file() {
         let config_for_test = get_config();
         let mut relay = get_relay_with_update_from_file(true, true, false, &config_for_test);

@@ -411,6 +411,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_hand_made_finality_light_client_update_from_file() {
         let config = get_config();
         let beacon_rpc_client = BeaconRPCClient::new(
@@ -435,6 +436,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_hand_made_finality_light_client_update_from_file_with_next_sync_committee() {
         let config = get_config();
         let beacon_rpc_client = BeaconRPCClient::new(
