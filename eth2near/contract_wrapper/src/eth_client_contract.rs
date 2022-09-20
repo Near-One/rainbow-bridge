@@ -35,6 +35,11 @@ impl EthClientContract {
         finalized_beacon_header: ExtendedBeaconBlockHeader,
         current_sync_committee: SyncCommittee,
         next_sync_committee: SyncCommittee,
+        validate_updates: bool,
+        verify_bls_signatures: bool,
+        hashes_gc_threshold: u64,
+        max_submitted_blocks_by_account: u32,
+        trusted_signer: Option<AccountId>,
     ) {
         #[derive(BorshSerialize)]
         pub struct InitInput {
@@ -56,11 +61,11 @@ impl EthClientContract {
             finalized_beacon_header,
             current_sync_committee,
             next_sync_committee,
-            validate_updates: true,
-            verify_bls_signatures: false,
-            hashes_gc_threshold: 51000,
-            max_submitted_blocks_by_account: 8000,
-            trusted_signer: Option::<AccountId>::Some(self.contract_wrapper.get_signer_account_id()),
+            validate_updates,
+            verify_bls_signatures,
+            hashes_gc_threshold,
+            max_submitted_blocks_by_account,
+            trusted_signer,
         };
 
         self.contract_wrapper
@@ -75,6 +80,10 @@ impl EthClientContract {
 
     pub fn get_account_id(&self) -> AccountId {
         self.contract_wrapper.get_account_id()
+    }
+
+    pub fn get_signer_account_id(&self) -> AccountId {
+        self.contract_wrapper.get_signer_account_id()
     }
 }
 

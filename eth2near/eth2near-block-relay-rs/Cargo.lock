@@ -1114,6 +1114,7 @@ dependencies = [
  "eth-types",
  "eth2_to_near_relay",
  "log",
+ "near-primitives 0.14.0",
  "near-sdk",
  "reqwest",
  "serde",

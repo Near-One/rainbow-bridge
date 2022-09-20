@@ -35,6 +35,16 @@ pub struct Config {
 
     // Timeout for ETH RPC requests in seconds
     pub eth_requests_timeout_seconds: u64,
+
+    pub validate_updates: bool,
+
+    pub verify_bls_signature: bool,
+
+    pub hashes_gc_threshold: u64,
+
+    pub max_submitted_blocks_by_account: u32,
+
+    pub trusted_signature: Option<String>,
 }
 
 impl Config {
@@ -72,6 +82,17 @@ impl Config {
             .unwrap()
         {
             panic!("Signer account id doesn't exist on NEAR network");
+        }
+
+        // check `trusted_signature`
+        if let Some(trusted_signature) = self.trusted_signature.clone() {
+            let _trusted_signature: near_sdk::AccountId = trusted_signature.parse().unwrap();
+            if !near_rpc_client
+                .check_account_exists(&trusted_signature)
+                .unwrap()
+            {
+                panic!("Trusted signature doesn't exist on NEAR network");
+            }
         }
 
         // check `contract_account_id`

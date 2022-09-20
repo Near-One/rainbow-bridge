@@ -77,6 +77,11 @@ pub fn init_contract_from_files(
         finalized_beacon_header,
         current_sync_committee,
         next_sync_committee,
+        true,
+        false,
+        51000,
+        8000,
+        Some(eth_client_contract.get_signer_account_id())
     );
     thread::sleep(time::Duration::from_secs(30));
 }
@@ -148,6 +153,11 @@ pub fn init_contract_from_specific_slot(
         finalized_beacon_header,
         current_sync_committee,
         next_sync_committee,
+        true,
+        false,
+        51000,
+        8000,
+        Some(eth_client_contract.get_signer_account_id())
     );
 
     thread::sleep(time::Duration::from_secs(30));
@@ -192,7 +202,7 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
     }
 }
 
-fn get_init_config(config_for_test: &ConfigForTests) -> eth2_contract_init::config::Config {
+fn get_init_config(config_for_test: &ConfigForTests, eth_client_contract: &EthClientContract) -> eth2_contract_init::config::Config {
     eth2_contract_init::config::Config {
         beacon_endpoint: config_for_test.beacon_endpoint.to_string(),
         eth1_endpoint: config_for_test.eth1_endpoint.to_string(),
@@ -204,6 +214,11 @@ fn get_init_config(config_for_test: &ConfigForTests) -> eth2_contract_init::conf
         near_network_id: "testnet".to_string(),
         output_dir: None,
         eth_requests_timeout_seconds: 30,
+        validate_updates: true,
+        verify_bls_signature: false,
+        hashes_gc_threshold: 51000,
+        max_submitted_blocks_by_account: 8000,
+        trusted_signature: Some(eth_client_contract.get_signer_account_id().to_string())
     }
 }
 
@@ -216,7 +231,7 @@ pub fn get_client_contract(
 
     let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 
-    let config = get_init_config(config_for_test);
+    let config = get_init_config(config_for_test, &eth_client_contract);
     match from_file {
         true => test_utils::init_contract_from_files(&mut eth_client_contract, config_for_test),
         false => init_contract(&config, &mut eth_client_contract).unwrap(),

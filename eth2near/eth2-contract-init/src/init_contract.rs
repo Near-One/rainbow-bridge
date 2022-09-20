@@ -59,12 +59,22 @@ pub fn init_contract(
         .unwrap()
         .next_sync_committee;
 
+    let mut trusted_signature: Option<near_primitives::types::AccountId> = Option::None;
+    if let Some(trusted_signature_name) = config.trusted_signature.clone() {
+        trusted_signature = Option::Some(trusted_signature_name.parse().unwrap());
+    }
+
     eth_client_contract.init_contract(
         config.network.to_string(),
         finalized_execution_header,
         finalized_header,
         current_sync_committee,
         next_sync_committee,
+        config.validate_updates,
+        config.verify_bls_signature,
+        config.hashes_gc_threshold,
+        config.max_submitted_blocks_by_account,
+        trusted_signature,
     );
 
     thread::sleep(time::Duration::from_secs(30));
