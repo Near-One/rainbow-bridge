@@ -281,7 +281,6 @@ mod tests {
         const PATH_TO_CURRENT_SYNC_COMMITTEE: &str =
             "./data/next_sync_committee_kiln_period_133.json";
         const PATH_TO_NEXT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_kiln_period_134.json";
-        const NETWORK: &str = "kiln";
 
         let current_sync_committee: SyncCommittee = serde_json::from_str(
             &std::fs::read_to_string(PATH_TO_CURRENT_SYNC_COMMITTEE).expect("Unable to read file"),
@@ -314,11 +313,16 @@ mod tests {
         }
 
         eth_client_contract.init_contract(
-            NETWORK.to_string(),
+            eth_client_contract::EthNetwork::Kiln,
             finalized_execution_header.unwrap(),
             finalized_beacon_header,
             current_sync_committee,
             next_sync_committee,
+            true,
+            false,
+            51000,
+            8000,
+            Some(eth_client_contract.get_signer_account_id()),
         );
         eth_state.current_light_client_update = 1;
     }

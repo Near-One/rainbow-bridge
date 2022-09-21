@@ -7,7 +7,7 @@ use contract_wrapper::{
 };
 use eth2_to_near_relay::config::Config;
 use eth2_to_near_relay::eth2near_relay::Eth2NearRelay;
-use eth2_to_near_relay::logger::SimpleLogger;
+use logger::SimpleLogger;
 use log::LevelFilter;
 use std::string::String;
 

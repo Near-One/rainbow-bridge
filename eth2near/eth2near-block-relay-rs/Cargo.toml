@@ -28,6 +28,7 @@ toml = "0.5.9"
 finality-update-verify = { path = "../finality-update-verify" }
 atomic_refcell = "0.1.8"
 bitvec = "*"
+logger = { path = "../logger" }
 
 near-jsonrpc-client = "0.4.0-beta.0"
 near-crypto = "0.14.0"
