@@ -70,6 +70,15 @@ pub struct Config {
 
     // Sleep time in seconds after blocks/light_client_update submission to client
     pub sleep_time_after_submission_secs: u64,
+
+    /// Max number of stored blocks in the storage of the eth2 client contract
+    /// Events that happen past this threshold cannot be verified by the client
+    /// It is used on initialization the eth2 client
+    pub hashes_gc_threshold: Option<u64>,
+
+    /// Max number of unfinalized blocks allowed to be stored by one submitter account
+    /// It is used on initialization the eth2 client
+    pub max_submitted_blocks_by_account: Option<u32>,
 }
 
 impl Config {

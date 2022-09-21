@@ -65,6 +65,16 @@ pub fn init_contract(
         finalized_header,
         current_sync_committee,
         next_sync_committee,
+        config.hashes_gc_threshold.unwrap_or(51_000),
+        config.max_submitted_blocks_by_account.unwrap_or(8000),
+        Some(
+            config
+                .dao_contract_account_id
+                .as_ref()
+                .unwrap_or(&config.signer_account_id)
+                .parse()
+                .unwrap(),
+        ),
     );
 
     thread::sleep(time::Duration::from_secs(30));

@@ -35,6 +35,9 @@ impl EthClientContract {
         finalized_beacon_header: ExtendedBeaconBlockHeader,
         current_sync_committee: SyncCommittee,
         next_sync_committee: SyncCommittee,
+        hashes_gc_threshold: u64,
+        max_submitted_blocks_by_account: u32,
+        trusted_signer: Option<AccountId>,
     ) {
         #[derive(BorshSerialize)]
         pub struct InitInput {
@@ -58,9 +61,9 @@ impl EthClientContract {
             next_sync_committee,
             validate_updates: true,
             verify_bls_signatures: false,
-            hashes_gc_threshold: 51000,
-            max_submitted_blocks_by_account: 8000,
-            trusted_signer: Option::<AccountId>::None,
+            hashes_gc_threshold,
+            max_submitted_blocks_by_account,
+            trusted_signer,
         };
 
         self.contract_wrapper
