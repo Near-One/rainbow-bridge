@@ -65,8 +65,8 @@ pub fn init_contract(
         finalized_header,
         current_sync_committee,
         next_sync_committee,
-        config.hashes_gc_threshold.unwrap_or(51_000),
-        config.max_submitted_blocks_by_account.unwrap_or(8000),
+        config.hashes_gc_threshold,
+        config.max_submitted_blocks_by_account,
         Some(
             config
                 .dao_contract_account_id

@@ -35,8 +35,8 @@ impl EthClientContract {
         finalized_beacon_header: ExtendedBeaconBlockHeader,
         current_sync_committee: SyncCommittee,
         next_sync_committee: SyncCommittee,
-        hashes_gc_threshold: u64,
-        max_submitted_blocks_by_account: u32,
+        hashes_gc_threshold: Option<u64>,
+        max_submitted_blocks_by_account: Option<u32>,
         trusted_signer: Option<AccountId>,
     ) {
         #[derive(BorshSerialize)]
@@ -61,8 +61,8 @@ impl EthClientContract {
             next_sync_committee,
             validate_updates: true,
             verify_bls_signatures: false,
-            hashes_gc_threshold,
-            max_submitted_blocks_by_account,
+            hashes_gc_threshold: hashes_gc_threshold.unwrap_or(51_000),
+            max_submitted_blocks_by_account: max_submitted_blocks_by_account.unwrap_or(8000),
             trusted_signer,
         };
 
