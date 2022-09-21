@@ -11,3 +11,4 @@ pub mod sandbox_contract_wrapper;
 pub mod utils;
 pub mod eth_network_enum;
 pub mod near_network_enum;
+pub mod near_rpc_client;

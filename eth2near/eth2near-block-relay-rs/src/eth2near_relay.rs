@@ -3,7 +3,7 @@ use crate::config::Config;
 use crate::eth1_rpc_client::Eth1RPCClient;
 use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
 use crate::last_slot_searcher::LastSlotSearcher;
-use crate::near_rpc_client::NearRPCClient;
+use contract_wrapper::near_rpc_client::NearRPCClient;
 use crate::prometheus_metrics;
 use crate::prometheus_metrics::{
     FAILS_ON_HEADERS_SUBMISSION, FAILS_ON_UPDATES_SUBMISSION, LAST_ETH_SLOT, LAST_ETH_SLOT_ON_NEAR,
