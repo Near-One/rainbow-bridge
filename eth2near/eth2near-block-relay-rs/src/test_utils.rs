@@ -77,6 +77,7 @@ pub fn init_contract_from_files(
         finalized_beacon_header,
         current_sync_committee,
         next_sync_committee,
+        eth_client_contract.get_signature_account_id().to_string(),
     );
     thread::sleep(time::Duration::from_secs(30));
 }
@@ -148,6 +149,7 @@ pub fn init_contract_from_specific_slot(
         finalized_beacon_header,
         current_sync_committee,
         next_sync_committee,
+        eth_client_contract.get_signature_account_id().to_string()
     );
 
     thread::sleep(time::Duration::from_secs(30));
@@ -201,7 +203,9 @@ pub fn get_client_contract(
 
     let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 
-    let config = get_config(config_for_test);
+    let mut config = get_config(config_for_test);
+    config.signer_account_id = eth_client_contract.get_signature_account_id().to_string();
+
     match from_file {
         true => test_utils::init_contract_from_files(&mut eth_client_contract, config_for_test),
         false => init_contract(&config, &mut eth_client_contract).unwrap(),

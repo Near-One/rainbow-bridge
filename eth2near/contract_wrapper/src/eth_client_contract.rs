@@ -35,6 +35,7 @@ impl EthClientContract {
         finalized_beacon_header: ExtendedBeaconBlockHeader,
         current_sync_committee: SyncCommittee,
         next_sync_committee: SyncCommittee,
+        trusted_signer: String,
     ) {
         #[derive(BorshSerialize)]
         pub struct InitInput {
@@ -60,7 +61,7 @@ impl EthClientContract {
             verify_bls_signatures: false,
             hashes_gc_threshold: 51000,
             max_submitted_blocks_by_account: 8000,
-            trusted_signer: Option::<AccountId>::Some(self.contract_wrapper.get_signer_account_id()),
+            trusted_signer: Option::<AccountId>::Some(trusted_signer.parse().unwrap()),
         };
 
         self.contract_wrapper
@@ -76,6 +77,8 @@ impl EthClientContract {
     pub fn get_account_id(&self) -> AccountId {
         self.contract_wrapper.get_account_id()
     }
+
+    pub fn get_signature_account_id(&self) -> AccountId { self.contract_wrapper.get_signer_account_id() }
 }
 
 impl EthClientContractTrait for EthClientContract {
@@ -262,12 +265,23 @@ mod tests {
 
         // create accounts
         let owner = worker.root_account().unwrap();
+        let relay_account = rt
+            .block_on(
+                owner
+                    .create_subaccount("relay_account")
+                    .initial_balance(30 * near_sdk::ONE_NEAR)
+                    .transact(),
+            )
+            .unwrap()
+            .into_result()
+            .unwrap();
+
         let contract = rt.block_on(owner.deploy(&wasm)).unwrap().unwrap();
 
-        (owner, contract)
+        (relay_account, contract)
     }
 
-    fn init_contract(eth_client_contract: &EthClientContract, eth_state: &mut EthState) {
+    fn init_contract(eth_client_contract: &EthClientContract, eth_state: &mut EthState, trusted_signer: String) {
         const PATH_TO_CURRENT_SYNC_COMMITTEE: &str =
             "./data/next_sync_committee_kiln_period_133.json";
         const PATH_TO_NEXT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_kiln_period_134.json";
@@ -309,6 +323,7 @@ mod tests {
             finalized_beacon_header,
             current_sync_committee,
             next_sync_committee,
+            trusted_signer,
         );
         eth_state.current_light_client_update = 1;
     }
@@ -326,7 +341,7 @@ mod tests {
 
         let mut eth_state = EthState::new();
 
-        init_contract(&eth_client_contract, &mut eth_state);
+        init_contract(&eth_client_contract, &mut eth_state, relay_account.id().to_string());
         let first_finalized_slot = eth_client_contract
             .get_finalized_beacon_block_slot()
             .unwrap();

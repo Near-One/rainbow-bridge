@@ -224,6 +224,7 @@ mod tests {
             finalized_beacon_header,
             current_sync_committee,
             next_sync_committee,
+            signer_account_id.clone()
         );
 
         let dao_contract_wrapper =

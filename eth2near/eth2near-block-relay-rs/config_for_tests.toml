@@ -1,5 +1,5 @@
 beacon_endpoint = "https://lodestar-goerli.chainsafe.io"
-eth1_endpoint = "https://goerli.infura.io/v3/API_KEY"
+eth1_endpoint = "https://goerli.infura.io/v3/64aa9edc46d941c3b30882ad2eae4304"
 path_to_current_sync_committee = "./data/goerli_testdata/next_sync_committee_goerli_period_473.json"
 path_to_next_sync_committee = "./data/goerli_testdata/next_sync_committee_goerli_period_474.json"
 path_to_execution_blocks_headers = "./data/goerli_testdata/execution_block_headers_goerli_slots_3885697_3886176.json"
