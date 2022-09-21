@@ -26,6 +26,7 @@ pub fn verify_light_client_snapshot(
     {
         return false;
     }
+    
     let branch = convert_branch(&light_client_snapshot.current_sync_committee_branch);
     merkle_proof::verify_merkle_proof(
         light_client_snapshot
