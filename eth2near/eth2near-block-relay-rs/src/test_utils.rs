@@ -149,7 +149,7 @@ pub fn init_contract_from_specific_slot(
         finalized_beacon_header,
         current_sync_committee,
         next_sync_committee,
-        eth_client_contract.get_signature_account_id().to_string()
+        eth_client_contract.get_signature_account_id().to_string(),
     );
 
     thread::sleep(time::Duration::from_secs(30));

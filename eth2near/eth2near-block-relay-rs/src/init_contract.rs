@@ -65,7 +65,7 @@ pub fn init_contract(
         finalized_header,
         current_sync_committee,
         next_sync_committee,
-        config.signer_account_id.clone()
+        config.signer_account_id.clone(),
     );
 
     thread::sleep(time::Duration::from_secs(30));

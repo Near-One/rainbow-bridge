@@ -10,6 +10,7 @@ use crate::prometheus_metrics::{
     LAST_FINALIZED_ETH_SLOT, LAST_FINALIZED_ETH_SLOT_ON_NEAR,
 };
 use crate::relay_errors::NoBlockForSlotError;
+use bitvec::macros::internal::funty::Fundamental;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::eth2::LightClientUpdate;
 use eth_types::BlockHeader;
@@ -402,7 +403,7 @@ impl Eth2NearRelay {
         LAST_FINALIZED_ETH_SLOT
             .inc_by(last_finalized_slot_on_eth as i64 - LAST_FINALIZED_ETH_SLOT.get());
 
-        trace!(target: "relay", "last_finalized_slot on near/eth {}/{}", last_finalized_slot_on_near, last_finalized_slot_on_eth);
+        info!(target: "relay", "last_finalized_slot on near/eth {}/{}", last_finalized_slot_on_near, last_finalized_slot_on_eth);
 
         if self.is_enough_blocks_for_light_client_update(
             last_submitted_slot,
@@ -583,6 +584,21 @@ impl Eth2NearRelay {
             }
 
             info!(target: "relay", "Sending light client update");
+
+            let finalized_block_number = return_on_fail!(
+                self.beacon_rpc_client
+                    .get_block_number_for_slot(types::Slot::new(
+                        light_client_update
+                            .finality_update
+                            .header_update
+                            .beacon_header
+                            .slot
+                            .as_u64()
+                    )),
+                "Fail on getting finalized block number"
+            );
+
+            info!(target: "relay", "Finalized block number = {}", finalized_block_number);
 
             let execution_outcome = return_on_fail_and_sleep!(
                 self.eth_client_contract
