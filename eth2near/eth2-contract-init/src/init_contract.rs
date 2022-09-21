@@ -5,6 +5,7 @@ use eth_types::eth2::ExtendedBeaconBlockHeader;
 use eth_types::BlockHeader;
 use log::info;
 use std::{thread, time};
+use contract_wrapper::near_network_enum::NearNetwork;
 use crate::config::Config;
 
 pub fn init_contract(
@@ -64,13 +65,13 @@ pub fn init_contract(
         trusted_signature = Option::Some(trusted_signature_name.parse().unwrap());
     }
 
-    if  config.near_network_id == "mainnet" {
+    if let NearNetwork::Mainnet = config.near_network_id {
         assert!(config.validate_updates, "The updates validation can't be disabled for mainnet");
         assert!(config.verify_bls_signature || config.trusted_signature.is_some(), "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet");
     }
 
     eth_client_contract.init_contract(
-        config.network.to_string(),
+        config.network.clone(),
         finalized_execution_header,
         finalized_header,
         current_sync_committee,

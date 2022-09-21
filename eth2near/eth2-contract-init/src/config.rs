@@ -1,3 +1,5 @@
+use contract_wrapper::eth_network_enum::EthNetwork;
+use contract_wrapper::near_network_enum::NearNetwork;
 use eth2_to_near_relay::near_rpc_client::NearRPCClient;
 use reqwest::Url;
 use serde::Deserialize;
@@ -25,10 +27,10 @@ pub struct Config {
     pub contract_account_id: String,
 
     // The Ethereum network name (mainnet, kiln, ropsten, goerli)
-    pub network: String,
+    pub network: EthNetwork,
 
     // NEAR network name (mainnet, testnet)
-    pub near_network_id: String,
+    pub near_network_id: NearNetwork,
 
     // Path to dir for output submitted light client updates and execution blocks
     pub output_dir: Option<String>,
@@ -56,7 +58,6 @@ impl Config {
 
         Self::check_urls(&config);
         Self::check_account_id(&config);
-        Self::check_network_types(&config);
 
         config
     }
@@ -102,22 +103,6 @@ impl Config {
             .unwrap()
         {
             panic!("Contract account id doesn't exist on NEAR network");
-        }
-    }
-
-    fn check_network_types(&self) {
-        // check `network`
-        if !(self.network == "mainnet"
-            || self.network == "kiln"
-            || self.network == "ropsten"
-            || self.network == "goerli")
-        {
-            panic!("Unknown network {}", self.network);
-        }
-
-        // check `near_network_id`
-        if !(self.near_network_id == "mainnet" || self.near_network_id == "testnet") {
-            panic!("Unknown near network id {}", self.near_network_id);
         }
     }
 }

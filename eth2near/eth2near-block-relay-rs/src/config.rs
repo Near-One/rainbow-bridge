@@ -1,5 +1,7 @@
 use crate::contract_type::ContractType;
+use contract_wrapper::eth_network_enum::EthNetwork;
 use crate::near_rpc_client::NearRPCClient;
+use contract_wrapper::near_network_enum::NearNetwork;
 use reqwest::Url;
 use serde::Deserialize;
 use std::io::Read;
@@ -29,7 +31,7 @@ pub struct Config {
     pub contract_account_id: String,
 
     // The Ethereum network name (mainnet, kiln, ropsten, goerli)
-    pub network: String,
+    pub network: EthNetwork,
 
     // Contract type (near, dao, file)
     pub contract_type: ContractType,
@@ -41,7 +43,7 @@ pub struct Config {
     pub max_blocks_for_finalization: u64,
 
     // NEAR network name (mainnet, testnet)
-    pub near_network_id: String,
+    pub near_network_id: NearNetwork,
 
     // Port for Prometheus
     pub prometheus_metrics_port: Option<u16>,
@@ -82,7 +84,6 @@ impl Config {
 
         Self::check_urls(&config);
         Self::check_account_id(&config);
-        Self::check_network_types(&config);
 
         config
     }
@@ -129,22 +130,6 @@ impl Config {
             {
                 panic!("DAO account id doesn't exist on NEAR network");
             }
-        }
-    }
-
-    fn check_network_types(&self) {
-        // check `network`
-        if !(self.network == "mainnet"
-            || self.network == "kiln"
-            || self.network == "ropsten"
-            || self.network == "goerli")
-        {
-            panic!("Unknown network {}", self.network);
-        }
-
-        // check `near_network_id`
-        if !(self.near_network_id == "mainnet" || self.near_network_id == "testnet") {
-            panic!("Unknown near network id {}", self.near_network_id);
         }
     }
 }

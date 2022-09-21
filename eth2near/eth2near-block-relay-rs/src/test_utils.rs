@@ -15,6 +15,7 @@ use tokio::runtime::Runtime;
 use tree_hash::TreeHash;
 use workspaces::{Account, Contract};
 use crate::contract_type::ContractType;
+use contract_wrapper::near_network_enum::NearNetwork;
 
 pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
     let mut json_file_path = std::env::current_exe().unwrap();
@@ -73,7 +74,7 @@ pub fn init_contract_from_files(
     }
 
     eth_client_contract.init_contract(
-        config_for_test.network_name.to_string(),
+        config_for_test.network_name.clone(),
         finalized_execution_header.unwrap(),
         finalized_beacon_header,
         current_sync_committee,
@@ -149,7 +150,7 @@ pub fn init_contract_from_specific_slot(
         .unwrap();
 
     eth_client_contract.init_contract(
-        config_for_test.network_name.to_string(),
+        config_for_test.network_name.clone(),
         finalized_execution_header,
         finalized_beacon_header,
         current_sync_committee,
@@ -186,11 +187,11 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
         signer_account_id: "NaN".to_string(),
         path_to_signer_secret_key: "NaN".to_string(),
         contract_account_id: "NaN".to_string(),
-        network: config_for_test.network_name.to_string(),
+        network: config_for_test.network_name.clone(),
         contract_type: ContractType::Near,
         light_client_updates_submission_frequency_in_epochs: 1,
         max_blocks_for_finalization: 5000,
-        near_network_id: "testnet".to_string(),
+        near_network_id: NearNetwork::Testnet,
         prometheus_metrics_port: Some(32221),
         dao_contract_account_id: None,
         output_dir: None,
@@ -214,8 +215,8 @@ fn get_init_config(
         signer_account_id: "NaN".to_string(),
         path_to_signer_secret_key: "NaN".to_string(),
         contract_account_id: "NaN".to_string(),
-        network: config_for_test.network_name.to_string(),
-        near_network_id: "testnet".to_string(),
+        network: config_for_test.network_name.clone(),
+        near_network_id: NearNetwork::Testnet,
         output_dir: None,
         eth_requests_timeout_seconds: 30,
         validate_updates: true,

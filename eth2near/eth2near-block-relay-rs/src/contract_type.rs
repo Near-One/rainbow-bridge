@@ -18,7 +18,7 @@ impl Display for IncorrectContractType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Unknown contract type. Possible contract types: 'near', 'dao', 'file'"
+            "Unknown contract type. Possible contract types: 'Near', 'Dao', 'File'"
         )
     }
 }
@@ -28,9 +28,9 @@ impl Error for IncorrectContractType {}
 impl Display for ContractType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            ContractType::Near => write!(f, "near"),
-            ContractType::Dao => write!(f, "dao"),
-            ContractType::File => write!(f, "file"),
+            ContractType::Near => write!(f, "Near"),
+            ContractType::Dao => write!(f, "Dao"),
+            ContractType::File => write!(f, "File"),
         }
     }
 }
@@ -38,9 +38,9 @@ impl Display for ContractType {
 impl ContractType {
     pub fn as_str(&self) -> &str {
         match self {
-            ContractType::Near => "near",
-            ContractType::Dao => "dao",
-            ContractType::File => "file",
+            ContractType::Near => "Near",
+            ContractType::Dao => "Dao",
+            ContractType::File => "File",
         }
     }
 }
@@ -50,9 +50,9 @@ impl FromStr for ContractType {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "near" => Ok(ContractType::Near),
-            "dao" => Ok(ContractType::Dao),
-            "file" => Ok(ContractType::File),
+            "Near" => Ok(ContractType::Near),
+            "Dao" => Ok(ContractType::Dao),
+            "File" => Ok(ContractType::File),
             _ => Err(IncorrectContractType),
         }
     }

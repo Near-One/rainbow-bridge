@@ -14,6 +14,7 @@ use std::error::Error;
 use std::option::Option;
 use std::string::String;
 use std::vec::Vec;
+use crate::eth_network_enum::EthNetwork;
 
 pub struct EthClientContract {
     last_slot: u64,
@@ -30,7 +31,7 @@ impl EthClientContract {
 
     pub fn init_contract(
         &self,
-        network: String,
+        network: EthNetwork,
         finalized_execution_header: BlockHeader,
         finalized_beacon_header: ExtendedBeaconBlockHeader,
         current_sync_committee: SyncCommittee,
@@ -56,7 +57,7 @@ impl EthClientContract {
         }
 
         let init_input = InitInput {
-            network,
+            network: network.to_string(),
             finalized_execution_header,
             finalized_beacon_header,
             current_sync_committee,
