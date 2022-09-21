@@ -124,7 +124,7 @@ impl ExecutionBlockProof {
 #[cfg(test)]
 mod tests {
     use crate::config_for_tests::ConfigForTests;
-    use crate::test_utils::read_json_file_from_data_dir;
+    use crate::utils::read_json_file_from_data_dir;
     use types::BeaconBlockBody;
     use types::MainnetEthSpec;
 

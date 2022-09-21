@@ -1,6 +1,6 @@
 use contract_wrapper::eth_client_contract::EthClientContract;
-use eth2_to_near_relay::beacon_rpc_client::BeaconRPCClient;
-use eth2_to_near_relay::eth1_rpc_client::Eth1RPCClient;
+use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
+use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
 use eth_types::eth2::ExtendedBeaconBlockHeader;
 use eth_types::BlockHeader;
 use log::info;

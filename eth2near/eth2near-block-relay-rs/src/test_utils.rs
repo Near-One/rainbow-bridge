@@ -1,7 +1,7 @@
-use crate::beacon_rpc_client::BeaconRPCClient;
+use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
 use crate::config_for_tests::ConfigForTests;
-use crate::eth1_rpc_client::Eth1RPCClient;
+use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
 use crate::eth2near_relay::Eth2NearRelay;
 use crate::test_utils;
 use contract_wrapper::eth_client_contract::EthClientContract;

@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 eth2_to_near_relay = { path = "../eth2near-block-relay-rs"}
+eth_rpc_client = { path = "../eth_rpc_client" }
 eth-types = { path = "../../contracts/near/eth-types/", features = ["eip1559"]}
 contract_wrapper = { path = "../contract_wrapper" }
 log = { version = "0.4", features = ["std", "serde"] }

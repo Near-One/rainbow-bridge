@@ -1,9 +1,9 @@
 use crate::execution_block_proof::ExecutionBlockProof;
-use crate::relay_errors::{
+use crate::errors::{
     ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError, NoBlockForSlotError,
     SignatureSlotNotFoundError,
 };
-use contract_wrapper::utils::trim_quotes;
+use crate::utils::trim_quotes;
 use eth_types::eth2::BeaconBlockHeader;
 use eth_types::eth2::FinalizedHeaderUpdate;
 use eth_types::eth2::HeaderUpdate;
@@ -470,12 +470,12 @@ impl BeaconRPCClient {
 mod tests {
     use crate::beacon_rpc_client::BeaconRPCClient;
     use crate::config_for_tests::ConfigForTests;
-    use crate::test_utils::read_json_file_from_data_dir;
-    use contract_wrapper::utils::trim_quotes;
+    use crate::utils::read_json_file_from_data_dir;
     use serde_json::Value;
     use types::BeaconBlockBody;
     use types::BeaconBlockHeader;
     use types::MainnetEthSpec;
+    use crate::utils::trim_quotes;
 
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000;

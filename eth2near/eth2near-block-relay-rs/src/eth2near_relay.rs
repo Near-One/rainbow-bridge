@@ -1,7 +1,7 @@
-use crate::beacon_rpc_client::BeaconRPCClient;
+use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
-use crate::eth1_rpc_client::Eth1RPCClient;
-use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
+use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
+use eth_rpc_client::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
 use crate::last_slot_searcher::LastSlotSearcher;
 use contract_wrapper::near_rpc_client::NearRPCClient;
 use crate::prometheus_metrics;
@@ -9,7 +9,7 @@ use crate::prometheus_metrics::{
     FAILS_ON_HEADERS_SUBMISSION, FAILS_ON_UPDATES_SUBMISSION, LAST_ETH_SLOT, LAST_ETH_SLOT_ON_NEAR,
     LAST_FINALIZED_ETH_SLOT, LAST_FINALIZED_ETH_SLOT_ON_NEAR,
 };
-use crate::relay_errors::NoBlockForSlotError;
+use eth_rpc_client::errors::NoBlockForSlotError;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::eth2::LightClientUpdate;
 use eth_types::BlockHeader;
@@ -607,11 +607,11 @@ impl Eth2NearRelay {
 
 #[cfg(test)]
 mod tests {
-    use crate::beacon_rpc_client::BeaconRPCClient;
+    use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
     use crate::config_for_tests::ConfigForTests;
     use crate::eth2near_relay::{Eth2NearRelay, ONE_EPOCH_IN_SLOTS};
-    use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
-    use crate::relay_errors::NoBlockForSlotError;
+    use eth_rpc_client::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
+    use eth_rpc_client::errors::NoBlockForSlotError;
     use crate::test_utils::{get_relay, get_relay_from_slot, get_relay_with_update_from_file};
     use eth_types::eth2::LightClientUpdate;
     use eth_types::BlockHeader;

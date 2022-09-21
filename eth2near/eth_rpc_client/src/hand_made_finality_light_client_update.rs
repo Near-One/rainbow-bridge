@@ -1,7 +1,7 @@
 use crate::beacon_block_body_merkle_tree::BeaconStateMerkleTree;
 use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::execution_block_proof::ExecutionBlockProof;
-use crate::relay_errors::{
+use crate::errors::{
     ErrorOnUnwrapSignatureBit, MissNextSyncCommittee, MissSyncAggregationError, NoBlockForSlotError,
 };
 use eth_types::eth2::{
@@ -379,14 +379,8 @@ mod tests {
             TIMEOUT_STATE_SECONDS,
         );
 
-        let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
-            &std::fs::read_to_string(config.path_to_light_client_updates)
-                .expect("Unable to read file"),
-        )
-        .unwrap();
-
         let light_client_period =
-            BeaconRPCClient::get_period_for_slot(light_client_updates[0].signature_slot);
+            BeaconRPCClient::get_period_for_slot(config.first_slot);
 
         let light_client_update = beacon_rpc_client
             .get_light_client_update(light_client_period)
@@ -421,17 +415,18 @@ mod tests {
         let hand_made_light_client_update =
             HandMadeFinalityLightClientUpdate::get_finality_light_client_update_from_file(
                 &beacon_rpc_client,
-                &config.path_to_attested_state,
+                &config.path_to_attested_state_for_period,
             )
             .unwrap();
 
-        let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
-            &std::fs::read_to_string(config.path_to_light_client_updates)
-                .expect("Unable to read file"),
-        )
-        .unwrap();
+        let light_client_period =
+            BeaconRPCClient::get_period_for_slot(hand_made_light_client_update.signature_slot);
 
-        cmp_light_client_updates(&hand_made_light_client_update, &light_client_updates[1]);
+        let light_client_update = beacon_rpc_client
+            .get_light_client_update(light_client_period)
+            .unwrap();
+
+        cmp_light_client_updates(&hand_made_light_client_update, &light_client_update);
     }
 
     #[test]
@@ -449,14 +444,9 @@ mod tests {
                 &config.path_to_finality_state_for_period,
             ).unwrap();
 
-        let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
-            &std::fs::read_to_string(config.path_to_light_client_updates)
-                .expect("Unable to read file"),
-        )
-        .unwrap();
-
         let light_client_period =
-            BeaconRPCClient::get_period_for_slot(light_client_updates[0].signature_slot);
+            BeaconRPCClient::get_period_for_slot(hand_made_light_client_update.signature_slot);
+
         let light_client_update = beacon_rpc_client
             .get_light_client_update(light_client_period)
             .unwrap();

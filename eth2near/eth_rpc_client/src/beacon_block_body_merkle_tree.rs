@@ -148,7 +148,7 @@ mod tests {
     use crate::beacon_block_body_merkle_tree::{
         BeaconBlockBodyMerkleTree, ExecutionPayloadMerkleTree,
     };
-    use crate::test_utils::read_json_file_from_data_dir;
+    use crate::utils::read_json_file_from_data_dir;
     use tree_hash::TreeHash;
     use types::BeaconBlockBody;
     use types::MainnetEthSpec;
