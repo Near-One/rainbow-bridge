@@ -17,7 +17,7 @@ use std::vec::Vec;
 
 pub struct EthClientContract {
     last_slot: u64,
-    contract_wrapper: Box<dyn ContractWrapper>,
+    pub contract_wrapper: Box<dyn ContractWrapper>,
 }
 
 impl EthClientContract {
@@ -322,6 +322,9 @@ mod tests {
             finalized_beacon_header,
             current_sync_committee,
             next_sync_committee,
+            None,
+            None,
+            Some(eth_client_contract.contract_wrapper.get_signer_account_id()),
         );
         eth_state.current_light_client_update = 1;
     }
