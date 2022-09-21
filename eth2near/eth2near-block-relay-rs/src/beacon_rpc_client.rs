@@ -480,7 +480,7 @@ mod tests {
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000;
 
-    fn get_config() -> ConfigForTests {
+    fn get_test_config() -> ConfigForTests {
         ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
     }
 
@@ -530,7 +530,7 @@ mod tests {
 
     #[test]
     fn test_get_json_from_raw_request() {
-        let config = get_config();
+        let config = get_test_config();
         let file_json_str =
             std::fs::read_to_string(&config.path_to_block).expect("Unable to read file");
 
@@ -545,7 +545,7 @@ mod tests {
 
     #[test]
     fn test_rpc_beacon_block_body_and_header_smoke() {
-        let config = get_config();
+        let config = get_test_config();
 
         let _beacon_block_body = BeaconRPCClient::new(
             &config.beacon_endpoint,
@@ -565,7 +565,7 @@ mod tests {
 
     #[test]
     fn test_get_beacon_block_header() {
-        let config = get_config();
+        let config = get_test_config();
         let beacon_block_header = BeaconRPCClient::new(
             &config.beacon_endpoint,
             TIMEOUT_SECONDS,
@@ -606,7 +606,7 @@ mod tests {
 
     #[test]
     fn test_get_beacon_block_body() {
-        let config = get_config();
+        let config = get_test_config();
 
         let beacon_block_body = BeaconRPCClient::new(
             &config.beacon_endpoint,
@@ -678,7 +678,7 @@ mod tests {
 
     #[test]
     fn test_fetch_light_client_update() {
-        let config = get_config();
+        let config = get_test_config();
 
         let beacon_rpc_client = BeaconRPCClient::new(
             &config.beacon_endpoint,

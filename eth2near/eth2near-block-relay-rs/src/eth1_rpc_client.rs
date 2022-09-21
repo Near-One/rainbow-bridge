@@ -85,13 +85,13 @@ mod tests {
     use crate::config_for_tests::ConfigForTests;
     use crate::eth1_rpc_client::Eth1RPCClient;
 
-    fn get_config() -> ConfigForTests {
+    fn get_test_config() -> ConfigForTests {
         ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
     }
 
     #[test]
     fn test_smoke_get_block_by_number() {
-        let config = get_config();
+        let config = get_test_config();
 
         let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
         eth1_rpc_client
@@ -101,7 +101,7 @@ mod tests {
 
     #[test]
     fn test_is_syncing() {
-        let config = get_config();
+        let config = get_test_config();
 
         let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
         assert!(!eth1_rpc_client.is_syncing().unwrap());
