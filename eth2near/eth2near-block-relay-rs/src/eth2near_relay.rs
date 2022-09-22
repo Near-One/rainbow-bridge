@@ -197,14 +197,16 @@ impl Eth2NearRelay {
                 were_submission_on_iter = true;
             }
 
-            let last_finalized_slot_on_near: u64 = return_on_fail!(
+            let last_finalized_slot_on_near: u64 = skip_fail!(
                 self.eth_client_contract.get_finalized_beacon_block_slot(),
-                "Error on getting finalized block hash. Skipping sending light client update"
-            );
-            let last_finalized_slot_on_eth: u64 = return_on_fail!(self
+                "Error on getting finalized block hash. Skipping sending light client update",
+                self.sleep_time_on_sync_secs);
+            
+            let last_finalized_slot_on_eth: u64 = skip_fail!(self
                 .beacon_rpc_client
                 .get_last_finalized_slot_number(),
-                "Error on getting last finalized slot number on Ethereum. Skipping sending light client update").as_u64();
+                "Error on getting last finalized slot number on Ethereum. Skipping sending light client update",
+                self.sleep_time_on_sync_secs).as_u64();
 
             LAST_FINALIZED_ETH_SLOT_ON_NEAR
                 .inc_by(last_finalized_slot_on_near as i64 - LAST_FINALIZED_ETH_SLOT_ON_NEAR.get());
