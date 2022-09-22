@@ -324,7 +324,7 @@ mod tests {
             next_sync_committee,
             None,
             None,
-            Some(eth_client_contract.contract_wrapper.get_signer_account_id()),
+            None,
         );
         eth_state.current_light_client_update = 1;
     }
