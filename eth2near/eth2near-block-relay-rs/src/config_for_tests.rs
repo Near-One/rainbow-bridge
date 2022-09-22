@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use std::io::Read;
 use std::path::PathBuf;
+use std::env;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct ConfigForTests {
@@ -36,7 +37,7 @@ impl ConfigForTests {
         config.read_to_string(&mut content).unwrap();
         let mut config: Self = toml::from_str(content.as_str()).unwrap();
 
-        let api_key_string = std::fs::read_to_string("./data/API_KEY").expect("Unable to read file");
+        let api_key_string = env::var("API_KEY").unwrap();
         config.eth1_endpoint = config.eth1_endpoint.replace("API_KEY", &api_key_string);
 
         config
