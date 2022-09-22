@@ -53,6 +53,8 @@ jobs:
             timeout-minutes: 20
 
           - job-name: test eth2near/eth2-to-near-block-relay-rs
+            env: 
+                API_KEY: ${{ secrets.INFURA_API_KEY }} 
             cmd: |
               cd eth2near/eth2near-block-relay-rs
               ./test.sh
