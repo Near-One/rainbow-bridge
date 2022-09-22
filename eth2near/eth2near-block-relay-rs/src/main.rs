@@ -26,6 +26,7 @@ struct Arguments {
 
     #[clap(long, action = ArgAction::Set, default_value = "")]
     /// The trusted block root for checkpoint for contract initialization
+    /// e.g.: --init-contract --init-block-root 0x9cd0c5a8392d0659426b12384e8440c147510ab93eeaeccb08435a462d7bb1c7
     init_block_root: String,
 
     #[clap(long, default_value_t = String::from("info"))]

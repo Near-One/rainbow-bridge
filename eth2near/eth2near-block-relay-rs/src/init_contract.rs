@@ -1,6 +1,7 @@
 use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
 use crate::eth1_rpc_client::Eth1RPCClient;
+use crate::light_client_snapshot_with_proof::LightClientSnapshotWithProof;
 use contract_wrapper::eth_client_contract::EthClientContract;
 use eth2_utility::consensus::{convert_branch, floorlog2, get_subtree_index};
 use eth_types::eth2::ExtendedBeaconBlockHeader;
@@ -8,7 +9,6 @@ use eth_types::BlockHeader;
 use log::info;
 use std::{thread, time};
 use tree_hash::TreeHash;
-use crate::light_client_snapshot_with_proof::LightClientSnapshotWithProof;
 
 const CURRENT_SYNC_COMMITTEE_INDEX: u32 = 54;
 const CURRENT_SYNC_COMMITTEE_TREE_DEPTH: u32 = floorlog2(CURRENT_SYNC_COMMITTEE_INDEX);
@@ -18,15 +18,15 @@ pub fn verify_light_client_snapshot(
     block_root: String,
     light_client_snapshot: &LightClientSnapshotWithProof,
 ) -> bool {
-    if block_root
-        != format!(
-            "{:#x}",
-            light_client_snapshot.beacon_header.tree_hash_root()
-        )
-    {
+    let expected_block_root = format!(
+        "{:#x}",
+        light_client_snapshot.beacon_header.tree_hash_root()
+    );
+
+    if block_root != expected_block_root {
         return false;
     }
-    
+
     let branch = convert_branch(&light_client_snapshot.current_sync_committee_branch);
     merkle_proof::verify_merkle_proof(
         light_client_snapshot
@@ -51,10 +51,6 @@ pub fn init_contract(
         config.eth_requests_timeout_seconds,
         config.state_requests_timeout_seconds,
     );
-
-    if init_block_root.is_empty() {
-        init_block_root = beacon_rpc_client.get_checkpoint_root().expect("Fail to get last checkpoint");
-    }
 
     let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
 
@@ -88,12 +84,21 @@ pub fn init_contract(
         .unwrap()
         .next_sync_committee;
 
+    if init_block_root.is_empty() {
+        init_block_root = beacon_rpc_client
+            .get_checkpoint_root()
+            .expect("Fail to get last checkpoint");
+    }
+
     let light_client_snapshot = beacon_rpc_client
         .get_bootstrap(init_block_root.clone())
         .expect("Unable to fetch bootstrap state");
 
-    if BeaconRPCClient::get_period_for_slot(light_client_snapshot.beacon_header.slot) !=
-        BeaconRPCClient::get_period_for_slot(finality_slot) {
+    info!(target: "relay", "init_block_root: {}", init_block_root);
+
+    if BeaconRPCClient::get_period_for_slot(light_client_snapshot.beacon_header.slot)
+        != BeaconRPCClient::get_period_for_slot(finality_slot)
+    {
         panic!("Period for init_block_root different from current period. Please use snapshot for current period");
     }
 
