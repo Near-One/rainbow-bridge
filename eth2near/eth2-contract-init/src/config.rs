@@ -51,10 +51,10 @@ pub struct Config {
 
 impl Config {
     pub fn load_from_toml(path: PathBuf) -> Self {
-        let mut config = std::fs::File::open(path).unwrap();
+        let mut config = std::fs::File::open(path).expect("Error on opening file with config");
         let mut content = String::new();
-        config.read_to_string(&mut content).unwrap();
-        let config = toml::from_str(content.as_str()).unwrap();
+        config.read_to_string(&mut content).expect("Error on reading config");
+        let config = toml::from_str(content.as_str()).expect("Error on parse config");
 
         Self::check_urls(&config);
         Self::check_account_id(&config);
@@ -64,43 +64,43 @@ impl Config {
 
     fn check_urls(&self) {
         // check `beacon_endpoint`
-        Url::parse(&self.beacon_endpoint).unwrap();
+        Url::parse(&self.beacon_endpoint).expect("Incorrect beacon endpoint");
 
         // check `eth1_endpoint`
-        Url::parse(&self.eth1_endpoint).unwrap();
+        Url::parse(&self.eth1_endpoint).expect("Incorrect eth1 endpoint");
 
         // check `near_endpoint`
-        Url::parse(&self.near_endpoint).unwrap();
+        Url::parse(&self.near_endpoint).expect("Incorrect near endpoint");
     }
 
     fn check_account_id(&self) {
         let near_rpc_client = NearRPCClient::new(&self.near_endpoint);
 
         // check `signer_account_id`
-        let _signer_account_id: near_sdk::AccountId = self.signer_account_id.parse().unwrap();
+        self.signer_account_id.parse::<near_sdk::AccountId>().expect("Incorrect signature account");
         if !near_rpc_client
             .check_account_exists(&self.signer_account_id)
-            .unwrap()
+            .expect("Error on checking signature account existence")
         {
             panic!("Signer account id doesn't exist on NEAR network");
         }
 
         // check `trusted_signature`
         if let Some(trusted_signature) = self.trusted_signature.clone() {
-            let _trusted_signature: near_sdk::AccountId = trusted_signature.parse().unwrap();
+            trusted_signature.parse::<near_sdk::AccountId>().expect("Incorrect contract account id");
             if !near_rpc_client
                 .check_account_exists(&trusted_signature)
-                .unwrap()
+                .expect("Error on checking trusted signature account existence")
             {
                 panic!("Trusted signature doesn't exist on NEAR network");
             }
         }
 
         // check `contract_account_id`
-        let _contract_account_id: near_sdk::AccountId = self.contract_account_id.parse().unwrap();
+        self.contract_account_id.parse::<near_sdk::AccountId>().expect("Incorrect contract account id");
         if !near_rpc_client
             .check_account_exists(&self.contract_account_id)
-            .unwrap()
+            .expect("Error on checking contract account existence")
         {
             panic!("Contract account id doesn't exist on NEAR network");
         }

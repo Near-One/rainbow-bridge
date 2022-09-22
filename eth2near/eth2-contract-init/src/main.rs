@@ -41,21 +41,21 @@ fn init_log(args: &Arguments, config: &Config) {
     let mut path_to_log_file = "./eth2-contract-init.log".to_string();
     if let Some(out_dir) = config.clone().output_dir {
         path_to_log_file = out_dir.clone() + "/" + "eth2-contract-init.log";
-        std::fs::create_dir_all(out_dir).unwrap();
+        std::fs::create_dir_all(out_dir).expect("Error during creation output dirs in path");
     }
 
     log::set_boxed_logger(Box::new(SimpleLogger::new(path_to_log_file)))
         .map(|()| log::set_max_level(log_level_filter))
-        .unwrap();
+        .expect("Error during logger creation");
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Arguments::parse();
-    let config = Config::load_from_toml(args.config.clone().try_into().unwrap());
+    let config = Config::load_from_toml(args.config.clone().try_into().expect("Incorrect config path"));
     init_log(&args, &config);
 
     let mut eth_client_contract = EthClientContract::new(get_eth_contract_wrapper(&config));
-    init_contract(&config, &mut eth_client_contract).unwrap();
+    init_contract(&config, &mut eth_client_contract).expect("Error on contract initialization");
 
     Ok(())
 }

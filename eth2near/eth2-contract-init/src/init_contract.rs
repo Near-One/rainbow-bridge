@@ -21,12 +21,13 @@ pub fn init_contract(
     );
     let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
 
-    let start_slot = beacon_rpc_client.get_last_finalized_slot_number().unwrap();
+    let start_slot = beacon_rpc_client.get_last_finalized_slot_number().expect("Error on fetching the last finalized slot for initialization");
     let period = BeaconRPCClient::get_period_for_slot(start_slot.as_u64());
 
     let light_client_update = beacon_rpc_client
         .get_finality_light_client_update_with_sync_commity_update()
-        .unwrap();
+        .expect("Error on fetching finality light client update with sync committee update");
+
     let block_id = format!(
         "{}",
         light_client_update
@@ -39,30 +40,31 @@ pub fn init_contract(
         ExtendedBeaconBlockHeader::from(light_client_update.finality_update.header_update);
     let finalized_body = beacon_rpc_client
         .get_beacon_block_body_for_block_id(&block_id)
-        .unwrap();
+        .expect("Error on fetching finalized body");
 
     let finalized_execution_header: BlockHeader = eth1_rpc_client
         .get_block_header_by_number(
             finalized_body
                 .execution_payload()
-                .unwrap()
+                .expect("No execution payload in finalized body")
                 .execution_payload
                 .block_number,
         )
-        .unwrap();
+        .expect("Error on fetching finalized execution header");
+
     let next_sync_committee = light_client_update
         .sync_committee_update
-        .unwrap()
+        .expect("No sync_committee update in light client update")
         .next_sync_committee;
     let prev_light_client_update = beacon_rpc_client.get_light_client_update(period - 1)?;
     let current_sync_committee = prev_light_client_update
         .sync_committee_update
-        .unwrap()
+        .expect("No sync_committee update in prev light client update")
         .next_sync_committee;
 
     let mut trusted_signature: Option<near_primitives::types::AccountId> = Option::None;
     if let Some(trusted_signature_name) = config.trusted_signature.clone() {
-        trusted_signature = Option::Some(trusted_signature_name.parse().unwrap());
+        trusted_signature = Option::Some(trusted_signature_name.parse().expect("Error on parsing trusted signature account"));
     }
 
     if let NearNetwork::Mainnet = config.near_network_id {
@@ -149,7 +151,8 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet")]
-    fn test_init_contract_on_mainnet_without_trusted_signature() {        let config_for_test = ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap());
+    fn test_init_contract_on_mainnet_without_trusted_signature() {
+        let config_for_test = ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap());
 
         let (relay_account, contract) = create_contract(&config_for_test);
         let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
