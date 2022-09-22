@@ -1121,7 +1121,9 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "tokio 1.21.1",
  "toml",
+ "workspaces",
 ]
 
 [[package]]

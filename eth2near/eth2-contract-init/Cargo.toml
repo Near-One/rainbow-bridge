@@ -18,6 +18,11 @@ near-sdk = "4.0.0"
 near-primitives = "0.14.0"
 logger = { path = "../logger" }
 
+[dev-dependencies]
+workspaces = "0.5.0"
+tokio = { version = "1.1", features = ["macros", "rt", "time"] }
+
+
 [patch]
 [patch.crates-io]
 eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }

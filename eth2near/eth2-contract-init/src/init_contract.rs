@@ -86,3 +86,79 @@ pub fn init_contract(
     thread::sleep(time::Duration::from_secs(30));
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use contract_wrapper::eth_client_contract::EthClientContract;
+    use tokio::runtime::Runtime;
+    use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
+    use workspaces::{Account, Contract};
+    use crate::init_contract::init_contract;
+    use contract_wrapper::near_network_enum::NearNetwork;
+    use crate::config_for_tests::ConfigForTests;
+
+    fn create_contract(config_for_test: &ConfigForTests) -> (Account, Contract) {
+        let rt = Runtime::new().unwrap();
+        let worker = rt.block_on(workspaces::sandbox()).unwrap();
+
+        // create accounts
+        let owner: Account = worker.root_account().unwrap();
+
+        let wasm = std::fs::read(&config_for_test.wasm_filepath).unwrap();
+        let contract = rt.block_on(owner.deploy(&wasm)).unwrap().unwrap();
+
+        (owner, contract)
+    }
+
+    fn get_init_config(config_for_test: &ConfigForTests,  eth_client_contract: &EthClientContract) -> crate::config::Config {
+        return crate::config::Config {
+            beacon_endpoint: config_for_test.beacon_endpoint.to_string(),
+            eth1_endpoint: config_for_test.eth1_endpoint.to_string(),
+            near_endpoint: "https://rpc.testnet.near.org".to_string(),
+            signer_account_id: "NaN".to_string(),
+            path_to_signer_secret_key: "NaN".to_string(),
+            contract_account_id: "NaN".to_string(),
+            network: config_for_test.network_name.clone(),
+            near_network_id: NearNetwork::Testnet,
+            output_dir: None,
+            eth_requests_timeout_seconds: 30,
+            validate_updates: true,
+            verify_bls_signature: false,
+            hashes_gc_threshold: 51000,
+            max_submitted_blocks_by_account: 8000,
+            trusted_signature: Some(eth_client_contract.get_signer_account_id().to_string()),
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "The updates validation can't be disabled for mainnet")]
+    fn test_init_contract_on_mainnet_without_validation() {
+        let config_for_test = ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap());
+
+        let (relay_account, contract) = create_contract(&config_for_test);
+        let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
+
+        let mut eth_client_contract = EthClientContract::new(contract_wrapper);
+        let mut init_config = get_init_config(&config_for_test, &eth_client_contract);
+        init_config.validate_updates = false;
+        init_config.near_network_id = NearNetwork::Mainnet;
+
+        init_contract(&init_config, &mut eth_client_contract).unwrap();
+    }
+
+
+    #[test]
+    #[should_panic(expected = "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet")]
+    fn test_init_contract_on_mainnet_without_trusted_signature() {        let config_for_test = ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap());
+
+        let (relay_account, contract) = create_contract(&config_for_test);
+        let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
+
+        let mut eth_client_contract = EthClientContract::new(contract_wrapper);
+        let mut init_config = get_init_config(&config_for_test, &eth_client_contract);
+        init_config.near_network_id = NearNetwork::Mainnet;
+        init_config.trusted_signature = None;
+
+        init_contract(&init_config, &mut eth_client_contract).unwrap();
+    }
+}
