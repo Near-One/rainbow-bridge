@@ -14,7 +14,7 @@ use std::error::Error;
 use std::option::Option;
 use std::string::String;
 use std::vec::Vec;
-
+use serde::Serialize;
 pub struct EthClientContract {
     last_slot: u64,
     pub contract_wrapper: Box<dyn ContractWrapper>,
@@ -39,7 +39,7 @@ impl EthClientContract {
         max_submitted_blocks_by_account: Option<u32>,
         trusted_signer: Option<AccountId>,
     ) {
-        #[derive(BorshSerialize)]
+        #[derive(BorshSerialize, Serialize)]
         pub struct InitInput {
             pub network: String,
             pub finalized_execution_header: eth_types::BlockHeader,
@@ -65,6 +65,11 @@ impl EthClientContract {
             max_submitted_blocks_by_account: max_submitted_blocks_by_account.unwrap_or(8000),
             trusted_signer,
         };
+
+        println!(
+            "Init eth2 client input: \n {}",
+            serde_json::to_string_pretty(&init_input).unwrap()
+        );
 
         self.contract_wrapper
             .call_change_method(
