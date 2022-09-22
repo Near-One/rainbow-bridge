@@ -1,3 +1,4 @@
+use std::env;
 use serde::Deserialize;
 use std::io::Read;
 use std::path::PathBuf;
@@ -16,6 +17,12 @@ impl ConfigForTests {
         let mut config = std::fs::File::open(path).unwrap();
         let mut content = String::new();
         config.read_to_string(&mut content).unwrap();
-        toml::from_str(content.as_str()).unwrap()
+
+        let mut config: Self = toml::from_str(content.as_str()).unwrap();
+
+        let api_key_string = env::var("API_KEY").unwrap();
+        config.eth1_endpoint = config.eth1_endpoint.replace("API_KEY", &api_key_string);
+
+        config
     }
 }
