@@ -34,8 +34,11 @@ impl ConfigForTests {
         let mut config = std::fs::File::open(path).unwrap();
         let mut content = String::new();
         config.read_to_string(&mut content).unwrap();
-        toml::from_str(content.as_str()).unwrap()
+        let mut config: Self = toml::from_str(content.as_str()).unwrap();
 
+        let api_key_string = std::fs::read_to_string("./data/API_KEY").expect("Unable to read file");
+        config.eth1_endpoint = config.eth1_endpoint.replace("API_KEY", &api_key_string);
 
+        config
     }
 }

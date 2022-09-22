@@ -2,7 +2,7 @@ use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::relay_errors::{ExecutionPayloadError, NoBlockForSlotError};
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::H256;
-use log::{debug, trace, info};
+use log::{trace, info};
 use std::cmp::{max, min};
 use std::error::Error;
 

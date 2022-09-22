@@ -585,7 +585,7 @@ impl Eth2NearRelay {
 
             let execution_outcome = return_on_fail_and_sleep!(
                 self.eth_client_contract
-                    .send_light_client_update(light_client_update),
+                    .send_light_client_update(light_client_update.clone()),
                 "Fail to send light client update",
                 self.sleep_time_on_sync_secs
             );
