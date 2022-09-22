@@ -78,6 +78,9 @@ pub fn init_contract_from_files(eth_client_contract: &mut EthClientContract) {
         finalized_beacon_header,
         current_sync_committee,
         next_sync_committee,
+        None,
+        None,
+        Some(eth_client_contract.contract_wrapper.get_signer_account_id()),
     );
     thread::sleep(time::Duration::from_secs(30));
 }
@@ -154,6 +157,9 @@ pub fn init_contract_from_specific_slot(
         finalized_beacon_header,
         current_sync_committee,
         next_sync_committee,
+        None,
+        None,
+        Some(eth_client_contract.contract_wrapper.get_signer_account_id()),
     );
 
     thread::sleep(time::Duration::from_secs(30));
@@ -207,6 +213,8 @@ fn get_config() -> Config {
         state_requests_timeout_seconds: 1000,
         sleep_time_after_submission_secs: 5,
         sleep_time_on_sync_secs: 30,
+        hashes_gc_threshold: None,
+        max_submitted_blocks_by_account: None,
     }
 }
 

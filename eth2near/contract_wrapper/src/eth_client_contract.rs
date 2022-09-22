@@ -14,10 +14,10 @@ use std::error::Error;
 use std::option::Option;
 use std::string::String;
 use std::vec::Vec;
-
+use serde::Serialize;
 pub struct EthClientContract {
     last_slot: u64,
-    contract_wrapper: Box<dyn ContractWrapper>,
+    pub contract_wrapper: Box<dyn ContractWrapper>,
 }
 
 impl EthClientContract {
@@ -35,8 +35,11 @@ impl EthClientContract {
         finalized_beacon_header: ExtendedBeaconBlockHeader,
         current_sync_committee: SyncCommittee,
         next_sync_committee: SyncCommittee,
+        hashes_gc_threshold: Option<u64>,
+        max_submitted_blocks_by_account: Option<u32>,
+        trusted_signer: Option<AccountId>,
     ) {
-        #[derive(BorshSerialize)]
+        #[derive(BorshSerialize, Serialize)]
         pub struct InitInput {
             pub network: String,
             pub finalized_execution_header: eth_types::BlockHeader,
@@ -58,10 +61,15 @@ impl EthClientContract {
             next_sync_committee,
             validate_updates: true,
             verify_bls_signatures: false,
-            hashes_gc_threshold: 51000,
-            max_submitted_blocks_by_account: 8000,
-            trusted_signer: Option::<AccountId>::None,
+            hashes_gc_threshold: hashes_gc_threshold.unwrap_or(51_000),
+            max_submitted_blocks_by_account: max_submitted_blocks_by_account.unwrap_or(8000),
+            trusted_signer,
         };
+
+        println!(
+            "Init eth2 client input: \n {}",
+            serde_json::to_string_pretty(&init_input).unwrap()
+        );
 
         self.contract_wrapper
             .call_change_method(
@@ -319,6 +327,9 @@ mod tests {
             finalized_beacon_header,
             current_sync_committee,
             next_sync_committee,
+            None,
+            None,
+            None,
         );
         eth_state.current_light_client_update = 1;
     }
