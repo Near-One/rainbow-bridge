@@ -583,8 +583,6 @@ impl Eth2NearRelay {
                 return;
             }
 
-            info!(target: "relay", "Sending light client update");
-
             let finalized_block_number = return_on_fail!(
                 self.beacon_rpc_client
                     .get_block_number_for_slot(types::Slot::new(
@@ -606,6 +604,8 @@ impl Eth2NearRelay {
                 "Fail to send light client update",
                 self.sleep_time_on_sync_secs
             );
+
+            info!(target: "relay", "Sending light client update");
 
             if let FinalExecutionStatus::Failure(error_message) = execution_outcome.status {
                 FAILS_ON_UPDATES_SUBMISSION.inc();
