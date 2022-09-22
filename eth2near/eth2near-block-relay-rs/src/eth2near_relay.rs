@@ -583,21 +583,6 @@ impl Eth2NearRelay {
                 return;
             }
 
-            let finalized_block_number = return_on_fail!(
-                self.beacon_rpc_client
-                    .get_block_number_for_slot(types::Slot::new(
-                        light_client_update
-                            .finality_update
-                            .header_update
-                            .beacon_header
-                            .slot
-                            .as_u64()
-                    )),
-                "Fail on getting finalized block number"
-            );
-
-            info!(target: "relay", "Finalized block number = {}", finalized_block_number);
-
             let execution_outcome = return_on_fail_and_sleep!(
                 self.eth_client_contract
                     .send_light_client_update(light_client_update),
@@ -614,6 +599,21 @@ impl Eth2NearRelay {
 
             info!(target: "relay", "Successful light client update submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
                                   self.near_network_name, execution_outcome.transaction.hash);
+
+            let finalized_block_number = return_on_fail!(
+                self.beacon_rpc_client
+                    .get_block_number_for_slot(types::Slot::new(
+                        light_client_update
+                            .finality_update
+                            .header_update
+                            .beacon_header
+                            .slot
+                            .as_u64()
+                    )),
+                "Fail on getting finalized block number"
+            );
+
+            info!(target: "relay", "Finalized block number from light client update = {}", finalized_block_number);
             sleep(Duration::from_secs(self.sleep_time_after_submission_secs));
         } else {
             debug!(target: "relay", "Finalized block for light client update is not found on NEAR. Skipping send light client update");
