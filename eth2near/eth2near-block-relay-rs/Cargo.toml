@@ -24,6 +24,7 @@ futures = { version = "0.3.21", default-features = false }
 async-std = "1.12.0"
 hex = "*"
 toml = "0.5.9"
+eth2-utility  = { path = "../../contracts/near/eth2-utility" }
 finality-update-verify = { path = "../finality-update-verify" }
 atomic_refcell = "0.1.8"
 bitvec = "*"

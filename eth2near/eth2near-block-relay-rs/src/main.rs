@@ -24,6 +24,11 @@ struct Arguments {
     /// The eth contract on Near will be initialized
     init_contract: bool,
 
+    #[clap(long, action = ArgAction::Set, default_value = "")]
+    /// The trusted block root for checkpoint for contract initialization
+    /// e.g.: --init-contract --init-block-root 0x9cd0c5a8392d0659426b12384e8440c147510ab93eeaeccb08435a462d7bb1c7
+    init_block_root: String,
+
     #[clap(long, default_value_t = String::from("info"))]
     /// Log level (trace, debug, info, warn, error)
     log_level: String,
@@ -101,7 +106,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if args.init_contract {
         let mut eth_client_contract = EthClientContract::new(get_eth_contract_wrapper(&config));
-        init_contract(&config, &mut eth_client_contract).unwrap();
+        init_contract(&config, &mut eth_client_contract, args.init_block_root).unwrap();
     } else {
         let mut eth2near_relay = Eth2NearRelay::init(
             &config,
