@@ -1,3 +1,4 @@
+use std::cmp::max;
 use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
 use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
@@ -188,9 +189,9 @@ impl Eth2NearRelay {
                 self.sleep_time_on_sync_secs
             );
 
-            LAST_ETH_SLOT.inc_by(last_eth2_slot_on_eth_chain as i64 - LAST_ETH_SLOT.get());
+            LAST_ETH_SLOT.inc_by(max(0, last_eth2_slot_on_eth_chain as i64 - LAST_ETH_SLOT.get()));
             LAST_ETH_SLOT_ON_NEAR
-                .inc_by(last_eth2_slot_on_near as i64 - LAST_ETH_SLOT_ON_NEAR.get());
+                .inc_by(max(0,last_eth2_slot_on_near as i64 - LAST_ETH_SLOT_ON_NEAR.get()));
 
             info!(target: "relay", "Last slot on near = {}; last slot on eth = {}",
                   last_eth2_slot_on_near, last_eth2_slot_on_eth_chain);
