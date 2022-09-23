@@ -108,7 +108,7 @@ impl Eth2NearRelay {
             config.state_requests_timeout_seconds,
         );
         let next_light_client_update =
-            Self::get_light_client_update_from_file(config, &beacon_rpc_client).unwrap();
+            Self::get_light_client_update_from_file(config, &beacon_rpc_client).expect("Error on parsing light client update");
 
         let eth2near_relay = Eth2NearRelay {
             beacon_rpc_client,
@@ -137,7 +137,7 @@ impl Eth2NearRelay {
             eth2near_relay
                 .eth_client_contract
                 .register_submitter()
-                .unwrap();
+                .expect("Error during register submitter");
         }
 
         if let Some(port) = config.prometheus_metrics_port {
@@ -244,7 +244,7 @@ impl Eth2NearRelay {
                             beacon_rpc_client,
                             &path_to_attested_state,
                             &path_to_finality_state,
-                        ).unwrap(),
+                        ).expect("Error on getting light client update from file"),
                     );
                 }
                 None => {
@@ -252,7 +252,7 @@ impl Eth2NearRelay {
                         HandMadeFinalityLightClientUpdate::get_finality_light_client_update_from_file(
                             beacon_rpc_client,
                             &path_to_attested_state,
-                        ).unwrap(),
+                        ).expect("Error on getting light client update from file"),
                     );
                 }
             }

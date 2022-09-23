@@ -77,10 +77,10 @@ pub struct Config {
 
 impl Config {
     pub fn load_from_toml(path: PathBuf) -> Self {
-        let mut config = std::fs::File::open(path).unwrap();
+        let mut config = std::fs::File::open(path).expect("Error on parsing path to config");
         let mut content = String::new();
-        config.read_to_string(&mut content).unwrap();
-        let config = toml::from_str(content.as_str()).unwrap();
+        config.read_to_string(&mut content).expect("Error on reading config");
+        let config = toml::from_str(content.as_str()).expect("Error on config parsing");
 
         Self::check_urls(&config);
         Self::check_account_id(&config);
@@ -90,32 +90,32 @@ impl Config {
 
     fn check_urls(&self) {
         // check `beacon_endpoint`
-        Url::parse(&self.beacon_endpoint).unwrap();
+        Url::parse(&self.beacon_endpoint).expect("Error on beacon endpoint URL parsing");
 
         // check `eth1_endpoint`
-        Url::parse(&self.eth1_endpoint).unwrap();
+        Url::parse(&self.eth1_endpoint).expect("Error on eth1 endpoint URL parsing");
 
         // check `near_endpoint`
-        Url::parse(&self.near_endpoint).unwrap();
+        Url::parse(&self.near_endpoint).expect("Error on near endpoint URL parsing");
     }
 
     fn check_account_id(&self) {
         let near_rpc_client = NearRPCClient::new(&self.near_endpoint);
 
         // check `signer_account_id`
-        let _signer_account_id: near_sdk::AccountId = self.signer_account_id.parse().unwrap();
+        let _signer_account_id: near_sdk::AccountId = self.signer_account_id.parse().expect("Error on signature account id parsing");
         if !near_rpc_client
             .check_account_exists(&self.signer_account_id)
-            .unwrap()
+            .expect("Error on checking signature account id existence")
         {
             panic!("Signer account id doesn't exist on NEAR network");
         }
 
         // check `contract_account_id`
-        let _contract_account_id: near_sdk::AccountId = self.contract_account_id.parse().unwrap();
+        let _contract_account_id: near_sdk::AccountId = self.contract_account_id.parse().expect("Error on contract account id parsing");
         if !near_rpc_client
             .check_account_exists(&self.contract_account_id)
-            .unwrap()
+            .expect("Error on checking contract account id existence")
         {
             panic!("Contract account id doesn't exist on NEAR network");
         }
@@ -123,10 +123,10 @@ impl Config {
         // check `dao_contract_account_id`
         if let Some(dao_contract_account_id) = self.dao_contract_account_id.clone() {
             let _dao_contract_account_id: near_sdk::AccountId =
-                dao_contract_account_id.parse().unwrap();
+                dao_contract_account_id.parse().expect("Error on dao contract account id parsing");
             if !near_rpc_client
                 .check_account_exists(&dao_contract_account_id)
-                .unwrap()
+                .expect("Error on checking DAO account id existence")
             {
                 panic!("DAO account id doesn't exist on NEAR network");
             }
