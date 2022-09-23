@@ -74,11 +74,11 @@ impl EthClientContract {
         self.contract_wrapper
             .call_change_method(
                 "init".to_string(),
-                init_input.try_to_vec().unwrap(),
+                init_input.try_to_vec().expect("Error on parse init_input"),
                 None,
                 None,
             )
-            .unwrap();
+            .expect("Error during contract initialization");
     }
 
     pub fn get_account_id(&self) -> AccountId {
@@ -144,7 +144,7 @@ impl EthClientContractTrait for EthClientContract {
         let method_names = vec!["submit_execution_header".to_string(); headers.len()];
         let args = headers
             .iter()
-            .map(|header| header.try_to_vec().unwrap())
+            .filter_map(|header| header.try_to_vec().ok())
             .collect();
 
         self.contract_wrapper
