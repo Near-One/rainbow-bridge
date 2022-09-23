@@ -5,6 +5,7 @@ use std::error::Error;
 use std::fmt;
 use std::fmt::Display;
 use types::{BeaconBlockBody, MainnetEthSpec};
+use crate::relay_errors::MissExecutionPayload;
 
 /// `ExecutionBlockProof` contains a `block_hash` (execution block) and
 /// a proof of its inclusion in the `BeaconBlockBody` tree hash.
@@ -44,7 +45,7 @@ impl ExecutionBlockProof {
         let execution_payload_merkle_tree = &ExecutionPayloadMerkleTree::new(
             &beacon_block_body
                 .execution_payload()
-                .unwrap()
+                .map_err(|_| MissExecutionPayload)?
                 .execution_payload,
         );
 
@@ -67,7 +68,7 @@ impl ExecutionBlockProof {
         Ok(Self {
             block_hash: beacon_block_body
                 .execution_payload()
-                .unwrap()
+                .map_err(|_| MissExecutionPayload)?
                 .execution_payload
                 .block_hash
                 .into_root(),
