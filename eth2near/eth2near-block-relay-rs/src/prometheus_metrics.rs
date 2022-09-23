@@ -20,21 +20,21 @@ lazy_static! {
         "last_finalized_eth_slot_on_near",
         "Last Finalized Ethereum Slot on NEAR"
     )
-    .expect("metric cann't be created");
+    .expect("metric can't be created");
     pub static ref FAILS_ON_HEADERS_SUBMISSION: IntCounter = IntCounter::new(
         "fails_on_headers_submission",
         "Fails number on Headers Submission"
     )
-    .expect("metric cann't be created");
+    .expect("metric can't be created");
     pub static ref FAILS_ON_UPDATES_SUBMISSION: IntCounter = IntCounter::new(
         "fails_on_updates_submission",
         "Fails number on Light Client Updates Submission"
     )
-    .expect("metric cann't be created");
+    .expect("metric can't be created");
 
     pub static ref CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH: IntCounter =
         IntCounter::new("chain_execution_block_height_on_eth",
-        "Chain execution block height on eth").expect("metric cann't be created");
+        "Chain execution block height on eth").expect("metric can't be created");
 
     pub static ref CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH: IntCounter =
         IntCounter::new("chain_finalized_execution_block_height_on_eth",
@@ -42,11 +42,11 @@ lazy_static! {
 
     pub static ref CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR: IntCounter =
         IntCounter::new("chain_execution_block_height_on_near",
-        "Chain execution block height on near").expect("metric cann't be created");
+        "Chain execution block height on near").expect("metric can't be created");
 
     pub static ref CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR: IntCounter =
         IntCounter::new("chain_finalized_execution_block_height_on_near",
-        "Chain finalized execution block height on near").expect("metric cann't be created");
+        "Chain finalized execution block height on near").expect("metric can't be created");
 }
 
 fn register_custom_metrics() {
