@@ -90,3 +90,25 @@ impl Display for MissNextSyncCommittee {
 }
 
 impl Error for MissNextSyncCommittee {}
+
+#[derive(Debug)]
+pub struct ErrorOnJsonParse;
+
+impl Display for ErrorOnJsonParse {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Error during json parse")
+    }
+}
+
+impl Error for ErrorOnJsonParse {}
+
+#[derive(Debug)]
+pub struct MissExecutionPayload;
+
+impl Display for MissExecutionPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Miss execution payload")
+    }
+}
+
+impl Error for MissExecutionPayload {}

@@ -1,8 +1,5 @@
 use crate::execution_block_proof::ExecutionBlockProof;
-use crate::errors::{
-    ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError, NoBlockForSlotError,
-    SignatureSlotNotFoundError,
-};
+use crate::errors::{ErrorOnJsonParse, ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError, NoBlockForSlotError, SignatureSlotNotFoundError};
 use crate::utils::trim_quotes;
 use eth_types::eth2::BeaconBlockHeader;
 use eth_types::eth2::FinalizedHeaderUpdate;
@@ -49,11 +46,11 @@ impl BeaconRPCClient {
             client: reqwest::blocking::Client::builder()
                 .timeout(Duration::from_secs(timeout_seconds))
                 .build()
-                .unwrap(),
+                .expect("Error on building blocking client for regular rpc requests."),
             client_state_request: reqwest::blocking::Client::builder()
                 .timeout(Duration::from_secs(timeout_state_seconds))
                 .build()
-                .unwrap(),
+                .expect("Error on building blocking client for state request."),
         }
     }
 
@@ -268,7 +265,11 @@ impl BeaconRPCClient {
         let json_str = self.get_json_from_raw_request(&url_request)?;
 
         let v: Value = serde_json::from_str(&json_str)?;
-        Ok(v["data"]["is_syncing"].as_bool().unwrap())
+        return if let Some(is_sync) = v["data"]["is_syncing"].as_bool() {
+            Ok(is_sync)
+        } else {
+            Err(Box::new(ErrorOnJsonParse))?
+        }
     }
 
     fn get_json_from_client(client: &Client, url: &str) -> Result<String, Box<dyn Error>> {
