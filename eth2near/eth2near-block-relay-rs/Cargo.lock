@@ -1235,6 +1235,7 @@ dependencies = [
  "env_logger",
  "eth-types",
  "eth2-contract-init",
+ "eth2-utility",
  "eth2_hashing",
  "eth_rpc_client",
  "ethereum-types",

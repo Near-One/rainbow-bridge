@@ -2,7 +2,7 @@ use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
 use eth_rpc_client::errors::{ExecutionPayloadError, NoBlockForSlotError};
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::H256;
-use log::{debug, trace};
+use log::{trace, info};
 use std::cmp::{max, min};
 use std::error::Error;
 
@@ -22,10 +22,11 @@ impl LastSlotSearcher {
         beacon_rpc_client: &BeaconRPCClient,
         eth_client_contract: &Box<dyn EthClientContractTrait>,
     ) -> Result<u64, Box<dyn Error>> {
-        debug!(target: "relay", "= Search for last slot on near =");
+        info!(target: "relay", "= Search for last slot on near =");
 
         let finalized_slot = eth_client_contract.get_finalized_beacon_block_slot()?;
-        trace!(target: "relay", "Finalized slot on near={}", finalized_slot);
+        let finalized_number = beacon_rpc_client.get_block_number_for_slot(types::Slot::new(finalized_slot))?;
+        info!(target: "relay", "Finalized slot/block_number on near={}/{}", finalized_slot, finalized_number);
 
         let last_submitted_slot = eth_client_contract.get_last_submitted_slot();
         trace!(target: "relay", "Last submitted slot={}", last_submitted_slot);
@@ -410,7 +411,7 @@ mod tests {
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000;
 
-    fn get_config() -> ConfigForTests {
+    fn get_test_config() -> ConfigForTests {
         ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
     }
 
@@ -447,7 +448,7 @@ mod tests {
 
     #[test]
     fn test_block_known_on_near() {
-        let config_for_test = get_config();
+        let config_for_test = get_test_config();
 
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
@@ -504,7 +505,7 @@ mod tests {
 
     #[test]
     fn test_find_left_non_error_slot() {
-        let config_for_test = get_config();
+        let config_for_test = get_test_config();
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client = BeaconRPCClient::new(
@@ -580,7 +581,7 @@ mod tests {
 
     #[test]
     fn test_linear_search_backward() {
-        let config_for_test = get_config();
+        let config_for_test = get_test_config();
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client = BeaconRPCClient::new(
@@ -629,7 +630,7 @@ mod tests {
 
     #[test]
     fn test_linear_search_forward() {
-        let config_for_test = get_config();
+        let config_for_test = get_test_config();
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client = BeaconRPCClient::new(
@@ -688,7 +689,7 @@ mod tests {
 
     #[test]
     fn test_linear_slot_search() {
-        let config_for_test = get_config();
+        let config_for_test = get_test_config();
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client = BeaconRPCClient::new(
@@ -763,7 +764,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_error_on_connection_problem() {
-        let config_for_test = get_config();
+        let config_for_test = get_test_config();
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client = BeaconRPCClient::new(
@@ -804,7 +805,7 @@ mod tests {
 
     #[test]
     fn test_binsearch_slot_range() {
-        let config_for_test = get_config();
+        let config_for_test = get_test_config();
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client = BeaconRPCClient::new(
@@ -906,7 +907,7 @@ mod tests {
 
     #[test]
     fn test_binsearch_slot_forward() {
-        let config_for_test = get_config();
+        let config_for_test = get_test_config();
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client = BeaconRPCClient::new(
@@ -1009,7 +1010,7 @@ mod tests {
 
     #[test]
     fn test_binsearch_slot_search() {
-        let config_for_test = get_config();
+        let config_for_test = get_test_config();
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client = BeaconRPCClient::new(
@@ -1120,7 +1121,7 @@ mod tests {
 
     #[test]
     fn test_get_last_slot_binsearch() {
-        let config_for_test = get_config();
+        let config_for_test = get_test_config();
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client = BeaconRPCClient::new(
@@ -1187,7 +1188,7 @@ mod tests {
 
     #[test]
     fn test_get_last_slot_linearsearch() {
-        let config_for_test = get_config();
+        let config_for_test = get_test_config();
         let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client = BeaconRPCClient::new(

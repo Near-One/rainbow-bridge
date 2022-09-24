@@ -80,8 +80,8 @@ pub fn init_contract(
         next_sync_committee,
         config.validate_updates,
         config.verify_bls_signature,
-        config.hashes_gc_threshold,
-        config.max_submitted_blocks_by_account,
+        Some(config.hashes_gc_threshold),
+        Some(config.max_submitted_blocks_by_account),
         trusted_signature,
     );
 

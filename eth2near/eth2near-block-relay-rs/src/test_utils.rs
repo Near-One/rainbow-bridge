@@ -81,9 +81,9 @@ pub fn init_contract_from_files(
         next_sync_committee,
         true,
         false,
-        51000,
-        8000,
-        Some(eth_client_contract.get_signer_account_id()),
+        None,
+        None,
+        Some(eth_client_contract.contract_wrapper.get_signer_account_id()),
     );
     thread::sleep(time::Duration::from_secs(30));
 }
@@ -157,9 +157,9 @@ pub fn init_contract_from_specific_slot(
         next_sync_committee,
         true,
         false,
-        51000,
-        8000,
-        Some(eth_client_contract.get_signer_account_id()),
+        None,
+        None,
+        Some(eth_client_contract.contract_wrapper.get_signer_account_id()),
     );
 
     thread::sleep(time::Duration::from_secs(30));
@@ -201,6 +201,8 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
         state_requests_timeout_seconds: 1000,
         sleep_time_on_sync_secs: 0,
         sleep_time_after_submission_secs: 5,
+        hashes_gc_threshold: None,
+        max_submitted_blocks_by_account: None,
     }
 }
 
@@ -236,7 +238,9 @@ pub fn get_client_contract(
 
     let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 
-    let config = get_init_config(config_for_test, &eth_client_contract);
+    let mut config = get_init_config(config_for_test, &eth_client_contract);
+    config.signer_account_id = eth_client_contract.get_signer_account_id().to_string();
+
     match from_file {
         true => test_utils::init_contract_from_files(&mut eth_client_contract, config_for_test),
         false => init_contract(&config, &mut eth_client_contract).unwrap(),

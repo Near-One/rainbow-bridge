@@ -132,7 +132,7 @@ mod tests {
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000;
 
-    fn get_config() -> ConfigForTests {
+    fn get_test_config() -> ConfigForTests {
         ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
     }
 
@@ -184,7 +184,7 @@ mod tests {
 
     #[test]
     fn test_beacon_block_body_root_matches_body_root_in_header() {
-        let config = get_config();
+        let config = get_test_config();
 
         let beacon_rpc_client = crate::beacon_rpc_client::BeaconRPCClient::new(
             &config.beacon_endpoint,

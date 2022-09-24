@@ -15,10 +15,11 @@ use std::option::Option;
 use std::string::String;
 use std::vec::Vec;
 use crate::eth_network_enum::EthNetwork;
+use serde::Serialize;
 
 pub struct EthClientContract {
     last_slot: u64,
-    contract_wrapper: Box<dyn ContractWrapper>,
+    pub contract_wrapper: Box<dyn ContractWrapper>,
 }
 
 impl EthClientContract {
@@ -38,11 +39,11 @@ impl EthClientContract {
         next_sync_committee: SyncCommittee,
         validate_updates: bool,
         verify_bls_signatures: bool,
-        hashes_gc_threshold: u64,
-        max_submitted_blocks_by_account: u32,
+        hashes_gc_threshold: Option<u64>,
+        max_submitted_blocks_by_account: Option<u32>,
         trusted_signer: Option<AccountId>,
     ) {
-        #[derive(BorshSerialize)]
+        #[derive(BorshSerialize, Serialize)]
         pub struct InitInput {
             pub network: String,
             pub finalized_execution_header: eth_types::BlockHeader,
@@ -64,10 +65,15 @@ impl EthClientContract {
             next_sync_committee,
             validate_updates,
             verify_bls_signatures,
-            hashes_gc_threshold,
-            max_submitted_blocks_by_account,
+            hashes_gc_threshold: hashes_gc_threshold.unwrap_or(51_000),
+            max_submitted_blocks_by_account: max_submitted_blocks_by_account.unwrap_or(8000),
             trusted_signer,
         };
+
+        println!(
+            "Init eth2 client input: \n {}",
+            serde_json::to_string_pretty(&init_input).unwrap()
+        );
 
         self.contract_wrapper
             .call_change_method(
@@ -200,6 +206,7 @@ mod tests {
     use crate::sandbox_contract_wrapper::SandboxContractWrapper;
     use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::BlockHeader;
+    use near_primitives::types::AccountId;
     use tokio::runtime::Runtime;
 
     // TODO: use a more clean approach to include binary
@@ -272,12 +279,23 @@ mod tests {
 
         // create accounts
         let owner = worker.root_account().unwrap();
+        let relay_account = rt
+            .block_on(
+                owner
+                    .create_subaccount("relay_account")
+                    .initial_balance(30 * near_sdk::ONE_NEAR)
+                    .transact(),
+            )
+            .unwrap()
+            .into_result()
+            .unwrap();
+
         let contract = rt.block_on(owner.deploy(&wasm)).unwrap().unwrap();
 
-        (owner, contract)
+        (relay_account, contract)
     }
 
-    fn init_contract(eth_client_contract: &EthClientContract, eth_state: &mut EthState) {
+    fn init_contract(eth_client_contract: &EthClientContract, eth_state: &mut EthState, trusted_signer: String) {
         const PATH_TO_CURRENT_SYNC_COMMITTEE: &str =
             "./data/next_sync_committee_kiln_period_133.json";
         const PATH_TO_NEXT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_kiln_period_134.json";
@@ -320,9 +338,9 @@ mod tests {
             next_sync_committee,
             true,
             false,
-            51000,
-            8000,
-            Some(eth_client_contract.get_signer_account_id()),
+            None,
+            None,
+            Option::<AccountId>::Some(trusted_signer.parse().unwrap()),
         );
         eth_state.current_light_client_update = 1;
     }
@@ -340,7 +358,7 @@ mod tests {
 
         let mut eth_state = EthState::new();
 
-        init_contract(&eth_client_contract, &mut eth_state);
+        init_contract(&eth_client_contract, &mut eth_state, relay_account.id().to_string());
         let first_finalized_slot = eth_client_contract
             .get_finalized_beacon_block_slot()
             .unwrap();

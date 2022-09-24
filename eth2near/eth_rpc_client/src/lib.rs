@@ -6,3 +6,4 @@ pub mod errors;
 pub mod beacon_block_body_merkle_tree;
 pub mod hand_made_finality_light_client_update;
 pub mod config_for_tests;
+pub mod light_client_snapshot_with_proof;

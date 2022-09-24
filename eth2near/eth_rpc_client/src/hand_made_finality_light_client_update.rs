@@ -343,7 +343,7 @@ mod tests {
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000;
 
-    fn get_config() -> ConfigForTests {
+    fn get_test_config() -> ConfigForTests {
         ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
     }
 
@@ -372,7 +372,7 @@ mod tests {
     #[ignore]
     #[test]
     fn test_hand_made_finality_light_client_update() {
-        let config = get_config();
+        let config = get_test_config();
         let beacon_rpc_client = BeaconRPCClient::new(
             &config.beacon_endpoint,
             TIMEOUT_SECONDS,
@@ -405,8 +405,9 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_hand_made_finality_light_client_update_from_file() {
-        let config = get_config();
+        let config = get_test_config();
         let beacon_rpc_client = BeaconRPCClient::new(
             &config.beacon_endpoint,
             TIMEOUT_SECONDS,
@@ -430,8 +431,9 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_hand_made_finality_light_client_update_from_file_with_next_sync_committee() {
-        let config = get_config();
+        let config = get_test_config();
         let beacon_rpc_client = BeaconRPCClient::new(
             &config.beacon_endpoint,
             TIMEOUT_SECONDS,

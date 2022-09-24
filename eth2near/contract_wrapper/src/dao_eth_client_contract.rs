@@ -222,9 +222,9 @@ mod tests {
             next_sync_committee,
             true,
             false,
-            51000,
-            8000,
-            None
+            None,
+            None,
+            Some(eth_client.contract_wrapper.get_signer_account_id()),
         );
 
         let dao_contract_wrapper =
