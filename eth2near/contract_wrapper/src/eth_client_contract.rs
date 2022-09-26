@@ -16,7 +16,7 @@ use std::string::String;
 use std::vec::Vec;
 use serde::Serialize;
 
-/// Direct provider of Ethereum Light Client on NEAR
+/// Proxy for Ethereum Light Client Contract on NEAR
 pub struct EthClientContract {
     /// last submitted slot by this relay
     last_slot: u64,

@@ -11,13 +11,25 @@ use std::io::Write;
 use std::path::Path;
 use std::vec::Vec;
 
+/// Proxy for Ethereum Light Client Contract on NEAR
+/// with saving to file all submitted headers and light client updates
 pub struct FileEthClientContract {
+    /// Proxy for Ethereum Light Client Contract on NEAR
     eth_client_contract: EthClientContract,
+
+    /// File for storing submitted light client updates
     light_client_updates_file: std::fs::File,
+
+    /// File for storing submitted headers
     blocks_headers_file: std::fs::File,
 }
 
 impl FileEthClientContract {
+    /// Constructor of FileEthClientContract
+    ///
+    /// # Arguments
+    /// * `eth_client_contract` - proxy for Eth Light Client contrac on NEAR
+    /// * `dir_path` - path to output directory for output files
     pub fn new(eth_client_contract: EthClientContract, dir_path: String) -> Self {
         std::fs::create_dir_all(&dir_path).unwrap();
         let header_path = Path::new(&dir_path).join("execution_block_headers.json");
