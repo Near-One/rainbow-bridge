@@ -6,17 +6,21 @@ use near_sdk::json_types::Base64VecU8;
 use near_sdk::{AccountId, Gas};
 use serde_json::json;
 use std::error::Error;
-
 use crate::contract_wrapper_trait::ContractWrapper;
+
+/// Proxy for interaction with DAO Contract on NEAR
 pub struct DAOContract {
+    /// Wrapper for interact with NEAR Contract
     pub contract_wrapper: Box<dyn ContractWrapper>,
 }
 
 impl DAOContract {
+    /// Constructor for DAOContract
     pub fn new(contract_wrapper: Box<dyn ContractWrapper>) -> Self {
         DAOContract { contract_wrapper }
     }
 
+    /// Get last proposal id on DAO
     pub fn get_last_proposal_id(&self) -> Result<u64, Box<dyn Error>> {
         let response = self
             .contract_wrapper
@@ -25,6 +29,7 @@ impl DAOContract {
         Ok(serde_json::from_slice(response.as_slice())?)
     }
 
+    /// Get proposal by proposal id
     pub fn get_proposal(&self, id: u64) -> Result<ProposalOutput, Box<dyn Error>> {
         let response = self.contract_wrapper.call_view_function(
             "get_proposal".to_string(),
@@ -34,6 +39,7 @@ impl DAOContract {
         Ok(serde_json::from_slice(response.as_slice())?)
     }
 
+    /// Get policy
     pub fn get_policy(&self) -> Result<Policy, Box<dyn Error>> {
         let response = self
             .contract_wrapper
@@ -42,6 +48,7 @@ impl DAOContract {
         Ok(serde_json::from_slice(response.as_slice())?)
     }
 
+    /// Submit a new proposal to DAO contract
     pub fn add_proposal(
         &mut self,
         proposal: ProposalInput,
@@ -69,6 +76,7 @@ impl DAOContract {
         ))
     }
 
+    /// Make Action under Proposal with the given id
     pub fn act_proposal(
         &self,
         id: u64,
@@ -84,6 +92,11 @@ impl DAOContract {
         )
     }
 
+    /// Submit Light Client Update to DAO
+    ///
+    /// # Arguments
+    /// * `reveiver_id` - account id of the Ethereum Light Client Contract on NEAR
+    /// * `update` - Light Client Update
     pub fn submit_light_client_update_proposal(
         &mut self,
         receiver_id: AccountId,
