@@ -305,11 +305,7 @@ impl BeaconRPCClient {
         let json_str = self.get_json_from_raw_request(&url_request)?;
 
         let v: Value = serde_json::from_str(&json_str)?;
-        return if let Some(is_sync) = v["data"]["is_syncing"].as_bool() {
-            Ok(is_sync)
-        } else {
-            Err(Box::new(ErrorOnJsonParse))?
-        }
+        v["data"]["is_syncing"].as_bool().ok_or(Err(Box::new(ErrorOnJsonParse))?)
     }
 
     fn get_json_from_client(client: &Client, url: &str) -> Result<String, Box<dyn Error>> {
