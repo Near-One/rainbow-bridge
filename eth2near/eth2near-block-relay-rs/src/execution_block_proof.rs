@@ -84,7 +84,7 @@ impl ExecutionBlockProof {
         self.block_hash
     }
 
-    pub fn verify_proof_for_hash(&self, beacon_block_body_hash: &H256) -> Result<bool, Box<dyn Error>> {
+    pub fn verify_proof_for_hash(&self, beacon_block_body_hash: &H256) -> Result<bool, IncorrectBranchLength> {
         let l2_proof: &[H256] = &self.proof[0..Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE];
         let l1_proof: &[H256] =
             &self.proof[Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE..Self::PROOF_SIZE];
@@ -104,9 +104,9 @@ impl ExecutionBlockProof {
         ))
     }
 
-    fn merkle_root_from_branch(leaf: H256, branch: &[H256], depth: usize, index: usize) -> Result<H256, Box<dyn Error>> {
+    fn merkle_root_from_branch(leaf: H256, branch: &[H256], depth: usize, index: usize) -> Result<H256, IncorrectBranchLength> {
         if branch.len() != depth {
-            return Err(Box::new(IncorrectBranchLength));
+            return Err(IncorrectBranchLength);
         }
 
         let mut merkle_root = leaf.as_bytes().to_vec();
