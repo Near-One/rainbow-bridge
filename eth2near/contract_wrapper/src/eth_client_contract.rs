@@ -15,12 +15,18 @@ use std::option::Option;
 use std::string::String;
 use std::vec::Vec;
 use serde::Serialize;
+
+/// Direct provider of Ethereum Light Client on NEAR
 pub struct EthClientContract {
+    /// last submitted slot by this relay
     last_slot: u64,
+
+    /// Wrapper for interact with NEAR Contract
     pub contract_wrapper: Box<dyn ContractWrapper>,
 }
 
 impl EthClientContract {
+    /// Constructor for EthClientContract
     pub fn new(contract_wrapper: Box<dyn ContractWrapper>) -> Self {
         EthClientContract {
             last_slot: 0,
@@ -28,6 +34,17 @@ impl EthClientContract {
         }
     }
 
+    /// Initialization of Ethereum Light Client Contract on NEAR
+    ///
+    /// # Arguments
+    /// * `network` - the name of Ethereum network such as mainnet, kiln, goerli etc
+    /// * `finalized_execution_header` - the finalized execution header to start initialization with
+    /// * `finalized_beacon_header` - correspondent finalized beacon header
+    /// * `current_sync_committee` - sync committee corespondent for finalized block
+    /// * `next_sync_committee` - sync committee for the next period after period for finalized block
+    /// * `hashes_gs_threshold` - the maximum number of stored finalized blocks
+    /// * `max_submitted_block_by_account` - the maximum number of unfinalized blocks which can store one relay
+    /// * `trusted_signer` - the account address of trusted signer which aloud to submit light client update
     pub fn init_contract(
         &self,
         network: String,
@@ -81,6 +98,7 @@ impl EthClientContract {
             .unwrap();
     }
 
+    /// Returns the Eth Light Client account address
     pub fn get_account_id(&self) -> AccountId {
         self.contract_wrapper.get_account_id()
     }
