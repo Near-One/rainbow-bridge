@@ -216,7 +216,7 @@ impl Eth2NearRelay {
                 self.sleep_time_on_sync_secs
             );
 
-            info!(target: "relay", "Last slot on near = {}; max slot for submission = {}",
+            info!(target: "relay", "Last slot on NEAR = {}; max slot for submission = {}",
                   last_eth2_slot_on_near, max_slot_for_submission);
 
             if last_eth2_slot_on_near < max_slot_for_submission {
@@ -449,7 +449,7 @@ impl Eth2NearRelay {
         if last_finalized_slot_on_eth
             >= last_finalized_slot_on_near + self.max_blocks_for_finalization
         {
-            info!(target: "relay", "Too big gap between slot of finalized block on Near and Eth. Sending hand made light client update");
+            info!(target: "relay", "Too big gap between slot of finalized block on NEAR and ETH. Sending hand made light client update");
             self.send_hand_made_light_client_update(last_finalized_slot_on_near);
         } else {
             self.send_regular_light_client_update(
@@ -483,13 +483,13 @@ impl Eth2NearRelay {
         info!(target: "relay", "Last finalized slot/period on ethereum={}/{}", last_finalized_slot_on_eth, end_period);
 
         let light_client_update = if end_period == last_eth2_period_on_near_chain {
-            debug!(target: "relay", "Finalized period on Eth and Near are equal. Don't fetch sync commity update");
+            debug!(target: "relay", "Finalized period on ETH and NEAR are equal. Don't fetch sync commity update");
             return_on_fail!(
                 self.beacon_rpc_client.get_finality_light_client_update(),
                 "Error on getting light client update. Skipping sending light client update"
             )
         } else {
-            debug!(target: "relay", "Finalized period on Eth and Near are different. Fetching sync commity update");
+            debug!(target: "relay", "Finalized period on ETH and NEAR are different. Fetching sync commity update");
             return_on_fail!(
                 self.beacon_rpc_client
                     .get_finality_light_client_update_with_sync_commity_update(),
@@ -550,7 +550,7 @@ impl Eth2NearRelay {
                 .slot;
 
             if finality_update_slot <= last_finalized_slot_on_near {
-                info!(target: "relay", "Finality update slot for hand made light client update <= last finality update on near. Increment gap for attested slot and skipping light client update.");
+                info!(target: "relay", "Finality update slot for hand made light client update <= last finality update on NEAR. Increment gap for attested slot and skipping light client update.");
                 attested_slot = return_on_fail!(
                     self.get_attested_slot(last_finalized_slot_on_near + ONE_EPOCH_IN_SLOTS),
                     "Error on getting attested slot"
