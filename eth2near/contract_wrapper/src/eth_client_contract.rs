@@ -30,7 +30,7 @@ impl EthClientContract {
 
     pub fn init_contract(
         &self,
-        network: String,
+        ethereum_network: String,
         finalized_execution_header: BlockHeader,
         finalized_beacon_header: ExtendedBeaconBlockHeader,
         current_sync_committee: SyncCommittee,
@@ -54,7 +54,7 @@ impl EthClientContract {
         }
 
         let init_input = InitInput {
-            network,
+            network: ethereum_network,
             finalized_execution_header,
             finalized_beacon_header,
             current_sync_committee,
@@ -289,7 +289,7 @@ mod tests {
         const PATH_TO_CURRENT_SYNC_COMMITTEE: &str =
             "./data/next_sync_committee_kiln_period_133.json";
         const PATH_TO_NEXT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_kiln_period_134.json";
-        const NETWORK: &str = "kiln";
+        const ETH_NETWORK: &str = "kiln";
 
         let current_sync_committee: SyncCommittee = serde_json::from_str(
             &std::fs::read_to_string(PATH_TO_CURRENT_SYNC_COMMITTEE).expect("Unable to read file"),
@@ -322,7 +322,7 @@ mod tests {
         }
 
         eth_client_contract.init_contract(
-            NETWORK.to_string(),
+            ETH_NETWORK.to_string(),
             finalized_execution_header.unwrap(),
             finalized_beacon_header,
             current_sync_committee,

@@ -338,6 +338,8 @@ impl LastSlotSearcher {
         beacon_rpc_client: &BeaconRPCClient,
         eth_client_contract: &Box<dyn EthClientContractTrait>,
     ) -> (u64, bool) {
+        trace!(target: "relay", " left non error slor {}, {}, {}", left_slot, right_slot, step);
+
         let mut slot = left_slot;
         while slot != right_slot {
             match self.block_known_on_near(slot, beacon_rpc_client, eth_client_contract) {

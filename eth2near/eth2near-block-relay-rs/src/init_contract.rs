@@ -107,7 +107,7 @@ pub fn init_contract(
     }
 
     eth_client_contract.init_contract(
-        config.network.to_string(),
+        config.ethereum_network.to_string(),
         finalized_execution_header,
         finalized_header,
         light_client_snapshot.current_sync_committee,

@@ -28,7 +28,7 @@ pub struct Config {
     pub contract_account_id: String,
 
     // The Ethereum network name (mainnet, kiln, ropsten, goerli)
-    pub network: String,
+    pub ethereum_network: String,
 
     // Contract type (near, dao, file)
     pub contract_type: String,
@@ -142,12 +142,12 @@ impl Config {
 
     fn check_network_types(&self) {
         // check `network`
-        if !(self.network == "mainnet"
-            || self.network == "kiln"
-            || self.network == "ropsten"
-            || self.network == "goerli")
+        if !(self.ethereum_network == "mainnet"
+            || self.ethereum_network == "kiln"
+            || self.ethereum_network == "ropsten"
+            || self.ethereum_network == "goerli")
         {
-            panic!("Unknown network {}", self.network);
+            panic!("Unknown ethereum network {}", self.ethereum_network);
         }
 
         // check `contract_type`

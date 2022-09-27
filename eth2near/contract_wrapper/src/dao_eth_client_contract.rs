@@ -167,7 +167,7 @@ mod tests {
         const CONTRACT_ACCOUNT_ID: &str = "dev-1660212590113-35162107482173";
         const DAO_CONTRACT_ACCOUNT_ID: &str = "eth2-test.sputnikv2.testnet";
 
-        const NETWORK: &str = "kiln";
+        const ETH_NETWORK: &str = "kiln";
 
         let near_contract_wrapper = Box::new(NearContractWrapper::new_with_raw_secret_key(
             NEAR_ENDPOINT,
@@ -219,7 +219,7 @@ mod tests {
         }
 
         eth_client.init_contract(
-            NETWORK.to_string(),
+            ETH_NETWORK.to_string(),
             finalized_execution_header.unwrap(),
             finalized_beacon_header,
             current_sync_committee,

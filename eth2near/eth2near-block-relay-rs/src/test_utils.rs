@@ -27,7 +27,7 @@ pub fn init_contract_from_files(eth_client_contract: &mut EthClientContract) {
         "../contract_wrapper/data/next_sync_committee_kiln_period_133.json";
     const PATH_TO_NEXT_SYNC_COMMITTEE: &str =
         "../contract_wrapper/data/next_sync_committee_kiln_period_134.json";
-    const NETWORK: &str = "kiln";
+    const ETH_NETWORK: &str = "kiln";
     const PATH_TO_EXECUTION_BLOCKS: &str =
         "../contract_wrapper/data/execution_block_headers_kiln_1099394-1099937.json";
     const PATH_TO_LIGHT_CLIENT_UPDATES: &str =
@@ -73,7 +73,7 @@ pub fn init_contract_from_files(eth_client_contract: &mut EthClientContract) {
     }
 
     eth_client_contract.init_contract(
-        NETWORK.to_string(),
+        ETH_NETWORK.to_string(),
         finalized_execution_header.unwrap(),
         finalized_beacon_header,
         current_sync_committee,
@@ -93,7 +93,7 @@ pub fn init_contract_from_specific_slot(
         "../contract_wrapper/data/next_sync_committee_kiln_period_133.json";
     const PATH_TO_NEXT_SYNC_COMMITTEE: &str =
         "../contract_wrapper/data/next_sync_committee_kiln_period_134.json";
-    const NETWORK: &str = "kiln";
+    const ETH_NETWORK: &str = "kiln";
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000;
 
@@ -152,7 +152,7 @@ pub fn init_contract_from_specific_slot(
         .unwrap();
 
     eth_client_contract.init_contract(
-        NETWORK.to_string(),
+        ETH_NETWORK.to_string(),
         finalized_execution_header,
         finalized_beacon_header,
         current_sync_committee,
@@ -199,7 +199,7 @@ fn get_config() -> Config {
         signer_account_id: "NaN".to_string(),
         path_to_signer_secret_key: "NaN".to_string(),
         contract_account_id: "NaN".to_string(),
-        network: "kiln".to_string(),
+        ethereum_network: "kiln".to_string(),
         contract_type: "near".to_string(),
         light_client_updates_submission_frequency_in_epochs: 1,
         max_blocks_for_finalization: 5000,

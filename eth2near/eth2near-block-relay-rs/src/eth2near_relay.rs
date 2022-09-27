@@ -68,7 +68,7 @@ pub struct Eth2NearRelay {
     near_rpc_client: NearRPCClient,
     eth_client_contract: Box<dyn EthClientContractTrait>,
     max_submitted_headers: u64,
-    network: String,
+    ethereum_network: String,
     light_client_updates_submission_frequency_in_epochs: u64,
     max_blocks_for_finalization: u64,
     near_network_name: String,
@@ -103,7 +103,7 @@ impl Eth2NearRelay {
             eth_client_contract: eth_contract,
             near_rpc_client: NearRPCClient::new(&config.near_endpoint),
             max_submitted_headers: config.total_submit_headers as u64,
-            network: config.network.to_string(),
+            ethereum_network: config.ethereum_network.to_string(),
             light_client_updates_submission_frequency_in_epochs: config
                 .light_client_updates_submission_frequency_in_epochs,
             max_blocks_for_finalization: config.max_blocks_for_finalization,
@@ -159,8 +159,9 @@ impl Eth2NearRelay {
         LAST_ETH_SLOT_ON_NEAR
             .inc_by(max(0,last_eth2_slot_on_near as i64 - LAST_ETH_SLOT_ON_NEAR.get()));
 
-        let last_block_number = self.beacon_rpc_client.get_block_number_for_slot(Slot::new(last_eth2_slot_on_near))?;
-        CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR.inc_by(max(0, last_block_number as i64 - CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR.get()));
+        if let Ok(last_block_number) = self.beacon_rpc_client.get_block_number_for_slot(Slot::new(last_eth2_slot_on_near)) {
+            CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR.inc_by(max(0, last_block_number as i64 - CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR.get()));
+        }
 
         return Ok(last_eth2_slot_on_near);
     }
@@ -386,7 +387,7 @@ impl Eth2NearRelay {
         };
 
         finality_update_verify::is_correct_finality_update(
-            &self.network,
+            &self.ethereum_network,
             light_client_update,
             sync_committee,
         )

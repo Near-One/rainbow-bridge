@@ -32,12 +32,12 @@ fn to_lighthouse_beacon_block_header(
 }
 
 pub fn is_correct_finality_update(
-    network: &str,
+    ethereum_network: &str,
     light_client_update: &LightClientUpdate,
     sync_committee: SyncCommittee,
 ) -> Result<bool, Box<dyn Error>> {
-    let network = Network::from_str(network)?;
-    let config = NetworkConfig::new(&network);
+    let ethereum_network = Network::from_str(ethereum_network)?;
+    let config = NetworkConfig::new(&ethereum_network);
 
     let sync_committee_bits =
         BitVec::<u8, Lsb0>::from_slice(&light_client_update.sync_aggregate.sync_committee_bits.0);
@@ -101,7 +101,7 @@ mod tests {
 
     #[test]
     fn smoke_verify_finality_update_true() {
-        let network = "kiln";
+        let ethereum_network = "kiln";
         let beacon_rpc_client =
             BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let light_client_update_period_99 = beacon_rpc_client.get_light_client_update(99).unwrap();
@@ -109,7 +109,7 @@ mod tests {
             beacon_rpc_client.get_light_client_update(100).unwrap();
 
         assert!(is_correct_finality_update(
-            network,
+            ethereum_network,
             &light_client_update_period_100,
             light_client_update_period_99
                 .sync_committee_update
@@ -121,7 +121,7 @@ mod tests {
 
     #[test]
     fn smoke_verify_finality_update_false() {
-        let network = "kiln";
+        let ethereum_network = "kiln";
         let beacon_rpc_client =
             BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
         let light_client_update_period_99 = beacon_rpc_client.get_light_client_update(99).unwrap();
@@ -129,7 +129,7 @@ mod tests {
             beacon_rpc_client.get_light_client_update(100).unwrap();
 
         assert!(!is_correct_finality_update(
-            network,
+            ethereum_network,
             &light_client_update_period_99,
             light_client_update_period_100
                 .sync_committee_update
