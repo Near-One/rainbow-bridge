@@ -3,7 +3,7 @@ use crate::relay_errors::{ExecutionPayloadError, NoBlockForSlotError};
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::H256;
 use log::{debug, trace};
-use std::cmp::{max, min};
+use std::cmp;
 use std::error::Error;
 
 pub struct LastSlotSearcher {
@@ -30,7 +30,7 @@ impl LastSlotSearcher {
         let last_submitted_slot = eth_client_contract.get_last_submitted_slot();
         trace!(target: "relay", "Last submitted slot={}", last_submitted_slot);
 
-        let slot = max(finalized_slot, last_submitted_slot);
+        let slot = cmp::max(finalized_slot, last_submitted_slot);
         trace!(target: "relay", "Init slot for search as {}", slot);
 
         return if self.enable_binsearch {
@@ -138,7 +138,7 @@ impl LastSlotSearcher {
             ) {
                 Ok(true) => {
                     prev_slot = slot + current_step;
-                    current_step = min(current_step * 2, max_slot - slot);
+                    current_step = cmp::min(current_step * 2, max_slot - slot);
                 }
                 Ok(false) => break,
                 Err(err) => match err.downcast_ref::<NoBlockForSlotError>() {
@@ -152,7 +152,7 @@ impl LastSlotSearcher {
                         );
                         if slot_on_near {
                             prev_slot = slot_id;
-                            current_step = min(current_step * 2, max_slot - slot);
+                            current_step = cmp::min(current_step * 2, max_slot - slot);
                         } else {
                             current_step = slot_id - slot;
                             break;

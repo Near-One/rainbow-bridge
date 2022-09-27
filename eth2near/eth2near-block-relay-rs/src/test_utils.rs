@@ -2,7 +2,7 @@ use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
 use crate::eth1_rpc_client::Eth1RPCClient;
 use crate::eth2near_relay::Eth2NearRelay;
-use crate::init_contract::init_contract;
+use crate::init_contract;
 use crate::test_utils;
 use contract_wrapper::eth_client_contract::EthClientContract;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
@@ -226,7 +226,7 @@ pub fn get_client_contract(from_file: bool) -> Box<dyn EthClientContractTrait> {
     let config = get_config();
     match from_file {
         true => test_utils::init_contract_from_files(&mut eth_client_contract),
-        false => init_contract(&config, &mut eth_client_contract, "".to_string()).unwrap(),
+        false => init_contract::init_contract(&config, &mut eth_client_contract, "".to_string()).unwrap(),
     };
 
     Box::new(eth_client_contract)

@@ -1,4 +1,4 @@
-use std::cmp::max;
+use std::cmp;
 use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
 use crate::eth1_rpc_client::Eth1RPCClient;
@@ -14,8 +14,7 @@ use eth_types::BlockHeader;
 use log::{debug, info, trace, warn};
 use near_primitives::views::FinalExecutionStatus;
 use std::error::Error;
-use std::thread::sleep;
-use std::thread::spawn;
+use std::thread;
 use std::time::Duration;
 use std::vec::Vec;
 use types::Slot;
@@ -29,7 +28,7 @@ macro_rules! skip_fail {
             Err(e) => {
                 warn!(target: "relay", "{}. Error: {}", $msg, e);
                 trace!(target: "relay", "Sleep {} secs before next loop", $sleep_time);
-                sleep(Duration::from_secs($sleep_time));
+                thread::sleep(Duration::from_secs($sleep_time));
                 continue;
             }
         }
@@ -55,7 +54,7 @@ macro_rules! return_on_fail_and_sleep {
             Err(e) => {
                 warn!(target: "relay", "{}. Error: {}", $msg, e);
                 trace!(target: "relay", "Sleep {} secs before next loop", $sleep_time);
-                sleep(Duration::from_secs($sleep_time));
+                thread::sleep(Duration::from_secs($sleep_time));
                 return;
             }
         }
@@ -128,7 +127,7 @@ impl Eth2NearRelay {
         }
 
         if let Some(port) = config.prometheus_metrics_port {
-            spawn(move || prometheus_metrics::run_prometheus_service(port));
+            thread::spawn(move || prometheus_metrics::run_prometheus_service(port));
         }
 
         eth2near_relay
@@ -136,11 +135,11 @@ impl Eth2NearRelay {
 
     fn get_max_slot_for_submission(&self) -> Result<u64, Box<dyn Error>> {
         let last_eth2_slot = self.beacon_rpc_client.get_last_slot_number()?.as_u64();
-        LAST_ETH_SLOT.inc_by(max(0, last_eth2_slot as i64 - LAST_ETH_SLOT.get()));
+        LAST_ETH_SLOT.inc_by(cmp::max(0, last_eth2_slot as i64 - LAST_ETH_SLOT.get()));
         info!(target: "relay", "Last slot on ETH = {}", last_eth2_slot);
 
         let last_block_number = self.beacon_rpc_client.get_block_number_for_slot(Slot::new(last_eth2_slot))?;
-        CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH.inc_by(max(0, last_block_number as i64 - CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH.get()));
+        CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH.inc_by(cmp::max(0, last_block_number as i64 - CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH.get()));
 
         return if self.submit_only_finalized_blocks {
             Ok(self.beacon_rpc_client.get_last_finalized_slot_number()?.as_u64())
@@ -157,10 +156,10 @@ impl Eth2NearRelay {
         )?;
 
         LAST_ETH_SLOT_ON_NEAR
-            .inc_by(max(0,last_eth2_slot_on_near as i64 - LAST_ETH_SLOT_ON_NEAR.get()));
+            .inc_by(cmp::max(0,last_eth2_slot_on_near as i64 - LAST_ETH_SLOT_ON_NEAR.get()));
 
         if let Ok(last_block_number) = self.beacon_rpc_client.get_block_number_for_slot(Slot::new(last_eth2_slot_on_near)) {
-            CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR.inc_by(max(0, last_block_number as i64 - CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR.get()));
+            CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR.inc_by(cmp::max(0, last_block_number as i64 - CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR.get()));
         }
 
         return Ok(last_eth2_slot_on_near);
@@ -169,10 +168,10 @@ impl Eth2NearRelay {
     fn get_last_finalized_slot_on_near(&self) -> Result<u64, Box<dyn Error>> {
         let last_finalized_slot_on_near = self.eth_client_contract.get_finalized_beacon_block_slot()?;
         LAST_FINALIZED_ETH_SLOT_ON_NEAR
-            .inc_by(max(0, last_finalized_slot_on_near as i64 - LAST_FINALIZED_ETH_SLOT_ON_NEAR.get()));
+            .inc_by(cmp::max(0, last_finalized_slot_on_near as i64 - LAST_FINALIZED_ETH_SLOT_ON_NEAR.get()));
 
         let last_block_number = self.beacon_rpc_client.get_block_number_for_slot(Slot::new(last_finalized_slot_on_near))?;
-        CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR.inc_by(max(0, last_block_number as i64 - CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR.get()));
+        CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR.inc_by(cmp::max(0, last_block_number as i64 - CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR.get()));
 
         Ok(last_finalized_slot_on_near)
     }
@@ -183,10 +182,10 @@ impl Eth2NearRelay {
             .get_last_finalized_slot_number()?.as_u64();
 
         LAST_FINALIZED_ETH_SLOT
-            .inc_by(max(0,last_finalized_slot_on_eth as i64 - LAST_FINALIZED_ETH_SLOT.get()));
+            .inc_by(cmp::max(0,last_finalized_slot_on_eth as i64 - LAST_FINALIZED_ETH_SLOT.get()));
 
         let last_block_number = self.beacon_rpc_client.get_block_number_for_slot(Slot::new(last_finalized_slot_on_eth))?;
-        CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH.inc_by(max(0, last_block_number as i64 - CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH.get()));
+        CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH.inc_by(cmp::max(0, last_block_number as i64 - CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH.get()));
 
         Ok(last_finalized_slot_on_eth)
     }
@@ -263,7 +262,7 @@ impl Eth2NearRelay {
 
             if !were_submission_on_iter {
                 info!(target: "relay", "Sync with ETH network. Sleep {} secs", self.sleep_time_on_sync_secs);
-                sleep(Duration::from_secs(self.sleep_time_on_sync_secs));
+                thread::sleep(Duration::from_secs(self.sleep_time_on_sync_secs));
             }
         }
     }
@@ -274,7 +273,7 @@ impl Eth2NearRelay {
             || self.near_rpc_client.is_syncing()?
         {
             info!(target: "relay", "Waiting for sync...");
-            sleep(Duration::from_secs(self.sleep_time_on_sync_secs));
+            thread::sleep(Duration::from_secs(self.sleep_time_on_sync_secs));
         }
         Ok(())
     }
@@ -365,7 +364,7 @@ impl Eth2NearRelay {
         *last_eth2_slot_on_near = current_slot - 1;
         info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
                                   self.near_network_name, execution_outcome.transaction.hash);
-        sleep(Duration::from_secs(self.sleep_time_after_submission_secs));
+        thread::sleep(Duration::from_secs(self.sleep_time_after_submission_secs));
     }
 
     fn verify_bls_signature_for_finality_update(
@@ -605,7 +604,7 @@ impl Eth2NearRelay {
 
             info!(target: "relay", "Successful light client update submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
                                   self.near_network_name, execution_outcome.transaction.hash);
-            sleep(Duration::from_secs(self.sleep_time_after_submission_secs));
+            thread::sleep(Duration::from_secs(self.sleep_time_after_submission_secs));
         } else {
             debug!(target: "relay", "Finalized block for light client update is not found on NEAR. Skipping send light client update");
         }

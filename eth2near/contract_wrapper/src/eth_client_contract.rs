@@ -15,6 +15,7 @@ use std::option::Option;
 use std::string::String;
 use std::vec::Vec;
 use serde::Serialize;
+
 pub struct EthClientContract {
     last_slot: u64,
     pub contract_wrapper: Box<dyn ContractWrapper>,
