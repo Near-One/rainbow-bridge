@@ -201,7 +201,7 @@ fn get_config() -> Config {
         contract_account_id: "NaN".to_string(),
         ethereum_network: "kiln".to_string(),
         contract_type: "near".to_string(),
-        light_client_updates_submission_frequency_in_epochs: 1,
+        interval_between_light_client_updates_submission_in_epochs: 1,
         max_blocks_for_finalization: 5000,
         near_network_id: "testnet".to_string(),
         prometheus_metrics_port: Some(32221),

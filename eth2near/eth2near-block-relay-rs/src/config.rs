@@ -33,8 +33,8 @@ pub struct Config {
     // Contract type (near, dao, file)
     pub contract_type: String,
 
-    // Frequency of submission light client updates. Once in N epochs.
-    pub light_client_updates_submission_frequency_in_epochs: u64,
+    // Period of submission light client updates. Once in N epochs.
+    pub interval_between_light_client_updates_submission_in_epochs: u64,
 
     // maximum gap in slots between submitting light client update
     pub max_blocks_for_finalization: u64,
