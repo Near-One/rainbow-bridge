@@ -194,7 +194,7 @@ fn get_config() -> Config {
     Config {
         beacon_endpoint: "https://lodestar-kiln.chainsafe.io".to_string(),
         eth1_endpoint: "https://rpc.kiln.themerge.dev".to_string(),
-        total_submit_headers: 8,
+        headers_batch_size: 8,
         near_endpoint: "NaN".to_string(),
         signer_account_id: "NaN".to_string(),
         path_to_signer_secret_key: "NaN".to_string(),

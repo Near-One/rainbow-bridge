@@ -13,7 +13,7 @@ pub struct Config {
     pub eth1_endpoint: String,
 
     // the max number of headers submitted in one batch to eth client
-    pub total_submit_headers: u32,
+    pub headers_batch_size: u32,
 
     // endpoint for a full node on the NEAR chain
     pub near_endpoint: String,

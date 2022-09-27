@@ -67,7 +67,7 @@ pub struct Eth2NearRelay {
     eth1_rpc_client: Eth1RPCClient,
     near_rpc_client: NearRPCClient,
     eth_client_contract: Box<dyn EthClientContractTrait>,
-    max_submitted_headers: u64,
+    headers_batch_size: u64,
     ethereum_network: String,
     light_client_updates_submission_frequency_in_epochs: u64,
     max_blocks_for_finalization: u64,
@@ -102,7 +102,7 @@ impl Eth2NearRelay {
             eth1_rpc_client: Eth1RPCClient::new(&config.eth1_endpoint),
             eth_client_contract: eth_contract,
             near_rpc_client: NearRPCClient::new(&config.near_endpoint),
-            max_submitted_headers: config.total_submit_headers as u64,
+            headers_batch_size: config.headers_batch_size as u64,
             ethereum_network: config.ethereum_network.to_string(),
             light_client_updates_submission_frequency_in_epochs: config
                 .light_client_updates_submission_frequency_in_epochs,
@@ -324,10 +324,10 @@ impl Eth2NearRelay {
         let mut headers: Vec<BlockHeader> = vec![];
         let mut current_slot = start_slot;
 
-        while headers.len() < self.max_submitted_headers as usize
+        while headers.len() < self.headers_batch_size as usize
             && current_slot <= last_eth2_slot_on_eth_chain
         {
-            debug!(target: "relay", "Try add block header for slot={}, headers len={}/{}", current_slot, headers.len(), self.max_submitted_headers);
+            debug!(target: "relay", "Try add block header for slot={}, headers len={}/{}", current_slot, headers.len(), self.headers_batch_size);
             match self.get_execution_block_by_slot(current_slot) {
                 Ok(eth1_header) => headers.push(eth1_header),
                 Err(err) => match err.downcast_ref::<NoBlockForSlotError>() {
@@ -858,7 +858,7 @@ mod tests {
         let blocks = relay
             .get_execution_blocks_between(finalized_slot + 1, RIGHT_BOUND_IN_SLOT_SEARCH)
             .unwrap();
-        assert_eq!(blocks.0.len(), relay.max_submitted_headers as usize);
+        assert_eq!(blocks.0.len(), relay.headers_batch_size as usize);
 
         let first_block = relay
             .get_execution_block_by_slot(finalized_slot + 1)
@@ -1001,7 +1001,7 @@ mod tests {
     #[ignore]
     fn test_base_update_for_new_period() {
         let mut relay = get_relay_from_slot(true, FINALIZED_SLOT_BEFORE_NEW_PERIOD);
-        relay.max_submitted_headers = 33;
+        relay.headers_batch_size = 33;
 
         let blocks = relay
             .get_execution_blocks_between(
@@ -1028,7 +1028,7 @@ mod tests {
     #[ignore]
     fn test_update_new_period_without_next_sync_committee() {
         let mut relay = get_relay_from_slot(true, FINALIZED_SLOT_BEFORE_NEW_PERIOD);
-        relay.max_submitted_headers = 33;
+        relay.headers_batch_size = 33;
         let blocks = relay
             .get_execution_blocks_between(
                 FINALIZED_SLOT_BEFORE_NEW_PERIOD + 1,
@@ -1083,7 +1083,7 @@ mod tests {
     fn test_max_finalized_blocks_341() {
         let mut relay = get_relay(true, true);
         relay.max_blocks_for_finalization = 10000;
-        relay.max_submitted_headers = 10000;
+        relay.headers_batch_size = 10000;
 
         let finalized_slot = get_finalized_slot(&relay);
         send_execution_blocks_between(&mut relay, finalized_slot + 1, FINALIZED_SLOT_7);
@@ -1107,7 +1107,7 @@ mod tests {
     fn test_max_finalized_blocks_393() {
         let mut relay = get_relay(true, true);
         relay.max_blocks_for_finalization = 10000;
-        relay.max_submitted_headers = 10000;
+        relay.headers_batch_size = 10000;
 
         let finalized_slot = get_finalized_slot(&relay);
         send_execution_blocks_between(&mut relay, finalized_slot + 1, FINALIZED_SLOT_8);
