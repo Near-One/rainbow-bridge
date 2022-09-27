@@ -1,6 +1,5 @@
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
-use bls;
 use eth2_utility::consensus::{
     compute_domain, compute_signing_root, get_participant_pubkeys, Network, NetworkConfig,
     DOMAIN_SYNC_COMMITTEE, MIN_SYNC_COMMITTEE_PARTICIPANTS,

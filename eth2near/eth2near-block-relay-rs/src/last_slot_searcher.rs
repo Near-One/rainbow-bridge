@@ -33,7 +33,7 @@ impl LastSlotSearcher {
         let slot = cmp::max(finalized_slot, last_submitted_slot);
         trace!(target: "relay", "Init slot for search as {}", slot);
 
-        return if self.enable_binsearch {
+        if self.enable_binsearch {
             self.binary_slot_search(
                 slot,
                 finalized_slot,
@@ -49,7 +49,7 @@ impl LastSlotSearcher {
                 beacon_rpc_client,
                 eth_client_contract,
             )
-        };
+        }
     }
 
     // Search for the slot before the first unknown slot on NEAR

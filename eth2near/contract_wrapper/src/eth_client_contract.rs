@@ -13,7 +13,6 @@ use serde_json::json;
 use std::error::Error;
 use std::option::Option;
 use std::string::String;
-use std::vec::Vec;
 use serde::Serialize;
 
 pub struct EthClientContract {
@@ -133,7 +132,7 @@ impl EthClientContractTrait for EthClientContract {
 
     fn send_headers(
         &mut self,
-        headers: &Vec<BlockHeader>,
+        headers: &[BlockHeader],
         end_slot: u64,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>> {
         self.last_slot = end_slot;

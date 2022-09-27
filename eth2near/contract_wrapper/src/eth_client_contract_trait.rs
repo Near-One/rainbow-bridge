@@ -4,7 +4,6 @@ use near_primitives::views::FinalExecutionOutcomeView;
 use near_primitives::types::AccountId;
 use near_sdk::Balance;
 use std::error::Error;
-use std::vec::Vec;
 
 pub trait EthClientContractTrait {
     fn get_last_submitted_slot(&self) -> u64;
@@ -18,7 +17,7 @@ pub trait EthClientContractTrait {
     fn get_finalized_beacon_block_slot(&self) -> Result<u64, Box<dyn Error>>;
     fn send_headers(
         &mut self,
-        headers: &Vec<BlockHeader>,
+        headers: &[BlockHeader],
         end_slot: u64,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>>;
 

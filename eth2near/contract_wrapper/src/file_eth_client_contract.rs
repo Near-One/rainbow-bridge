@@ -9,7 +9,6 @@ use std::error::Error;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-use std::vec::Vec;
 
 pub struct FileEthClientContract {
     eth_client_contract: EthClientContract,
@@ -66,7 +65,7 @@ impl EthClientContractTrait for FileEthClientContract {
 
     fn send_headers(
         &mut self,
-        headers: &Vec<BlockHeader>,
+        headers: &[BlockHeader],
         end_slot: u64,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>> {
         for header in headers {
