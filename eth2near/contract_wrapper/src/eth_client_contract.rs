@@ -206,6 +206,24 @@ impl EthClientContractTrait for EthClientContract {
 
         Ok(LightClientState::try_from_slice(result.as_slice())?)
     }
+
+    fn get_num_of_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
+        let response = self.contract_wrapper.call_view_function(
+            "get_num_of_submitted_blocks_by_account".to_string(),
+            json!({"account_id": self.contract_wrapper.get_signer_account_id()}).to_string().into_bytes(),
+        )?;
+
+        Ok(serde_json::from_slice(response.as_slice())?)
+    }
+
+    fn get_max_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
+        let response = self.contract_wrapper.call_view_function(
+            "get_max_submitted_blocks_by_account".to_string(),
+            json!({}).to_string().into_bytes(),
+        )?;
+
+        Ok(serde_json::from_slice(response.as_slice())?)
+    }
 }
 
 #[cfg(test)]

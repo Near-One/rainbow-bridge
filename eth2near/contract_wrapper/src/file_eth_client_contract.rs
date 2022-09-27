@@ -106,4 +106,12 @@ impl EthClientContractTrait for FileEthClientContract {
     fn is_submitter_registered(&self, account_id: Option<AccountId>) -> Result<bool, Box<dyn Error>> {
         self.eth_client_contract.is_submitter_registered(account_id)
     }
+
+    fn get_num_of_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
+        self.eth_client_contract.get_num_of_submitted_blocks_by_account()
+    }
+
+    fn get_max_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
+        self.eth_client_contract.get_max_submitted_blocks_by_account()
+    }
 }
