@@ -28,12 +28,12 @@ impl NearContractWrapper {
         signer_secret_key: &str,
         contract_account_id: &str,
     ) -> NearContractWrapper {
-        let signer_account_id = account_id.parse().unwrap();
+        let signer_account_id = account_id.parse().expect("Error on parsing account id during creation near contract wrapper");
         let client = JsonRpcClient::connect(near_endpoint);
-        let contract_account = contract_account_id.parse().unwrap();
+        let contract_account = contract_account_id.parse().expect("Error on parsing contract account id during creation near contract wrapper");
 
         let signer =
-            InMemorySigner::from_secret_key(signer_account_id, signer_secret_key.parse().unwrap());
+            InMemorySigner::from_secret_key(signer_account_id, signer_secret_key.parse().expect("Error on parsing signature secret key"));
 
         NearContractWrapper {
             client,
@@ -51,8 +51,8 @@ impl NearContractWrapper {
         let v: Value = serde_json::from_str(
             &std::fs::read_to_string(path_to_signer_secret_key).expect("Unable to read file"),
         )
-        .unwrap();
-        let signer_secret_key = utils::trim_quotes(serde_json::to_string(&v["private_key"]).unwrap());
+        .expect("Error on parsing file with secret key during contract initialization");
+        let signer_secret_key = utils::trim_quotes(serde_json::to_string(&v["private_key"]).expect("Error during trim quotes of signature secret key"));
 
         Self::new_with_raw_secret_key(
             near_endpoint,

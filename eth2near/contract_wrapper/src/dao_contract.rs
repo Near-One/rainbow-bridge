@@ -89,7 +89,7 @@ impl DAOContract {
         receiver_id: AccountId,
         update: LightClientUpdate,
     ) -> Result<(u64, FinalExecutionOutcomeView), Box<dyn Error>> {
-        let raw_update = update.try_to_vec().unwrap();
+        let raw_update = update.try_to_vec()?;
         let update_hash = near_primitives::hash::hash(&raw_update);
         let args = Base64VecU8::from(raw_update);
 
