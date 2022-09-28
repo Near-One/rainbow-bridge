@@ -1,11 +1,11 @@
 use crate::beacon_block_body_merkle_tree::{BeaconBlockBodyMerkleTree, ExecutionPayloadMerkleTree};
+use crate::relay_errors::MissExecutionPayload;
 use eth2_hashing::{hash, hash32_concat};
 use ethereum_types::H256;
 use std::error::Error;
 use std::fmt;
 use std::fmt::Display;
 use types::{BeaconBlockBody, MainnetEthSpec};
-use crate::relay_errors::MissExecutionPayload;
 
 /// `ExecutionBlockProof` contains a `block_hash` (execution block) and
 /// a proof of its inclusion in the `BeaconBlockBody` tree hash.
@@ -84,7 +84,10 @@ impl ExecutionBlockProof {
         self.block_hash
     }
 
-    pub fn verify_proof_for_hash(&self, beacon_block_body_hash: &H256) -> Result<bool, IncorrectBranchLength> {
+    pub fn verify_proof_for_hash(
+        &self,
+        beacon_block_body_hash: &H256,
+    ) -> Result<bool, IncorrectBranchLength> {
         let l2_proof: &[H256] = &self.proof[0..Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE];
         let l1_proof: &[H256] =
             &self.proof[Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE..Self::PROOF_SIZE];
@@ -104,7 +107,12 @@ impl ExecutionBlockProof {
         ))
     }
 
-    fn merkle_root_from_branch(leaf: H256, branch: &[H256], depth: usize, index: usize) -> Result<H256, IncorrectBranchLength> {
+    fn merkle_root_from_branch(
+        leaf: H256,
+        branch: &[H256],
+        depth: usize,
+        index: usize,
+    ) -> Result<H256, IncorrectBranchLength> {
         if branch.len() != depth {
             return Err(IncorrectBranchLength);
         }
@@ -131,23 +139,28 @@ pub struct IncorrectBranchLength;
 
 impl Display for IncorrectBranchLength {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Error on getting merkle root from branch. Proof length should equal depth")
+        write!(
+            f,
+            "Error on getting merkle root from branch. Proof length should equal depth"
+        )
     }
 }
 
 impl Error for IncorrectBranchLength {}
 
-
 #[cfg(test)]
 mod tests {
+    use crate::config_for_tests::ConfigForTests;
     use crate::test_utils::read_json_file_from_data_dir;
     use types::BeaconBlockBody;
     use types::MainnetEthSpec;
 
-    const TEST_BEACON_BLOCK_ID: u32 = 741888;
-    const BEACON_ENDPOINT: &str = "https://lodestar-kiln.chainsafe.io";
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000;
+
+    fn get_test_config() -> ConfigForTests {
+        ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
+    }
 
     #[test]
     fn test_beacon_block_body_root_verification() {
@@ -182,9 +195,9 @@ mod tests {
             types::ExecutionBlockHash::from_root(execution_block_proof.get_execution_block_hash())
         );
 
-        assert!(
-            execution_block_proof.verify_proof_for_hash(&beacon_block_body_merkle_tree.0.hash()).unwrap()
-        );
+        assert!(execution_block_proof
+            .verify_proof_for_hash(&beacon_block_body_merkle_tree.0.hash())
+            .unwrap());
 
         let execution_block_proof_copy =
             crate::execution_block_proof::ExecutionBlockProof::construct_from_raw_data(
@@ -192,21 +205,25 @@ mod tests {
                 &execution_block_proof.get_proof(),
             );
         assert!(execution_block_proof_copy
-            .verify_proof_for_hash(&beacon_block_body_merkle_tree.0.hash()).unwrap());
+            .verify_proof_for_hash(&beacon_block_body_merkle_tree.0.hash())
+            .unwrap());
     }
 
     #[test]
     fn test_beacon_block_body_root_matches_body_root_in_header() {
+        let config = get_test_config();
+
         let beacon_rpc_client = crate::beacon_rpc_client::BeaconRPCClient::new(
-            BEACON_ENDPOINT,
+            &config.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
         );
+
         let beacon_block_body = beacon_rpc_client
-            .get_beacon_block_body_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
+            .get_beacon_block_body_for_block_id(&format!("{}", config.first_slot))
             .unwrap();
         let beacon_block_header = beacon_rpc_client
-            .get_beacon_block_header_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
+            .get_beacon_block_header_for_block_id(&format!("{}", config.first_slot))
             .unwrap();
 
         let beacon_block_body_merkle_tree =

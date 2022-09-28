@@ -84,6 +84,8 @@ impl EthClientContract {
     pub fn get_account_id(&self) -> AccountId {
         self.contract_wrapper.get_account_id()
     }
+
+    pub fn get_signature_account_id(&self) -> AccountId { self.contract_wrapper.get_signer_account_id() }
 }
 
 impl EthClientContractTrait for EthClientContract {
@@ -198,11 +200,12 @@ mod tests {
     use crate::sandbox_contract_wrapper::SandboxContractWrapper;
     use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::BlockHeader;
+    use near_primitives::types::AccountId;
     use tokio::runtime::Runtime;
 
     // TODO: use a more clean approach to include binary
     const WASM_FILEPATH: &str =
-        "../../contracts/near/target/wasm32-unknown-unknown/release/eth2_client.wasm";
+        "../../contracts/near/res/eth2_client.wasm";
 
     struct EthState {
         pub execution_blocks: Vec<BlockHeader>,
@@ -267,7 +270,6 @@ mod tests {
 
         let worker = rt.block_on(workspaces::sandbox()).unwrap();
         let wasm = std::fs::read(WASM_FILEPATH).unwrap();
-        let contract = rt.block_on(worker.dev_deploy(&wasm)).unwrap();
 
         // create accounts
         let owner = worker.root_account().unwrap();
@@ -282,10 +284,12 @@ mod tests {
             .into_result()
             .unwrap();
 
+        let contract = rt.block_on(owner.deploy(&wasm)).unwrap().unwrap();
+
         (relay_account, contract)
     }
 
-    fn init_contract(eth_client_contract: &EthClientContract, eth_state: &mut EthState) {
+    fn init_contract(eth_client_contract: &EthClientContract, eth_state: &mut EthState, trusted_signer: String) {
         const PATH_TO_CURRENT_SYNC_COMMITTEE: &str =
             "./data/next_sync_committee_kiln_period_133.json";
         const PATH_TO_NEXT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_kiln_period_134.json";
@@ -329,7 +333,7 @@ mod tests {
             next_sync_committee,
             None,
             None,
-            None,
+            Option::<AccountId>::Some(trusted_signer.parse().unwrap()),
         );
         eth_state.current_light_client_update = 1;
     }
@@ -347,7 +351,7 @@ mod tests {
 
         let mut eth_state = EthState::new();
 
-        init_contract(&eth_client_contract, &mut eth_state);
+        init_contract(&eth_client_contract, &mut eth_state, relay_account.id().to_string());
         let first_finalized_slot = eth_client_contract
             .get_finalized_beacon_block_slot()
             .unwrap();
