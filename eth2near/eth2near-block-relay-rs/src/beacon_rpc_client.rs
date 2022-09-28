@@ -134,7 +134,7 @@ impl BeaconRPCClient {
                 &light_client_update_json_str,
             )?,
             sync_committee_update: Some(
-                Self::get_sync_committee_update_from_light_lient_update_json_str(
+                Self::get_sync_committee_update_from_light_client_update_json_str(
                     &light_client_update_json_str,
                 )?,
             ),
@@ -283,7 +283,7 @@ impl BeaconRPCClient {
                 &finality_light_client_update_json_str,
             )?,
             sync_committee_update: Some(
-                Self::get_sync_committee_update_from_light_lient_update_json_str(
+                Self::get_sync_committee_update_from_light_client_update_json_str(
                     &light_client_update_json_str,
                 )?,
             ),
@@ -451,7 +451,7 @@ impl BeaconRPCClient {
         })
     }
 
-    fn get_sync_committee_update_from_light_lient_update_json_str(
+    fn get_sync_committee_update_from_light_client_update_json_str(
         light_client_update_json_str: &str,
     ) -> Result<SyncCommitteeUpdate, Box<dyn Error>> {
         let v: Value = serde_json::from_str(light_client_update_json_str)?;

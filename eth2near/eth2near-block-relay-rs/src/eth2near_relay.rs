@@ -465,7 +465,7 @@ impl Eth2NearRelay {
                 return;
             }
 
-            self.send_specific_light_cleint_update(light_client_update);
+            self.send_specific_light_client_update(light_client_update);
             self.terminate = true;
         }
     }
@@ -497,7 +497,7 @@ impl Eth2NearRelay {
             )
         };
 
-        self.send_specific_light_cleint_update(light_client_update);
+        self.send_specific_light_client_update(light_client_update);
     }
 
     fn get_attested_slot(
@@ -559,12 +559,12 @@ impl Eth2NearRelay {
             }
 
             trace!(target: "relay", "Hand made light client update: {:?}", light_client_update);
-            self.send_specific_light_cleint_update(light_client_update);
+            self.send_specific_light_client_update(light_client_update);
             return;
         }
     }
 
-    fn send_specific_light_cleint_update(&mut self, light_client_update: LightClientUpdate) {
+    fn send_specific_light_client_update(&mut self, light_client_update: LightClientUpdate) {
         let is_known_block = return_on_fail!(
             self.eth_client_contract.is_known_block(
                 &light_client_update
@@ -716,7 +716,7 @@ mod tests {
             &std::fs::read_to_string(PATH_TO_LIGHT_CLIENT_UPDATES).expect("Unable to read file"),
         )
         .unwrap();
-        relay.send_specific_light_cleint_update(light_client_updates[1].clone());
+        relay.send_specific_light_client_update(light_client_updates[1].clone());
 
         let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, FINALIZED_SLOT_1);
@@ -1049,7 +1049,7 @@ mod tests {
             )
             .unwrap();
 
-        relay.send_specific_light_cleint_update(light_client_update);
+        relay.send_specific_light_client_update(light_client_update);
 
         let new_finality_slot = get_finalized_slot(&relay);
 
@@ -1093,7 +1093,7 @@ mod tests {
             &std::fs::read_to_string(PATH_TO_LIGHT_CLIENT_UPDATES).expect("Unable to read file"),
         )
         .unwrap();
-        relay.send_specific_light_cleint_update(light_client_updates[7].clone());
+        relay.send_specific_light_client_update(light_client_updates[7].clone());
 
         let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, FINALIZED_SLOT_7);
@@ -1117,7 +1117,7 @@ mod tests {
             &std::fs::read_to_string(PATH_TO_LIGHT_CLIENT_UPDATES).expect("Unable to read file"),
         )
         .unwrap();
-        relay.send_specific_light_cleint_update(light_client_updates[8].clone());
+        relay.send_specific_light_client_update(light_client_updates[8].clone());
 
         let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, FINALIZED_SLOT_8);
