@@ -1,9 +1,6 @@
 use crate::execution_block_proof::ExecutionBlockProof;
 use crate::light_client_snapshot_with_proof::LightClientSnapshotWithProof;
-use crate::relay_errors::{
-    ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError, NoBlockForSlotError,
-    SignatureSlotNotFoundError,
-};
+use crate::relay_errors::{ErrorOnJsonParse, ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError, NoBlockForSlotError, SignatureSlotNotFoundError};
 use contract_wrapper::utils::trim_quotes;
 use eth_types::eth2::BeaconBlockHeader;
 use eth_types::eth2::FinalizedHeaderUpdate;
@@ -51,11 +48,11 @@ impl BeaconRPCClient {
             client: reqwest::blocking::Client::builder()
                 .timeout(Duration::from_secs(timeout_seconds))
                 .build()
-                .unwrap(),
+                .expect("Error on building blocking client for regular rpc requests."),
             client_state_request: reqwest::blocking::Client::builder()
                 .timeout(Duration::from_secs(timeout_state_seconds))
                 .build()
-                .unwrap(),
+                .expect("Error on building blocking client for state request."),
         }
     }
 
@@ -172,11 +169,16 @@ impl BeaconRPCClient {
     }
 
     pub fn get_checkpoint_root(&self) -> Result<String, Box<dyn Error>> {
-        let url = format!("{}/eth/v1/beacon/states/finalized/finality_checkpoints", self.endpoint_url);
+        let url = format!(
+            "{}/eth/v1/beacon/states/finalized/finality_checkpoints",
+            self.endpoint_url
+        );
         let checkpoint_json_str = self.get_json_from_raw_request(&url)?;
         let parsed_json: Value = serde_json::from_str(&checkpoint_json_str)?;
 
-        Ok(trim_quotes(parsed_json["data"]["finalized"]["root"].to_string()))
+        Ok(trim_quotes(
+            parsed_json["data"]["finalized"]["root"].to_string(),
+        ))
     }
 
     /// Return the last finalized slot in the Beacon chain
@@ -308,7 +310,7 @@ impl BeaconRPCClient {
         let json_str = self.get_json_from_raw_request(&url_request)?;
 
         let v: Value = serde_json::from_str(&json_str)?;
-        Ok(v["data"]["is_syncing"].as_bool().unwrap())
+        v["data"]["is_syncing"].as_bool().ok_or(Err(Box::new(ErrorOnJsonParse))?)
     }
 
     fn get_json_from_client(client: &Client, url: &str) -> Result<String, Box<dyn Error>> {

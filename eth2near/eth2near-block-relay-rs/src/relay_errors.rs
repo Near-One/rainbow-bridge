@@ -71,17 +71,6 @@ impl Display for MissSyncCommitteeUpdate {
 impl Error for MissSyncCommitteeUpdate {}
 
 #[derive(Debug)]
-pub struct MissNextSyncCommittee;
-
-impl Display for MissNextSyncCommittee {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Miss next sync committee in the Beacon Block State")
-    }
-}
-
-impl Error for MissNextSyncCommittee {}
-
-#[derive(Debug)]
 pub struct NoBlockForSlotError;
 
 impl Display for NoBlockForSlotError {
@@ -104,3 +93,36 @@ impl Display for FailOnGettingJson {
 }
 
 impl Error for FailOnGettingJson {}
+
+#[derive(Debug)]
+pub struct MissNextSyncCommittee;
+
+impl Display for MissNextSyncCommittee {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Miss next sync committee in the Beacon Block State")
+    }
+}
+
+impl Error for MissNextSyncCommittee {}
+
+#[derive(Debug)]
+pub struct ErrorOnJsonParse;
+
+impl Display for ErrorOnJsonParse {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Error during json parse")
+    }
+}
+
+impl Error for ErrorOnJsonParse {}
+
+#[derive(Debug)]
+pub struct MissExecutionPayload;
+
+impl Display for MissExecutionPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Miss execution payload")
+    }
+}
+
+impl Error for MissExecutionPayload {}

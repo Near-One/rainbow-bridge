@@ -2,7 +2,10 @@ use crate::beacon_block_body_merkle_tree::{BeaconBlockBodyMerkleTree, ExecutionP
 use eth2_hashing::{hash, hash32_concat};
 use ethereum_types::H256;
 use std::error::Error;
+use std::fmt;
+use std::fmt::Display;
 use types::{BeaconBlockBody, MainnetEthSpec};
+use crate::relay_errors::MissExecutionPayload;
 
 /// `ExecutionBlockProof` contains a `block_hash` (execution block) and
 /// a proof of its inclusion in the `BeaconBlockBody` tree hash.
@@ -42,7 +45,7 @@ impl ExecutionBlockProof {
         let execution_payload_merkle_tree = &ExecutionPayloadMerkleTree::new(
             &beacon_block_body
                 .execution_payload()
-                .unwrap()
+                .map_err(|_| MissExecutionPayload)?
                 .execution_payload,
         );
 
@@ -65,7 +68,7 @@ impl ExecutionBlockProof {
         Ok(Self {
             block_hash: beacon_block_body
                 .execution_payload()
-                .unwrap()
+                .map_err(|_| MissExecutionPayload)?
                 .execution_payload
                 .block_hash
                 .into_root(),
@@ -81,7 +84,7 @@ impl ExecutionBlockProof {
         self.block_hash
     }
 
-    pub fn verify_proof_for_hash(&self, beacon_block_body_hash: &H256) -> bool {
+    pub fn verify_proof_for_hash(&self, beacon_block_body_hash: &H256) -> Result<bool, IncorrectBranchLength> {
         let l2_proof: &[H256] = &self.proof[0..Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE];
         let l1_proof: &[H256] =
             &self.proof[Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE..Self::PROOF_SIZE];
@@ -90,19 +93,21 @@ impl ExecutionBlockProof {
             l2_proof,
             Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE,
             Self::L2_EXECUTION_PAYLOAD_TREE_EXECUTION_BLOCK_INDEX,
-        );
+        )?;
 
-        merkle_proof::verify_merkle_proof(
+        Ok(merkle_proof::verify_merkle_proof(
             execution_payload_hash,
             l1_proof,
             BeaconBlockBodyMerkleTree::BEACON_BLOCK_BODY_TREE_DEPTH,
             Self::L1_BEACON_BLOCK_BODY_TREE_EXECUTION_PAYLOAD_INDEX,
             *beacon_block_body_hash,
-        )
+        ))
     }
 
-    fn merkle_root_from_branch(leaf: H256, branch: &[H256], depth: usize, index: usize) -> H256 {
-        assert_eq!(branch.len(), depth, "proof length should equal depth");
+    fn merkle_root_from_branch(leaf: H256, branch: &[H256], depth: usize, index: usize) -> Result<H256, IncorrectBranchLength> {
+        if branch.len() != depth {
+            return Err(IncorrectBranchLength);
+        }
 
         let mut merkle_root = leaf.as_bytes().to_vec();
 
@@ -117,9 +122,21 @@ impl ExecutionBlockProof {
             }
         }
 
-        H256::from_slice(&merkle_root)
+        Ok(H256::from_slice(&merkle_root))
     }
 }
+
+#[derive(Debug)]
+pub struct IncorrectBranchLength;
+
+impl Display for IncorrectBranchLength {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Error on getting merkle root from branch. Proof length should equal depth")
+    }
+}
+
+impl Error for IncorrectBranchLength {}
+
 
 #[cfg(test)]
 mod tests {
@@ -169,7 +186,7 @@ mod tests {
         );
 
         assert!(
-            execution_block_proof.verify_proof_for_hash(&beacon_block_body_merkle_tree.0.hash())
+            execution_block_proof.verify_proof_for_hash(&beacon_block_body_merkle_tree.0.hash()).unwrap()
         );
 
         let execution_block_proof_copy =
@@ -178,7 +195,7 @@ mod tests {
                 &execution_block_proof.get_proof(),
             );
         assert!(execution_block_proof_copy
-            .verify_proof_for_hash(&beacon_block_body_merkle_tree.0.hash()));
+            .verify_proof_for_hash(&beacon_block_body_merkle_tree.0.hash()).unwrap());
     }
 
     #[test]
