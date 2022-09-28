@@ -1,6 +1,9 @@
 use crate::execution_block_proof::ExecutionBlockProof;
 use crate::light_client_snapshot_with_proof::LightClientSnapshotWithProof;
-use crate::relay_errors::{ErrorOnJsonParse, ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError, NoBlockForSlotError, SignatureSlotNotFoundError};
+use crate::relay_errors::{
+    ErrorOnJsonParse, ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError,
+    NoBlockForSlotError, SignatureSlotNotFoundError,
+};
 use contract_wrapper::utils::trim_quotes;
 use eth_types::eth2::BeaconBlockHeader;
 use eth_types::eth2::FinalizedHeaderUpdate;
@@ -310,7 +313,10 @@ impl BeaconRPCClient {
         let json_str = self.get_json_from_raw_request(&url_request)?;
 
         let v: Value = serde_json::from_str(&json_str)?;
-        v["data"]["is_syncing"].as_bool().ok_or(Err(Box::new(ErrorOnJsonParse))?)
+
+        v["data"]["is_syncing"]
+            .as_bool()
+            .ok_or(Box::new(ErrorOnJsonParse))
     }
 
     fn get_json_from_client(client: &Client, url: &str) -> Result<String, Box<dyn Error>> {

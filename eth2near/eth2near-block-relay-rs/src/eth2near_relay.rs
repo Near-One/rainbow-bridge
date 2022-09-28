@@ -1,4 +1,3 @@
-use std::cmp::max;
 use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
 use crate::eth1_rpc_client::Eth1RPCClient;
@@ -6,7 +5,12 @@ use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUp
 use crate::last_slot_searcher::LastSlotSearcher;
 use crate::near_rpc_client::NearRPCClient;
 use crate::prometheus_metrics;
-use crate::prometheus_metrics::{CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH, CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR, CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH, CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR, FAILS_ON_HEADERS_SUBMISSION, FAILS_ON_UPDATES_SUBMISSION, LAST_ETH_SLOT, LAST_ETH_SLOT_ON_NEAR, LAST_FINALIZED_ETH_SLOT, LAST_FINALIZED_ETH_SLOT_ON_NEAR};
+use crate::prometheus_metrics::{
+    CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH, CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR,
+    CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH, CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR,
+    FAILS_ON_HEADERS_SUBMISSION, FAILS_ON_UPDATES_SUBMISSION, LAST_ETH_SLOT, LAST_ETH_SLOT_ON_NEAR,
+    LAST_FINALIZED_ETH_SLOT, LAST_FINALIZED_ETH_SLOT_ON_NEAR,
+};
 use crate::relay_errors::NoBlockForSlotError;
 use bitvec::macros::internal::funty::Fundamental;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
@@ -14,6 +18,7 @@ use eth_types::eth2::LightClientUpdate;
 use eth_types::BlockHeader;
 use log::{debug, info, trace, warn};
 use near_primitives::views::FinalExecutionStatus;
+use std::cmp::max;
 use std::error::Error;
 use std::thread::sleep;
 use std::thread::spawn;
@@ -152,41 +157,67 @@ impl Eth2NearRelay {
         LAST_ETH_SLOT.inc_by(max(0, last_eth2_slot as i64 - LAST_ETH_SLOT.get()));
         info!(target: "relay", "Last slot on ETH = {}", last_eth2_slot);
 
-        if let Ok(last_block_number) = self.beacon_rpc_client.get_block_number_for_slot(Slot::new(last_eth2_slot)) {
-            CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH.inc_by(max(0, last_block_number as i64 - CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH.get()));
+        if let Ok(last_block_number) = self
+            .beacon_rpc_client
+            .get_block_number_for_slot(Slot::new(last_eth2_slot))
+        {
+            CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH.inc_by(max(
+                0,
+                last_block_number as i64 - CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH.get(),
+            ));
         }
 
         return if self.submit_only_finalized_blocks {
-            Ok(self.beacon_rpc_client.get_last_finalized_slot_number()?.as_u64())
+            Ok(self
+                .beacon_rpc_client
+                .get_last_finalized_slot_number()?
+                .as_u64())
         } else {
             Ok(last_eth2_slot)
-        }
+        };
     }
 
     fn get_last_eth2_slot_on_near(&mut self, max_slot: u64) -> Result<u64, Box<dyn Error>> {
         let last_eth2_slot_on_near = self.last_slot_searcher.get_last_slot(
             max_slot,
             &self.beacon_rpc_client,
-            &self.eth_client_contract
+            &self.eth_client_contract,
         )?;
 
-        LAST_ETH_SLOT_ON_NEAR
-            .inc_by(max(0,last_eth2_slot_on_near as i64 - LAST_ETH_SLOT_ON_NEAR.get()));
+        LAST_ETH_SLOT_ON_NEAR.inc_by(max(
+            0,
+            last_eth2_slot_on_near as i64 - LAST_ETH_SLOT_ON_NEAR.get(),
+        ));
 
-        if let Ok(last_block_number) = self.beacon_rpc_client.get_block_number_for_slot(Slot::new(last_eth2_slot_on_near)) {
-            CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR.inc_by(max(0, last_block_number as i64 - CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR.get()));
+        if let Ok(last_block_number) = self
+            .beacon_rpc_client
+            .get_block_number_for_slot(Slot::new(last_eth2_slot_on_near))
+        {
+            CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR.inc_by(max(
+                0,
+                last_block_number as i64 - CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR.get(),
+            ));
         }
 
         return Ok(last_eth2_slot_on_near);
     }
 
     fn get_last_finalized_slot_on_near(&self) -> Result<u64, Box<dyn Error>> {
-        let last_finalized_slot_on_near = self.eth_client_contract.get_finalized_beacon_block_slot()?;
-        LAST_FINALIZED_ETH_SLOT_ON_NEAR
-            .inc_by(max(0, last_finalized_slot_on_near as i64 - LAST_FINALIZED_ETH_SLOT_ON_NEAR.get()));
+        let last_finalized_slot_on_near =
+            self.eth_client_contract.get_finalized_beacon_block_slot()?;
+        LAST_FINALIZED_ETH_SLOT_ON_NEAR.inc_by(max(
+            0,
+            last_finalized_slot_on_near as i64 - LAST_FINALIZED_ETH_SLOT_ON_NEAR.get(),
+        ));
 
-        if let Ok(last_block_number) = self.beacon_rpc_client.get_block_number_for_slot(Slot::new(last_finalized_slot_on_near)) {
-            CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR.inc_by(max(0, last_block_number as i64 - CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR.get()));
+        if let Ok(last_block_number) = self
+            .beacon_rpc_client
+            .get_block_number_for_slot(Slot::new(last_finalized_slot_on_near))
+        {
+            CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR.inc_by(max(
+                0,
+                last_block_number as i64 - CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR.get(),
+            ));
         }
 
         Ok(last_finalized_slot_on_near)
@@ -195,13 +226,22 @@ impl Eth2NearRelay {
     fn get_last_finalized_slot_on_eth(&self) -> Result<u64, Box<dyn Error>> {
         let last_finalized_slot_on_eth = self
             .beacon_rpc_client
-            .get_last_finalized_slot_number()?.as_u64();
+            .get_last_finalized_slot_number()?
+            .as_u64();
 
-        LAST_FINALIZED_ETH_SLOT
-            .inc_by(max(0,last_finalized_slot_on_eth as i64 - LAST_FINALIZED_ETH_SLOT.get()));
+        LAST_FINALIZED_ETH_SLOT.inc_by(max(
+            0,
+            last_finalized_slot_on_eth as i64 - LAST_FINALIZED_ETH_SLOT.get(),
+        ));
 
-        if let Ok(last_block_number) = self.beacon_rpc_client.get_block_number_for_slot(Slot::new(last_finalized_slot_on_eth)) {
-            CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH.inc_by(max(0, last_block_number as i64 - CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH.get()));
+        if let Ok(last_block_number) = self
+            .beacon_rpc_client
+            .get_block_number_for_slot(Slot::new(last_finalized_slot_on_eth))
+        {
+            CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH.inc_by(max(
+                0,
+                last_block_number as i64 - CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH.get(),
+            ));
         }
 
         Ok(last_finalized_slot_on_eth)
@@ -226,7 +266,8 @@ impl Eth2NearRelay {
             let max_slot_for_submission: u64 = skip_fail!(
                 self.get_max_slot_for_submission(),
                 "Fail to get last slot on Eth",
-                self.sleep_time_on_sync_secs);
+                self.sleep_time_on_sync_secs
+            );
 
             let mut last_eth2_slot_on_near: u64 = skip_fail!(
                 self.get_last_eth2_slot_on_near(max_slot_for_submission),

@@ -1,7 +1,7 @@
 use serde::Deserialize;
+use std::env;
 use std::io::Read;
 use std::path::PathBuf;
-use std::env;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct ConfigForTests {
