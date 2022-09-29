@@ -1217,6 +1217,7 @@ dependencies = [
  "eth-types",
  "eth2-utility",
  "eth2_hashing",
+ "eth2_ssz",
  "ethereum-types",
  "finality-update-verify",
  "futures",

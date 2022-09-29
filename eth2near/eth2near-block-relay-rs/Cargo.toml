@@ -28,6 +28,7 @@ eth2-utility  = { path = "../../contracts/near/eth2-utility" }
 finality-update-verify = { path = "../finality-update-verify" }
 atomic_refcell = "0.1.8"
 bitvec = "*"
+eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
 
 near-jsonrpc-client = "0.4.0-beta.0"
 near-crypto = "0.14.0"
