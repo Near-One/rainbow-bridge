@@ -734,8 +734,6 @@ mod tests {
             }
         }
 
-        println!("Submitted blocks: {}", blocks.len());
-
         relay
             .eth_client_contract
             .send_headers(&blocks, end_slot)
