@@ -15,13 +15,28 @@ use tokio::runtime::Runtime;
 
 pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
 
+
+/// Implementation of interaction with a contract on NEAR.
 pub struct NearContractWrapper {
+    /// RPC client for interaction with NEAR RPC endpoint
     client: JsonRpcClient,
+
+    /// Account ID of the contract
     contract_account: AccountId,
+
+    /// Account that signs the transactions
     signer: InMemorySigner,
 }
 
 impl NearContractWrapper {
+    /// Constructor of `NearContractorWrapper`
+    ///
+    /// # Arguments
+    ///
+    /// * `near_endpoint` - The URL to NEAR RPC endpoint.
+    /// * `account_id` - Signer account ID.
+    /// * `signer_secret_key` - Signer secret key as the raw string.
+    /// * `contract_account_id` - Contract account ID.
     pub fn new_with_raw_secret_key(
         near_endpoint: &str,
         account_id: &str,
@@ -42,6 +57,14 @@ impl NearContractWrapper {
         }
     }
 
+    /// Constructor of `NearContractorWrapper`
+    ///
+    /// # Arguments
+    ///
+    /// * `near_endpoint` - The URL to NEAR RPC endpoint.
+    /// * `account_id` - Signer account ID.
+    /// * `path_to_signer_secret_key` - Path to the file containing signer's secret key file.
+    /// * `contract_account_id` - Contract account ID.
     pub fn new(
         near_endpoint: &str,
         account_id: &str,
