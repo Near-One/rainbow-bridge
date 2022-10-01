@@ -11,22 +11,22 @@ pub trait EthClientContractTrait {
     /// Returns the last submitted slot by this relay
     fn get_last_submitted_slot(&self) -> u64;
 
-    /// Check if block with the execution block hash is known in Eth Client
+    /// Checks if the block with the execution block hash is known to Ethereum Light Client on NEAR
     fn is_known_block(&self, execution_block_hash: &H256) -> Result<bool, Box<dyn Error>>;
 
-    /// Submit the Light Client Update to Eth Client. Returns the Transaction Status
+    /// Submits the Light Client Update to Ethereum Light Client on NEAR. Returns the final execution outcome or an error
     fn send_light_client_update(
         &mut self,
         light_client_update: LightClientUpdate,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>>;
 
-    /// Get finalized beacon block hash from Eth Client
+    /// Gets finalized beacon block hash from Ethereum Light Client on NEAR
     fn get_finalized_beacon_block_hash(&self) -> Result<H256, Box<dyn Error>>;
 
-    /// Get finalized beacon block slot from Eth Client
+    /// Gets finalized beacon block slot from Ethereum Light Client on NEAR
     fn get_finalized_beacon_block_slot(&self) -> Result<u64, Box<dyn Error>>;
 
-    /// Send headers to Eth Client.
+    /// Sends headers to Ethereum Light Client on NEAR. Returns final execution outcome or an error.
     ///
     /// # Arguments
     ///
@@ -38,15 +38,15 @@ pub trait EthClientContractTrait {
         end_slot: u64,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>>;
 
-    /// Get the minimum deposit for registration new relay
+    /// Gets the minimum required deposit for the registration of a new relay
     fn get_min_deposit(&self) -> Result<Balance, Box<dyn Error>>;
 
-    /// Register current relay on the Eth Client
+    /// Registers the current relay in the Ethereum Light Client on NEAR
     fn register_submitter(&self) -> Result<FinalExecutionOutcomeView, Box<dyn Error>>;
 
-    /// Check if the relay is registered on the Eth Client
+    /// Checks if the relay is registered in the Ethereum Light Client on NEAR
     fn is_submitter_registered(&self, account_id: Option<AccountId>) -> Result<bool, Box<dyn Error>>;
 
-    /// Get the Light Client State of the Eth Client
+    /// Gets the Light Client State of the Ethereum Light Client on NEAR
     fn get_light_client_state(&self) -> Result<LightClientState, Box<dyn Error>>;
 }

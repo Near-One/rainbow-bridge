@@ -8,9 +8,9 @@ use serde_json::json;
 use std::error::Error;
 use crate::contract_wrapper_trait::ContractWrapper;
 
-/// Proxy for interaction with DAO Contract on NEAR
+/// Implementation for interaction with DAO Contract on NEAR.
 pub struct DAOContract {
-    /// Wrapper for interact with NEAR Contract
+    /// Wrapper for interacting with NEAR Contract
     pub contract_wrapper: Box<dyn ContractWrapper>,
 }
 
@@ -20,7 +20,7 @@ impl DAOContract {
         DAOContract { contract_wrapper }
     }
 
-    /// Get last proposal id on DAO
+    /// Gets last proposal ID in DAO contract
     pub fn get_last_proposal_id(&self) -> Result<u64, Box<dyn Error>> {
         let response = self
             .contract_wrapper
@@ -29,7 +29,7 @@ impl DAOContract {
         Ok(serde_json::from_slice(response.as_slice())?)
     }
 
-    /// Get proposal by proposal id
+    /// Gets the proposal for a given proposal ID
     pub fn get_proposal(&self, id: u64) -> Result<ProposalOutput, Box<dyn Error>> {
         let response = self.contract_wrapper.call_view_function(
             "get_proposal".to_string(),
@@ -39,7 +39,7 @@ impl DAOContract {
         Ok(serde_json::from_slice(response.as_slice())?)
     }
 
-    /// Get policy
+    /// Gets policy of the DAO contract
     pub fn get_policy(&self) -> Result<Policy, Box<dyn Error>> {
         let response = self
             .contract_wrapper
@@ -48,7 +48,7 @@ impl DAOContract {
         Ok(serde_json::from_slice(response.as_slice())?)
     }
 
-    /// Submit a new proposal to DAO contract
+    /// Submits a new proposal to the DAO contract
     pub fn add_proposal(
         &mut self,
         proposal: ProposalInput,
@@ -76,7 +76,7 @@ impl DAOContract {
         ))
     }
 
-    /// Make Action under Proposal with the given id
+    /// Votes for a specific `Action` in the `Proposal` with the given ID
     pub fn act_proposal(
         &self,
         id: u64,
@@ -92,11 +92,11 @@ impl DAOContract {
         )
     }
 
-    /// Submit Light Client Update to DAO
+    /// Submits Light Client Update to DAO
     ///
     /// # Arguments
-    /// * `reveiver_id` - account id of the Ethereum Light Client Contract on NEAR
-    /// * `update` - Light Client Update
+    /// * `receiver_id` - account ID of the Ethereum Light Client Contract on NEAR.
+    /// * `update` - Light Client Update.
     pub fn submit_light_client_update_proposal(
         &mut self,
         receiver_id: AccountId,

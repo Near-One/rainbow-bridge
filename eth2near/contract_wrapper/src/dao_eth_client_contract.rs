@@ -13,18 +13,18 @@ use std::thread;
 use std::time::Duration;
 use std::vec::Vec;
 
-/// Proxy for Ethereum Light Client Contract on NEAR
-/// with intermediate submission Light Client Updates to DAO
+/// Implementation of Ethereum Light Client Contract interaction on NEAR
+/// having intermediate submission of Light Client Updates to the DAO contract.
 pub struct DaoEthClientContract {
-    /// Proxy for Ethereum Light Client Contract on NEAR
+    /// Interface for an interaction with Ethereum Light Client Contract on NEAR
     eth_client_contract: EthClientContract,
 
-    /// Proxy for DAO Contract
+    /// Interface for an interaction with DAO Contract
     dao_contract: DAOContract,
 }
 
 impl DaoEthClientContract {
-    //Constructor for DaoEthClientContract
+    // Constructor for `DaoEthClientContract`
     pub fn new(eth_client_contract: EthClientContract, dao_contract: DAOContract) -> Self {
         Self {
             eth_client_contract,

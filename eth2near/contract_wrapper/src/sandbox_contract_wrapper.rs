@@ -14,10 +14,10 @@ use workspaces::{Account, Contract};
 
 pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
 
-/// Proxy for interaction with NEAR contract in Sandbox emulator for testing purposes
+/// Implementation for interaction with NEAR contract in Sandbox emulator for testing purposes.
 /// Implemented using https://github.com/near/workspaces-rs
 pub struct SandboxContractWrapper {
-    /// Account which signed transactions
+    /// Account which signs transactions
     signer_account: Account,
 
     /// Emulated NEAR contract
@@ -25,7 +25,7 @@ pub struct SandboxContractWrapper {
 }
 
 impl SandboxContractWrapper {
-    /// SandboxContractWrapper constructor
+    /// `SandboxContractWrapper` constructor
     pub fn new(signer_account: &Account, contract: Contract) -> Self {
         SandboxContractWrapper {
             signer_account: signer_account.clone(),
