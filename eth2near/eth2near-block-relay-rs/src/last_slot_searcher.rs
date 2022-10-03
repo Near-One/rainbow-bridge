@@ -2,7 +2,7 @@ use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
 use eth_rpc_client::errors::{ExecutionPayloadError, NoBlockForSlotError};
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::H256;
-use log::{trace, info};
+use log::{info, trace};
 use std::cmp::{max, min};
 use std::error::Error;
 
@@ -25,7 +25,8 @@ impl LastSlotSearcher {
         info!(target: "relay", "= Search for last slot on near =");
 
         let finalized_slot = eth_client_contract.get_finalized_beacon_block_slot()?;
-        let finalized_number = beacon_rpc_client.get_block_number_for_slot(types::Slot::new(finalized_slot))?;
+        let finalized_number =
+            beacon_rpc_client.get_block_number_for_slot(types::Slot::new(finalized_slot))?;
         info!(target: "relay", "Finalized slot/block_number on near={}/{}", finalized_slot, finalized_number);
 
         let last_submitted_slot = eth_client_contract.get_last_submitted_slot();

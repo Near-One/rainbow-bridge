@@ -77,6 +77,6 @@ jobs:
 
       - name: Execute
         env:
-          API_KEY: ${{ secrets.INFURA_API_KEY }}
+          ETH1_INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }} 
         run: ${{ matrix.cmd }}
         timeout-minutes: ${{ matrix.timeout-minutes }}

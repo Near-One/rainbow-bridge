@@ -17,12 +17,17 @@ use std::vec::Vec;
 use crate::eth_network_enum::EthNetwork;
 use serde::Serialize;
 
+/// Implementation for interaction with Ethereum Light Client Contract on NEAR.
 pub struct EthClientContract {
+    /// last submitted slot by this relay
     last_slot: u64,
+
+    /// Wrapper for interacting with NEAR Contract
     pub contract_wrapper: Box<dyn ContractWrapper>,
 }
 
 impl EthClientContract {
+    /// Constructor for `EthClientContract`
     pub fn new(contract_wrapper: Box<dyn ContractWrapper>) -> Self {
         EthClientContract {
             last_slot: 0,
@@ -30,6 +35,17 @@ impl EthClientContract {
         }
     }
 
+    /// Initializes the Ethereum Light Client Contract on NEAR.
+    ///
+    /// # Arguments
+    /// * `network` - the name of Ethereum network such as `mainnet`, `goerli`, `kiln`, etc.
+    /// * `finalized_execution_header` - the finalized execution header to start initialization with.
+    /// * `finalized_beacon_header` - correspondent finalized beacon header.
+    /// * `current_sync_committee` - sync committee correspondent for finalized block.
+    /// * `next_sync_committee` - sync committee for the next period after period for finalized block.
+    /// * `hashes_gs_threshold` - the maximum number of stored finalized blocks.
+    /// * `max_submitted_block_by_account` - the maximum number of unfinalized blocks which one relay can store in the client's storage.
+    /// * `trusted_signer` - the account address of the trusted signer which is allowed to submit light client updates.
     pub fn init_contract(
         &self,
         network: EthNetwork,
@@ -85,6 +101,7 @@ impl EthClientContract {
             .expect("Error during contract initialization");
     }
 
+    /// Returns the Eth Light Client account address
     pub fn get_account_id(&self) -> AccountId {
         self.contract_wrapper.get_account_id()
     }

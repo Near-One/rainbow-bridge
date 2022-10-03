@@ -386,6 +386,7 @@ mod tests {
             .get_light_client_update(light_client_period)
             .unwrap();
 
+
         let attested_slot = light_client_update.attested_beacon_header.slot;
 
         let hand_made_light_client_update =
@@ -449,7 +450,7 @@ mod tests {
         let light_client_period =
             BeaconRPCClient::get_period_for_slot(hand_made_light_client_update.signature_slot);
 
-        let light_client_update = beacon_rpc_client
+       let light_client_update = beacon_rpc_client
             .get_light_client_update(light_client_period)
             .unwrap();
 

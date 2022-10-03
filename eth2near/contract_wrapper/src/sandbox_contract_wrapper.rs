@@ -14,13 +14,18 @@ use workspaces::{Account, Contract};
 
 pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
 
-// Implemented using https://github.com/near/workspaces-rs
+/// Implementation for interaction with NEAR contract in Sandbox emulator for testing purposes.
+/// Implemented using https://github.com/near/workspaces-rs
 pub struct SandboxContractWrapper {
+    /// Account which signs transactions
     signer_account: Account,
+
+    /// Emulated NEAR contract
     contract: Contract,
 }
 
 impl SandboxContractWrapper {
+    /// `SandboxContractWrapper` constructor
     pub fn new(signer_account: &Account, contract: Contract) -> Self {
         SandboxContractWrapper {
             signer_account: signer_account.clone(),
@@ -74,6 +79,14 @@ impl SandboxContractWrapper {
 }
 
 impl ContractWrapper for SandboxContractWrapper {
+    fn get_account_id(&self) -> AccountId {
+        self.contract.id().clone()
+    }
+
+    fn get_signer_account_id(&self) -> AccountId {
+        self.signer_account.id().to_string().parse().unwrap()
+    }
+
     fn call_view_function(
         &self,
         method_name: String,
@@ -139,13 +152,5 @@ impl ContractWrapper for SandboxContractWrapper {
                 )?,
             ),
         )
-    }
-
-    fn get_account_id(&self) -> AccountId {
-        self.contract.id().clone()
-    }
-
-    fn get_signer_account_id(&self) -> AccountId {
-        self.signer_account.id().to_string().parse().unwrap()
     }
 }

@@ -32,8 +32,8 @@ impl ConfigForTests {
         config.read_to_string(&mut content).unwrap();
         let mut config: Self = toml::from_str(content.as_str()).unwrap();
 
-        let api_key_string = env::var("API_KEY").unwrap();
-        config.eth1_endpoint = config.eth1_endpoint.replace("API_KEY", &api_key_string);
+        let api_key_string = env::var("ETH1_INFURA_API_KEY").unwrap();
+        config.eth1_endpoint = config.eth1_endpoint.replace("ETH1_INFURA_API_KEY", &api_key_string);
 
         config
     }
