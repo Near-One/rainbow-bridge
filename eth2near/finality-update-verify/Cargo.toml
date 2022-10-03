@@ -12,7 +12,10 @@ types =  { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624
 bitvec = "1.0.0"
 
 [dev-dependencies]
-eth2_to_near_relay = { path = "../eth2near-block-relay-rs" }
+eth2_to_near_relay = { path = "../eth2near-block-relay-rs"}
+serde_json = "1.0.74"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.5.9"
 
 [patch]
 [patch.crates-io]

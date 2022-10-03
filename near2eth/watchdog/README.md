@@ -34,7 +34,7 @@ Create and fill `~/.rainbow/config.json` file. The content of the config file fo
 ```json=
 {
         "ethNodeUrl": "",
-        "ethClientAddress": "0x3be7Df8dB39996a837041bb8Ee0dAdf60F767038",
+        "ethClientAddress": "0x3FEFc5A4B1c02f21cBc8D3613643ba0635b9a873",
         "ethMasterSk": "",
         "watchdogDelay": 600
 }
@@ -86,7 +86,7 @@ Options:
   --eth-node-url <eth_node_url>                          The URL of the Ethereum node. (default: "")
   --eth-master-sk <eth_master_sk>                        The secret key of the master account on Ethereum blockchain. (default: "")
   --eth-client-artifact-path <eth_client_artifact_path>  Path to the artifact file defining Ethereum Client contract. (default: "/home/username/src/rainbow-bridge/contracts/eth/nearbridge/artifacts/contracts/NearBridge.sol/NearBridge.json")
-  --eth-client-address <eth_client_address>              ETH address of the EthClient contract. (default: "0x3be7Df8dB39996a837041bb8Ee0dAdf60F767038")
+  --eth-client-address <eth_client_address>              ETH address of the EthClient contract.
   --watchdog-delay <watchdog_delay>                      Number of seconds to wait after validating all signatures. (default: 600)
   --watchdog-error-delay <watchdog_error_delay>          Number of seconds to wait before retrying if there is an error. (default: "1")
   --daemon <daemon>                                      Whether the process should be launched as a daemon. (default: "true")

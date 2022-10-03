@@ -16,39 +16,39 @@ use tokio::runtime::Runtime;
 pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
 
 
-/// Proxy for interaction with contract on NEAR
+/// Implementation of interaction with a contract on NEAR.
 pub struct NearContractWrapper {
-    /// RPC client for interaction with near endpoint
+    /// RPC client for interaction with NEAR RPC endpoint
     client: JsonRpcClient,
 
-    /// Contract account address
+    /// Account ID of the contract
     contract_account: AccountId,
 
-    /// Account which signed the transaction
+    /// Account that signs the transactions
     signer: InMemorySigner,
 }
 
 impl NearContractWrapper {
-    /// Constructor of NeatContractorWrapper
+    /// Constructor of `NearContractorWrapper`
     ///
     /// # Arguments
     ///
-    /// * `near_endpoint` - The URL to near_endpoint.
-    /// * `account_id` - Signer account address.
-    /// * `signer_secret_key` - String with signer secret key.
-    /// * `contract_account_id` - Contract account address.
+    /// * `near_endpoint` - The URL to NEAR RPC endpoint.
+    /// * `account_id` - Signer account ID.
+    /// * `signer_secret_key` - Signer secret key as the raw string.
+    /// * `contract_account_id` - Contract account ID.
     pub fn new_with_raw_secret_key(
         near_endpoint: &str,
         account_id: &str,
         signer_secret_key: &str,
         contract_account_id: &str,
     ) -> NearContractWrapper {
-        let signer_account_id = account_id.parse().unwrap();
+        let signer_account_id = account_id.parse().expect("Error on parsing account id during creation near contract wrapper");
         let client = JsonRpcClient::connect(near_endpoint);
-        let contract_account = contract_account_id.parse().unwrap();
+        let contract_account = contract_account_id.parse().expect("Error on parsing contract account id during creation near contract wrapper");
 
         let signer =
-            InMemorySigner::from_secret_key(signer_account_id, signer_secret_key.parse().unwrap());
+            InMemorySigner::from_secret_key(signer_account_id, signer_secret_key.parse().expect("Error on parsing signature secret key"));
 
         NearContractWrapper {
             client,
@@ -57,14 +57,14 @@ impl NearContractWrapper {
         }
     }
 
-    /// Constructor of NeatContractorWrapper
+    /// Constructor of `NearContractorWrapper`
     ///
     /// # Arguments
     ///
-    /// * `near_endpoint` - The URL to near_endpoint.
-    /// * `account_id` - Signer account address.
-    /// * `path_to_signer_secret_key` - Path to file with signer secret key.
-    /// * `contract_account_id` - Contract account address.
+    /// * `near_endpoint` - The URL to NEAR RPC endpoint.
+    /// * `account_id` - Signer account ID.
+    /// * `path_to_signer_secret_key` - Path to the file containing signer's secret key file.
+    /// * `contract_account_id` - Contract account ID.
     pub fn new(
         near_endpoint: &str,
         account_id: &str,
@@ -74,8 +74,8 @@ impl NearContractWrapper {
         let v: Value = serde_json::from_str(
             &std::fs::read_to_string(path_to_signer_secret_key).expect("Unable to read file"),
         )
-        .unwrap();
-        let signer_secret_key = trim_quotes(serde_json::to_string(&v["private_key"]).unwrap());
+        .expect("Error on parsing file with secret key during contract initialization");
+        let signer_secret_key = trim_quotes(serde_json::to_string(&v["private_key"]).expect("Error during trim quotes of signature secret key"));
 
         Self::new_with_raw_secret_key(
             near_endpoint,
