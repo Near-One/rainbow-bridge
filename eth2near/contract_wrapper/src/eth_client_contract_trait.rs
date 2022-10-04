@@ -4,7 +4,6 @@ use near_primitives::views::FinalExecutionOutcomeView;
 use near_primitives::types::AccountId;
 use near_sdk::Balance;
 use std::error::Error;
-use std::vec::Vec;
 
 /// Interface for using Ethereum Light Client
 pub trait EthClientContractTrait {
@@ -34,7 +33,7 @@ pub trait EthClientContractTrait {
     /// * `end_slot` - the slot of the last header in list
     fn send_headers(
         &mut self,
-        headers: &Vec<BlockHeader>,
+        headers: &[BlockHeader],
         end_slot: u64,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>>;
 

@@ -1,5 +1,5 @@
 use crate::contract_wrapper_trait::ContractWrapper;
-use crate::utils::trim_quotes;
+use crate::utils;
 use near_crypto::InMemorySigner;
 use near_jsonrpc_client::{methods, JsonRpcClient};
 use near_jsonrpc_primitives::types::query::QueryResponseKind;
@@ -75,7 +75,7 @@ impl NearContractWrapper {
             &std::fs::read_to_string(path_to_signer_secret_key).expect("Unable to read file"),
         )
         .expect("Error on parsing file with secret key during contract initialization");
-        let signer_secret_key = trim_quotes(serde_json::to_string(&v["private_key"]).expect("Error during trim quotes of signature secret key"));
+        let signer_secret_key = utils::trim_quotes(serde_json::to_string(&v["private_key"]).expect("Error during trim quotes of signature secret key"));
 
         Self::new_with_raw_secret_key(
             near_endpoint,

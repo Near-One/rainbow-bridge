@@ -107,11 +107,11 @@ impl HandMadeFinalityLightClientUpdate {
                 .into();
             let signature_beacon_body = beacon_rpc_client
                 .get_beacon_block_body_for_block_id(&format!("{}", signature_slot))?;
-            let sync_committe_signature = signature_beacon_body
+            let sync_aggregate = signature_beacon_body
                 .sync_aggregate()
                 .map_err(|_| MissSyncAggregationError)?;
             let sync_committee_bits: [u8; 64] =
-                Self::get_sync_committee_bits(sync_committe_signature)?;
+                Self::get_sync_committee_bits(sync_aggregate)?;
             let sync_committee_bits_sum: u32 = sync_committee_bits
                 .into_iter()
                 .map(|x| x.count_ones())
@@ -174,10 +174,10 @@ impl HandMadeFinalityLightClientUpdate {
     ) -> Result<LightClientUpdate, Box<dyn Error>> {
         let signature_beacon_body =
             beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", signature_slot))?;
-        let sync_committe_signature = signature_beacon_body
+        let sync_aggregate = signature_beacon_body
             .sync_aggregate()
             .map_err(|_| MissSyncAggregationError)?;
-        let sync_committee_bits: [u8; 64] = Self::get_sync_committee_bits(sync_committe_signature)?;
+        let sync_committee_bits: [u8; 64] = Self::get_sync_committee_bits(sync_aggregate)?;
 
         let attested_header = beacon_rpc_client
             .get_beacon_block_header_for_block_id(&format!("{}", attested_slot))?;
@@ -194,7 +194,7 @@ impl HandMadeFinalityLightClientUpdate {
             sync_aggregate: eth_types::eth2::SyncAggregate {
                 sync_committee_bits: SyncCommitteeBits(sync_committee_bits),
                 sync_committee_signature: serde_json::from_str::<SignatureBytes>(
-                    &serde_json::to_string(&sync_committe_signature.sync_committee_signature)?,
+                    &serde_json::to_string(&sync_aggregate.sync_committee_signature)?,
                 )?,
             },
             signature_slot,
