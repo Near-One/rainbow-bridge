@@ -11,6 +11,7 @@ use eth_types::eth2::{
 use eth_types::H256;
 use log::trace;
 use serde_json::Value;
+use ssz::Encode;
 use std::error::Error;
 use tree_hash::TreeHash;
 use types::{BeaconBlockBody, BeaconBlockHeader, BeaconState, MainnetEthSpec};
@@ -204,7 +205,7 @@ impl HandMadeFinalityLightClientUpdate {
                 &finalized_block_body,
             )?,
             sync_committee_update: match finality_beacon_state {
-                None => Option::<SyncCommitteeUpdate>::None,
+                None => None,
                 Some(beacon_state) => Some(Self::get_next_sync_committee(&beacon_state)?),
             },
         })
@@ -239,7 +240,6 @@ impl HandMadeFinalityLightClientUpdate {
                 next_sync_committee
                     .pubkeys
                     .iter()
-                    .copied()
                     .map(|x| eth_types::eth2::PublicKeyBytes(x.serialize()))
                     .collect(),
             ),
@@ -272,9 +272,7 @@ impl HandMadeFinalityLightClientUpdate {
         match sync_committee_signature
             .clone()
             .sync_committee_bits
-            .into_bytes()
-            .into_vec()
-            .as_slice()
+            .as_ssz_bytes()
             .try_into()
         {
             Ok(ba) => Ok(ba),
@@ -324,7 +322,6 @@ impl HandMadeFinalityLightClientUpdate {
                 execution_hash_branch: finalized_block_eth1data_proof
                     .get_proof()
                     .iter()
-                    .copied()
                     .map(|x| eth_types::H256::from(x.0.to_vec()))
                     .collect(),
             },
