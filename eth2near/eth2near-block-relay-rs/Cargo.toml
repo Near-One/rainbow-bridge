@@ -9,10 +9,13 @@ tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "
 merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
 eth2_hashing = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
 eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
+
 eth-types = { path = "../../contracts/near/eth-types/", features = ["eip1559"]}
-contract_wrapper = { path = "../contract_wrapper" }
 eth2-utility  = { path = "../../contracts/near/eth2-utility" }
+
+contract_wrapper = { path = "../contract_wrapper" }
 finality-update-verify = { path = "../finality-update-verify" }
+
 log = { version = "0.4", features = ["std", "serde"] }
 serde_json = "1.0.74"
 serde = { version = "1.0", features = ["derive"] }
