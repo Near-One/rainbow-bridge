@@ -12,12 +12,18 @@ use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
 
+/// Implementation of Ethereum Light Client Contract interaction on NEAR
+/// having intermediate submission of Light Client Updates to the DAO contract.
 pub struct DaoEthClientContract {
+    /// Interface for an interaction with Ethereum Light Client Contract on NEAR
     eth_client_contract: EthClientContract,
+
+    /// Interface for an interaction with DAO Contract
     dao_contract: DAOContract,
 }
 
 impl DaoEthClientContract {
+    // Constructor for `DaoEthClientContract`
     pub fn new(eth_client_contract: EthClientContract, dao_contract: DAOContract) -> Self {
         Self {
             eth_client_contract,

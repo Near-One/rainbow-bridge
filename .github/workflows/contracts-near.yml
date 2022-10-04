@@ -64,5 +64,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Execute
+        env:
+          ETH1_INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }} 
         run: ${{ matrix.cmd }}
         timeout-minutes: ${{ matrix.timeout-minutes }}

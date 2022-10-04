@@ -6,17 +6,21 @@ use near_sdk::json_types::Base64VecU8;
 use near_sdk::{AccountId, Gas};
 use serde_json::json;
 use std::error::Error;
-
 use crate::contract_wrapper_trait::ContractWrapper;
+
+/// Implementation for interaction with DAO Contract on NEAR.
 pub struct DAOContract {
+    /// Wrapper for interacting with NEAR Contract
     pub contract_wrapper: Box<dyn ContractWrapper>,
 }
 
 impl DAOContract {
+    /// Constructor for DAOContract
     pub fn new(contract_wrapper: Box<dyn ContractWrapper>) -> Self {
         DAOContract { contract_wrapper }
     }
 
+    /// Gets last proposal ID in DAO contract
     pub fn get_last_proposal_id(&self) -> Result<u64, Box<dyn Error>> {
         let response = self
             .contract_wrapper
@@ -25,6 +29,7 @@ impl DAOContract {
         Ok(serde_json::from_slice(response.as_slice())?)
     }
 
+    /// Gets the proposal for a given proposal ID
     pub fn get_proposal(&self, id: u64) -> Result<dao_types::ProposalOutput, Box<dyn Error>> {
         let response = self.contract_wrapper.call_view_function(
             "get_proposal".to_string(),
@@ -34,6 +39,7 @@ impl DAOContract {
         Ok(serde_json::from_slice(response.as_slice())?)
     }
 
+    /// Gets policy of the DAO contract
     pub fn get_policy(&self) -> Result<dao_types::Policy, Box<dyn Error>> {
         let response = self
             .contract_wrapper
@@ -42,6 +48,7 @@ impl DAOContract {
         Ok(serde_json::from_slice(response.as_slice())?)
     }
 
+    /// Submits a new proposal to the DAO contract
     pub fn add_proposal(
         &mut self,
         proposal: dao_types::ProposalInput,
@@ -69,6 +76,7 @@ impl DAOContract {
         ))
     }
 
+    /// Votes for a specific `Action` in the `Proposal` with the given ID
     pub fn act_proposal(
         &self,
         id: u64,
@@ -84,6 +92,11 @@ impl DAOContract {
         )
     }
 
+    /// Submits Light Client Update to DAO
+    ///
+    /// # Arguments
+    /// * `receiver_id` - account ID of the Ethereum Light Client Contract on NEAR.
+    /// * `update` - Light Client Update.
     pub fn submit_light_client_update_proposal(
         &mut self,
         receiver_id: AccountId,

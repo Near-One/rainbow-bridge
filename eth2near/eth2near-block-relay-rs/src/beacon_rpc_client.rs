@@ -1,7 +1,10 @@
 use crate::execution_block_proof::ExecutionBlockProof;
 use crate::light_client_snapshot_with_proof::LightClientSnapshotWithProof;
-use crate::relay_errors::{ErrorOnJsonParse, ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError, NoBlockForSlotError, SignatureSlotNotFoundError};
 use contract_wrapper::utils;
+use crate::relay_errors::{
+    ErrorOnJsonParse, ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError,
+    NoBlockForSlotError, SignatureSlotNotFoundError,
+};
 use eth_types::eth2::BeaconBlockHeader;
 use eth_types::eth2::FinalizedHeaderUpdate;
 use eth_types::eth2::HeaderUpdate;
@@ -310,7 +313,10 @@ impl BeaconRPCClient {
         let json_str = self.get_json_from_raw_request(&url_request)?;
 
         let v: Value = serde_json::from_str(&json_str)?;
-        v["data"]["is_syncing"].as_bool().ok_or(Err(Box::new(ErrorOnJsonParse))?)
+
+        v["data"]["is_syncing"]
+            .as_bool()
+            .ok_or(Box::new(ErrorOnJsonParse))
     }
 
     fn get_json_from_client(client: &Client, url: &str) -> Result<String, Box<dyn Error>> {
@@ -511,15 +517,20 @@ impl BeaconRPCClient {
 #[cfg(test)]
 mod tests {
     use crate::beacon_rpc_client::BeaconRPCClient;
+    use crate::config_for_tests::ConfigForTests;
     use crate::test_utils::read_json_file_from_data_dir;
+    use contract_wrapper::utils::trim_quotes;
+    use serde_json::Value;
     use types::BeaconBlockBody;
     use types::BeaconBlockHeader;
     use types::MainnetEthSpec;
 
-    const TEST_BEACON_BLOCK_ID: u32 = 741888;
-    const BEACON_ENDPOINT: &str = "https://lodestar-kiln.chainsafe.io";
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000;
+
+    fn get_test_config() -> ConfigForTests {
+        ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
+    }
 
     #[test]
     fn test_get_header_from_json() {
@@ -567,62 +578,106 @@ mod tests {
 
     #[test]
     fn test_get_json_from_raw_request() {
-        let file_json_str = read_json_file_from_data_dir("beacon_block_kiln_slot_741888.json");
+        let config = get_test_config();
+        let file_json_str =
+            std::fs::read_to_string(&config.path_to_block).expect("Unable to read file");
 
-        let url = "https://lodestar-kiln.chainsafe.io/eth/v2/beacon/blocks/741888";
-        let beacon_rpc_client = BeaconRPCClient::new(url, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
-        let rpc_json_str = beacon_rpc_client.get_json_from_raw_request(url);
-
+        let url = format!(
+            "{}/eth/v2/beacon/blocks/{}",
+            config.beacon_endpoint, config.first_slot
+        );
+        let beacon_rpc_client = BeaconRPCClient::new(&url, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
+        let rpc_json_str = beacon_rpc_client.get_json_from_raw_request(&url);
         assert_eq!(rpc_json_str.unwrap(), file_json_str.trim());
     }
 
     #[test]
     fn test_rpc_beacon_block_body_and_header_smoke() {
-        let _beacon_block_body =
-            BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS)
-                .get_beacon_block_body_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
-                .unwrap();
-        let _beacon_block_header =
-            BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS)
-                .get_beacon_block_header_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
-                .unwrap();
+        let config = get_test_config();
+
+        let _beacon_block_body = BeaconRPCClient::new(
+            &config.beacon_endpoint,
+            TIMEOUT_SECONDS,
+            TIMEOUT_STATE_SECONDS,
+        )
+        .get_beacon_block_body_for_block_id(&config.first_slot.to_string())
+        .unwrap();
+        let _beacon_block_header = BeaconRPCClient::new(
+            &config.beacon_endpoint,
+            TIMEOUT_SECONDS,
+            TIMEOUT_STATE_SECONDS,
+        )
+        .get_beacon_block_header_for_block_id(&config.first_slot.to_string())
+        .unwrap();
     }
 
     #[test]
     fn test_get_beacon_block_header() {
-        let beacon_block_header =
-            BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS)
-                .get_beacon_block_header_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
-                .unwrap();
+        let config = get_test_config();
+        let beacon_block_header = BeaconRPCClient::new(
+            &config.beacon_endpoint,
+            TIMEOUT_SECONDS,
+            TIMEOUT_STATE_SECONDS,
+        )
+        .get_beacon_block_header_for_block_id(&format!("{}", config.first_slot))
+        .unwrap();
 
-        assert_eq!(beacon_block_header.slot, 741888);
-        assert_eq!(beacon_block_header.proposer_index, 5407);
+        let header_json_str =
+            std::fs::read_to_string(config.path_to_header).expect("Unable to read file");
+        let v: Value = serde_json::from_str(&header_json_str).unwrap();
+
+        assert_eq!(
+            beacon_block_header.slot,
+            trim_quotes(v["data"]["header"]["message"]["slot"].to_string())
+                .parse::<u64>()
+                .unwrap()
+        );
+        assert_eq!(
+            beacon_block_header.proposer_index,
+            trim_quotes(v["data"]["header"]["message"]["proposer_index"].to_string())
+                .parse::<u64>()
+                .unwrap()
+        );
         assert_eq!(
             format!("{:?}", beacon_block_header.body_root),
-            "0xd7f1c80baaceb9a1d3301e4f740fe8b5de9970153dc2ab254a4be39fe054addc"
+            trim_quotes(v["data"]["header"]["message"]["body_root"].to_string())
         );
         assert_eq!(
             format!("{:?}", beacon_block_header.parent_root),
-            "0xc94fa44bbe07890c887a50fff10a329da3c1ea7163ed08780f6d8c194b1e2904"
+            trim_quotes(v["data"]["header"]["message"]["parent_root"].to_string())
         );
         assert_eq!(
             format!("{:?}", beacon_block_header.state_root),
-            "0x8725ba537c2f4449def8d06000b2136c40bca189cf24380f334b5edb41635507"
+            trim_quotes(v["data"]["header"]["message"]["state_root"].to_string())
         );
     }
 
     #[test]
     fn test_get_beacon_block_body() {
-        let beacon_block_body =
-            BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS)
-                .get_beacon_block_body_for_block_id(&TEST_BEACON_BLOCK_ID.to_string())
-                .unwrap();
-        assert_eq!(beacon_block_body.attestations().len(), 29);
+        let config = get_test_config();
+
+        let beacon_block_body = BeaconRPCClient::new(
+            &config.beacon_endpoint,
+            TIMEOUT_SECONDS,
+            TIMEOUT_STATE_SECONDS,
+        )
+        .get_beacon_block_body_for_block_id(&config.first_slot.to_string())
+        .unwrap();
+
+        let block_json_str =
+            std::fs::read_to_string(config.path_to_block).expect("Unable to read file");
+        let v: Value = serde_json::from_str(&block_json_str).unwrap();
+        assert_eq!(
+            beacon_block_body.attestations().len(),
+            v["data"]["message"]["body"]["attestations"]
+                .as_array()
+                .unwrap()
+                .len()
+        );
         assert_eq!(
             format!("{:?}", beacon_block_body.eth1_data().block_hash),
-            "0x95a8bfef2aa4b30e63647f0e8eef7352ebac10a066acf8e24c3387982faffae2"
+            v["data"]["message"]["body"]["eth1_data"]["block_hash"]
         );
-        assert_eq!(beacon_block_body.eth1_data().deposit_count, 16392);
     }
 
     #[test]
@@ -670,59 +725,132 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_fetch_light_client_update() {
-        const PERIOD: u64 = 100;
-        let beacon_rpc_client =
-            BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
-        let light_client_update = beacon_rpc_client.get_light_client_update(PERIOD).unwrap();
+        let config = get_test_config();
+
+        let beacon_rpc_client = BeaconRPCClient::new(
+            &config.beacon_endpoint,
+            TIMEOUT_SECONDS,
+            TIMEOUT_STATE_SECONDS,
+        );
+        let file_json_str = std::fs::read_to_string(&config.path_to_light_client_update)
+            .expect("Unable to read file");
+        let v: Value = serde_json::from_str(&file_json_str).unwrap();
+
+        let period: u64 = BeaconRPCClient::get_period_for_slot(
+            v["data"][0]["attested_header"]["slot"]
+                .as_str()
+                .unwrap()
+                .parse::<u64>()
+                .unwrap(),
+        );
+        let light_client_update = beacon_rpc_client.get_light_client_update(period).unwrap();
 
         // check attested_header
-        assert_eq!(light_client_update.attested_beacon_header.slot, 823724);
+        assert_eq!(
+            light_client_update.attested_beacon_header.slot,
+            v["data"][0]["attested_header"]["slot"]
+                .as_str()
+                .unwrap()
+                .parse::<u64>()
+                .unwrap()
+        );
         assert_eq!(
             light_client_update.attested_beacon_header.proposer_index,
-            105744
+            v["data"][0]["attested_header"]["proposer_index"]
+                .as_str()
+                .unwrap()
+                .parse::<u64>()
+                .unwrap()
         );
         assert_eq!(
             serde_json::to_string(&light_client_update.attested_beacon_header.parent_root).unwrap(),
-            "\"0xb059eecb214d18b7ee03e73a4094bce92e2e302b91f542a0412508fd5fd7b4fe\""
+            format!(
+                "\"{}\"",
+                v["data"][0]["attested_header"]["parent_root"]
+                    .as_str()
+                    .unwrap()
+            )
         );
         assert_eq!(
             serde_json::to_string(&light_client_update.attested_beacon_header.state_root).unwrap(),
-            "\"0x2cb304118032eb9c26dcfbf0217c3e4b4bf6bbd531193e9dea5f310c373bb482\""
+            format!(
+                "\"{}\"",
+                v["data"][0]["attested_header"]["state_root"]
+                    .as_str()
+                    .unwrap()
+            )
         );
         assert_eq!(
             serde_json::to_string(&light_client_update.attested_beacon_header.body_root).unwrap(),
-            "\"0x19bbc81a1aaf030cb5773c0370af542f9d6a2c5d13280427ddb8dbcca7dcdcb9\""
+            format!(
+                "\"{}\"",
+                v["data"][0]["attested_header"]["body_root"]
+                    .as_str()
+                    .unwrap()
+            )
         );
 
         // check sync_aggregate
-        assert_eq!(serde_json::to_string(&light_client_update.sync_aggregate.sync_committee_signature).unwrap(), "\"0x884ed0aeeac15090bd8ea39bcdb30e6586a53fd4d51237840e8f0c457942410b374cd2328c9d8c777b076fe79c0cc477048ad1ec7c4542f88f9e033752a2ea36ba2d39f6ef788381040e553e914fcf09d3cc5106d708c36478bc34e0370d1e41\"");
+        assert_eq!(
+            serde_json::to_string(&light_client_update.sync_aggregate.sync_committee_signature)
+                .unwrap(),
+            format!(
+                "{}",
+                v["data"][0]["sync_aggregate"]["sync_committee_signature"]
+            )
+        );
 
         // check signature_slot
         let beacon_block_body = beacon_rpc_client
             .get_beacon_block_body_for_block_id(&format!("{}", light_client_update.signature_slot))
             .unwrap();
-        assert_eq!(serde_json::to_string(&beacon_block_body.sync_aggregate().unwrap().sync_committee_signature).unwrap(), "\"0x884ed0aeeac15090bd8ea39bcdb30e6586a53fd4d51237840e8f0c457942410b374cd2328c9d8c777b076fe79c0cc477048ad1ec7c4542f88f9e033752a2ea36ba2d39f6ef788381040e553e914fcf09d3cc5106d708c36478bc34e0370d1e41\"");
+        assert_eq!(
+            serde_json::to_string(
+                &beacon_block_body
+                    .sync_aggregate()
+                    .unwrap()
+                    .sync_committee_signature
+            )
+            .unwrap(),
+            format!(
+                "{}",
+                v["data"][0]["sync_aggregate"]["sync_committee_signature"]
+            )
+        );
 
         // check finality_update
         let finality_update = light_client_update.finality_update;
-        assert_eq!(finality_update.header_update.beacon_header.slot, 823648);
+        assert_eq!(
+            finality_update.header_update.beacon_header.slot,
+            v["data"][0]["finalized_header"]["slot"]
+                .as_str()
+                .unwrap()
+                .parse::<u64>()
+                .unwrap()
+        );
         assert_eq!(
             serde_json::to_string(&finality_update.header_update.beacon_header.body_root).unwrap(),
-            "\"0x44c9d4b7b97a9e147cff85f90e68f8c30dae846fd6b969e6b8298e4d8311769e\""
+            format!("{}", v["data"][0]["finalized_header"]["body_root"])
         );
         assert_eq!(
             serde_json::to_string(&finality_update.finality_branch[1]).unwrap(),
-            "\"0xf6c4677e9f110179f08f4eb6ad73e8a8b7d74a46f3956c66e4eb01ce6b70e5c4\""
+            format!("{}", v["data"][0]["finality_branch"][1])
         );
 
         // check sync_committe_update
         let sync_committe_update = light_client_update.sync_committee_update.unwrap();
-        assert_eq!(serde_json::to_string(&sync_committe_update.next_sync_committee.aggregate_pubkey).unwrap(), "\"0x8dcf66eb3c34854131fd7926cd86c0d10051ad045e1fbc30c59e9162019b46f2daa0e0914bf1b32541dfa54b7be57c7c\"");
+        assert_eq!(
+            serde_json::to_string(&sync_committe_update.next_sync_committee.aggregate_pubkey)
+                .unwrap(),
+            format!(
+                "{}",
+                v["data"][0]["next_sync_committee"]["aggregate_pubkey"]
+            )
+        );
         assert_eq!(
             serde_json::to_string(&sync_committe_update.next_sync_committee_branch[1]).unwrap(),
-            "\"0xedeb16e5754a4be920bb51e97dbf15833f838a5770e8509cc34cde12ee74422e\""
+            format!("{}", v["data"][0]["next_sync_committee_branch"][1])
         );
     }
 }

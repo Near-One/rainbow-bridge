@@ -2,7 +2,7 @@ use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::relay_errors::{ExecutionPayloadError, NoBlockForSlotError};
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::H256;
-use log::{debug, trace};
+use log::{info, trace};
 use std::cmp;
 use std::error::Error;
 
@@ -22,10 +22,12 @@ impl LastSlotSearcher {
         beacon_rpc_client: &BeaconRPCClient,
         eth_client_contract: &Box<dyn EthClientContractTrait>,
     ) -> Result<u64, Box<dyn Error>> {
-        debug!(target: "relay", "= Search for last slot on near =");
+        info!(target: "relay", "= Search for last slot on near =");
 
         let finalized_slot = eth_client_contract.get_finalized_beacon_block_slot()?;
-        trace!(target: "relay", "Finalized slot on near={}", finalized_slot);
+        let finalized_number =
+            beacon_rpc_client.get_block_number_for_slot(types::Slot::new(finalized_slot))?;
+        info!(target: "relay", "Finalized slot/block_number on near={}/{}", finalized_slot, finalized_number);
 
         let last_submitted_slot = eth_client_contract.get_last_submitted_slot();
         trace!(target: "relay", "Last submitted slot={}", last_submitted_slot);
@@ -401,6 +403,7 @@ impl LastSlotSearcher {
 #[cfg(test)]
 mod tests {
     use crate::beacon_rpc_client::BeaconRPCClient;
+    use crate::config_for_tests::ConfigForTests;
     use crate::eth1_rpc_client::Eth1RPCClient;
     use crate::last_slot_searcher::LastSlotSearcher;
     use crate::test_utils::get_client_contract;
@@ -408,11 +411,12 @@ mod tests {
     use eth_types::BlockHeader;
     use std::error::Error;
 
-    const FIRST_SLOT: u64 = 1099360;
-    const SLOT_WITHOUT_BLOCK: u64 = 1099364;
-    const RIGHT_BOUND_IN_SLOT_SEARCH: u64 = 1099500;
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000;
+
+    fn get_test_config() -> ConfigForTests {
+        ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
+    }
 
     fn get_execution_block_by_slot(
         slot: u64,
@@ -447,18 +451,20 @@ mod tests {
 
     #[test]
     fn test_block_known_on_near() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_test_config();
+
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client = BeaconRPCClient::new(
-            "https://lodestar-kiln.chainsafe.io",
+            &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
         );
-        let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
+        let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
         let is_block_known = last_slot_searcher.block_known_on_near(
-            SLOT_WITHOUT_BLOCK,
+            config_for_test.slot_without_block,
             &beacon_rpc_client,
             &eth_client_contract,
         );
@@ -467,7 +473,7 @@ mod tests {
         }
 
         let is_block_known = last_slot_searcher.block_known_on_near(
-            FIRST_SLOT,
+            config_for_test.first_slot,
             &beacon_rpc_client,
             &eth_client_contract,
         );
@@ -502,57 +508,55 @@ mod tests {
 
     #[test]
     fn test_find_left_non_error_slot() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_test_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client = BeaconRPCClient::new(
-            "https://lodestar-kiln.chainsafe.io",
+            &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
         );
-        let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
+        let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
-        const LEFT_EMPTY_SLOT: u64 = 1060529;
-        const RIGHT_EMPTY_SLOT: u64 = 1060530;
-
         let (left_non_empty_slot, is_known_block) = last_slot_searcher.find_left_non_error_slot(
-            LEFT_EMPTY_SLOT - 1,
-            RIGHT_EMPTY_SLOT + 2,
+            config_for_test.left_empty_slot - 1,
+            config_for_test.right_empty_slot + 2,
             1,
             &beacon_rpc_client,
             &eth_client_contract,
         );
-        assert_eq!(left_non_empty_slot, LEFT_EMPTY_SLOT - 1);
+        assert_eq!(left_non_empty_slot, config_for_test.left_empty_slot - 1);
         assert!(!is_known_block);
 
         let (left_non_empty_slot, is_known_block) = last_slot_searcher.find_left_non_error_slot(
-            LEFT_EMPTY_SLOT,
-            RIGHT_EMPTY_SLOT + 2,
+            config_for_test.left_empty_slot,
+            config_for_test.right_empty_slot + 2,
             1,
             &beacon_rpc_client,
             &eth_client_contract,
         );
-        assert_eq!(left_non_empty_slot, RIGHT_EMPTY_SLOT + 1);
+        assert_eq!(left_non_empty_slot, config_for_test.right_empty_slot + 1);
         assert!(!is_known_block);
 
         let (left_non_empty_slot, is_known_block) = last_slot_searcher.find_left_non_error_slot(
-            LEFT_EMPTY_SLOT,
-            RIGHT_EMPTY_SLOT,
+            config_for_test.left_empty_slot,
+            config_for_test.right_empty_slot,
             1,
             &beacon_rpc_client,
             &eth_client_contract,
         );
-        assert_eq!(left_non_empty_slot, RIGHT_EMPTY_SLOT);
+        assert_eq!(left_non_empty_slot, config_for_test.right_empty_slot);
         assert!(!is_known_block);
 
         let (left_non_empty_slot, is_known_block) = last_slot_searcher.find_left_non_error_slot(
-            RIGHT_EMPTY_SLOT,
-            RIGHT_EMPTY_SLOT + 2,
+            config_for_test.right_empty_slot,
+            config_for_test.right_empty_slot + 2,
             1,
             &beacon_rpc_client,
             &eth_client_contract,
         );
-        assert_eq!(left_non_empty_slot, RIGHT_EMPTY_SLOT + 1);
+        assert_eq!(left_non_empty_slot, config_for_test.right_empty_slot + 1);
         assert!(!is_known_block);
 
         let finalized_slot = eth_client_contract
@@ -580,14 +584,15 @@ mod tests {
 
     #[test]
     fn test_linear_search_backward() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_test_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client = BeaconRPCClient::new(
-            "https://lodestar-kiln.chainsafe.io",
+            &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
         );
-        let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
+        let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
         let finalized_slot = eth_client_contract
@@ -614,28 +619,29 @@ mod tests {
             &mut eth_client_contract,
             &eth1_rpc_client,
             finalized_slot + 3,
-            SLOT_WITHOUT_BLOCK - 1,
+            config_for_test.slot_without_block - 1,
         );
 
         let last_submitted_block = last_slot_searcher.linear_search_backward(
             finalized_slot + 1,
-            finalized_slot + 10,
+            config_for_test.right_bound_in_slot_search,
             &beacon_rpc_client,
             &eth_client_contract,
         );
-        assert_eq!(last_submitted_block, SLOT_WITHOUT_BLOCK);
+        assert_eq!(last_submitted_block, config_for_test.slot_without_block);
     }
 
     #[test]
     fn test_linear_search_forward() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_test_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client = BeaconRPCClient::new(
-            "https://lodestar-kiln.chainsafe.io",
+            &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
         );
-        let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
+        let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
         let mut slot = eth_client_contract
@@ -648,7 +654,7 @@ mod tests {
             &mut eth_client_contract,
             &eth1_rpc_client,
             slot,
-            SLOT_WITHOUT_BLOCK - 2,
+            config_for_test.slot_without_block - 2,
         );
 
         let last_block_on_near = last_slot_searcher.linear_search_forward(
@@ -656,19 +662,19 @@ mod tests {
                 .get_finalized_beacon_block_slot()
                 .unwrap()
                 + 1,
-            RIGHT_BOUND_IN_SLOT_SEARCH,
+            config_for_test.right_bound_in_slot_search,
             &beacon_rpc_client,
             &eth_client_contract,
         );
 
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK - 2);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block - 2);
 
         send_execution_blocks(
             &beacon_rpc_client,
             &mut eth_client_contract,
             &eth1_rpc_client,
-            SLOT_WITHOUT_BLOCK - 1,
-            SLOT_WITHOUT_BLOCK - 1,
+            config_for_test.slot_without_block - 1,
+            config_for_test.slot_without_block - 1,
         );
 
         let last_block_on_near = last_slot_searcher.linear_search_forward(
@@ -676,24 +682,25 @@ mod tests {
                 .get_finalized_beacon_block_slot()
                 .unwrap()
                 + 1,
-            RIGHT_BOUND_IN_SLOT_SEARCH,
+            config_for_test.right_bound_in_slot_search,
             &beacon_rpc_client,
             &eth_client_contract,
         );
 
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block);
     }
 
     #[test]
     fn test_linear_slot_search() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_test_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let beacon_rpc_client = BeaconRPCClient::new(
-            "https://lodestar-kiln.chainsafe.io",
+            &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
         );
-        let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
+        let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
         let mut slot = eth_client_contract
@@ -705,7 +712,7 @@ mod tests {
             &mut eth_client_contract,
             &eth1_rpc_client,
             slot,
-            SLOT_WITHOUT_BLOCK - 1,
+            config_for_test.slot_without_block - 1,
         );
 
         let finalized_slot = eth_client_contract
@@ -714,60 +721,61 @@ mod tests {
 
         let last_block_on_near = last_slot_searcher
             .linear_slot_search(
-                SLOT_WITHOUT_BLOCK - 1,
+                config_for_test.slot_without_block - 1,
                 finalized_slot,
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block);
 
         let last_block_on_near = last_slot_searcher
             .linear_slot_search(
-                SLOT_WITHOUT_BLOCK,
+                config_for_test.slot_without_block,
                 finalized_slot,
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block);
 
         let last_block_on_near = last_slot_searcher
             .linear_slot_search(
-                FIRST_SLOT + 1,
+                config_for_test.first_slot + 1,
                 finalized_slot,
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block);
 
         let last_block_on_near = last_slot_searcher
             .linear_slot_search(
-                SLOT_WITHOUT_BLOCK + 5,
+                config_for_test.slot_without_block + 5,
                 finalized_slot,
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block);
     }
 
     #[test]
     #[should_panic]
     fn test_error_on_connection_problem() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_test_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client = BeaconRPCClient::new(
-            "https://lodestar-kiln.chainsafe.io",
+            &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
         );
-        let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
+        let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
         let finalized_slot = eth_client_contract
@@ -791,7 +799,7 @@ mod tests {
             .linear_slot_search(
                 finalized_slot + 1,
                 finalized_slot,
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
@@ -800,14 +808,15 @@ mod tests {
 
     #[test]
     fn test_binsearch_slot_range() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_test_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client = BeaconRPCClient::new(
-            "https://lodestar-kiln.chainsafe.io",
+            &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
         );
-        let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
+        let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
         let finalized_beacon_slot = eth_client_contract
@@ -819,7 +828,7 @@ mod tests {
             &mut eth_client_contract,
             &eth1_rpc_client,
             finalized_beacon_slot + 1,
-            SLOT_WITHOUT_BLOCK - 2,
+            config_for_test.slot_without_block - 2,
         );
 
         let last_block_on_near = last_slot_searcher
@@ -828,19 +837,19 @@ mod tests {
                     .get_finalized_beacon_block_slot()
                     .unwrap()
                     + 1,
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK - 2);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block - 2);
 
         send_execution_blocks(
             &beacon_rpc_client,
             &mut eth_client_contract,
             &eth1_rpc_client,
-            SLOT_WITHOUT_BLOCK - 1,
-            SLOT_WITHOUT_BLOCK - 1,
+            config_for_test.slot_without_block - 1,
+            config_for_test.slot_without_block - 1,
         );
         let last_block_on_near = last_slot_searcher
             .binsearch_slot_range(
@@ -848,12 +857,12 @@ mod tests {
                     .get_finalized_beacon_block_slot()
                     .unwrap()
                     + 1,
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block);
 
         let last_block_on_near = last_slot_searcher
             .binsearch_slot_range(
@@ -861,22 +870,22 @@ mod tests {
                     .get_finalized_beacon_block_slot()
                     .unwrap()
                     + 1,
-                SLOT_WITHOUT_BLOCK,
+                config_for_test.slot_without_block,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK - 1);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block - 1);
 
         let last_block_on_near = last_slot_searcher
             .binsearch_slot_range(
-                SLOT_WITHOUT_BLOCK,
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.slot_without_block,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block);
 
         beacon_rpc_client = BeaconRPCClient::new(
             "http://httpstat.us/504/",
@@ -889,7 +898,7 @@ mod tests {
                     .get_finalized_beacon_block_slot()
                     .unwrap()
                     + 1,
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
@@ -901,14 +910,15 @@ mod tests {
 
     #[test]
     fn test_binsearch_slot_forward() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_test_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client = BeaconRPCClient::new(
-            "https://lodestar-kiln.chainsafe.io",
+            &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
         );
-        let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
+        let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
         let finalized_beacon_slot = eth_client_contract
@@ -920,7 +930,7 @@ mod tests {
             &mut eth_client_contract,
             &eth1_rpc_client,
             finalized_beacon_slot + 1,
-            SLOT_WITHOUT_BLOCK - 2,
+            config_for_test.slot_without_block - 2,
         );
 
         let last_block_on_near = last_slot_searcher
@@ -929,19 +939,19 @@ mod tests {
                     .get_finalized_beacon_block_slot()
                     .unwrap()
                     + 1,
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK - 2);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block - 2);
 
         send_execution_blocks(
             &beacon_rpc_client,
             &mut eth_client_contract,
             &eth1_rpc_client,
-            SLOT_WITHOUT_BLOCK - 1,
-            SLOT_WITHOUT_BLOCK - 1,
+            config_for_test.slot_without_block - 1,
+            config_for_test.slot_without_block - 1,
         );
 
         let last_block_on_near = last_slot_searcher
@@ -950,12 +960,12 @@ mod tests {
                     .get_finalized_beacon_block_slot()
                     .unwrap()
                     + 1,
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block);
 
         let last_block_on_near = last_slot_searcher
             .binsearch_slot_forward(
@@ -963,22 +973,22 @@ mod tests {
                     .get_finalized_beacon_block_slot()
                     .unwrap()
                     + 1,
-                SLOT_WITHOUT_BLOCK,
+                config_for_test.slot_without_block,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK - 1);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block - 1);
 
         let last_block_on_near = last_slot_searcher
             .binsearch_slot_forward(
-                SLOT_WITHOUT_BLOCK,
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.slot_without_block,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block);
 
         beacon_rpc_client = BeaconRPCClient::new(
             "http://httpstat.us/504/",
@@ -991,7 +1001,7 @@ mod tests {
                     .get_finalized_beacon_block_slot()
                     .unwrap()
                     + 1,
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
@@ -1003,14 +1013,15 @@ mod tests {
 
     #[test]
     fn test_binsearch_slot_search() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_test_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client = BeaconRPCClient::new(
-            "https://lodestar-kiln.chainsafe.io",
+            &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
         );
-        let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
+        let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
 
         let finalized_slot = eth_client_contract
@@ -1022,7 +1033,7 @@ mod tests {
             &mut eth_client_contract,
             &eth1_rpc_client,
             finalized_slot + 1,
-            SLOT_WITHOUT_BLOCK - 2,
+            config_for_test.slot_without_block - 2,
         );
 
         let finalized_slot = eth_client_contract
@@ -1033,64 +1044,64 @@ mod tests {
             .binary_slot_search(
                 finalized_slot + 1,
                 finalized_slot,
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK - 2);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block - 2);
 
         send_execution_blocks(
             &beacon_rpc_client,
             &mut eth_client_contract,
             &eth1_rpc_client,
-            SLOT_WITHOUT_BLOCK - 1,
-            SLOT_WITHOUT_BLOCK - 1,
+            config_for_test.slot_without_block - 1,
+            config_for_test.slot_without_block - 1,
         );
 
         let last_block_on_near = last_slot_searcher
             .binary_slot_search(
                 finalized_slot + 1,
                 finalized_slot,
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block);
 
         let last_block_on_near = last_slot_searcher
             .binary_slot_search(
                 finalized_slot + 1,
                 finalized_slot,
-                SLOT_WITHOUT_BLOCK,
+                config_for_test.slot_without_block,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block);
 
         let last_block_on_near = last_slot_searcher
             .binary_slot_search(
                 finalized_slot + 1,
                 finalized_slot,
-                SLOT_WITHOUT_BLOCK - 1,
+                config_for_test.slot_without_block - 1,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK - 1);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block - 1);
 
         let last_block_on_near = last_slot_searcher
             .binary_slot_search(
-                SLOT_WITHOUT_BLOCK,
+                config_for_test.slot_without_block,
                 finalized_slot,
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK - 1);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block - 1);
 
         beacon_rpc_client = BeaconRPCClient::new(
             "http://httpstat.us/504/",
@@ -1101,7 +1112,7 @@ mod tests {
             .binary_slot_search(
                 finalized_slot + 1,
                 finalized_slot,
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
@@ -1113,14 +1124,15 @@ mod tests {
 
     #[test]
     fn test_get_last_slot_binsearch() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_test_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client = BeaconRPCClient::new(
-            "https://lodestar-kiln.chainsafe.io",
+            &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
         );
-        let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
+        let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let mut last_slot_searcher = LastSlotSearcher::new(true);
 
         let finalized_slot = eth_client_contract
@@ -1131,34 +1143,34 @@ mod tests {
             &mut eth_client_contract,
             &eth1_rpc_client,
             finalized_slot + 1,
-            SLOT_WITHOUT_BLOCK - 2,
+            config_for_test.slot_without_block - 2,
         );
 
         let last_block_on_near = last_slot_searcher
             .get_last_slot(
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK - 2);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block - 2);
 
         send_execution_blocks(
             &beacon_rpc_client,
             &mut eth_client_contract,
             &eth1_rpc_client,
-            SLOT_WITHOUT_BLOCK - 1,
-            SLOT_WITHOUT_BLOCK - 1,
+            config_for_test.slot_without_block - 1,
+            config_for_test.slot_without_block - 1,
         );
 
         let last_block_on_near = last_slot_searcher
             .get_last_slot(
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block);
 
         beacon_rpc_client = BeaconRPCClient::new(
             "http://httpstat.us/504/",
@@ -1167,7 +1179,7 @@ mod tests {
         );
         if last_slot_searcher
             .get_last_slot(
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
@@ -1179,14 +1191,15 @@ mod tests {
 
     #[test]
     fn test_get_last_slot_linearsearch() {
-        let mut eth_client_contract = get_client_contract(true);
+        let config_for_test = get_test_config();
+        let mut eth_client_contract = get_client_contract(true, &config_for_test);
         eth_client_contract.register_submitter().unwrap();
         let mut beacon_rpc_client = BeaconRPCClient::new(
-            "https://lodestar-kiln.chainsafe.io",
+            &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
         );
-        let eth1_rpc_client = Eth1RPCClient::new("https://rpc.kiln.themerge.dev");
+        let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let mut last_slot_searcher = LastSlotSearcher::new(true);
 
         let finalized_slot = eth_client_contract
@@ -1198,34 +1211,34 @@ mod tests {
             &mut eth_client_contract,
             &eth1_rpc_client,
             finalized_slot + 1,
-            SLOT_WITHOUT_BLOCK - 2,
+            config_for_test.slot_without_block - 2,
         );
 
         let last_block_on_near = last_slot_searcher
             .get_last_slot(
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK - 2);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block - 2);
 
         send_execution_blocks(
             &beacon_rpc_client,
             &mut eth_client_contract,
             &eth1_rpc_client,
-            SLOT_WITHOUT_BLOCK - 1,
-            SLOT_WITHOUT_BLOCK - 1,
+            config_for_test.slot_without_block - 1,
+            config_for_test.slot_without_block - 1,
         );
 
         let last_block_on_near = last_slot_searcher
             .get_last_slot(
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )
             .unwrap();
-        assert_eq!(last_block_on_near, SLOT_WITHOUT_BLOCK);
+        assert_eq!(last_block_on_near, config_for_test.slot_without_block);
 
         beacon_rpc_client = BeaconRPCClient::new(
             "http://httpstat.us/504/",
@@ -1234,7 +1247,7 @@ mod tests {
         );
         if last_slot_searcher
             .get_last_slot(
-                RIGHT_BOUND_IN_SLOT_SEARCH,
+                config_for_test.right_bound_in_slot_search,
                 &beacon_rpc_client,
                 &eth_client_contract,
             )

@@ -10,6 +10,9 @@ use std::error::Error;
 use std::str::FromStr;
 use types::{Hash256, Slot};
 
+#[cfg(test)]
+pub mod config_for_tests;
+
 fn h256_to_hash256(hash: H256) -> Hash256 {
     Hash256::from_slice(hash.0.as_bytes())
 }
@@ -92,48 +95,50 @@ pub fn is_correct_finality_update(
 #[cfg(test)]
 mod tests {
     use crate::is_correct_finality_update;
-    use eth2_to_near_relay::beacon_rpc_client::BeaconRPCClient;
+    use crate::config_for_tests::ConfigForTests;
+    use eth_types::eth2::LightClientUpdate;
+    use eth_types::eth2::SyncCommittee;
 
-    const BEACON_ENDPOINT: &str = "https://lodestar-kiln.chainsafe.io";
-    const TIMEOUT_SECONDS: u64 = 30;
-    const TIMEOUT_STATE_SECONDS: u64 = 1000;
-
-    #[test]
-    fn smoke_verify_finality_update_true() {
-        let ethereum_network = "kiln";
-        let beacon_rpc_client =
-            BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
-        let light_client_update_period_99 = beacon_rpc_client.get_light_client_update(99).unwrap();
-        let light_client_update_period_100 =
-            beacon_rpc_client.get_light_client_update(100).unwrap();
-
-        assert!(is_correct_finality_update(
-            ethereum_network,
-            &light_client_update_period_100,
-            light_client_update_period_99
-                .sync_committee_update
-                .unwrap()
-                .next_sync_committee
+    fn get_config() -> ConfigForTests {
+        ConfigForTests::load_from_toml(
+            "config_for_tests.toml"
+                .try_into()
+                .unwrap(),
         )
-        .unwrap());
     }
 
     #[test]
-    fn smoke_verify_finality_update_false() {
-        let ethereum_network = "kiln";
-        let beacon_rpc_client =
-            BeaconRPCClient::new(BEACON_ENDPOINT, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
-        let light_client_update_period_99 = beacon_rpc_client.get_light_client_update(99).unwrap();
-        let light_client_update_period_100 =
-            beacon_rpc_client.get_light_client_update(100).unwrap();
+    fn smoke_verify_finality_update() {
+        let config = get_config();
+
+        let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
+            &std::fs::read_to_string(config.path_to_light_client_updates)
+                .expect("Unable to read file"),
+        )
+        .unwrap();
+
+        let current_sync_committee: SyncCommittee = serde_json::from_str(
+            &std::fs::read_to_string(config.path_to_current_sync_committee.clone())
+                .expect("Unable to read file"),
+        )
+        .unwrap();
+        let next_sync_committee: SyncCommittee = serde_json::from_str(
+            &std::fs::read_to_string(config.path_to_next_sync_committee.clone())
+                .expect("Unable to read file"),
+        )
+        .unwrap();
+
+        assert!(is_correct_finality_update(
+            &config.network_name,
+            &light_client_updates[0],
+            current_sync_committee
+        )
+        .unwrap());
 
         assert!(!is_correct_finality_update(
-            ethereum_network,
-            &light_client_update_period_99,
-            light_client_update_period_100
-                .sync_committee_update
-                .unwrap()
-                .next_sync_committee
+            &config.network_name,
+            &light_client_updates[0],
+            next_sync_committee
         )
         .unwrap());
     }
