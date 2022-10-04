@@ -33,7 +33,7 @@ toml = "0.5.9"
 atomic_refcell = "0.1.8"
 bitvec = "*"
 
-near-jsonrpc-client = "0.4.0-beta.0"
+near-jsonrpc-client = "=0.4.0-beta.0"
 near-crypto = "0.14.0"
 near-primitives = "0.14.0"
 near-chain-configs = "0.14.0"
