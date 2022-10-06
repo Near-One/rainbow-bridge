@@ -120,6 +120,14 @@ impl EthClientContractTrait for DaoEthClientContract {
     fn get_light_client_state(&self) -> Result<LightClientState, Box<dyn Error>> {
         self.eth_client_contract.get_light_client_state()
     }
+
+    fn get_num_of_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
+        self.eth_client_contract.get_num_of_submitted_blocks_by_account()
+    }
+
+    fn get_max_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
+        self.eth_client_contract.get_max_submitted_blocks_by_account()
+    }
 }
 
 #[cfg(test)]

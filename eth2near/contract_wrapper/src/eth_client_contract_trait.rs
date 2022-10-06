@@ -48,4 +48,10 @@ pub trait EthClientContractTrait {
 
     /// Gets the Light Client State of the Ethereum Light Client on NEAR
     fn get_light_client_state(&self) -> Result<LightClientState, Box<dyn Error>>;
+
+    /// Get number of unfinalized blocks submitted by current relay and currently stored on contract
+    fn get_num_of_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>>;
+
+    /// Get max possible number of unfinalized blocks which can be stored on contract for one account
+    fn get_max_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>>;
 }

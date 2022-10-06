@@ -19,7 +19,7 @@ use eth_types::eth2::LightClientUpdate;
 use eth_types::BlockHeader;
 use log::{debug, info, trace, warn};
 use near_primitives::views::FinalExecutionStatus;
-use std::cmp::max;
+use std::cmp::{max, min};
 use std::error::Error;
 use std::thread;
 use std::thread::sleep;
@@ -97,6 +97,7 @@ pub struct Eth2NearRelay {
     next_light_client_update: Option<LightClientUpdate>,
     sleep_time_on_sync_secs: u64,
     sleep_time_after_submission_secs: u64,
+    max_submitted_blocks_by_account: u32,
 }
 
 impl Eth2NearRelay {
@@ -116,6 +117,10 @@ impl Eth2NearRelay {
         let next_light_client_update =
             Self::get_light_client_update_from_file(config, &beacon_rpc_client).unwrap();
 
+        let max_submitted_blocks_by_account = eth_contract
+            .get_max_submitted_blocks_by_account()
+            .expect("Error on getting max submitted blocks by account");
+
         let eth2near_relay = Eth2NearRelay {
             beacon_rpc_client,
             eth1_rpc_client: Eth1RPCClient::new(&config.eth1_endpoint),
@@ -133,6 +138,7 @@ impl Eth2NearRelay {
             next_light_client_update,
             sleep_time_on_sync_secs: config.sleep_time_on_sync_secs,
             sleep_time_after_submission_secs: config.sleep_time_after_submission_secs,
+            max_submitted_blocks_by_account,
         };
 
         if !eth2near_relay
@@ -360,7 +366,16 @@ impl Eth2NearRelay {
         let mut headers: Vec<BlockHeader> = vec![];
         let mut current_slot = start_slot;
 
-        while headers.len() < self.headers_batch_size as usize
+        let remaining_headers = (self.max_submitted_blocks_by_account
+            - self
+                .eth_client_contract
+                .get_num_of_submitted_blocks_by_account()?) as u64;
+
+        trace!(target: "relay", "remaining headers number {}", remaining_headers);
+
+        let max_submitted_headers = min(self.headers_batch_size, remaining_headers);
+
+        while headers.len() < max_submitted_headers as usize
             && current_slot <= last_eth2_slot_on_eth_chain
         {
             debug!(target: "relay", "Try add block header for slot={}, headers len={}/{}", current_slot, headers.len(), self.headers_batch_size);
