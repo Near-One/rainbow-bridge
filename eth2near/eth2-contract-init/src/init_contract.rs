@@ -6,13 +6,50 @@ use eth_types::BlockHeader;
 use log::info;
 use std::{thread, time};
 use contract_wrapper::near_network_enum::NearNetwork;
+use eth_rpc_client::light_client_snapshot_with_proof::LightClientSnapshotWithProof;
 use crate::config::Config;
+use eth2_utility::consensus;
+use tree_hash::TreeHash;
+
+const CURRENT_SYNC_COMMITTEE_INDEX: u32 = 54;
+const CURRENT_SYNC_COMMITTEE_TREE_DEPTH: u32 = consensus::floorlog2(CURRENT_SYNC_COMMITTEE_INDEX);
+const CURRENT_SYNC_COMMITTEE_TREE_INDEX: u32 = consensus::get_subtree_index(CURRENT_SYNC_COMMITTEE_INDEX);
+
+pub fn verify_light_client_snapshot(
+    block_root: String,
+    light_client_snapshot: &LightClientSnapshotWithProof,
+) -> bool {
+    let expected_block_root = format!(
+        "{:#x}",
+        light_client_snapshot.beacon_header.tree_hash_root()
+    );
+
+    if block_root != expected_block_root {
+        return false;
+    }
+
+    let branch = consensus::convert_branch(&light_client_snapshot.current_sync_committee_branch);
+    merkle_proof::verify_merkle_proof(
+        light_client_snapshot
+            .current_sync_committee
+            .tree_hash_root(),
+        &branch,
+        CURRENT_SYNC_COMMITTEE_TREE_DEPTH.try_into().unwrap(),
+        CURRENT_SYNC_COMMITTEE_TREE_INDEX.try_into().unwrap(),
+        light_client_snapshot.beacon_header.state_root.0,
+    )
+}
 
 pub fn init_contract(
     config: &Config,
     eth_client_contract: &mut EthClientContract,
 ) -> Result<(), Box<dyn std::error::Error>> {
     info!(target: "relay", "=== Contract initialization ===");
+
+    if let NearNetwork::Mainnet = config.near_network_id {
+        assert!(config.validate_updates, "The updates validation can't be disabled for mainnet");
+        assert!(config.verify_bls_signature || config.trusted_signature.is_some(), "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet");
+    }
 
     let beacon_rpc_client = BeaconRPCClient::new(
         &config.beacon_endpoint,
@@ -21,21 +58,17 @@ pub fn init_contract(
     );
     let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
 
-    let start_slot = beacon_rpc_client.get_last_finalized_slot_number().expect("Error on fetching the last finalized slot for initialization");
-    let period = BeaconRPCClient::get_period_for_slot(start_slot.as_u64());
-
     let light_client_update = beacon_rpc_client
         .get_finality_light_client_update_with_sync_commity_update()
         .expect("Error on fetching finality light client update with sync committee update");
+    let finality_slot = light_client_update
+        .finality_update
+        .header_update
+        .beacon_header
+        .slot;
 
-    let block_id = format!(
-        "{}",
-        light_client_update
-            .finality_update
-            .header_update
-            .beacon_header
-            .slot
-    );
+    let block_id = format!("{}", finality_slot);
+
     let finalized_header: ExtendedBeaconBlockHeader =
         ExtendedBeaconBlockHeader::from(light_client_update.finality_update.header_update);
     let finalized_body = beacon_rpc_client
@@ -56,27 +89,40 @@ pub fn init_contract(
         .sync_committee_update
         .expect("No sync_committee update in light client update")
         .next_sync_committee;
-    let prev_light_client_update = beacon_rpc_client.get_light_client_update(period - 1)?;
-    let current_sync_committee = prev_light_client_update
-        .sync_committee_update
-        .expect("No sync_committee update in prev light client update")
-        .next_sync_committee;
+
+    let init_block_root= match config.init_block_root.clone() {
+        None => beacon_rpc_client
+                .get_checkpoint_root()
+                .expect("Fail to get last checkpoint"),
+        Some(init_block_str) => init_block_str,
+    };
+
+    let light_client_snapshot = beacon_rpc_client
+        .get_bootstrap(init_block_root.clone())
+        .expect("Unable to fetch bootstrap state");
+
+    info!(target: "relay", "init_block_root: {}", init_block_root);
+
+    if BeaconRPCClient::get_period_for_slot(light_client_snapshot.beacon_header.slot)
+        != BeaconRPCClient::get_period_for_slot(finality_slot)
+    {
+        panic!("Period for init_block_root different from current period. Please use snapshot for current period");
+    }
+
+    if !verify_light_client_snapshot(init_block_root, &light_client_snapshot) {
+        return Err("Invalid light client snapshot".into());
+    }
 
     let mut trusted_signature: Option<near_primitives::types::AccountId> = Option::None;
     if let Some(trusted_signature_name) = config.trusted_signature.clone() {
         trusted_signature = Option::Some(trusted_signature_name.parse().expect("Error on parsing trusted signature account"));
     }
 
-    if let NearNetwork::Mainnet = config.near_network_id {
-        assert!(config.validate_updates, "The updates validation can't be disabled for mainnet");
-        assert!(config.verify_bls_signature || config.trusted_signature.is_some(), "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet");
-    }
-
     eth_client_contract.init_contract(
-        config.network.clone(),
+        config.ethereum_network.clone(),
         finalized_execution_header,
         finalized_header,
-        current_sync_committee,
+        light_client_snapshot.current_sync_committee,
         next_sync_committee,
         config.validate_updates,
         config.verify_bls_signature,
@@ -120,7 +166,7 @@ mod tests {
             signer_account_id: "NaN".to_string(),
             path_to_signer_secret_key: "NaN".to_string(),
             contract_account_id: "NaN".to_string(),
-            network: config_for_test.network_name.clone(),
+            ethereum_network: config_for_test.network_name.clone(),
             near_network_id: NearNetwork::Testnet,
             output_dir: None,
             eth_requests_timeout_seconds: 30,
@@ -129,6 +175,7 @@ mod tests {
             hashes_gc_threshold: 51000,
             max_submitted_blocks_by_account: 8000,
             trusted_signature: Some(eth_client_contract.get_signer_account_id().to_string()),
+            init_block_root: None,
         }
     }
 

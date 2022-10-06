@@ -27,7 +27,7 @@ pub struct Config {
     pub contract_account_id: String,
 
     // The Ethereum network name (mainnet, kiln, ropsten, goerli)
-    pub network: EthNetwork,
+    pub ethereum_network: EthNetwork,
 
     // NEAR network name (mainnet, testnet)
     pub near_network_id: NearNetwork,
@@ -47,6 +47,10 @@ pub struct Config {
     pub max_submitted_blocks_by_account: u32,
 
     pub trusted_signature: Option<String>,
+
+    /// The trusted block root for checkpoint for contract initialization
+    /// e.g.: 0x9cd0c5a8392d0659426b12384e8440c147510ab93eeaeccb08435a462d7bb1c7
+    pub init_block_root: Option<String>,
 }
 
 impl Config {

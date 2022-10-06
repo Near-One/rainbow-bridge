@@ -4,9 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
+merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
 eth2_to_near_relay = { path = "../eth2near-block-relay-rs"}
 eth_rpc_client = { path = "../eth_rpc_client" }
 eth-types = { path = "../../contracts/near/eth-types/", features = ["eip1559"]}
+eth2-utility  = { path = "../../contracts/near/eth2-utility" }
 contract_wrapper = { path = "../contract_wrapper" }
 log = { version = "0.4", features = ["std", "serde"] }
 clap = { version = "3.1.6", features = ["derive"] }
@@ -21,7 +24,6 @@ logger = { path = "../logger" }
 [dev-dependencies]
 workspaces = "0.5.0"
 tokio = { version = "1.1", features = ["macros", "rt", "time"] }
-
 
 [patch]
 [patch.crates-io]

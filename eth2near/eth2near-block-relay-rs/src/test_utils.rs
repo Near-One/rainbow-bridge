@@ -217,7 +217,7 @@ fn get_init_config(
         signer_account_id: "NaN".to_string(),
         path_to_signer_secret_key: "NaN".to_string(),
         contract_account_id: "NaN".to_string(),
-        network: config_for_test.network_name.clone(),
+        ethereum_network: config_for_test.network_name.clone(),
         near_network_id: NearNetwork::Testnet,
         output_dir: None,
         eth_requests_timeout_seconds: 30,
@@ -226,6 +226,7 @@ fn get_init_config(
         hashes_gc_threshold: 51000,
         max_submitted_blocks_by_account: 8000,
         trusted_signature: Some(eth_client_contract.get_signer_account_id().to_string()),
+        init_block_root: None,
     }
 }
 

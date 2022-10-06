@@ -1112,16 +1112,19 @@ dependencies = [
  "clap",
  "contract_wrapper",
  "eth-types",
+ "eth2-utility",
  "eth2_to_near_relay",
  "eth_rpc_client",
  "log",
  "logger",
+ "merkle_proof",
  "near-primitives 0.14.0",
  "near-sdk",
  "reqwest",
  "serde",
  "serde_json",
  "toml",
+ "tree_hash",
 ]
 
 [[package]]
