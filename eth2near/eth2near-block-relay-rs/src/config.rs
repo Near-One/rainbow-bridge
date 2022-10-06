@@ -13,7 +13,7 @@ pub struct Config {
     pub eth1_endpoint: String,
 
     // the max number of headers submitted in one batch to eth client
-    pub total_submit_headers: u32,
+    pub headers_batch_size: u32,
 
     // endpoint for a full node on the NEAR chain
     pub near_endpoint: String,
@@ -28,13 +28,13 @@ pub struct Config {
     pub contract_account_id: String,
 
     // The Ethereum network name (mainnet, kiln, ropsten, goerli)
-    pub network: String,
+    pub ethereum_network: String,
 
     // Contract type (near, dao, file)
     pub contract_type: String,
 
-    // Frequency of submission light client updates. Once in N epochs.
-    pub light_client_updates_submission_frequency_in_epochs: u64,
+    // Period of submission light client updates. Once in N epochs.
+    pub interval_between_light_client_updates_submission_in_epochs: u64,
 
     // maximum gap in slots between submitting light client update
     pub max_blocks_for_finalization: u64,
@@ -142,12 +142,12 @@ impl Config {
 
     fn check_network_types(&self) {
         // check `network`
-        if !(self.network == "mainnet"
-            || self.network == "kiln"
-            || self.network == "ropsten"
-            || self.network == "goerli")
+        if !(self.ethereum_network == "mainnet"
+            || self.ethereum_network == "kiln"
+            || self.ethereum_network == "ropsten"
+            || self.ethereum_network == "goerli")
         {
-            panic!("Unknown network {}", self.network);
+            panic!("Unknown ethereum network {}", self.ethereum_network);
         }
 
         // check `contract_type`

@@ -35,8 +35,6 @@ impl Eth1RPCClient {
         let val: Value = serde_json::from_str(&res)?;
         let mut block_json = serde_json::to_string(&val["result"])?;
 
-        println!("{}", block_json);
-
         block_json = block_json.replace("baseFeePerGas", "base_fee_per_gas");
         block_json = block_json.replace("extraData", "extra_data");
         block_json = block_json.replace("gasLimit", "gas_limit");

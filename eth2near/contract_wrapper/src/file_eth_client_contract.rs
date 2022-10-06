@@ -9,7 +9,6 @@ use std::error::Error;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-use std::vec::Vec;
 
 /// Implementation for Ethereum Light Client Contract interaction on NEAR
 /// which saves to the file all the submitted headers and light client updates.
@@ -78,7 +77,7 @@ impl EthClientContractTrait for FileEthClientContract {
 
     fn send_headers(
         &mut self,
-        headers: &Vec<BlockHeader>,
+        headers: &[BlockHeader],
         end_slot: u64,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>> {
         for header in headers {

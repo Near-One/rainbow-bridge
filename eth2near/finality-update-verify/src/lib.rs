@@ -1,6 +1,5 @@
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
-use bls;
 use eth2_utility::consensus::{
     compute_domain, compute_signing_root, get_participant_pubkeys, Network, NetworkConfig,
     DOMAIN_SYNC_COMMITTEE, MIN_SYNC_COMMITTEE_PARTICIPANTS,
@@ -35,12 +34,12 @@ fn to_lighthouse_beacon_block_header(
 }
 
 pub fn is_correct_finality_update(
-    network: &str,
+    ethereum_network: &str,
     light_client_update: &LightClientUpdate,
     sync_committee: SyncCommittee,
 ) -> Result<bool, Box<dyn Error>> {
-    let network = Network::from_str(network)?;
-    let config = NetworkConfig::new(&network);
+    let ethereum_network = Network::from_str(ethereum_network)?;
+    let config = NetworkConfig::new(&ethereum_network);
 
     let sync_committee_bits =
         BitVec::<u8, Lsb0>::from_slice(&light_client_update.sync_aggregate.sync_committee_bits.0);
