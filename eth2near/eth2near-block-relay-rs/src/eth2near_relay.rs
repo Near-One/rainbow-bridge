@@ -373,9 +373,9 @@ impl Eth2NearRelay {
 
         trace!(target: "relay", "remaining headers number {}", remaining_headers);
 
-        let max_submitted_headers = min(self.max_submitted_headers, remaining_headers);
+        let max_submitted_headers = min(self.headers_batch_size, remaining_headers);
 
-        while headers.len() < self.headers_batch_size as usize
+        while headers.len() < max_submitted_headers as usize
             && current_slot <= last_eth2_slot_on_eth_chain
         {
             debug!(target: "relay", "Try add block header for slot={}, headers len={}/{}", current_slot, headers.len(), self.headers_batch_size);
