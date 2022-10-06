@@ -1,6 +1,6 @@
 use atomic_refcell::AtomicRefCell;
 use log::{Level, Metadata, Record};
-use std::fs::{File};
+use std::fs::File;
 use std::io::Write;
 use std::ops::DerefMut;
 
