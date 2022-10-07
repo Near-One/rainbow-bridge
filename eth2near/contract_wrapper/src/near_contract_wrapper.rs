@@ -1,5 +1,5 @@
 use crate::contract_wrapper_trait::ContractWrapper;
-use crate::utils::trim_quotes;
+use crate::utils;
 use near_crypto::InMemorySigner;
 use near_jsonrpc_client::{methods, JsonRpcClient};
 use near_jsonrpc_primitives::types::query::QueryResponseKind;
@@ -15,13 +15,28 @@ use tokio::runtime::Runtime;
 
 pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
 
+
+/// Implementation of interaction with a contract on NEAR.
 pub struct NearContractWrapper {
+    /// RPC client for interaction with NEAR RPC endpoint
     client: JsonRpcClient,
+
+    /// Account ID of the contract
     contract_account: AccountId,
+
+    /// Account that signs the transactions
     signer: InMemorySigner,
 }
 
 impl NearContractWrapper {
+    /// Constructor of `NearContractorWrapper`
+    ///
+    /// # Arguments
+    ///
+    /// * `near_endpoint` - The URL to NEAR RPC endpoint.
+    /// * `account_id` - Signer account ID.
+    /// * `signer_secret_key` - Signer secret key as the raw string.
+    /// * `contract_account_id` - Contract account ID.
     pub fn new_with_raw_secret_key(
         near_endpoint: &str,
         account_id: &str,
@@ -42,6 +57,14 @@ impl NearContractWrapper {
         }
     }
 
+    /// Constructor of `NearContractorWrapper`
+    ///
+    /// # Arguments
+    ///
+    /// * `near_endpoint` - The URL to NEAR RPC endpoint.
+    /// * `account_id` - Signer account ID.
+    /// * `path_to_signer_secret_key` - Path to the file containing signer's secret key file.
+    /// * `contract_account_id` - Contract account ID.
     pub fn new(
         near_endpoint: &str,
         account_id: &str,
@@ -52,7 +75,7 @@ impl NearContractWrapper {
             &std::fs::read_to_string(path_to_signer_secret_key).expect("Unable to read file"),
         )
         .expect("Error on parsing file with secret key during contract initialization");
-        let signer_secret_key = trim_quotes(serde_json::to_string(&v["private_key"]).expect("Error during trim quotes of signature secret key"));
+        let signer_secret_key = utils::trim_quotes(serde_json::to_string(&v["private_key"]).expect("Error during trim quotes of signature secret key"));
 
         Self::new_with_raw_secret_key(
             near_endpoint,

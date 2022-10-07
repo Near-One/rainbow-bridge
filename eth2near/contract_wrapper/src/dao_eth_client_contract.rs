@@ -11,14 +11,19 @@ use std::error::Error;
 use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
-use std::vec::Vec;
 
+/// Implementation of Ethereum Light Client Contract interaction on NEAR
+/// having intermediate submission of Light Client Updates to the DAO contract.
 pub struct DaoEthClientContract {
+    /// Interface for an interaction with Ethereum Light Client Contract on NEAR
     eth_client_contract: EthClientContract,
+
+    /// Interface for an interaction with DAO Contract
     dao_contract: DAOContract,
 }
 
 impl DaoEthClientContract {
+    // Constructor for `DaoEthClientContract`
     pub fn new(eth_client_contract: EthClientContract, dao_contract: DAOContract) -> Self {
         Self {
             eth_client_contract,
@@ -65,7 +70,7 @@ impl EthClientContractTrait for DaoEthClientContract {
         let (proposal_id, execution_outcome) =
             self.dao_contract.submit_light_client_update_proposal(
                 near_sdk::AccountId::from_str(
-                    &self.eth_client_contract.get_account_id().to_string(),
+                    &self.eth_client_contract.get_account_id(),
                 )?,
                 light_client_update,
             )?;
@@ -94,7 +99,7 @@ impl EthClientContractTrait for DaoEthClientContract {
 
     fn send_headers(
         &mut self,
-        headers: &Vec<BlockHeader>,
+        headers: &[BlockHeader],
         end_slot: u64,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>> {
         self.eth_client_contract.send_headers(headers, end_slot)
@@ -114,6 +119,14 @@ impl EthClientContractTrait for DaoEthClientContract {
 
     fn get_light_client_state(&self) -> Result<LightClientState, Box<dyn Error>> {
         self.eth_client_contract.get_light_client_state()
+    }
+
+    fn get_num_of_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
+        self.eth_client_contract.get_num_of_submitted_blocks_by_account()
+    }
+
+    fn get_max_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
+        self.eth_client_contract.get_max_submitted_blocks_by_account()
     }
 }
 
@@ -167,7 +180,7 @@ mod tests {
         const CONTRACT_ACCOUNT_ID: &str = "dev-1660212590113-35162107482173";
         const DAO_CONTRACT_ACCOUNT_ID: &str = "eth2-test.sputnikv2.testnet";
 
-        const NETWORK: &str = "kiln";
+        const ETH_NETWORK: &str = "kiln";
 
         let near_contract_wrapper = Box::new(NearContractWrapper::new_with_raw_secret_key(
             NEAR_ENDPOINT,
@@ -219,7 +232,7 @@ mod tests {
         }
 
         eth_client.init_contract(
-            NETWORK.to_string(),
+            ETH_NETWORK.to_string(),
             finalized_execution_header.unwrap(),
             finalized_beacon_header,
             current_sync_committee,

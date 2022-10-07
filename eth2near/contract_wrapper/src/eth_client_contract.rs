@@ -13,14 +13,19 @@ use serde_json::json;
 use std::error::Error;
 use std::option::Option;
 use std::string::String;
-use std::vec::Vec;
 use serde::Serialize;
+
+/// Implementation for interaction with Ethereum Light Client Contract on NEAR.
 pub struct EthClientContract {
+    /// last submitted slot by this relay
     last_slot: u64,
+
+    /// Wrapper for interacting with NEAR Contract
     pub contract_wrapper: Box<dyn ContractWrapper>,
 }
 
 impl EthClientContract {
+    /// Constructor for `EthClientContract`
     pub fn new(contract_wrapper: Box<dyn ContractWrapper>) -> Self {
         EthClientContract {
             last_slot: 0,
@@ -28,9 +33,20 @@ impl EthClientContract {
         }
     }
 
+    /// Initializes the Ethereum Light Client Contract on NEAR.
+    ///
+    /// # Arguments
+    /// * `network` - the name of Ethereum network such as `mainnet`, `goerli`, `kiln`, etc.
+    /// * `finalized_execution_header` - the finalized execution header to start initialization with.
+    /// * `finalized_beacon_header` - correspondent finalized beacon header.
+    /// * `current_sync_committee` - sync committee correspondent for finalized block.
+    /// * `next_sync_committee` - sync committee for the next period after period for finalized block.
+    /// * `hashes_gs_threshold` - the maximum number of stored finalized blocks.
+    /// * `max_submitted_block_by_account` - the maximum number of unfinalized blocks which one relay can store in the client's storage.
+    /// * `trusted_signer` - the account address of the trusted signer which is allowed to submit light client updates.
     pub fn init_contract(
         &self,
-        network: String,
+        ethereum_network: String,
         finalized_execution_header: BlockHeader,
         finalized_beacon_header: ExtendedBeaconBlockHeader,
         current_sync_committee: SyncCommittee,
@@ -54,7 +70,7 @@ impl EthClientContract {
         }
 
         let init_input = InitInput {
-            network,
+            network: ethereum_network,
             finalized_execution_header,
             finalized_beacon_header,
             current_sync_committee,
@@ -81,6 +97,7 @@ impl EthClientContract {
             .expect("Error during contract initialization");
     }
 
+    /// Returns the Eth Light Client account address
     pub fn get_account_id(&self) -> AccountId {
         self.contract_wrapper.get_account_id()
     }
@@ -134,7 +151,7 @@ impl EthClientContractTrait for EthClientContract {
 
     fn send_headers(
         &mut self,
-        headers: &Vec<BlockHeader>,
+        headers: &[BlockHeader],
         end_slot: u64,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>> {
         self.last_slot = end_slot;
@@ -189,6 +206,24 @@ impl EthClientContractTrait for EthClientContract {
             .call_view_function("get_light_client_state".to_string(), vec![])?;
 
         Ok(LightClientState::try_from_slice(result.as_slice())?)
+    }
+
+    fn get_num_of_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
+        let response = self.contract_wrapper.call_view_function(
+            "get_num_of_submitted_blocks_by_account".to_string(),
+            json!({"account_id": self.contract_wrapper.get_signer_account_id()}).to_string().into_bytes(),
+        )?;
+
+        Ok(serde_json::from_slice(response.as_slice())?)
+    }
+
+    fn get_max_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
+        let response = self.contract_wrapper.call_view_function(
+            "get_max_submitted_blocks_by_account".to_string(),
+            json!({}).to_string().into_bytes(),
+        )?;
+
+        Ok(serde_json::from_slice(response.as_slice())?)
     }
 }
 
@@ -293,7 +328,7 @@ mod tests {
         const PATH_TO_CURRENT_SYNC_COMMITTEE: &str =
             "./data/next_sync_committee_kiln_period_133.json";
         const PATH_TO_NEXT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_kiln_period_134.json";
-        const NETWORK: &str = "kiln";
+        const ETH_NETWORK: &str = "kiln";
 
         let current_sync_committee: SyncCommittee = serde_json::from_str(
             &std::fs::read_to_string(PATH_TO_CURRENT_SYNC_COMMITTEE).expect("Unable to read file"),
@@ -326,7 +361,7 @@ mod tests {
         }
 
         eth_client_contract.init_contract(
-            NETWORK.to_string(),
+            ETH_NETWORK.to_string(),
             finalized_execution_header.unwrap(),
             finalized_beacon_header,
             current_sync_committee,
