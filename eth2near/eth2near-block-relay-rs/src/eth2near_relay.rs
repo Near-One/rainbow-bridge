@@ -842,6 +842,11 @@ mod tests {
 
     #[test]
     fn test_finality_light_client_update_correctness() {
+        const TREE_FINALITY_DEPTH: usize = 6;
+        const  TREE_FINALITY_INDEX: usize = 41;
+        const TREE_NEXT_SYNC_COMMITTEE_DEPTH: usize = 5;
+        const TREE_NEXT_SYNC_COMMITTEE_INDEX: usize = 23;
+
         let config_for_test = get_test_config();
 
         let relay = get_relay(true, true, &config_for_test);
@@ -855,8 +860,8 @@ mod tests {
                 .beacon_header
                 .tree_hash_root(),
             branch.as_slice(),
-            6,
-            41,
+            TREE_FINALITY_DEPTH,
+            TREE_FINALITY_INDEX,
             light_client_update.attested_beacon_header.state_root.0
         ));
 
@@ -864,8 +869,8 @@ mod tests {
         assert!(merkle_proof::verify_merkle_proof(
             light_client_update.sync_committee_update.as_ref().unwrap().next_sync_committee.tree_hash_root(),
             branch.as_slice(),
-            5,
-            23,
+            TREE_NEXT_SYNC_COMMITTEE_DEPTH,
+            TREE_NEXT_SYNC_COMMITTEE_INDEX,
             light_client_update.finality_update.header_update.beacon_header.state_root.0
         ));
     }
