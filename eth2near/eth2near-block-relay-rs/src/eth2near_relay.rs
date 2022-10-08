@@ -725,6 +725,7 @@ mod tests {
     use eth_types::BlockHeader;
     use std::thread::sleep;
     use std::time::Duration;
+    use tree_hash::TreeHash;
 
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000;
@@ -837,6 +838,36 @@ mod tests {
 
         let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, finalized_slot_1);
+    }
+
+    #[test]
+    fn test_finality_light_client_update_correctness() {
+        let config_for_test = get_test_config();
+
+        let relay = get_relay(true, true, &config_for_test);
+
+        let light_client_update = relay.beacon_rpc_client.get_finality_light_client_update_with_sync_commity_update().unwrap();
+
+        let branch: Vec<ethereum_types::H256> = light_client_update.finality_update.finality_branch.iter().map(|h| h.0).collect();
+        assert!(merkle_proof::verify_merkle_proof(
+            light_client_update.finality_update
+                .header_update
+                .beacon_header
+                .tree_hash_root(),
+            branch.as_slice(),
+            6,
+            41,
+            light_client_update.attested_beacon_header.state_root.0
+        ));
+
+        let branch = light_client_update.sync_committee_update.as_ref().unwrap().next_sync_committee_branch.iter().map(|h| h.0).collect::<Vec<ethereum_types::H256>>();
+        assert!(merkle_proof::verify_merkle_proof(
+            light_client_update.sync_committee_update.as_ref().unwrap().next_sync_committee.tree_hash_root(),
+            branch.as_slice(),
+            5,
+            23,
+            light_client_update.finality_update.header_update.beacon_header.state_root.0
+        ));
     }
 
     #[test]
