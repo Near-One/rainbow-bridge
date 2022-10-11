@@ -843,7 +843,7 @@ mod tests {
     #[test]
     fn test_finality_light_client_update_correctness() {
         const TREE_FINALITY_DEPTH: usize = 6;
-        const  TREE_FINALITY_INDEX: usize = 41;
+        const TREE_FINALITY_INDEX: usize = 41;
         const TREE_NEXT_SYNC_COMMITTEE_DEPTH: usize = 5;
         const TREE_NEXT_SYNC_COMMITTEE_INDEX: usize = 23;
 
