@@ -212,7 +212,7 @@ async function getBridgeOnNearBalance ({
       nodeUrl: nearNodeUrl,
       networkId: nearNetworkId,
       masterAccount: nearReceiverAccount,
-      deps: { keyStore: keyStore }
+      keyStore: keyStore
     })
 
     const nearAccount = new nearAPI.Account(
