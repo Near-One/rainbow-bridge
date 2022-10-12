@@ -3,7 +3,7 @@ use eth_rpc_client::errors::{ExecutionPayloadError, NoBlockForSlotError};
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::H256;
 use log::{info, trace};
-use std::cmp::{max, min};
+use std::cmp;
 use std::error::Error;
 
 pub struct LastSlotSearcher {
@@ -32,10 +32,10 @@ impl LastSlotSearcher {
         let last_submitted_slot = eth_client_contract.get_last_submitted_slot();
         trace!(target: "relay", "Last submitted slot={}", last_submitted_slot);
 
-        let slot = max(finalized_slot, last_submitted_slot);
+        let slot = cmp::max(finalized_slot, last_submitted_slot);
         trace!(target: "relay", "Init slot for search as {}", slot);
 
-        return if self.enable_binsearch {
+        if self.enable_binsearch {
             self.binary_slot_search(
                 slot,
                 finalized_slot,
@@ -51,7 +51,7 @@ impl LastSlotSearcher {
                 beacon_rpc_client,
                 eth_client_contract,
             )
-        };
+        }
     }
 
     // Search for the slot before the first unknown slot on NEAR
@@ -140,7 +140,7 @@ impl LastSlotSearcher {
             ) {
                 Ok(true) => {
                     prev_slot = slot + current_step;
-                    current_step = min(current_step * 2, max_slot - slot);
+                    current_step = cmp::min(current_step * 2, max_slot - slot);
                 }
                 Ok(false) => break,
                 Err(err) => match err.downcast_ref::<NoBlockForSlotError>() {
@@ -154,7 +154,7 @@ impl LastSlotSearcher {
                         );
                         if slot_on_near {
                             prev_slot = slot_id;
-                            current_step = min(current_step * 2, max_slot - slot);
+                            current_step = cmp::min(current_step * 2, max_slot - slot);
                         } else {
                             current_step = slot_id - slot;
                             break;
@@ -228,44 +228,50 @@ impl LastSlotSearcher {
         eth_client_contract: &Box<dyn EthClientContractTrait>,
     ) -> Result<u64, Box<dyn Error>> {
         if slot == finalized_slot {
-            return Ok(self.linear_search_forward(
+            return self.linear_search_forward(
                 slot,
                 last_eth_slot,
                 beacon_rpc_client,
                 eth_client_contract,
-            ));
+            );
         }
 
         match self.block_known_on_near(slot, beacon_rpc_client, eth_client_contract) {
-            Ok(true) => Ok(self.linear_search_forward(
+            Ok(true) => self.linear_search_forward(
                 slot,
                 last_eth_slot,
                 beacon_rpc_client,
                 eth_client_contract,
-            )),
-            Ok(false) => Ok(self.linear_search_backward(
+            ),
+            Ok(false) => self.linear_search_backward(
                 finalized_slot,
                 slot,
                 beacon_rpc_client,
                 eth_client_contract,
-            )),
+            ),
             Err(err) => match err.downcast_ref::<NoBlockForSlotError>() {
                 Some(_) => {
-                    let left_slot = self.linear_search_forward(
-                        slot,
-                        last_eth_slot,
+                    let (left_slot, slot_on_near) = self.find_left_non_error_slot(
+                        slot + 1,
+                        last_eth_slot + 1,
+                        1,
                         beacon_rpc_client,
                         eth_client_contract,
                     );
-                    if left_slot > slot {
-                        Ok(left_slot)
-                    } else {
-                        Ok(self.linear_search_backward(
-                            finalized_slot,
-                            slot,
+
+                    match slot_on_near {
+                        true => self.linear_search_forward(
+                            left_slot,
+                            last_eth_slot,
                             beacon_rpc_client,
                             eth_client_contract,
-                        ))
+                        ),
+                        false => self.linear_search_backward(
+                            finalized_slot,
+                            left_slot - 1,
+                            beacon_rpc_client,
+                            eth_client_contract,
+                        ),
                     }
                 }
                 None => Err(err),
@@ -285,17 +291,20 @@ impl LastSlotSearcher {
         max_slot: u64,
         beacon_rpc_client: &BeaconRPCClient,
         eth_client_contract: &Box<dyn EthClientContractTrait>,
-    ) -> u64 {
+    ) -> Result<u64, Box<dyn Error>> {
         let mut slot = slot;
         while slot < max_slot {
             match self.block_known_on_near(slot + 1, beacon_rpc_client, eth_client_contract) {
                 Ok(true) => slot += 1,
                 Ok(false) => break,
-                Err(_) => slot += 1,
+                Err(err) => match err.downcast_ref::<NoBlockForSlotError>() {
+                    Some(_) => slot += 1,
+                    None => return Err(err),
+                }
             }
         }
 
-        slot
+        Ok(slot)
     }
 
     // Returns the slot before the first unknown block on NEAR
@@ -310,7 +319,7 @@ impl LastSlotSearcher {
         last_slot: u64,
         beacon_rpc_client: &BeaconRPCClient,
         eth_client_contract: &Box<dyn EthClientContractTrait>,
-    ) -> u64 {
+    ) -> Result<u64, Box<dyn Error>> {
         let mut slot = last_slot;
         let mut last_false_slot = slot + 1;
 
@@ -321,11 +330,14 @@ impl LastSlotSearcher {
                     last_false_slot = slot;
                     slot -= 1
                 }
-                Err(_) => slot -= 1,
+                Err(err) => match err.downcast_ref::<NoBlockForSlotError>() {
+                    Some(_) => slot -= 1,
+                    None => return Err(err),
+                }
             }
         }
 
-        last_false_slot - 1
+        Ok(last_false_slot - 1)
     }
 
     // Find the leftmost non-empty slot. Search range: [left_slot, right_slot).
@@ -340,6 +352,8 @@ impl LastSlotSearcher {
         beacon_rpc_client: &BeaconRPCClient,
         eth_client_contract: &Box<dyn EthClientContractTrait>,
     ) -> (u64, bool) {
+        trace!(target: "relay", " left non error slor {}, {}, {}", left_slot, right_slot, step);
+
         let mut slot = left_slot;
         while slot != right_slot {
             match self.block_known_on_near(slot, beacon_rpc_client, eth_client_contract) {
@@ -609,7 +623,7 @@ mod tests {
             finalized_slot + 10,
             &beacon_rpc_client,
             &eth_client_contract,
-        );
+        ).unwrap();
         assert_eq!(last_submitted_block, finalized_slot + 2);
 
         send_execution_blocks(
@@ -625,7 +639,7 @@ mod tests {
             config_for_test.right_bound_in_slot_search,
             &beacon_rpc_client,
             &eth_client_contract,
-        );
+        ).unwrap();
         assert_eq!(last_submitted_block, config_for_test.slot_without_block);
     }
 
@@ -663,7 +677,7 @@ mod tests {
             config_for_test.right_bound_in_slot_search,
             &beacon_rpc_client,
             &eth_client_contract,
-        );
+        ).unwrap();
 
         assert_eq!(last_block_on_near, config_for_test.slot_without_block - 2);
 
@@ -683,7 +697,7 @@ mod tests {
             config_for_test.right_bound_in_slot_search,
             &beacon_rpc_client,
             &eth_client_contract,
-        );
+        ).unwrap();
 
         assert_eq!(last_block_on_near, config_for_test.slot_without_block);
     }

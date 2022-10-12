@@ -4,7 +4,6 @@ use near_primitives::views::FinalExecutionOutcomeView;
 use near_primitives::types::AccountId;
 use near_sdk::Balance;
 use std::error::Error;
-use std::vec::Vec;
 
 /// Interface for using Ethereum Light Client
 pub trait EthClientContractTrait {
@@ -34,7 +33,7 @@ pub trait EthClientContractTrait {
     /// * `end_slot` - the slot of the last header in list
     fn send_headers(
         &mut self,
-        headers: &Vec<BlockHeader>,
+        headers: &[BlockHeader],
         end_slot: u64,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>>;
 
@@ -49,4 +48,10 @@ pub trait EthClientContractTrait {
 
     /// Gets the Light Client State of the Ethereum Light Client on NEAR
     fn get_light_client_state(&self) -> Result<LightClientState, Box<dyn Error>>;
+
+    /// Get number of unfinalized blocks submitted by current relay and currently stored on contract
+    fn get_num_of_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>>;
+
+    /// Get max possible number of unfinalized blocks which can be stored on contract for one account
+    fn get_max_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>>;
 }

@@ -3,11 +3,11 @@ use crate::config::Config;
 use crate::config_for_tests::ConfigForTests;
 use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
 use crate::eth2near_relay::Eth2NearRelay;
+use eth2_contract_init::init_contract;
 use crate::test_utils;
 use contract_wrapper::eth_client_contract::EthClientContract;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
-use eth2_contract_init::init_contract::init_contract;
 use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
 use eth_types::BlockHeader;
 use std::{thread, time};
@@ -182,14 +182,14 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
     Config {
         beacon_endpoint: config_for_test.beacon_endpoint.to_string(),
         eth1_endpoint: config_for_test.eth1_endpoint.to_string(),
-        total_submit_headers: 8,
+        headers_batch_size: 8,
         near_endpoint: "https://rpc.testnet.near.org".to_string(),
         signer_account_id: "NaN".to_string(),
         path_to_signer_secret_key: "NaN".to_string(),
         contract_account_id: "NaN".to_string(),
-        network: config_for_test.network_name.clone(),
+        ethereum_network: config_for_test.network_name.clone(),
         contract_type: ContractType::Near,
-        light_client_updates_submission_frequency_in_epochs: 1,
+        interval_between_light_client_updates_submission_in_epochs: 1,
         max_blocks_for_finalization: 5000,
         near_network_id: NearNetwork::Testnet,
         prometheus_metrics_port: Some(32221),
@@ -244,7 +244,7 @@ pub fn get_client_contract(
 
     match from_file {
         true => test_utils::init_contract_from_files(&mut eth_client_contract, config_for_test),
-        false => init_contract(&config, &mut eth_client_contract).unwrap(),
+        false => init_contract::init_contract(&config, &mut eth_client_contract).unwrap(),
     };
 
     Box::new(eth_client_contract)

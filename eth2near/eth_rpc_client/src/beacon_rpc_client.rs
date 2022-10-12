@@ -1,6 +1,6 @@
 use crate::execution_block_proof::ExecutionBlockProof;
 use crate::errors::{ErrorOnJsonParse, ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError, NoBlockForSlotError, SignatureSlotNotFoundError};
-use crate::utils::trim_quotes;
+use crate::utils;
 use crate::light_client_snapshot_with_proof::LightClientSnapshotWithProof;
 use eth_types::eth2::BeaconBlockHeader;
 use eth_types::eth2::FinalizedHeaderUpdate;
@@ -131,7 +131,7 @@ impl BeaconRPCClient {
                 &light_client_update_json_str,
             )?,
             sync_committee_update: Some(
-                Self::get_sync_committee_update_from_light_lient_update_json_str(
+                Self::get_sync_committee_update_from_light_client_update_json_str(
                     &light_client_update_json_str,
                 )?,
             ),
@@ -176,7 +176,7 @@ impl BeaconRPCClient {
         let checkpoint_json_str = self.get_json_from_raw_request(&url)?;
         let parsed_json: Value = serde_json::from_str(&checkpoint_json_str)?;
 
-        Ok(trim_quotes(
+        Ok(utils::trim_quotes(
             parsed_json["data"]["finalized"]["root"].to_string(),
         ))
     }
@@ -195,7 +195,7 @@ impl BeaconRPCClient {
         &self,
         beacon_block_hash: H256,
     ) -> Result<u64, Box<dyn Error>> {
-        let beacon_block_hash_str: String = trim_quotes(serde_json::to_string(&beacon_block_hash)?);
+        let beacon_block_hash_str: String = utils::trim_quotes(serde_json::to_string(&beacon_block_hash)?);
 
         let url = format!(
             "{}/{}/{}",
@@ -205,7 +205,7 @@ impl BeaconRPCClient {
         );
         let block_json_str = &self.get_json_from_raw_request(&url)?;
         let v: Value = serde_json::from_str(block_json_str)?;
-        let slot = trim_quotes(v["data"]["message"]["slot"].to_string()).parse::<u64>()?;
+        let slot = utils::trim_quotes(v["data"]["message"]["slot"].to_string()).parse::<u64>()?;
 
         Ok(slot)
     }
@@ -280,7 +280,7 @@ impl BeaconRPCClient {
                 &finality_light_client_update_json_str,
             )?,
             sync_committee_update: Some(
-                Self::get_sync_committee_update_from_light_lient_update_json_str(
+                Self::get_sync_committee_update_from_light_client_update_json_str(
                     &light_client_update_json_str,
                 )?,
             ),
@@ -450,7 +450,7 @@ impl BeaconRPCClient {
         })
     }
 
-    fn get_sync_committee_update_from_light_lient_update_json_str(
+    fn get_sync_committee_update_from_light_client_update_json_str(
         light_client_update_json_str: &str,
     ) -> Result<SyncCommitteeUpdate, Box<dyn Error>> {
         let v: Value = serde_json::from_str(light_client_update_json_str)?;
@@ -478,22 +478,22 @@ impl BeaconRPCClient {
         &self,
         start_slot: u64,
     ) -> Result<types::BeaconBlockHeader, Box<dyn Error>> {
-        const CHECK_SLOTS_FORWARD_LIMIT: u64 = 32;
+        let finalized_slot = self.get_last_finalized_slot_number()?.as_u64();
 
-        let mut slot = start_slot;
-        for _ in 0..CHECK_SLOTS_FORWARD_LIMIT {
-            if let Ok(beacon_block_body) =
-                self.get_beacon_block_header_for_block_id(&format!("{}", slot))
-            {
-                return Ok(beacon_block_body);
+        for slot in start_slot..finalized_slot {
+            match self.get_beacon_block_header_for_block_id(&format!("{}", slot)) {
+                Ok(beacon_block_body) => return Ok(beacon_block_body),
+                Err(err) => match err.downcast_ref::<NoBlockForSlotError>() {
+                    Some(_) => continue,
+                    None => return Err(err),
+                }
             }
-            slot += 1;
         }
 
         Err(format!(
             "Unable to get non empty beacon block in range [`{}`-`{}`)",
             start_slot,
-            start_slot + CHECK_SLOTS_FORWARD_LIMIT
+            finalized_slot
         ))?
     }
 

@@ -13,7 +13,6 @@ use serde_json::json;
 use std::error::Error;
 use std::option::Option;
 use std::string::String;
-use std::vec::Vec;
 use crate::eth_network_enum::EthNetwork;
 use serde::Serialize;
 
@@ -48,7 +47,7 @@ impl EthClientContract {
     /// * `trusted_signer` - the account address of the trusted signer which is allowed to submit light client updates.
     pub fn init_contract(
         &self,
-        network: EthNetwork,
+        ethereum_network: EthNetwork,
         finalized_execution_header: BlockHeader,
         finalized_beacon_header: ExtendedBeaconBlockHeader,
         current_sync_committee: SyncCommittee,
@@ -74,7 +73,7 @@ impl EthClientContract {
         }
 
         let init_input = InitInput {
-            network: network.to_string(),
+            network: ethereum_network.to_string(),
             finalized_execution_header,
             finalized_beacon_header,
             current_sync_committee,
@@ -157,7 +156,7 @@ impl EthClientContractTrait for EthClientContract {
 
     fn send_headers(
         &mut self,
-        headers: &Vec<BlockHeader>,
+        headers: &[BlockHeader],
         end_slot: u64,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>> {
         self.last_slot = end_slot;
@@ -212,6 +211,24 @@ impl EthClientContractTrait for EthClientContract {
             .call_view_function("get_light_client_state".to_string(), vec![])?;
 
         Ok(LightClientState::try_from_slice(result.as_slice())?)
+    }
+
+    fn get_num_of_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
+        let response = self.contract_wrapper.call_view_function(
+            "get_num_of_submitted_blocks_by_account".to_string(),
+            json!({"account_id": self.contract_wrapper.get_signer_account_id()}).to_string().into_bytes(),
+        )?;
+
+        Ok(serde_json::from_slice(response.as_slice())?)
+    }
+
+    fn get_max_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
+        let response = self.contract_wrapper.call_view_function(
+            "get_max_submitted_blocks_by_account".to_string(),
+            json!({}).to_string().into_bytes(),
+        )?;
+
+        Ok(serde_json::from_slice(response.as_slice())?)
     }
 }
 

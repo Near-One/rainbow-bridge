@@ -1,5 +1,3 @@
-extern crate core;
-
 pub mod config;
 pub mod contract_type;
 pub mod eth2near_relay;

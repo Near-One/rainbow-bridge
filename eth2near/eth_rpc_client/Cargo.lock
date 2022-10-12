@@ -1216,6 +1216,7 @@ dependencies = [
  "env_logger",
  "eth-types",
  "eth2_hashing",
+ "eth2_ssz",
  "ethereum-types",
  "finality-update-verify",
  "futures",
