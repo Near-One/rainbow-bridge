@@ -12,7 +12,8 @@ use tree_hash::TreeHash;
 
 const CURRENT_SYNC_COMMITTEE_INDEX: u32 = 54;
 const CURRENT_SYNC_COMMITTEE_TREE_DEPTH: u32 = consensus::floorlog2(CURRENT_SYNC_COMMITTEE_INDEX);
-const CURRENT_SYNC_COMMITTEE_TREE_INDEX: u32 = consensus::get_subtree_index(CURRENT_SYNC_COMMITTEE_INDEX);
+const CURRENT_SYNC_COMMITTEE_TREE_INDEX: u32 =
+    consensus::get_subtree_index(CURRENT_SYNC_COMMITTEE_INDEX);
 
 pub fn verify_light_client_snapshot(
     block_root: String,

@@ -1,10 +1,10 @@
 use crate::execution_block_proof::ExecutionBlockProof;
 use crate::light_client_snapshot_with_proof::LightClientSnapshotWithProof;
-use contract_wrapper::utils;
 use crate::relay_errors::{
     ErrorOnJsonParse, ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError,
     NoBlockForSlotError, SignatureSlotNotFoundError,
 };
+use contract_wrapper::utils;
 use eth_types::eth2::BeaconBlockHeader;
 use eth_types::eth2::FinalizedHeaderUpdate;
 use eth_types::eth2::HeaderUpdate;
@@ -198,7 +198,8 @@ impl BeaconRPCClient {
         &self,
         beacon_block_hash: H256,
     ) -> Result<u64, Box<dyn Error>> {
-        let beacon_block_hash_str: String = utils::trim_quotes(serde_json::to_string(&beacon_block_hash)?);
+        let beacon_block_hash_str: String =
+            utils::trim_quotes(serde_json::to_string(&beacon_block_hash)?);
 
         let url = format!(
             "{}/{}/{}",
@@ -455,14 +456,13 @@ impl BeaconRPCClient {
                 Err(err) => match err.downcast_ref::<NoBlockForSlotError>() {
                     Some(_) => continue,
                     None => return Err(err),
-                }
+                },
             }
         }
 
         Err(format!(
             "Unable to get non empty beacon block in range [`{}`-`{}`)",
-            start_slot,
-            finalized_slot
+            start_slot, finalized_slot
         ))?
     }
 

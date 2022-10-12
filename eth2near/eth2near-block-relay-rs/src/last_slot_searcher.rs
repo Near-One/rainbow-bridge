@@ -300,7 +300,7 @@ impl LastSlotSearcher {
                 Err(err) => match err.downcast_ref::<NoBlockForSlotError>() {
                     Some(_) => slot += 1,
                     None => return Err(err),
-                }
+                },
             }
         }
 
@@ -333,7 +333,7 @@ impl LastSlotSearcher {
                 Err(err) => match err.downcast_ref::<NoBlockForSlotError>() {
                     Some(_) => slot -= 1,
                     None => return Err(err),
-                }
+                },
             }
         }
 
@@ -618,12 +618,14 @@ mod tests {
             finalized_slot + 2,
         );
 
-        let last_submitted_block = last_slot_searcher.linear_search_backward(
-            finalized_slot + 1,
-            finalized_slot + 10,
-            &beacon_rpc_client,
-            &eth_client_contract,
-        ).unwrap();
+        let last_submitted_block = last_slot_searcher
+            .linear_search_backward(
+                finalized_slot + 1,
+                finalized_slot + 10,
+                &beacon_rpc_client,
+                &eth_client_contract,
+            )
+            .unwrap();
         assert_eq!(last_submitted_block, finalized_slot + 2);
 
         send_execution_blocks(
@@ -634,12 +636,14 @@ mod tests {
             config_for_test.slot_without_block - 1,
         );
 
-        let last_submitted_block = last_slot_searcher.linear_search_backward(
-            finalized_slot + 1,
-            config_for_test.right_bound_in_slot_search,
-            &beacon_rpc_client,
-            &eth_client_contract,
-        ).unwrap();
+        let last_submitted_block = last_slot_searcher
+            .linear_search_backward(
+                finalized_slot + 1,
+                config_for_test.right_bound_in_slot_search,
+                &beacon_rpc_client,
+                &eth_client_contract,
+            )
+            .unwrap();
         assert_eq!(last_submitted_block, config_for_test.slot_without_block);
     }
 
@@ -669,15 +673,17 @@ mod tests {
             config_for_test.slot_without_block - 2,
         );
 
-        let last_block_on_near = last_slot_searcher.linear_search_forward(
-            eth_client_contract
-                .get_finalized_beacon_block_slot()
-                .unwrap()
-                + 1,
-            config_for_test.right_bound_in_slot_search,
-            &beacon_rpc_client,
-            &eth_client_contract,
-        ).unwrap();
+        let last_block_on_near = last_slot_searcher
+            .linear_search_forward(
+                eth_client_contract
+                    .get_finalized_beacon_block_slot()
+                    .unwrap()
+                    + 1,
+                config_for_test.right_bound_in_slot_search,
+                &beacon_rpc_client,
+                &eth_client_contract,
+            )
+            .unwrap();
 
         assert_eq!(last_block_on_near, config_for_test.slot_without_block - 2);
 
@@ -689,15 +695,17 @@ mod tests {
             config_for_test.slot_without_block - 1,
         );
 
-        let last_block_on_near = last_slot_searcher.linear_search_forward(
-            eth_client_contract
-                .get_finalized_beacon_block_slot()
-                .unwrap()
-                + 1,
-            config_for_test.right_bound_in_slot_search,
-            &beacon_rpc_client,
-            &eth_client_contract,
-        ).unwrap();
+        let last_block_on_near = last_slot_searcher
+            .linear_search_forward(
+                eth_client_contract
+                    .get_finalized_beacon_block_slot()
+                    .unwrap()
+                    + 1,
+                config_for_test.right_bound_in_slot_search,
+                &beacon_rpc_client,
+                &eth_client_contract,
+            )
+            .unwrap();
 
         assert_eq!(last_block_on_near, config_for_test.slot_without_block);
     }
