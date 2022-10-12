@@ -222,6 +222,7 @@ class EthOnNearClientContract extends BorshContract {
       console.log('EthOnNearClient initialized')
     }
 
+    /* TODO: fix it
     console.log('Checking EthOnNearClient initialization.')
     const firstRoot = await this.dag_merkle_root({
       epoch: 0
@@ -240,6 +241,7 @@ class EthOnNearClientContract extends BorshContract {
       )
       process.exit(1)
     }
+    */
   }
 
   async updateDagMerkleRoots (dagsStartEpoch) {

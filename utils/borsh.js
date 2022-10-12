@@ -224,7 +224,7 @@ const signAndSendTransactionAsync = async (
   const status = await account.connection.provider.status()
   const [txHash, signedTx] = await nearAPI.transactions.signTransaction(
     receiverId,
-    ++accessKey.nonce,
+    ++accessKey.accessKey.nonce,
     actions,
     nearAPI.utils.serialize.base_decode(status.sync_info.latest_block_hash),
     account.connection.signer,
