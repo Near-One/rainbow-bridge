@@ -24,15 +24,15 @@ class BorshError extends Error {
 
 function serializeField (schema, value, fieldType, writer) {
   if (fieldType === 'u8') {
-    writer.write_u8(value)
+    writer.writeU8(value)
   } else if (fieldType === 'u64') {
-    writer.write_u64(value)
+    writer.writeU64(value)
   } else if (fieldType === 'u128') {
-    writer.write_u128(value)
+    writer.writeU128(value)
   } else if (fieldType === 'bool') {
-    return writer.write_u8(value ? 1 : 0)
+    return writer.writeU8(value ? 1 : 0)
   } else if (fieldType === 'string') {
-    return writer.write_string(value)
+    return writer.writeString(value)
   } else if (fieldType instanceof Array) {
     if (typeof fieldType[0] === 'number') {
       if (value.length !== fieldType[0]) {
@@ -40,9 +40,9 @@ function serializeField (schema, value, fieldType, writer) {
           `Expecting byte array of length ${fieldType[0]}, but got ${value.length} bytes`
         )
       }
-      writer.write_fixed_array(value)
+      writer.writeFixedArray(value)
     } else {
-      writer.write_array(value, (item) => {
+      writer.writeArray(value, (item) => {
         serializeField(schema, item, fieldType[0], writer)
       })
     }
@@ -53,9 +53,9 @@ function serializeField (schema, value, fieldType, writer) {
     }
     if (structSchema.kind === 'option') {
       if (value === null) {
-        writer.write_u8(0)
+        writer.writeU8(0)
       } else {
-        writer.write_u8(1)
+        writer.writeU8(1)
         serializeField(schema, value, structSchema.type, writer)
       }
     } else if (structSchema.kind === 'struct') {
@@ -63,7 +63,7 @@ function serializeField (schema, value, fieldType, writer) {
         serializeField(schema, value[fieldName], fieldType, writer)
       )
     } else if (structSchema.kind === 'function') {
-      writer.write_buffer(structSchema.ser(value))
+      writer.writeBuffer(structSchema.ser(value))
     } else {
       throw new Error(
         `Unexpected schema kind: ${structSchema.kind} for ${fieldType}`
