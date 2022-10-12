@@ -300,10 +300,13 @@ class BorshContract {
         value: async (args) => {
           args = serialize(borshSchema, d.inputFieldType, args)
           const result = await backoff(10, () =>
-            this.account.connection.provider.query(
-              `call/${this.contractId}/${d.methodName}`,
-              nearAPI.utils.serialize.base_encode(args)
-            )
+            this.account.connection.provider.query({
+              request_type: 'call_function',
+              finality: 'optimistic',
+              account_id: this.contractId,
+              method_name: d.methodName,
+              args_base64: args.toString('base64')
+            })
           )
           if (result.logs) {
             this.account.printLogs(this.contractId, result.logs)

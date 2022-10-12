@@ -135,7 +135,7 @@ const borshSchema = {
   }
 }
 
-// const DAG_ROOT_EPOCH_0 = '0x55b891e842e58f58956a847cbbf67821'
+const DAG_ROOT_EPOCH_0 = '0x55b891e842e58f58956a847cbbf67821'
 const DAG_ROOT_EPOCH_699 = '0xddff7537a9babc2e0d77f8bcce955753'
 class EthOnNearClientContract extends BorshContract {
   constructor (account, contractId) {
@@ -222,7 +222,6 @@ class EthOnNearClientContract extends BorshContract {
       console.log('EthOnNearClient initialized')
     }
 
-    /* TODO: fix it
     console.log('Checking EthOnNearClient initialization.')
     const firstRoot = await this.dag_merkle_root({
       epoch: 0
@@ -241,7 +240,6 @@ class EthOnNearClientContract extends BorshContract {
       )
       process.exit(1)
     }
-    */
   }
 
   async updateDagMerkleRoots (dagsStartEpoch) {
