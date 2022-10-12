@@ -65,7 +65,7 @@ class InitNearContracts {
       nodeUrl: nearNodeUrl,
       networkId: nearNetworkId,
       masterAccount: nearMasterAccount,
-      keyStore: keyStore
+      keyStore
     })
 
     console.log('Creating accounts and deploying the contracts.')

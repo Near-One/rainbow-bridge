@@ -39,7 +39,7 @@ class DeployToken {
       nodeUrl: nearNodeUrl,
       networkId: nearNetworkId,
       masterAccount: nearMasterAccount,
-      keyStore: keyStore
+      keyStore
     })
 
     await verifyAccount(near, nearMasterAccount)

@@ -89,7 +89,7 @@ async function createLocalKeyStore (networkId, keyPath) {
     keyStore.setKey(networkId, account.account_id, keyPair).then(() => {})
     keyStores.push(keyStore)
   }
-  return { keyStore: new nearAPI.keyStores.MergeKeyStore(keyStores) }
+  return new nearAPI.keyStores.MergeKeyStore(keyStores)
 }
 
 function getWeb3 (config) {

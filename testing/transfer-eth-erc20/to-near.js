@@ -301,7 +301,7 @@ class TransferETHERC20ToNear {
       nodeUrl: nearNodeUrl,
       networkId: nearNetworkId,
       masterAccount: nearMasterAccountId,
-      keyStore: keyStore
+      keyStore
     })
     const nearMasterAccount = new nearAPI.Account(
       near.connection,

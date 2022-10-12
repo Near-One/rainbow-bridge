@@ -28,9 +28,7 @@ class UpdateDagMerkleRoots {
     const near = await nearAPI.connect({
       nodeUrl: nearNodeUrl,
       networkId: nearNetworkId,
-      deps: {
-        keyStore: keyStore
-      }
+      keyStore
     })
 
     console.log(`DAG Merkle roots SHA256-checksum: ${sha256(JSON.stringify(dagMerkleRoots, null, 2))}`)

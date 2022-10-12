@@ -173,7 +173,7 @@ class NearStatus {
             nodeUrl: nearNodeUrl,
             nearNetworkId,
             masterAccount: nearMasterAccount,
-            keyStore: keyStore
+            keyStore
           })
           this.masterAccount = (await verifyAccountGently(near, nearMasterAccount))
             ? new Status(nearMasterAccount, Ok, Valid)
