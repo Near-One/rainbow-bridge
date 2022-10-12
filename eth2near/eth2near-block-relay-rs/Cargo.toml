@@ -32,6 +32,7 @@ hex = "*"
 toml = "0.5.9"
 atomic_refcell = "0.1.8"
 bitvec = "*"
+primitive-types = "0.7.3"
 
 near-jsonrpc-client = "=0.4.0-beta.0"
 near-crypto = "0.14.0"

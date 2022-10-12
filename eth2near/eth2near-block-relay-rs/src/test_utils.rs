@@ -214,7 +214,9 @@ pub fn get_client_contract(
 
     match from_file {
         true => test_utils::init_contract_from_files(&mut eth_client_contract, config_for_test),
-        false => init_contract::init_contract(&config, &mut eth_client_contract, "".to_string()).unwrap(),
+        false => {
+            init_contract::init_contract(&config, &mut eth_client_contract, "".to_string()).unwrap()
+        }
     };
 
     Box::new(eth_client_contract)
