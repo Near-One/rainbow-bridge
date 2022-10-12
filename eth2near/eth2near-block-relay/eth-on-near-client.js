@@ -135,7 +135,7 @@ const borshSchema = {
   }
 }
 
-const DAG_ROOT_EPOCH_0 = '0x55b891e842e58f58956a847cbbf67821'
+//const DAG_ROOT_EPOCH_0 = '0x55b891e842e58f58956a847cbbf67821'
 const DAG_ROOT_EPOCH_699 = '0xddff7537a9babc2e0d77f8bcce955753'
 class EthOnNearClientContract extends BorshContract {
   constructor (account, contractId) {
