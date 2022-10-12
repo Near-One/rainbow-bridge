@@ -447,22 +447,22 @@ impl BeaconRPCClient {
         &self,
         start_slot: u64,
     ) -> Result<types::BeaconBlockHeader, Box<dyn Error>> {
-        const CHECK_SLOTS_FORWARD_LIMIT: u64 = 32;
+        let finalized_slot = self.get_last_finalized_slot_number()?.as_u64();
 
-        let mut slot = start_slot;
-        for _ in 0..CHECK_SLOTS_FORWARD_LIMIT {
-            if let Ok(beacon_block_body) =
-                self.get_beacon_block_header_for_block_id(&format!("{}", slot))
-            {
-                return Ok(beacon_block_body);
+        for slot in start_slot..finalized_slot {
+            match self.get_beacon_block_header_for_block_id(&format!("{}", slot)) {
+                Ok(beacon_block_body) => return Ok(beacon_block_body),
+                Err(err) => match err.downcast_ref::<NoBlockForSlotError>() {
+                    Some(_) => continue,
+                    None => return Err(err),
+                }
             }
-            slot += 1;
         }
 
         Err(format!(
             "Unable to get non empty beacon block in range [`{}`-`{}`)",
             start_slot,
-            start_slot + CHECK_SLOTS_FORWARD_LIMIT
+            finalized_slot
         ))?
     }
 
