@@ -38,9 +38,7 @@ class Near2EthRelay {
     this.near = await nearAPI.connect({
       nodeUrl: nearNodeUrl,
       networkId: nearNetworkId,
-      deps: {
-        keyStore: keyStore
-      }
+      keyStore: keyStore
     })
 
     // Declare Near2EthClient contract.

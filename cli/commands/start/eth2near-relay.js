@@ -63,9 +63,7 @@ class StartEth2NearRelayCommand {
         nodeUrl: nearNodeUrl,
         networkId: nearNetworkId,
         masterAccount: nearMasterAccount,
-        deps: {
-          keyStore: keyStore
-        }
+        keyStore: keyStore
       })
 
       const relay = new Eth2NearRelay()

@@ -11,14 +11,14 @@ const PROJECT_KEY_DIR = './neardev'
 const DEFAULT_GAS = 1000000
 
 async function setupNear (config) {
-  const deps = await createLocalKeyStore(config.networkId, config.keyPath)
+  const keyStore = await createLocalKeyStore(config.networkId, config.keyPath)
   if (config.keyPath) {
     delete config.keyPath
   }
   return nearAPI.connect({
     networkId: config.networkId,
     nodeUrl: config.nearNodeUrl,
-    deps
+    keyStore
   })
 }
 
