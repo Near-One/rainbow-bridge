@@ -302,7 +302,7 @@ class BorshContract {
           const result = await backoff(10, () =>
             this.account.connection.provider.query({
               request_type: 'call_function',
-              finality: 'optimistic',
+              finality: 'final',
               account_id: this.contractId,
               method_name: d.methodName,
               args_base64: args.toString('base64')
