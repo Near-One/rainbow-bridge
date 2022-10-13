@@ -195,7 +195,8 @@ impl BeaconRPCClient {
         &self,
         beacon_block_hash: H256,
     ) -> Result<u64, Box<dyn Error>> {
-        let beacon_block_hash_str: String = utils::trim_quotes(serde_json::to_string(&beacon_block_hash)?);
+        let beacon_block_hash_str: String =
+            utils::trim_quotes(serde_json::to_string(&beacon_block_hash)?);
 
         let url = format!(
             "{}/{}/{}",
@@ -248,43 +249,8 @@ impl BeaconRPCClient {
     pub fn get_finality_light_client_update_with_sync_commity_update(
         &self,
     ) -> Result<LightClientUpdate, Box<dyn Error>> {
-        let url_finality = format!(
-            "{}/{}",
-            self.endpoint_url,
-            Self::URL_FINALITY_LIGHT_CLIENT_UPDATE_PATH
-        );
         let last_period = Self::get_period_for_slot(self.get_last_slot_number()?.as_u64());
-        let url_update = format!(
-            "{}/{}?start_period={}&count=1",
-            self.endpoint_url,
-            Self::URL_GET_LIGHT_CLIENT_UPDATE_API,
-            last_period
-        );
-        let finality_light_client_update_json_str =
-            self.get_json_from_raw_request(&url_finality)?;
-        let light_client_update_json_str = self.get_json_from_raw_request(&url_update)?;
-
-        let v: Value = serde_json::from_str(&finality_light_client_update_json_str)?;
-        let finality_light_client_update_json_str =
-            serde_json::to_string(&json!({"data": [v["data"]]}))?;
-
-        Ok(LightClientUpdate {
-            attested_beacon_header: Self::get_attested_header_from_light_client_update_json_str(
-                &finality_light_client_update_json_str,
-            )?,
-            sync_aggregate: Self::get_sync_aggregate_from_light_client_update_json_str(
-                &finality_light_client_update_json_str,
-            )?,
-            signature_slot: self.get_signature_slot(&finality_light_client_update_json_str)?,
-            finality_update: self.get_finality_update_from_light_client_update_json_str(
-                &finality_light_client_update_json_str,
-            )?,
-            sync_committee_update: Some(
-                Self::get_sync_committee_update_from_light_client_update_json_str(
-                    &light_client_update_json_str,
-                )?,
-            ),
-        })
+        self.get_light_client_update(last_period)
     }
 
     pub fn get_beacon_state(
@@ -486,14 +452,13 @@ impl BeaconRPCClient {
                 Err(err) => match err.downcast_ref::<NoBlockForSlotError>() {
                     Some(_) => continue,
                     None => return Err(err),
-                }
+                },
             }
         }
 
         Err(format!(
             "Unable to get non empty beacon block in range [`{}`-`{}`)",
-            start_slot,
-            finalized_slot
+            start_slot, finalized_slot
         ))?
     }
 

@@ -236,7 +236,7 @@ class Eth2NearRelay {
             actions.push(action)
           }
 
-          const task = this.ethClientContract.account.signAndSendTransaction(this.ethClientContract.contractId, actions)
+          const task = this.ethClientContract.account.signAndSendTransaction({ receiverId: this.ethClientContract.contractId, actions })
 
           console.log(
             `Submit txn to add block ${clientBlockNumber + 1

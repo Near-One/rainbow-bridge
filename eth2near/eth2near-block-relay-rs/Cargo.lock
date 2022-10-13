@@ -1308,6 +1308,7 @@ dependencies = [
  "near-jsonrpc-primitives",
  "near-primitives 0.14.0",
  "near-sdk",
+ "primitive-types 0.7.3",
  "prometheus",
  "reqwest",
  "serde",

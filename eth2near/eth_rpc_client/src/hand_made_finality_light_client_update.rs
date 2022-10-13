@@ -111,8 +111,7 @@ impl HandMadeFinalityLightClientUpdate {
             let sync_aggregate = signature_beacon_body
                 .sync_aggregate()
                 .map_err(|_| MissSyncAggregationError)?;
-            let sync_committee_bits: [u8; 64] =
-                Self::get_sync_committee_bits(sync_aggregate)?;
+            let sync_committee_bits: [u8; 64] = Self::get_sync_committee_bits(sync_aggregate)?;
             let sync_committee_bits_sum: u32 = sync_committee_bits
                 .into_iter()
                 .map(|x| x.count_ones())
