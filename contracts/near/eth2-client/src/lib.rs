@@ -429,6 +429,18 @@ impl Eth2Client {
     ) {
         let config = NetworkConfig::new(&self.network);
         let signature_period = compute_sync_committee_period(update.signature_slot);
+
+        // Verify signature period does not skip a sync committee period
+        require!(
+            signature_period == finalized_period || signature_period == finalized_period + 1,
+            format!(
+                "The acceptable signature periods are '{}' and '{}' but got {}",
+                finalized_period,
+                finalized_period + 1,
+                signature_period
+            )
+        );
+
         // Verify sync committee aggregate signature
         let sync_committee = if signature_period == finalized_period {
             self.current_sync_committee.get().unwrap()
@@ -558,7 +570,11 @@ impl Eth2Client {
     /// Remove information about the headers that are at least as old as the given block number.
     fn gc_finalized_execution_blocks(&mut self, mut header_number: u64) {
         loop {
-            if self.finalized_execution_blocks.remove(&header_number).is_some() {
+            if self
+                .finalized_execution_blocks
+                .remove(&header_number)
+                .is_some()
+            {
                 if header_number == 0 {
                     break;
                 } else {
