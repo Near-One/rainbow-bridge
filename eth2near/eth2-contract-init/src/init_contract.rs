@@ -47,14 +47,14 @@ pub fn init_contract(
     info!(target: "relay", "=== Contract initialization ===");
 
     if let NearNetwork::Mainnet = config.near_network_id {
-        assert!(config.validate_updates, "The updates validation can't be disabled for mainnet");
-        assert!(config.verify_bls_signature || config.trusted_signature.is_some(), "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet");
+        assert!(config.validate_updates.unwrap_or(true), "The updates validation can't be disabled for mainnet");
+        assert!(config.verify_bls_signature.unwrap_or(false) || config.trusted_signature.is_some(), "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet");
     }
 
     let beacon_rpc_client = BeaconRPCClient::new(
         &config.beacon_endpoint,
-        config.eth_requests_timeout_seconds,
-        config.eth_requests_timeout_seconds,
+        config.eth_requests_timeout_seconds.unwrap_or(10),
+        config.eth_requests_timeout_seconds.unwrap_or(10),
     );
     let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
 
@@ -126,8 +126,8 @@ pub fn init_contract(
         next_sync_committee,
         config.validate_updates,
         config.verify_bls_signature,
-        Some(config.hashes_gc_threshold),
-        Some(config.max_submitted_blocks_by_account),
+        config.hashes_gc_threshold,
+        config.max_submitted_blocks_by_account,
         trusted_signature,
     );
 
@@ -169,11 +169,11 @@ mod tests {
             ethereum_network: config_for_test.network_name.clone(),
             near_network_id: NearNetwork::Testnet,
             output_dir: None,
-            eth_requests_timeout_seconds: 30,
-            validate_updates: true,
-            verify_bls_signature: false,
-            hashes_gc_threshold: 51000,
-            max_submitted_blocks_by_account: 8000,
+            eth_requests_timeout_seconds: Some(30),
+            validate_updates: Some(true),
+            verify_bls_signature: Some(false),
+            hashes_gc_threshold: Some(51000),
+            max_submitted_blocks_by_account: Some(8000),
             trusted_signature: Some(eth_client_contract.get_signer_account_id().to_string()),
             init_block_root: None,
         }
@@ -189,7 +189,7 @@ mod tests {
 
         let mut eth_client_contract = EthClientContract::new(contract_wrapper);
         let mut init_config = get_init_config(&config_for_test, &eth_client_contract);
-        init_config.validate_updates = false;
+        init_config.validate_updates = Some(false);
         init_config.near_network_id = NearNetwork::Mainnet;
 
         init_contract(&init_config, &mut eth_client_contract).unwrap();

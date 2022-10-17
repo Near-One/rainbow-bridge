@@ -36,15 +36,15 @@ pub struct Config {
     pub output_dir: Option<String>,
 
     // Timeout for ETH RPC requests in seconds
-    pub eth_requests_timeout_seconds: u64,
+    pub eth_requests_timeout_seconds: Option<u64>,
 
-    pub validate_updates: bool,
+    pub validate_updates: Option<bool>,
 
-    pub verify_bls_signature: bool,
+    pub verify_bls_signature: Option<bool>,
 
-    pub hashes_gc_threshold: u64,
+    pub hashes_gc_threshold: Option<u64>,
 
-    pub max_submitted_blocks_by_account: u32,
+    pub max_submitted_blocks_by_account: Option<u32>,
 
     pub trusted_signature: Option<String>,
 
