@@ -5,7 +5,7 @@
   "author": "Near Inc. <hello@near.org>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/near/rainbow-bridge.git"
+    "url": "git+https://github.com/aurora-is-near/rainbow-bridge.git"
   },
   "license": "MIT",
   "keywords": [
@@ -35,11 +35,17 @@
   "workspaces": [
     "cli",
     "contracts/eth",
+    "contracts/eth/nearbridge",
+    "contracts/eth/nearprover",
     "contracts/near",
     "eth2near/eth2near-block-relay",
     "near2eth/near2eth-block-relay",
     "near2eth/watchdog",
     "testing",
     "utils"
-  ]
+  ],
+  "resolutions": {
+    "eth-object": "github:aurora-is-near/eth-object#383b6ea68c7050bea4cab6950c1d5a7fa553e72b",
+    "rainbow-token-connector": "github:aurora-is-near/eth-object#383b6ea68c7050bea4cab6950c1d5a7fa553e72b"
+  }
 }

@@ -12,6 +12,7 @@ vendor
 .DS_Store
 .vscode
 .history
+result
 
 # Ignore ethashproof binaries
 eth2near/ethashproof/cmd/cache/cache
