@@ -46,7 +46,7 @@ pub struct Config {
 
     pub max_submitted_blocks_by_account: Option<u32>,
 
-    pub trusted_signature: Option<String>,
+    pub trusted_signer_account_id: Option<String>,
 
     /// The trusted block root for checkpoint for contract initialization
     /// e.g.: 0x9cd0c5a8392d0659426b12384e8440c147510ab93eeaeccb08435a462d7bb1c7
@@ -89,8 +89,8 @@ impl Config {
             panic!("Signer account ID doesn't exist on NEAR network");
         }
 
-        // check `trusted_signature`
-        if let Some(trusted_signature) = self.trusted_signature.clone() {
+        // check `trusted_signer_account_id`
+        if let Some(trusted_signature) = self.trusted_signer_account_id.clone() {
             trusted_signature.parse::<near_sdk::AccountId>().expect("Incorrect contract account ID");
             if !near_rpc_client
                 .check_account_exists(&trusted_signature)

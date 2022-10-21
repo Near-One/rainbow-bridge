@@ -48,7 +48,7 @@ pub fn init_contract(
 
     if let NearNetwork::Mainnet = config.near_network_id {
         assert!(config.validate_updates.unwrap_or(true), "The updates validation can't be disabled for mainnet");
-        assert!(config.verify_bls_signature.unwrap_or(false) || config.trusted_signature.is_some(), "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet");
+        assert!(config.verify_bls_signature.unwrap_or(false) || config.trusted_signer_account_id.is_some(), "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet");
     }
 
     let beacon_rpc_client = BeaconRPCClient::new(
@@ -114,7 +114,7 @@ pub fn init_contract(
     }
 
     let mut trusted_signature: Option<near_primitives::types::AccountId> = Option::None;
-    if let Some(trusted_signature_name) = config.trusted_signature.clone() {
+    if let Some(trusted_signature_name) = config.trusted_signer_account_id.clone() {
         trusted_signature = Option::Some(trusted_signature_name.parse().expect("Error on parsing trusted signature account"));
     }
 
@@ -174,7 +174,7 @@ mod tests {
             verify_bls_signature: Some(false),
             hashes_gc_threshold: Some(51000),
             max_submitted_blocks_by_account: Some(8000),
-            trusted_signature: Some(eth_client_contract.get_signer_account_id().to_string()),
+            trusted_signer_account_id: Some(eth_client_contract.get_signer_account_id().to_string()),
             init_block_root: None,
         }
     }
@@ -207,7 +207,7 @@ mod tests {
         let mut eth_client_contract = EthClientContract::new(contract_wrapper);
         let mut init_config = get_init_config(&config_for_test, &eth_client_contract);
         init_config.near_network_id = NearNetwork::Mainnet;
-        init_config.trusted_signature = None;
+        init_config.trusted_signer_account_id = None;
 
         init_contract(&init_config, &mut eth_client_contract).unwrap();
     }
