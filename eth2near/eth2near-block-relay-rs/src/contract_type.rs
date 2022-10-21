@@ -27,11 +27,7 @@ impl Error for IncorrectContractType {}
 
 impl Display for ContractType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            ContractType::Near => write!(f, "Near"),
-            ContractType::Dao => write!(f, "Dao"),
-            ContractType::File => write!(f, "File"),
-        }
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -49,10 +45,10 @@ impl FromStr for ContractType {
     type Err = IncorrectContractType;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "Near" => Ok(ContractType::Near),
-            "Dao" => Ok(ContractType::Dao),
-            "File" => Ok(ContractType::File),
+        match s.to_lowercase().as_str() {
+            "near" => Ok(ContractType::Near),
+            "dao" => Ok(ContractType::Dao),
+            "file" => Ok(ContractType::File),
             _ => Err(IncorrectContractType),
         }
     }
