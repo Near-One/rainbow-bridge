@@ -26,10 +26,7 @@ impl Error for IncorrectNearNetwork {}
 
 impl Display for NearNetwork {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            NearNetwork::Mainnet => write!(f, "mainnet"),
-            NearNetwork::Testnet => write!(f, "testnet"),
-        }
+        write!(f, "{}", self.as_str())
     }
 }
 

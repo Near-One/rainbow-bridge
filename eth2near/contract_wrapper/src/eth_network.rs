@@ -28,12 +28,7 @@ impl Error for IncorrectEthNetwork {}
 
 impl Display for EthNetwork {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            EthNetwork::Mainnet => write!(f, "mainnet"),
-            EthNetwork::Kiln => write!(f, "kiln"),
-            EthNetwork::Goerli => write!(f, "goerli"),
-            EthNetwork::Ropsten => write!(f, "ropsten")
-        }
+        write!(f, "{}", self.as_str())
     }
 }
 
