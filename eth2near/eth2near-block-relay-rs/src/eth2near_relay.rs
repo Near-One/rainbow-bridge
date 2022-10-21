@@ -148,7 +148,7 @@ impl Eth2NearRelay {
             eth2near_relay
                 .eth_client_contract
                 .register_submitter()
-                .expect("Error during register submitter");
+                .expect("Error on registering the submitter");
         }
 
         if let Some(port) = config.prometheus_metrics_port {

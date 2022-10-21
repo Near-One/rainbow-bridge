@@ -17,7 +17,7 @@ impl Display for IncorrectNearNetwork {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Unknown near network id. Possible near networks: 'Mainnet', 'Testnet'"
+            "Unknown NEAR network id. Possible networks: 'Mainnet', 'Testnet'"
         )
     }
 }

@@ -102,29 +102,29 @@ impl Config {
         Url::parse(&self.beacon_endpoint).expect("Error on beacon endpoint URL parsing");
 
         // check `eth1_endpoint`
-        Url::parse(&self.eth1_endpoint).expect("Error on eth1 endpoint URL parsing");
+        Url::parse(&self.eth1_endpoint).expect("Error on ETH1 endpoint URL parsing");
 
         // check `near_endpoint`
-        Url::parse(&self.near_endpoint).expect("Error on near endpoint URL parsing");
+        Url::parse(&self.near_endpoint).expect("Error on NEAR endpoint URL parsing");
     }
 
     fn check_account_id(&self) {
         let near_rpc_client = NearRPCClient::new(&self.near_endpoint);
 
         // check `signer_account_id`
-        let _signer_account_id: near_sdk::AccountId = self.signer_account_id.parse().expect("Error on signature account id parsing");
+        let _signer_account_id: near_sdk::AccountId = self.signer_account_id.parse().expect("Error on signer account ID parsing");
         if !near_rpc_client
             .check_account_exists(&self.signer_account_id)
-            .expect("Error on checking signature account id existence")
+            .expect("Error on checking signer account ID existence")
         {
             panic!("Signer account id doesn't exist on NEAR network");
         }
 
         // check `contract_account_id`
-        let _contract_account_id: near_sdk::AccountId = self.contract_account_id.parse().expect("Error on contract account id parsing");
+        let _contract_account_id: near_sdk::AccountId = self.contract_account_id.parse().expect("Error on contract account ID parsing");
         if !near_rpc_client
             .check_account_exists(&self.contract_account_id)
-            .expect("Error on checking contract account id existence")
+            .expect("Error on checking contract account ID existence")
         {
             panic!("Contract account id doesn't exist on NEAR network");
         }
@@ -132,10 +132,10 @@ impl Config {
         // check `dao_contract_account_id`
         if let Some(dao_contract_account_id) = self.dao_contract_account_id.clone() {
             let _dao_contract_account_id: near_sdk::AccountId =
-                dao_contract_account_id.parse().expect("Error on dao contract account id parsing");
+                dao_contract_account_id.parse().expect("Error on DAO contract account ID parsing");
             if !near_rpc_client
                 .check_account_exists(&dao_contract_account_id)
-                .expect("Error on checking DAO account id existence")
+                .expect("Error on checking DAO account ID existence")
             {
                 panic!("DAO account id doesn't exist on NEAR network");
             }

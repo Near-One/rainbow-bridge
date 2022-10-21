@@ -38,8 +38,8 @@ impl Display for ContractType {
 impl ContractType {
     pub fn as_str(&self) -> &str {
         match self {
-            ContractType::Near => "Near",
-            ContractType::Dao => "Dao",
+            ContractType::Near => "NEAR",
+            ContractType::Dao => "DAO",
             ContractType::File => "File",
         }
     }

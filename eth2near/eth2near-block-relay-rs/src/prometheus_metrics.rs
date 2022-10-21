@@ -136,7 +136,7 @@ pub fn run_prometheus_service(port: u16) {
 
     let metrics_route = warp::path!("metrics").and_then(metrics_handler);
 
-    let rt = Runtime::new().expect("Error on creation Runtime for prometheus service");
+    let rt = Runtime::new().expect("Error on creating runtime for Prometheus service");
     let handle = rt.handle();
 
     println!("Started on port {}", port);

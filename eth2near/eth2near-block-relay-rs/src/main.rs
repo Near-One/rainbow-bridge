@@ -47,7 +47,7 @@ fn get_dao_contract_wrapper(config: &Config) -> Box<dyn ContractWrapper> {
         &config.near_endpoint,
         &config.signer_account_id,
         &config.path_to_signer_secret_key,
-        &dao_contract_account_id.expect("No dao contract account provided for relay running in DAO mode"),
+        &dao_contract_account_id.expect("No DAO contract account ID provided for relay running in DAO mode"),
     ))
 }
 
@@ -90,7 +90,7 @@ fn init_log(args: &Arguments, config: &Config) {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Arguments::parse();
-    let config = Config::load_from_toml(args.config.clone().try_into().expect("Error in config parsing"));
+    let config = Config::load_from_toml(args.config.clone().try_into().expect("Error on config parsing"));
     init_log(&args, &config);
 
     let mut eth2near_relay = Eth2NearRelay::init(

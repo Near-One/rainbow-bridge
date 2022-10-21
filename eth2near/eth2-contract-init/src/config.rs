@@ -71,42 +71,42 @@ impl Config {
         Url::parse(&self.beacon_endpoint).expect("Incorrect beacon endpoint");
 
         // check `eth1_endpoint`
-        Url::parse(&self.eth1_endpoint).expect("Incorrect eth1 endpoint");
+        Url::parse(&self.eth1_endpoint).expect("Incorrect ETH1 endpoint");
 
         // check `near_endpoint`
-        Url::parse(&self.near_endpoint).expect("Incorrect near endpoint");
+        Url::parse(&self.near_endpoint).expect("Incorrect NEAR endpoint");
     }
 
     fn check_account_id(&self) {
         let near_rpc_client = NearRPCClient::new(&self.near_endpoint);
 
         // check `signer_account_id`
-        self.signer_account_id.parse::<near_sdk::AccountId>().expect("Incorrect signature account");
+        self.signer_account_id.parse::<near_sdk::AccountId>().expect("Incorrect signer account ID");
         if !near_rpc_client
             .check_account_exists(&self.signer_account_id)
-            .expect("Error on checking signature account existence")
+            .expect("Error on checking signer account ID existence")
         {
-            panic!("Signer account id doesn't exist on NEAR network");
+            panic!("Signer account ID doesn't exist on NEAR network");
         }
 
         // check `trusted_signature`
         if let Some(trusted_signature) = self.trusted_signature.clone() {
-            trusted_signature.parse::<near_sdk::AccountId>().expect("Incorrect contract account id");
+            trusted_signature.parse::<near_sdk::AccountId>().expect("Incorrect contract account ID");
             if !near_rpc_client
                 .check_account_exists(&trusted_signature)
-                .expect("Error on checking trusted signature account existence")
+                .expect("Error on checking trusted signer account ID existence")
             {
-                panic!("Trusted signature doesn't exist on NEAR network");
+                panic!("Trusted signer account ID doesn't exist on NEAR network");
             }
         }
 
         // check `contract_account_id`
-        self.contract_account_id.parse::<near_sdk::AccountId>().expect("Incorrect contract account id");
+        self.contract_account_id.parse::<near_sdk::AccountId>().expect("Incorrect contract account ID");
         if !near_rpc_client
             .check_account_exists(&self.contract_account_id)
-            .expect("Error on checking contract account existence")
+            .expect("Error on checking contract account ID existence")
         {
-            panic!("Contract account id doesn't exist on NEAR network");
+            panic!("Contract account ID doesn't exist on NEAR network");
         }
     }
 }
