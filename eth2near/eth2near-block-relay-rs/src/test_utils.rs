@@ -225,7 +225,7 @@ fn get_init_config(
         verify_bls_signature: Some(false),
         hashes_gc_threshold: Some(51000),
         max_submitted_blocks_by_account: Some(8000),
-        trusted_signature: Some(eth_client_contract.get_signer_account_id().to_string()),
+        trusted_signer_account_id: Some(eth_client_contract.get_signer_account_id().to_string()),
         init_block_root: None,
     }
 }
