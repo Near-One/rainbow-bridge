@@ -15,7 +15,7 @@ use tokio::runtime::Runtime;
 use tree_hash::TreeHash;
 use workspaces::{Account, Contract};
 use crate::contract_type::ContractType;
-use contract_wrapper::near_network_enum::NearNetwork;
+use contract_wrapper::near_network::NearNetwork;
 
 pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
     let mut json_file_path = std::env::current_exe().unwrap();

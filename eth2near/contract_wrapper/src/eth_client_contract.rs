@@ -13,7 +13,7 @@ use serde_json::json;
 use std::error::Error;
 use std::option::Option;
 use std::string::String;
-use crate::eth_network_enum::EthNetwork;
+use crate::eth_network::EthNetwork;
 use serde::Serialize;
 
 /// Implementation for interaction with Ethereum Light Client Contract on NEAR.

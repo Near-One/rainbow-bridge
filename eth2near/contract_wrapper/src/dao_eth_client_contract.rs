@@ -134,7 +134,7 @@ impl EthClientContractTrait for DaoEthClientContract {
 mod tests {
     use crate::eth_client_contract_trait::EthClientContractTrait;
     use crate::near_contract_wrapper::NearContractWrapper;
-    use crate::{dao_contract, dao_eth_client_contract, eth_client_contract, eth_network_enum, near_contract_wrapper, utils};
+    use crate::{dao_contract, dao_eth_client_contract, eth_client_contract, eth_network, near_contract_wrapper, utils};
     use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::BlockHeader;
     use std::path::PathBuf;
@@ -228,7 +228,7 @@ mod tests {
         }
 
         eth_client.init_contract(
-            eth_network_enum::EthNetwork::Kiln,
+            eth_network::EthNetwork::Kiln,
             finalized_execution_header.unwrap(),
             finalized_beacon_header,
             current_sync_committee,

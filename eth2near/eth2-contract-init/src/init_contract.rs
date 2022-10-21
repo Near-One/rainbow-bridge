@@ -5,7 +5,7 @@ use eth_types::eth2::ExtendedBeaconBlockHeader;
 use eth_types::BlockHeader;
 use log::info;
 use std::{thread, time};
-use contract_wrapper::near_network_enum::NearNetwork;
+use contract_wrapper::near_network::NearNetwork;
 use eth_rpc_client::light_client_snapshot_with_proof::LightClientSnapshotWithProof;
 use crate::config::Config;
 use eth2_utility::consensus;
@@ -142,7 +142,7 @@ mod tests {
     use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
     use workspaces::{Account, Contract};
     use crate::init_contract::init_contract;
-    use contract_wrapper::near_network_enum::NearNetwork;
+    use contract_wrapper::near_network::NearNetwork;
     use crate::config_for_tests::ConfigForTests;
 
     fn create_contract(config_for_test: &ConfigForTests) -> (Account, Contract) {

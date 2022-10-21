@@ -1,7 +1,7 @@
 use crate::contract_type::ContractType;
-use contract_wrapper::eth_network_enum::EthNetwork;
+use contract_wrapper::eth_network::EthNetwork;
 use contract_wrapper::near_rpc_client::NearRPCClient;
-use contract_wrapper::near_network_enum::NearNetwork;
+use contract_wrapper::near_network::NearNetwork;
 use reqwest::Url;
 use serde::Deserialize;
 use std::io::Read;

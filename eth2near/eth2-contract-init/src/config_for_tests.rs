@@ -2,7 +2,7 @@ use std::env;
 use serde::Deserialize;
 use std::io::Read;
 use std::path::PathBuf;
-use contract_wrapper::eth_network_enum::EthNetwork;
+use contract_wrapper::eth_network::EthNetwork;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct ConfigForTests {
