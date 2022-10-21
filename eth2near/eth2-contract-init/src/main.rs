@@ -4,7 +4,7 @@ use contract_wrapper::eth_client_contract::EthClientContract;
 use contract_wrapper::near_contract_wrapper::NearContractWrapper;
 use eth2_contract_init::init_contract::init_contract;
 use eth2_contract_init::config::Config;
-use logger::SimpleLogger;
+use eth2near_logger::SimpleLogger;
 use log::LevelFilter;
 use std::string::String;
 

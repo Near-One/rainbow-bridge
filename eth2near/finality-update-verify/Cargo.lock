@@ -1218,6 +1218,7 @@ dependencies = [
  "eth2-utility",
  "eth2_hashing",
  "eth2_ssz",
+ "eth2near-logger",
  "eth_rpc_client",
  "ethereum-types",
  "finality-update-verify",
@@ -1225,7 +1226,6 @@ dependencies = [
  "hex 0.4.3",
  "lazy_static",
  "log",
- "logger",
  "merkle_proof",
  "near-chain-configs",
  "near-crypto 0.14.0",
@@ -1244,6 +1244,14 @@ dependencies = [
  "tree_hash",
  "types",
  "warp",
+]
+
+[[package]]
+name = "eth2near-logger"
+version = "0.1.0"
+dependencies = [
+ "atomic_refcell",
+ "log",
 ]
 
 [[package]]
@@ -2150,14 +2158,6 @@ dependencies = [
  "cfg-if 1.0.0",
  "serde",
  "value-bag",
-]
-
-[[package]]
-name = "logger"
-version = "0.1.0"
-dependencies = [
- "atomic_refcell",
- "log",
 ]
 
 [[package]]

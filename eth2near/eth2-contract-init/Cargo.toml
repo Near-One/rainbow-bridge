@@ -19,7 +19,7 @@ serde = { version = "1.0", features = ["derive"] }
 toml = "0.5.9"
 near-sdk = "4.0.0"
 near-primitives = "0.14.0"
-logger = { path = "../logger" }
+eth2near-logger = { path = "../logger" }
 
 [dev-dependencies]
 workspaces = "0.5.0"
