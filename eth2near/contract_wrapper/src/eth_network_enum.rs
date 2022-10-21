@@ -19,7 +19,7 @@ impl Display for IncorrectEthNetwork {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Unknown Eth network. Possible Eth network: 'Mainnet', 'Kiln', 'Goerli', 'Ropsten'"
+            "Unknown Ethereum network. Possible networks: 'Mainnet', 'Kiln', 'Goerli', 'Ropsten'"
         )
     }
 }
