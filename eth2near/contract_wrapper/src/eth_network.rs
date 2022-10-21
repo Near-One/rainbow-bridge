@@ -47,11 +47,11 @@ impl FromStr for EthNetwork {
     type Err = IncorrectEthNetwork;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "Mainnet" | "mainnet" => Ok(EthNetwork::Mainnet),
-            "Kiln" | "kiln" => Ok(EthNetwork::Kiln),
-            "Goerli" | "goerli" => Ok(EthNetwork::Goerli),
-            "Ropsten" | "ropsten" => Ok(EthNetwork::Ropsten),
+        match s.to_lowercase().as_str() {
+            "mainnet" => Ok(EthNetwork::Mainnet),
+            "kiln" => Ok(EthNetwork::Kiln),
+            "goerli" => Ok(EthNetwork::Goerli),
+            "ropsten" => Ok(EthNetwork::Ropsten),
             _ => Err(IncorrectEthNetwork),
         }
     }

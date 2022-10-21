@@ -43,9 +43,9 @@ impl FromStr for NearNetwork {
     type Err = IncorrectNearNetwork;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "Mainnet" | "mainnet" => Ok(NearNetwork::Mainnet),
-            "Testnet" | "testnet" => Ok(NearNetwork::Testnet),
+        match s.to_lowercase().as_str() {
+            "mainnet" => Ok(NearNetwork::Mainnet),
+            "testnet" => Ok(NearNetwork::Testnet),
             _ => Err(IncorrectNearNetwork),
         }
     }
