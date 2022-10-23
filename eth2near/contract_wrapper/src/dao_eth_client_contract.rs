@@ -134,9 +134,7 @@ impl EthClientContractTrait for DaoEthClientContract {
 mod tests {
     use crate::eth_client_contract_trait::EthClientContractTrait;
     use crate::near_contract_wrapper::NearContractWrapper;
-    use crate::{
-        dao_contract, dao_eth_client_contract, eth_client_contract, near_contract_wrapper, utils,
-    };
+    use crate::{dao_contract, dao_eth_client_contract, eth_client_contract, eth_network, near_contract_wrapper, utils};
     use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::BlockHeader;
     use std::path::PathBuf;
@@ -179,8 +177,6 @@ mod tests {
         const NEAR_ENDPOINT: &str = "https://rpc.testnet.near.org";
         const CONTRACT_ACCOUNT_ID: &str = "dev-1660212590113-35162107482173";
         const DAO_CONTRACT_ACCOUNT_ID: &str = "eth2-test.sputnikv2.testnet";
-
-        const ETH_NETWORK: &str = "kiln";
 
         let near_contract_wrapper = Box::new(NearContractWrapper::new_with_raw_secret_key(
             NEAR_ENDPOINT,
@@ -232,11 +228,13 @@ mod tests {
         }
 
         eth_client.init_contract(
-            ETH_NETWORK.to_string(),
+            eth_network::EthNetwork::Kiln,
             finalized_execution_header.unwrap(),
             finalized_beacon_header,
             current_sync_committee,
             next_sync_committee,
+            Some(true),
+            Some(false),
             None,
             None,
             Some(eth_client.contract_wrapper.get_signer_account_id()),

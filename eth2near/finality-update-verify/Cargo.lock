@@ -1217,6 +1217,9 @@ dependencies = [
  "eth-types",
  "eth2-utility",
  "eth2_hashing",
+ "eth2_ssz",
+ "eth2near-logger",
+ "eth_rpc_client",
  "ethereum-types",
  "finality-update-verify",
  "futures",
@@ -1230,6 +1233,48 @@ dependencies = [
  "near-jsonrpc-primitives",
  "near-primitives 0.14.0",
  "near-sdk",
+ "primitive-types 0.7.3",
+ "prometheus",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thread",
+ "tokio 1.21.1",
+ "toml",
+ "tree_hash",
+ "types",
+ "warp",
+]
+
+[[package]]
+name = "eth2near-logger"
+version = "0.1.0"
+dependencies = [
+ "atomic_refcell",
+ "log",
+]
+
+[[package]]
+name = "eth_rpc_client"
+version = "0.1.0"
+dependencies = [
+ "async-std",
+ "atomic_refcell",
+ "bitvec 0.17.4",
+ "borsh",
+ "clap",
+ "contract_wrapper",
+ "env_logger",
+ "eth-types",
+ "eth2_hashing",
+ "eth2_ssz",
+ "ethereum-types",
+ "finality-update-verify",
+ "futures",
+ "hex 0.3.2",
+ "lazy_static",
+ "log",
+ "merkle_proof",
  "prometheus",
  "reqwest",
  "serde",

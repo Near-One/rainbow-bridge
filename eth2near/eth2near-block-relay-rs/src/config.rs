@@ -1,4 +1,7 @@
-use crate::near_rpc_client::NearRPCClient;
+use crate::contract_type::ContractType;
+use contract_wrapper::eth_network::EthNetwork;
+use contract_wrapper::near_rpc_client::NearRPCClient;
+use contract_wrapper::near_network::NearNetwork;
 use reqwest::Url;
 use serde::Deserialize;
 use std::io::Read;
@@ -27,11 +30,11 @@ pub struct Config {
     // Account id for eth client contract on NEAR
     pub contract_account_id: String,
 
-    // The Ethereum network name (mainnet, kiln, ropsten, goerli)
-    pub ethereum_network: String,
+    // The Ethereum network name (Mainnet, Kiln, Ropsten, Goerli)
+    pub ethereum_network: EthNetwork,
 
     // Contract type (near, dao, file)
-    pub contract_type: String,
+    pub contract_type: ContractType,
 
     // Period of submission light client updates. Once in N epochs.
     pub interval_between_light_client_updates_submission_in_epochs: u64,
@@ -40,7 +43,7 @@ pub struct Config {
     pub max_blocks_for_finalization: u64,
 
     // NEAR network name (mainnet, testnet)
-    pub near_network_id: String,
+    pub near_network_id: NearNetwork,
 
     // Port for Prometheus
     pub prometheus_metrics_port: Option<u16>,
@@ -83,46 +86,45 @@ pub struct Config {
 
 impl Config {
     pub fn load_from_toml(path: PathBuf) -> Self {
-        let mut config = std::fs::File::open(path).unwrap();
+        let mut config = std::fs::File::open(path).expect("Error on parsing path to config");
         let mut content = String::new();
-        config.read_to_string(&mut content).unwrap();
-        let config = toml::from_str(content.as_str()).unwrap();
+        config.read_to_string(&mut content).expect("Error on reading config");
+        let config = toml::from_str(content.as_str()).expect("Error on config parsing");
 
         Self::check_urls(&config);
         Self::check_account_id(&config);
-        Self::check_network_types(&config);
 
         config
     }
 
     fn check_urls(&self) {
         // check `beacon_endpoint`
-        Url::parse(&self.beacon_endpoint).unwrap();
+        Url::parse(&self.beacon_endpoint).expect("Error on beacon endpoint URL parsing");
 
         // check `eth1_endpoint`
-        Url::parse(&self.eth1_endpoint).unwrap();
+        Url::parse(&self.eth1_endpoint).expect("Error on ETH1 endpoint URL parsing");
 
         // check `near_endpoint`
-        Url::parse(&self.near_endpoint).unwrap();
+        Url::parse(&self.near_endpoint).expect("Error on NEAR endpoint URL parsing");
     }
 
     fn check_account_id(&self) {
         let near_rpc_client = NearRPCClient::new(&self.near_endpoint);
 
         // check `signer_account_id`
-        let _signer_account_id: near_sdk::AccountId = self.signer_account_id.parse().unwrap();
+        let _signer_account_id: near_sdk::AccountId = self.signer_account_id.parse().expect("Error on signer account ID parsing");
         if !near_rpc_client
             .check_account_exists(&self.signer_account_id)
-            .unwrap()
+            .expect("Error on checking signer account ID existence")
         {
             panic!("Signer account id doesn't exist on NEAR network");
         }
 
         // check `contract_account_id`
-        let _contract_account_id: near_sdk::AccountId = self.contract_account_id.parse().unwrap();
+        let _contract_account_id: near_sdk::AccountId = self.contract_account_id.parse().expect("Error on contract account ID parsing");
         if !near_rpc_client
             .check_account_exists(&self.contract_account_id)
-            .unwrap()
+            .expect("Error on checking contract account ID existence")
         {
             panic!("Contract account id doesn't exist on NEAR network");
         }
@@ -130,37 +132,13 @@ impl Config {
         // check `dao_contract_account_id`
         if let Some(dao_contract_account_id) = self.dao_contract_account_id.clone() {
             let _dao_contract_account_id: near_sdk::AccountId =
-                dao_contract_account_id.parse().unwrap();
+                dao_contract_account_id.parse().expect("Error on DAO contract account ID parsing");
             if !near_rpc_client
                 .check_account_exists(&dao_contract_account_id)
-                .unwrap()
+                .expect("Error on checking DAO account ID existence")
             {
                 panic!("DAO account id doesn't exist on NEAR network");
             }
-        }
-    }
-
-    fn check_network_types(&self) {
-        // check `network`
-        if !(self.ethereum_network == "mainnet"
-            || self.ethereum_network == "kiln"
-            || self.ethereum_network == "ropsten"
-            || self.ethereum_network == "goerli")
-        {
-            panic!("Unknown ethereum network {}", self.ethereum_network);
-        }
-
-        // check `contract_type`
-        if !(self.contract_type == "near"
-            || self.contract_type == "dao"
-            || self.contract_type == "file")
-        {
-            panic!("Unknown contract type {}", self.contract_type);
-        }
-
-        // check `near_network_id`
-        if !(self.near_network_id == "mainnet" || self.near_network_id == "testnet") {
-            panic!("Unknown near network id {}", self.near_network_id);
         }
     }
 }

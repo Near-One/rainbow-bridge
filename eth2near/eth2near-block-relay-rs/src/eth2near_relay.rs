@@ -1,9 +1,10 @@
-use crate::beacon_rpc_client::BeaconRPCClient;
+use std::cmp;
+use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
-use crate::eth1_rpc_client::Eth1RPCClient;
-use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
+use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
+use eth_rpc_client::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
 use crate::last_slot_searcher::LastSlotSearcher;
-use crate::near_rpc_client::NearRPCClient;
+use contract_wrapper::near_rpc_client::NearRPCClient;
 use crate::prometheus_metrics;
 use crate::prometheus_metrics::{
     CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH, CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR,
@@ -11,20 +12,18 @@ use crate::prometheus_metrics::{
     FAILS_ON_HEADERS_SUBMISSION, FAILS_ON_UPDATES_SUBMISSION, LAST_ETH_SLOT, LAST_ETH_SLOT_ON_NEAR,
     LAST_FINALIZED_ETH_SLOT, LAST_FINALIZED_ETH_SLOT_ON_NEAR,
 };
-use crate::relay_errors::NoBlockForSlotError;
-use bitvec::macros::internal::funty::Fundamental;
+use eth_rpc_client::errors::NoBlockForSlotError;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::eth2::LightClientUpdate;
 use eth_types::BlockHeader;
 use log::{debug, info, trace, warn};
 use near_primitives::views::FinalExecutionStatus;
-use std::cmp;
-use std::cmp::{max, min};
 use std::error::Error;
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
 use std::vec::Vec;
+use bitvec::macros::internal::funty::Fundamental;
 use types::Slot;
 
 const ONE_EPOCH_IN_SLOTS: u64 = 32;
@@ -115,7 +114,7 @@ impl Eth2NearRelay {
             config.state_requests_timeout_seconds,
         );
         let next_light_client_update =
-            Self::get_light_client_update_from_file(config, &beacon_rpc_client).unwrap();
+            Self::get_light_client_update_from_file(config, &beacon_rpc_client).expect("Error on parsing light client update");
 
         let max_submitted_blocks_by_account = eth_contract
             .get_max_submitted_blocks_by_account()
@@ -149,7 +148,7 @@ impl Eth2NearRelay {
             eth2near_relay
                 .eth_client_contract
                 .register_submitter()
-                .unwrap();
+                .expect("Error on registering the submitter");
         }
 
         if let Some(port) = config.prometheus_metrics_port {
@@ -168,7 +167,7 @@ impl Eth2NearRelay {
             .beacon_rpc_client
             .get_block_number_for_slot(Slot::new(last_eth2_slot))
         {
-            CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH.inc_by(max(
+            CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH.inc_by(cmp::max(
                 0,
                 last_block_number as i64 - CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH.get(),
             ));
@@ -191,7 +190,7 @@ impl Eth2NearRelay {
             &self.eth_client_contract,
         )?;
 
-        LAST_ETH_SLOT_ON_NEAR.inc_by(max(
+        LAST_ETH_SLOT_ON_NEAR.inc_by(cmp::max(
             0,
             last_eth2_slot_on_near as i64 - LAST_ETH_SLOT_ON_NEAR.get(),
         ));
@@ -200,7 +199,7 @@ impl Eth2NearRelay {
             .beacon_rpc_client
             .get_block_number_for_slot(Slot::new(last_eth2_slot_on_near))
         {
-            CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR.inc_by(max(
+            CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR.inc_by(cmp::max(
                 0,
                 last_block_number as i64 - CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR.get(),
             ));
@@ -212,7 +211,7 @@ impl Eth2NearRelay {
     fn get_last_finalized_slot_on_near(&self) -> Result<u64, Box<dyn Error>> {
         let last_finalized_slot_on_near =
             self.eth_client_contract.get_finalized_beacon_block_slot()?;
-        LAST_FINALIZED_ETH_SLOT_ON_NEAR.inc_by(max(
+        LAST_FINALIZED_ETH_SLOT_ON_NEAR.inc_by(cmp::max(
             0,
             last_finalized_slot_on_near as i64 - LAST_FINALIZED_ETH_SLOT_ON_NEAR.get(),
         ));
@@ -221,7 +220,7 @@ impl Eth2NearRelay {
             .beacon_rpc_client
             .get_block_number_for_slot(Slot::new(last_finalized_slot_on_near))
         {
-            CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR.inc_by(max(
+            CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR.inc_by(cmp::max(
                 0,
                 last_block_number as i64 - CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR.get(),
             ));
@@ -236,7 +235,7 @@ impl Eth2NearRelay {
             .get_last_finalized_slot_number()?
             .as_u64();
 
-        LAST_FINALIZED_ETH_SLOT.inc_by(max(
+        LAST_FINALIZED_ETH_SLOT.inc_by(cmp::max(
             0,
             last_finalized_slot_on_eth as i64 - LAST_FINALIZED_ETH_SLOT.get(),
         ));
@@ -245,7 +244,7 @@ impl Eth2NearRelay {
             .beacon_rpc_client
             .get_block_number_for_slot(Slot::new(last_finalized_slot_on_eth))
         {
-            CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH.inc_by(max(
+            CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH.inc_by(cmp::max(
                 0,
                 last_block_number as i64 - CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH.get(),
             ));
@@ -334,7 +333,7 @@ impl Eth2NearRelay {
                             beacon_rpc_client,
                             &path_to_attested_state,
                             &path_to_finality_state,
-                        ).unwrap(),
+                        ).expect("Error on getting light client update from file"),
                     );
                 }
                 None => {
@@ -342,7 +341,7 @@ impl Eth2NearRelay {
                         HandMadeFinalityLightClientUpdate::get_finality_light_client_update_from_file(
                             beacon_rpc_client,
                             &path_to_attested_state,
-                        ).unwrap(),
+                        ).expect("Error on getting light client update from file"),
                     );
                 }
             }
@@ -373,7 +372,7 @@ impl Eth2NearRelay {
 
         trace!(target: "relay", "remaining headers number {}", remaining_headers);
 
-        let max_submitted_headers = min(self.headers_batch_size, remaining_headers);
+        let max_submitted_headers = cmp::min(self.headers_batch_size, remaining_headers);
 
         while headers.len() < max_submitted_headers as usize
             && current_slot <= last_eth2_slot_on_eth_chain
@@ -716,11 +715,11 @@ impl Eth2NearRelay {
 
 #[cfg(test)]
 mod tests {
-    use crate::beacon_rpc_client::BeaconRPCClient;
+    use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
     use crate::config_for_tests::ConfigForTests;
     use crate::eth2near_relay::{Eth2NearRelay, ONE_EPOCH_IN_SLOTS};
-    use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
-    use crate::relay_errors::NoBlockForSlotError;
+    use eth_rpc_client::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
+    use eth_rpc_client::errors::NoBlockForSlotError;
     use crate::test_utils::{get_relay, get_relay_from_slot, get_relay_with_update_from_file};
     use eth_types::eth2::LightClientUpdate;
     use eth_types::BlockHeader;

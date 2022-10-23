@@ -1,11 +1,11 @@
 use crate::beacon_block_body_merkle_tree::{BeaconBlockBodyMerkleTree, ExecutionPayloadMerkleTree};
-use crate::relay_errors::MissExecutionPayload;
 use eth2_hashing;
 use ethereum_types::H256;
 use std::error::Error;
 use std::fmt;
 use std::fmt::Display;
 use types::{BeaconBlockBody, MainnetEthSpec};
+use crate::errors::MissExecutionPayload;
 
 /// `ExecutionBlockProof` contains a `block_hash` (execution block) and
 /// a proof of its inclusion in the `BeaconBlockBody` tree hash.
@@ -152,7 +152,7 @@ impl Error for IncorrectBranchLength {}
 #[cfg(test)]
 mod tests {
     use crate::config_for_tests::ConfigForTests;
-    use crate::test_utils::read_json_file_from_data_dir;
+    use crate::utils::read_json_file_from_data_dir;
     use types::BeaconBlockBody;
     use types::MainnetEthSpec;
 

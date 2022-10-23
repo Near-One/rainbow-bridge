@@ -3,26 +3,33 @@ use std::fmt;
 use std::fmt::Display;
 
 #[derive(Debug)]
-pub struct ErrorOnUnwrapSignatureBit;
+pub struct ExecutionPayloadError;
 
-impl Display for ErrorOnUnwrapSignatureBit {
+impl Display for ExecutionPayloadError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Error on getting signature bits from sync aggregate!")
+        write!(
+            f,
+            "Execution Payload not found. \
+        Beacon Block Body in this blockchain variant doesn't contain execution payload. \
+        Please use The Merge variants"
+        )
     }
 }
 
-impl Error for ErrorOnUnwrapSignatureBit {}
+impl Error for ExecutionPayloadError {}
 
 #[derive(Debug)]
-pub struct SignatureSlotNotFoundError;
+pub struct FailOnGettingJson {
+    pub response: String,
+}
 
-impl Display for SignatureSlotNotFoundError {
+impl Display for FailOnGettingJson {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Signature slot not found!")
+        write!(f, "Fail on getting JSON, response: {}", self.response)
     }
 }
 
-impl Error for SignatureSlotNotFoundError {}
+impl Error for FailOnGettingJson {}
 
 #[derive(Debug)]
 pub struct MissSyncAggregationError;
@@ -41,36 +48,6 @@ impl Display for MissSyncAggregationError {
 impl Error for MissSyncAggregationError {}
 
 #[derive(Debug)]
-pub struct ExecutionPayloadError;
-
-impl Display for ExecutionPayloadError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Execution Payload not found. \
-        Beacon Block Body in this blockchain variant doesn't contain execution payload. \
-        Please use The Merge variants"
-        )
-    }
-}
-
-impl Error for ExecutionPayloadError {}
-
-#[derive(Debug)]
-pub struct MissSyncCommitteeUpdate;
-
-impl Display for MissSyncCommitteeUpdate {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Sync Committee Update is missing for this Light Client Update"
-        )
-    }
-}
-
-impl Error for MissSyncCommitteeUpdate {}
-
-#[derive(Debug)]
 pub struct NoBlockForSlotError;
 
 impl Display for NoBlockForSlotError {
@@ -82,17 +59,26 @@ impl Display for NoBlockForSlotError {
 impl Error for NoBlockForSlotError {}
 
 #[derive(Debug)]
-pub struct FailOnGettingJson {
-    pub response: String,
-}
+pub struct SignatureSlotNotFoundError;
 
-impl Display for FailOnGettingJson {
+impl Display for SignatureSlotNotFoundError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Fail on getting JSON, response: {}", self.response)
+        write!(f, "Signature slot not found!")
     }
 }
 
-impl Error for FailOnGettingJson {}
+impl Error for SignatureSlotNotFoundError {}
+
+#[derive(Debug)]
+pub struct ErrorOnUnwrapSignatureBit;
+
+impl Display for ErrorOnUnwrapSignatureBit {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Error on getting signature bits from sync aggregate!")
+    }
+}
+
+impl Error for ErrorOnUnwrapSignatureBit {}
 
 #[derive(Debug)]
 pub struct MissNextSyncCommittee;

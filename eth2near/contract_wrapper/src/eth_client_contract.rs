@@ -13,6 +13,7 @@ use serde_json::json;
 use std::error::Error;
 use std::option::Option;
 use std::string::String;
+use crate::eth_network::EthNetwork;
 use serde::Serialize;
 
 /// Implementation for interaction with Ethereum Light Client Contract on NEAR.
@@ -46,11 +47,13 @@ impl EthClientContract {
     /// * `trusted_signer` - the account address of the trusted signer which is allowed to submit light client updates.
     pub fn init_contract(
         &self,
-        ethereum_network: String,
+        ethereum_network: EthNetwork,
         finalized_execution_header: BlockHeader,
         finalized_beacon_header: ExtendedBeaconBlockHeader,
         current_sync_committee: SyncCommittee,
         next_sync_committee: SyncCommittee,
+        validate_updates: Option<bool>,
+        verify_bls_signatures: Option<bool>,
         hashes_gc_threshold: Option<u64>,
         max_submitted_blocks_by_account: Option<u32>,
         trusted_signer: Option<AccountId>,
@@ -70,13 +73,13 @@ impl EthClientContract {
         }
 
         let init_input = InitInput {
-            network: ethereum_network,
+            network: ethereum_network.to_string(),
             finalized_execution_header,
             finalized_beacon_header,
             current_sync_committee,
             next_sync_committee,
-            validate_updates: true,
-            verify_bls_signatures: false,
+            validate_updates: validate_updates.unwrap_or(true),
+            verify_bls_signatures: verify_bls_signatures.unwrap_or(false),
             hashes_gc_threshold: hashes_gc_threshold.unwrap_or(51_000),
             max_submitted_blocks_by_account: max_submitted_blocks_by_account.unwrap_or(8000),
             trusted_signer,
@@ -102,7 +105,9 @@ impl EthClientContract {
         self.contract_wrapper.get_account_id()
     }
 
-    pub fn get_signature_account_id(&self) -> AccountId { self.contract_wrapper.get_signer_account_id() }
+    pub fn get_signer_account_id(&self) -> AccountId {
+        self.contract_wrapper.get_signer_account_id()
+    }
 }
 
 impl EthClientContractTrait for EthClientContract {
@@ -328,7 +333,6 @@ mod tests {
         const PATH_TO_CURRENT_SYNC_COMMITTEE: &str =
             "./data/next_sync_committee_kiln_period_133.json";
         const PATH_TO_NEXT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_kiln_period_134.json";
-        const ETH_NETWORK: &str = "kiln";
 
         let current_sync_committee: SyncCommittee = serde_json::from_str(
             &std::fs::read_to_string(PATH_TO_CURRENT_SYNC_COMMITTEE).expect("Unable to read file"),
@@ -361,11 +365,13 @@ mod tests {
         }
 
         eth_client_contract.init_contract(
-            ETH_NETWORK.to_string(),
+            eth_client_contract::EthNetwork::Kiln,
             finalized_execution_header.unwrap(),
             finalized_beacon_header,
             current_sync_committee,
             next_sync_committee,
+            Some(true),
+            Some(false),
             None,
             None,
             Option::<AccountId>::Some(trusted_signer.parse().unwrap()),

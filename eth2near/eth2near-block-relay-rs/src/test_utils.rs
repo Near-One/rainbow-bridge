@@ -1,9 +1,9 @@
-use crate::beacon_rpc_client::BeaconRPCClient;
+use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
 use crate::config_for_tests::ConfigForTests;
-use crate::eth1_rpc_client::Eth1RPCClient;
+use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
 use crate::eth2near_relay::Eth2NearRelay;
-use crate::init_contract;
+use eth2_contract_init::init_contract;
 use crate::test_utils;
 use contract_wrapper::eth_client_contract::EthClientContract;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
@@ -14,6 +14,8 @@ use std::{thread, time};
 use tokio::runtime::Runtime;
 use tree_hash::TreeHash;
 use workspaces::{Account, Contract};
+use crate::contract_type::ContractType;
+use contract_wrapper::near_network::NearNetwork;
 
 pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
     let mut json_file_path = std::env::current_exe().unwrap();
@@ -72,11 +74,13 @@ pub fn init_contract_from_files(
     }
 
     eth_client_contract.init_contract(
-        config_for_test.network_name.to_string(),
+        config_for_test.network_name.clone(),
         finalized_execution_header.unwrap(),
         finalized_beacon_header,
         current_sync_committee,
         next_sync_committee,
+        Some(true),
+        Some(false),
         None,
         None,
         Some(eth_client_contract.contract_wrapper.get_signer_account_id()),
@@ -146,11 +150,13 @@ pub fn init_contract_from_specific_slot(
         .unwrap();
 
     eth_client_contract.init_contract(
-        config_for_test.network_name.to_string(),
+        config_for_test.network_name.clone(),
         finalized_execution_header,
         finalized_beacon_header,
         current_sync_committee,
         next_sync_committee,
+        Some(true),
+        Some(false),
         None,
         None,
         Some(eth_client_contract.contract_wrapper.get_signer_account_id()),
@@ -181,11 +187,11 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
         signer_account_id: "NaN".to_string(),
         path_to_signer_secret_key: "NaN".to_string(),
         contract_account_id: "NaN".to_string(),
-        ethereum_network: config_for_test.network_name.to_string(),
-        contract_type: "near".to_string(),
+        ethereum_network: config_for_test.network_name.clone(),
+        contract_type: ContractType::Near,
         interval_between_light_client_updates_submission_in_epochs: 1,
         max_blocks_for_finalization: 5000,
-        near_network_id: "testnet".to_string(),
+        near_network_id: NearNetwork::Testnet,
         prometheus_metrics_port: Some(32221),
         dao_contract_account_id: None,
         output_dir: None,
@@ -200,6 +206,30 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
     }
 }
 
+fn get_init_config(
+    config_for_test: &ConfigForTests,
+    eth_client_contract: &EthClientContract,
+) -> eth2_contract_init::config::Config {
+    eth2_contract_init::config::Config {
+        beacon_endpoint: config_for_test.beacon_endpoint.to_string(),
+        eth1_endpoint: config_for_test.eth1_endpoint.to_string(),
+        near_endpoint: "https://rpc.testnet.near.org".to_string(),
+        signer_account_id: "NaN".to_string(),
+        path_to_signer_secret_key: "NaN".to_string(),
+        contract_account_id: "NaN".to_string(),
+        ethereum_network: config_for_test.network_name.clone(),
+        near_network_id: NearNetwork::Testnet,
+        output_dir: None,
+        eth_requests_timeout_seconds: Some(30),
+        validate_updates: Some(true),
+        verify_bls_signature: Some(false),
+        hashes_gc_threshold: Some(51000),
+        max_submitted_blocks_by_account: Some(8000),
+        trusted_signer_account_id: Some(eth_client_contract.get_signer_account_id().to_string()),
+        init_block_root: None,
+    }
+}
+
 pub fn get_client_contract(
     from_file: bool,
     config_for_test: &ConfigForTests,
@@ -209,14 +239,12 @@ pub fn get_client_contract(
 
     let mut eth_client_contract = EthClientContract::new(contract_wrapper);
 
-    let mut config = get_config(config_for_test);
-    config.signer_account_id = eth_client_contract.get_signature_account_id().to_string();
+    let mut config = get_init_config(config_for_test, &eth_client_contract);
+    config.signer_account_id = eth_client_contract.get_signer_account_id().to_string();
 
     match from_file {
         true => test_utils::init_contract_from_files(&mut eth_client_contract, config_for_test),
-        false => {
-            init_contract::init_contract(&config, &mut eth_client_contract, "".to_string()).unwrap()
-        }
+        false => init_contract::init_contract(&config, &mut eth_client_contract).unwrap(),
     };
 
     Box::new(eth_client_contract)
