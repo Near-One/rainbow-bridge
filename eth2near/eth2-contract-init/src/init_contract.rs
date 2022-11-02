@@ -59,7 +59,7 @@ pub fn init_contract(
     let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
 
     let light_client_update_with_next_sync_committee = beacon_rpc_client
-        .get_finality_light_client_update_with_sync_commity_update()
+        .get_light_client_update_for_last_period()
         .expect("Error on fetching finality light client update with sync committee update");
     let finality_light_client_update = beacon_rpc_client
         .get_finality_light_client_update()
@@ -145,9 +145,13 @@ mod tests {
     use tokio::runtime::Runtime;
     use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
     use workspaces::{Account, Contract};
+    use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
     use crate::init_contract::init_contract;
     use contract_wrapper::near_network::NearNetwork;
+    use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
     use crate::config_for_tests::ConfigForTests;
+
+    const ONE_EPOCH_IN_SLOTS: u64 = 32;
 
     fn create_contract(config_for_test: &ConfigForTests) -> (Account, Contract) {
         let rt = Runtime::new().unwrap();
@@ -214,5 +218,38 @@ mod tests {
         init_config.trusted_signer_account_id = None;
 
         init_contract(&init_config, &mut eth_client_contract).unwrap();
+    }
+
+    #[test]
+    fn test_sync_with_eth_after_init() {
+        let config_for_test = ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap());
+
+        let (relay_account, contract) = create_contract(&config_for_test);
+        let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
+
+        let mut eth_client_contract = EthClientContract::new(contract_wrapper);
+        let init_config = get_init_config(&config_for_test, &eth_client_contract);
+
+        init_contract(&init_config, &mut eth_client_contract).unwrap();
+
+        let last_finalized_slot_eth_client = eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .expect("Error on getting last finalized beacon block slot(Eth client)");
+
+        let beacon_rpc_client = BeaconRPCClient::new(
+            &init_config.beacon_endpoint,
+            init_config.eth_requests_timeout_seconds.unwrap_or(10),
+            init_config.eth_requests_timeout_seconds.unwrap_or(10),
+        );
+
+        let last_finalized_slot_eth_network = beacon_rpc_client
+            .get_last_finalized_slot_number()
+            .expect("Error on getting last finalized beacon block slot");
+
+        const MAX_GAP_IN_EPOCH_BETWEEN_FINALIZED_SLOTS: u64 = 3;
+
+        assert!(last_finalized_slot_eth_client +
+            ONE_EPOCH_IN_SLOTS * MAX_GAP_IN_EPOCH_BETWEEN_FINALIZED_SLOTS
+            >= last_finalized_slot_eth_network.as_u64());
     }
 }
