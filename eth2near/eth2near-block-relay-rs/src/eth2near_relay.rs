@@ -579,7 +579,7 @@ impl Eth2NearRelay {
             debug!(target: "relay", "Finalized period on ETH and NEAR are different. Fetching sync commity update");
             return_on_fail!(
                 self.beacon_rpc_client
-                    .get_finality_light_client_update_with_sync_commity_update(),
+                    .get_light_client_update_for_last_period(),
                 "Error on getting light client update. Skipping sending light client update"
             )
         };
@@ -853,7 +853,7 @@ mod tests {
 
         let light_client_update = relay
             .beacon_rpc_client
-            .get_finality_light_client_update_with_sync_commity_update()
+            .get_light_client_update_for_last_period()
             .unwrap();
 
         let branch: Vec<ethereum_types::H256> = light_client_update
