@@ -6,6 +6,7 @@ use contract_wrapper::{
     dao_contract, dao_eth_client_contract, eth_client_contract, file_eth_client_contract,
 };
 use eth2_to_near_relay::config::Config;
+use eth2_to_near_relay::contract_type::ContractType;
 use eth2_to_near_relay::eth2near_relay::Eth2NearRelay;
 use eth2near_logger::SimpleLogger;
 use log::LevelFilter;
@@ -47,7 +48,8 @@ fn get_dao_contract_wrapper(config: &Config) -> Box<dyn ContractWrapper> {
         &config.near_endpoint,
         &config.signer_account_id,
         &config.path_to_signer_secret_key,
-        &dao_contract_account_id.expect("No DAO contract account ID provided for relay running in DAO mode"),
+        &dao_contract_account_id
+            .expect("No DAO contract account ID provided for relay running in DAO mode"),
     ))
 }
 
@@ -55,21 +57,24 @@ fn get_eth_client_contract(config: &Config) -> Box<dyn EthClientContractTrait> {
     let eth_contract_wrapper = get_eth_contract_wrapper(config);
     let eth_client = eth_client_contract::EthClientContract::new(eth_contract_wrapper);
 
-    match config.contract_type.as_str() {
-        "dao" => Box::new(dao_eth_client_contract::DaoEthClientContract::new(
+    match config.contract_type {
+        ContractType::Dao => Box::new(dao_eth_client_contract::DaoEthClientContract::new(
             eth_client,
             dao_contract::DAOContract::new(get_dao_contract_wrapper(config)),
         )),
-        "file" => Box::new(file_eth_client_contract::FileEthClientContract::new(
+        ContractType::File => Box::new(file_eth_client_contract::FileEthClientContract::new(
             eth_client,
-            config.output_dir.clone().expect("No output dir provided for relay running in FILE mode"),
+            config
+                .output_dir
+                .clone()
+                .expect("No output dir provided for relay running in FILE mode"),
         )),
-        _ => Box::new(eth_client),
+        ContractType::Near => Box::new(eth_client),
     }
 }
 
 fn init_log(args: &Arguments, config: &Config) {
-    let log_level_filter = match args.log_level.as_str() {
+    let log_level_filter = match args.log_level.to_lowercase().as_str() {
         "trace" => LevelFilter::Trace,
         "debug" => LevelFilter::Debug,
         "warn" => LevelFilter::Warn,
@@ -90,7 +95,12 @@ fn init_log(args: &Arguments, config: &Config) {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Arguments::parse();
-    let config = Config::load_from_toml(args.config.clone().try_into().expect("Error on config parsing"));
+    let config = Config::load_from_toml(
+        args.config
+            .clone()
+            .try_into()
+            .expect("Error on config parsing"),
+    );
     init_log(&args, &config);
 
     let mut eth2near_relay = Eth2NearRelay::init(
