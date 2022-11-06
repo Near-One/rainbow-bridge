@@ -34,7 +34,7 @@ impl BeaconRPCClient {
     const URL_BODY_PATH: &'static str = "eth/v2/beacon/blocks";
     const URL_GET_LIGHT_CLIENT_UPDATE_API: &'static str = "eth/v1/beacon/light_client/updates";
     const URL_FINALITY_LIGHT_CLIENT_UPDATE_PATH: &'static str =
-        "eth/v1/beacon/light_client/finality_update/";
+        "eth/v1/beacon/light_client/finality_update";
     const URL_GET_BOOTSTRAP: &'static str = "eth/v1/beacon/light_client/bootstrap";
     const URL_STATE_PATH: &'static str = "eth/v2/debug/beacon/states";
 
