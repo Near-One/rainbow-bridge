@@ -1,7 +1,10 @@
+use crate::errors::{
+    ErrorOnJsonParse, ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError,
+    NoBlockForSlotError, SignatureSlotNotFoundError,
+};
 use crate::execution_block_proof::ExecutionBlockProof;
-use crate::errors::{ErrorOnJsonParse, ExecutionPayloadError, FailOnGettingJson, MissSyncAggregationError, NoBlockForSlotError, SignatureSlotNotFoundError};
-use crate::utils;
 use crate::light_client_snapshot_with_proof::LightClientSnapshotWithProof;
+use crate::utils;
 use eth_types::eth2::BeaconBlockHeader;
 use eth_types::eth2::FinalizedHeaderUpdate;
 use eth_types::eth2::HeaderUpdate;
@@ -20,6 +23,33 @@ use std::time::Duration;
 use types::MainnetEthSpec;
 use types::{BeaconBlockBody, BeaconState};
 
+struct RPCRoutes {
+    pub get_block_header: String,
+    pub get_block: String,
+    pub get_light_client_update: String,
+    pub get_light_client_finality_update: String,
+    pub get_bootstrap: String,
+    pub get_state: String,
+}
+
+impl RPCRoutes {
+    pub fn new() -> Self {
+        Self {
+            get_block_header: "eth/v1/beacon/headers".to_string(),
+            get_block: "eth/v2/beacon/blocks".to_string(),
+            get_light_client_update: "eth/v1/beacon/light_client/updates".to_string(),
+            #[cfg(feature = "beacon_rpc_v1_1")]
+            get_light_client_finality_update: "eth/v1/beacon/light_client/finality_update/"
+                .to_string(),
+            #[cfg(feature = "beacon_rpc_v1_2")]
+            get_light_client_finality_update: "eth/v1/beacon/light_client/finality_update"
+                .to_string(),
+            get_bootstrap: "eth/v1/beacon/light_client/bootstrap".to_string(),
+            get_state: "eth/v2/debug/beacon/states".to_string(),
+        }
+    }
+}
+
 /// `BeaconRPCClient` allows getting beacon block body, beacon block header
 /// and light client updates
 /// using Beacon RPC API (https://ethereum.github.io/beacon-APIs/)
@@ -27,17 +57,10 @@ pub struct BeaconRPCClient {
     endpoint_url: String,
     client: Client,
     client_state_request: Client,
+    routes: RPCRoutes,
 }
 
 impl BeaconRPCClient {
-    const URL_HEADER_PATH: &'static str = "eth/v1/beacon/headers";
-    const URL_BODY_PATH: &'static str = "eth/v2/beacon/blocks";
-    const URL_GET_LIGHT_CLIENT_UPDATE_API: &'static str = "eth/v1/beacon/light_client/updates";
-    const URL_FINALITY_LIGHT_CLIENT_UPDATE_PATH: &'static str =
-        "eth/v1/beacon/light_client/finality_update";
-    const URL_GET_BOOTSTRAP: &'static str = "eth/v1/beacon/light_client/bootstrap";
-    const URL_STATE_PATH: &'static str = "eth/v2/debug/beacon/states";
-
     const SLOTS_PER_EPOCH: u64 = 32;
     const EPOCHS_PER_PERIOD: u64 = 256;
 
@@ -53,6 +76,7 @@ impl BeaconRPCClient {
                 .timeout(Duration::from_secs(timeout_state_seconds))
                 .build()
                 .expect("Error on building blocking client for state request."),
+            routes: RPCRoutes::new(),
         }
     }
 
@@ -67,7 +91,10 @@ impl BeaconRPCClient {
         &self,
         block_id: &str,
     ) -> Result<BeaconBlockBody<MainnetEthSpec>, Box<dyn Error>> {
-        let url = format!("{}/{}/{}", self.endpoint_url, Self::URL_BODY_PATH, block_id);
+        let url = format!(
+            "{}/{}/{}",
+            self.endpoint_url, self.routes.get_block, block_id
+        );
 
         let json_str = &self.get_json_from_raw_request(&url)?;
 
@@ -90,9 +117,7 @@ impl BeaconRPCClient {
     ) -> Result<types::BeaconBlockHeader, Box<dyn Error>> {
         let url = format!(
             "{}/{}/{}",
-            self.endpoint_url,
-            Self::URL_HEADER_PATH,
-            block_id
+            self.endpoint_url, self.routes.get_block_header, block_id
         );
 
         let json_str = &self.get_json_from_raw_request(&url)?;
@@ -113,9 +138,7 @@ impl BeaconRPCClient {
     ) -> Result<LightClientUpdate, Box<dyn Error>> {
         let url = format!(
             "{}/{}?start_period={}&count=1",
-            self.endpoint_url,
-            Self::URL_GET_LIGHT_CLIENT_UPDATE_API,
-            period
+            self.endpoint_url, self.routes.get_light_client_update, period
         );
         let light_client_update_json_str = self.get_json_from_raw_request(&url)?;
 
@@ -147,9 +170,7 @@ impl BeaconRPCClient {
     ) -> Result<LightClientSnapshotWithProof, Box<dyn Error>> {
         let url = format!(
             "{}/{}/{}",
-            self.endpoint_url,
-            Self::URL_GET_BOOTSTRAP,
-            block_root
+            self.endpoint_url, self.routes.get_bootstrap, block_root
         );
 
         let light_client_snapshot_json_str = self.get_json_from_raw_request(&url)?;
@@ -200,9 +221,7 @@ impl BeaconRPCClient {
 
         let url = format!(
             "{}/{}/{}",
-            self.endpoint_url,
-            Self::URL_BODY_PATH,
-            beacon_block_hash_str
+            self.endpoint_url, self.routes.get_block, beacon_block_hash_str
         );
         let block_json_str = &self.get_json_from_raw_request(&url)?;
         let v: Value = serde_json::from_str(block_json_str)?;
@@ -223,8 +242,7 @@ impl BeaconRPCClient {
     pub fn get_finality_light_client_update(&self) -> Result<LightClientUpdate, Box<dyn Error>> {
         let url = format!(
             "{}/{}",
-            self.endpoint_url,
-            Self::URL_FINALITY_LIGHT_CLIENT_UPDATE_PATH
+            self.endpoint_url, self.routes.get_light_client_finality_update,
         );
 
         let light_client_update_json_str = self.get_json_from_raw_request(&url)?;
@@ -265,9 +283,7 @@ impl BeaconRPCClient {
     ) -> Result<BeaconState<MainnetEthSpec>, Box<dyn Error>> {
         let url_request = format!(
             "{}/{}/{}",
-            self.endpoint_url,
-            Self::URL_STATE_PATH,
-            state_id
+            self.endpoint_url, self.routes.get_state, state_id
         );
         let json_str = Self::get_json_from_client(&self.client_state_request, &url_request)?;
 
@@ -486,11 +502,11 @@ mod tests {
     use crate::beacon_rpc_client::BeaconRPCClient;
     use crate::config_for_tests::ConfigForTests;
     use crate::utils::read_json_file_from_data_dir;
+    use crate::utils::trim_quotes;
     use serde_json::Value;
     use types::BeaconBlockBody;
     use types::BeaconBlockHeader;
     use types::MainnetEthSpec;
-    use crate::utils::trim_quotes;
 
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000;
