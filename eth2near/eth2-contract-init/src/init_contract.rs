@@ -55,6 +55,7 @@ pub fn init_contract(
         &config.beacon_endpoint,
         config.eth_requests_timeout_seconds.unwrap_or(10),
         config.eth_requests_timeout_seconds.unwrap_or(10),
+        Some(config.beacon_rpc_version.clone()),
     );
     let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
 
@@ -148,7 +149,7 @@ mod tests {
     use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
     use crate::init_contract::init_contract;
     use contract_wrapper::near_network::NearNetwork;
-    use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
+    use eth_rpc_client::beacon_rpc_client::{BeaconRPCClient, BeaconRPCVersion};
     use crate::config_for_tests::ConfigForTests;
 
     const ONE_EPOCH_IN_SLOTS: u64 = 32;
@@ -184,6 +185,7 @@ mod tests {
             max_submitted_blocks_by_account: Some(8000),
             trusted_signer_account_id: Some(eth_client_contract.get_signer_account_id().to_string()),
             init_block_root: None,
+            beacon_rpc_version: BeaconRPCVersion::V1_1,
         }
     }
 
@@ -240,6 +242,7 @@ mod tests {
             &init_config.beacon_endpoint,
             init_config.eth_requests_timeout_seconds.unwrap_or(10),
             init_config.eth_requests_timeout_seconds.unwrap_or(10),
+            None,
         );
 
         let last_finalized_slot_eth_network = beacon_rpc_client

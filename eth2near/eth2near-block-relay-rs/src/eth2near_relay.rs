@@ -1,10 +1,5 @@
-use std::cmp;
-use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
 use crate::config::Config;
-use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
-use eth_rpc_client::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
 use crate::last_slot_searcher::LastSlotSearcher;
-use contract_wrapper::near_rpc_client::NearRPCClient;
 use crate::prometheus_metrics;
 use crate::prometheus_metrics::{
     CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH, CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR,
@@ -12,18 +7,23 @@ use crate::prometheus_metrics::{
     FAILS_ON_HEADERS_SUBMISSION, FAILS_ON_UPDATES_SUBMISSION, LAST_ETH_SLOT, LAST_ETH_SLOT_ON_NEAR,
     LAST_FINALIZED_ETH_SLOT, LAST_FINALIZED_ETH_SLOT_ON_NEAR,
 };
-use eth_rpc_client::errors::NoBlockForSlotError;
+use bitvec::macros::internal::funty::Fundamental;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
+use contract_wrapper::near_rpc_client::NearRPCClient;
+use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
+use eth_rpc_client::errors::NoBlockForSlotError;
+use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
+use eth_rpc_client::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
 use eth_types::eth2::LightClientUpdate;
 use eth_types::BlockHeader;
 use log::{debug, info, trace, warn};
 use near_primitives::views::FinalExecutionStatus;
+use std::cmp;
 use std::error::Error;
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
 use std::vec::Vec;
-use bitvec::macros::internal::funty::Fundamental;
 use types::Slot;
 
 const ONE_EPOCH_IN_SLOTS: u64 = 32;
@@ -112,9 +112,11 @@ impl Eth2NearRelay {
             &config.beacon_endpoint,
             config.eth_requests_timeout_seconds,
             config.state_requests_timeout_seconds,
+            Some(config.beacon_rpc_version.clone()),
         );
         let next_light_client_update =
-            Self::get_light_client_update_from_file(config, &beacon_rpc_client).expect("Error on parsing light client update");
+            Self::get_light_client_update_from_file(config, &beacon_rpc_client)
+                .expect("Error on parsing light client update");
 
         let max_submitted_blocks_by_account = eth_contract
             .get_max_submitted_blocks_by_account()
@@ -715,12 +717,12 @@ impl Eth2NearRelay {
 
 #[cfg(test)]
 mod tests {
-    use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
     use crate::config_for_tests::ConfigForTests;
     use crate::eth2near_relay::{Eth2NearRelay, ONE_EPOCH_IN_SLOTS};
-    use eth_rpc_client::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
-    use eth_rpc_client::errors::NoBlockForSlotError;
     use crate::test_utils::{get_relay, get_relay_from_slot, get_relay_with_update_from_file};
+    use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
+    use eth_rpc_client::errors::NoBlockForSlotError;
+    use eth_rpc_client::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
     use eth_types::eth2::LightClientUpdate;
     use eth_types::BlockHeader;
     use std::thread::sleep;
@@ -1010,6 +1012,7 @@ mod tests {
             "http://httpstat.us/504/",
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         if let Err(err) = relay.get_execution_block_by_slot(config_for_test.slot_without_block) {
             if err.downcast_ref::<NoBlockForSlotError>().is_some() {
@@ -1191,6 +1194,7 @@ mod tests {
             "http://httpstat.us/504/",
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
 
         relay

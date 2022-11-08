@@ -1,4 +1,4 @@
-use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
+use eth_rpc_client::beacon_rpc_client::{BeaconRPCClient, BeaconRPCVersion};
 use crate::config::Config;
 use crate::config_for_tests::ConfigForTests;
 use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
@@ -108,7 +108,7 @@ pub fn init_contract_from_specific_slot(
     .unwrap();
 
     let beacon_rpc_client =
-        BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT, TIMEOUT_STATE);
+        BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT, TIMEOUT_STATE, None);
     let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
 
     let finality_header = beacon_rpc_client
@@ -203,6 +203,7 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
         sleep_time_after_submission_secs: 5,
         hashes_gc_threshold: None,
         max_submitted_blocks_by_account: None,
+        beacon_rpc_version: BeaconRPCVersion::V1_1,
     }
 }
 
@@ -227,6 +228,7 @@ fn get_init_config(
         max_submitted_blocks_by_account: Some(8000),
         trusted_signer_account_id: Some(eth_client_contract.get_signer_account_id().to_string()),
         init_block_root: None,
+        beacon_rpc_version: BeaconRPCVersion::V1_1,
     }
 }
 
