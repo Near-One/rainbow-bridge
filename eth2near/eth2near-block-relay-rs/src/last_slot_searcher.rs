@@ -471,6 +471,7 @@ mod tests {
             &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
@@ -527,6 +528,7 @@ mod tests {
             &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
@@ -603,6 +605,7 @@ mod tests {
             &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
@@ -656,6 +659,7 @@ mod tests {
             &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
@@ -719,6 +723,7 @@ mod tests {
             &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
@@ -794,6 +799,7 @@ mod tests {
             &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
@@ -814,6 +820,7 @@ mod tests {
             "http://httpstat.us/504/",
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         last_slot_searcher
             .linear_slot_search(
@@ -835,6 +842,7 @@ mod tests {
             &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
@@ -911,6 +919,7 @@ mod tests {
             "http://httpstat.us/504/",
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         if last_slot_searcher
             .binsearch_slot_range(
@@ -937,6 +946,7 @@ mod tests {
             &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
@@ -1014,6 +1024,7 @@ mod tests {
             "http://httpstat.us/504/",
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         if last_slot_searcher
             .binsearch_slot_forward(
@@ -1040,6 +1051,7 @@ mod tests {
             &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let last_slot_searcher = LastSlotSearcher::new(true);
@@ -1127,6 +1139,7 @@ mod tests {
             "http://httpstat.us/504/",
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         if last_slot_searcher
             .binary_slot_search(
@@ -1151,6 +1164,7 @@ mod tests {
             &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let mut last_slot_searcher = LastSlotSearcher::new(true);
@@ -1196,6 +1210,7 @@ mod tests {
             "http://httpstat.us/504/",
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         if last_slot_searcher
             .get_last_slot(
@@ -1218,6 +1233,7 @@ mod tests {
             &config_for_test.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
         let mut last_slot_searcher = LastSlotSearcher::new(true);
@@ -1264,6 +1280,7 @@ mod tests {
             "http://httpstat.us/504/",
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         if last_slot_searcher
             .get_last_slot(

@@ -373,6 +373,7 @@ mod tests {
             &config.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
 
         let light_client_period =
@@ -409,6 +410,7 @@ mod tests {
             &config.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         let hand_made_light_client_update =
             HandMadeFinalityLightClientUpdate::get_finality_light_client_update_from_file(
@@ -435,6 +437,7 @@ mod tests {
             &config.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         let hand_made_light_client_update =
             HandMadeFinalityLightClientUpdate::get_light_client_update_from_file_with_next_sync_committee(

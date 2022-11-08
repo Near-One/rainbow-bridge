@@ -1,4 +1,5 @@
 use crate::contract_type::ContractType;
+use eth_rpc_client::beacon_rpc_client::BeaconRPCVersion;
 use contract_wrapper::eth_network::EthNetwork;
 use contract_wrapper::near_rpc_client::NearRPCClient;
 use contract_wrapper::near_network::NearNetwork;
@@ -82,6 +83,9 @@ pub struct Config {
     /// Max number of unfinalized blocks allowed to be stored by one submitter account.
     /// It is used on initialization of the Eth2 client.
     pub max_submitted_blocks_by_account: Option<u32>,
+
+    // Beacon rpc version (V1_1, V1_2)
+    pub beacon_rpc_version: BeaconRPCVersion,
 }
 
 impl Config {

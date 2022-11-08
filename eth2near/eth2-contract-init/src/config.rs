@@ -1,6 +1,7 @@
 use contract_wrapper::eth_network::EthNetwork;
 use contract_wrapper::near_network::NearNetwork;
 use contract_wrapper::near_rpc_client::NearRPCClient;
+use eth_rpc_client::beacon_rpc_client;
 use reqwest::Url;
 use serde::Deserialize;
 use std::io::Read;
@@ -51,6 +52,9 @@ pub struct Config {
     /// The trusted block root for checkpoint for contract initialization
     /// e.g.: 0x9cd0c5a8392d0659426b12384e8440c147510ab93eeaeccb08435a462d7bb1c7
     pub init_block_root: Option<String>,
+
+    // Beacon rpc version (V1_1, V1_2)
+    pub beacon_rpc_version: beacon_rpc_client::BeaconRPCVersion,
 }
 
 impl Config {

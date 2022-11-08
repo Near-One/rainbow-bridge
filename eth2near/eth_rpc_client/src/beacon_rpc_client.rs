@@ -16,6 +16,7 @@ use eth_types::eth2::SyncCommitteeUpdate;
 use eth_types::H256;
 use log::trace;
 use reqwest::blocking::Client;
+use serde::Deserialize;
 use serde_json::{json, Value};
 use std::error::Error;
 use std::string::String;
@@ -23,7 +24,13 @@ use std::time::Duration;
 use types::MainnetEthSpec;
 use types::{BeaconBlockBody, BeaconState};
 
-struct RPCRoutes {
+#[derive(Debug, Clone, Deserialize)]
+pub enum BeaconRPCVersion {
+    V1_1,
+    V1_2,
+}
+
+struct BeaconRPCRoutes {
     pub get_block_header: String,
     pub get_block: String,
     pub get_light_client_update: String,
@@ -32,20 +39,27 @@ struct RPCRoutes {
     pub get_state: String,
 }
 
-impl RPCRoutes {
-    pub fn new() -> Self {
-        Self {
-            get_block_header: "eth/v1/beacon/headers".to_string(),
-            get_block: "eth/v2/beacon/blocks".to_string(),
-            get_light_client_update: "eth/v1/beacon/light_client/updates".to_string(),
-            #[cfg(feature = "beacon_rpc_v1_1")]
-            get_light_client_finality_update: "eth/v1/beacon/light_client/finality_update/"
-                .to_string(),
-            #[cfg(feature = "beacon_rpc_v1_2")]
-            get_light_client_finality_update: "eth/v1/beacon/light_client/finality_update"
-                .to_string(),
-            get_bootstrap: "eth/v1/beacon/light_client/bootstrap".to_string(),
-            get_state: "eth/v2/debug/beacon/states".to_string(),
+impl BeaconRPCRoutes {
+    pub fn new(version: BeaconRPCVersion) -> Self {
+        match version {
+            BeaconRPCVersion::V1_1 => Self {
+                get_block_header: "eth/v1/beacon/headers".to_string(),
+                get_block: "eth/v2/beacon/blocks".to_string(),
+                get_light_client_update: "eth/v1/beacon/light_client/updates".to_string(),
+                get_light_client_finality_update: "eth/v1/beacon/light_client/finality_update/"
+                    .to_string(),
+                get_bootstrap: "eth/v1/beacon/light_client/bootstrap".to_string(),
+                get_state: "eth/v2/debug/beacon/states".to_string(),
+            },
+            BeaconRPCVersion::V1_2 => Self {
+                get_block_header: "eth/v1/beacon/headers".to_string(),
+                get_block: "eth/v2/beacon/blocks".to_string(),
+                get_light_client_update: "eth/v1/beacon/light_client/updates".to_string(),
+                get_light_client_finality_update: "eth/v1/beacon/light_client/finality_update"
+                    .to_string(),
+                get_bootstrap: "eth/v1/beacon/light_client/bootstrap".to_string(),
+                get_state: "eth/v2/debug/beacon/states".to_string(),
+            },
         }
     }
 }
@@ -57,7 +71,7 @@ pub struct BeaconRPCClient {
     endpoint_url: String,
     client: Client,
     client_state_request: Client,
-    routes: RPCRoutes,
+    routes: BeaconRPCRoutes,
 }
 
 impl BeaconRPCClient {
@@ -65,7 +79,12 @@ impl BeaconRPCClient {
     const EPOCHS_PER_PERIOD: u64 = 256;
 
     /// Creates `BeaconRPCClient` for the given BeaconAPI `endpoint_url`
-    pub fn new(endpoint_url: &str, timeout_seconds: u64, timeout_state_seconds: u64) -> Self {
+    pub fn new(
+        endpoint_url: &str,
+        timeout_seconds: u64,
+        timeout_state_seconds: u64,
+        version: Option<BeaconRPCVersion>,
+    ) -> Self {
         Self {
             endpoint_url: endpoint_url.to_string(),
             client: reqwest::blocking::Client::builder()
@@ -76,7 +95,7 @@ impl BeaconRPCClient {
                 .timeout(Duration::from_secs(timeout_state_seconds))
                 .build()
                 .expect("Error on building blocking client for state request."),
-            routes: RPCRoutes::new(),
+            routes: BeaconRPCRoutes::new(version.unwrap_or(BeaconRPCVersion::V1_1)),
         }
     }
 
@@ -569,7 +588,8 @@ mod tests {
             "{}/eth/v2/beacon/blocks/{}",
             config.beacon_endpoint, config.first_slot
         );
-        let beacon_rpc_client = BeaconRPCClient::new(&url, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS);
+        let beacon_rpc_client =
+            BeaconRPCClient::new(&url, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS, None);
         let rpc_json_str = beacon_rpc_client.get_json_from_raw_request(&url);
         assert_eq!(rpc_json_str.unwrap(), file_json_str.trim());
     }
@@ -582,6 +602,7 @@ mod tests {
             &config.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         )
         .get_beacon_block_body_for_block_id(&config.first_slot.to_string())
         .unwrap();
@@ -589,6 +610,7 @@ mod tests {
             &config.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         )
         .get_beacon_block_header_for_block_id(&config.first_slot.to_string())
         .unwrap();
@@ -601,6 +623,7 @@ mod tests {
             &config.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         )
         .get_beacon_block_header_for_block_id(&format!("{}", config.first_slot))
         .unwrap();
@@ -643,6 +666,7 @@ mod tests {
             &config.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         )
         .get_beacon_block_body_for_block_id(&config.first_slot.to_string())
         .unwrap();
@@ -668,7 +692,8 @@ mod tests {
         assert!(!BeaconRPCClient::new(
             "https://lodestar-goerli.chainsafe.io",
             TIMEOUT_SECONDS,
-            TIMEOUT_STATE_SECONDS
+            TIMEOUT_STATE_SECONDS,
+            None
         )
         .is_syncing()
         .unwrap());
@@ -715,6 +740,7 @@ mod tests {
             &config.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
         let file_json_str = std::fs::read_to_string(&config.path_to_light_client_update)
             .expect("Unable to read file");

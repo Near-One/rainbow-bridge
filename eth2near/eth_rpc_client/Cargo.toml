@@ -34,7 +34,3 @@ prometheus = { version = "0.9", features = ["process"] }
 lazy_static = "1.4"
 warp = "0.2"
 thread = "*"
-
-[features]
-beacon_rpc_v1_1 = []
-beacon_rpc_v1_2 = []
