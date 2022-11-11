@@ -1,7 +1,8 @@
+use near_plugins::{Ownable, Pausable};
+use near_plugins_derive::pause;
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use admin_controlled::Mask;
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -9,16 +10,16 @@ use eth2_utility::consensus::*;
 use eth2_utility::types::*;
 use eth_types::eth2::*;
 use eth_types::{BlockHeader, H256};
+use near_sdk::collections::LazyOption;
 use near_sdk::collections::{LookupMap, UnorderedMap};
 use near_sdk::{assert_self, env, near_bindgen, require, AccountId, PanicOnDefault};
-use near_sdk_inner::collections::LazyOption;
-use near_sdk_inner::{Balance, BorshStorageKey, Promise};
+use near_sdk::{Balance, BorshStorageKey, Promise};
 use tree_hash::TreeHash;
 
 #[cfg(test)]
 mod tests;
 
-const PAUSE_SUBMIT_UPDATE: Mask = 1;
+pub type Mask = u128;
 
 #[derive(BorshSerialize, BorshStorageKey)]
 enum StorageKey {
@@ -31,11 +32,12 @@ enum StorageKey {
 }
 
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Ownable, Pausable)]
 pub struct Eth2Client {
     /// If set, only light client updates by the trusted signer will be accepted
     trusted_signer: Option<AccountId>,
     /// Mask determining all paused functions
+    #[deprecated]
     paused: Mask,
     /// Whether the client validates the updates.
     /// Should only be set to `false` for debugging, testing, and diagnostic purposes
@@ -106,7 +108,8 @@ impl Eth2Client {
             submitter: env::predecessor_account_id(),
         };
 
-        Self {
+        #[allow(deprecated)]
+        let mut contract = Self {
             trusted_signer: args.trusted_signer,
             paused: Mask::default(),
             validate_updates: args.validate_updates,
@@ -131,7 +134,10 @@ impl Eth2Client {
                 StorageKey::NextSyncCommittee,
                 Some(&args.next_sync_committee),
             ),
-        }
+        };
+
+        contract.owner_set(Some(env::predecessor_account_id()));
+        contract
     }
 
     #[result_serializer(borsh)]
@@ -244,6 +250,7 @@ impl Eth2Client {
         self.max_submitted_blocks_by_account
     }
 
+    #[pause(except(owner, self))]
     pub fn submit_beacon_chain_light_client_update(
         &mut self,
         #[serializer(borsh)] update: LightClientUpdate,
@@ -570,7 +577,11 @@ impl Eth2Client {
     /// Remove information about the headers that are at least as old as the given block number.
     fn gc_finalized_execution_blocks(&mut self, mut header_number: u64) {
         loop {
-            if self.finalized_execution_blocks.remove(&header_number).is_some() {
+            if self
+                .finalized_execution_blocks
+                .remove(&header_number)
+                .is_some()
+            {
                 if header_number == 0 {
                     break;
                 } else {
@@ -603,8 +614,6 @@ impl Eth2Client {
     }
 
     fn is_light_client_update_allowed(&self) {
-        self.check_not_paused(PAUSE_SUBMIT_UPDATE);
-
         if let Some(trusted_signer) = &self.trusted_signer {
             require!(
                 &env::predecessor_account_id() == trusted_signer,
@@ -613,5 +622,3 @@ impl Eth2Client {
         }
     }
 }
-
-admin_controlled::impl_admin_controlled!(Eth2Client, paused);

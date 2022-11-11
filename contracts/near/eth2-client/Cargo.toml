@@ -14,10 +14,11 @@ eth2-utility =  { path = "../eth2-utility" }
 tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
 merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
 bls = { git = "https://github.com/aurora-is-near/lighthouse.git", optional = true, rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec", default-features = false, features = ["milagro"]}
-admin-controlled =  { path = "../admin-controlled" }
 near-sdk = "4.0.0"
 borsh = "0.9.3"
 bitvec = "1.0.0"
+near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", rev = "5579de43c28984d00fa9aebc0a8e755258bba6c2" }
+near-plugins-derive = { git = "https://github.com/aurora-is-near/near-plugins", rev = "5579de43c28984d00fa9aebc0a8e755258bba6c2" }
 
 [dev-dependencies]
 lazy_static = "1.4.0"

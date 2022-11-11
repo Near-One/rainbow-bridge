@@ -1,17 +1,11 @@
 #[cfg(test)]
 mod tests {
     use crate::tests::utils::*;
-    use crate::{Eth2Client, PAUSE_SUBMIT_UPDATE};
-    use admin_controlled::AdminControlled;
-    use bitvec::bitarr;
-    use bitvec::order::Lsb0;
-    use eth2_utility::consensus::*;
+    use crate::Eth2Client;
     use eth_types::eth2::LightClientUpdate;
-    use eth_types::{BlockHeader, H256, U256};
-    use hex::FromHex;
-    use near_sdk::test_utils::{accounts, VMContextBuilder};
-    use near_sdk::{testing_env, VMConfig};
-    use tree_hash::TreeHash;
+    use eth_types::BlockHeader;
+    use near_sdk::test_utils::VMContextBuilder;
+    use near_sdk::{testing_env, AccountId, VMConfig};
 
     macro_rules! inner_set_env {
         ($builder:ident) => {
@@ -44,8 +38,16 @@ mod tests {
         updates: &'a Vec<LightClientUpdate>,
     }
 
+    fn eth2_client_account() -> AccountId {
+        "eth2-client.near".parse().unwrap()
+    }
+
     pub fn get_test_context(init_options: Option<InitOptions>) -> TestContext<'static> {
         let (headers, updates, init_input) = get_test_data(init_options);
+        set_env!(
+            current_account_id: eth2_client_account(),
+            predecessor_account_id: eth2_client_account(),
+        );
         let contract = Eth2Client::init(init_input);
         assert_eq!(contract.last_block_number(), headers[0].number);
 
@@ -70,6 +72,14 @@ mod tests {
     #[cfg(not(feature = "mainnet"))]
     mod generic_tests {
         use super::*;
+        use bitvec::order::Lsb0;
+        use bitvec::bitarr;
+        use near_sdk::test_utils::accounts;
+        use eth2_utility::consensus::*;
+        use eth_types::{H256, U256};
+        use near_plugins::Pausable;
+        use tree_hash::TreeHash;
+        use hex::FromHex;
 
         #[test]
         pub fn test_header_root() {
@@ -424,8 +434,8 @@ mod tests {
                 headers: _,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0), current_account_id: accounts(0));
-            contract.set_paused(PAUSE_SUBMIT_UPDATE);
+            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: eth2_client_account(), current_account_id: eth2_client_account());
+            contract.pa_pause_feature("submit_beacon_chain_light_client_update".to_string());
             set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(1), current_account_id: accounts(0));
             contract.submit_beacon_chain_light_client_update(updates[1].clone());
         }

@@ -1024,7 +1024,6 @@ dependencies = [
 name = "eth2-client"
 version = "0.1.0"
 dependencies = [
- "admin-controlled",
  "anyhow",
  "bitvec 1.0.0",
  "bls",
@@ -1035,6 +1034,8 @@ dependencies = [
  "hex 0.4.2",
  "lazy_static",
  "merkle_proof",
+ "near-plugins",
+ "near-plugins-derive",
  "near-sdk",
  "near-units",
  "serde_json",
