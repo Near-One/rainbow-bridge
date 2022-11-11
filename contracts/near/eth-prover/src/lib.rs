@@ -1,5 +1,6 @@
-use admin_controlled::Mask;
-use borsh::{BorshDeserialize, BorshSerialize};
+use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_plugins::{Ownable, Pausable};
+use near_plugins_derive::pause;
 use eth_types::*;
 use near_sdk::{env, ext_contract, near_bindgen, Gas, PanicOnDefault, PromiseOrValue};
 use rlp::Rlp;
@@ -12,10 +13,13 @@ const BLOCK_HASH_SAFE_GAS: Gas = Gas(10_000_000_000_000);
 /// Gas to call on_block_hash
 const ON_BLOCK_HASH_GAS: Gas = Gas(5_000_000_000_000);
 
+pub type Mask = u128;
+
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Ownable, Pausable)]
 pub struct EthProver {
     bridge_smart_contract: AccountId,
+    #[deprecated]
     paused: Mask,
 }
 
@@ -46,17 +50,19 @@ fn get_vec(data: &Rlp, pos: usize) -> Vec<u8> {
     data.at(pos).unwrap().as_val::<Vec<u8>>().unwrap()
 }
 
-const PAUSE_VERIFY: Mask = 1;
-
 #[near_bindgen]
 impl EthProver {
     #[init]
     #[private]
     pub fn init(#[serializer(borsh)] bridge_smart_contract: AccountId) -> Self {
-        Self {
+        #[allow(deprecated)]
+        let mut contract = Self {
             bridge_smart_contract,
             paused: Mask::default(),
-        }
+        };
+
+        contract.owner_set(Some(near_sdk::env::predecessor_account_id()));
+        contract
     }
 
     /// Implementation of the callback when the EthClient returns data.
@@ -95,6 +101,7 @@ impl EthProver {
             .into()
     }
 
+    #[pause(except(owner, self))]
     #[result_serializer(borsh)]
     pub fn verify_log_entry(
         &self,
@@ -106,7 +113,6 @@ impl EthProver {
         #[serializer(borsh)] proof: Vec<Vec<u8>>,
         #[serializer(borsh)] skip_bridge_call: bool,
     ) -> PromiseOrValue<bool> {
-        self.check_not_paused(PAUSE_VERIFY);
         let log_entry: LogEntry = rlp::decode(log_entry_data.as_slice()).unwrap();
         let receipt: Receipt = rlp::decode(receipt_data.as_slice()).unwrap();
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
@@ -246,8 +252,6 @@ impl EthProver {
         self.bridge_smart_contract = bridge;
     }
 }
-
-admin_controlled::impl_admin_controlled!(EthProver, paused);
 
 #[cfg(test)]
 mod tests;

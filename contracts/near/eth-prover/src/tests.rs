@@ -5,6 +5,7 @@ mod tests {
     use near_sdk::PromiseOrValue;
     use rlp::RlpStream;
     use serde::{Deserialize, Deserializer};
+    use near_sdk::borsh;
 
     #[derive(Debug)]
     struct Hex(pub Vec<u8>);

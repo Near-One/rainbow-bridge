@@ -8,23 +8,22 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-wee_alloc = { version = "0.4.5", default-features = false, features = [] }
 eth-types =  { path = "../eth-types", default-features = false }
-admin-controlled =  { path = "../admin-controlled" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 near-sdk = "4.0.0"
-borsh = "0.9.3"
 rlp = "0.4.2"
 hex = "0.4.2"
+near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", rev = "5579de43c28984d00fa9aebc0a8e755258bba6c2" }
+near-plugins-derive = { git = "https://github.com/aurora-is-near/near-plugins", rev = "5579de43c28984d00fa9aebc0a8e755258bba6c2" }
 
 [dev-dependencies]
 hex = "0.4.2"
 indicatif = "0.14"
 lazy_static = "*"
-near-crypto = { git = "https://github.com/nearprotocol/nearcore.git" }
-near-primitives = { git = "https://github.com/nearprotocol/nearcore.git" }
-near-runtime-standalone = { git = "https://github.com/nearprotocol/nearcore.git" }
+near-crypto = "0.14.0"
+near-primitives = "0.14.0"
+workspaces = "0.6.0"
 
 [features]
 default = ["eip1559"]

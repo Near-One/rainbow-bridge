@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use borsh::{BorshDeserialize, BorshSerialize};
+use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use eth_types::*;
 use hex::FromHex;
 use near_crypto::{InMemorySigner, KeyType, Signer};
