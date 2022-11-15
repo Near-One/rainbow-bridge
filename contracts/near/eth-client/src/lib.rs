@@ -1,9 +1,10 @@
-use admin_controlled::Mask;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
 use near_sdk::collections::UnorderedMap;
 use near_sdk::{assert_self, AccountId};
 use near_sdk::{env, near_bindgen, PanicOnDefault};
+use near_plugins::{Ownable, Pausable};
+use near_plugins_derive::pause;
 
 #[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
@@ -59,10 +60,10 @@ pub struct HeaderInfo {
     pub number: u64,
 }
 
-const PAUSE_ADD_BLOCK_HEADER: Mask = 1;
+pub type Mask = u128;
 
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Ownable, Pausable)]
 pub struct EthClient {
     /// Whether client validates the PoW when accepting the header. Should only be set to `false`
     /// for debugging, testing, diagnostic purposes when used with Ganache or in PoA testnets
@@ -102,6 +103,7 @@ pub struct EthClient {
     /// others will be immediately rejected, used in PoA testnets
     trusted_signer: Option<AccountId>,
     /// Mask determining all paused functions
+    #[deprecated]
     paused: Mask,
 }
 
@@ -122,6 +124,7 @@ impl EthClient {
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
         let header_hash = header.hash.unwrap().clone();
         let header_number = header.number;
+        #[allow(deprecated)]
         let mut res = Self {
             validate_ethash,
             dags_start_epoch,
@@ -150,6 +153,8 @@ impl EthClient {
                 number: header_number,
             },
         );
+
+        res.owner_set(Some(near_sdk::env::predecessor_account_id()));
         res
     }
 
@@ -198,6 +203,7 @@ impl EthClient {
     /// Add the block header to the client.
     /// `block_header` -- RLP-encoded Ethereum header;
     /// `dag_nodes` -- dag nodes with their merkle proofs.
+    #[pause(except(owner, self))]
     #[result_serializer(borsh)]
     pub fn add_block_header(
         &mut self,
@@ -205,7 +211,6 @@ impl EthClient {
         #[serializer(borsh)] dag_nodes: Vec<DoubleNodeWithMerkleProof>,
     ) {
         env::log_str("Add block header");
-        self.check_not_paused(PAUSE_ADD_BLOCK_HEADER);
         let header: BlockHeader = rlp::decode(block_header.as_slice()).unwrap();
 
         if let Some(trusted_signer) = &self.trusted_signer {
@@ -454,5 +459,3 @@ impl EthClient {
         (H256(pair.0), H256(pair.1))
     }
 }
-
-admin_controlled::impl_admin_controlled!(EthClient, paused);

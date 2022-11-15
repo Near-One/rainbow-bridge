@@ -171,7 +171,7 @@ fn get_context() -> VMContext {
         signer_account_pk: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
             .parse()
             .unwrap(),
-        predecessor_account_id: "carol.near".parse().unwrap(),
+        predecessor_account_id: "alice.near".parse().unwrap(),
         input: vec![],
         block_index: 0,
         block_timestamp: 0,
