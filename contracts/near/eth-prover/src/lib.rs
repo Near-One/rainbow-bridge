@@ -1,7 +1,7 @@
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use eth_types::*;
 use near_plugins::{Ownable, Pausable};
 use near_plugins_derive::pause;
-use eth_types::*;
+use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::{env, ext_contract, near_bindgen, Gas, PanicOnDefault, PromiseOrValue};
 use rlp::Rlp;
 

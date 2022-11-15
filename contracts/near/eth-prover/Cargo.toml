@@ -22,8 +22,9 @@ hex = "0.4.2"
 indicatif = "0.14"
 lazy_static = "*"
 near-crypto = "0.14.0"
-near-primitives = "0.14.0"
+near-primitives = "0.15.0"
 workspaces = "0.6.0"
+tokio = { version = "1.18.1", features = ["full"] }
 
 [features]
 default = ["eip1559"]
