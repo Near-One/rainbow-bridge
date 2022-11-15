@@ -28,6 +28,12 @@ jobs:
               fi
             timeout-minutes: 40
 
+          - job-name: test eth-prover
+            cmd: |
+              cd contracts/near/eth-prover
+              ./test.sh
+            timeout-minutes: 20
+
           - job-name: test eth-client
             cmd: |
               cd contracts/near/eth-client
