@@ -95,7 +95,7 @@ impl BeaconRPCClient {
                 .timeout(Duration::from_secs(timeout_state_seconds))
                 .build()
                 .expect("Error on building blocking client for state request."),
-            routes: BeaconRPCRoutes::new(version.unwrap_or(BeaconRPCVersion::V1_1)),
+            routes: BeaconRPCRoutes::new(version.unwrap_or(BeaconRPCVersion::V1_2)),
         }
     }
 

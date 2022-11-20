@@ -185,7 +185,7 @@ mod tests {
             max_submitted_blocks_by_account: Some(8000),
             trusted_signer_account_id: Some(eth_client_contract.get_signer_account_id().to_string()),
             init_block_root: None,
-            beacon_rpc_version: BeaconRPCVersion::V1_1,
+            beacon_rpc_version: BeaconRPCVersion::V1_2,
         }
     }
 

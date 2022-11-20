@@ -203,7 +203,7 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
         sleep_time_after_submission_secs: 5,
         hashes_gc_threshold: None,
         max_submitted_blocks_by_account: None,
-        beacon_rpc_version: BeaconRPCVersion::V1_1,
+        beacon_rpc_version: BeaconRPCVersion::V1_2,
     }
 }
 
@@ -228,7 +228,7 @@ fn get_init_config(
         max_submitted_blocks_by_account: Some(8000),
         trusted_signer_account_id: Some(eth_client_contract.get_signer_account_id().to_string()),
         init_block_root: None,
-        beacon_rpc_version: BeaconRPCVersion::V1_1,
+        beacon_rpc_version: BeaconRPCVersion::V1_2,
     }
 }
 
