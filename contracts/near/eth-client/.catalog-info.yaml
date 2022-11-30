@@ -17,5 +17,6 @@ spec:
   system: bridge-protocol
   deployedAt:
     - contract:near/mainnet/client.bridge.near
+    - contract:near/mainnet/client-eth2.bridge.near
   interactsWith:
     - relayer:near/mainnet/relayer.bridge.near
