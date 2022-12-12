@@ -65,6 +65,9 @@ pub struct Config {
     // Timeout for ETH RPC get status requests in seconds
     pub state_requests_timeout_seconds: u64,
 
+    // Timeout for NEAR RPC requests in seconds
+    pub near_requests_timeout_seconds: u64,
+
     // Sleep time in seconds when ETH client is synchronized with ETH network
     pub sleep_time_on_sync_secs: u64,
 
