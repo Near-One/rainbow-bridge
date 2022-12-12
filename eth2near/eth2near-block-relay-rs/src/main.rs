@@ -48,6 +48,9 @@ fn get_eth_contract_wrapper(config: &Config) -> Box<dyn ContractWrapper> {
         &config.signer_account_id,
         &config.path_to_signer_secret_key,
         &config.contract_account_id,
+        Some(std::time::Duration::from_secs(
+            config.near_requests_timeout_seconds,
+        )),
     ))
 }
 
@@ -59,6 +62,9 @@ fn get_dao_contract_wrapper(config: &Config) -> Box<dyn ContractWrapper> {
         &config.signer_account_id,
         &config.path_to_signer_secret_key,
         &dao_contract_account_id.unwrap(),
+        Some(std::time::Duration::from_secs(
+            config.near_requests_timeout_seconds,
+        )),
     ))
 }
 

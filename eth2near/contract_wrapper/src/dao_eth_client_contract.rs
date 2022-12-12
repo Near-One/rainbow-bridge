@@ -174,6 +174,7 @@ mod tests {
             &signer_account_id,
             &signer_private_key,
             CONTRACT_ACCOUNT_ID,
+            None,
         ));
 
         let eth_client = eth_client_contract::EthClientContract::new(near_contract_wrapper);
@@ -235,6 +236,7 @@ mod tests {
                 &signer_account_id,
                 &signer_private_key,
                 DAO_CONTRACT_ACCOUNT_ID,
+                None,
             );
         let dao_contract = dao_contract::DAOContract::new(Box::new(dao_contract_wrapper));
         let mut dao_client =

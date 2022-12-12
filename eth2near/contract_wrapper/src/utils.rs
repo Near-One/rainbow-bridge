@@ -9,3 +9,17 @@ pub fn trim_quotes(s: String) -> String {
 
     res_str
 }
+
+pub fn new_near_rpc_client(timeout: Option<std::time::Duration>) -> reqwest::Client {
+    let mut headers = reqwest::header::HeaderMap::with_capacity(2);
+    headers.insert(
+        reqwest::header::CONTENT_TYPE,
+        reqwest::header::HeaderValue::from_static("application/json"),
+    );
+
+    let mut builder = reqwest::Client::builder().default_headers(headers);
+    if let Some(timeout) = timeout {
+        builder = builder.timeout(timeout);
+    }
+    builder.build().unwrap()
+}
