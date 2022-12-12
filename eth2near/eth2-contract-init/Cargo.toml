@@ -1,0 +1,26 @@
+[package]
+name = "eth2-contract-init"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
+merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
+eth2_to_near_relay = { path = "../eth2near-block-relay-rs"}
+eth_rpc_client = { path = "../eth_rpc_client" }
+eth-types = { path = "../../contracts/near/eth-types/", features = ["eip1559"]}
+eth2-utility  = { path = "../../contracts/near/eth2-utility" }
+contract_wrapper = { path = "../contract_wrapper" }
+log = { version = "0.4", features = ["std", "serde"] }
+clap = { version = "3.1.6", features = ["derive"] }
+reqwest = { version = "0.11", features = ["blocking"] }
+serde_json = "1.0.74"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.5.9"
+near-sdk = "4.0.0"
+near-primitives = "0.14.0"
+eth2near-logger = { path = "../logger" }
+
+[dev-dependencies]
+workspaces = "0.5.0"
+tokio = { version = "1.1", features = ["macros", "rt", "time"] }

@@ -10,7 +10,7 @@ pub struct SimpleLogger {
 
 impl SimpleLogger {
     pub fn new(path: String) -> Self {
-        let file = File::create(path).unwrap();
+        let file = File::create(path).expect("Error on log file creation");
         Self {
             file: AtomicRefCell::new(file),
         }

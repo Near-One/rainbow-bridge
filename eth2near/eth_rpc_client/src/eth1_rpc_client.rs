@@ -80,22 +80,28 @@ impl Eth1RPCClient {
 
 #[cfg(test)]
 mod tests {
+    use crate::config_for_tests::ConfigForTests;
     use crate::eth1_rpc_client::Eth1RPCClient;
 
-    const TEST_BEACON_BLOCK_ID: u32 = 766535;
-    const ETH1_ENDPOINT: &str = "https://rpc.kiln.themerge.dev";
+    fn get_test_config() -> ConfigForTests {
+        ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
+    }
 
     #[test]
     fn test_smoke_get_block_by_number() {
-        let eth1_rpc_client = Eth1RPCClient::new(ETH1_ENDPOINT);
+        let config = get_test_config();
+
+        let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
         eth1_rpc_client
-            .get_block_header_by_number(TEST_BEACON_BLOCK_ID.into())
+            .get_block_header_by_number(config.eth1_number)
             .unwrap();
     }
 
     #[test]
     fn test_is_syncing() {
-        let eth1_rpc_client = Eth1RPCClient::new(ETH1_ENDPOINT);
+        let config = get_test_config();
+
+        let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
         assert!(!eth1_rpc_client.is_syncing().unwrap());
     }
 }

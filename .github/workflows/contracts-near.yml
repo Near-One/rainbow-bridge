@@ -58,11 +58,25 @@ jobs:
               ./test.sh
             timeout-minutes: 20
 
+          - job-name: test eth2near/eth2-contract-init
+            cmd: |
+              cd eth2near/eth2-contract-init
+              ./test.sh
+            timeout-minutes: 20
+
+          - job-name: test eth2near/eth_rpc_client
+            cmd: |
+              cd eth2near/eth_rpc_client
+              ./test.sh
+            timeout-minutes: 20
+
     name: ${{ matrix.job-name }}
     steps:
       - name: Clone the repository
         uses: actions/checkout@v2
 
       - name: Execute
+        env:
+          ETH1_INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }} 
         run: ${{ matrix.cmd }}
         timeout-minutes: ${{ matrix.timeout-minutes }}

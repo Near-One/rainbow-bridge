@@ -1,4 +1,4 @@
-use crate::dao_types::*;
+use crate::dao_types;
 use eth_types::eth2::LightClientUpdate;
 use near_primitives::views::FinalExecutionOutcomeView;
 use near_sdk::borsh::BorshSerialize;
@@ -6,17 +6,21 @@ use near_sdk::json_types::Base64VecU8;
 use near_sdk::{AccountId, Gas};
 use serde_json::json;
 use std::error::Error;
-
 use crate::contract_wrapper_trait::ContractWrapper;
+
+/// Implementation for interaction with DAO Contract on NEAR.
 pub struct DAOContract {
+    /// Wrapper for interacting with NEAR Contract
     pub contract_wrapper: Box<dyn ContractWrapper>,
 }
 
 impl DAOContract {
+    /// Constructor for DAOContract
     pub fn new(contract_wrapper: Box<dyn ContractWrapper>) -> Self {
         DAOContract { contract_wrapper }
     }
 
+    /// Gets last proposal ID in DAO contract
     pub fn get_last_proposal_id(&self) -> Result<u64, Box<dyn Error>> {
         let response = self
             .contract_wrapper
@@ -25,7 +29,8 @@ impl DAOContract {
         Ok(serde_json::from_slice(response.as_slice())?)
     }
 
-    pub fn get_proposal(&self, id: u64) -> Result<ProposalOutput, Box<dyn Error>> {
+    /// Gets the proposal for a given proposal ID
+    pub fn get_proposal(&self, id: u64) -> Result<dao_types::ProposalOutput, Box<dyn Error>> {
         let response = self.contract_wrapper.call_view_function(
             "get_proposal".to_string(),
             json!({ "id": id }).to_string().into_bytes(),
@@ -34,7 +39,8 @@ impl DAOContract {
         Ok(serde_json::from_slice(response.as_slice())?)
     }
 
-    pub fn get_policy(&self) -> Result<Policy, Box<dyn Error>> {
+    /// Gets policy of the DAO contract
+    pub fn get_policy(&self) -> Result<dao_types::Policy, Box<dyn Error>> {
         let response = self
             .contract_wrapper
             .call_view_function("get_policy".to_string(), json!({}).to_string().into_bytes())?;
@@ -42,9 +48,10 @@ impl DAOContract {
         Ok(serde_json::from_slice(response.as_slice())?)
     }
 
+    /// Submits a new proposal to the DAO contract
     pub fn add_proposal(
         &mut self,
-        proposal: ProposalInput,
+        proposal: dao_types::ProposalInput,
     ) -> Result<(u64, FinalExecutionOutcomeView), Box<dyn Error>> {
         let policy = self.get_policy()?;
         let response = self.contract_wrapper.call_change_method(
@@ -69,10 +76,11 @@ impl DAOContract {
         ))
     }
 
+    /// Votes for a specific `Action` in the `Proposal` with the given ID
     pub fn act_proposal(
         &self,
         id: u64,
-        action: Action,
+        action: dao_types::Action,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
         self.contract_wrapper.call_change_method(
             "act_proposal".to_string(),
@@ -84,30 +92,35 @@ impl DAOContract {
         )
     }
 
+    /// Submits Light Client Update to DAO
+    ///
+    /// # Arguments
+    /// * `receiver_id` - account ID of the Ethereum Light Client Contract on NEAR.
+    /// * `update` - Light Client Update.
     pub fn submit_light_client_update_proposal(
         &mut self,
         receiver_id: AccountId,
         update: LightClientUpdate,
     ) -> Result<(u64, FinalExecutionOutcomeView), Box<dyn Error>> {
-        let raw_update = update.try_to_vec().unwrap();
+        let raw_update = update.try_to_vec()?;
         let update_hash = near_primitives::hash::hash(&raw_update);
         let args = Base64VecU8::from(raw_update);
 
         const GAS_FOR_SUBMIT_LIGHT_CLIENT_UPDATE: u64 = 270 * Gas::ONE_TERA.0;
-        let action = ActionCall {
+        let action = dao_types::ActionCall {
             method_name: "submit_beacon_chain_light_client_update".to_string(),
             args,
             deposit: 0.into(),
             gas: GAS_FOR_SUBMIT_LIGHT_CLIENT_UPDATE.into(),
         };
 
-        let proposal_input = ProposalInput {
+        let proposal_input = dao_types::ProposalInput {
             description: json!({
                 "finalized slot": update.finality_update.header_update.beacon_header.slot,
                 "update_hash": update_hash.to_string()
             })
             .to_string(),
-            kind: ProposalKind::FunctionCall {
+            kind: dao_types::ProposalKind::FunctionCall {
                 receiver_id,
                 actions: vec![action],
             },

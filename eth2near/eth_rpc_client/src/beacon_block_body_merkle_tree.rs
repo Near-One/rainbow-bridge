@@ -47,7 +47,7 @@ impl BeaconBlockBodyMerkleTree {
 /// high-level fields of the `ExecutionPayload`.
 /// The hashes of each element are produced by using `ssz` serialization.
 /// `ExecutionPayload` is one of the field in BeaconBlockBody.
-/// The hash of the root of `ExecutionPlayloadMerkleTree` is the 9th leave in BeaconBlockBody Merkle Tree.
+/// The hash of the root of `ExecutionPlayloadMerkleTree` is the 9th leaf in BeaconBlockBody Merkle Tree.
 pub struct ExecutionPayloadMerkleTree(pub MerkleTree);
 
 impl ExecutionPayloadMerkleTree {
@@ -148,7 +148,7 @@ mod tests {
     use crate::beacon_block_body_merkle_tree::{
         BeaconBlockBodyMerkleTree, ExecutionPayloadMerkleTree,
     };
-    use crate::test_utils::read_json_file_from_data_dir;
+    use crate::utils::read_json_file_from_data_dir;
     use tree_hash::TreeHash;
     use types::BeaconBlockBody;
     use types::MainnetEthSpec;

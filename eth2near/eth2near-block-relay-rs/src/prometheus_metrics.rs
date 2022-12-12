@@ -31,22 +31,26 @@ lazy_static! {
         "Fails number on Light Client Updates Submission"
     )
     .expect("metric can't be created");
-
-    pub static ref CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH: IntCounter =
-        IntCounter::new("chain_execution_block_height_on_eth",
-        "Chain execution block height on eth").expect("metric can't be created");
-
-    pub static ref CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH: IntCounter =
-        IntCounter::new("chain_finalized_execution_block_height_on_eth",
-        "Chain finalized execution block height on eth").expect("metric cann't be created");
-
-    pub static ref CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR: IntCounter =
-        IntCounter::new("chain_execution_block_height_on_near",
-        "Chain execution block height on near").expect("metric can't be created");
-
-    pub static ref CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR: IntCounter =
-        IntCounter::new("chain_finalized_execution_block_height_on_near",
-        "Chain finalized execution block height on near").expect("metric can't be created");
+    pub static ref CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH: IntCounter = IntCounter::new(
+        "chain_execution_block_height_on_eth",
+        "Chain execution block height on eth"
+    )
+    .expect("metric can't be created");
+    pub static ref CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH: IntCounter = IntCounter::new(
+        "chain_finalized_execution_block_height_on_eth",
+        "Chain finalized execution block height on eth"
+    )
+    .expect("metric cann't be created");
+    pub static ref CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR: IntCounter = IntCounter::new(
+        "chain_execution_block_height_on_near",
+        "Chain execution block height on near"
+    )
+    .expect("metric can't be created");
+    pub static ref CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR: IntCounter = IntCounter::new(
+        "chain_finalized_execution_block_height_on_near",
+        "Chain finalized execution block height on near"
+    )
+    .expect("metric can't be created");
 }
 
 fn register_custom_metrics() {
@@ -79,7 +83,9 @@ fn register_custom_metrics() {
         .expect("chain_execution_block_height_on_eth can't be registered");
 
     REGISTRY
-        .register(Box::new(CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH.clone()))
+        .register(Box::new(
+            CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH.clone(),
+        ))
         .expect("chain_finalized_execution_block_height_on_eth can't be registered");
 
     REGISTRY
@@ -87,7 +93,9 @@ fn register_custom_metrics() {
         .expect("chain_execution_block_height_on_near can't be registered");
 
     REGISTRY
-        .register(Box::new(CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR.clone()))
+        .register(Box::new(
+            CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR.clone(),
+        ))
         .expect("chain_finalized_execution_block_height_on_near can't be registered");
 }
 
@@ -128,7 +136,7 @@ pub fn run_prometheus_service(port: u16) {
 
     let metrics_route = warp::path!("metrics").and_then(metrics_handler);
 
-    let rt = Runtime::new().unwrap();
+    let rt = Runtime::new().expect("Error on creating runtime for Prometheus service");
     let handle = rt.handle();
 
     println!("Started on port {}", port);

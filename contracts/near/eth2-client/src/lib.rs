@@ -429,6 +429,18 @@ impl Eth2Client {
     ) {
         let config = NetworkConfig::new(&self.network);
         let signature_period = compute_sync_committee_period(update.signature_slot);
+
+        // Verify signature period does not skip a sync committee period
+        require!(
+            signature_period == finalized_period || signature_period == finalized_period + 1,
+            format!(
+                "The acceptable signature periods are '{}' and '{}' but got {}",
+                finalized_period,
+                finalized_period + 1,
+                signature_period
+            )
+        );
+
         // Verify sync committee aggregate signature
         let sync_committee = if signature_period == finalized_period {
             self.current_sync_committee.get().unwrap()

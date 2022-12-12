@@ -109,9 +109,10 @@ async function getAccountStatus (near, accountId) {
 async function accountExists (near, accountId) {
   const account = new nearAPI.Account(near.connection, accountId)
   try {
-    await account.fetchState()
+    await account.state()
     return true
   } catch (e) {
+    console.log(e)
     return false
   }
 }
@@ -119,7 +120,7 @@ async function accountExists (near, accountId) {
 // Checks whether the account has the key specified in the keyStore.
 async function accountHasTheKey (near, accountId) {
   const account = new nearAPI.Account(near.connection, accountId)
-  const keyStoreKey = await near.config.deps.keyStore.getKey(
+  const keyStoreKey = await near.config.keyStore.getKey(
     near.config.networkId,
     accountId
   )

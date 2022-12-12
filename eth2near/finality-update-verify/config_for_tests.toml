@@ -1,0 +1,4 @@
+path_to_current_sync_committee = "./../eth2near-block-relay-rs/data/goerli_testdata/next_sync_committee_goerli_period_473.json"
+path_to_next_sync_committee = "./../eth2near-block-relay-rs/data/goerli_testdata/next_sync_committee_goerli_period_474.json"
+path_to_light_client_updates = "./../eth2near-block-relay-rs/data/goerli_testdata/light_client_updates_goerli_slots_3885697_3886176.json"
+network_name = "goerli"

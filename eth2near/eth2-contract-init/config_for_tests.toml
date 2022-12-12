@@ -1,0 +1,4 @@
+beacon_endpoint = "https://lodestar-goerli.chainsafe.io"
+eth1_endpoint = "https://goerli.infura.io/v3/ETH1_INFURA_API_KEY"
+network_name = "Goerli"
+wasm_filepath = "../../contracts/near/res/eth2_client.wasm"
