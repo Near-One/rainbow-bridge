@@ -136,6 +136,40 @@ impl EthProver {
             .into()
     }
 
+    pub fn verify_unlock_proof(
+        &self,
+        #[serializer(borsh)] header_data: Vec<u8>,
+        #[serializer(borsh)] proof: Vec<Vec<u8>>, // merkle proof
+        #[serializer(borsh)] key: Vec<u8>,  // rlp encoded key
+        #[serializer(borsh)] processed_hash_value: Vec<u8>,  // rlp encoded bool value
+    ) -> PromiseOrValue{
+        self.check_not_paused(PAUSE_VERIFY);
+        let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
+        let key: H256 = rlp::decode(key.as_slice()).unwrap();
+        let data =
+            Self::verify_trie_proof(header.state_root, rlp::encode(&key), proof);
+        
+        let verification_result = processed_hash_value == data;
+        if verification_result {
+            return PromiseOrValue::Value(true);
+        } else {
+            return PromiseOrValue::Value(false);
+        }
+
+        // Verify block header was in the bridge
+        eth_client::ext(self.bridge_smart_contract.parse().unwrap())
+        .with_static_gas(BLOCK_HASH_SAFE_GAS)
+        .block_hash_safe(header.number)
+        .then(
+            remote_self::ext(env::current_account_id())
+                .with_static_gas(ON_BLOCK_HASH_GAS)
+                .on_block_hash(header.hash.unwrap()),
+        )
+        .into()
+
+    }
+
+
     /// Verify the proof recursively traversing through the key.
     /// Return the value at the end of the key, in case the proof is valid.
     ///
