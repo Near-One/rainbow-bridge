@@ -156,7 +156,11 @@ use near_sdk::{testing_env, VMContext};
 lazy_static! {
     static ref WEB3RS: web3::Web3<web3::transports::Http> = {
         let (eloop, transport) = web3::transports::Http::new(
-            "https://mainnet.infura.io/v3/b5f870422ee5454fb11937e947154cd2",
+            format!(
+                "https://mainnet.infura.io/v3/{}",
+                std::env::var("ETH_RPC_KEY").unwrap_or("".to_string())
+            )
+            .as_str(),
         )
         .unwrap();
         eloop.into_remote();
