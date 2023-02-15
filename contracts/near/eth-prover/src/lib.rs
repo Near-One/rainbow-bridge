@@ -52,7 +52,7 @@ const PAUSE_VERIFY: Mask = 1;
 impl EthProver {
     #[init]
     #[private]
-    pub fn init(#[serializer(borsh)] bridge_smart_contract: AccountId) -> Self {
+    pub fn init(bridge_smart_contract: AccountId) -> Self {
         Self {
             bridge_smart_contract,
             paused: Mask::default(),
@@ -138,11 +138,12 @@ impl EthProver {
 
     pub fn verify_unlock_proof(
         &self,
-        #[serializer(borsh)] header_data: Vec<u8>,
-        #[serializer(borsh)] proof: Vec<Vec<u8>>, // merkle proof
-        #[serializer(borsh)] key: Vec<u8>,  // rlp encoded key
-        #[serializer(borsh)] processed_hash_value: Vec<u8>,  // rlp encoded bool value
-    ) -> PromiseOrValue{
+        header_data: Vec<u8>,
+        proof: Vec<Vec<u8>>, // merkle proof
+        key: Vec<u8>,  // rlp encoded key
+        processed_hash_value: Vec<u8>,  // rlp encoded bool value
+        skip_bridge_call: bool
+    ) -> PromiseOrValue<bool>{
         self.check_not_paused(PAUSE_VERIFY);
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
         let key: H256 = rlp::decode(key.as_slice()).unwrap();
@@ -150,12 +151,11 @@ impl EthProver {
             Self::verify_trie_proof(header.state_root, rlp::encode(&key), proof);
         
         let verification_result = processed_hash_value == data;
-        if verification_result {
+        if verification_result && skip_bridge_call {
             return PromiseOrValue::Value(true);
-        } else {
+        } else if !verification_result {
             return PromiseOrValue::Value(false);
         }
-
         // Verify block header was in the bridge
         eth_client::ext(self.bridge_smart_contract.parse().unwrap())
         .with_static_gas(BLOCK_HASH_SAFE_GAS)
@@ -285,3 +285,4 @@ admin_controlled::impl_admin_controlled!(EthProver, paused);
 
 #[cfg(test)]
 mod tests;
+mod tests1;
