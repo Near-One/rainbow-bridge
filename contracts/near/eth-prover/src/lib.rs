@@ -52,7 +52,7 @@ const PAUSE_VERIFY: Mask = 1;
 impl EthProver {
     #[init]
     #[private]
-    pub fn init(bridge_smart_contract: AccountId) -> Self {
+    pub fn init(#[serializer(borsh)] bridge_smart_contract: AccountId) -> Self {
         Self {
             bridge_smart_contract,
             paused: Mask::default(),
@@ -138,11 +138,11 @@ impl EthProver {
 
     pub fn verify_unlock_proof(
         &self,
-        header_data: Vec<u8>,
-        proof: Vec<Vec<u8>>, // merkle proof
-        key: Vec<u8>,  // rlp encoded key
-        processed_hash_value: Vec<u8>,  // rlp encoded bool value
-        skip_bridge_call: bool
+        #[serializer(borsh)] header_data: Vec<u8>,
+        #[serializer(borsh)] proof: Vec<Vec<u8>>, // merkle proof
+        #[serializer(borsh)] key: Vec<u8>,  // rlp encoded key
+        #[serializer(borsh)] processed_hash_value: Vec<u8>,  // rlp encoded bool value
+        #[serializer(borsh)] skip_bridge_call: bool
     ) -> PromiseOrValue<bool>{
         self.check_not_paused(PAUSE_VERIFY);
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
