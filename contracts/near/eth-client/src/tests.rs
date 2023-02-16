@@ -158,7 +158,7 @@ lazy_static! {
         let (eloop, transport) = web3::transports::Http::new(
             format!(
                 "https://mainnet.infura.io/v3/{}",
-                std::env::var("ETH_RPC_KEY").unwrap_or("".to_string())
+                std::env::var("INFURA_API_KEY").unwrap_or("".to_string())
             )
             .as_str(),
         )
