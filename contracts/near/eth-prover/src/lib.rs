@@ -285,4 +285,4 @@ admin_controlled::impl_admin_controlled!(EthProver, paused);
 
 #[cfg(test)]
 mod tests;
-mod tests1;
+mod tests_unlock;
