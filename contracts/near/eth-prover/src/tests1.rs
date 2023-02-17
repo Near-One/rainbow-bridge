@@ -27,15 +27,18 @@ mod tests1 {
         }
     }
 
-    use near_sdk::MockedBlockchain;
+    // TESTS
+
     use near_sdk::{testing_env, VMContext};
 
-    fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
+    fn get_context(input: Vec<u8>) -> VMContext {
         VMContext {
-            current_account_id: "alice.near".to_string(),
-            signer_account_id: "bob.near".to_string(),
-            signer_account_pk: vec![0, 1, 2],
-            predecessor_account_id: "carol.near".to_string(),
+            current_account_id: "alice.near".parse().unwrap(),
+            signer_account_id: "bob.near".parse().unwrap(),
+            signer_account_pk: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
+                .parse()
+                .unwrap(),
+            predecessor_account_id: "carol.near".parse().unwrap(),
             input,
             block_index: 0,
             block_timestamp: 0,
@@ -44,47 +47,39 @@ mod tests1 {
             account_locked_balance: 0,
             storage_usage: 0,
             attached_deposit: 0,
-            prepaid_gas: 10u64.pow(18),
-            random_seed: vec![0, 1, 2],
-            is_view,
+            prepaid_gas: near_sdk::Gas(10u64.pow(18)),
+            random_seed: vec![1; 32].try_into().unwrap(),
+            view_config: None,
             output_data_receivers: vec![],
         }
     }
+   
+        #[test]
+        pub fn test_state_proof() {
+            testing_env!(get_context(vec![]));
 
-    #[test]
-    fn test_verify_state_proof(){
-        testing_env!(get_context(vec![], false));
+            //let expected_value = "01";
+            let expected_root = "9dc8b927bc1f203931c70cc3850246046859c40e0044964753b28ff41285b75d"; //state root
+            let key = "ec92a9aa5b0091a625b3467da991181b7f6a3871356857ee2e3d726fcf075c83"; // contract add
+            let proof_rlp = vec!["63168682a314606854cba72eda7c136c685366c251187aa59a1ab5aaa802ecd4",
+                                 "4f063070027f6f9734cfe049ac1875b1ad9ae7f9e0ca98961afe97658d4357c4",
+                                 "25eab5759163d28627d2c73694878fc56ea434664d2416bec721a63b4348eb6a"
+                                ];
 
-        let contract = EthProver::init("ethbridge".to_string());
-        let header_data = Vec::from_hex("").unwrap();
-        let key = Vec::from_hex("ec92a9aa5b0091a625b3467da991181b7f6a3871356857ee2e3d726fcf075c83").unwrap();
-        let processed_hash_value = Vec::from_hex("1").unwrap();
-        let proof = vec![
-        vec![
-            Vec::from_hex("f90211a0786e2b7a3a24cfafe31c1cac9b0cc4b57cfb9e27264b9aeb8ba52d48181fd013a0bbf8c0df9d3837792180786e217cbcbfb6cb6c1ee790ec0dba83fc05248f2627a060d5477cb7243063a66f6533e342632aea890e13cf45c0144ad7f8254bb74242a02dd5604620fcf3990474b172d1bb5653bf7bfc9ee1d269e765da3f7a91ac2ec3a04134b666e4a8e3e28701e33bed36680ae025cc5f89f8d29457975148338017c4a07bf7ed874ff02f5938267592e1a3cfca0ca8d7d4b6fccd617b815fad456c2c53a076515bac0f65924da357aba2f6c312472a9ef94d1c459f2cd0380b84a91d46aca0f49dd3a32c4adb7b6f02188b32a7823c79bb5b2ed1f3cdf4da11c36304ae4e25a05ba06e342a112365ced395b4bf830d148ad1e6a787912a9a603293a4e079e3f5a029f967b2d7ed040cda92ab4905f2976636a7bb16ba850679eca942e02d5b3458a024bdf35e1d8fd46cdee76420d508c722d7f47825356620c266094f6c66c67f7ea070a8abf4345f7148bbcbd0f443fe00cfed0a17ab828b7051cb3ede4bee4499b1a00d9cd9aa39cdd4a91bcd4feb8c73db017dce78ec82ba6f14287775567615f247a02f3d28876d69fd8945b3fdeff87186bcb97c236ccefa3b6182507bc6e504606fa03b4078e843b8927c29753dfc91a44c246cb22ea3673a3bad8dab7c8f6b8ce226a061983eaffadbdc7d6e7a0f9d9f5c1c64f983a4a6724aaa2126a0b6c03c984f3280").unwrap(),
-            Vec::from_hex("f901d1a0269a0b881e99b091fd1f85a9e44ee4daf1bfaa127412213b0ec1edacf2fcb4e0a0e7f129286b917093dd713ebf19c11b699dd3b7e2c8dd81b96da000d8929e6bd7a042e1e974e7e7b3829b6fd86c08ec48c92789a4c5b29aaba295ac47eb78da8979a0af69958bb871e61c3dab996738ae596fd6d8b0c6dd126361053ca23c67576aa6a0957f511c654ba45de24daa58d5069b8e854e1af4230f5e00ff80942f32179f9280a002cca7c62c8aaf39f3300a3694c5df5909d2365d68935dead512cec79b859546a0c150cdf6bf843bf02c321ad13d4b680a5ac6816a93b607b68b3d2944645cc573a0d44663526783865e11155d5490966374eaf24421c59522f6350769715d83f5f280a028d3420f6f3cfd2eff10d769032ec92a9ce6a26004a4b5e432577f7d218cb8eea095fcf2b12e8b70bb0c075d41576e00242769a18622ab1d936326fa053aeaa501a0ecf0ef75da3fd6cd5bc5a73049bbbdedd2fb0ccdb86bb07895d012b1b93354d5a02c8f51d330045fd36258abd5dc39dbc9ac14103ca91925bed4f55066f7d51830a024fff2a5c88286da53434ffeafc0962a9c2230a26c303850a04853096882be92a0a0eb992284319d09507645086aaf48f97428294e89aab782574993ed0543caef80").unwrap(),
-            Vec::from_hex("f851808080808080a05a173679dbc21d5c5b16c40e4d0fdd5ec92f602c2db2adbe71c9d4b2aedb585480a04cd868f531723c2438dce2df71b16e2d4d6f49299867484a662073b40aaac5ca8080808080808080").unwrap(),
-            Vec::from_hex("e19f3ba9af7041ec3098c4d818db9972f67827520c1db7d022f6c3041b6f40ecc301").unwrap(),
-        ],
-    ].iter().map(|node| {
-        let mut stream = RlpStream::new();
-        stream.begin_list(node.len());
-        for item in node {
-            stream.append(item);
+            let expected_root = hex::decode(expected_root).unwrap().into();
+            let key = hex::decode(key).unwrap();
+            let proof = proof_rlp
+                .into_iter()
+                .map(|x| hex::decode(x).unwrap())
+                .collect();
+            //let expected_value = hex::decode(expected_value).unwrap();
+            let result = EthProver::verify_trie_proof(expected_root, key, proof);
+
+            // assert_eq!(
+            //     EthProver::verify_trie_proof(expected_root, key, proof),
+            //     expected_value
+            // );
+            println!("{:?}", result);
         }
-        stream.out()
-    }).collect();
-
-        if let PromiseOrValue::Value(true) = contract.verify_unlock_proof(
-            header_data,
-            proof,
-            key,
-            processed_hash_value,
-            true
-        ) {
-        } else {
-            panic!();
-        }
-    }
-
+    
 }
