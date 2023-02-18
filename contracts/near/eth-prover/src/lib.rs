@@ -136,21 +136,21 @@ impl EthProver {
             .into()
     }
 
-    pub fn verify_unlock_proof(
+    #[result_serializer(borsh)]
+    pub fn verify_account_proof(
         &self,
         #[serializer(borsh)] header_data: Vec<u8>,
-        #[serializer(borsh)] proof: Vec<Vec<u8>>, // merkle proof
-        #[serializer(borsh)] key: Vec<u8>,  // rlp encoded key
-        #[serializer(borsh)] processed_hash_value: Vec<u8>,  // rlp encoded bool value
+        #[serializer(borsh)] proof: Vec<Vec<u8>>, // account proof
+        #[serializer(borsh)] key: Vec<u8>,  // keccak256 of eth address
+        #[serializer(borsh)] account_data: Vec<u8>,  // rlp encoded account state
         #[serializer(borsh)] skip_bridge_call: bool
     ) -> PromiseOrValue<bool>{
         self.check_not_paused(PAUSE_VERIFY);
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
-        let key: H256 = rlp::decode(key.as_slice()).unwrap();
         let data =
-            Self::verify_trie_proof(header.state_root, rlp::encode(&key), proof);
+            Self::verify_trie_proof(header.state_root, key, proof);
         
-        let verification_result = processed_hash_value == data;
+        let verification_result = data == account_data;
         if verification_result && skip_bridge_call {
             return PromiseOrValue::Value(true);
         } else if !verification_result {
