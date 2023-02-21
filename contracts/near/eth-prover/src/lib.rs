@@ -176,7 +176,7 @@ impl EthProver {
         #[serializer(borsh)] account_proof: Vec<Vec<u8>>, // account proof
         #[serializer(borsh)] contract_address: Vec<u8>,  // eth address
         #[serializer(borsh)] account_state: Vec<u8>,  // rlp encoded account state
-        #[serializer(borsh)] storage_hash: H256,  // storage hash
+        #[serializer(borsh)] storage_hash: Vec<u8>,  // storage hash
         #[serializer(borsh)] storage_key: Vec<u8>,  // storage key
         #[serializer(borsh)] storage_proof: Vec<Vec<u8>>,  // storage proof
         #[serializer(borsh)] value: Vec<u8>,  // storage value
@@ -190,7 +190,7 @@ impl EthProver {
         
         let verification_result = data == account_state;
         if verification_result {
-            let st_data = Self::verify_trie_proof(storage_hash, storage_key, storage_proof);
+            let st_data = Self::verify_trie_proof(H256::from(storage_hash), storage_key, storage_proof);
             let verification_result = st_data == value;
             if verification_result && skip_bridge_call{
                 return PromiseOrValue::Value(true);
