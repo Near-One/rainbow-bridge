@@ -169,6 +169,48 @@ impl EthProver {
 
     }
 
+    #[result_serializer(borsh)]
+    pub fn verify_storage_proof(
+        &self,
+        #[serializer(borsh)] header_data: Vec<u8>,
+        #[serializer(borsh)] account_proof: Vec<Vec<u8>>, // account proof
+        #[serializer(borsh)] contract_address: Vec<u8>,  // eth address
+        #[serializer(borsh)] account_state: Vec<u8>,  // rlp encoded account state
+        #[serializer(borsh)] storage_hash: H256,  // storage hash
+        #[serializer(borsh)] storage_key: Vec<u8>,  // storage key
+        #[serializer(borsh)] storage_proof: Vec<Vec<u8>>,  // storage proof
+        #[serializer(borsh)] value: Vec<u8>,  // storage value
+        #[serializer(borsh)] skip_bridge_call: bool
+    ) -> PromiseOrValue<bool>{
+        self.check_not_paused(PAUSE_VERIFY);
+        let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
+        let account_key = near_keccak256(&contract_address).to_vec();
+        let data =
+            Self::verify_trie_proof(header.state_root, account_key, account_proof);
+        
+        let verification_result = data == account_state;
+        if verification_result {
+            let st_data = Self::verify_trie_proof(storage_hash, storage_key, storage_proof);
+            let verification_result = st_data == value;
+            if verification_result && skip_bridge_call{
+                return PromiseOrValue::Value(true);
+            }
+        } else if !verification_result {
+            return PromiseOrValue::Value(false);
+        }
+        // Verify block header was in the bridge
+        eth_client::ext(self.bridge_smart_contract.parse().unwrap())
+        .with_static_gas(BLOCK_HASH_SAFE_GAS)
+        .block_hash_safe(header.number)
+        .then(
+            remote_self::ext(env::current_account_id())
+                .with_static_gas(ON_BLOCK_HASH_GAS)
+                .on_block_hash(header.hash.unwrap()),
+        )
+        .into()
+
+    }
+
 
     /// Verify the proof recursively traversing through the key.
     /// Return the value at the end of the key, in case the proof is valid.
