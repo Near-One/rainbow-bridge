@@ -175,9 +175,9 @@ impl EthProver {
         #[serializer(borsh)] header_data: Vec<u8>,
         #[serializer(borsh)] account_proof: Vec<Vec<u8>>, // account proof
         #[serializer(borsh)] contract_address: Vec<u8>,  // eth address
-        #[serializer(borsh)] account_state: Vec<u8>,  // rlp encoded account state
+        #[serializer(borsh)] account_state: Vec<u8>,  // encoded account state
         #[serializer(borsh)] storage_hash: Vec<u8>,  // storage hash
-        #[serializer(borsh)] storage_key: Vec<u8>,  // storage key
+        #[serializer(borsh)] storage_key: Vec<u8>,  // keccak256 of storage key
         #[serializer(borsh)] storage_proof: Vec<Vec<u8>>,  // storage proof
         #[serializer(borsh)] value: Vec<u8>,  // storage value
         #[serializer(borsh)] skip_bridge_call: bool
@@ -187,7 +187,7 @@ impl EthProver {
         let account_key = near_keccak256(&contract_address).to_vec();
         let data =
             Self::verify_trie_proof(header.state_root, account_key, account_proof);
-        
+          
         let verification_result = data == account_state;
         if verification_result {
             let st_data = Self::verify_trie_proof(H256::from(storage_hash), storage_key, storage_proof);
