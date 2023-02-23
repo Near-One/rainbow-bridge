@@ -2,7 +2,7 @@ use admin_controlled::Mask;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
 use near_sdk::{env, ext_contract, near_bindgen, Gas, PanicOnDefault, PromiseOrValue};
-use rlp::Rlp;
+use rlp::{Rlp};
 
 type AccountId = String;
 
@@ -185,26 +185,28 @@ impl EthProver {
         self.check_not_paused(PAUSE_VERIFY);
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
 
+        
         if let Some(min_header_height) = min_header_height {
             if header.number < min_header_height {
                 return PromiseOrValue::Value(false);
             }
         }
-
+        
         if let Some(max_header_height) = max_header_height {
             if header.number > max_header_height {
                 return PromiseOrValue::Value(false);
             }
         }
-
+        
         let account_key = near_keccak256(&contract_address).to_vec();
         let data = Self::verify_trie_proof(header.state_root, account_key, account_proof);
-
-        let verification_result = data == account_state;
+        
+        let retrieved_storage_hash: Vec<u8> = Rlp::new(&account_state).val_at(2).unwrap();
+        let verification_result = data == account_state && retrieved_storage_hash == storage_hash;
         if verification_result {
             let st_data =
-                Self::verify_trie_proof(H256::from(storage_hash), storage_key, storage_proof);
-            let verification_result = st_data == value;
+                Self::verify_trie_proof(H256::from(retrieved_storage_hash), storage_key, storage_proof);
+            let verification_result = st_data == expected_storage_value;
             if verification_result && skip_bridge_call {
                 return PromiseOrValue::Value(true);
             }

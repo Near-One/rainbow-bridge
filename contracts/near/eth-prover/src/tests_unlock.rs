@@ -358,7 +358,7 @@ mod tests_unlock {
     }
 
     #[test]
-    #[should_panic(expected = "assertion failed: `(left == right)")]
+    #[should_panic(expected = "explicit panic")]
     pub fn test_verify_storage_proof_with_wrong_storage_hash() {
         testing_env!(get_context(vec![]));
         let contract = EthProver::init("ethbridge".to_string());
@@ -482,7 +482,7 @@ mod tests_unlock {
     }
 
     #[test]
-    #[should_panic(expected = "assertion failed: `(left == right)")]
+    #[should_panic(expected = "explicit panic")]
     pub fn test_verify_storage_proof_with_wrong_header_data_except_stateroot() {
         testing_env!(get_context(vec![]));
         let contract = EthProver::init("ethbridge".to_string());
