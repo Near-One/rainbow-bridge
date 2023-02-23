@@ -2,7 +2,7 @@ use admin_controlled::Mask;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
 use near_sdk::{env, ext_contract, near_bindgen, Gas, PanicOnDefault, PromiseOrValue};
-use rlp::{Rlp};
+use rlp::Rlp;
 
 type AccountId = String;
 
@@ -173,7 +173,7 @@ impl EthProver {
         #[serializer(borsh)] header_data: Vec<u8>,
         #[serializer(borsh)] account_proof: Vec<Vec<u8>>, // account proof
         #[serializer(borsh)] contract_address: Vec<u8>,   // eth address
-        #[serializer(borsh)] account_state: Vec<u8>,      // encoded account state
+        #[serializer(borsh)] expected_account_state: Vec<u8>, // encoded account state
         #[serializer(borsh)] storage_key: Vec<u8>,        // keccak256 of storage key
         #[serializer(borsh)] storage_proof: Vec<Vec<u8>>, // storage proof
         #[serializer(borsh)] expected_storage_value: Vec<u8>, // storage value
@@ -184,34 +184,34 @@ impl EthProver {
         self.check_not_paused(PAUSE_VERIFY);
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
 
-        
         if let Some(min_header_height) = min_header_height {
             if header.number < min_header_height {
                 return PromiseOrValue::Value(false);
             }
         }
-        
+
         if let Some(max_header_height) = max_header_height {
             if header.number > max_header_height {
                 return PromiseOrValue::Value(false);
             }
         }
-        
+
         let account_key = near_keccak256(&contract_address).to_vec();
-        let data = Self::verify_trie_proof(header.state_root, account_key, account_proof);
-        
-        let retrieved_storage_hash: Vec<u8> = Rlp::new(&account_state).val_at(2).unwrap();
-        let verification_result = data == account_state;
-        if verification_result {
-            let st_data =
-                Self::verify_trie_proof(H256::from(retrieved_storage_hash), storage_key, storage_proof);
-            let verification_result = st_data == expected_storage_value;
-            if verification_result && skip_bridge_call {
-                return PromiseOrValue::Value(true);
-            }
-        } else if !verification_result {
+        let account_state = Self::verify_trie_proof(header.state_root, account_key, account_proof);
+        if account_state != expected_account_state {
             return PromiseOrValue::Value(false);
         }
+
+        let storage_hash: H256 = Rlp::new(&account_state).val_at(2).unwrap();
+        let storage_value = Self::verify_trie_proof(storage_hash, storage_key, storage_proof);
+        if storage_value != expected_storage_value {
+            return PromiseOrValue::Value(false);
+        }
+
+        if skip_bridge_call {
+            return PromiseOrValue::Value(true);
+        }
+
         // Verify block header was in the bridge
         eth_client::ext(self.bridge_smart_contract.parse().unwrap())
             .with_static_gas(BLOCK_HASH_SAFE_GAS)
