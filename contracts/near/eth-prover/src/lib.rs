@@ -155,18 +155,14 @@ impl EthProver {
 
         if let Some(min_header_height) = min_header_height {
             if header.number < min_header_height {
-                env::log_str(
-                    "block height in header data > min header height"
-                );
+                env::log_str("block height in header data > min header height");
                 return PromiseOrValue::Value(false);
             }
         }
 
         if let Some(max_header_height) = max_header_height {
             if header.number > max_header_height {
-                env::log_str(
-                    "block height in header data < max header height"
-                );
+                env::log_str("block height in header data < max header height");
                 return PromiseOrValue::Value(false);
             }
         }
@@ -174,18 +170,14 @@ impl EthProver {
         let account_key = near_keccak256(&contract_address).to_vec();
         let account_state = Self::verify_trie_proof(header.state_root, account_key, account_proof);
         if account_state != expected_account_state {
-            env::log_str(
-                "account_state != expected_account_state"
-            );
+            env::log_str("account_state != expected_account_state");
             return PromiseOrValue::Value(false);
         }
 
         let storage_hash: H256 = Rlp::new(&account_state).val_at(2).unwrap();
         let storage_value = Self::verify_trie_proof(storage_hash, storage_key, storage_proof);
         if storage_value != expected_storage_value {
-            env::log_str(
-                "storage_value != expected_storage_value"
-            );
+            env::log_str("storage_value != expected_storage_value");
             return PromiseOrValue::Value(false);
         }
 
