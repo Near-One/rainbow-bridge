@@ -28,18 +28,17 @@ mod tests_unlock {
     }
 
     #[derive(Debug, Deserialize)]
-    pub struct JsonProof<'a>{
-        pub header_data: &'a str,
-        pub account_proof_rlp: Vec<&'a str>, // account proof
-        pub contract_address: &'a str,   // eth address
-        pub expected_account_state: &'a str, // encoded account state
-        pub storage_key: &'a str,        // keccak256 of storage key
-        pub storage_proof: Vec<&'a str>, // storage proof
+    pub struct JsonProof{
+        pub header_data: String,
+        pub account_proof_rlp: Vec<String>, // account proof
+        pub contract_address: String,   // eth address
+        pub expected_account_state: String, // encoded account state
+        pub storage_key: String,        // keccak256 of storage key
+        pub storage_proof: Vec<String>, // storage proof
         pub expected_storage_value: bool, // storage value
-        pub min_header_height: &'a str,
-        pub max_header_height: &'a str,
+        pub min_header_height: String,
+        pub max_header_height: String,
         pub skip_bridge_call: bool,
-        
     }
 
     #[derive(Debug, Deserialize)]
@@ -54,10 +53,9 @@ mod tests_unlock {
         pub min_header_height: Option<u64>,
         pub max_header_height: Option<u64>,
         pub skip_bridge_call: bool,
-        
     }
 
-    pub fn get_json_proof(filename: String) -> JsonProof<'static> {
+    pub fn get_json_proof(filename: String) -> JsonProof {
         serde_json::from_reader(std::fs::File::open(std::path::Path::new(&filename)).unwrap()).unwrap() 
     }
 
@@ -195,7 +193,7 @@ mod tests_unlock {
     pub fn test_verify_storage_proof_with_json() {
         testing_env!(get_context(vec![]));
         let contract = EthProver::init("ethbridge".to_string());
-        let test_data = get_storage_proof(String::from("./test_data/data1.json"));
+        let test_data = get_storage_proof(String::from("./src/test_data/data1.json"));
         if let PromiseOrValue::Value(true) = contract.verify_storage_proof(
             test_data.header_data,
             test_data.account_proof,
