@@ -4,7 +4,8 @@ mod tests_unlock {
     use hex::FromHex;
     use near_sdk::PromiseOrValue;
     use serde::{Deserialize, Deserializer};
-
+    use borsh::BorshSerialize;
+    
     #[derive(Debug)]
     struct Hex(pub Vec<u8>);
 
@@ -24,6 +25,61 @@ mod tests_unlock {
                 serde::de::Error::custom(err.to_string())
             })?))
         }
+    }
+
+    #[derive(Debug, Deserialize)]
+    pub struct JsonProof<'a>{
+        pub header_data: &'a str,
+        pub account_proof_rlp: Vec<&'a str>, // account proof
+        pub contract_address: &'a str,   // eth address
+        pub expected_account_state: &'a str, // encoded account state
+        pub storage_key: &'a str,        // keccak256 of storage key
+        pub storage_proof: Vec<&'a str>, // storage proof
+        pub expected_storage_value: bool, // storage value
+        pub min_header_height: &'a str,
+        pub max_header_height: &'a str,
+        pub skip_bridge_call: bool,
+        
+    }
+
+    #[derive(Debug, Deserialize)]
+    pub struct StorageProof{
+        pub header_data: Vec<u8>,
+        pub account_proof: Vec<Vec<u8>>, // account proof
+        pub contract_address: Vec<u8>,   // eth address
+        pub expected_account_state: Vec<u8>, // encoded account state
+        pub storage_key: Vec<u8>,        // keccak256 of storage key
+        pub storage_proof: Vec<Vec<u8>>, // storage proof
+        pub expected_storage_value: Vec<u8>, // storage value
+        pub min_header_height: Option<u64>,
+        pub max_header_height: Option<u64>,
+        pub skip_bridge_call: bool,
+        
+    }
+
+    pub fn get_json_proof(filename: String) -> JsonProof<'static> {
+        serde_json::from_reader(std::fs::File::open(std::path::Path::new(&filename)).unwrap()).unwrap() 
+    }
+
+    pub fn get_storage_proof(file_path: String) -> StorageProof {
+
+       let json_proof: JsonProof = get_json_proof(file_path);
+
+        let header_data = hex::decode(json_proof.header_data).unwrap().into();
+        let contract_address = hex::decode(json_proof.contract_address).unwrap().into();
+        let account_proof = json_proof.account_proof_rlp
+            .into_iter()
+            .map(|x| hex::decode(x).unwrap())
+            .collect();
+        let expected_account_state = hex::decode(json_proof.expected_account_state).unwrap();
+        let storage_key = hex::decode(json_proof.storage_key).unwrap();
+        let storage_proof = json_proof.storage_proof
+            .into_iter()
+            .map(|x| hex::decode(x).unwrap())
+            .collect();
+        let expected_storage_value = json_proof.expected_storage_value.try_to_vec().unwrap();
+
+        StorageProof { header_data, account_proof, contract_address, expected_account_state, storage_key, storage_proof, expected_storage_value, min_header_height: None, max_header_height: None, skip_bridge_call: json_proof.skip_bridge_call }
     }
 
     // TESTS
@@ -128,6 +184,29 @@ mod tests_unlock {
             None,
             None,
             true,
+        ) {
+        } else {
+            panic!();
+        }
+    }
+
+
+    #[test]
+    pub fn test_verify_storage_proof_with_json() {
+        testing_env!(get_context(vec![]));
+        let contract = EthProver::init("ethbridge".to_string());
+        let test_data = get_storage_proof(String::from("./test_data/data1.json"));
+        if let PromiseOrValue::Value(true) = contract.verify_storage_proof(
+            test_data.header_data,
+            test_data.account_proof,
+            test_data.contract_address,
+            test_data.expected_account_state,
+            test_data.storage_key,
+            test_data.storage_proof,
+            test_data.expected_storage_value,
+            test_data.min_header_height,
+            test_data.max_header_height,
+            test_data.skip_bridge_call,
         ) {
         } else {
             panic!();
