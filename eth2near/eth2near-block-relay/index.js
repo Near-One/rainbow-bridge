@@ -21,7 +21,8 @@ const {
   EthProofExtractor,
   logFromWeb3,
   receiptFromWeb3,
-  ethToNearFindProof
+  ethToNearFindProof,
+  ethToNearFindStorageProof
 } = require('./eth-proof-extractor')
 
 const {
@@ -311,4 +312,5 @@ exports.EthOnNearProverContract = EthOnNearProverContract
 exports.logFromWeb3 = logFromWeb3
 exports.receiptFromWeb3 = receiptFromWeb3
 exports.ethToNearFindProof = ethToNearFindProof
+exports.ethToNearFindStorageProof = ethToNearFindStorageProof
 exports.dagMerkleRoots = dagMerkleRoots
