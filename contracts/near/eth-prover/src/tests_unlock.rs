@@ -1,47 +1,36 @@
 #[cfg(test)]
 mod tests_unlock {
     use crate::EthProver;
-    use borsh::BorshSerialize;
     use eth_types::H256;
-    use hex::FromHex;
     use near_sdk::PromiseOrValue;
     use rlp::Rlp;
-    use serde::{Deserialize, Deserializer};
+    use serde::{Deserialize};
+    use near_sdk::borsh::{BorshSerialize};
+    use near_sdk::{serde_json};
 
-    #[derive(Debug)]
-    struct Hex(pub Vec<u8>);
+    // #[derive(Debug)]
+    // struct Hex(pub Vec<u8>);
 
-    impl<'de> Deserialize<'de> for Hex {
-        fn deserialize<D>(deserializer: D) -> Result<Self, <D as Deserializer<'de>>::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let mut s = <String as Deserialize>::deserialize(deserializer)?;
-            if s.starts_with("0x") {
-                s = s[2..].to_string();
-            }
-            if s.len() % 2 == 1 {
-                s.insert_str(0, "0");
-            }
-            Ok(Hex(Vec::from_hex(&s).map_err(|err| {
-                serde::de::Error::custom(err.to_string())
-            })?))
-        }
-    }
-
+    
     #[derive(Debug, Deserialize)]
+    #[serde(crate = "near_sdk::serde")]
     pub struct JsonProof {
-        pub header_data: String,
+        #[serde(with = "hex::serde")]
+        pub header_data: Vec<u8>,
         pub account_proof_rlp: Vec<String>, // account proof
-        pub contract_address: String,       // eth address
-        pub expected_account_state: String, // encoded account state
-        pub storage_key: String,            // keccak256 of storage key
+        #[serde(with = "hex::serde")]
+        pub contract_address: Vec<u8>,       // eth address
+        #[serde(with = "hex::serde")]
+        pub expected_account_state: Vec<u8>, // encoded account state
+        #[serde(with = "hex::serde")]
+        pub storage_key: Vec<u8>,            // keccak256 of storage key
         pub storage_proof: Vec<String>,     // storage proof
         pub expected_storage_value: bool,   // storage value
         pub min_header_height: String,
         pub max_header_height: String,
         pub skip_bridge_call: bool,
     }
+
 
     #[derive(Debug, Deserialize)]
     pub struct StorageProof {
@@ -58,22 +47,22 @@ mod tests_unlock {
     }
 
     pub fn get_json_proof(filename: String) -> JsonProof {
-        serde_json::from_reader(std::fs::File::open(std::path::Path::new(&filename)).unwrap())
-            .unwrap()
+        let contents = std::fs::read_to_string(&filename).expect("Unable to read file");
+        serde_json::from_str(&contents).expect("Unable to deserialize")
     }
 
     pub fn get_storage_proof(file_path: String) -> StorageProof {
         let json_proof: JsonProof = get_json_proof(file_path);
 
-        let header_data = hex::decode(json_proof.header_data).unwrap().into();
-        let contract_address = hex::decode(json_proof.contract_address).unwrap().into();
+        let header_data = json_proof.header_data;
+        let contract_address = json_proof.contract_address;
         let account_proof = json_proof
             .account_proof_rlp
             .into_iter()
             .map(|x| hex::decode(x).unwrap())
             .collect();
-        let expected_account_state = hex::decode(json_proof.expected_account_state).unwrap();
-        let storage_key = hex::decode(json_proof.storage_key).unwrap();
+        let expected_account_state = json_proof.expected_account_state;
+        let storage_key = json_proof.storage_key;
         let storage_proof = json_proof
             .storage_proof
             .into_iter()

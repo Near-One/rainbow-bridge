@@ -19,7 +19,7 @@
     "e2a020ef74619139dab09d59cafa630682f8f30445738dcfb7147514aa27399ae2ee01"
   ],
   "expected_storage_value": true,
-  "min_header_height": "",
+  "min_header_height": "is_none",
   "max_header_height": "",
   "skip_bridge_call": true
 }
