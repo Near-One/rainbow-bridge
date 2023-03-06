@@ -4,84 +4,49 @@ mod tests_unlock {
     use eth_types::H256;
     use near_sdk::PromiseOrValue;
     use rlp::Rlp;
-    use serde::{Deserialize};
+    use serde::{Deserialize, Deserializer};
     use near_sdk::borsh::{BorshSerialize};
     use near_sdk::{serde_json};
 
-    // #[derive(Debug)]
-    // struct Hex(pub Vec<u8>);
-
-    
     #[derive(Debug, Deserialize)]
     #[serde(crate = "near_sdk::serde")]
-    pub struct JsonProof {
-        #[serde(with = "hex::serde")]
-        pub header_data: Vec<u8>,
-        pub account_proof_rlp: Vec<String>, // account proof
-        #[serde(with = "hex::serde")]
-        pub contract_address: Vec<u8>,       // eth address
-        #[serde(with = "hex::serde")]
-        pub expected_account_state: Vec<u8>, // encoded account state
-        #[serde(with = "hex::serde")]
-        pub storage_key: Vec<u8>,            // keccak256 of storage key
-        pub storage_proof: Vec<String>,     // storage proof
-        pub expected_storage_value: bool,   // storage value
-        pub min_header_height: String,
-        pub max_header_height: String,
-        pub skip_bridge_call: bool,
-    }
-
-
-    #[derive(Debug, Deserialize)]
     pub struct StorageProof {
+        #[serde(with = "hex::serde")]
         pub header_data: Vec<u8>,
-        pub account_proof: Vec<Vec<u8>>,     // account proof
+        #[serde(deserialize_with = "deserialize_hex_vec")]
+        pub account_proof: Vec<Vec<u8>>, // account proof
+        #[serde(with = "hex::serde")]
         pub contract_address: Vec<u8>,       // eth address
+        #[serde(with = "hex::serde")]
         pub expected_account_state: Vec<u8>, // encoded account state
-        pub storage_key: Vec<u8>,            // keccak256 of storage key
+        #[serde(with = "hex::serde")]
+        pub storage_key: Vec<u8>, // keccak256 of storage key
+        #[serde(deserialize_with = "deserialize_hex_vec")]
         pub storage_proof: Vec<Vec<u8>>,     // storage proof
-        pub expected_storage_value: Vec<u8>, // storage value
+        #[serde(deserialize_with = "deserialize_from_bool")]
+        pub expected_storage_value: Vec<u8>,   // storage value
         pub min_header_height: Option<u64>,
         pub max_header_height: Option<u64>,
         pub skip_bridge_call: bool,
     }
 
-    pub fn get_json_proof(filename: String) -> JsonProof {
-        let contents = std::fs::read_to_string(&filename).expect("Unable to read file");
-        serde_json::from_str(&contents).expect("Unable to deserialize")
+    fn deserialize_hex_vec<'de, D>(deserializer: D) -> Result<Vec<Vec<u8>>, D::Error>
+        where D: Deserializer<'de>,
+    {
+        let s: Vec<String> = Deserialize::deserialize(deserializer)?;
+        Ok(s.into_iter().map(|x| hex::decode(x).unwrap()).collect())
     }
 
-    pub fn get_storage_proof(file_path: String) -> StorageProof {
-        let json_proof: JsonProof = get_json_proof(file_path);
+    fn deserialize_from_bool<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+        where D: Deserializer<'de>,
+    {
+        let value: bool = Deserialize::deserialize(deserializer)?;
+        Ok(value.try_to_vec().unwrap())
+    }
 
-        let header_data = json_proof.header_data;
-        let contract_address = json_proof.contract_address;
-        let account_proof = json_proof
-            .account_proof_rlp
-            .into_iter()
-            .map(|x| hex::decode(x).unwrap())
-            .collect();
-        let expected_account_state = json_proof.expected_account_state;
-        let storage_key = json_proof.storage_key;
-        let storage_proof = json_proof
-            .storage_proof
-            .into_iter()
-            .map(|x| hex::decode(x).unwrap())
-            .collect();
-        let expected_storage_value = json_proof.expected_storage_value.try_to_vec().unwrap();
-
-        StorageProof {
-            header_data,
-            account_proof,
-            contract_address,
-            expected_account_state,
-            storage_key,
-            storage_proof,
-            expected_storage_value,
-            min_header_height: None,
-            max_header_height: None,
-            skip_bridge_call: json_proof.skip_bridge_call,
-        }
+    pub fn get_storage_proof(filename: String) -> StorageProof {
+        let contents = std::fs::read_to_string(&filename).expect("Unable to read file");
+        serde_json::from_str(&contents).expect("Unable to deserialize")
     }
 
     // TESTS
