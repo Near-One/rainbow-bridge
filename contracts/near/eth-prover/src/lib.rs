@@ -143,7 +143,7 @@ impl EthProver {
         #[serializer(borsh)] account_proof: Vec<Vec<u8>>, // account proof
         #[serializer(borsh)] contract_address: Vec<u8>,   // eth address
         #[serializer(borsh)] expected_account_state: Vec<u8>, // encoded account state
-        #[serializer(borsh)] storage_key: Vec<u8>,        // keccak256 of storage key
+        #[serializer(borsh)] storage_key_hash: Vec<u8>,   // keccak256 of storage key
         #[serializer(borsh)] storage_proof: Vec<Vec<u8>>, // storage proof
         #[serializer(borsh)] expected_storage_value: Vec<u8>, // storage value
         #[serializer(borsh)] min_header_height: Option<u64>,
@@ -175,7 +175,7 @@ impl EthProver {
         }
 
         let storage_hash: H256 = Rlp::new(&account_state).val_at(2).unwrap();
-        let storage_value = Self::verify_trie_proof(storage_hash, storage_key, storage_proof);
+        let storage_value = Self::verify_trie_proof(storage_hash, storage_key_hash, storage_proof);
         if storage_value != expected_storage_value {
             env::log_str("storage_value != expected_storage_value");
             return PromiseOrValue::Value(false);

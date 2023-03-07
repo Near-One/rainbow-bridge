@@ -2,16 +2,12 @@
 mod tests_unlock {
     use crate::EthProver;
     use eth_types::H256;
+    use near_sdk::borsh::BorshSerialize;
+    use near_sdk::serde_json;
     use near_sdk::PromiseOrValue;
     use rlp::Rlp;
-    use serde::{Deserialize};
-    use near_sdk::borsh::{BorshSerialize};
-    use near_sdk::{serde_json};
+    use serde::Deserialize;
 
-    // #[derive(Debug)]
-    // struct Hex(pub Vec<u8>);
-
-    
     #[derive(Debug, Deserialize)]
     #[serde(crate = "near_sdk::serde")]
     pub struct JsonProof {
@@ -19,11 +15,11 @@ mod tests_unlock {
         pub header_data: Vec<u8>,
         pub account_proof_rlp: Vec<String>, // account proof
         #[serde(with = "hex::serde")]
-        pub contract_address: Vec<u8>,       // eth address
+        pub contract_address: Vec<u8>, // eth address
         #[serde(with = "hex::serde")]
         pub expected_account_state: Vec<u8>, // encoded account state
         #[serde(with = "hex::serde")]
-        pub storage_key: Vec<u8>,            // keccak256 of storage key
+        pub storage_key_hash: Vec<u8>, // keccak256 of storage key
         pub storage_proof: Vec<String>,     // storage proof
         pub expected_storage_value: bool,   // storage value
         pub min_header_height: String,
@@ -31,14 +27,13 @@ mod tests_unlock {
         pub skip_bridge_call: bool,
     }
 
-
     #[derive(Debug, Deserialize)]
     pub struct StorageProof {
         pub header_data: Vec<u8>,
         pub account_proof: Vec<Vec<u8>>,     // account proof
         pub contract_address: Vec<u8>,       // eth address
         pub expected_account_state: Vec<u8>, // encoded account state
-        pub storage_key: Vec<u8>,            // keccak256 of storage key
+        pub storage_key_hash: Vec<u8>,       // keccak256 of storage key
         pub storage_proof: Vec<Vec<u8>>,     // storage proof
         pub expected_storage_value: Vec<u8>, // storage value
         pub min_header_height: Option<u64>,
@@ -62,7 +57,7 @@ mod tests_unlock {
             .map(|x| hex::decode(x).unwrap())
             .collect();
         let expected_account_state = json_proof.expected_account_state;
-        let storage_key = json_proof.storage_key;
+        let storage_key_hash = json_proof.storage_key_hash;
         let storage_proof = json_proof
             .storage_proof
             .into_iter()
@@ -75,7 +70,7 @@ mod tests_unlock {
             account_proof,
             contract_address,
             expected_account_state,
-            storage_key,
+            storage_key_hash,
             storage_proof,
             expected_storage_value,
             min_header_height: None,
@@ -121,7 +116,7 @@ mod tests_unlock {
         assert_eq!(
             EthProver::verify_trie_proof(
                 storage_hash,
-                test_data.storage_key,
+                test_data.storage_key_hash,
                 test_data.storage_proof
             ),
             test_data.expected_storage_value
@@ -138,7 +133,7 @@ mod tests_unlock {
             test_data.account_proof,
             test_data.contract_address,
             test_data.expected_account_state,
-            test_data.storage_key,
+            test_data.storage_key_hash,
             test_data.storage_proof,
             test_data.expected_storage_value,
             test_data.min_header_height,
@@ -163,7 +158,7 @@ mod tests_unlock {
             test_data.account_proof,
             test_data.contract_address,
             test_data.expected_account_state,
-            test_data.storage_key,
+            test_data.storage_key_hash,
             test_data.storage_proof,
             test_data.expected_storage_value,
             test_data.min_header_height,
@@ -188,7 +183,7 @@ mod tests_unlock {
             test_data.account_proof,
             test_data.contract_address,
             test_data.expected_account_state,
-            test_data.storage_key,
+            test_data.storage_key_hash,
             test_data.storage_proof,
             test_data.expected_storage_value,
             test_data.min_header_height,
@@ -213,7 +208,7 @@ mod tests_unlock {
             test_data.account_proof,
             test_data.contract_address,
             test_data.expected_account_state,
-            test_data.storage_key,
+            test_data.storage_key_hash,
             test_data.storage_proof,
             test_data.expected_storage_value,
             test_data.min_header_height,
@@ -239,7 +234,7 @@ mod tests_unlock {
             test_data.account_proof,
             test_data.contract_address,
             test_data.expected_account_state,
-            test_data.storage_key,
+            test_data.storage_key_hash,
             test_data.storage_proof,
             test_data.expected_storage_value,
             test_data.min_header_height,
@@ -264,7 +259,7 @@ mod tests_unlock {
             test_data.account_proof,
             test_data.contract_address,
             test_data.expected_account_state,
-            test_data.storage_key,
+            test_data.storage_key_hash,
             test_data.storage_proof,
             test_data.expected_storage_value,
             test_data.min_header_height,

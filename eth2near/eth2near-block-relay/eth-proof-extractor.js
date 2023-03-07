@@ -142,30 +142,30 @@ async function ethToNearFindProof ({ lockedEventRaw, ethNodeUrl }) {
   web3.currentProvider.connection.close()
 }
 
-async function ethToNearFindStorageProof({ storageDataRaw, ethNodeUrl }) {
+async function ethToNearFindStorageProof({ contractAddress, storageKey, blockNumber, ethNodeUrl }) {
   const robustWeb3 = new RobustWeb3(ethNodeUrl)
   const web3 = robustWeb3.web3
   try {
-    const storageData = JSON.parse(storageDataRaw) || {}
     const extractor = new EthProofExtractor()
     extractor.initialize(ethNodeUrl)
 
-    const extractedProof = await extractor.extractStorageProof(storageData.contractAddress, storageData.slotKey, storageData.blockNumber)
+    const extractedProof = await extractor.extractStorageProof(contractAddress, storageKey, blockNumber)
     extractor.destroy()
 
     const proof = {
-      header_data: extractedProof.header_rlp,
-      account_proof: extractedProof.account_proof,
-      contract_address: storageData.contractAddress,
-      expected_account_state: extractedProof.account_rlp,
-      storage_key: web3.utils.keccak256(storageData.slotKey),
-      storage_proof: extractedProof.storage_proof,
+      contract_address: utils.stripHexPrefix(contractAddress.toLowerCase()),
+      storage_key: utils.stripHexPrefix(storageKey),
+      blockNumber,
+      header_data: extractedProof.header_rlp.toString('hex'),
+      account_proof: extractedProof.account_proof.map(x => utils.stripHexPrefix(x)),
+      expected_account_state: extractedProof.account_rlp.toString('hex'),
+      storage_key_hash: utils.stripHexPrefix(web3.utils.keccak256(storageKey)),
+      storage_proof: extractedProof.storage_proof.map(x => utils.stripHexPrefix(x)),
     }
-    console.log(JSON.stringify({ block_number: storageData.blockNumber, storage_proof: proof }, JSONreplacer))
+    console.log(JSON.stringify(proof, JSONreplacer))
   } catch (error) {
     console.log('Failed', error.toString())
   }
-  web3.currentProvider.connection.close()
 }
 
 EthProofExtractor.fromWeb3 = (web3) => {

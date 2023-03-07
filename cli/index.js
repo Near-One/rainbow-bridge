@@ -651,10 +651,10 @@ RainbowConfig.addOptions(
 
 RainbowConfig.addOptions(
   program
-    .command('eth-to-near-find-storage-proof <storage_data>')
-    .description('Get eth-to-near storage proof by storage data.'),
-  async (storageDataRaw, args) => {
-    await ethToNearFindStorageProof({ storageDataRaw, ...args })
+    .command('eth-to-near-find-storage-proof <contract-address> <storage_key> <block-number>')
+    .description('Get eth-to-near storage proof for provided storage key.'),
+  async (contractAddress, storageKey, blockNumber, args) => {
+    await ethToNearFindStorageProof({ contractAddress, storageKey, blockNumber, ...args })
   },
   [
     'eth-node-url'
