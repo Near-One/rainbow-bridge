@@ -155,7 +155,7 @@ async function ethToNearFindStorageProof({ contractAddress, storageKey, blockNum
     const proof = {
       contract_address: utils.stripHexPrefix(contractAddress.toLowerCase()),
       storage_key: utils.stripHexPrefix(storageKey),
-      blockNumber,
+      block_number: blockNumber,
       header_data: extractedProof.header_rlp.toString('hex'),
       account_proof: extractedProof.account_proof.map(x => utils.stripHexPrefix(x)),
       expected_account_state: extractedProof.account_rlp.toString('hex'),
