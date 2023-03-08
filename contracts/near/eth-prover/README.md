@@ -20,7 +20,7 @@ Eth-Prover trustless contract to prove the integrity of data (proofs) provided b
 - `account_proof: Vec<Vec<u8>>`: Buffer data of account-proof from `eth_getProof` method call response.
 - `contract_address: Vec<u8>`: Buffered data of Eth-contract address for which we are prooving.
 - `expected_account_state: Vec<u8>`: encoded account state made-up of `{nonce, balance, storageHash, codeHash}`
-- `storage_key: Vec<u8>`: keccak256 of storage-key in `eth_getProof`
+- `storage_key_hash: Vec<u8>`: keccak256 of storage-key in `eth_getProof`
 - `storage_proof: Vec<Vec<u8>>`: Buffer data of `storage-proof` for above `storage_key` from `eth_getProof` method call response.
 - `expected_storage_value: Vec<u8>`: storage_value against which proof is to be verified.
 - `min_header_height: Option<u64>`: Valid-till block height for unlock.

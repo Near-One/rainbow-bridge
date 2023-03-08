@@ -13,7 +13,7 @@ mod tests_unlock {
     pub struct JsonProof {
         #[serde(with = "hex::serde")]
         pub header_data: Vec<u8>,
-        pub account_proof_rlp: Vec<String>, // account proof
+        pub account_proof: Vec<String>, // account proof
         #[serde(with = "hex::serde")]
         pub contract_address: Vec<u8>, // eth address
         #[serde(with = "hex::serde")]
@@ -52,7 +52,7 @@ mod tests_unlock {
         let header_data = json_proof.header_data;
         let contract_address = json_proof.contract_address;
         let account_proof = json_proof
-            .account_proof_rlp
+            .account_proof
             .into_iter()
             .map(|x| hex::decode(x).unwrap())
             .collect();
