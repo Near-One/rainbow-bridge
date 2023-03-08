@@ -221,6 +221,31 @@ mod tests_unlock {
     }
 
     #[test]
+    #[should_panic(expected = "storage_value != expected_storage_value")]
+    pub fn test_verify_storage_proof_with_false_value() {
+        testing_env!(get_context(vec![]));
+        let contract = EthProver::init("ethbridge".to_string());
+        let test_data = get_storage_proof(String::from(
+            "./src/test_data/storageProofWithFalseValue.json",
+        ));
+        if let PromiseOrValue::Value(true) = contract.verify_storage_proof(
+            test_data.header_data,
+            test_data.account_proof,
+            test_data.contract_address,
+            test_data.expected_account_state,
+            test_data.storage_key_hash,
+            test_data.storage_proof,
+            test_data.expected_storage_value,
+            test_data.min_header_height,
+            test_data.max_header_height,
+            test_data.skip_bridge_call,
+        ) {
+        } else {
+            panic!("storage_value != expected_storage_value");
+        }
+    }
+
+    #[test]
     #[should_panic(expected = "explicit panic")]
     pub fn test_verify_storage_proof_with_wrong_account_data() {
         testing_env!(get_context(vec![]));
