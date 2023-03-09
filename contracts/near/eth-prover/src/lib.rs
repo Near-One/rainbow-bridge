@@ -280,18 +280,8 @@ impl EthProver {
                 path.push(val % 16);
             }
 
-            if head == 2 {
-                // Even Leaf node
-                assert_eq!(proof_index + 1, proof.len());
-                assert_eq!(key_index + path.len(), key.len());
-                if &path_u8.clone().as_slice()[1..] == &key.as_slice()[key_index..]{
-                    get_vec(&node, 1)
-                } else {
-                    vec![0]
-                }
-            } else if head == 3{
-                // Odd Leaf node
-                println!("leaf node2");
+            if head >= 2 {
+                // Leaf node
                 assert_eq!(proof_index + 1, proof.len());
                 assert_eq!(key_index + path.len(), key.len());
                 if path.as_slice() == &key[key_index..key_index + path.len()]{
