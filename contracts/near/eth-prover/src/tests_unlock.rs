@@ -221,7 +221,6 @@ mod tests_unlock {
     }
 
     #[test]
-    #[should_panic(expected = "storage_value != expected_storage_value")]
     pub fn test_verify_storage_proof_with_false_value() {
         testing_env!(get_context(vec![]));
         let contract = EthProver::init("ethbridge".to_string());

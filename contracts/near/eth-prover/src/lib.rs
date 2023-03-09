@@ -243,18 +243,23 @@ impl EthProver {
 
         if node.iter().count() == 17 {
             // Branch node
-            if key_index == key.len() {
+            if key_index >= key.len() {
                 assert_eq!(proof_index + 1, proof.len());
                 get_vec(&node, 16)
             } else {
                 let new_expected_root = get_vec(&node, key[key_index] as usize);
-                Self::_verify_trie_proof(
-                    new_expected_root,
-                    key,
-                    proof,
-                    key_index + 1,
-                    proof_index + 1,
-                )
+                if !new_expected_root.is_empty() {
+                    Self::_verify_trie_proof(
+                        new_expected_root,
+                        key,
+                        proof,
+                        key_index + 1,
+                        proof_index + 1,
+                    )
+                } else {
+                    // not included in proof
+                    vec![0]
+                }
             }
         } else {
             // Leaf or extension node
@@ -270,19 +275,33 @@ impl EthProver {
             if head % 2 == 1 {
                 path.push(path_u8[0] % 16);
             }
-            for val in path_u8.into_iter().skip(1) {
+            for val in path_u8.clone().into_iter().skip(1) {
                 path.push(val / 16);
                 path.push(val % 16);
             }
-            assert_eq!(path.as_slice(), &key[key_index..key_index + path.len()]);
 
-            if head >= 2 {
-                // Leaf node
+            if head == 2 {
+                // Even Leaf node
                 assert_eq!(proof_index + 1, proof.len());
                 assert_eq!(key_index + path.len(), key.len());
-                get_vec(&node, 1)
+                if &path_u8.clone().as_slice()[1..] == &key.as_slice()[key_index..]{
+                    get_vec(&node, 1)
+                } else {
+                    vec![0]
+                }
+            } else if head == 3{
+                // Odd Leaf node
+                println!("leaf node2");
+                assert_eq!(proof_index + 1, proof.len());
+                assert_eq!(key_index + path.len(), key.len());
+                if path.as_slice() == &key[key_index..key_index + path.len()]{
+                    get_vec(&node, 1)
+                } else {
+                    vec![0]
+                }
             } else {
                 // Extension node
+                assert_eq!(path.as_slice(), &key[key_index..key_index + path.len()]);
                 let new_expected_root = get_vec(&node, 1);
                 Self::_verify_trie_proof(
                     new_expected_root,
