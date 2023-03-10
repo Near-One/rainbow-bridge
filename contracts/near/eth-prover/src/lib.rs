@@ -136,6 +136,10 @@ impl EthProver {
             .into()
     }
 
+    /// WARNING: When the value is not found, `eth_getProof` will return "0x0" at
+    /// the StorageProof `value` field.  In order to verify the proof of non
+    /// existence, you must set `value` to empty vec, *not* the RLP encoding of 0 or null
+    /// (which would be 0x80).
     #[result_serializer(borsh)]
     pub fn verify_storage_proof(
         &self,
@@ -258,7 +262,7 @@ impl EthProver {
                     )
                 } else {
                     // not included in proof
-                    vec![0]
+                    vec![]
                 }
             }
         } else {
@@ -275,7 +279,7 @@ impl EthProver {
             if head % 2 == 1 {
                 path.push(path_u8[0] % 16);
             }
-            for val in path_u8.clone().into_iter().skip(1) {
+            for val in path_u8.iter().skip(1) {
                 path.push(val / 16);
                 path.push(val % 16);
             }
@@ -284,10 +288,10 @@ impl EthProver {
                 // Leaf node
                 assert_eq!(proof_index + 1, proof.len());
                 assert_eq!(key_index + path.len(), key.len());
-                if path.as_slice() == &key[key_index..key_index + path.len()]{
+                if path.as_slice() == &key[key_index..key_index + path.len()] {
                     get_vec(&node, 1)
                 } else {
-                    vec![0]
+                    vec![]
                 }
             } else {
                 // Extension node

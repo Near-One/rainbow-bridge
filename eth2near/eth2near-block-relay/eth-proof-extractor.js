@@ -38,7 +38,8 @@ class EthProofExtractor {
       header_rlp: header.serialize(),
       account_rlp: account.serialize(),
       account_proof: proofFromWeb3.accountProof,
-      storage_proof: proofFromWeb3.storageProof[0].proof
+      storage_proof: proofFromWeb3.storageProof[0].proof,
+      value: proofFromWeb3.storageProof[0].value
     }
   }
 
@@ -160,7 +161,8 @@ async function ethToNearFindStorageProof ({ contractAddress, storageKey, blockNu
       account_proof: extractedProof.account_proof.map(x => utils.stripHexPrefix(x)),
       expected_account_state: extractedProof.account_rlp.toString('hex'),
       storage_key_hash: utils.stripHexPrefix(web3.utils.keccak256(storageKey)),
-      storage_proof: extractedProof.storage_proof.map(x => utils.stripHexPrefix(x))
+      storage_proof: extractedProof.storage_proof.map(x => utils.stripHexPrefix(x)),
+      value: utils.padToEven(utils.stripHexPrefix(extractedProof.value))
     }
     console.log(JSON.stringify(proof, JSONreplacer))
   } catch (error) {

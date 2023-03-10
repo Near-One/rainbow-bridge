@@ -19,7 +19,7 @@
     "f851808080808080a05a173679dbc21d5c5b16c40e4d0fdd5ec92f602c2db2adbe71c9d4b2aedb585480a04cd868f531723c2438dce2df71b16e2d4d6f49299867484a662073b40aaac5ca8080808080808080",
     "e19f3ba9af7041ec3098c4d818db9972f67827520c1db7d022f6c3041b6f40ecc301"
   ],
-  "expected_storage_value": true,
+  "expected_storage_value": "01",
   "min_header_height": "",
   "max_header_height": "",
   "skip_bridge_call": true

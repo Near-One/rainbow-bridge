@@ -2,7 +2,6 @@
 mod tests_unlock {
     use crate::EthProver;
     use eth_types::H256;
-    use near_sdk::borsh::BorshSerialize;
     use near_sdk::serde_json;
     use near_sdk::PromiseOrValue;
     use rlp::Rlp;
@@ -20,8 +19,9 @@ mod tests_unlock {
         pub expected_account_state: Vec<u8>, // encoded account state
         #[serde(with = "hex::serde")]
         pub storage_key_hash: Vec<u8>, // keccak256 of storage key
-        pub storage_proof: Vec<String>,     // storage proof
-        pub expected_storage_value: bool,   // storage value
+        pub storage_proof: Vec<String>, // storage proof
+        #[serde(with = "hex::serde")]
+        pub expected_storage_value: Vec<u8>, // storage value
         pub min_header_height: String,
         pub max_header_height: String,
         pub skip_bridge_call: bool,
@@ -63,7 +63,6 @@ mod tests_unlock {
             .into_iter()
             .map(|x| hex::decode(x).unwrap())
             .collect();
-        let expected_storage_value = json_proof.expected_storage_value.try_to_vec().unwrap();
 
         StorageProof {
             header_data,
@@ -72,7 +71,7 @@ mod tests_unlock {
             expected_account_state,
             storage_key_hash,
             storage_proof,
-            expected_storage_value,
+            expected_storage_value: json_proof.expected_storage_value,
             min_header_height: None,
             max_header_height: None,
             skip_bridge_call: json_proof.skip_bridge_call,

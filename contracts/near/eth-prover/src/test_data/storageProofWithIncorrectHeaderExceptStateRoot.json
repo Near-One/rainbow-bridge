@@ -19,7 +19,7 @@
     "f871a003c2a7f927a157d07815fdd586453a7f82223b912344dcb85fdb717b268cddb98080808080808080a0ad44120a824ee96076f8c53f155604f1e778eb0c678303eb680b69e3b72d7b9f8080a0dd6eb7d9c298eea97e0c3779437f0247e76237d430aeee5c9676830ed4e19e7480808080",
     "e19f3e5fde3c4a1600408ce3ebbd6a720b7491c663bef3fedcf7835dd6863fd34b01"
   ],
-  "expected_storage_value": true,
+  "expected_storage_value": "01",
   "min_header_height": "",
   "max_header_height": "",
   "skip_bridge_call": true
