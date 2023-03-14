@@ -427,7 +427,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "paused")]
+        #[should_panic(expected = "PauseManager")]
         pub fn test_panic_on_submit_update_paused() {
             let TestContext {
                 mut contract,

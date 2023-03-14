@@ -45,10 +45,6 @@ pub struct EthProver {
     paused: u128,
 }
 
-fn assert_self() {
-    assert_eq!(env::current_account_id(), env::predecessor_account_id());
-}
-
 /// Defines an interface to call EthProver back as a callback with the result from the
 /// EthClient contract.
 #[ext_contract(remote_self)]
@@ -92,6 +88,7 @@ impl EthProver {
     /// - `block_hash` is the actual data from the EthClient call
     /// - `expected_block_hash` is the block hash that we expect to be passed by us.
     #[result_serializer(borsh)]
+    #[private]
     pub fn on_block_hash(
         &self,
         #[callback]
@@ -99,7 +96,6 @@ impl EthProver {
         block_hash: Option<H256>,
         #[serializer(borsh)] expected_block_hash: H256,
     ) -> bool {
-        assert_self();
         return block_hash == Some(expected_block_hash);
     }
 

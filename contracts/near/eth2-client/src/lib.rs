@@ -1,5 +1,8 @@
-use near_plugins::{Ownable, Pausable};
-use near_plugins_derive::pause;
+use near_plugins::{
+    access_control, access_control_any, pause, AccessControlRole, AccessControllable, Pausable,
+    Upgradable,
+};
+use near_sdk::serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -12,14 +15,12 @@ use eth_types::eth2::*;
 use eth_types::{BlockHeader, H256};
 use near_sdk::collections::LazyOption;
 use near_sdk::collections::{LookupMap, UnorderedMap};
-use near_sdk::{assert_self, env, near_bindgen, require, AccountId, PanicOnDefault};
+use near_sdk::{env, near_bindgen, require, AccountId, PanicOnDefault};
 use near_sdk::{Balance, BorshStorageKey, Promise};
 use tree_hash::TreeHash;
 
 #[cfg(test)]
 mod tests;
-
-pub type Mask = u128;
 
 #[derive(BorshSerialize, BorshStorageKey)]
 enum StorageKey {
@@ -31,14 +32,35 @@ enum StorageKey {
     NextSyncCommittee,
 }
 
+#[derive(AccessControlRole, Deserialize, Serialize, Copy, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub enum Role {
+    PauseManager,
+    UpgradableManager,
+    UpgradableCodeStager,
+    UpgradableCodeDeployer,
+    UpgradableDurationManager,
+    ConfigManager,
+    UnrestrictedSubmitLightClientUpdate,
+}
+
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Ownable, Pausable)]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Pausable, Upgradable)]
+#[access_control(role_type(Role))]
+#[pausable(manager_roles(Role::PauseManager))]
+#[upgradable(access_control_roles(
+    code_stagers(Role::UpgradableCodeStager, Role::UpgradableManager),
+    code_deployers(Role::UpgradableCodeDeployer, Role::UpgradableManager),
+    duration_initializers(Role::UpgradableDurationManager, Role::UpgradableManager),
+    duration_update_stagers(Role::UpgradableDurationManager, Role::UpgradableManager),
+    duration_update_appliers(Role::UpgradableDurationManager, Role::UpgradableManager),
+))]
 pub struct Eth2Client {
     /// If set, only light client updates by the trusted signer will be accepted
     trusted_signer: Option<AccountId>,
     /// Mask determining all paused functions
     #[deprecated]
-    paused: Mask,
+    paused: u128,
     /// Whether the client validates the updates.
     /// Should only be set to `false` for debugging, testing, and diagnostic purposes
     validate_updates: bool,
@@ -111,7 +133,7 @@ impl Eth2Client {
         #[allow(deprecated)]
         let mut contract = Self {
             trusted_signer: args.trusted_signer,
-            paused: Mask::default(),
+            paused: 0,
             validate_updates: args.validate_updates,
             verify_bls_signatures: args.verify_bls_signatures,
             hashes_gc_threshold: args.hashes_gc_threshold,
@@ -136,7 +158,7 @@ impl Eth2Client {
             ),
         };
 
-        contract.owner_set(Some(env::predecessor_account_id()));
+        contract.acl_init_super_admin(env::predecessor_account_id());
         contract
     }
 
@@ -250,7 +272,7 @@ impl Eth2Client {
         self.max_submitted_blocks_by_account
     }
 
-    #[pause(except(owner, self))]
+    #[pause(except(roles(Role::UnrestrictedSubmitLightClientUpdate)))]
     pub fn submit_beacon_chain_light_client_update(
         &mut self,
         #[serializer(borsh)] update: LightClientUpdate,
@@ -304,8 +326,8 @@ impl Eth2Client {
         );
     }
 
+    #[access_control_any(roles(Role::ConfigManager))]
     pub fn update_trusted_signer(&mut self, trusted_signer: Option<AccountId>) {
-        assert_self();
         self.trusted_signer = trusted_signer;
     }
 
