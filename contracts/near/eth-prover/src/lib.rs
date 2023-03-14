@@ -1,7 +1,10 @@
 use eth_types::*;
-use near_plugins::{Ownable, Pausable};
-use near_plugins_derive::pause;
+use near_plugins::{
+    access_control, access_control_any, pause, AccessControlRole, AccessControllable, Pausable,
+    Upgradable,
+};
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, ext_contract, near_bindgen, Gas, PanicOnDefault, PromiseOrValue};
 use rlp::Rlp;
 
@@ -13,14 +16,33 @@ const BLOCK_HASH_SAFE_GAS: Gas = Gas(10_000_000_000_000);
 /// Gas to call on_block_hash
 const ON_BLOCK_HASH_GAS: Gas = Gas(5_000_000_000_000);
 
-pub type Mask = u128;
+#[derive(AccessControlRole, Deserialize, Serialize, Copy, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub enum Role {
+    PauseManager,
+    UnrestrictedVerifyLogEntry,
+    UpgradableManager,
+    UpgradableCodeStager,
+    UpgradableCodeDeployer,
+    UpgradableDurationManager,
+    ConfigManager,
+}
 
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Ownable, Pausable)]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Pausable, Upgradable)]
+#[access_control(role_type(Role))]
+#[pausable(manager_roles(Role::PauseManager))]
+#[upgradable(access_control_roles(
+    code_stagers(Role::UpgradableCodeStager, Role::UpgradableManager),
+    code_deployers(Role::UpgradableCodeDeployer, Role::UpgradableManager),
+    duration_initializers(Role::UpgradableDurationManager, Role::UpgradableManager),
+    duration_update_stagers(Role::UpgradableDurationManager, Role::UpgradableManager),
+    duration_update_appliers(Role::UpgradableDurationManager, Role::UpgradableManager),
+))]
 pub struct EthProver {
     bridge_smart_contract: AccountId,
     #[deprecated]
-    paused: Mask,
+    paused: u128,
 }
 
 fn assert_self() {
@@ -58,10 +80,10 @@ impl EthProver {
         #[allow(deprecated)]
         let mut contract = Self {
             bridge_smart_contract,
-            paused: Mask::default(),
+            paused: 0,
         };
 
-        contract.owner_set(Some(near_sdk::env::predecessor_account_id()));
+        contract.acl_init_super_admin(near_sdk::env::predecessor_account_id());
         contract
     }
 
@@ -101,7 +123,7 @@ impl EthProver {
             .into()
     }
 
-    #[pause(except(owner, self))]
+    #[pause(except(roles(Role::UnrestrictedVerifyLogEntry)))]
     #[result_serializer(borsh)]
     pub fn verify_log_entry(
         &self,
@@ -240,8 +262,8 @@ impl EthProver {
         }
     }
 
+    #[access_control_any(roles(Role::ConfigManager))]
     pub fn set_bridge(&mut self, bridge: AccountId) {
-        assert_self();
         env::log_str(
             format!(
                 "Old bridge account: {} New bridge account {}",
