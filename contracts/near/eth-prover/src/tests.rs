@@ -39,7 +39,7 @@ mod tests {
             signer_account_pk: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
                 .parse()
                 .unwrap(),
-            predecessor_account_id: "carol.near".parse().unwrap(),
+            predecessor_account_id: "alice.near".parse().unwrap(),
             input,
             block_index: 0,
             block_timestamp: 0,
