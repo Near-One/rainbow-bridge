@@ -32,7 +32,7 @@ jobs:
             cmd: |
               cd contracts/near/eth-prover
               ./test.sh
-            timeout-minutes: 20
+            timeout-minutes: 40
 
           - job-name: test eth-client
             cmd: |

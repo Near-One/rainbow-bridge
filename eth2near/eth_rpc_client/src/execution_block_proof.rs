@@ -218,6 +218,7 @@ mod tests {
             &config.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
+            None,
         );
 
         let beacon_block_body = beacon_rpc_client

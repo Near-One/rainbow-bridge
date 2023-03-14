@@ -1,8 +1,8 @@
+use serde::Deserialize;
 use std::error::Error;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
 pub enum ContractType {
@@ -34,8 +34,8 @@ impl Display for ContractType {
 impl ContractType {
     pub fn as_str(&self) -> &str {
         match self {
-            ContractType::Near => "NEAR",
-            ContractType::Dao => "DAO",
+            ContractType::Near => "Near",
+            ContractType::Dao => "Dao",
             ContractType::File => "File",
         }
     }
