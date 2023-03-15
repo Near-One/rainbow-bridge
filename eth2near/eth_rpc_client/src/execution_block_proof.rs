@@ -4,7 +4,7 @@ use ethereum_types::H256;
 use std::error::Error;
 use std::fmt;
 use std::fmt::Display;
-use types::{BeaconBlockBody, MainnetEthSpec};
+use types::{BeaconBlockBody, ExecutionPayload, MainnetEthSpec};
 use crate::errors::MissExecutionPayload;
 
 /// `ExecutionBlockProof` contains a `block_hash` (execution block) and
@@ -48,6 +48,8 @@ impl ExecutionBlockProof {
                 .map_err(|_| MissExecutionPayload)?.into()
         );
 
+        println!("ok4.3");
+
         let l1_execution_payload_proof = beacon_block_merkle_tree
             .0
             .generate_proof(
@@ -62,13 +64,14 @@ impl ExecutionBlockProof {
             ).unwrap().1;
         block_proof.extend(&l1_execution_payload_proof);
 
+        println!("ok4.4");
+
+        let execution_payload: ExecutionPayload<MainnetEthSpec> = beacon_block_body
+            .execution_payload()
+            .map_err(|_| MissExecutionPayload)?.into();
         Ok(Self {
-            block_hash: beacon_block_body
-                .execution_payload()
-                .map_err(|_| MissExecutionPayload)?
-                .execution_payload_merge()
-                .map_err(|_| MissExecutionPayload)?
-                .block_hash
+            block_hash: execution_payload
+                .block_hash()
                 .into_root(),
             proof: block_proof.as_slice().try_into()?,
         })

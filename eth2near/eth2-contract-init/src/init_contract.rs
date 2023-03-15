@@ -2,6 +2,7 @@ use contract_wrapper::eth_client_contract::EthClientContract;
 use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
 use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
 use eth_types::eth2::ExtendedBeaconBlockHeader;
+use types::{BeaconBlockBody, ExecutionPayload, MainnetEthSpec};
 use eth_types::BlockHeader;
 use log::info;
 use std::{thread, time};
@@ -80,14 +81,12 @@ pub fn init_contract(
         .get_beacon_block_body_for_block_id(&block_id)
         .expect("Error on fetching finalized body");
 
+    let execution_payload: ExecutionPayload<MainnetEthSpec> = finalized_body
+        .execution_payload()
+        .expect("No execution payload in finalized body").into();
     let finalized_execution_header: BlockHeader = eth1_rpc_client
         .get_block_header_by_number(
-            finalized_body
-                .execution_payload()
-                .expect("No execution payload in finalized body")
-                .execution_payload_merge()
-                .expect("No execution payload in finalized body")
-                .block_number,
+            execution_payload.block_number(),
         )
         .expect("Error on fetching finalized execution header");
 
