@@ -310,7 +310,7 @@ impl BlockHeader {
         near_keccak256({
             let mut stream = RlpStream::new();
             self.stream_rlp(&mut stream, false);
-            stream.out().as_slice()
+            &stream.out()[..]
         })
         .into()
     }
@@ -350,7 +350,7 @@ impl RlpDecodable for BlockHeader {
             near_keccak256({
                 let mut stream = RlpStream::new();
                 block_header.stream_rlp(&mut stream, false);
-                stream.out().as_slice()
+                &stream.out()[..]
             })
             .into(),
         );
@@ -363,7 +363,7 @@ impl RlpDecodable for BlockHeader {
             near_keccak256({
                 let mut stream = RlpStream::new();
                 block_header.stream_rlp(&mut stream, true);
-                stream.out().as_slice()
+                &stream.out()[..]
             })
             .into(),
         );
