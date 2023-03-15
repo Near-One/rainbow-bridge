@@ -1089,7 +1089,7 @@ dependencies = [
  "ethereum-types 0.9.2",
  "hex 0.4.2",
  "lazy_static",
- "merkle_proof",
+ "merkle_proof 0.2.0 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec)",
  "near-sdk",
  "near-units",
  "serde_json",
@@ -1105,13 +1105,13 @@ dependencies = [
  "bitvec 1.0.0",
  "borsh",
  "eth-types",
- "ethereum-types 0.9.2",
+ "ethereum-types 0.14.1",
  "hex 0.4.2",
  "lazy_static",
- "merkle_proof",
+ "merkle_proof 0.2.0 (git+https://github.com/aurora-is-near/lighthouse.git?branch=lighthouse_1.5.1)",
  "near-sdk",
  "serde_json",
- "tree_hash 0.4.1 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec)",
+ "tree_hash 0.4.1 (git+https://github.com/aurora-is-near/lighthouse.git?branch=lighthouse_1.5.1)",
 ]
 
 [[package]]
@@ -2187,12 +2187,23 @@ checksum = "8452105ba047068f40ff7093dd1d9da90898e63dd61736462e9cdda6a90ad3c3"
 [[package]]
 name = "merkle_proof"
 version = "0.2.0"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?branch=lighthouse_1.5.1#4903a499bc7418922328423d1feda2f7efb77743"
+dependencies = [
+ "eth2_hashing",
+ "ethereum-types 0.14.1",
+ "lazy_static",
+ "safe_arith 0.1.0 (git+https://github.com/aurora-is-near/lighthouse.git?branch=lighthouse_1.5.1)",
+]
+
+[[package]]
+name = "merkle_proof"
+version = "0.2.0"
 source = "git+https://github.com/aurora-is-near/lighthouse.git?rev=b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec#b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec"
 dependencies = [
  "eth2_hashing",
  "ethereum-types 0.9.2",
  "lazy_static",
- "safe_arith",
+ "safe_arith 0.1.0 (git+https://github.com/aurora-is-near/lighthouse.git?rev=b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec)",
 ]
 
 [[package]]
@@ -3720,6 +3731,11 @@ name = "ryu"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "71d301d4193d031abdd79ff7e3dd721168a9572ef3fe51a1517aba235bd8f86e"
+
+[[package]]
+name = "safe_arith"
+version = "0.1.0"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?branch=lighthouse_1.5.1#4903a499bc7418922328423d1feda2f7efb77743"
 
 [[package]]
 name = "safe_arith"
