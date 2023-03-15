@@ -85,7 +85,8 @@ pub fn init_contract(
             finalized_body
                 .execution_payload()
                 .expect("No execution payload in finalized body")
-                .execution_payload
+                .execution_payload_merge()
+                .expect("No execution payload in finalized body")
                 .block_number,
         )
         .expect("Error on fetching finalized execution header");
