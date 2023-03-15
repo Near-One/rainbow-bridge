@@ -254,7 +254,8 @@ impl BeaconRPCClient {
         Ok(beacon_block_body
             .execution_payload()
             .map_err(|_| ExecutionPayloadError)?
-            .execution_payload
+            .execution_payload_merge()
+            .map_err(|_| ExecutionPayloadError)?
             .block_number)
     }
 
@@ -341,6 +342,7 @@ impl BeaconRPCClient {
     ) -> Result<std::string::String, Box<dyn Error>> {
         let v: Value = serde_json::from_str(block_json_str)?;
         let body_json_str = serde_json::to_string(&v["data"]["message"]["body"])?;
+        println!("{:?}", body_json_str);
         Ok(body_json_str)
     }
 
@@ -355,8 +357,10 @@ impl BeaconRPCClient {
     fn get_attested_header_from_light_client_update_json_str(
         light_client_update_json_str: &str,
     ) -> Result<BeaconBlockHeader, Box<dyn Error>> {
+        println!("ok1");
         let v: Value = serde_json::from_str(light_client_update_json_str)?;
-        let attested_header_json_str = serde_json::to_string(&v["data"][0]["attested_header"])?;
+        let attested_header_json_str = serde_json::to_string(&v[0]["data"]["attested_header"]["beacon"])?;
+        println!("{}", attested_header_json_str);
         let attested_header: BeaconBlockHeader = serde_json::from_str(&attested_header_json_str)?;
 
         Ok(attested_header)
@@ -365,8 +369,9 @@ impl BeaconRPCClient {
     fn get_sync_aggregate_from_light_client_update_json_str(
         light_client_update_json_str: &str,
     ) -> Result<SyncAggregate, Box<dyn Error>> {
+        println!("ok2");
         let v: Value = serde_json::from_str(light_client_update_json_str)?;
-        let sync_aggregate_json_str = serde_json::to_string(&v["data"][0]["sync_aggregate"])?;
+        let sync_aggregate_json_str = serde_json::to_string(&v[0]["data"]["sync_aggregate"])?;
         let sync_aggregate: SyncAggregate = serde_json::from_str(&sync_aggregate_json_str)?;
 
         Ok(sync_aggregate)
@@ -379,40 +384,10 @@ impl BeaconRPCClient {
         &self,
         light_client_update_json_str: &str,
     ) -> Result<Slot, Box<dyn Error>> {
-        const CHECK_SLOTS_FORWARD_LIMIT: u64 = 10;
-
+        println!("ok3");
         let v: Value = serde_json::from_str(light_client_update_json_str)?;
-
-        let attested_header_json_str = serde_json::to_string(&v["data"][0]["attested_header"])?;
-        let attested_header: BeaconBlockHeader = serde_json::from_str(&attested_header_json_str)?;
-
-        let mut signature_slot = attested_header.slot + 1;
-
-        let sync_aggregate = Self::get_sync_aggregate_from_light_client_update_json_str(
-            light_client_update_json_str,
-        )?;
-
-        loop {
-            if let Ok(beacon_block_body) =
-                self.get_beacon_block_body_for_block_id(&format!("{}", signature_slot))
-            {
-                if format!(
-                    "\"{:?}\"",
-                    beacon_block_body
-                        .sync_aggregate()
-                        .map_err(|_| { MissSyncAggregationError })?
-                        .sync_committee_signature
-                ) == serde_json::to_string(&sync_aggregate.sync_committee_signature)?
-                {
-                    break;
-                }
-            }
-
-            signature_slot += 1;
-            if signature_slot - attested_header.slot > CHECK_SLOTS_FORWARD_LIMIT {
-                return Err(Box::new(SignatureSlotNotFoundError));
-            }
-        }
+        println!("{:?}", v[0]["data"]["signature_slot"]);
+        let signature_slot = serde_json::from_str(v[0]["data"]["signature_slot"].as_str().ok_or(SignatureSlotNotFoundError)?)?;
 
         Ok(signature_slot)
     }
@@ -421,12 +396,13 @@ impl BeaconRPCClient {
         &self,
         light_client_update_json_str: &str,
     ) -> Result<FinalizedHeaderUpdate, Box<dyn Error>> {
+        println!("ok4");
         let v: Value = serde_json::from_str(light_client_update_json_str)?;
 
-        let finalized_header_json_str = serde_json::to_string(&v["data"][0]["finalized_header"])?;
+        let finalized_header_json_str = serde_json::to_string(&v[0]["data"]["finalized_header"]["beacon"])?;
         let finalized_header: BeaconBlockHeader = serde_json::from_str(&finalized_header_json_str)?;
 
-        let finalized_branch_json_str = serde_json::to_string(&v["data"][0]["finality_branch"])?;
+        let finalized_branch_json_str = serde_json::to_string(&v[0]["data"]["finality_branch"])?;
         let finalized_branch: Vec<eth_types::H256> =
             serde_json::from_str(&finalized_branch_json_str)?;
 
@@ -462,12 +438,12 @@ impl BeaconRPCClient {
     ) -> Result<SyncCommitteeUpdate, Box<dyn Error>> {
         let v: Value = serde_json::from_str(light_client_update_json_str)?;
         let next_sync_committee_branch_json_str =
-            serde_json::to_string(&v["data"][0]["next_sync_committee_branch"])?;
+            serde_json::to_string(&v[0]["data"]["next_sync_committee_branch"])?;
         let next_sync_committee_branch: Vec<eth_types::H256> =
             serde_json::from_str(&next_sync_committee_branch_json_str)?;
 
         let next_sync_committee_json_str =
-            serde_json::to_string(&v["data"][0]["next_sync_committee"])?;
+            serde_json::to_string(&v[0]["data"]["next_sync_committee"])?;
         let next_sync_committee: SyncCommittee =
             serde_json::from_str(&next_sync_committee_json_str)?;
 

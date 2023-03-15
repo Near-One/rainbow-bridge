@@ -227,7 +227,7 @@ impl HandMadeFinalityLightClientUpdate {
             BEACON_STATE_MERKLE_TREE_DEPTH,
         );
 
-        let next_sync_committee_branch = proof.1;
+        let next_sync_committee_branch = proof.unwrap().1;
 
         let next_sync_committee_branch = next_sync_committee_branch
             .into_iter()
@@ -292,7 +292,7 @@ impl HandMadeFinalityLightClientUpdate {
         );
 
         let mut finality_branch = vec![beacon_state.finalized_checkpoint().epoch.tree_hash_root()];
-        finality_branch.append(&mut proof.1);
+        finality_branch.append(&mut proof.unwrap().1);
 
         Ok(finality_branch
             .into_iter()

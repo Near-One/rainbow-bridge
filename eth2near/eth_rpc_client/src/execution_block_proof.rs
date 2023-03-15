@@ -45,8 +45,7 @@ impl ExecutionBlockProof {
         let execution_payload_merkle_tree = &ExecutionPayloadMerkleTree::new(
             &beacon_block_body
                 .execution_payload()
-                .map_err(|_| MissExecutionPayload)?
-                .execution_payload,
+                .map_err(|_| MissExecutionPayload)?.into()
         );
 
         let l1_execution_payload_proof = beacon_block_merkle_tree
@@ -54,22 +53,21 @@ impl ExecutionBlockProof {
             .generate_proof(
                 Self::L1_BEACON_BLOCK_BODY_TREE_EXECUTION_PAYLOAD_INDEX,
                 Self::L1_BEACON_BLOCK_BODY_PROOF_SIZE,
-            )
-            .1;
+            ).unwrap().1;
         let mut block_proof = execution_payload_merkle_tree
             .0
             .generate_proof(
                 Self::L2_EXECUTION_PAYLOAD_TREE_EXECUTION_BLOCK_INDEX,
                 Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE,
-            )
-            .1;
+            ).unwrap().1;
         block_proof.extend(&l1_execution_payload_proof);
 
         Ok(Self {
             block_hash: beacon_block_body
                 .execution_payload()
                 .map_err(|_| MissExecutionPayload)?
-                .execution_payload
+                .execution_payload_merge()
+                .map_err(|_| MissExecutionPayload)?
                 .block_hash
                 .into_root(),
             proof: block_proof.as_slice().try_into()?,

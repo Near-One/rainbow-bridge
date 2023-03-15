@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use std::io::{Error, Write};
 #[cfg(feature = "eth2")]
 use tree_hash::{Hash256, TreeHash, TreeHashType};
+use tree_hash::PackedEncoding;
 
 #[cfg(feature = "eth2")]
 pub mod eth2;
@@ -33,15 +34,15 @@ impl TreeHash for H256 {
         TreeHashType::Vector
     }
 
-    fn tree_hash_packed_encoding(&self) -> Vec<u8> {
-        self.0.as_bytes().to_vec()
+    fn tree_hash_packed_encoding(&self) -> PackedEncoding {
+        PackedEncoding::from_slice(self.0.as_bytes())
     }
 
     fn tree_hash_packing_factor() -> usize {
         1
     }
 
-    fn tree_hash_root(&self) -> Hash256 {
+    fn tree_hash_root(&self) -> tree_hash::Hash256 {
         (*self).0
     }
 }

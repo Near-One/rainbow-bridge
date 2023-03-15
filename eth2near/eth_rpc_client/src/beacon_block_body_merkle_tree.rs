@@ -56,20 +56,20 @@ impl ExecutionPayloadMerkleTree {
 
     pub fn new(execution_payload: &ExecutionPayload<MainnetEthSpec>) -> Self {
         let leaves: [H256; Self::TREE_NUM_LEAVES] = [
-            execution_payload.parent_hash.tree_hash_root(),
-            execution_payload.fee_recipient.tree_hash_root(),
-            execution_payload.state_root.tree_hash_root(),
-            execution_payload.receipts_root.tree_hash_root(),
-            execution_payload.logs_bloom.tree_hash_root(),
-            execution_payload.prev_randao.tree_hash_root(),
-            execution_payload.block_number.tree_hash_root(),
-            execution_payload.gas_limit.tree_hash_root(),
-            execution_payload.gas_used.tree_hash_root(),
-            execution_payload.timestamp.tree_hash_root(),
-            execution_payload.extra_data.tree_hash_root(),
-            execution_payload.base_fee_per_gas.tree_hash_root(),
-            execution_payload.block_hash.tree_hash_root(),
-            execution_payload.transactions.tree_hash_root(),
+            execution_payload.parent_hash().tree_hash_root(),
+            execution_payload.fee_recipient().tree_hash_root(),
+            execution_payload.state_root().tree_hash_root(),
+            execution_payload.receipts_root().tree_hash_root(),
+            execution_payload.logs_bloom().tree_hash_root(),
+            execution_payload.prev_randao().tree_hash_root(),
+            execution_payload.block_number().tree_hash_root(),
+            execution_payload.gas_limit().tree_hash_root(),
+            execution_payload.gas_used().tree_hash_root(),
+            execution_payload.timestamp().tree_hash_root(),
+            execution_payload.extra_data().tree_hash_root(),
+            execution_payload.base_fee_per_gas().tree_hash_root(),
+            execution_payload.block_hash().tree_hash_root(),
+            execution_payload.transactions().tree_hash_root(),
         ];
 
         Self(MerkleTree::create(&leaves, Self::TREE_DEPTH))

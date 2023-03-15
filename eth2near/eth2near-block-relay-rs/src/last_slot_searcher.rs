@@ -390,7 +390,8 @@ impl LastSlotSearcher {
                     beacon_block_body
                         .execution_payload()
                         .map_err(|_| ExecutionPayloadError)?
-                        .execution_payload
+                        .execution_payload_merge()
+                        .map_err(|_| ExecutionPayloadError)?
                         .block_hash
                         .into_root()
                         .as_bytes(),
