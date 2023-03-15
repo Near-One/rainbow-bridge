@@ -1062,8 +1062,7 @@ dependencies = [
  "hex 0.4.3",
  "indicatif",
  "lazy_static",
- "near-plugins 0.1.0 (git+https://github.com/aurora-is-near/near-plugins?rev=5579de43c28984d00fa9aebc0a8e755258bba6c2)",
- "near-plugins-derive 0.1.0 (git+https://github.com/aurora-is-near/near-plugins?rev=5579de43c28984d00fa9aebc0a8e755258bba6c2)",
+ "near-plugins",
  "near-sdk",
  "primal",
  "rlp",
@@ -1082,7 +1081,7 @@ dependencies = [
  "indicatif",
  "lazy_static",
  "near-crypto 0.14.0",
- "near-plugins 0.1.0 (git+https://github.com/aurora-is-near/near-plugins?rev=8920f9a72631f1b224ed93405640bc062f2a0191)",
+ "near-plugins",
  "near-primitives 0.15.0",
  "near-sdk",
  "rlp",
@@ -1126,7 +1125,7 @@ dependencies = [
  "hex 0.4.3",
  "lazy_static",
  "merkle_proof",
- "near-plugins 0.1.0 (git+https://github.com/aurora-is-near/near-plugins?rev=8920f9a72631f1b224ed93405640bc062f2a0191)",
+ "near-plugins",
  "near-sdk",
  "near-units",
  "serde_json",
@@ -2446,35 +2445,12 @@ dependencies = [
 [[package]]
 name = "near-plugins"
 version = "0.1.0"
-source = "git+https://github.com/aurora-is-near/near-plugins?rev=5579de43c28984d00fa9aebc0a8e755258bba6c2#5579de43c28984d00fa9aebc0a8e755258bba6c2"
-dependencies = [
- "bitflags 1.3.2",
- "near-plugins-derive 0.1.0 (git+https://github.com/aurora-is-near/near-plugins?rev=5579de43c28984d00fa9aebc0a8e755258bba6c2)",
- "near-sdk",
- "serde",
-]
-
-[[package]]
-name = "near-plugins"
-version = "0.1.0"
 source = "git+https://github.com/aurora-is-near/near-plugins?rev=8920f9a72631f1b224ed93405640bc062f2a0191#8920f9a72631f1b224ed93405640bc062f2a0191"
 dependencies = [
  "bitflags 1.3.2",
- "near-plugins-derive 0.1.0 (git+https://github.com/aurora-is-near/near-plugins?rev=8920f9a72631f1b224ed93405640bc062f2a0191)",
+ "near-plugins-derive",
  "near-sdk",
  "serde",
-]
-
-[[package]]
-name = "near-plugins-derive"
-version = "0.1.0"
-source = "git+https://github.com/aurora-is-near/near-plugins?rev=5579de43c28984d00fa9aebc0a8e755258bba6c2#5579de43c28984d00fa9aebc0a8e755258bba6c2"
-dependencies = [
- "darling",
- "proc-macro-crate 0.1.5",
- "proc-macro2 1.0.52",
- "quote 1.0.26",
- "syn 1.0.109",
 ]
 
 [[package]]

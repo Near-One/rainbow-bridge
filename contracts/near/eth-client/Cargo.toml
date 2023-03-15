@@ -18,8 +18,7 @@ ethash = { git = "https://github.com/nearprotocol/rust-ethash" }
 hex = "0.4.0"
 rustc-hex = "2.1.0"
 borsh = "0.9.3"
-near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", rev = "5579de43c28984d00fa9aebc0a8e755258bba6c2" }
-near-plugins-derive = { git = "https://github.com/aurora-is-near/near-plugins", rev = "5579de43c28984d00fa9aebc0a8e755258bba6c2" }
+near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", rev = "8920f9a72631f1b224ed93405640bc062f2a0191" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # serde's Serialize and Deserialize traits are required for `near_bindgen` macro for non-wasm32 targets

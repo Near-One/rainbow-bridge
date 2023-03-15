@@ -278,6 +278,8 @@ fn add_dags_merkle_roots() {
 #[test]
 #[cfg(feature = "eip1559")]
 fn update_dags_merkle_roots() {
+    use near_plugins::AccessControllable;
+
     let block = read_block(format!("./src/data/{}.json", 12_965_000).to_string());
     let mut context = get_context();
     context.predecessor_account_id = context.current_account_id.clone();
@@ -295,6 +297,7 @@ fn update_dags_merkle_roots() {
         None,
     );
 
+    contract.acl_grant_role(crate::Role::ConfigManager.into(), context.predecessor_account_id);
     contract.update_dags_merkle_roots(0, dmr.dag_merkle_roots.clone());
 
     for i in 0..699 {
