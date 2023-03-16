@@ -156,6 +156,7 @@ pub struct BlockHeader {
         serde(with = "eth2_serde_utils::u64_hex_be")
     )]
     pub base_fee_per_gas: u64,
+    pub withdrawals_root: H256,
 
     pub hash: Option<H256>,
     pub partial_hash: Option<H256>,
@@ -204,6 +205,7 @@ impl From<BlockHeaderLondon> for BlockHeader {
             nonce: header.nonce,
             #[cfg(feature = "eip1559")]
             base_fee_per_gas: header.base_fee_per_gas,
+            withdrawals_root: H256::default(),
             hash: header.hash,
             partial_hash: header.partial_hash,
         }
@@ -252,6 +254,7 @@ impl From<BlockHeaderPreLondon> for BlockHeader {
             nonce: header.nonce,
             #[cfg(feature = "eip1559")]
             base_fee_per_gas: 7,
+            withdrawals_root: H256::default(),
             hash: header.hash,
             partial_hash: header.partial_hash,
         }
@@ -276,7 +279,7 @@ impl BlockHeader {
 
     fn stream_rlp(&self, stream: &mut RlpStream, partial: bool) {
         #[cfg(feature = "eip1559")]
-        let list_size = 14 + if !partial { 2 } else { 0 };
+        let list_size = 15 + if !partial { 2 } else { 0 };
         #[cfg(not(feature = "eip1559"))]
         let list_size = 13 + if !partial { 2 } else { 0 };
 
@@ -303,6 +306,8 @@ impl BlockHeader {
 
         #[cfg(feature = "eip1559")]
         stream.append(&self.base_fee_per_gas);
+
+        stream.append(&self.withdrawals_root);
     }
 
     pub fn calculate_hash(&self) -> H256 {
@@ -341,6 +346,7 @@ impl RlpDecodable for BlockHeader {
             nonce: serialized.val_at(14)?,
             #[cfg(feature = "eip1559")]
             base_fee_per_gas: serialized.val_at(15)?,
+            withdrawals_root: serialized.val_at(16)?,
             hash: None,
             partial_hash: None,
         };
