@@ -46,9 +46,11 @@ pub fn is_correct_finality_update(
 
     let sync_committee_bits_sum: u64 = sync_committee_bits.count_ones().try_into()?;
     if sync_committee_bits_sum < MIN_SYNC_COMMITTEE_PARTICIPANTS {
+        println!("SMALL bits sum");
         return Ok(false);
     }
     if sync_committee_bits_sum * 3 < (sync_committee_bits.len() * 2).try_into()? {
+        println!("SMALL bits sum 2");
         return Ok(false);
     }
 

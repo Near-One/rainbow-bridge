@@ -21,7 +21,7 @@ use serde_json::{json, Value};
 use std::error::Error;
 use std::string::String;
 use std::time::Duration;
-use types::MainnetEthSpec;
+use types::{ExecutionPayload, MainnetEthSpec};
 use types::{BeaconBlockBody, BeaconState};
 
 #[derive(Debug, Clone, Deserialize)]
@@ -262,12 +262,11 @@ impl BeaconRPCClient {
 
     pub fn get_block_number_for_slot(&self, slot: types::Slot) -> Result<u64, Box<dyn Error>> {
         let beacon_block_body = self.get_beacon_block_body_for_block_id(&slot.to_string())?;
-        Ok(beacon_block_body
+        let execution_payload: ExecutionPayload<MainnetEthSpec> = beacon_block_body
             .execution_payload()
-            .map_err(|_| ExecutionPayloadError)?
-            .execution_payload_merge()
-            .map_err(|_| ExecutionPayloadError)?
-            .block_number)
+            .map_err(|_| ExecutionPayloadError)?.into();
+
+        Ok(execution_payload.block_number())
     }
 
     pub fn get_finality_light_client_update(&self) -> Result<LightClientUpdate, Box<dyn Error>> {

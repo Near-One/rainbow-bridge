@@ -5,6 +5,7 @@ use eth_types::H256;
 use log::{info, trace};
 use std::cmp;
 use std::error::Error;
+use types::{ExecutionPayload, MainnetEthSpec};
 
 pub struct LastSlotSearcher {
     enable_binsearch: bool,
@@ -386,13 +387,11 @@ impl LastSlotSearcher {
         trace!(target: "relay", "Check if block with slot={} on NEAR", slot);
         match beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", slot)) {
             Ok(beacon_block_body) => {
+                let execution_payload: ExecutionPayload<MainnetEthSpec> = beacon_block_body
+                    .execution_payload()
+                    .map_err(|_| ExecutionPayloadError)?.into();
                 let hash: H256 = H256::from(
-                    beacon_block_body
-                        .execution_payload()
-                        .map_err(|_| ExecutionPayloadError)?
-                        .execution_payload_merge()
-                        .map_err(|_| ExecutionPayloadError)?
-                        .block_hash
+                    execution_payload.block_hash()
                         .into_root()
                         .as_bytes(),
                 );
