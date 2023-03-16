@@ -90,6 +90,9 @@ pub fn init_contract(
         )
         .expect("Error on fetching finalized execution header");
 
+    println!("{:?}", finalized_execution_header);
+    println!("hash: {:?}", finalized_execution_header.calculate_hash());
+
     let next_sync_committee = light_client_update_with_next_sync_committee
         .sync_committee_update
         .expect("No sync_committee update in light client update")

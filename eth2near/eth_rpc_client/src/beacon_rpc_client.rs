@@ -192,15 +192,22 @@ impl BeaconRPCClient {
             self.endpoint_url, self.routes.get_bootstrap, block_root
         );
 
+        println!("{}", url);
+
         let light_client_snapshot_json_str = self.get_json_from_raw_request(&url)?;
+        println!("ok5.0.1");
         let parsed_json: Value = serde_json::from_str(&light_client_snapshot_json_str)?;
+        println!("ok5.0.2");
+        println!("{}", parsed_json);
+        println!("{}", parsed_json["data"]["header"]);
         let beacon_header: BeaconBlockHeader =
-            serde_json::from_value(parsed_json["data"]["header"].clone())?;
+            serde_json::from_value(parsed_json["data"]["header"]["beacon"].clone())?;
+        println!("ok5.0.3");
         let current_sync_committee: SyncCommittee =
             serde_json::from_value(parsed_json["data"]["current_sync_committee"].clone())?;
+        println!("ok5.0.4");
         let current_sync_committee_branch: Vec<H256> =
             serde_json::from_value(parsed_json["data"]["current_sync_committee_branch"].clone())?;
-
         println!("ok5.1");
         Ok(LightClientSnapshotWithProof {
             beacon_header,
@@ -217,6 +224,9 @@ impl BeaconRPCClient {
         let checkpoint_json_str = self.get_json_from_raw_request(&url)?;
         let parsed_json: Value = serde_json::from_str(&checkpoint_json_str)?;
 
+        println!("{}", url);
+        println!("ok5.0.0 {}", parsed_json);
+        println!("{}", checkpoint_json_str);
         Ok(utils::trim_quotes(
             parsed_json["data"]["finalized"]["root"].to_string(),
         ))
