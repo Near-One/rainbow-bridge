@@ -19,9 +19,8 @@ overflow-checks = true
 [patch]
 [patch.crates-io]
 eth2_hashing = { path = "eth2_hashing" }
-eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca"  }
-eth2_ssz_types = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca"  }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca"}
-tree_hash_derive = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca"}
-eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca" }
-eth2_ssz_derive = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca" }
+eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae"  }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae"}
+tree_hash_derive = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae"}
+eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }
+eth2_ssz_derive = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }

@@ -5,10 +5,10 @@ edition = "2021"
 
 [dependencies]
 eth-types = { path ="../../contracts/near/eth-types/", features = ["eip1559"]}
-bls = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca" }
+bls = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }
 eth2-utility  = { path ="../../contracts/near/eth2-utility"}
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca" }
-types =  { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca" }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }
+types =  { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }
 bitvec = "1.0.0"
 
 [dev-dependencies]
