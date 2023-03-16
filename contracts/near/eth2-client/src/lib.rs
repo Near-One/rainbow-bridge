@@ -75,6 +75,8 @@ impl Eth2Client {
     #[init]
     #[private]
     pub fn init(#[serializer(borsh)] args: InitInput) -> Self {
+        //require!(false, "NEW CONTRACT");
+        require!(args.finalized_execution_header.withdrawals_root != H256::default(), "Withdrawls");
         let min_storage_balance_for_submitter =
             calculate_min_storage_balance_for_submitter(args.max_submitted_blocks_by_account);
         let network =

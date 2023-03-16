@@ -180,6 +180,7 @@ pub struct BlockHeaderLondon {
     pub mix_hash: H256,
     pub nonce: H64,
     pub base_fee_per_gas: u64,
+    pub withdrawals_root: H256,
 
     pub hash: Option<H256>,
     pub partial_hash: Option<H256>,
@@ -205,7 +206,7 @@ impl From<BlockHeaderLondon> for BlockHeader {
             nonce: header.nonce,
             #[cfg(feature = "eip1559")]
             base_fee_per_gas: header.base_fee_per_gas,
-            withdrawals_root: H256::default(),
+            withdrawals_root: header.withdrawals_root,
             hash: header.hash,
             partial_hash: header.partial_hash,
         }
