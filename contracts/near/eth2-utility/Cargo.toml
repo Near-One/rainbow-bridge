@@ -8,10 +8,10 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-ethereum-types = "0.14.1"
+ethereum-types = { version = "0.14.1", features = ["rlp", "serialize"],  default-features = false }
 eth-types =  { path = "../eth-types" }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "lighthouse_1.5.1" }
-merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "lighthouse_1.5.1" }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca" }
+merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca" }
 near-sdk = "4.0.0"
 borsh = "0.9.3"
 bitvec = "1.0.0"

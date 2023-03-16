@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git",  branch = "lighthouse_1.5.1" }
-merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "lighthouse_1.5.1" }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca" }
+merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca" }
 eth2_to_near_relay = { path = "../eth2near-block-relay-rs"}
 eth_rpc_client = { path = "../eth_rpc_client" }
 eth-types = { path = "../../contracts/near/eth-types/", features = ["eip1559"]}

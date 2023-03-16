@@ -12,8 +12,7 @@ use rlp_derive::RlpDecodable as RlpDecodableDerive;
 use serde::{Deserialize, Serialize};
 use std::io::{Error, Write};
 #[cfg(feature = "eth2")]
-use tree_hash::{Hash256, TreeHash, TreeHashType};
-use tree_hash::PackedEncoding;
+use tree_hash::{TreeHash, TreeHashType, PackedEncoding};
 
 #[cfg(feature = "eth2")]
 pub mod eth2;

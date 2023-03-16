@@ -7,15 +7,15 @@ edition = "2021"
 
 [dependencies]
 log = { version = "0.4", features = ["std", "serde"] }
-types =  { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "lighthouse_1.5.1" }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git",  branch = "lighthouse_1.5.1" }
-merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "lighthouse_1.5.1" }
+types =  { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca" }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca" }
+merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca" }
 serde_json = "1.0.74"
 serde = { version = "1.0", features = ["derive"] }
-eth2_hashing = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "lighthouse_1.5.1" }
-ethereum-types = "0.14.1"
+eth2_hashing = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca" }
+ethereum-types = { version = "0.14.1", features = ["rlp", "serialize"],  default-features = false }
 reqwest = { version = "0.11", features = ["blocking"] }
-eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "lighthouse_1.5.1" }
+eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca" }
 eth-types = { path = "../../contracts/near/eth-types/", features = ["eip1559"]}
 contract_wrapper = { path = "../contract_wrapper" }
 clap = { version = "3.1.6", features = ["derive"] }

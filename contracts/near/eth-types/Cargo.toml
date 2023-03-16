@@ -13,13 +13,13 @@ near-sdk = "4.0.0"
 borsh = "0.9.3"
 rlp = "0.5.2"
 rlp-derive = "0.1.0"
-ethereum-types = "0.14.1"
+ethereum-types = { version = "0.14.1", features = ["rlp", "serialize"],  default-features = false }
 derive_more = "^0.99.2"
-eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "lighthouse_1.5.1", optional = true }
-eth2_ssz_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "lighthouse_1.5.1", optional = true }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "lighthouse_1.5.1", optional = true }
-tree_hash_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "lighthouse_1.5.1", optional = true }
-eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git", branch = "lighthouse_1.5.1", optional = true }
+eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca", optional = true }
+eth2_ssz_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca", optional = true }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca", optional = true }
+tree_hash_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca", optional = true }
+eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "a3bdff781e689b50150a8d6e202dc7eec8f69aca", optional = true }
 hex = "0.4.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
