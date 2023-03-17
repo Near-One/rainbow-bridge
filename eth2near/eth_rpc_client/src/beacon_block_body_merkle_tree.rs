@@ -33,10 +33,11 @@ impl BeaconBlockBodyMerkleTree {
             } else {
                 H256::zero()
             },
-            beacon_block_body
-                .bls_to_execution_changes()
-                .unwrap()
-                .tree_hash_root(),
+            if let Ok(bls_to_execution_changes) = beacon_block_body.bls_to_execution_changes() {
+                bls_to_execution_changes.tree_hash_root()
+            } else {
+                H256::zero()
+            },
         ];
 
         Self(MerkleTree::create(
@@ -74,7 +75,11 @@ impl ExecutionPayloadMerkleTree {
             execution_payload.base_fee_per_gas().tree_hash_root(),
             execution_payload.block_hash().tree_hash_root(),
             execution_payload.transactions().tree_hash_root(),
-            execution_payload.withdrawals().unwrap().tree_hash_root(),
+            if let Ok(withdrawals) = execution_payload.withdrawals() {
+                withdrawals.tree_hash_root()
+            } else {
+                H256::zero()
+            },
         ];
 
         Self(MerkleTree::create(&leaves, Self::TREE_DEPTH))
@@ -142,18 +147,23 @@ impl BeaconStateMerkleTree {
             } else {
                 H256::zero()
             },
-            beacon_state
-                .next_withdrawal_index()
-                .unwrap()
-                .tree_hash_root(),
-            beacon_state
-                .next_withdrawal_validator_index()
-                .unwrap()
-                .tree_hash_root(),
-            beacon_state
-                .historical_summaries()
-                .unwrap()
-                .tree_hash_root(),
+            if let Ok(next_withdrawal_index) = beacon_state.next_withdrawal_index() {
+                next_withdrawal_index.tree_hash_root()
+            } else {
+                H256::zero()
+            },
+            if let Ok(next_withdrawal_validator_index) =
+                beacon_state.next_withdrawal_validator_index()
+            {
+                next_withdrawal_validator_index.tree_hash_root()
+            } else {
+                H256::zero()
+            },
+            if let Ok(historical_summaries) = beacon_state.historical_summaries() {
+                historical_summaries.tree_hash_root()
+            } else {
+                H256::zero()
+            },
         ];
 
         Self(MerkleTree::create(&leaves, Self::TREE_DEPTH))

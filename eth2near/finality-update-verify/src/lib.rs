@@ -8,7 +8,7 @@ use eth_types::eth2::{BeaconBlockHeader, LightClientUpdate, SyncCommittee};
 use eth_types::H256;
 use std::error::Error;
 use std::str::FromStr;
-use types::{ForkVersion, Hash256, Slot};
+use types::{Hash256, Slot};
 
 #[cfg(test)]
 pub mod config_for_tests;

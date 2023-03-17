@@ -286,7 +286,7 @@ impl HandMadeFinalityLightClientUpdate {
         const BEACON_STATE_FINALIZED_CHECKPOINT_INDEX: usize = 20;
 
         let beacon_state_merkle_tree = BeaconStateMerkleTree::new(beacon_state);
-        let mut proof = beacon_state_merkle_tree.0.generate_proof(
+        let proof = beacon_state_merkle_tree.0.generate_proof(
             BEACON_STATE_FINALIZED_CHECKPOINT_INDEX,
             BEACON_STATE_MERKLE_TREE_DEPTH,
         );

@@ -10,7 +10,7 @@ use eth_types::BlockHeader;
 use log::info;
 use std::{thread, time};
 use tree_hash::TreeHash;
-use types::{BeaconBlockBody, ExecutionPayload, MainnetEthSpec};
+use types::{ExecutionPayload, MainnetEthSpec};
 
 const CURRENT_SYNC_COMMITTEE_INDEX: u32 = 54;
 const CURRENT_SYNC_COMMITTEE_TREE_DEPTH: u32 = consensus::floorlog2(CURRENT_SYNC_COMMITTEE_INDEX);
