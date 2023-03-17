@@ -246,7 +246,8 @@ mod tests {
         let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
 
         let mut eth_client_contract = EthClientContract::new(contract_wrapper);
-        let init_config = get_init_config(&config_for_test, &eth_client_contract);
+        let mut init_config = get_init_config(&config_for_test, &eth_client_contract);
+        init_config.beacon_rpc_version = BeaconRPCVersion::V1_5;
 
         init_contract(&init_config, &mut eth_client_contract).unwrap();
 

@@ -899,9 +899,7 @@ mod tests {
                 TREE_NEXT_SYNC_COMMITTEE_DEPTH,
                 TREE_NEXT_SYNC_COMMITTEE_INDEX,
                 light_client_update
-                    .finality_update
-                    .header_update
-                    .beacon_header
+                    .attested_beacon_header
                     .state_root
                     .0
             ),

@@ -15,6 +15,7 @@ use eth_types::BlockHeader;
 use std::{thread, time};
 use tokio::runtime::Runtime;
 use tree_hash::TreeHash;
+use types::{ExecutionPayload, MainnetEthSpec};
 use workspaces::{Account, Contract};
 
 pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
@@ -131,25 +132,22 @@ pub fn init_contract_from_specific_slot(
         .get_beacon_block_body_for_block_id(&format!("{}", finality_slot))
         .unwrap();
 
+    let execution_payload: ExecutionPayload<MainnetEthSpec> = finalized_body
+        .execution_payload()
+        .unwrap().into();
     let finalized_beacon_header = ExtendedBeaconBlockHeader {
         header: finality_header.clone(),
         beacon_block_root: eth_types::H256(finality_header.tree_hash_root()),
-        execution_block_hash: finalized_body
-            .execution_payload()
-            .unwrap()
-            .execution_payload
-            .block_hash
+        execution_block_hash: execution_payload
+            .block_hash()
             .into_root()
             .into(),
     };
 
     let finalized_execution_header: BlockHeader = eth1_rpc_client
         .get_block_header_by_number(
-            finalized_body
-                .execution_payload()
-                .unwrap()
-                .execution_payload
-                .block_number,
+            execution_payload
+                .block_number(),
         )
         .unwrap();
 
@@ -207,7 +205,7 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
         sleep_time_after_submission_secs: 5,
         hashes_gc_threshold: None,
         max_submitted_blocks_by_account: None,
-        beacon_rpc_version: BeaconRPCVersion::V1_1,
+        beacon_rpc_version: BeaconRPCVersion::V1_5,
     }
 }
 
@@ -232,7 +230,7 @@ fn get_init_config(
         max_submitted_blocks_by_account: Some(8000),
         trusted_signer_account_id: Some(eth_client_contract.get_signer_account_id().to_string()),
         init_block_root: None,
-        beacon_rpc_version: BeaconRPCVersion::V1_1,
+        beacon_rpc_version: BeaconRPCVersion::V1_5,
     }
 }
 
