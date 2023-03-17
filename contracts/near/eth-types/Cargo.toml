@@ -26,6 +26,5 @@ hex = "0.4.0"
 serde-big-array = "0.4.1"
 
 [features]
-default = ["eip1559", "eth2"]
-eip1559 = []
+default = ["eth2"]
 eth2 = ["dep:eth2_ssz", "dep:eth2_ssz_derive", "dep:tree_hash", "dep:tree_hash_derive", "dep:eth2_serde_utils"]

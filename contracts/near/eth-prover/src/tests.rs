@@ -55,7 +55,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(feature = "eip1559", ignore)]
     fn simple_tx_res() {
         testing_env!(get_context(vec![]));
 
@@ -80,7 +79,7 @@ mod tests {
         for item in node {
             stream.append(item);
         }
-        stream.out()
+        stream.out().to_vec().to_vec()
     }).collect();
 
         if let PromiseOrValue::Value(true) = contract.verify_log_entry(
@@ -98,7 +97,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(feature = "eip1559", ignore)]
     fn complex_tx_res() {
         testing_env!(get_context(vec![]));
 
@@ -199,7 +197,7 @@ mod tests {
         for item in node {
             stream.append(item);
         }
-        stream.out()
+        stream.out().to_vec()
     }).collect();
 
         if let PromiseOrValue::Value(true) = contract.verify_log_entry(
@@ -217,7 +215,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(feature = "eip1559", ignore)]
     fn complex_test2() {
         let log_index = 0;
         let receipt_index = 1;
@@ -282,7 +279,7 @@ mod tests {
                 for item in node {
                     stream.append(item);
                 }
-                stream.out()
+                stream.out().to_vec()
             })
             .collect();
 
@@ -301,7 +298,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(feature = "eip1559", ignore)]
     fn complex_test3() {
         let log_index = 0;
         let receipt_index = 0;
@@ -341,7 +337,7 @@ mod tests {
                 for item in node {
                     stream.append(item);
                 }
-                stream.out()
+                stream.out().to_vec()
             })
             .collect();
 

@@ -17,6 +17,6 @@ tokio = { version = "1.19.0", features = ["rt", "macros"] }
 reqwest = { version = "0.11", features = ["blocking"] }
 serde_json = "1.0.74"
 serde = { version = "1.0", features = ["derive"] }
-eth-types = { path = "../../contracts/near/eth-types/", features = ["eip1559"]}
+eth-types = { path = "../../contracts/near/eth-types/" }
 workspaces = "0.7"
 anyhow = "1.0"

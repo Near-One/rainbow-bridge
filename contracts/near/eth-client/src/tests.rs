@@ -251,7 +251,6 @@ fn assert_hashes_equal_to_contract_hashes(
 }
 
 #[test]
-#[cfg_attr(feature = "eip1559", ignore)]
 fn add_dags_merkle_roots() {
     testing_env!(get_context());
     let (blocks, _) = get_blocks(&WEB3RS, 400_000, 400_001);
@@ -278,7 +277,6 @@ fn add_dags_merkle_roots() {
 }
 
 #[test]
-#[cfg(feature = "eip1559")]
 fn update_dags_merkle_roots() {
     let block = read_block(format!("./src/data/{}.json", 12_965_000).to_string());
     let mut context = get_context();
@@ -321,7 +319,6 @@ fn update_dags_merkle_roots() {
 }
 
 #[test]
-#[cfg_attr(feature = "eip1559", ignore)]
 fn add_blocks_2_and_3() {
     testing_env!(get_context());
 
@@ -360,7 +357,6 @@ fn add_blocks_2_and_3() {
 }
 
 #[test]
-#[cfg_attr(feature = "eip1559", ignore)]
 fn add_blocks_before_and_after_istanbul_fork() {
     testing_env!(get_context());
 
@@ -406,7 +402,6 @@ fn add_blocks_before_and_after_istanbul_fork() {
 }
 
 #[test]
-#[cfg_attr(feature = "eip1559", ignore)]
 fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
     testing_env!(get_context());
 
@@ -465,7 +460,6 @@ fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
 }
 
 #[test]
-#[cfg_attr(feature = "eip1559", ignore)]
 fn add_block_diverged_until_ethashproof_dataset_fix() {
     testing_env!(get_context());
 
@@ -503,7 +497,6 @@ fn add_block_diverged_until_ethashproof_dataset_fix() {
 }
 
 #[test]
-#[cfg_attr(feature = "eip1559", ignore)]
 fn add_400000_block_only() {
     testing_env!(get_context());
 
@@ -536,7 +529,6 @@ fn add_400000_block_only() {
 }
 
 #[test]
-#[cfg_attr(feature = "eip1559", ignore)]
 fn add_two_blocks_from_8996776() {
     testing_env!(get_context());
 
@@ -579,7 +571,6 @@ fn add_two_blocks_from_8996776() {
 }
 
 #[test]
-#[cfg_attr(feature = "eip1559", ignore)]
 fn add_two_blocks_from_400000() {
     testing_env!(get_context());
 
@@ -627,7 +618,6 @@ fn add_two_blocks_from_400000() {
 }
 
 #[test]
-#[cfg(feature = "eip1559")]
 fn add_blocks_from_12965000() {
     testing_env!(get_context());
 
@@ -669,7 +659,6 @@ fn add_blocks_from_12965000() {
 
 #[test]
 #[should_panic]
-#[cfg(feature = "eip1559")]
 fn add_blocks_with_invalid_mix_hash() {
     testing_env!(get_context());
 
@@ -708,7 +697,6 @@ fn add_blocks_with_invalid_mix_hash() {
 
 #[test]
 #[should_panic(expected = "RlpInconsistentLengthAndData")]
-#[cfg(feature = "eip1559")]
 fn add_blocks_with_extra_bytes() {
     testing_env!(get_context());
     let block_height: u64 = 12_965_000;
