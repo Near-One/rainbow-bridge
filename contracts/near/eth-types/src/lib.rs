@@ -152,13 +152,23 @@ pub struct BlockHeader {
     pub nonce: H64,
     #[cfg_attr(
         all(feature = "eth2", not(target_arch = "wasm32")),
-        serde(with = "eth2_serde_utils::u64_hex_be")
+        serde(deserialize_with = "u64_hex_be_option")
     )]
     pub base_fee_per_gas: Option<u64>,
     pub withdrawals_root: Option<H256>,
 
     pub hash: Option<H256>,
     pub partial_hash: Option<H256>,
+}
+
+#[cfg(feature = "eth2")]
+fn u64_hex_be_option<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Ok(Some(eth2_serde_utils::u64_hex_be::deserialize(
+        deserializer,
+    )?))
 }
 
 impl BlockHeader {
