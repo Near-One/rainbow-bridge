@@ -1,7 +1,8 @@
 use crate::beacon_block_body_merkle_tree::BeaconStateMerkleTree;
 use crate::beacon_rpc_client::BeaconRPCClient;
 use crate::errors::{
-    ErrorOnUnwrapSignatureBit, MissNextSyncCommittee, MissSyncAggregationError, NoBlockForSlotError,
+    ErrorOnUnwrapSignatureBit, MerkleTreeError, MissNextSyncCommittee, MissSyncAggregationError,
+    NoBlockForSlotError,
 };
 use crate::execution_block_proof::ExecutionBlockProof;
 use eth_types::eth2::{
@@ -222,12 +223,15 @@ impl HandMadeFinalityLightClientUpdate {
         const BEACON_STATE_MERKLE_TREE_DEPTH: usize = 5;
         const BEACON_STATE_NEXT_SYNC_COMMITTEE_INDEX: usize = 23;
 
-        let proof = beacon_state_merkle_tree.0.generate_proof(
-            BEACON_STATE_NEXT_SYNC_COMMITTEE_INDEX,
-            BEACON_STATE_MERKLE_TREE_DEPTH,
-        );
+        let proof = beacon_state_merkle_tree
+            .0
+            .generate_proof(
+                BEACON_STATE_NEXT_SYNC_COMMITTEE_INDEX,
+                BEACON_STATE_MERKLE_TREE_DEPTH,
+            )
+            .map_err(|err| MerkleTreeError(err))?;
 
-        let next_sync_committee_branch = proof.unwrap().1;
+        let next_sync_committee_branch = proof.1;
 
         let next_sync_committee_branch = next_sync_committee_branch
             .into_iter()
@@ -286,13 +290,16 @@ impl HandMadeFinalityLightClientUpdate {
         const BEACON_STATE_FINALIZED_CHECKPOINT_INDEX: usize = 20;
 
         let beacon_state_merkle_tree = BeaconStateMerkleTree::new(beacon_state);
-        let proof = beacon_state_merkle_tree.0.generate_proof(
-            BEACON_STATE_FINALIZED_CHECKPOINT_INDEX,
-            BEACON_STATE_MERKLE_TREE_DEPTH,
-        );
+        let mut proof = beacon_state_merkle_tree
+            .0
+            .generate_proof(
+                BEACON_STATE_FINALIZED_CHECKPOINT_INDEX,
+                BEACON_STATE_MERKLE_TREE_DEPTH,
+            )
+            .map_err(|err| MerkleTreeError(err))?;
 
         let mut finality_branch = vec![beacon_state.finalized_checkpoint().epoch.tree_hash_root()];
-        finality_branch.append(&mut proof.unwrap().1);
+        finality_branch.append(&mut proof.1);
 
         Ok(finality_branch
             .into_iter()

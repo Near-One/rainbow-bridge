@@ -1,5 +1,5 @@
 use crate::beacon_block_body_merkle_tree::{BeaconBlockBodyMerkleTree, ExecutionPayloadMerkleTree};
-use crate::errors::MissExecutionPayload;
+use crate::errors::{MerkleTreeError, MissExecutionPayload};
 use eth2_hashing;
 use ethereum_types::H256;
 use std::error::Error;
@@ -55,7 +55,7 @@ impl ExecutionBlockProof {
                 Self::L1_BEACON_BLOCK_BODY_TREE_EXECUTION_PAYLOAD_INDEX,
                 Self::L1_BEACON_BLOCK_BODY_PROOF_SIZE,
             )
-            .unwrap()
+            .map_err(|err| MerkleTreeError(err))?
             .1;
         let mut block_proof = execution_payload_merkle_tree
             .0
@@ -63,7 +63,7 @@ impl ExecutionBlockProof {
                 Self::L2_EXECUTION_PAYLOAD_TREE_EXECUTION_BLOCK_INDEX,
                 Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE,
             )
-            .unwrap()
+            .map_err(|err| MerkleTreeError(err))?
             .1;
         block_proof.extend(&l1_execution_payload_proof);
 

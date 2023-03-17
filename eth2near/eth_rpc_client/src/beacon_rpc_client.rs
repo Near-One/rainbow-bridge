@@ -28,6 +28,7 @@ use types::{ExecutionPayload, MainnetEthSpec};
 pub enum BeaconRPCVersion {
     V1_1,
     V1_2,
+    V1_5,
 }
 
 struct BeaconRPCRoutes {
@@ -37,6 +38,7 @@ struct BeaconRPCRoutes {
     pub get_light_client_finality_update: String,
     pub get_bootstrap: String,
     pub get_state: String,
+    pub version: BeaconRPCVersion,
 }
 
 impl BeaconRPCRoutes {
@@ -50,8 +52,9 @@ impl BeaconRPCRoutes {
                     .to_string(),
                 get_bootstrap: "eth/v1/beacon/light_client/bootstrap".to_string(),
                 get_state: "eth/v2/debug/beacon/states".to_string(),
+                version,
             },
-            BeaconRPCVersion::V1_2 => Self {
+            BeaconRPCVersion::V1_2 | BeaconRPCVersion::V1_5 => Self {
                 get_block_header: "eth/v1/beacon/headers".to_string(),
                 get_block: "eth/v2/beacon/blocks".to_string(),
                 get_light_client_update: "eth/v1/beacon/light_client/updates".to_string(),
@@ -59,6 +62,7 @@ impl BeaconRPCRoutes {
                     .to_string(),
                 get_bootstrap: "eth/v1/beacon/light_client/bootstrap".to_string(),
                 get_state: "eth/v2/debug/beacon/states".to_string(),
+                version,
             },
         }
     }
@@ -162,7 +166,7 @@ impl BeaconRPCClient {
         let light_client_update_json_str = self.get_json_from_raw_request(&url)?;
 
         Ok(LightClientUpdate {
-            attested_beacon_header: Self::get_attested_header_from_light_client_update_json_str(
+            attested_beacon_header: self.get_attested_header_from_light_client_update_json_str(
                 &light_client_update_json_str,
             )?,
             sync_aggregate: Self::get_sync_aggregate_from_light_client_update_json_str(
@@ -173,7 +177,7 @@ impl BeaconRPCClient {
                 &light_client_update_json_str,
             )?,
             sync_committee_update: Some(
-                Self::get_sync_committee_update_from_light_client_update_json_str(
+                self.get_sync_committee_update_from_light_client_update_json_str(
                     &light_client_update_json_str,
                 )?,
             ),
@@ -194,8 +198,13 @@ impl BeaconRPCClient {
 
         let light_client_snapshot_json_str = self.get_json_from_raw_request(&url)?;
         let parsed_json: Value = serde_json::from_str(&light_client_snapshot_json_str)?;
-        let beacon_header: BeaconBlockHeader =
-            serde_json::from_value(parsed_json["data"]["header"]["beacon"].clone())?;
+        let beacon_header: BeaconBlockHeader = match self.routes.version {
+            BeaconRPCVersion::V1_5 => {
+                serde_json::from_value(parsed_json["data"]["header"]["beacon"].clone())?
+            }
+            _ => serde_json::from_value(parsed_json["data"]["header"].clone())?,
+        };
+
         let current_sync_committee: SyncCommittee =
             serde_json::from_value(parsed_json["data"]["current_sync_committee"].clone())?;
         let current_sync_committee_branch: Vec<H256> =
@@ -269,7 +278,7 @@ impl BeaconRPCClient {
         let light_client_update_json_str = serde_json::to_string(&json!({"data": [v["data"]]}))?;
 
         Ok(LightClientUpdate {
-            attested_beacon_header: Self::get_attested_header_from_light_client_update_json_str(
+            attested_beacon_header: self.get_attested_header_from_light_client_update_json_str(
                 &light_client_update_json_str,
             )?,
             sync_aggregate: Self::get_sync_aggregate_from_light_client_update_json_str(
@@ -353,15 +362,20 @@ impl BeaconRPCClient {
     }
 
     fn get_attested_header_from_light_client_update_json_str(
+        &self,
         light_client_update_json_str: &str,
     ) -> Result<BeaconBlockHeader, Box<dyn Error>> {
         let v: Value = serde_json::from_str(light_client_update_json_str)?;
-        let mut attested_header_json_str =
-            serde_json::to_string(&v[0]["data"]["attested_header"]["beacon"])?;
-        if attested_header_json_str == "null" {
-            attested_header_json_str =
-                serde_json::to_string(&v["data"][0]["attested_header"]["beacon"])?;
-        }
+        let attested_header_json_str = match self.routes.version {
+            BeaconRPCVersion::V1_5 => {
+                let mut res = serde_json::to_string(&v[0]["data"]["attested_header"]["beacon"])?;
+                if res == "null" {
+                    res = serde_json::to_string(&v["data"][0]["attested_header"]["beacon"])?;
+                }
+                res
+            }
+            _ => serde_json::to_string(&v["data"][0]["attested_header"])?,
+        };
         let attested_header: BeaconBlockHeader = serde_json::from_str(&attested_header_json_str)?;
 
         Ok(attested_header)
@@ -388,13 +402,54 @@ impl BeaconRPCClient {
         light_client_update_json_str: &str,
     ) -> Result<Slot, Box<dyn Error>> {
         let v: Value = serde_json::from_str(light_client_update_json_str)?;
-        let signature_slot = serde_json::from_str(
-            v[0]["data"]["signature_slot"]
-                .as_str()
-                .unwrap_or_else(|| v["data"][0]["signature_slot"].as_str().unwrap()),
-        )?;
+        match self.routes.version {
+            BeaconRPCVersion::V1_5 => {
+                let signature_slot = serde_json::from_str(
+                    v[0]["data"]["signature_slot"]
+                        .as_str()
+                        .unwrap_or_else(|| v["data"][0]["signature_slot"].as_str().unwrap()),
+                )?;
 
-        Ok(signature_slot)
+                Ok(signature_slot)
+            }
+            _ => {
+                const CHECK_SLOTS_FORWARD_LIMIT: u64 = 10;
+                let attested_header_json_str =
+                    serde_json::to_string(&v["data"][0]["attested_header"])?;
+                let attested_header: BeaconBlockHeader =
+                    serde_json::from_str(&attested_header_json_str)?;
+
+                let mut signature_slot = attested_header.slot + 1;
+
+                let sync_aggregate = Self::get_sync_aggregate_from_light_client_update_json_str(
+                    light_client_update_json_str,
+                )?;
+
+                loop {
+                    if let Ok(beacon_block_body) =
+                        self.get_beacon_block_body_for_block_id(&format!("{}", signature_slot))
+                    {
+                        if format!(
+                            "\"{:?}\"",
+                            beacon_block_body
+                                .sync_aggregate()
+                                .map_err(|_| { MissSyncAggregationError })?
+                                .sync_committee_signature
+                        ) == serde_json::to_string(&sync_aggregate.sync_committee_signature)?
+                        {
+                            break;
+                        }
+                    }
+
+                    signature_slot += 1;
+                    if signature_slot - attested_header.slot > CHECK_SLOTS_FORWARD_LIMIT {
+                        return Err(Box::new(SignatureSlotNotFoundError));
+                    }
+                }
+
+                Ok(signature_slot)
+            }
+        }
     }
 
     fn get_finality_update_from_light_client_update_json_str(
@@ -403,12 +458,17 @@ impl BeaconRPCClient {
     ) -> Result<FinalizedHeaderUpdate, Box<dyn Error>> {
         let v: Value = serde_json::from_str(light_client_update_json_str)?;
 
-        let mut finalized_header_json_str =
-            serde_json::to_string(&v[0]["data"]["finalized_header"]["beacon"])?;
-        if finalized_header_json_str == "null" {
-            finalized_header_json_str =
-                serde_json::to_string(&v["data"][0]["finalized_header"]["beacon"])?;
-        }
+        let finalized_header_json_str = match self.routes.version {
+            BeaconRPCVersion::V1_5 => {
+                let mut res = serde_json::to_string(&v[0]["data"]["finalized_header"]["beacon"])?;
+                if res == "null" {
+                    res = serde_json::to_string(&v["data"][0]["finalized_header"]["beacon"])?;
+                }
+                res
+            }
+            _ => serde_json::to_string(&v["data"][0]["finalized_header"])?,
+        };
+
         let finalized_header: BeaconBlockHeader = serde_json::from_str(&finalized_header_json_str)?;
 
         let mut finalized_branch_json_str =
@@ -447,16 +507,25 @@ impl BeaconRPCClient {
     }
 
     fn get_sync_committee_update_from_light_client_update_json_str(
+        &self,
         light_client_update_json_str: &str,
     ) -> Result<SyncCommitteeUpdate, Box<dyn Error>> {
         let v: Value = serde_json::from_str(light_client_update_json_str)?;
-        let next_sync_committee_branch_json_str =
-            serde_json::to_string(&v[0]["data"]["next_sync_committee_branch"])?;
+        let next_sync_committee_branch_json_str = match self.routes.version {
+            BeaconRPCVersion::V1_5 => {
+                serde_json::to_string(&v[0]["data"]["next_sync_committee_branch"])?
+            }
+            _ => serde_json::to_string(&v["data"][0]["next_sync_committee_branch"])?,
+        };
+
         let next_sync_committee_branch: Vec<eth_types::H256> =
             serde_json::from_str(&next_sync_committee_branch_json_str)?;
 
-        let next_sync_committee_json_str =
-            serde_json::to_string(&v[0]["data"]["next_sync_committee"])?;
+        let next_sync_committee_json_str = match self.routes.version {
+            BeaconRPCVersion::V1_5 => serde_json::to_string(&v[0]["data"]["next_sync_committee"])?,
+            _ => serde_json::to_string(&v["data"][0]["next_sync_committee"])?,
+        };
+
         let next_sync_committee: SyncCommittee =
             serde_json::from_str(&next_sync_committee_json_str)?;
 
