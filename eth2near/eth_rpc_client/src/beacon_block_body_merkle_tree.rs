@@ -10,7 +10,7 @@ use types::{BeaconBlockBody, BeaconState, ExecutionPayload, MainnetEthSpec};
 pub struct BeaconBlockBodyMerkleTree(pub MerkleTree);
 
 impl BeaconBlockBodyMerkleTree {
-    pub const BEACON_BLOCK_BODY_TREE_NUM_LEAVES: usize = 10;
+    pub const BEACON_BLOCK_BODY_TREE_NUM_LEAVES: usize = 11;
     pub const BEACON_BLOCK_BODY_TREE_DEPTH: usize = 4;
 
     pub fn new(beacon_block_body: &BeaconBlockBody<MainnetEthSpec>) -> Self {
@@ -33,6 +33,7 @@ impl BeaconBlockBodyMerkleTree {
             } else {
                 H256::zero()
             },
+            beacon_block_body.bls_to_execution_changes().unwrap().tree_hash_root()
         ];
 
         Self(MerkleTree::create(
@@ -51,7 +52,7 @@ impl BeaconBlockBodyMerkleTree {
 pub struct ExecutionPayloadMerkleTree(pub MerkleTree);
 
 impl ExecutionPayloadMerkleTree {
-    pub const TREE_NUM_LEAVES: usize = 14;
+    pub const TREE_NUM_LEAVES: usize = 15;
     pub const TREE_DEPTH: usize = 4;
 
     pub fn new(execution_payload: &ExecutionPayload<MainnetEthSpec>) -> Self {
@@ -70,6 +71,7 @@ impl ExecutionPayloadMerkleTree {
             execution_payload.base_fee_per_gas().tree_hash_root(),
             execution_payload.block_hash().tree_hash_root(),
             execution_payload.transactions().tree_hash_root(),
+            execution_payload.withdrawals().unwrap().tree_hash_root(),
         ];
 
         Self(MerkleTree::create(&leaves, Self::TREE_DEPTH))
@@ -79,7 +81,7 @@ impl ExecutionPayloadMerkleTree {
 pub struct BeaconStateMerkleTree(pub MerkleTree);
 
 impl BeaconStateMerkleTree {
-    pub const TREE_NUM_LEAVES: usize = 25;
+    pub const TREE_NUM_LEAVES: usize = 28;
     pub const TREE_DEPTH: usize = 5;
 
     pub fn new(beacon_state: &BeaconState<MainnetEthSpec>) -> Self {
@@ -137,6 +139,9 @@ impl BeaconStateMerkleTree {
             } else {
                 H256::zero()
             },
+            beacon_state.next_withdrawal_index().unwrap().tree_hash_root(),
+            beacon_state.next_withdrawal_validator_index().unwrap().tree_hash_root(),
+            beacon_state.historical_summaries().unwrap().tree_hash_root(),
         ];
 
         Self(MerkleTree::create(&leaves, Self::TREE_DEPTH))
