@@ -12,7 +12,7 @@ ethereum-types = { version = "0.14.1", features = ["rlp", "serialize"],  default
 eth-types =  { path = "../eth-types" }
 tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }
 merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }
-near-sdk = "4.0.0"
+near-sdk = "4.1.1"
 borsh = "0.9.3"
 bitvec = "1.0.0"
 

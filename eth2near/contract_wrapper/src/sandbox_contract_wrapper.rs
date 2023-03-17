@@ -9,6 +9,7 @@ use near_primitives::views::{
 };
 use near_sdk::{Balance, Gas};
 use std::error::Error;
+use std::future::IntoFuture;
 use tokio::runtime::Runtime;
 use workspaces::{Account, Contract};
 
@@ -37,7 +38,7 @@ impl SandboxContractWrapper {
         call_execution_details: workspaces::result::ExecutionFinalResult,
     ) -> FinalExecutionOutcomeView {
         let status = match call_execution_details.is_success() {
-            true => FinalExecutionStatus::SuccessValue("".to_string()),
+            true => FinalExecutionStatus::SuccessValue("".into()),
             false => FinalExecutionStatus::Failure(TxExecutionError::ActionError(ActionError {
                 index: None,
                 kind: ActionErrorKind::AccountAlreadyExists {
@@ -68,7 +69,7 @@ impl SandboxContractWrapper {
                     receipt_ids: vec![],
                     gas_burnt: outcome.gas_burnt,
                     tokens_burnt: outcome.tokens_burnt,
-                    executor_id: outcome.clone().executor_id,
+                    executor_id: outcome.executor_id.parse().unwrap(),
                     status: ExecutionStatusView::Unknown,
                     metadata: Default::default(),
                 },
@@ -80,7 +81,7 @@ impl SandboxContractWrapper {
 
 impl ContractWrapper for SandboxContractWrapper {
     fn get_account_id(&self) -> AccountId {
-        self.contract.id().clone()
+        self.contract.id().parse().unwrap()
     }
 
     fn get_signer_account_id(&self) -> AccountId {
@@ -95,7 +96,7 @@ impl ContractWrapper for SandboxContractWrapper {
         let rt = Runtime::new()?;
 
         Ok(rt
-            .block_on(self.contract.view(&method_name, args))
+            .block_on(self.contract.view(&method_name).args(args).into_future())
             .unwrap()
             .result)
     }

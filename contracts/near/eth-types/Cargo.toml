@@ -9,7 +9,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
-near-sdk = "4.0.0"
+near-sdk = "4.1.1"
 borsh = "0.9.3"
 rlp = "0.5.2"
 rlp-derive = "0.1.0"

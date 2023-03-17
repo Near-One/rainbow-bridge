@@ -17,11 +17,11 @@ reqwest = { version = "0.11", features = ["blocking"] }
 serde_json = "1.0.74"
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.5.9"
-near-sdk = "4.0.0"
-near-primitives = "0.14.0"
+near-sdk = "4.1.1"
+near-primitives = "0.16.0"
 eth2near-logger = { path = "../logger" }
 types =  { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }
 
 [dev-dependencies]
-workspaces = "0.5.0"
+workspaces = "0.7"
 tokio = { version = "1.1", features = ["macros", "rt", "time"] }

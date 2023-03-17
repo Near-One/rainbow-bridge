@@ -15,7 +15,7 @@ tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "e
 merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }
 bls = { git = "https://github.com/aurora-is-near/lighthouse.git", optional = true, rev = "ec55f0b8eb997c80364f01afef74114ce139bcae", default-features = false, features = ["milagro"]}
 admin-controlled =  { path = "../admin-controlled" }
-near-sdk = "4.0.0"
+near-sdk = "4.1.1"
 borsh = "0.9.3"
 bitvec = "1.0.0"
 
@@ -23,9 +23,9 @@ bitvec = "1.0.0"
 lazy_static = "1.4.0"
 serde_json = "1.0"
 hex = "0.4.0"
-workspaces = "0.4.0"
+workspaces = "0.7"
 near-units = "0.2.0"
-tokio = { version = "1.18.1", features = ["full"] }
+tokio = { version = "1.19.0", features = ["full"] }
 anyhow = "1.0"
 
 [features]
