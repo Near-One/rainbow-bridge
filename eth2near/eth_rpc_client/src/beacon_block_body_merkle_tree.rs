@@ -33,7 +33,10 @@ impl BeaconBlockBodyMerkleTree {
             } else {
                 H256::zero()
             },
-            beacon_block_body.bls_to_execution_changes().unwrap().tree_hash_root()
+            beacon_block_body
+                .bls_to_execution_changes()
+                .unwrap()
+                .tree_hash_root(),
         ];
 
         Self(MerkleTree::create(
@@ -139,9 +142,18 @@ impl BeaconStateMerkleTree {
             } else {
                 H256::zero()
             },
-            beacon_state.next_withdrawal_index().unwrap().tree_hash_root(),
-            beacon_state.next_withdrawal_validator_index().unwrap().tree_hash_root(),
-            beacon_state.historical_summaries().unwrap().tree_hash_root(),
+            beacon_state
+                .next_withdrawal_index()
+                .unwrap()
+                .tree_hash_root(),
+            beacon_state
+                .next_withdrawal_validator_index()
+                .unwrap()
+                .tree_hash_root(),
+            beacon_state
+                .historical_summaries()
+                .unwrap()
+                .tree_hash_root(),
         ];
 
         Self(MerkleTree::create(&leaves, Self::TREE_DEPTH))

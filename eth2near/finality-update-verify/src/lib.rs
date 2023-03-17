@@ -46,11 +46,9 @@ pub fn is_correct_finality_update(
 
     let sync_committee_bits_sum: u64 = sync_committee_bits.count_ones().try_into()?;
     if sync_committee_bits_sum < MIN_SYNC_COMMITTEE_PARTICIPANTS {
-        println!("SMALL bits sum");
         return Ok(false);
     }
     if sync_committee_bits_sum * 3 < (sync_committee_bits.len() * 2).try_into()? {
-        println!("SMALL bits sum 2");
         return Ok(false);
     }
 
@@ -96,17 +94,13 @@ pub fn is_correct_finality_update(
 
 #[cfg(test)]
 mod tests {
-    use crate::is_correct_finality_update;
     use crate::config_for_tests::ConfigForTests;
+    use crate::is_correct_finality_update;
     use eth_types::eth2::LightClientUpdate;
     use eth_types::eth2::SyncCommittee;
 
     fn get_config() -> ConfigForTests {
-        ConfigForTests::load_from_toml(
-            "config_for_tests.toml"
-                .try_into()
-                .unwrap(),
-        )
+        ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
     }
 
     #[test]

@@ -1,7 +1,7 @@
 use eth_types::eth2::{LightClientState, LightClientUpdate};
 use eth_types::{BlockHeader, H256};
-use near_primitives::views::FinalExecutionOutcomeView;
 use near_primitives::types::AccountId;
+use near_primitives::views::FinalExecutionOutcomeView;
 use near_sdk::Balance;
 use std::error::Error;
 
@@ -44,7 +44,10 @@ pub trait EthClientContractTrait {
     fn register_submitter(&self) -> Result<FinalExecutionOutcomeView, Box<dyn Error>>;
 
     /// Checks if the relay is registered in the Ethereum Light Client on NEAR
-    fn is_submitter_registered(&self, account_id: Option<AccountId>) -> Result<bool, Box<dyn Error>>;
+    fn is_submitter_registered(
+        &self,
+        account_id: Option<AccountId>,
+    ) -> Result<bool, Box<dyn Error>>;
 
     /// Gets the Light Client State of the Ethereum Light Client on NEAR
     fn get_light_client_state(&self) -> Result<LightClientState, Box<dyn Error>>;

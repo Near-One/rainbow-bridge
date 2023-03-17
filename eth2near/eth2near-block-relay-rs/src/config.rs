@@ -1,8 +1,8 @@
 use crate::contract_type::ContractType;
-use eth_rpc_client::beacon_rpc_client::BeaconRPCVersion;
 use contract_wrapper::eth_network::EthNetwork;
-use contract_wrapper::near_rpc_client::NearRPCClient;
 use contract_wrapper::near_network::NearNetwork;
+use contract_wrapper::near_rpc_client::NearRPCClient;
+use eth_rpc_client::beacon_rpc_client::BeaconRPCVersion;
 use reqwest::Url;
 use serde::Deserialize;
 use std::io::Read;
@@ -92,7 +92,9 @@ impl Config {
     pub fn load_from_toml(path: PathBuf) -> Self {
         let mut config = std::fs::File::open(path).expect("Error on parsing path to config");
         let mut content = String::new();
-        config.read_to_string(&mut content).expect("Error on reading config");
+        config
+            .read_to_string(&mut content)
+            .expect("Error on reading config");
         let config = toml::from_str(content.as_str()).expect("Error on config parsing");
 
         Self::check_urls(&config);
@@ -116,7 +118,10 @@ impl Config {
         let near_rpc_client = NearRPCClient::new(&self.near_endpoint);
 
         // check `signer_account_id`
-        let _signer_account_id: near_sdk::AccountId = self.signer_account_id.parse().expect("Error on signer account ID parsing");
+        let _signer_account_id: near_sdk::AccountId = self
+            .signer_account_id
+            .parse()
+            .expect("Error on signer account ID parsing");
         if !near_rpc_client
             .check_account_exists(&self.signer_account_id)
             .expect("Error on checking signer account ID existence")
@@ -125,7 +130,10 @@ impl Config {
         }
 
         // check `contract_account_id`
-        let _contract_account_id: near_sdk::AccountId = self.contract_account_id.parse().expect("Error on contract account ID parsing");
+        let _contract_account_id: near_sdk::AccountId = self
+            .contract_account_id
+            .parse()
+            .expect("Error on contract account ID parsing");
         if !near_rpc_client
             .check_account_exists(&self.contract_account_id)
             .expect("Error on checking contract account ID existence")
@@ -135,8 +143,9 @@ impl Config {
 
         // check `dao_contract_account_id`
         if let Some(dao_contract_account_id) = self.dao_contract_account_id.clone() {
-            let _dao_contract_account_id: near_sdk::AccountId =
-                dao_contract_account_id.parse().expect("Error on DAO contract account ID parsing");
+            let _dao_contract_account_id: near_sdk::AccountId = dao_contract_account_id
+                .parse()
+                .expect("Error on DAO contract account ID parsing");
             if !near_rpc_client
                 .check_account_exists(&dao_contract_account_id)
                 .expect("Error on checking DAO account ID existence")

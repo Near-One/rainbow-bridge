@@ -1,6 +1,6 @@
+use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
 use eth_rpc_client::errors::{ExecutionPayloadError, NoBlockForSlotError};
-use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::H256;
 use log::{info, trace};
 use std::cmp;
@@ -389,12 +389,9 @@ impl LastSlotSearcher {
             Ok(beacon_block_body) => {
                 let execution_payload: ExecutionPayload<MainnetEthSpec> = beacon_block_body
                     .execution_payload()
-                    .map_err(|_| ExecutionPayloadError)?.into();
-                let hash: H256 = H256::from(
-                    execution_payload.block_hash()
-                        .into_root()
-                        .as_bytes(),
-                );
+                    .map_err(|_| ExecutionPayloadError)?
+                    .into();
+                let hash: H256 = H256::from(execution_payload.block_hash().into_root().as_bytes());
 
                 if eth_client_contract.is_known_block(&hash)? {
                     trace!(target: "relay", "Block with slot={} was found on NEAR", slot);
@@ -414,12 +411,12 @@ impl LastSlotSearcher {
 
 #[cfg(test)]
 mod tests {
-    use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
     use crate::config_for_tests::ConfigForTests;
-    use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
     use crate::last_slot_searcher::LastSlotSearcher;
     use crate::test_utils::get_client_contract;
     use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
+    use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
+    use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
     use eth_types::BlockHeader;
     use std::error::Error;
 

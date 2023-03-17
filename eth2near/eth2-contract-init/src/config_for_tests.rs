@@ -1,8 +1,8 @@
-use std::env;
+use contract_wrapper::eth_network::EthNetwork;
 use serde::Deserialize;
+use std::env;
 use std::io::Read;
 use std::path::PathBuf;
-use contract_wrapper::eth_network::EthNetwork;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct ConfigForTests {
@@ -21,7 +21,9 @@ impl ConfigForTests {
         let mut config: Self = toml::from_str(content.as_str()).unwrap();
 
         let api_key_string = env::var("ETH1_INFURA_API_KEY").unwrap();
-        config.eth1_endpoint = config.eth1_endpoint.replace("ETH1_INFURA_API_KEY", &api_key_string);
+        config.eth1_endpoint = config
+            .eth1_endpoint
+            .replace("ETH1_INFURA_API_KEY", &api_key_string);
 
         config
     }

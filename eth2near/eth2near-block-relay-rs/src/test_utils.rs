@@ -1,21 +1,21 @@
-use eth_rpc_client::beacon_rpc_client::{BeaconRPCClient, BeaconRPCVersion};
 use crate::config::Config;
 use crate::config_for_tests::ConfigForTests;
-use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
+use crate::contract_type::ContractType;
 use crate::eth2near_relay::Eth2NearRelay;
-use eth2_contract_init::init_contract;
 use crate::test_utils;
 use contract_wrapper::eth_client_contract::EthClientContract;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
+use contract_wrapper::near_network::NearNetwork;
 use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
+use eth2_contract_init::init_contract;
+use eth_rpc_client::beacon_rpc_client::{BeaconRPCClient, BeaconRPCVersion};
+use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
 use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
 use eth_types::BlockHeader;
 use std::{thread, time};
 use tokio::runtime::Runtime;
 use tree_hash::TreeHash;
 use workspaces::{Account, Contract};
-use crate::contract_type::ContractType;
-use contract_wrapper::near_network::NearNetwork;
 
 pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
     let mut json_file_path = std::env::current_exe().unwrap();
@@ -107,8 +107,12 @@ pub fn init_contract_from_specific_slot(
     )
     .unwrap();
 
-    let beacon_rpc_client =
-        BeaconRPCClient::new(&config_for_test.beacon_endpoint, TIMEOUT, TIMEOUT_STATE, None);
+    let beacon_rpc_client = BeaconRPCClient::new(
+        &config_for_test.beacon_endpoint,
+        TIMEOUT,
+        TIMEOUT_STATE,
+        None,
+    );
     let eth1_rpc_client = Eth1RPCClient::new(&config_for_test.eth1_endpoint);
 
     let finality_header = beacon_rpc_client

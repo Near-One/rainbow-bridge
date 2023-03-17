@@ -1,9 +1,9 @@
 use crate::beacon_block_body_merkle_tree::BeaconStateMerkleTree;
 use crate::beacon_rpc_client::BeaconRPCClient;
-use crate::execution_block_proof::ExecutionBlockProof;
 use crate::errors::{
     ErrorOnUnwrapSignatureBit, MissNextSyncCommittee, MissSyncAggregationError, NoBlockForSlotError,
 };
+use crate::execution_block_proof::ExecutionBlockProof;
 use eth_types::eth2::{
     FinalizedHeaderUpdate, HeaderUpdate, LightClientUpdate, SignatureBytes, SyncCommittee,
     SyncCommitteeBits, SyncCommitteeUpdate,
@@ -376,13 +376,11 @@ mod tests {
             None,
         );
 
-        let light_client_period =
-            BeaconRPCClient::get_period_for_slot(config.first_slot);
+        let light_client_period = BeaconRPCClient::get_period_for_slot(config.first_slot);
 
         let light_client_update = beacon_rpc_client
             .get_light_client_update(light_client_period)
             .unwrap();
-
 
         let attested_slot = light_client_update.attested_beacon_header.slot;
 
@@ -449,7 +447,7 @@ mod tests {
         let light_client_period =
             BeaconRPCClient::get_period_for_slot(hand_made_light_client_update.signature_slot);
 
-       let light_client_update = beacon_rpc_client
+        let light_client_update = beacon_rpc_client
             .get_light_client_update(light_client_period)
             .unwrap();
 
