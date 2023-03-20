@@ -199,6 +199,7 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
         path_to_finality_state: None,
         eth_requests_timeout_seconds: 30,
         state_requests_timeout_seconds: 1000,
+        near_requests_timeout_seconds: 30,
         sleep_time_on_sync_secs: 0,
         sleep_time_after_submission_secs: 5,
         hashes_gc_threshold: None,
