@@ -31,24 +31,14 @@ impl HandMadeFinalityLightClientUpdate {
                 attested_slot,
             )?;
         trace!(target: "relay", "New attested slot = {} and signature slot = {}", attested_slot, signature_slot);
-        let beacon_state = beacon_rpc_client.get_beacon_state(&format!("{}", attested_slot))?;
-
-        let finality_hash = beacon_state.finalized_checkpoint().root;
-        let finality_header = beacon_rpc_client
-            .get_beacon_block_header_for_block_id(&format!("{:?}", &finality_hash))?;
-        let finality_slot = finality_header.slot.as_u64();
-
-        let finality_beacon_state = match include_next_sync_committee {
-            true => Some(beacon_rpc_client.get_beacon_state(&format!("{}", finality_slot))?),
-            false => None,
-        };
+        let beacon_state = beacon_rpc_client.get_beacon_state(&format!("{}", attested_slot)).unwrap();
 
         Self::get_finality_light_client_update_for_state(
             beacon_rpc_client,
             attested_slot,
             signature_slot,
             beacon_state,
-            finality_beacon_state,
+            include_next_sync_committee
         )
     }
 
@@ -69,18 +59,16 @@ impl HandMadeFinalityLightClientUpdate {
             attested_slot,
             signature_slot,
             beacon_state,
-            None,
+            false
         )
     }
 
     pub fn get_light_client_update_from_file_with_next_sync_committee(
         beacon_rpc_client: &BeaconRPCClient,
         attested_state_file_name: &str,
-        finality_state_file_name: &str,
     ) -> Result<LightClientUpdate, Box<dyn Error>> {
         let attested_beacon_state = Self::get_state_from_file(attested_state_file_name)?;
         let attested_slot = attested_beacon_state.slot().as_u64();
-        let finality_beacon_state = Self::get_state_from_file(finality_state_file_name)?;
         let signature_slot = beacon_rpc_client
             .get_non_empty_beacon_block_header(attested_slot + 1)?
             .slot
@@ -91,7 +79,7 @@ impl HandMadeFinalityLightClientUpdate {
             attested_slot,
             signature_slot,
             attested_beacon_state,
-            Some(finality_beacon_state),
+            true
         )
     }
 }
@@ -171,7 +159,7 @@ impl HandMadeFinalityLightClientUpdate {
         attested_slot: u64,
         signature_slot: u64,
         beacon_state: BeaconState<MainnetEthSpec>,
-        finality_beacon_state: Option<BeaconState<MainnetEthSpec>>,
+        include_next_sync_committee: bool,
     ) -> Result<LightClientUpdate, Box<dyn Error>> {
         let signature_beacon_body =
             beacon_rpc_client.get_beacon_block_body_for_block_id(&format!("{}", signature_slot))?;
@@ -204,10 +192,11 @@ impl HandMadeFinalityLightClientUpdate {
                 &beacon_state,
                 &finalized_block_body,
             )?,
-            sync_committee_update: match finality_beacon_state {
-                None => None,
-                Some(beacon_state) => Some(Self::get_next_sync_committee(&beacon_state)?),
-            },
+            sync_committee_update: if include_next_sync_committee {
+                Some(Self::get_next_sync_committee(&beacon_state)?)
+            } else {
+                None
+            }
         })
     }
 
@@ -338,13 +327,14 @@ impl HandMadeFinalityLightClientUpdate {
 
 #[cfg(test)]
 mod tests {
-    use crate::beacon_rpc_client::BeaconRPCClient;
+    use crate::beacon_rpc_client::{BeaconRPCClient, BeaconRPCVersion};
     use crate::config_for_tests::ConfigForTests;
     use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
     use eth_types::eth2::LightClientUpdate;
+    use crate::beacon_rpc_client::BeaconRPCVersion::V1_5;
 
     const TIMEOUT_SECONDS: u64 = 30;
-    const TIMEOUT_STATE_SECONDS: u64 = 1000;
+    const TIMEOUT_STATE_SECONDS: u64 = 1000000;
 
     fn get_test_config() -> ConfigForTests {
         ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
@@ -380,7 +370,7 @@ mod tests {
             &config.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
-            None,
+            Some(BeaconRPCVersion::V1_5),
         );
 
         let light_client_period = BeaconRPCClient::get_period_for_slot(config.first_slot);
@@ -415,7 +405,7 @@ mod tests {
             &config.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
-            None,
+            Some(V1_5),
         );
         let hand_made_light_client_update =
             HandMadeFinalityLightClientUpdate::get_finality_light_client_update_from_file(
@@ -442,13 +432,13 @@ mod tests {
             &config.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
-            None,
+            Some(V1_5),
         );
+
         let hand_made_light_client_update =
             HandMadeFinalityLightClientUpdate::get_light_client_update_from_file_with_next_sync_committee(
                 &beacon_rpc_client,
                 &config.path_to_attested_state_for_period,
-                &config.path_to_finality_state_for_period,
             ).unwrap();
 
         let light_client_period =

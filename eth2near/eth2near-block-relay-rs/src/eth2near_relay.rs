@@ -339,7 +339,6 @@ impl Eth2NearRelay {
                         HandMadeFinalityLightClientUpdate::get_light_client_update_from_file_with_next_sync_committee(
                             beacon_rpc_client,
                             &path_to_attested_state,
-                            &path_to_finality_state,
                         ).expect("Error on getting light client update from file"),
                     );
                 }

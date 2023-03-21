@@ -177,7 +177,7 @@ mod tests {
     };
     use crate::utils::read_json_file_from_data_dir;
     use tree_hash::TreeHash;
-    use types::BeaconBlockBody;
+    use types::{BeaconBlockBody, ExecutionPayload};
     use types::MainnetEthSpec;
 
     #[test]
@@ -201,17 +201,14 @@ mod tests {
         let beacon_block_body: BeaconBlockBody<MainnetEthSpec> =
             serde_json::from_str(&json_str).unwrap();
         let beacon_block_body_merkle_tree = BeaconBlockBodyMerkleTree::new(&beacon_block_body);
+        let execution_payload: ExecutionPayload<MainnetEthSpec> = beacon_block_body
+            .execution_payload().unwrap().into();
         let execution_payload_merkle_tree = ExecutionPayloadMerkleTree::new(
-            &beacon_block_body
-                .execution_payload()
-                .unwrap()
-                .execution_payload,
+            &execution_payload
         );
 
         assert_eq!(
-            beacon_block_body
-                .execution_payload()
-                .unwrap()
+            execution_payload
                 .tree_hash_root(),
             execution_payload_merkle_tree.0.hash()
         );
@@ -221,12 +218,12 @@ mod tests {
             BeaconBlockBodyMerkleTree::BEACON_BLOCK_BODY_TREE_DEPTH,
         );
         assert_eq!(
-            execution_payload_proof.0,
+            execution_payload_proof.clone().unwrap().0,
             execution_payload_merkle_tree.0.hash()
         );
         assert!(merkle_proof::verify_merkle_proof(
             execution_payload_merkle_tree.0.hash(),
-            &execution_payload_proof.1,
+            &execution_payload_proof.unwrap().1,
             BeaconBlockBodyMerkleTree::BEACON_BLOCK_BODY_TREE_DEPTH,
             EXECUTION_PAYLOAD_INDEX,
             beacon_block_body_merkle_tree.0.hash()
