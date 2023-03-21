@@ -29,15 +29,16 @@ mod tests {
 
     // TESTS
 
-    use near_sdk::MockedBlockchain;
     use near_sdk::{testing_env, VMContext};
 
-    fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
+    fn get_context(input: Vec<u8>) -> VMContext {
         VMContext {
-            current_account_id: "alice.near".to_string(),
-            signer_account_id: "bob.near".to_string(),
-            signer_account_pk: vec![0, 1, 2],
-            predecessor_account_id: "carol.near".to_string(),
+            current_account_id: "alice.near".parse().unwrap(),
+            signer_account_id: "bob.near".parse().unwrap(),
+            signer_account_pk: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
+                .parse()
+                .unwrap(),
+            predecessor_account_id: "carol.near".parse().unwrap(),
             input,
             block_index: 0,
             block_timestamp: 0,
@@ -46,16 +47,17 @@ mod tests {
             account_locked_balance: 0,
             storage_usage: 0,
             attached_deposit: 0,
-            prepaid_gas: 10u64.pow(18),
-            random_seed: vec![0, 1, 2],
-            is_view,
+            prepaid_gas: near_sdk::Gas(10u64.pow(18)),
+            random_seed: vec![1; 32].try_into().unwrap(),
+            view_config: None,
             output_data_receivers: vec![],
         }
     }
 
     #[test]
+    #[cfg_attr(feature = "eip1559", ignore)]
     fn simple_tx_res() {
-        testing_env!(get_context(vec![], false));
+        testing_env!(get_context(vec![]));
 
         let contract = EthProver::init("ethbridge".to_string());
 
@@ -96,8 +98,9 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(feature = "eip1559", ignore)]
     fn complex_tx_res() {
-        testing_env!(get_context(vec![], false));
+        testing_env!(get_context(vec![]));
 
         let contract = EthProver::init("ethbridge".to_string());
 
@@ -214,6 +217,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(feature = "eip1559", ignore)]
     fn complex_test2() {
         let log_index = 0;
         let receipt_index = 1;
@@ -266,7 +270,7 @@ mod tests {
         Vec::from_hex("f901a70183012d99b9010000000000000000000000000000000000000001000000000000000000000000000000000000000000000002000000010000000000000000000000000000000000000000000008000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000400000000000000000000000000000000000000000000000000100000000000000000000004000080000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f89df89b94dac17f958d2ee523a2206206994597c13d831ec7f863a0ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3efa0000000000000000000000000adb2b42f6bd96f5c65920b9ac88619dce4166f94a0000000000000000000000000658a36d8f840f73207af8df717d12046b2c75969a000000000000000000000000000000000000000000000000000000000042c1d80").unwrap(),
     ],
     ];
-        testing_env!(get_context(vec![], false));
+        testing_env!(get_context(vec![]));
 
         let contract = EthProver::init("ethbridge".to_string());
 
@@ -297,6 +301,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(feature = "eip1559", ignore)]
     fn complex_test3() {
         let log_index = 0;
         let receipt_index = 0;
@@ -365,7 +370,7 @@ mod tests {
         assert_eq!(borsh_proof, actual_borsh_proof);
         assert_eq!(borsh_skip_bridge_call, actual_borsh_skip_bridge_call);
 
-        testing_env!(get_context(vec![], false));
+        testing_env!(get_context(vec![]));
 
         let contract = EthProver::init("ethbridge".to_string());
 
@@ -394,7 +399,7 @@ mod tests {
         let mut vm_config = VMConfig::free();
         vm_config.limit_config.max_number_logs = u64::MAX;
         vm_config.limit_config.max_promises_per_function_call_action = u64::MAX;
-        testing_env!(get_context(vec![], false), vm_config, Default::default());
+        testing_env!(get_context(vec![]), vm_config, Default::default());
         let contract = EthProver::init("ethbridge".to_string());
 
         let mut proofs = fs::read_dir(env::var("ETH_PROOF_DIR").unwrap())
@@ -454,12 +459,9 @@ mod tests {
         bar.finish();
     }
 
-    use near_sdk::VMConfig;
-
     #[test]
     pub fn test_verify_proof() {
-        let vm_config = VMConfig::free();
-        testing_env!(get_context(vec![], false), vm_config, Default::default());
+        testing_env!(get_context(vec![]));
 
         let expected_value = "f902a60183af4adfb9010000000000000000000000000000000000000000000000000000000000000000000800010000000000000002000100000000000000000000000000000000000000000000000000000008000008000000000000000000000200000000000000000000000000000000000000000000000000000000000000010000000010000000040000000000000000000000000000000200000000010000000000000000000000000000000000200080000000202000000000000000000000000000004000000000000002000000000000000000000000000000000000080000000000000000000000000000000000000000000200000004000000000000000000000000000000f9019bf89b94a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48f863a0ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3efa0000000000000000000000000c22df065a81f6e0107e214991b9d7fb179d401b3a000000000000000000000000023ddd3e3692d1861ed57ede224608875809e127fa00000000000000000000000000000000000000000000000000000000005f5e100f8fc9423ddd3e3692d1861ed57ede224608875809e127ff863a0dd85dc56b5b4da387bf69c28ec19b1d66e793e0d51b567882fa31dc50bbd32c5a0000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48a0000000000000000000000000c22df065a81f6e0107e214991b9d7fb179d401b3b8800000000000000000000000000000000000000000000000000000000005f5e1000000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000a6d616b6b652e6e65617200000000000000000000000000000000000000000000";
         let expected_root = "73733f420161b4189ea48140489bfada55d485fd580ab7e6f0f4b6de229f5177";
