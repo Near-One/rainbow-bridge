@@ -26,6 +26,7 @@ fn get_eth_contract_wrapper(config: &Config) -> Box<dyn ContractWrapper> {
         &config.signer_account_id,
         &config.path_to_signer_secret_key,
         &config.contract_account_id,
+        None,
     ))
 }
 
