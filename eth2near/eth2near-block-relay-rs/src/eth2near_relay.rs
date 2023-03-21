@@ -898,10 +898,7 @@ mod tests {
                 branch.as_slice(),
                 TREE_NEXT_SYNC_COMMITTEE_DEPTH,
                 TREE_NEXT_SYNC_COMMITTEE_INDEX,
-                light_client_update
-                    .attested_beacon_header
-                    .state_root
-                    .0
+                light_client_update.attested_beacon_header.state_root.0
             ),
             "Incorrect proof of inclusion the next sync committee to finality beacon state"
         );

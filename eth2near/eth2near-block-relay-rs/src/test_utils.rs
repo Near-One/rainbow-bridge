@@ -132,23 +132,16 @@ pub fn init_contract_from_specific_slot(
         .get_beacon_block_body_for_block_id(&format!("{}", finality_slot))
         .unwrap();
 
-    let execution_payload: ExecutionPayload<MainnetEthSpec> = finalized_body
-        .execution_payload()
-        .unwrap().into();
+    let execution_payload: ExecutionPayload<MainnetEthSpec> =
+        finalized_body.execution_payload().unwrap().into();
     let finalized_beacon_header = ExtendedBeaconBlockHeader {
         header: finality_header.clone(),
         beacon_block_root: eth_types::H256(finality_header.tree_hash_root()),
-        execution_block_hash: execution_payload
-            .block_hash()
-            .into_root()
-            .into(),
+        execution_block_hash: execution_payload.block_hash().into_root().into(),
     };
 
     let finalized_execution_header: BlockHeader = eth1_rpc_client
-        .get_block_header_by_number(
-            execution_payload
-                .block_number(),
-        )
+        .get_block_header_by_number(execution_payload.block_number())
         .unwrap();
 
     eth_client_contract.init_contract(
@@ -201,6 +194,7 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
         path_to_finality_state: None,
         eth_requests_timeout_seconds: 30,
         state_requests_timeout_seconds: 1000,
+        near_requests_timeout_seconds: 30,
         sleep_time_on_sync_secs: 0,
         sleep_time_after_submission_secs: 5,
         hashes_gc_threshold: None,
