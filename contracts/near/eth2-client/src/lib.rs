@@ -413,7 +413,7 @@ impl Eth2Client {
                     &branch,
                     SYNC_COMMITTEE_TREE_DEPTH.try_into().unwrap(),
                     SYNC_COMMITTEE_TREE_INDEX.try_into().unwrap(),
-                    active_header.state_root.0
+                    update.attested_beacon_header.state_root.0
                 ),
                 "Invalid next sync committee proof"
             );

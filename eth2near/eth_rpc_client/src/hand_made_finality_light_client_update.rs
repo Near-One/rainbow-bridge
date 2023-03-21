@@ -1,9 +1,10 @@
 use crate::beacon_block_body_merkle_tree::BeaconStateMerkleTree;
 use crate::beacon_rpc_client::BeaconRPCClient;
-use crate::execution_block_proof::ExecutionBlockProof;
 use crate::errors::{
-    ErrorOnUnwrapSignatureBit, MissNextSyncCommittee, MissSyncAggregationError, NoBlockForSlotError,
+    ErrorOnUnwrapSignatureBit, MerkleTreeError, MissNextSyncCommittee, MissSyncAggregationError,
+    NoBlockForSlotError,
 };
+use crate::execution_block_proof::ExecutionBlockProof;
 use eth_types::eth2::{
     FinalizedHeaderUpdate, HeaderUpdate, LightClientUpdate, SignatureBytes, SyncCommittee,
     SyncCommitteeBits, SyncCommitteeUpdate,
@@ -222,10 +223,13 @@ impl HandMadeFinalityLightClientUpdate {
         const BEACON_STATE_MERKLE_TREE_DEPTH: usize = 5;
         const BEACON_STATE_NEXT_SYNC_COMMITTEE_INDEX: usize = 23;
 
-        let proof = beacon_state_merkle_tree.0.generate_proof(
-            BEACON_STATE_NEXT_SYNC_COMMITTEE_INDEX,
-            BEACON_STATE_MERKLE_TREE_DEPTH,
-        );
+        let proof = beacon_state_merkle_tree
+            .0
+            .generate_proof(
+                BEACON_STATE_NEXT_SYNC_COMMITTEE_INDEX,
+                BEACON_STATE_MERKLE_TREE_DEPTH,
+            )
+            .map_err(|err| MerkleTreeError(err))?;
 
         let next_sync_committee_branch = proof.1;
 
@@ -286,10 +290,13 @@ impl HandMadeFinalityLightClientUpdate {
         const BEACON_STATE_FINALIZED_CHECKPOINT_INDEX: usize = 20;
 
         let beacon_state_merkle_tree = BeaconStateMerkleTree::new(beacon_state);
-        let mut proof = beacon_state_merkle_tree.0.generate_proof(
-            BEACON_STATE_FINALIZED_CHECKPOINT_INDEX,
-            BEACON_STATE_MERKLE_TREE_DEPTH,
-        );
+        let mut proof = beacon_state_merkle_tree
+            .0
+            .generate_proof(
+                BEACON_STATE_FINALIZED_CHECKPOINT_INDEX,
+                BEACON_STATE_MERKLE_TREE_DEPTH,
+            )
+            .map_err(|err| MerkleTreeError(err))?;
 
         let mut finality_branch = vec![beacon_state.finalized_checkpoint().epoch.tree_hash_root()];
         finality_branch.append(&mut proof.1);
@@ -376,13 +383,11 @@ mod tests {
             None,
         );
 
-        let light_client_period =
-            BeaconRPCClient::get_period_for_slot(config.first_slot);
+        let light_client_period = BeaconRPCClient::get_period_for_slot(config.first_slot);
 
         let light_client_update = beacon_rpc_client
             .get_light_client_update(light_client_period)
             .unwrap();
-
 
         let attested_slot = light_client_update.attested_beacon_header.slot;
 
@@ -449,7 +454,7 @@ mod tests {
         let light_client_period =
             BeaconRPCClient::get_period_for_slot(hand_made_light_client_update.signature_slot);
 
-       let light_client_update = beacon_rpc_client
+        let light_client_update = beacon_rpc_client
             .get_light_client_update(light_client_period)
             .unwrap();
 

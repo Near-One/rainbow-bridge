@@ -116,7 +116,7 @@ impl EthProver {
 
         // Verify receipt included into header
         let data =
-            Self::verify_trie_proof(header.receipts_root, rlp::encode(&receipt_index), proof);
+            Self::verify_trie_proof(header.receipts_root, rlp::encode(&receipt_index).to_vec(), proof);
         let verification_result = receipt_data == data;
         if verification_result && skip_bridge_call {
             return PromiseOrValue::Value(true);

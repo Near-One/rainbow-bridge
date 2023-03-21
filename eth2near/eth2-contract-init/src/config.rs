@@ -61,7 +61,9 @@ impl Config {
     pub fn load_from_toml(path: PathBuf) -> Self {
         let mut config = std::fs::File::open(path).expect("Error on opening file with config");
         let mut content = String::new();
-        config.read_to_string(&mut content).expect("Error on reading config");
+        config
+            .read_to_string(&mut content)
+            .expect("Error on reading config");
         let config = toml::from_str(content.as_str()).expect("Error on parse config");
 
         Self::check_urls(&config);
@@ -85,7 +87,9 @@ impl Config {
         let near_rpc_client = NearRPCClient::new(&self.near_endpoint);
 
         // check `signer_account_id`
-        self.signer_account_id.parse::<near_sdk::AccountId>().expect("Incorrect signer account ID");
+        self.signer_account_id
+            .parse::<near_sdk::AccountId>()
+            .expect("Incorrect signer account ID");
         if !near_rpc_client
             .check_account_exists(&self.signer_account_id)
             .expect("Error on checking signer account ID existence")
@@ -95,7 +99,9 @@ impl Config {
 
         // check `trusted_signer_account_id`
         if let Some(trusted_signature) = self.trusted_signer_account_id.clone() {
-            trusted_signature.parse::<near_sdk::AccountId>().expect("Incorrect contract account ID");
+            trusted_signature
+                .parse::<near_sdk::AccountId>()
+                .expect("Incorrect contract account ID");
             if !near_rpc_client
                 .check_account_exists(&trusted_signature)
                 .expect("Error on checking trusted signer account ID existence")
@@ -105,7 +111,9 @@ impl Config {
         }
 
         // check `contract_account_id`
-        self.contract_account_id.parse::<near_sdk::AccountId>().expect("Incorrect contract account ID");
+        self.contract_account_id
+            .parse::<near_sdk::AccountId>()
+            .expect("Incorrect contract account ID");
         if !near_rpc_client
             .check_account_exists(&self.contract_account_id)
             .expect("Error on checking contract account ID existence")

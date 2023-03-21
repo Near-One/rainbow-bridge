@@ -1,11 +1,11 @@
 use crate::beacon_block_body_merkle_tree::{BeaconBlockBodyMerkleTree, ExecutionPayloadMerkleTree};
+use crate::errors::{MerkleTreeError, MissExecutionPayload};
 use eth2_hashing;
 use ethereum_types::H256;
 use std::error::Error;
 use std::fmt;
 use std::fmt::Display;
-use types::{BeaconBlockBody, MainnetEthSpec};
-use crate::errors::MissExecutionPayload;
+use types::{BeaconBlockBody, ExecutionPayload, MainnetEthSpec};
 
 /// `ExecutionBlockProof` contains a `block_hash` (execution block) and
 /// a proof of its inclusion in the `BeaconBlockBody` tree hash.
@@ -46,7 +46,7 @@ impl ExecutionBlockProof {
             &beacon_block_body
                 .execution_payload()
                 .map_err(|_| MissExecutionPayload)?
-                .execution_payload,
+                .into(),
         );
 
         let l1_execution_payload_proof = beacon_block_merkle_tree
@@ -55,6 +55,7 @@ impl ExecutionBlockProof {
                 Self::L1_BEACON_BLOCK_BODY_TREE_EXECUTION_PAYLOAD_INDEX,
                 Self::L1_BEACON_BLOCK_BODY_PROOF_SIZE,
             )
+            .map_err(|err| MerkleTreeError(err))?
             .1;
         let mut block_proof = execution_payload_merkle_tree
             .0
@@ -62,16 +63,16 @@ impl ExecutionBlockProof {
                 Self::L2_EXECUTION_PAYLOAD_TREE_EXECUTION_BLOCK_INDEX,
                 Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE,
             )
+            .map_err(|err| MerkleTreeError(err))?
             .1;
         block_proof.extend(&l1_execution_payload_proof);
 
+        let execution_payload: ExecutionPayload<MainnetEthSpec> = beacon_block_body
+            .execution_payload()
+            .map_err(|_| MissExecutionPayload)?
+            .into();
         Ok(Self {
-            block_hash: beacon_block_body
-                .execution_payload()
-                .map_err(|_| MissExecutionPayload)?
-                .execution_payload
-                .block_hash
-                .into_root(),
+            block_hash: execution_payload.block_hash().into_root(),
             proof: block_proof.as_slice().try_into()?,
         })
     }

@@ -38,6 +38,9 @@ fn get_eth_contract_wrapper(config: &Config) -> Box<dyn ContractWrapper> {
         &config.signer_account_id,
         &config.path_to_signer_secret_key,
         &config.contract_account_id,
+        Some(std::time::Duration::from_secs(
+            config.near_requests_timeout_seconds,
+        )),
     ))
 }
 
@@ -50,6 +53,9 @@ fn get_dao_contract_wrapper(config: &Config) -> Box<dyn ContractWrapper> {
         &config.path_to_signer_secret_key,
         &dao_contract_account_id
             .expect("No DAO contract account ID provided for relay running in DAO mode"),
+        Some(std::time::Duration::from_secs(
+            config.near_requests_timeout_seconds,
+        )),
     ))
 }
 

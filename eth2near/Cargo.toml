@@ -11,8 +11,10 @@ members = [
 
 [patch]
 [patch.crates-io]
-eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
-eth2_ssz_types = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
-eth2_hashing = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
-eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "b624c3f0d3c5bc9ea46faa14c9cb2d90ee1e1dec" }
+eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae"  }
+eth2_ssz_types = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "ec55f0b8eb997c80364f01afef74114ce139bcae"  }
+eth2_hashing = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae"  }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae"}
+tree_hash_derive = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae"}
+eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }
+eth2_ssz_derive = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }

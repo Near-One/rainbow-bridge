@@ -2,8 +2,8 @@ use clap::Parser;
 use contract_wrapper::contract_wrapper_trait::ContractWrapper;
 use contract_wrapper::eth_client_contract::EthClientContract;
 use contract_wrapper::near_contract_wrapper::NearContractWrapper;
-use eth2_contract_init::init_contract::init_contract;
 use eth2_contract_init::config::Config;
+use eth2_contract_init::init_contract::init_contract;
 use eth2near_logger::SimpleLogger;
 use log::LevelFilter;
 use std::string::String;
@@ -51,7 +51,12 @@ fn init_log(args: &Arguments, config: &Config) {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Arguments::parse();
-    let config = Config::load_from_toml(args.config.clone().try_into().expect("Incorrect config path"));
+    let config = Config::load_from_toml(
+        args.config
+            .clone()
+            .try_into()
+            .expect("Incorrect config path"),
+    );
     init_log(&args, &config);
 
     let mut eth_client_contract = EthClientContract::new(get_eth_contract_wrapper(&config));

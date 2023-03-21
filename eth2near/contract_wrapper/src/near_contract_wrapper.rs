@@ -15,7 +15,6 @@ use tokio::runtime::Runtime;
 
 pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
 
-
 /// Implementation of interaction with a contract on NEAR.
 pub struct NearContractWrapper {
     /// RPC client for interaction with NEAR RPC endpoint
@@ -42,13 +41,23 @@ impl NearContractWrapper {
         account_id: &str,
         signer_secret_key: &str,
         contract_account_id: &str,
+        timeout: Option<std::time::Duration>,
     ) -> NearContractWrapper {
-        let signer_account_id = account_id.parse().expect("Error on parsing account id during creation near contract wrapper");
-        let client = JsonRpcClient::connect(near_endpoint);
-        let contract_account = contract_account_id.parse().expect("Error on parsing contract account id during creation near contract wrapper");
+        let signer_account_id = account_id
+            .parse()
+            .expect("Error on parsing account id during creation near contract wrapper");
+        let client =
+            JsonRpcClient::with(utils::new_near_rpc_client(timeout)).connect(near_endpoint);
+        let contract_account = contract_account_id
+            .parse()
+            .expect("Error on parsing contract account id during creation near contract wrapper");
 
-        let signer =
-            InMemorySigner::from_secret_key(signer_account_id, signer_secret_key.parse().expect("Error on parsing signature secret key"));
+        let signer = InMemorySigner::from_secret_key(
+            signer_account_id,
+            signer_secret_key
+                .parse()
+                .expect("Error on parsing signature secret key"),
+        );
 
         NearContractWrapper {
             client,
@@ -70,18 +79,23 @@ impl NearContractWrapper {
         account_id: &str,
         path_to_signer_secret_key: &str,
         contract_account_id: &str,
+        timeout: Option<std::time::Duration>,
     ) -> NearContractWrapper {
         let v: Value = serde_json::from_str(
             &std::fs::read_to_string(path_to_signer_secret_key).expect("Unable to read file"),
         )
         .expect("Error on parsing file with secret key during contract initialization");
-        let signer_secret_key = utils::trim_quotes(serde_json::to_string(&v["private_key"]).expect("Error during trim quotes of signature secret key"));
+        let signer_secret_key = utils::trim_quotes(
+            serde_json::to_string(&v["private_key"])
+                .expect("Error during trim quotes of signature secret key"),
+        );
 
         Self::new_with_raw_secret_key(
             near_endpoint,
             account_id,
             &signer_secret_key,
             contract_account_id,
+            timeout,
         )
     }
 }

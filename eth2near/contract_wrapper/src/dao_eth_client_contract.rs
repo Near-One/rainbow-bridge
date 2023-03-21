@@ -4,8 +4,8 @@ use crate::eth_client_contract::EthClientContract;
 use crate::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::eth2::{LightClientState, LightClientUpdate};
 use eth_types::{BlockHeader, H256};
-use near_primitives::views::FinalExecutionOutcomeView;
 use near_primitives::types::AccountId;
+use near_primitives::views::FinalExecutionOutcomeView;
 use near_sdk::Balance;
 use std::error::Error;
 use std::str::FromStr;
@@ -69,9 +69,7 @@ impl EthClientContractTrait for DaoEthClientContract {
         // Submmit new proposal
         let (proposal_id, execution_outcome) =
             self.dao_contract.submit_light_client_update_proposal(
-                near_sdk::AccountId::from_str(
-                    &self.eth_client_contract.get_account_id(),
-                )?,
+                near_sdk::AccountId::from_str(&self.eth_client_contract.get_account_id())?,
                 light_client_update,
             )?;
 
@@ -113,7 +111,10 @@ impl EthClientContractTrait for DaoEthClientContract {
         self.eth_client_contract.register_submitter()
     }
 
-    fn is_submitter_registered(&self, account_id: Option<AccountId>) -> Result<bool, Box<dyn Error>> {
+    fn is_submitter_registered(
+        &self,
+        account_id: Option<AccountId>,
+    ) -> Result<bool, Box<dyn Error>> {
         self.eth_client_contract.is_submitter_registered(account_id)
     }
 
@@ -122,11 +123,13 @@ impl EthClientContractTrait for DaoEthClientContract {
     }
 
     fn get_num_of_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
-        self.eth_client_contract.get_num_of_submitted_blocks_by_account()
+        self.eth_client_contract
+            .get_num_of_submitted_blocks_by_account()
     }
 
     fn get_max_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
-        self.eth_client_contract.get_max_submitted_blocks_by_account()
+        self.eth_client_contract
+            .get_max_submitted_blocks_by_account()
     }
 }
 
@@ -134,7 +137,10 @@ impl EthClientContractTrait for DaoEthClientContract {
 mod tests {
     use crate::eth_client_contract_trait::EthClientContractTrait;
     use crate::near_contract_wrapper::NearContractWrapper;
-    use crate::{dao_contract, dao_eth_client_contract, eth_client_contract, eth_network, near_contract_wrapper, utils};
+    use crate::{
+        dao_contract, dao_eth_client_contract, eth_client_contract, eth_network,
+        near_contract_wrapper, utils,
+    };
     use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::BlockHeader;
     use std::path::PathBuf;
@@ -183,6 +189,7 @@ mod tests {
             &signer_account_id,
             &signer_private_key,
             CONTRACT_ACCOUNT_ID,
+            None,
         ));
 
         let eth_client = eth_client_contract::EthClientContract::new(near_contract_wrapper);
@@ -246,6 +253,7 @@ mod tests {
                 &signer_account_id,
                 &signer_private_key,
                 DAO_CONTRACT_ACCOUNT_ID,
+                None,
             );
         let dao_contract = dao_contract::DAOContract::new(Box::new(dao_contract_wrapper));
         let mut dao_client =
