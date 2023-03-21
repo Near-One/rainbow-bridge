@@ -327,13 +327,13 @@ impl Eth2NearRelay {
     }
 
     fn wait_for_synchronization(&self) -> Result<(), Box<dyn Error>> {
-        // while self.beacon_rpc_client.is_syncing()?
-        //     || self.eth1_rpc_client.is_syncing()?
-        //     || self.near_rpc_client.is_syncing()?
-        // {
-        //     info!(target: "relay", "Waiting for sync...");
-        //     thread::sleep(Duration::from_secs(self.sleep_time_on_sync_secs));
-        // }
+        while self.beacon_rpc_client.is_syncing()?
+            || self.eth1_rpc_client.is_syncing()?
+            || self.near_rpc_client.is_syncing()?
+        {
+            info!(target: "relay", "Waiting for sync...");
+            thread::sleep(Duration::from_secs(self.sleep_time_on_sync_secs));
+        }
         Ok(())
     }
 
