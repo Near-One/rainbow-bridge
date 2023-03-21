@@ -31,7 +31,7 @@ pub enum BeaconRPCVersion {
     V1_5,
 }
 
-struct BeaconRPCRoutes {
+pub struct BeaconRPCRoutes {
     pub get_block_header: String,
     pub get_block: String,
     pub get_light_client_update: String,
@@ -78,7 +78,7 @@ pub struct BeaconRPCClient {
     endpoint_url: String,
     client: Client,
     client_state_request: Client,
-    routes: BeaconRPCRoutes,
+    pub routes: BeaconRPCRoutes,
 }
 
 impl BeaconRPCClient {
@@ -192,7 +192,7 @@ impl BeaconRPCClient {
         epoch: u64,
     ) -> Result<LightClientUpdate, Box<dyn Error>> {
         let url = format!(
-            "{}/{}?start_epoch={}",
+            "{}/{}?epoch={}",
             self.endpoint_url, self.routes.get_light_client_update_by_epoch, epoch
         );
         let mut light_client_update_json_str = self.get_json_from_raw_request(&url)?;
@@ -203,7 +203,7 @@ impl BeaconRPCClient {
         light_client_update_json_str = serde_json::to_string(&object).unwrap();
 
         Ok(LightClientUpdate {
-            attested_beacon_header: Self::get_attested_header_from_light_client_update_json_str(
+            attested_beacon_header: self.get_attested_header_from_light_client_update_json_str(
                 &light_client_update_json_str,
             )?,
             sync_aggregate: Self::get_sync_aggregate_from_light_client_update_json_str(
@@ -214,7 +214,7 @@ impl BeaconRPCClient {
                 &light_client_update_json_str,
             )?,
             sync_committee_update: Some(
-                Self::get_sync_committee_update_from_light_client_update_json_str(
+                self.get_sync_committee_update_from_light_client_update_json_str(
                     &light_client_update_json_str,
                 )?,
             ),

@@ -67,20 +67,6 @@ macro_rules! return_val_on_fail {
     };
 }
 
-macro_rules! return_on_fail_and_sleep {
-    ($res:expr, $msg:expr, $sleep_time:expr) => {
-        match $res {
-            Ok(val) => val,
-            Err(e) => {
-                warn!(target: "relay", "{}. Error: {}", $msg, e);
-                trace!(target: "relay", "Sleep {} secs before next loop", $sleep_time);
-                thread::sleep(Duration::from_secs($sleep_time));
-                return;
-            }
-        }
-    };
-}
-
 macro_rules! return_val_on_fail_and_sleep {
     ($res:expr, $msg:expr, $sleep_time:expr, $val:expr) => {
         match $res {
@@ -112,6 +98,7 @@ pub struct Eth2NearRelay {
     sleep_time_on_sync_secs: u64,
     sleep_time_after_submission_secs: u64,
     max_submitted_blocks_by_account: u32,
+    get_light_client_update_by_epoch: bool,
 }
 
 impl Eth2NearRelay {
@@ -155,6 +142,9 @@ impl Eth2NearRelay {
             sleep_time_on_sync_secs: config.sleep_time_on_sync_secs,
             sleep_time_after_submission_secs: config.sleep_time_after_submission_secs,
             max_submitted_blocks_by_account,
+            get_light_client_update_by_epoch: config
+                .get_light_client_update_by_epoch
+                .unwrap_or(false),
         };
 
         if !eth2near_relay
@@ -544,11 +534,13 @@ impl Eth2NearRelay {
             return;
         }
 
-        if self.send_regular_light_client_update_by_epoch(
-            last_finalized_slot_on_eth,
-            last_finalized_slot_on_near,
-        ) {
-            return;
+        if self.get_light_client_update_by_epoch {
+            if self.send_regular_light_client_update_by_epoch(
+                last_finalized_slot_on_eth,
+                last_finalized_slot_on_near,
+            ) {
+                return;
+            }
         }
 
         if last_finalized_slot_on_eth

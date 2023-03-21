@@ -89,6 +89,8 @@ pub struct Config {
 
     // Beacon rpc version (V1_1, V1_2)
     pub beacon_rpc_version: BeaconRPCVersion,
+
+    pub get_light_client_update_by_epoch: Option<bool>,
 }
 
 impl Config {

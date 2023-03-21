@@ -200,6 +200,7 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
         hashes_gc_threshold: None,
         max_submitted_blocks_by_account: None,
         beacon_rpc_version: BeaconRPCVersion::V1_5,
+        get_light_client_update_by_epoch: Some(false),
     }
 }
 
