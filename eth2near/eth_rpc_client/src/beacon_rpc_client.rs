@@ -31,7 +31,7 @@ pub enum BeaconRPCVersion {
     V1_5,
 }
 
-pub struct BeaconRPCRoutes {
+struct BeaconRPCRoutes {
     pub get_block_header: String,
     pub get_block: String,
     pub get_light_client_update: String,
@@ -78,7 +78,7 @@ pub struct BeaconRPCClient {
     endpoint_url: String,
     client: Client,
     client_state_request: Client,
-    pub routes: BeaconRPCRoutes,
+    routes: BeaconRPCRoutes,
 }
 
 impl BeaconRPCClient {
