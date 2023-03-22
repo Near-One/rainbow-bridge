@@ -161,7 +161,7 @@ pub struct BlockHeader {
     pub partial_hash: Option<H256>,
 }
 
-#[cfg(feature = "eth2")]
+#[cfg(all(feature = "eth2", not(target_arch = "wasm32")))]
 fn u64_hex_be_option<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
 where
     D: serde::Deserializer<'de>,
