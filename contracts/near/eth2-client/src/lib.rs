@@ -47,7 +47,7 @@ pub struct Eth2Client {
     /// It is desirable that this number is larger than 7 days' worth of headers, which is roughly
     /// 51k Ethereum blocks. So this number should be 51k in production.
     hashes_gc_threshold: u64,
-    /// Network. e.g. mainnet, kiln
+    /// Network. e.g. mainnet, goerli
     network: Network,
     /// Hashes of the finalized execution blocks mapped to their numbers. Stores up to `hashes_gc_threshold` entries.
     /// Execution block number -> execution block hash

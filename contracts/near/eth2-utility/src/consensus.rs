@@ -31,7 +31,6 @@ pub const EXECUTION_PROOF_SIZE: usize =
 #[derive(PartialEq, BorshSerialize, BorshDeserialize)]
 pub enum Network {
     Mainnet,
-    Kiln,
     Goerli,
 }
 
@@ -40,7 +39,6 @@ impl FromStr for Network {
     fn from_str(input: &str) -> Result<Network, Self::Err> {
         match input {
             "mainnet" => Ok(Network::Mainnet),
-            "kiln" => Ok(Network::Kiln),
             "goerli" => Ok(Network::Goerli),
             _ => Err(format!("Unknown network {}", input)),
         }
@@ -79,17 +77,6 @@ impl NetworkConfig {
                 bellatrix_fork_epoch: 112260,
                 capella_fork_version: [0x03, 0x00, 0x10, 0x20],
                 capella_fork_epoch: 162304,
-            },
-            Network::Kiln => Self {
-                genesis_validators_root: [
-                    0x99, 0xb0, 0x9f, 0xcd, 0x43, 0xe5, 0x90, 0x52, 0x36, 0xc3, 0x70, 0xf1, 0x84,
-                    0x05, 0x6b, 0xec, 0x6e, 0x66, 0x38, 0xcf, 0xc3, 0x1a, 0x32, 0x3b, 0x30, 0x4f,
-                    0xc4, 0xaa, 0x78, 0x9c, 0xb4, 0xad,
-                ],
-                bellatrix_fork_version: [0x70, 0x00, 0x00, 0x71],
-                bellatrix_fork_epoch: 150,
-                capella_fork_version: [0; 4],
-                capella_fork_epoch: 18446744073709551615,
             },
         }
     }
