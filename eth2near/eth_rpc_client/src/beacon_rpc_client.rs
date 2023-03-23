@@ -615,7 +615,7 @@ impl BeaconRPCClient {
 
 #[cfg(test)]
 mod tests {
-    use crate::beacon_rpc_client::BeaconRPCClient;
+    use crate::beacon_rpc_client::{BeaconRPCClient, BeaconRPCVersion};
     use crate::config_for_tests::ConfigForTests;
     use crate::utils::read_json_file_from_data_dir;
     use crate::utils::trim_quotes;
@@ -837,14 +837,14 @@ mod tests {
             &config.beacon_endpoint,
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
-            None,
+            Some(BeaconRPCVersion::V1_5),
         );
         let file_json_str = std::fs::read_to_string(&config.path_to_light_client_update)
             .expect("Unable to read file");
         let v: Value = serde_json::from_str(&file_json_str).unwrap();
 
         let period: u64 = BeaconRPCClient::get_period_for_slot(
-            v["data"][0]["attested_header"]["slot"]
+            v[0]["data"]["attested_header"]["beacon"]["slot"]
                 .as_str()
                 .unwrap()
                 .parse::<u64>()
@@ -855,7 +855,7 @@ mod tests {
         // check attested_header
         assert_eq!(
             light_client_update.attested_beacon_header.slot,
-            v["data"][0]["attested_header"]["slot"]
+            v[0]["data"]["attested_header"]["beacon"]["slot"]
                 .as_str()
                 .unwrap()
                 .parse::<u64>()
@@ -863,7 +863,7 @@ mod tests {
         );
         assert_eq!(
             light_client_update.attested_beacon_header.proposer_index,
-            v["data"][0]["attested_header"]["proposer_index"]
+            v[0]["data"]["attested_header"]["beacon"]["proposer_index"]
                 .as_str()
                 .unwrap()
                 .parse::<u64>()
@@ -873,7 +873,7 @@ mod tests {
             serde_json::to_string(&light_client_update.attested_beacon_header.parent_root).unwrap(),
             format!(
                 "\"{}\"",
-                v["data"][0]["attested_header"]["parent_root"]
+                v[0]["data"]["attested_header"]["beacon"]["parent_root"]
                     .as_str()
                     .unwrap()
             )
@@ -882,7 +882,7 @@ mod tests {
             serde_json::to_string(&light_client_update.attested_beacon_header.state_root).unwrap(),
             format!(
                 "\"{}\"",
-                v["data"][0]["attested_header"]["state_root"]
+                v[0]["data"]["attested_header"]["beacon"]["state_root"]
                     .as_str()
                     .unwrap()
             )
@@ -891,7 +891,7 @@ mod tests {
             serde_json::to_string(&light_client_update.attested_beacon_header.body_root).unwrap(),
             format!(
                 "\"{}\"",
-                v["data"][0]["attested_header"]["body_root"]
+                v[0]["data"]["attested_header"]["beacon"]["body_root"]
                     .as_str()
                     .unwrap()
             )
@@ -903,7 +903,7 @@ mod tests {
                 .unwrap(),
             format!(
                 "{}",
-                v["data"][0]["sync_aggregate"]["sync_committee_signature"]
+                v[0]["data"]["sync_aggregate"]["sync_committee_signature"]
             )
         );
 
@@ -921,7 +921,7 @@ mod tests {
             .unwrap(),
             format!(
                 "{}",
-                v["data"][0]["sync_aggregate"]["sync_committee_signature"]
+                v[0]["data"]["sync_aggregate"]["sync_committee_signature"]
             )
         );
 
@@ -929,7 +929,7 @@ mod tests {
         let finality_update = light_client_update.finality_update;
         assert_eq!(
             finality_update.header_update.beacon_header.slot,
-            v["data"][0]["finalized_header"]["slot"]
+            v[0]["data"]["finalized_header"]["beacon"]["slot"]
                 .as_str()
                 .unwrap()
                 .parse::<u64>()
@@ -937,11 +937,11 @@ mod tests {
         );
         assert_eq!(
             serde_json::to_string(&finality_update.header_update.beacon_header.body_root).unwrap(),
-            format!("{}", v["data"][0]["finalized_header"]["body_root"])
+            format!("{}", v[0]["data"]["finalized_header"]["beacon"]["body_root"])
         );
         assert_eq!(
             serde_json::to_string(&finality_update.finality_branch[1]).unwrap(),
-            format!("{}", v["data"][0]["finality_branch"][1])
+            format!("{}", v[0]["data"]["finality_branch"][1])
         );
 
         // check sync_committe_update
@@ -951,12 +951,12 @@ mod tests {
                 .unwrap(),
             format!(
                 "{}",
-                v["data"][0]["next_sync_committee"]["aggregate_pubkey"]
+                v[0]["data"]["next_sync_committee"]["aggregate_pubkey"]
             )
         );
         assert_eq!(
             serde_json::to_string(&sync_committe_update.next_sync_committee_branch[1]).unwrap(),
-            format!("{}", v["data"][0]["next_sync_committee_branch"][1])
+            format!("{}", v[0]["data"]["next_sync_committee_branch"][1])
         );
     }
 }
