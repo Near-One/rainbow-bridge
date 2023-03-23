@@ -31,14 +31,16 @@ impl HandMadeFinalityLightClientUpdate {
                 attested_slot,
             )?;
         trace!(target: "relay", "New attested slot = {} and signature slot = {}", attested_slot, signature_slot);
-        let beacon_state = beacon_rpc_client.get_beacon_state(&format!("{}", attested_slot)).unwrap();
+        let beacon_state = beacon_rpc_client
+            .get_beacon_state(&format!("{}", attested_slot))
+            .unwrap();
 
         Self::get_finality_light_client_update_for_state(
             beacon_rpc_client,
             attested_slot,
             signature_slot,
             beacon_state,
-            include_next_sync_committee
+            include_next_sync_committee,
         )
     }
 
@@ -59,7 +61,7 @@ impl HandMadeFinalityLightClientUpdate {
             attested_slot,
             signature_slot,
             beacon_state,
-            false
+            false,
         )
     }
 
@@ -79,7 +81,7 @@ impl HandMadeFinalityLightClientUpdate {
             attested_slot,
             signature_slot,
             attested_beacon_state,
-            true
+            true,
         )
     }
 }
@@ -196,7 +198,7 @@ impl HandMadeFinalityLightClientUpdate {
                 Some(Self::get_next_sync_committee(&beacon_state)?)
             } else {
                 None
-            }
+            },
         })
     }
 
@@ -327,11 +329,11 @@ impl HandMadeFinalityLightClientUpdate {
 
 #[cfg(test)]
 mod tests {
+    use crate::beacon_rpc_client::BeaconRPCVersion::V1_5;
     use crate::beacon_rpc_client::{BeaconRPCClient, BeaconRPCVersion};
     use crate::config_for_tests::ConfigForTests;
     use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
     use eth_types::eth2::LightClientUpdate;
-    use crate::beacon_rpc_client::BeaconRPCVersion::V1_5;
 
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000000;

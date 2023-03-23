@@ -49,7 +49,8 @@ impl BeaconRPCRoutes {
                 get_block_header: "eth/v1/beacon/headers".to_string(),
                 get_block: "eth/v2/beacon/blocks".to_string(),
                 get_light_client_update: "eth/v1/beacon/light_client/updates".to_string(),
-                get_light_client_update_by_epoch: "eth/v1/beacon/light_client/updates_epoch".to_string(),
+                get_light_client_update_by_epoch: "eth/v1/beacon/light_client/updates_epoch"
+                    .to_string(),
                 get_light_client_finality_update: "eth/v1/beacon/light_client/finality_update/"
                     .to_string(),
                 get_bootstrap: "eth/v1/beacon/light_client/bootstrap".to_string(),
@@ -60,7 +61,8 @@ impl BeaconRPCRoutes {
                 get_block_header: "eth/v1/beacon/headers".to_string(),
                 get_block: "eth/v2/beacon/blocks".to_string(),
                 get_light_client_update: "eth/v1/beacon/light_client/updates".to_string(),
-                get_light_client_update_by_epoch: "eth/v1/beacon/light_client/updates_epoch".to_string(),
+                get_light_client_update_by_epoch: "eth/v1/beacon/light_client/updates_epoch"
+                    .to_string(),
                 get_light_client_finality_update: "eth/v1/beacon/light_client/finality_update"
                     .to_string(),
                 get_bootstrap: "eth/v1/beacon/light_client/bootstrap".to_string(),

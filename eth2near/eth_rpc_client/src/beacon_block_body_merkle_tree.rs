@@ -177,8 +177,8 @@ mod tests {
     };
     use crate::utils::read_json_file_from_data_dir;
     use tree_hash::TreeHash;
-    use types::{BeaconBlockBody, ExecutionPayload};
     use types::MainnetEthSpec;
+    use types::{BeaconBlockBody, ExecutionPayload};
 
     #[test]
     fn test_body_root() {
@@ -201,15 +201,12 @@ mod tests {
         let beacon_block_body: BeaconBlockBody<MainnetEthSpec> =
             serde_json::from_str(&json_str).unwrap();
         let beacon_block_body_merkle_tree = BeaconBlockBodyMerkleTree::new(&beacon_block_body);
-        let execution_payload: ExecutionPayload<MainnetEthSpec> = beacon_block_body
-            .execution_payload().unwrap().into();
-        let execution_payload_merkle_tree = ExecutionPayloadMerkleTree::new(
-            &execution_payload
-        );
+        let execution_payload: ExecutionPayload<MainnetEthSpec> =
+            beacon_block_body.execution_payload().unwrap().into();
+        let execution_payload_merkle_tree = ExecutionPayloadMerkleTree::new(&execution_payload);
 
         assert_eq!(
-            execution_payload
-                .tree_hash_root(),
+            execution_payload.tree_hash_root(),
             execution_payload_merkle_tree.0.hash()
         );
 

@@ -154,8 +154,8 @@ impl Error for IncorrectBranchLength {}
 mod tests {
     use crate::config_for_tests::ConfigForTests;
     use crate::utils::read_json_file_from_data_dir;
-    use types::{BeaconBlockBody, ExecutionPayload};
     use types::MainnetEthSpec;
+    use types::{BeaconBlockBody, ExecutionPayload};
 
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000;
@@ -188,11 +188,10 @@ mod tests {
             )
             .unwrap();
 
-        let execution_payload: ExecutionPayload<MainnetEthSpec> = beacon_block_body
-            .execution_payload().unwrap().into();
+        let execution_payload: ExecutionPayload<MainnetEthSpec> =
+            beacon_block_body.execution_payload().unwrap().into();
         assert_eq!(
-            execution_payload
-                .block_hash(),
+            execution_payload.block_hash(),
             types::ExecutionBlockHash::from_root(execution_block_proof.get_execution_block_hash())
         );
 
