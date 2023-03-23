@@ -159,14 +159,14 @@ impl EthProver {
 
         if let Some(min_header_height) = min_header_height {
             if header.number < min_header_height {
-                env::log_str("block height in header data < min header height");
+                env::log_str(format!("Block height {} < Minimum header height {}", header.number, min_header_height).as_str());
                 return PromiseOrValue::Value(false);
             }
         }
 
         if let Some(max_header_height) = max_header_height {
             if header.number > max_header_height {
-                env::log_str("block height in header data > max header height");
+                env::log_str(format!("Block height {} > Maximum header height {}", header.number, max_header_height).as_str());
                 return PromiseOrValue::Value(false);
             }
         }

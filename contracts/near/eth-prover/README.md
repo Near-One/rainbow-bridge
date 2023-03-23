@@ -2,7 +2,7 @@
 
 Eth-Prover trustless contract to prove the integrity of data (proofs) provided by users and relayer trustlessly.
 
-## How to generate proofs for fastBridge `unlock` method :-
+## How To Generate Proofs:-
 
 - Pre-requisites before calling `eth_getProof` :
   - DATA, 20 Bytes - address of the account.
