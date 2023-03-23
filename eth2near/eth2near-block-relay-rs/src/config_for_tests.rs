@@ -1,4 +1,5 @@
 use contract_wrapper::eth_network::EthNetwork;
+use dotenv::dotenv;
 use serde::Deserialize;
 use std::env;
 use std::io::Read;
@@ -31,6 +32,8 @@ impl ConfigForTests {
         let mut content = String::new();
         config.read_to_string(&mut content).unwrap();
         let mut config: Self = toml::from_str(content.as_str()).unwrap();
+
+        dotenv().ok();
 
         let api_key_string = env::var("ETH1_INFURA_API_KEY").unwrap();
         config.eth1_endpoint = config
