@@ -620,8 +620,7 @@ mod tests {
     use crate::utils::read_json_file_from_data_dir;
     use crate::utils::trim_quotes;
     use serde_json::Value;
-    use types::BeaconBlockBody;
-    use types::BeaconBlockHeader;
+    use types::{BeaconBlockBody, BeaconBlockHeader};
     use types::MainnetEthSpec;
 
     const TIMEOUT_SECONDS: u64 = 30;
