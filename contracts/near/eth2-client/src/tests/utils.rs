@@ -41,22 +41,22 @@ pub struct InitOptions {
     pub trusted_signer: Option<AccountId>,
 }
 
-pub fn get_kiln_test_data(
+pub fn get_goerli_test_data(
     init_options: Option<InitOptions>,
 ) -> (
     &'static Vec<BlockHeader>,
     &'static Vec<LightClientUpdate>,
     InitInput,
 ) {
-    const NETWORK: &str = "kiln";
+    const NETWORK: &str = "goerli";
     lazy_static! {
         static ref INIT_UPDATE: LightClientUpdate =
-            read_client_updates(NETWORK.to_string(), 99, 99)[0].clone();
+            read_client_updates(NETWORK.to_string(), 632, 632)[0].clone();
         static ref UPDATES: Vec<LightClientUpdate> =
-            read_client_updates(NETWORK.to_string(), 100, 101);
+            read_client_updates(NETWORK.to_string(), 633, 634);
         static ref HEADERS: Vec<BlockHeader> = read_headers(format!(
             "./src/data/{}/execution_blocks_{}_{}.json",
-            NETWORK, 766535, 769622
+            NETWORK, 8652100, 8661554
         ));
     };
 
@@ -64,7 +64,7 @@ pub fn get_kiln_test_data(
         validate_updates: true,
         verify_bls_signatures: true,
         hashes_gc_threshold: 51000,
-        max_submitted_blocks_by_account: 7000,
+        max_submitted_blocks_by_account: 10000,
         trusted_signer: None,
     });
 
@@ -102,5 +102,5 @@ pub fn get_test_data(
     &'static Vec<LightClientUpdate>,
     InitInput,
 ) {
-    get_kiln_test_data(init_options)
+    get_goerli_test_data(init_options)
 }

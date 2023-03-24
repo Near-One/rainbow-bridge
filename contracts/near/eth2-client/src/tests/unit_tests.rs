@@ -73,10 +73,10 @@ mod tests {
 
         #[test]
         pub fn test_header_root() {
-            let header = read_beacon_header(format!("./src/data/kiln/beacon_header_{}.json", 5000));
+            let header = read_beacon_header(format!("./src/data/goerli/beacon_header_{}.json", 5258752));
             assert_eq!(
                 H256(header.tree_hash_root()),
-                Vec::from_hex("c613fbf1a8e95c2aa0f76a5d226ee1dc057cce18b235803f50e7a1bde050d290")
+                Vec::from_hex("cd669c0007ab6ff261a02cc3335ba470088e92f0460bf1efac451009efb9ec0a")
                     .unwrap()
                     .into()
             );
@@ -187,7 +187,7 @@ mod tests {
                 validate_updates: true,
                 verify_bls_signatures: true,
                 hashes_gc_threshold: 500,
-                max_submitted_blocks_by_account: 7000,
+                max_submitted_blocks_by_account: 10000,
                 trusted_signer: None,
             }));
             set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());

@@ -35,7 +35,7 @@ mod integration_tests {
 
     #[tokio::test]
     async fn test_gas_usage_of_submit_beacon_chain_light_client_update() -> anyhow::Result<()> {
-        let (headers, updates, init_input) = get_kiln_test_data(Some(InitOptions {
+        let (headers, updates, init_input) = get_goerli_test_data(Some(InitOptions {
             validate_updates: false,
             verify_bls_signatures: false,
             hashes_gc_threshold: 51000,
