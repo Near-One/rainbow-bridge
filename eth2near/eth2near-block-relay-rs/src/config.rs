@@ -59,9 +59,8 @@ pub struct Config {
     // for case of short relay run
     pub path_to_attested_state: Option<String>,
 
-    // Path to the json file with beacon state in the next finality slot
-    // for case of short relay run
-    pub path_to_finality_state: Option<String>,
+    // Include next sync committee to the Light Client Update in short relay run
+    pub include_next_sync_committee_to_light_client: bool,
 
     // Timeout for ETH RPC requests in seconds
     pub eth_requests_timeout_seconds: u64,

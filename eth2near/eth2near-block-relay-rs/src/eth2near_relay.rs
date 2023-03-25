@@ -333,23 +333,20 @@ impl Eth2NearRelay {
     ) -> Result<Option<LightClientUpdate>, Box<dyn Error>> {
         let mut next_light_client_update: Option<LightClientUpdate> = None;
         if let Some(path_to_attested_state) = config.clone().path_to_attested_state {
-            match config.clone().path_to_finality_state {
-                Some(path_to_finality_state) => {
-                    next_light_client_update = Some(
-                        HandMadeFinalityLightClientUpdate::get_light_client_update_from_file_with_next_sync_committee(
-                            beacon_rpc_client,
-                            &path_to_attested_state,
-                        ).expect("Error on getting light client update from file"),
-                    );
-                }
-                None => {
-                    next_light_client_update = Some(
-                        HandMadeFinalityLightClientUpdate::get_finality_light_client_update_from_file(
-                            beacon_rpc_client,
-                            &path_to_attested_state,
-                        ).expect("Error on getting light client update from file"),
-                    );
-                }
+            if config.clone().include_next_sync_committee_to_light_client {
+                next_light_client_update = Some(
+                    HandMadeFinalityLightClientUpdate::get_light_client_update_from_file_with_next_sync_committee(
+                        beacon_rpc_client,
+                        &path_to_attested_state,
+                    ).expect("Error on getting light client update from file"),
+                );
+            } else {
+                next_light_client_update = Some(
+                    HandMadeFinalityLightClientUpdate::get_finality_light_client_update_from_file(
+                        beacon_rpc_client,
+                        &path_to_attested_state,
+                    ).expect("Error on getting light client update from file"),
+                );
             }
         }
         Ok(next_light_client_update)

@@ -5,7 +5,6 @@ path_to_next_sync_committee = "./data/goerli_testdata/next_sync_committee_goerli
 path_to_execution_blocks_headers = "./data/goerli_testdata/execution_block_headers_goerli_slots_3885697_3886176.json"
 path_to_light_client_updates = "./data/goerli_testdata/light_client_updates_goerli_slots_3885697_3886176.json"
 path_to_attested_state = "./data/goerli_testdata/beacon_state_goerli_slot_3885731.json"
-path_to_finality_state = "./data/goerli_testdata/beacon_state_goerli_slot_3885664.json"
 network_name = "Goerli"
 first_slot = 3885632
 slot_without_block = 3885649

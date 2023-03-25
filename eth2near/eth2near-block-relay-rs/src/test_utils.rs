@@ -191,7 +191,7 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
         dao_contract_account_id: None,
         output_dir: None,
         path_to_attested_state: None,
-        path_to_finality_state: None,
+        include_next_sync_committee_to_light_client: false,
         eth_requests_timeout_seconds: 30,
         state_requests_timeout_seconds: 1000,
         near_requests_timeout_seconds: 30,
@@ -273,7 +273,7 @@ pub fn get_relay_with_update_from_file(
     config.path_to_attested_state = Some(config_for_test.path_to_attested_state.to_string());
 
     if next_sync_committee {
-        config.path_to_finality_state = Some(config_for_test.path_to_finality_state.to_string());
+        config.include_next_sync_committee_to_light_client = true;
     }
 
     Eth2NearRelay::init(

@@ -14,7 +14,6 @@ pub struct ConfigForTests {
     pub path_to_execution_blocks_headers: String,
     pub path_to_light_client_updates: String,
     pub path_to_attested_state: String,
-    pub path_to_finality_state: String,
     pub network_name: EthNetwork,
     pub first_slot: u64,
     pub slot_without_block: u64,
