@@ -798,9 +798,9 @@ mod tests {
     #[test]
     fn test_get_header_json_from_rpc_result() {
         let beacon_block_header_response_json =
-            read_json_file_from_data_dir("beacon_block_header_response_kiln_slot_741888.json");
+            read_json_file_from_data_dir("beacon_block_header_response_goerli_slot_5262172.json");
         let beacon_block_header_struct_json =
-            read_json_file_from_data_dir("beacon_block_header_struct_kiln_slot_741888.json");
+            read_json_file_from_data_dir("beacon_block_header_struct_goerli_slot_5262172.json");
 
         let beacon_header_file: BeaconBlockHeader =
             serde_json::from_str(&beacon_block_header_struct_json).unwrap();
