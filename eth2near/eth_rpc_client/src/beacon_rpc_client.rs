@@ -664,13 +664,13 @@ mod tests {
     #[test]
     fn test_get_beacon_body_from_json() {
         let beacon_block_body_json_str =
-            read_json_file_from_data_dir("beacon_block_body_kiln_slot_741888.json");
+            read_json_file_from_data_dir("beacon_block_body_goerli_slot_5262172.json");
         let beacon_block_body: BeaconBlockBody<MainnetEthSpec> =
             serde_json::from_str(&beacon_block_body_json_str).unwrap();
 
         assert_eq!(
             format!("{:?}", beacon_block_body.eth1_data().deposit_root),
-            "0x4b2bfc129d2ce9b4264882bb49c5df18faa8d10b571ee7e87aa85e164da0d2d7"
+            "0xfbaffc56168493dd351168a3c270f67a3b57030b1bb826499843f5154014574d"
         );
     }
 
@@ -815,9 +815,9 @@ mod tests {
 
     #[test]
     fn test_beacon_block_body_json_from_rpc_result() {
-        let beacon_block_json = read_json_file_from_data_dir("beacon_block_kiln_slot_741888.json");
+        let beacon_block_json = read_json_file_from_data_dir("beacon_block_goerli_slot_5262172.json");
         let beacon_block_body_json =
-            read_json_file_from_data_dir("beacon_block_body_kiln_slot_741888.json");
+            read_json_file_from_data_dir("beacon_block_body_goerli_slot_5262172.json");
         let beacon_body_file: BeaconBlockBody<MainnetEthSpec> =
             serde_json::from_str(&beacon_block_body_json).unwrap();
         let beacon_body_rpc: BeaconBlockBody<MainnetEthSpec> = serde_json::from_str(

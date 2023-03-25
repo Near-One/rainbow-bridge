@@ -167,7 +167,7 @@ mod tests {
     #[test]
     fn test_beacon_block_body_root_verification() {
         let beacon_block_body_json_str =
-            read_json_file_from_data_dir("beacon_block_body_kiln_slot_741888.json");
+            read_json_file_from_data_dir("beacon_block_body_goerli_slot_5262172.json");
 
         let beacon_block_body: BeaconBlockBody<MainnetEthSpec> =
             serde_json::from_str(&beacon_block_body_json_str).unwrap();
@@ -179,7 +179,7 @@ mod tests {
 
         assert_eq!(
             format!("{:?}", beacon_block_body_merkle_tree.0.hash()),
-            "0xd7f1c80baaceb9a1d3301e4f740fe8b5de9970153dc2ab254a4be39fe054addc"
+            "0x5f3a9eda5c6d2f5c30e4ad2f9c5221334deec7ea2e3ba2b21b78cf10c7f9b1fe"
         );
 
         let execution_block_proof =
