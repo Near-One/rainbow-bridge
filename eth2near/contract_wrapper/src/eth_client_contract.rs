@@ -339,7 +339,8 @@ mod tests {
     ) {
         const PATH_TO_CURRENT_SYNC_COMMITTEE: &str =
             "./data/next_sync_committee_goerli_period_641.json";
-        const PATH_TO_NEXT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_goerli_period_642.json";
+        const PATH_TO_NEXT_SYNC_COMMITTEE: &str =
+            "./data/next_sync_committee_goerli_period_642.json";
 
         let current_sync_committee: SyncCommittee = serde_json::from_str(
             &std::fs::read_to_string(PATH_TO_CURRENT_SYNC_COMMITTEE).expect("Unable to read file"),

@@ -169,7 +169,13 @@ impl BeaconRPCClient {
             self.endpoint_url, self.routes.get_light_client_update, period
         );
         let light_client_update_json_str = self.get_json_from_raw_request(&url)?;
+        self.light_client_update_from_json_str(light_client_update_json_str)
+    }
 
+    pub fn light_client_update_from_json_str(
+        &self,
+        light_client_update_json_str: String,
+    ) -> Result<LightClientUpdate, Box<dyn Error>> {
         Ok(LightClientUpdate {
             attested_beacon_header: self.get_attested_header_from_light_client_update_json_str(
                 &light_client_update_json_str,
@@ -620,8 +626,8 @@ mod tests {
     use crate::utils::read_json_file_from_data_dir;
     use crate::utils::trim_quotes;
     use serde_json::Value;
-    use types::{BeaconBlockBody, BeaconBlockHeader};
     use types::MainnetEthSpec;
+    use types::{BeaconBlockBody, BeaconBlockHeader};
 
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000;
@@ -815,7 +821,8 @@ mod tests {
 
     #[test]
     fn test_beacon_block_body_json_from_rpc_result() {
-        let beacon_block_json = read_json_file_from_data_dir("beacon_block_goerli_slot_5262172.json");
+        let beacon_block_json =
+            read_json_file_from_data_dir("beacon_block_goerli_slot_5262172.json");
         let beacon_block_body_json =
             read_json_file_from_data_dir("beacon_block_body_goerli_slot_5262172.json");
         let beacon_body_file: BeaconBlockBody<MainnetEthSpec> =
@@ -936,7 +943,10 @@ mod tests {
         );
         assert_eq!(
             serde_json::to_string(&finality_update.header_update.beacon_header.body_root).unwrap(),
-            format!("{}", v[0]["data"]["finalized_header"]["beacon"]["body_root"])
+            format!(
+                "{}",
+                v[0]["data"]["finalized_header"]["beacon"]["body_root"]
+            )
         );
         assert_eq!(
             serde_json::to_string(&finality_update.finality_branch[1]).unwrap(),

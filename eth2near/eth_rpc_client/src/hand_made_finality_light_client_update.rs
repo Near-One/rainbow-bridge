@@ -334,6 +334,7 @@ mod tests {
     use crate::config_for_tests::ConfigForTests;
     use crate::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
     use eth_types::eth2::LightClientUpdate;
+    use std::fs::read_to_string;
 
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000000;
@@ -400,7 +401,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_hand_made_finality_light_client_update_from_file() {
         let config = get_test_config();
         let beacon_rpc_client = BeaconRPCClient::new(
@@ -416,18 +416,16 @@ mod tests {
             )
             .unwrap();
 
-        let light_client_period =
-            BeaconRPCClient::get_period_for_slot(hand_made_light_client_update.signature_slot);
-
         let light_client_update = beacon_rpc_client
-            .get_light_client_update(light_client_period)
+            .light_client_update_from_json_str(
+                read_to_string(config.path_to_light_client_update_for_attested_slot).unwrap(),
+            )
             .unwrap();
 
         cmp_light_client_updates(&hand_made_light_client_update, &light_client_update);
     }
 
     #[test]
-    #[ignore]
     fn test_hand_made_finality_light_client_update_from_file_with_next_sync_committee() {
         let config = get_test_config();
         let beacon_rpc_client = BeaconRPCClient::new(
@@ -443,13 +441,11 @@ mod tests {
                 &config.path_to_attested_state_for_period,
             ).unwrap();
 
-        let light_client_period =
-            BeaconRPCClient::get_period_for_slot(hand_made_light_client_update.signature_slot);
-
         let light_client_update = beacon_rpc_client
-            .get_light_client_update(light_client_period)
+            .light_client_update_from_json_str(
+                read_to_string(config.path_to_light_client_update_for_attested_slot).unwrap(),
+            )
             .unwrap();
-
         cmp_light_client_updates(&hand_made_light_client_update, &light_client_update);
 
         assert_eq!(
