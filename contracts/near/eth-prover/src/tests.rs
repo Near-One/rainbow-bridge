@@ -79,7 +79,7 @@ mod tests {
         for item in node {
             stream.append(item);
         }
-        stream.out().to_vec().to_vec()
+        stream.out().to_vec()
     }).collect();
 
         if let PromiseOrValue::Value(true) = contract.verify_log_entry(
