@@ -30,8 +30,13 @@ jobs:
 
     name: ${{ matrix.job-name }}
     steps:
+      - name: Install LFS
+        run: apt-get install git-lfs
+
       - name: Clone the repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          lfs: 'true'
 
       - name: Install nearup
         run: |
