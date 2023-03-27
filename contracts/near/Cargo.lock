@@ -1235,7 +1235,7 @@ dependencies = [
 [[package]]
 name = "ethash"
 version = "0.4.0"
-source = "git+https://github.com/aurora-is-near/rust-ethash?rev=a27b2c7217f74c4470d7cd0b26b41b58431a26ee#a27b2c7217f74c4470d7cd0b26b41b58431a26ee"
+source = "git+https://github.com/aurora-is-near/rust-ethash?tag=0.2.0#a27b2c7217f74c4470d7cd0b26b41b58431a26ee"
 dependencies = [
  "byteorder",
  "ethereum-types 0.14.1",

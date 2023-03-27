@@ -15,7 +15,7 @@ borsh = "0.9.3"
 rlp = "0.5.2"
 primal = "0.2.3"
 arrutil = "0.1.2"
-ethash = { git = "https://github.com/aurora-is-near/rust-ethash", rev = "a27b2c7217f74c4470d7cd0b26b41b58431a26ee", default-features = false }
+ethash = { git = "https://github.com/aurora-is-near/rust-ethash", tag = "0.2.0", default-features = false }
 hex = "0.4.0"
 rustc-hex = "2.1.0"
 
