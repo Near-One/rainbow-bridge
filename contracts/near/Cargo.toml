@@ -19,8 +19,8 @@ overflow-checks = true
 [patch]
 [patch.crates-io]
 eth2_hashing = { path = "eth2_hashing" }
-eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae"  }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae"}
-tree_hash_derive = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae"}
-eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }
-eth2_ssz_derive = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }
+eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm"  }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm"}
+tree_hash_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm"}
+eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
+eth2_ssz_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }

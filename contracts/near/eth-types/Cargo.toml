@@ -15,11 +15,11 @@ rlp = "0.5.2"
 rlp-derive = "0.1.0"
 ethereum-types = { version = "0.14.1", features = ["rlp", "serialize"],  default-features = false }
 derive_more = "^0.99.2"
-eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "ec55f0b8eb997c80364f01afef74114ce139bcae", optional = true }
-eth2_ssz_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "ec55f0b8eb997c80364f01afef74114ce139bcae", optional = true }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "ec55f0b8eb997c80364f01afef74114ce139bcae", optional = true }
-tree_hash_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "ec55f0b8eb997c80364f01afef74114ce139bcae", optional = true }
-eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "ec55f0b8eb997c80364f01afef74114ce139bcae", optional = true }
+eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm", optional = true }
+eth2_ssz_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm", optional = true }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm", optional = true }
+tree_hash_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm", optional = true }
+eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm", optional = true }
 hex = "0.4.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

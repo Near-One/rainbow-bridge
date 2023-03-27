@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-types =  { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git",  rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }
-merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }
-eth2_hashing = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }
-eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", rev = "ec55f0b8eb997c80364f01afef74114ce139bcae" }
+types =  { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
+merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
+eth2_hashing = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
+eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
 eth-types = { path = "../../contracts/near/eth-types/" }
 eth2-utility  = { path = "../../contracts/near/eth2-utility" }
 
