@@ -305,6 +305,16 @@ impl Eth2Client {
     pub fn get_trusted_signer(&self) -> Option<AccountId> {
         self.trusted_signer.clone()
     }
+
+    #[private]
+    pub fn migrate_network(&mut self) {
+        self.network = match self.network {
+            Network::Mainnet => Network::Mainnet,
+            Network::Goerli => Network::Goerli,
+            Network::Goerli2 => Network::Goerli,
+            Network::Goerli3 => Network::Goerli,
+        }
+    }
 }
 
 impl Eth2Client {

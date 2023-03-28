@@ -32,6 +32,8 @@ pub const EXECUTION_PROOF_SIZE: usize =
 pub enum Network {
     Mainnet,
     Goerli,
+    Goerli2,
+    Goerli3,
 }
 
 impl FromStr for Network {
@@ -67,7 +69,7 @@ impl NetworkConfig {
                 capella_fork_version: [0x03, 0x00, 0x00, 0x00],
                 capella_fork_epoch: 194048,
             },
-            Network::Goerli => Self {
+            Network::Goerli | _ => Self {
                 genesis_validators_root: [
                     0x04, 0x3d, 0xb0, 0xd9, 0xa8, 0x38, 0x13, 0x55, 0x1e, 0xe2, 0xf3, 0x34, 0x50,
                     0xd2, 0x37, 0x97, 0x75, 0x7d, 0x43, 0x09, 0x11, 0xa9, 0x32, 0x05, 0x30, 0xad,
