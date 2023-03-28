@@ -64,8 +64,8 @@ impl NetworkConfig {
                 ],
                 bellatrix_fork_version: [0x02, 0x00, 0x00, 0x00],
                 bellatrix_fork_epoch: 144896,
-                capella_fork_version: [0; 4],
-                capella_fork_epoch: 18446744073709551615,
+                capella_fork_version: [0x03, 0x00, 0x00, 0x00],
+                capella_fork_epoch: 194048,
             },
             Network::Goerli => Self {
                 genesis_validators_root: [
