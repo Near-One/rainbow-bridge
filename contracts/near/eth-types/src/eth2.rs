@@ -69,10 +69,10 @@ pub struct ExtendedBeaconBlockHeader {
 
 impl From<HeaderUpdate> for ExtendedBeaconBlockHeader {
     fn from(item: HeaderUpdate) -> Self {
-        let root = H256(item.beacon_header.tree_hash_root());
+        let root = item.beacon_header.tree_hash_root();
         ExtendedBeaconBlockHeader {
             header: item.beacon_header,
-            beacon_block_root: root,
+            beacon_block_root: H256(root),
             execution_block_hash: item.execution_block_hash,
         }
     }

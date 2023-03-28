@@ -1,4 +1,3 @@
-use futures::future::join_all;
 use std::panic;
 
 use crate::{DoubleNodeWithMerkleProof, EthClient};
@@ -6,7 +5,6 @@ use eth_types::*;
 use hex::FromHex;
 use rlp::RlpStream;
 use serde::{Deserialize, Deserializer};
-use web3::futures::Future;
 use web3::types::Block;
 
 use lazy_static::lazy_static;
@@ -138,7 +136,7 @@ fn rlp_append<TX>(header: &Block<TX>, stream: &mut RlpStream) {
     stream.append(&header.state_root);
     stream.append(&header.transactions_root);
     stream.append(&header.receipts_root);
-    stream.append(&header.logs_bloom);
+    stream.append(&header.logs_bloom.unwrap());
     stream.append(&header.difficulty);
     stream.append(&header.number.unwrap());
     stream.append(&header.gas_limit);
@@ -155,7 +153,7 @@ use near_sdk::{testing_env, VMContext};
 
 lazy_static! {
     static ref WEB3RS: web3::Web3<web3::transports::Http> = {
-        let (eloop, transport) = web3::transports::Http::new(
+        let transport = web3::transports::Http::new(
             format!(
                 "https://mainnet.infura.io/v3/{}",
                 std::env::var("ETH1_INFURA_API_KEY").unwrap()
@@ -163,7 +161,6 @@ lazy_static! {
             .as_str(),
         )
         .unwrap();
-        eloop.into_remote();
         web3::Web3::new(transport)
     };
 }
@@ -197,18 +194,23 @@ fn get_blocks(
     stop: usize,
 ) -> (Vec<Vec<u8>>, Vec<H256>) {
     let futures = (start..stop)
-        .map(|i| web3rust.eth().block((i as u64).into()))
+        .map(|i| {
+            web3rust.eth().block(web3::types::BlockId::Number(
+                web3::types::BlockNumber::Number(i.into()),
+            ))
+        })
         .collect::<Vec<_>>();
 
-    let block_headers = join_all(futures).wait().unwrap();
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let block_headers = rt.block_on(web3::futures::future::join_all(futures));
 
     let mut blocks: Vec<Vec<u8>> = vec![];
     let mut hashes: Vec<H256> = vec![];
     for block_header in block_headers {
         let mut stream = RlpStream::new();
-        rlp_append(&block_header.clone().unwrap(), &mut stream);
-        blocks.push(stream.out());
-        hashes.push(H256(block_header.clone().unwrap().hash.unwrap().0.into()));
+        rlp_append(&block_header.clone().unwrap().unwrap(), &mut stream);
+        blocks.push(stream.out().to_vec());
+        hashes.push(H256(block_header.unwrap().unwrap().hash.unwrap().0.into()));
     }
 
     (blocks, hashes)
@@ -249,7 +251,6 @@ fn assert_hashes_equal_to_contract_hashes(
 }
 
 #[test]
-#[cfg_attr(feature = "eip1559", ignore)]
 fn add_dags_merkle_roots() {
     testing_env!(get_context());
     let (blocks, _) = get_blocks(&WEB3RS, 400_000, 400_001);
@@ -276,7 +277,6 @@ fn add_dags_merkle_roots() {
 }
 
 #[test]
-#[cfg(feature = "eip1559")]
 fn update_dags_merkle_roots() {
     let block = read_block(format!("./src/data/{}.json", 12_965_000).to_string());
     let mut context = get_context();
@@ -319,7 +319,6 @@ fn update_dags_merkle_roots() {
 }
 
 #[test]
-#[cfg_attr(feature = "eip1559", ignore)]
 fn add_blocks_2_and_3() {
     testing_env!(get_context());
 
@@ -358,7 +357,6 @@ fn add_blocks_2_and_3() {
 }
 
 #[test]
-#[cfg_attr(feature = "eip1559", ignore)]
 fn add_blocks_before_and_after_istanbul_fork() {
     testing_env!(get_context());
 
@@ -404,7 +402,6 @@ fn add_blocks_before_and_after_istanbul_fork() {
 }
 
 #[test]
-#[cfg_attr(feature = "eip1559", ignore)]
 fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
     testing_env!(get_context());
 
@@ -463,7 +460,6 @@ fn add_blocks_before_and_after_nov11_2020_unannounced_fork() {
 }
 
 #[test]
-#[cfg_attr(feature = "eip1559", ignore)]
 fn add_block_diverged_until_ethashproof_dataset_fix() {
     testing_env!(get_context());
 
@@ -501,7 +497,6 @@ fn add_block_diverged_until_ethashproof_dataset_fix() {
 }
 
 #[test]
-#[cfg_attr(feature = "eip1559", ignore)]
 fn add_400000_block_only() {
     testing_env!(get_context());
 
@@ -534,7 +529,6 @@ fn add_400000_block_only() {
 }
 
 #[test]
-#[cfg_attr(feature = "eip1559", ignore)]
 fn add_two_blocks_from_8996776() {
     testing_env!(get_context());
 
@@ -577,7 +571,6 @@ fn add_two_blocks_from_8996776() {
 }
 
 #[test]
-#[cfg_attr(feature = "eip1559", ignore)]
 fn add_two_blocks_from_400000() {
     testing_env!(get_context());
 
@@ -625,7 +618,6 @@ fn add_two_blocks_from_400000() {
 }
 
 #[test]
-#[cfg(feature = "eip1559")]
 fn add_blocks_from_12965000() {
     testing_env!(get_context());
 
@@ -667,7 +659,6 @@ fn add_blocks_from_12965000() {
 
 #[test]
 #[should_panic]
-#[cfg(feature = "eip1559")]
 fn add_blocks_with_invalid_mix_hash() {
     testing_env!(get_context());
 
@@ -699,14 +690,13 @@ fn add_blocks_with_invalid_mix_hash() {
     let mut header: BlockHeader = rlp::decode(proof.header_rlp.0.clone().as_slice()).unwrap();
     header.mix_hash = H256::from(vec![1; 32]);
     contract.add_block_header(
-        rlp::encode(&header),
+        rlp::encode(&header).to_vec(),
         proof.to_double_node_with_merkle_proof_vec(),
     );
 }
 
 #[test]
 #[should_panic(expected = "RlpInconsistentLengthAndData")]
-#[cfg(feature = "eip1559")]
 fn add_blocks_with_extra_bytes() {
     testing_env!(get_context());
     let block_height: u64 = 12_965_000;

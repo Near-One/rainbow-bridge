@@ -2,8 +2,8 @@ use crate::eth_client_contract::EthClientContract;
 use crate::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::eth2::{LightClientState, LightClientUpdate};
 use eth_types::{BlockHeader, H256};
-use near_primitives::views::FinalExecutionOutcomeView;
 use near_primitives::types::AccountId;
+use near_primitives::views::FinalExecutionOutcomeView;
 use near_sdk::Balance;
 use std::error::Error;
 use std::fs::File;
@@ -102,15 +102,20 @@ impl EthClientContractTrait for FileEthClientContract {
         self.eth_client_contract.get_light_client_state()
     }
 
-    fn is_submitter_registered(&self, account_id: Option<AccountId>) -> Result<bool, Box<dyn Error>> {
+    fn is_submitter_registered(
+        &self,
+        account_id: Option<AccountId>,
+    ) -> Result<bool, Box<dyn Error>> {
         self.eth_client_contract.is_submitter_registered(account_id)
     }
 
     fn get_num_of_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
-        self.eth_client_contract.get_num_of_submitted_blocks_by_account()
+        self.eth_client_contract
+            .get_num_of_submitted_blocks_by_account()
     }
 
     fn get_max_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
-        self.eth_client_contract.get_max_submitted_blocks_by_account()
+        self.eth_client_contract
+            .get_max_submitted_blocks_by_account()
     }
 }

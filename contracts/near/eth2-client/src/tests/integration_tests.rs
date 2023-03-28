@@ -7,14 +7,11 @@ mod integration_tests {
     use near_sdk::ONE_NEAR;
     use near_units::*;
     use workspaces::operations::Function;
-    use workspaces::prelude::*;
-    use workspaces::{network::Sandbox, Account, Contract, Worker};
+    use workspaces::{Account, Contract};
 
     const WASM_FILEPATH: &str = "../target/wasm32-unknown-unknown/release/eth2_client.wasm";
 
-    async fn initialize_client(
-        init_input: InitInput,
-    ) -> anyhow::Result<(Account, Contract, Worker<Sandbox>)> {
+    async fn initialize_client(init_input: InitInput) -> anyhow::Result<(Account, Contract)> {
         let worker = workspaces::sandbox().await?;
         let wasm = std::fs::read(WASM_FILEPATH)?;
         let contract = worker.dev_deploy(&wasm).await?;
@@ -22,33 +19,33 @@ mod integration_tests {
         // create accounts
         let owner = worker.root_account()?;
         let alice = owner
-            .create_subaccount(&worker, "alice")
+            .create_subaccount("alice")
             .initial_balance(parse_near!("30 N"))
             .transact()
             .await?
             .into_result()?;
 
-        contract
-            .call(&worker, "init")
-            .args(init_input.try_to_vec()?)
+        let _result = contract
+            .call("init")
+            .args_borsh(init_input)
             .transact()
             .await?;
-        Ok((alice, contract, worker))
+        Ok((alice, contract))
     }
 
     #[tokio::test]
     async fn test_gas_usage_of_submit_beacon_chain_light_client_update() -> anyhow::Result<()> {
-        let (headers, updates, init_input) = get_kiln_test_data(Some(InitOptions {
+        let (headers, updates, init_input) = get_goerli_test_data(Some(InitOptions {
             validate_updates: false,
             verify_bls_signatures: false,
             hashes_gc_threshold: 51000,
             max_submitted_blocks_by_account: 7000,
             trusted_signer: None,
         }));
-        let (alice, contract, worker) = initialize_client(init_input).await?;
+        let (alice, contract) = initialize_client(init_input).await?;
 
-        alice
-            .call(&worker, contract.id(), "register_submitter")
+        let _result = alice
+            .call(contract.id(), "register_submitter")
             .deposit(10 * ONE_NEAR)
             .transact()
             .await?;
@@ -56,7 +53,7 @@ mod integration_tests {
         let num_of_blocks_to_submit = 32;
         let headers = &headers.as_slice()[1..num_of_blocks_to_submit];
         for headers_chunk in headers.chunks(50) {
-            let mut transaction = alice.batch(&worker, contract.id());
+            let mut transaction = alice.batch(contract.id());
             for header in headers_chunk {
                 transaction = transaction.call(
                     Function::new("submit_execution_header")
@@ -65,26 +62,23 @@ mod integration_tests {
                 );
             }
 
-            transaction.transact().await?;
+            let _result = transaction.transact().await?;
         }
 
         let mut update = updates[1].clone();
         update.finality_update.header_update.execution_block_hash =
             headers.last().unwrap().calculate_hash();
         let outcome = alice
-            .call(
-                &worker,
-                contract.id(),
-                "submit_beacon_chain_light_client_update",
-            )
-            .args(update.try_to_vec()?)
+            .call(contract.id(), "submit_beacon_chain_light_client_update")
+            .args_borsh(update)
             .gas(parse_gas!("300 T") as u64)
             .transact()
             .await?;
 
         for header in headers {
             let result: Option<H256> = contract
-                .view(&worker, "block_hash_safe", header.number.try_to_vec()?)
+                .view("block_hash_safe")
+                .args_borsh(header.number)
                 .await?
                 .borsh()?;
             assert!(result.is_some())

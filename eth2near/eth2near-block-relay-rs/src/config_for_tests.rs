@@ -1,8 +1,9 @@
+use contract_wrapper::eth_network::EthNetwork;
+use dotenv::dotenv;
 use serde::Deserialize;
+use std::env;
 use std::io::Read;
 use std::path::PathBuf;
-use contract_wrapper::eth_network::EthNetwork;
-use std::env;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct ConfigForTests {
@@ -13,7 +14,6 @@ pub struct ConfigForTests {
     pub path_to_execution_blocks_headers: String,
     pub path_to_light_client_updates: String,
     pub path_to_attested_state: String,
-    pub path_to_finality_state: String,
     pub network_name: EthNetwork,
     pub first_slot: u64,
     pub slot_without_block: u64,
@@ -31,6 +31,8 @@ impl ConfigForTests {
         let mut content = String::new();
         config.read_to_string(&mut content).unwrap();
         let mut config: Self = toml::from_str(content.as_str()).unwrap();
+
+        dotenv().ok();
 
         let api_key_string = env::var("ETH1_INFURA_API_KEY").unwrap();
         config.eth1_endpoint = config

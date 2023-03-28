@@ -8,7 +8,7 @@ pub struct ConfigForTests {
     pub path_to_next_sync_committee: String,
     pub path_to_light_client_updates: String,
     pub network_name: String,
- }
+}
 
 impl ConfigForTests {
     pub fn load_from_toml(path: PathBuf) -> Self {

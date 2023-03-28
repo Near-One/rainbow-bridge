@@ -1,5 +1,6 @@
 use crate::contract_wrapper_trait::ContractWrapper;
 use crate::eth_client_contract_trait::EthClientContractTrait;
+use crate::eth_network::EthNetwork;
 use borsh::BorshDeserialize;
 use eth_types::eth2::{
     ExtendedBeaconBlockHeader, LightClientState, LightClientUpdate, SyncCommittee,
@@ -9,12 +10,11 @@ use near_primitives::borsh::BorshSerialize;
 use near_primitives::types::AccountId;
 use near_primitives::views::FinalExecutionOutcomeView;
 use near_sdk::Balance;
+use serde::Serialize;
 use serde_json::json;
 use std::error::Error;
 use std::option::Option;
 use std::string::String;
-use crate::eth_network::EthNetwork;
-use serde::Serialize;
 
 /// Implementation for interaction with Ethereum Light Client Contract on NEAR.
 pub struct EthClientContract {
@@ -216,7 +216,9 @@ impl EthClientContractTrait for EthClientContract {
     fn get_num_of_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
         let response = self.contract_wrapper.call_view_function(
             "get_num_of_submitted_blocks_by_account".to_string(),
-            json!({"account_id": self.contract_wrapper.get_signer_account_id()}).to_string().into_bytes(),
+            json!({"account_id": self.contract_wrapper.get_signer_account_id()})
+                .to_string()
+                .into_bytes(),
         )?;
 
         Ok(serde_json::from_slice(response.as_slice())?)
@@ -244,8 +246,7 @@ mod tests {
     use tokio::runtime::Runtime;
 
     // TODO: use a more clean approach to include binary
-    const WASM_FILEPATH: &str =
-        "../../contracts/near/res/eth2_client.wasm";
+    const WASM_FILEPATH: &str = "../../contracts/near/res/eth2_client.wasm";
 
     struct EthState {
         pub execution_blocks: Vec<BlockHeader>,
@@ -257,9 +258,9 @@ mod tests {
     impl EthState {
         pub fn new() -> Self {
             const PATH_TO_EXECUTION_BLOCKS: &str =
-                "./data/execution_block_headers_kiln_1099394-1099937.json";
+                "./data/execution_block_headers_goerli_5262172-5262492.json";
             const PATH_TO_LIGHT_CLIENT_UPDATES: &str =
-                "./data/light_client_updates_kiln_1099394-1099937.json";
+                "./data/light_client_updates_goerli_5262172-5262492.json";
 
             let execution_blocks: Vec<BlockHeader> = serde_json::from_str(
                 &std::fs::read_to_string(PATH_TO_EXECUTION_BLOCKS).expect("Unable to read file"),
@@ -281,7 +282,7 @@ mod tests {
         }
 
         pub fn submit_block(&mut self, eth_client: &mut EthClientContract) {
-            eth_client
+            let res = eth_client
                 .send_headers(
                     &vec![self.execution_blocks[self.current_execution_block].clone()],
                     0,
@@ -296,7 +297,7 @@ mod tests {
         }
 
         pub fn submit_update(&mut self, eth_client: &mut EthClientContract) {
-            eth_client
+            let res = eth_client
                 .send_light_client_update(
                     self.light_client_updates[self.current_light_client_update].clone(),
                 )
@@ -329,10 +330,15 @@ mod tests {
         (relay_account, contract)
     }
 
-    fn init_contract(eth_client_contract: &EthClientContract, eth_state: &mut EthState, trusted_signer: String) {
+    fn init_contract(
+        eth_client_contract: &EthClientContract,
+        eth_state: &mut EthState,
+        trusted_signer: String,
+    ) {
         const PATH_TO_CURRENT_SYNC_COMMITTEE: &str =
-            "./data/next_sync_committee_kiln_period_133.json";
-        const PATH_TO_NEXT_SYNC_COMMITTEE: &str = "./data/next_sync_committee_kiln_period_134.json";
+            "./data/next_sync_committee_goerli_period_641.json";
+        const PATH_TO_NEXT_SYNC_COMMITTEE: &str =
+            "./data/next_sync_committee_goerli_period_642.json";
 
         let current_sync_committee: SyncCommittee = serde_json::from_str(
             &std::fs::read_to_string(PATH_TO_CURRENT_SYNC_COMMITTEE).expect("Unable to read file"),
@@ -365,7 +371,7 @@ mod tests {
         }
 
         eth_client_contract.init_contract(
-            eth_client_contract::EthNetwork::Kiln,
+            eth_client_contract::EthNetwork::Goerli,
             finalized_execution_header.unwrap(),
             finalized_beacon_header,
             current_sync_committee,
@@ -392,17 +398,18 @@ mod tests {
 
         let mut eth_state = EthState::new();
 
-        init_contract(&eth_client_contract, &mut eth_state, relay_account.id().to_string());
+        init_contract(
+            &eth_client_contract,
+            &mut eth_state,
+            relay_account.id().to_string(),
+        );
         let first_finalized_slot = eth_client_contract
             .get_finalized_beacon_block_slot()
             .unwrap();
-        assert_eq!(first_finalized_slot, 1099360);
+        assert_eq!(first_finalized_slot, 5262208);
 
         // Use `relay_account` as a signer for normal operations
-        let contract_wrapper = Box::new(SandboxContractWrapper::new(
-            &relay_account,
-            contract,
-        ));
+        let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
         let mut eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
         eth_client_contract.register_submitter().unwrap();
 

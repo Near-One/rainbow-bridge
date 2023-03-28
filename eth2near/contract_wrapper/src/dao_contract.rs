@@ -1,4 +1,6 @@
+use crate::contract_wrapper_trait::ContractWrapper;
 use crate::dao_types;
+use crate::utils::status_as_success_decoded;
 use eth_types::eth2::LightClientUpdate;
 use near_primitives::views::FinalExecutionOutcomeView;
 use near_sdk::borsh::BorshSerialize;
@@ -6,7 +8,6 @@ use near_sdk::json_types::Base64VecU8;
 use near_sdk::{AccountId, Gas};
 use serde_json::json;
 use std::error::Error;
-use crate::contract_wrapper_trait::ContractWrapper;
 
 /// Implementation for interaction with DAO Contract on NEAR.
 pub struct DAOContract {
@@ -65,10 +66,7 @@ impl DAOContract {
 
         Ok((
             serde_json::from_slice(
-                response
-                    .clone()
-                    .status
-                    .as_success_decoded()
+                status_as_success_decoded(response.clone().status)
                     .ok_or("Failed to add proposal")?
                     .as_slice(),
             )?,
@@ -156,7 +154,7 @@ mod tests {
     fn get_default_result() -> FinalExecutionOutcomeView {
         let status_str = to_base64("215");
         FinalExecutionOutcomeView {
-            status: FinalExecutionStatus::SuccessValue(status_str),
+            status: FinalExecutionStatus::SuccessValue(status_str.into()),
             transaction: SignedTransactionView {
                 signer_id: "accout.testnet".parse().unwrap(),
                 public_key: PublicKey::empty(KeyType::ED25519),
