@@ -243,8 +243,6 @@ mod tests {
     use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::BlockHeader;
     use near_primitives::types::AccountId;
-    use std::thread::sleep;
-    use std::time::Duration;
     use tokio::runtime::Runtime;
 
     // TODO: use a more clean approach to include binary
