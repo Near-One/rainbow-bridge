@@ -133,7 +133,7 @@ impl Eth2Client {
                 StorageKey::NextSyncCommittee,
                 Some(&args.next_sync_committee),
             ),
-            client_mode: ClientMode::LightClientUpdate,
+            client_mode: ClientMode::SubmitLightClientUpdate,
             unfinalized_head_execution_header: None,
             unfinalized_tail_execution_header: None,
         }
@@ -182,6 +182,20 @@ impl Eth2Client {
             current_sync_committee: self.current_sync_committee.get().unwrap(),
             next_sync_committee: self.next_sync_committee.get().unwrap(),
         }
+    }
+
+    /// Returns current client mode
+    #[result_serializer(borsh)]
+    pub fn get_client_mode(&self) -> ClientMode {
+        self.client_mode.clone()
+    }
+
+    /// Returns unfinalized tail execution block number
+    #[result_serializer(borsh)]
+    pub fn get_unfinalized_tail_block_number(&self) -> Option<u64> {
+        self.unfinalized_tail_execution_header
+            .as_ref()
+            .map(|header| header.block_number)
     }
 
     pub fn submit_beacon_chain_light_client_update(
@@ -245,7 +259,7 @@ impl Eth2Client {
                 .set(self.unfinalized_head_execution_header.as_ref().unwrap());
             self.unfinalized_tail_execution_header = None;
             self.unfinalized_head_execution_header = None;
-            self.client_mode = ClientMode::LightClientUpdate;
+            self.client_mode = ClientMode::SubmitLightClientUpdate;
         } else {
             let block_info = ExecutionHeaderInfo {
                 parent_hash: block_header.parent_hash,
@@ -488,7 +502,10 @@ impl Eth2Client {
     }
 
     fn is_light_client_update_allowed(&self) {
-        require!(matches!(self.client_mode, ClientMode::LightClientUpdate));
+        require!(matches!(
+            self.client_mode,
+            ClientMode::SubmitLightClientUpdate
+        ));
         self.check_not_paused(PAUSE_SUBMIT_UPDATE);
 
         if let Some(trusted_signer) = &self.trusted_signer {

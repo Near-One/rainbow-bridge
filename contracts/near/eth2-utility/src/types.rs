@@ -27,6 +27,6 @@ pub struct InitInput {
 
 #[derive(Clone, BorshDeserialize, BorshSerialize)]
 pub enum ClientMode {
-    LightClientUpdate,
+    SubmitLightClientUpdate,
     SubmitHeader,
 }
