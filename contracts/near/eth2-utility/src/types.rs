@@ -24,3 +24,9 @@ pub struct InitInput {
     pub max_submitted_blocks_by_account: u32,
     pub trusted_signer: Option<AccountId>,
 }
+
+#[derive(Clone, BorshDeserialize, BorshSerialize)]
+pub enum ClientMode {
+    LightClientUpdate,
+    SubmitHeader,
+}
