@@ -205,9 +205,14 @@ impl Eth2Client {
         require!(
             block_hash
                 == self
-                    .unfinalized_tail_execution_header.as_ref()
+                    .unfinalized_tail_execution_header
+                    .as_ref()
                     .map(|header| header.parent_hash)
-                    .unwrap_or(self.finalized_beacon_header.execution_block_hash)
+                    .unwrap_or(self.finalized_beacon_header.execution_block_hash),
+            format!(
+                "The block {:#?} has unknown parent {:#?}. Parent should be submitted first.",
+                block_hash, block_header.parent_hash
+            )
         );
 
         let insert_result = self
@@ -216,31 +221,39 @@ impl Eth2Client {
 
         require!(
             insert_result.is_none(),
-            format!("The block {} already submitted!", &block_hash)
+            format!("The block {:#?} already submitted!", &block_hash)
         );
 
-        if block_header.number == self.finalized_execution_header.get().unwrap().block_number + 1 {
-            let finalized_execution_header_hash = self
-                .finalized_execution_blocks
-                .get(&self.finalized_execution_header.get().unwrap().block_number)
-                .unwrap();
-            require!(block_header.parent_hash == finalized_execution_header_hash);
+        let finalized_execution_header = self.finalized_execution_header.get().unwrap();
+        // Apply gc
+        if let Some(diff_between_unfinalized_head_and_tail) =
+            self.get_diff_between_unfinalized_head_and_tail()
+        {
+            let header_number_to_remove = finalized_execution_header.block_number
+                + diff_between_unfinalized_head_and_tail
+                - self.hashes_gc_threshold;
 
+            if header_number_to_remove > 0
+                && header_number_to_remove < finalized_execution_header.block_number
+            {
+                self.gc_finalized_execution_blocks(header_number_to_remove);
+            }
+        }
+
+        if block_header.number == finalized_execution_header.block_number + 1 {
             self.finalized_execution_header
                 .set(self.unfinalized_head_execution_header.as_ref().unwrap());
             self.unfinalized_tail_execution_header = None;
             self.unfinalized_head_execution_header = None;
             self.client_mode = ClientMode::LightClientUpdate;
         } else {
-            let submitter = env::predecessor_account_id();
             let block_info = ExecutionHeaderInfo {
                 parent_hash: block_header.parent_hash,
                 block_number: block_header.number,
-                submitter,
+                submitter: env::predecessor_account_id(),
             };
-            if self.unfinalized_head_execution_header.is_none()
-                && block_hash == self.finalized_beacon_header.execution_block_hash
-            {
+
+            if self.unfinalized_head_execution_header.is_none() {
                 self.unfinalized_head_execution_header = Some(block_info.clone());
             }
             self.unfinalized_tail_execution_header = Some(block_info);
@@ -249,7 +262,7 @@ impl Eth2Client {
         #[cfg(feature = "logs")]
         env::log_str(
             format!(
-                "Submitted header number {}, hash {:?}",
+                "Submitted header number {}, hash {:#?}",
                 block_header.number, block_hash
             )
             .as_str(),
@@ -484,6 +497,19 @@ impl Eth2Client {
                 "Eth-client is deployed as trust mode, only trusted_signer can update the client"
             );
         }
+    }
+
+    fn get_diff_between_unfinalized_head_and_tail(&self) -> Option<u64> {
+        let head_block_number = self
+            .unfinalized_head_execution_header
+            .as_ref()
+            .map(|header| header.block_number)?;
+        let tail_block_number = self
+            .unfinalized_tail_execution_header
+            .as_ref()
+            .map(|header| header.block_number)?;
+
+        Some(head_block_number - tail_block_number)
     }
 }
 
