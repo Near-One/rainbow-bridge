@@ -1,6 +1,6 @@
 use crate::*;
-use near_sdk::Balance;
 use near_sdk::collections::UnorderedMap;
+use near_sdk::Balance;
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]

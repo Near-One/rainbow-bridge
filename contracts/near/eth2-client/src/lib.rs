@@ -144,6 +144,12 @@ impl Eth2Client {
         self.finalized_execution_blocks.get(&block_number)
     }
 
+    /// Checks if the execution header is already submitted.
+    #[result_serializer(borsh)]
+    pub fn is_known_execution_header(&self, block_number: u64) -> bool {
+        self.finalized_execution_blocks.get(&block_number).is_some()
+    }
+
     /// Get finalized beacon block root
     #[result_serializer(borsh)]
     pub fn finalized_beacon_block_root(&self) -> H256 {
@@ -204,16 +210,16 @@ impl Eth2Client {
         require!(self.client_mode == ClientMode::SubmitHeader);
 
         let block_hash = block_header.calculate_hash();
+        let expected_block_hash = self
+            .unfinalized_tail_execution_header
+            .as_ref()
+            .map(|header| header.parent_hash)
+            .unwrap_or(self.finalized_beacon_header.execution_block_hash);
         require!(
-            block_hash
-                == self
-                    .unfinalized_tail_execution_header
-                    .as_ref()
-                    .map(|header| header.parent_hash)
-                    .unwrap_or(self.finalized_beacon_header.execution_block_hash),
+            block_hash == expected_block_hash,
             format!(
-                "The block {:#?} has unknown parent {:#?}. Parent should be submitted first.",
-                block_hash, block_header.parent_hash
+                "The expected block hash is {:#?} but got {:#?}.",
+                expected_block_hash, block_hash
             )
         );
 
