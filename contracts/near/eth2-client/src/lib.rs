@@ -8,22 +8,23 @@ use eth2_utility::consensus::*;
 use eth2_utility::types::*;
 use eth_types::eth2::*;
 use eth_types::{BlockHeader, H256};
-use near_sdk::collections::{LookupMap, UnorderedMap};
-use near_sdk::{assert_self, env, near_bindgen, require, AccountId, PanicOnDefault};
-use near_sdk_inner::collections::LazyOption;
-use near_sdk_inner::{Balance, BorshStorageKey};
+use near_sdk::collections::{LookupMap, LazyOption};
+use near_sdk::{assert_self, env, near_bindgen, require, AccountId, PanicOnDefault, BorshStorageKey};
 use tree_hash::TreeHash;
+
 
 #[cfg(test)]
 mod tests;
+
+mod migrate;
 
 const PAUSE_SUBMIT_UPDATE: Mask = 1;
 
 #[derive(BorshSerialize, BorshStorageKey)]
 enum StorageKey {
     FinalizedExecutionBlocks,
-    UnfinalizedHeaders,
-    Submitters,
+    __DeprecatedUnfinalizedHeaders,
+    __DeprecatedSubmitters,
     FinalizedExecutionHeader,
     CurrentSyncCommittee,
     NextSyncCommittee,
@@ -51,17 +52,6 @@ pub struct Eth2Client {
     /// Hashes of the finalized execution blocks mapped to their numbers. Stores up to `hashes_gc_threshold` entries.
     /// Execution block number -> execution block hash
     finalized_execution_blocks: LookupMap<u64, H256>,
-    /// All unfinalized execution blocks' headers hashes mapped to their `HeaderInfo`.
-    /// Execution block hash -> ExecutionHeaderInfo object
-    __unfinalized_headers: UnorderedMap<H256, ExecutionHeaderInfo>,
-    /// `AccountId`s mapped to their number of submitted headers.
-    /// Submitter account -> Num of submitted headers
-    __submitters: LookupMap<AccountId, u32>,
-    /// Max number of unfinalized blocks allowed to be stored by one submitter account
-    /// This value should be at least 32 blocks (1 epoch), but the recommended value is 1024 (32 epochs)
-    __max_submitted_blocks_by_account: u32,
-    // The minimum balance that should be attached to register a new submitter account
-    __min_storage_balance_for_submitter: Balance,
     /// Light client state
     finalized_beacon_header: ExtendedBeaconBlockHeader,
     finalized_execution_header: LazyOption<ExecutionHeaderInfo>,
@@ -77,8 +67,6 @@ impl Eth2Client {
     #[init]
     #[private]
     pub fn init(#[serializer(borsh)] args: InitInput) -> Self {
-        let min_storage_balance_for_submitter =
-            calculate_min_storage_balance_for_submitter(args.max_submitted_blocks_by_account);
         let network =
             Network::from_str(args.network.as_str()).unwrap_or_else(|e| env::panic_str(e.as_str()));
 
@@ -116,10 +104,6 @@ impl Eth2Client {
             hashes_gc_threshold: args.hashes_gc_threshold,
             network,
             finalized_execution_blocks: LookupMap::new(StorageKey::FinalizedExecutionBlocks),
-            __unfinalized_headers: UnorderedMap::new(StorageKey::UnfinalizedHeaders),
-            __submitters: LookupMap::new(StorageKey::Submitters),
-            __max_submitted_blocks_by_account: args.max_submitted_blocks_by_account,
-            __min_storage_balance_for_submitter: min_storage_balance_for_submitter,
             finalized_beacon_header: args.finalized_beacon_header,
             finalized_execution_header: LazyOption::new(
                 StorageKey::FinalizedExecutionHeader,
