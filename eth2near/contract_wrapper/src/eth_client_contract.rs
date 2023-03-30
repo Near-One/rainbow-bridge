@@ -10,7 +10,6 @@ use eth2_utility::types::ClientMode;
 use near_primitives::borsh::BorshSerialize;
 use near_primitives::types::AccountId;
 use near_primitives::views::FinalExecutionOutcomeView;
-use near_sdk::Balance;
 use serde::Serialize;
 use serde_json::json;
 use std::error::Error;
@@ -19,9 +18,6 @@ use std::string::String;
 
 /// Implementation for interaction with Ethereum Light Client Contract on NEAR.
 pub struct EthClientContract {
-    /// last submitted slot by this relay
-    last_slot: u64,
-
     /// Wrapper for interacting with NEAR Contract
     pub contract_wrapper: Box<dyn ContractWrapper>,
 }
@@ -30,7 +26,6 @@ impl EthClientContract {
     /// Constructor for `EthClientContract`
     pub fn new(contract_wrapper: Box<dyn ContractWrapper>) -> Self {
         EthClientContract {
-            last_slot: 0,
             contract_wrapper,
         }
     }
@@ -112,10 +107,6 @@ impl EthClientContract {
 }
 
 impl EthClientContractTrait for EthClientContract {
-    fn get_last_submitted_slot(&self) -> u64 {
-        return self.last_slot;
-    }
-
     fn send_light_client_update(
         &mut self,
         light_client_update: LightClientUpdate,
@@ -159,10 +150,7 @@ impl EthClientContractTrait for EthClientContract {
     fn send_headers(
         &mut self,
         headers: &[BlockHeader],
-        end_slot: u64,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>> {
-        self.last_slot = end_slot;
-
         if headers.len() == 0 {
             return Err(Box::new(crate::errors::TryToSubmitZeroHeaderError));
         }
@@ -177,62 +165,12 @@ impl EthClientContractTrait for EthClientContract {
             .call_change_method_batch(method_names, args, None, None)
     }
 
-    fn get_min_deposit(&self) -> Result<Balance, Box<dyn Error>> {
-        Ok(Balance::try_from_slice(
-            &self.contract_wrapper.call_view_function(
-                "min_storage_balance_for_submitter".to_string(),
-                json!({}).to_string().into_bytes(),
-            )?,
-        )?)
-    }
-
-    fn register_submitter(&self) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
-        self.contract_wrapper.call_change_method(
-            "register_submitter".to_string(),
-            json!({}).to_string().into_bytes(),
-            Some(self.get_min_deposit()?),
-            None,
-        )
-    }
-
-    fn is_submitter_registered(
-        &self,
-        account_id: Option<AccountId>,
-    ) -> Result<bool, Box<dyn Error>> {
-        let response = self.contract_wrapper.call_view_function(
-            "is_submitter_registered".to_string(),
-            json!({"account_id": account_id.unwrap_or(self.contract_wrapper.get_signer_account_id())}).to_string().into_bytes(),
-        )?;
-
-        Ok(serde_json::from_slice(response.as_slice())?)
-    }
-
     fn get_light_client_state(&self) -> Result<LightClientState, Box<dyn Error>> {
         let result = self
             .contract_wrapper
             .call_view_function("get_light_client_state".to_string(), vec![])?;
 
         Ok(LightClientState::try_from_slice(result.as_slice())?)
-    }
-
-    fn get_num_of_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
-        let response = self.contract_wrapper.call_view_function(
-            "get_num_of_submitted_blocks_by_account".to_string(),
-            json!({"account_id": self.contract_wrapper.get_signer_account_id()})
-                .to_string()
-                .into_bytes(),
-        )?;
-
-        Ok(serde_json::from_slice(response.as_slice())?)
-    }
-
-    fn get_max_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
-        let response = self.contract_wrapper.call_view_function(
-            "get_max_submitted_blocks_by_account".to_string(),
-            json!({}).to_string().into_bytes(),
-        )?;
-
-        Ok(serde_json::from_slice(response.as_slice())?)
     }
 
     fn get_last_block_number(&self) -> Result<u64, Box<dyn Error>> {
@@ -243,10 +181,6 @@ impl EthClientContractTrait for EthClientContract {
 
         let beacon_block_number: u64 = u64::try_from_slice(&response)?;
         Ok(beacon_block_number)
-    }
-
-    fn is_known_block(&self, execution_block_hash: &H256) -> Result<bool, Box<dyn Error>> {
-        todo!()
     }
 
     fn get_unfinalized_tail_block_number(&self) -> Result<Option<u64>, Box<dyn Error>> {

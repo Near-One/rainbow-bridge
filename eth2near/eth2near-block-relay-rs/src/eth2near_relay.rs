@@ -1,10 +1,8 @@
 use crate::config::Config;
-use crate::last_slot_searcher::LastSlotSearcher;
 use crate::prometheus_metrics;
 use crate::prometheus_metrics::{
-    CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH, CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR,
     CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_ETH, CHAIN_FINALIZED_EXECUTION_BLOCK_HEIGHT_ON_NEAR,
-    FAILS_ON_HEADERS_SUBMISSION, FAILS_ON_UPDATES_SUBMISSION, LAST_ETH_SLOT, LAST_ETH_SLOT_ON_NEAR,
+    FAILS_ON_HEADERS_SUBMISSION, FAILS_ON_UPDATES_SUBMISSION,
     LAST_FINALIZED_ETH_SLOT, LAST_FINALIZED_ETH_SLOT_ON_NEAR,
 };
 use bitvec::macros::internal::funty::Fundamental;
@@ -108,9 +106,7 @@ pub struct Eth2NearRelay {
     interval_between_light_client_updates_submission_in_epochs: u64,
     max_blocks_for_finalization: u64,
     near_network_name: String,
-    last_slot_searcher: LastSlotSearcher,
     terminate: bool,
-    submit_only_finalized_blocks: bool,
     next_light_client_update: Option<LightClientUpdate>,
     sleep_time_on_sync_secs: u64,
     sleep_time_after_submission_secs: u64,
@@ -121,8 +117,6 @@ impl Eth2NearRelay {
     pub fn init(
         config: &Config,
         eth_contract: Box<dyn EthClientContractTrait>,
-        enable_binsearch: bool,
-        submit_only_finalized_blocks: bool,
     ) -> Self {
         info!(target: "relay", "=== Relay initialization === ");
 
@@ -147,9 +141,7 @@ impl Eth2NearRelay {
                 .interval_between_light_client_updates_submission_in_epochs,
             max_blocks_for_finalization: config.max_blocks_for_finalization,
             near_network_name: config.near_network_id.to_string(),
-            last_slot_searcher: LastSlotSearcher::new(enable_binsearch),
             terminate: false,
-            submit_only_finalized_blocks,
             next_light_client_update,
             sleep_time_on_sync_secs: config.sleep_time_on_sync_secs,
             sleep_time_after_submission_secs: config.sleep_time_after_submission_secs,
@@ -163,56 +155,6 @@ impl Eth2NearRelay {
         }
 
         eth2near_relay
-    }
-
-    fn get_max_slot_for_submission(&self) -> Result<u64, Box<dyn Error>> {
-        let last_eth2_slot = self.beacon_rpc_client.get_last_slot_number()?.as_u64();
-        LAST_ETH_SLOT.inc_by(cmp::max(0, last_eth2_slot as i64 - LAST_ETH_SLOT.get()));
-        info!(target: "relay", "Last slot on ETH = {}", last_eth2_slot);
-
-        if let Ok(last_block_number) = self
-            .beacon_rpc_client
-            .get_block_number_for_slot(Slot::new(last_eth2_slot))
-        {
-            CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH.inc_by(cmp::max(
-                0,
-                last_block_number as i64 - CHAIN_EXECUTION_BLOCK_HEIGHT_ON_ETH.get(),
-            ));
-        }
-
-        return if self.submit_only_finalized_blocks {
-            Ok(self
-                .beacon_rpc_client
-                .get_last_finalized_slot_number()?
-                .as_u64())
-        } else {
-            Ok(last_eth2_slot)
-        };
-    }
-
-    fn get_last_eth2_slot_on_near(&mut self, max_slot: u64) -> Result<u64, Box<dyn Error>> {
-        let last_eth2_slot_on_near = self.last_slot_searcher.get_last_slot(
-            max_slot,
-            &self.beacon_rpc_client,
-            &self.eth_client_contract,
-        )?;
-
-        LAST_ETH_SLOT_ON_NEAR.inc_by(cmp::max(
-            0,
-            last_eth2_slot_on_near as i64 - LAST_ETH_SLOT_ON_NEAR.get(),
-        ));
-
-        if let Ok(last_block_number) = self
-            .beacon_rpc_client
-            .get_block_number_for_slot(Slot::new(last_eth2_slot_on_near))
-        {
-            CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR.inc_by(cmp::max(
-                0,
-                last_block_number as i64 - CHAIN_EXECUTION_BLOCK_HEIGHT_ON_NEAR.get(),
-            ));
-        }
-
-        return Ok(last_eth2_slot_on_near);
     }
 
     fn get_last_finalized_slot_on_near(&self) -> Result<u64, Box<dyn Error>> {
@@ -264,7 +206,6 @@ impl Eth2NearRelay {
         info!(target: "relay", "=== Relay running ===");
         let mut iter_id = 0;
         while !self.terminate {
-            let mut were_submission_on_iter: bool = false;
             iter_id += 1;
             self.set_terminate(iter_id, max_iterations);
             skip_fail!(
@@ -281,7 +222,7 @@ impl Eth2NearRelay {
                 self.sleep_time_on_sync_secs
             );
 
-            were_submission_on_iter = match client_mode {
+            let were_submission_on_iter = match client_mode {
                 ClientMode::SubmitLightClientUpdate => self.submit_light_client_update(),
                 ClientMode::SubmitHeader => self.submit_headers()
             };
@@ -466,7 +407,7 @@ impl Eth2NearRelay {
         info!(target: "relay", "Try submit headers from slot={} to {} to NEAR", *last_eth2_slot_on_near + 1, current_slot - 1);
         let execution_outcome = return_val_on_fail!(
             self.eth_client_contract
-                .send_headers(&headers, current_slot - 1),
+                .send_headers(&headers),
             "Error on header submission",
             false
         );
