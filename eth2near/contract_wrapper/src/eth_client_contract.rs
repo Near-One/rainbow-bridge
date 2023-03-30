@@ -248,6 +248,16 @@ impl EthClientContractTrait for EthClientContract {
     fn is_known_block(&self, execution_block_hash: &H256) -> Result<bool, Box<dyn Error>> {
         todo!()
     }
+
+    fn get_unfinalized_tail_block_number(&self) -> Result<Option<u64>, Box<dyn Error>> {
+        let response = self.contract_wrapper.call_view_function(
+            "get_unfinalized_tail_block_number".to_string(),
+            json!({}).to_string().into_bytes(),
+        )?;
+
+        let beacon_block_number: Option<u64> = Option::<u64>::try_from_slice(&response)?;
+        Ok(beacon_block_number)
+    }
 }
 
 #[cfg(test)]

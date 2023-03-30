@@ -140,6 +140,10 @@ impl EthClientContractTrait for DaoEthClientContract {
     fn get_last_block_number(&self) -> Result<u64, Box<dyn Error>> {
         self.eth_client_contract.get_last_block_number()
     }
+
+    fn get_unfinalized_tail_block_number(&self) -> Result<Option<u64>, Box<dyn Error>> {
+        self.eth_client_contract.get_unfinalized_tail_block_number()
+    }
 }
 
 #[cfg(test)]

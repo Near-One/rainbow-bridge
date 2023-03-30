@@ -19,8 +19,9 @@ use eth_types::eth2::LightClientUpdate;
 use eth_types::BlockHeader;
 use log::{debug, info, trace, warn};
 use near_primitives::views::FinalExecutionStatus;
-use std::cmp;
+use std::{cmp, fmt};
 use std::error::Error;
+use std::fmt::Display;
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
@@ -81,6 +82,20 @@ macro_rules! return_val_on_fail_and_sleep {
         }
     };
 }
+
+#[derive(Debug)]
+pub struct SlotByBlockNumberNotFound;
+
+impl Display for SlotByBlockNumberNotFound {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Slot wasn't found for given block number"
+        )
+    }
+}
+
+impl Error for SlotByBlockNumberNotFound {}
 
 pub struct Eth2NearRelay {
     beacon_rpc_client: BeaconRPCClient,
@@ -282,17 +297,24 @@ impl Eth2NearRelay {
         self.send_light_client_updates_with_checks()
     }
 
-    fn get_slot_by_block_number(&self, block_number: u64, max_slot: u64) -> u64 {
+    fn get_slot_by_block_number(&self, block_number: u64, max_slot: u64, min_slot: u64) -> Result<u64, Box<dyn Error>> {
         let mut current_slot = max_slot;
-        loop {
-            if let Ok(current_block_number) = self.beacon_rpc_client.get_block_number_for_slot(Slot::new(current_slot)) {
-                if current_block_number == block_number {
-                    return current_slot
-                }
+        while current_slot >= min_slot {
+            match self.beacon_rpc_client.get_block_number_for_slot(Slot::new(current_slot)) {
+                Ok(current_block_number) => {
+                    if current_block_number == block_number {
+                        return Ok(current_slot)
+                    }
+                    current_slot -= 1;
+                },
+                Err(err) => match err.downcast_ref::<NoBlockForSlotError>() {
+                    Some(_) => { current_slot -= 1; }
+                    None => return Err(err),
+                },
             }
-
-            current_slot -= 1;
         }
+
+        return Err(Box::new(SlotByBlockNumberNotFound));
     }
 
     fn submit_headers(&mut self) -> bool {
@@ -305,13 +327,23 @@ impl Eth2NearRelay {
         let min_block_number = return_val_on_fail!(self.eth_client_contract.get_last_block_number(),
                                                "Fail to get last block number",
                                                false);
-        let min_slot = self.get_slot_by_block_number(min_block_number, max_slot);
+        let min_slot = return_val_on_fail!(self.get_slot_by_block_number(min_block_number, max_slot, 0),
+            "Fail to get slot by block number",
+            false);
         let mut current_slot = max_slot;
 
         info!(target: "relay", "Submit headers from {} to {}", max_slot, min_slot);
-        let mut were_submission_on_iter = false;
+
         while current_slot > min_slot {
             info!(target: "relay", "= Creating headers batch =");
+
+            let max_block_number = skip_fail!(self.eth_client_contract.get_unfinalized_tail_block_number(),
+                "Fail to fetch unfinalized tail block number",
+                self.sleep_time_on_sync_secs);
+
+            if let Some(max_block_number) = max_block_number {
+                current_slot = skip_fail!(self.get_slot_by_block_number(max_block_number, current_slot + 1, min_slot), "Fail to get slot by block_number", 0) - 1;
+            }
 
             let (headers, new_current_slot) = skip_fail!(
                     self.get_execution_blocks_between(
@@ -322,11 +354,12 @@ impl Eth2NearRelay {
                     self.sleep_time_on_sync_secs
                 );
 
-            self.submit_execution_blocks(headers, new_current_slot + 1, &mut current_slot);
-            were_submission_on_iter = true;
+            if !self.submit_execution_blocks(headers, new_current_slot + 1, &mut current_slot) {
+                return false;
+            }
         }
 
-        were_submission_on_iter
+        return true;
     }
 
     fn wait_for_synchronization(&self) -> Result<(), Box<dyn Error>> {
@@ -409,23 +442,29 @@ impl Eth2NearRelay {
         headers: Vec<BlockHeader>,
         current_slot: u64,
         last_eth2_slot_on_near: &mut u64,
-    ) {
+    ) -> bool {
         info!(target: "relay", "Try submit headers from slot={} to {} to NEAR", *last_eth2_slot_on_near + 1, current_slot - 1);
-        let execution_outcome = return_on_fail!(
+        let execution_outcome = return_val_on_fail!(
             self.eth_client_contract
                 .send_headers(&headers, current_slot - 1),
-            "Error on header submission"
+            "Error on header submission",
+            false
         );
 
         if let FinalExecutionStatus::Failure(error_message) = execution_outcome.status {
             FAILS_ON_HEADERS_SUBMISSION.inc();
-            warn!(target: "relay", "FAIL status on Headers submission. Error: {:?}", error_message);
-        }
+            warn!(target: "relay", "FAIL status on Headers submission. Error: {:?}. Transaction URL: https://explorer.{}.near.org/transactions/{}",
+                error_message, self.near_network_name, execution_outcome.transaction.hash);
 
-        *last_eth2_slot_on_near = current_slot - 1;
-        info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
+            return false;
+        } else {
+            *last_eth2_slot_on_near = current_slot - 1;
+            info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
                                   self.near_network_name, execution_outcome.transaction.hash);
-        thread::sleep(Duration::from_secs(self.sleep_time_after_submission_secs));
+
+            thread::sleep(Duration::from_secs(self.sleep_time_after_submission_secs));
+            return true;
+        }
     }
 
     fn verify_bls_signature_for_finality_update(

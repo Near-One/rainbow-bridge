@@ -62,4 +62,6 @@ pub trait EthClientContractTrait {
     fn get_max_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>>;
 
     fn get_last_block_number(&self) -> Result<u64, Box<dyn Error>>;
+
+    fn get_unfinalized_tail_block_number(&self) -> Result<Option<u64>, Box<dyn Error>>;
 }
