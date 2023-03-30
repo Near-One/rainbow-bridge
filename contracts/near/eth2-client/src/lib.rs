@@ -8,10 +8,11 @@ use eth2_utility::consensus::*;
 use eth2_utility::types::*;
 use eth_types::eth2::*;
 use eth_types::{BlockHeader, H256};
-use near_sdk::collections::{LookupMap, LazyOption};
-use near_sdk::{assert_self, env, near_bindgen, require, AccountId, PanicOnDefault, BorshStorageKey};
+use near_sdk::collections::{LazyOption, LookupMap};
+use near_sdk::{
+    assert_self, env, near_bindgen, require, AccountId, BorshStorageKey, PanicOnDefault,
+};
 use tree_hash::TreeHash;
-
 
 #[cfg(test)]
 mod tests;
@@ -197,7 +198,7 @@ impl Eth2Client {
 
     #[result_serializer(borsh)]
     pub fn submit_execution_header(&mut self, #[serializer(borsh)] block_header: BlockHeader) {
-        require!(matches!(self.client_mode, ClientMode::SubmitHeader));
+        require!(self.client_mode == ClientMode::SubmitHeader);
 
         let block_hash = block_header.calculate_hash();
         require!(
@@ -486,10 +487,7 @@ impl Eth2Client {
     }
 
     fn is_light_client_update_allowed(&self) {
-        require!(matches!(
-            self.client_mode,
-            ClientMode::SubmitLightClientUpdate
-        ));
+        require!(self.client_mode == ClientMode::SubmitLightClientUpdate);
         self.check_not_paused(PAUSE_SUBMIT_UPDATE);
 
         if let Some(trusted_signer) = &self.trusted_signer {
