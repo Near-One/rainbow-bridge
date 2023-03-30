@@ -203,6 +203,7 @@ mod tests {
     use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::BlockHeader;
     use near_primitives::types::AccountId;
+    use near_primitives::views::ExecutionStatusView::SuccessValue;
     use tokio::runtime::Runtime;
 
     // TODO: use a more clean approach to include binary
@@ -245,9 +246,9 @@ mod tests {
             let res = eth_client
                 .send_headers(
                     &vec![self.execution_blocks[self.current_execution_block].clone()],
-                    0,
                 )
                 .unwrap();
+
             self.current_execution_block += 1;
             while self.execution_blocks[self.current_execution_block].hash
                 == self.execution_blocks[self.current_execution_block - 1].hash
@@ -371,7 +372,6 @@ mod tests {
         // Use `relay_account` as a signer for normal operations
         let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
         let mut eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
-        eth_client_contract.register_submitter().unwrap();
 
         let next_hash = eth_state.light_client_updates[eth_state.current_light_client_update]
             .clone()
@@ -383,13 +383,8 @@ mod tests {
                 [eth_state.current_execution_block]
                 .hash
                 .unwrap();
-            assert!(!eth_client_contract
-                .is_known_block(&current_execution_block_hash)
-                .unwrap());
+
             eth_state.submit_block(&mut eth_client_contract);
-            assert!(eth_client_contract
-                .is_known_block(&current_execution_block_hash)
-                .unwrap());
 
             if current_execution_block_hash == next_hash {
                 eth_state.submit_update(&mut eth_client_contract);

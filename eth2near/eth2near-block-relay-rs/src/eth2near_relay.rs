@@ -801,7 +801,7 @@ mod tests {
 
         relay
             .eth_client_contract
-            .send_headers(&blocks, end_slot)
+            .send_headers(&blocks)
             .unwrap();
     }
 
@@ -830,7 +830,7 @@ mod tests {
 
         relay
             .eth_client_contract
-            .send_headers(&blocks, finality_slot_on_eth)
+            .send_headers(&blocks)
             .unwrap();
 
         finality_slot_on_eth
@@ -853,7 +853,7 @@ mod tests {
         end_slot += 1;
 
         let blocks: Vec<BlockHeader> = vec![];
-        if let Ok(_) = relay.eth_client_contract.send_headers(&blocks, end_slot) {
+        if let Ok(_) = relay.eth_client_contract.send_headers(&blocks) {
             panic!("No error on submit 0 headers");
         }
     }
@@ -1126,31 +1126,6 @@ mod tests {
     }
 
     #[test]
-    fn test_get_execution_blocks_between() {
-        let config_for_test = get_test_config();
-        let relay = get_relay(true, true, &config_for_test);
-        let finalized_slot = get_finalized_slot(&relay);
-
-        let blocks = relay
-            .get_execution_blocks_between(
-                finalized_slot + 1,
-                config_for_test.right_bound_in_slot_search,
-            )
-            .unwrap();
-        assert_eq!(blocks.0.len(), relay.headers_batch_size as usize);
-
-        let first_block = relay
-            .get_execution_block_by_slot(finalized_slot + 1)
-            .unwrap();
-        assert_eq!(blocks.0[0].hash, first_block.hash);
-
-        for i in 1..blocks.0.len() {
-            assert_ne!(blocks.0[i - 1].hash, blocks.0[i].hash);
-            assert_eq!(blocks.0[i - 1].hash.unwrap(), blocks.0[i].parent_hash);
-        }
-    }
-
-    #[test]
     fn test_submit_execution_blocks() {
         let config_for_test = get_test_config();
         let mut relay = get_relay(true, true, &config_for_test);
@@ -1163,16 +1138,6 @@ mod tests {
             .unwrap();
         relay.submit_execution_blocks(blocks.0, blocks.1, &mut finalized_slot);
         assert_eq!(finalized_slot, blocks.1 - 1);
-
-        let last_slot = relay
-            .last_slot_searcher
-            .get_last_slot(
-                config_for_test.right_bound_in_slot_search,
-                &relay.beacon_rpc_client,
-                &relay.eth_client_contract,
-            )
-            .unwrap();
-        assert_eq!(last_slot, blocks.1 - 1);
     }
 
     #[test]
@@ -1225,28 +1190,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "504 Gateway Timeout")]
-    fn get_execution_blocks_in_bad_network() {
-        let config_for_test = get_test_config();
-        let mut relay = get_relay(true, true, &config_for_test);
-        let finalized_slot = get_finalized_slot(&relay);
-
-        relay.beacon_rpc_client = BeaconRPCClient::new(
-            "http://httpstat.us/504/",
-            TIMEOUT_SECONDS,
-            TIMEOUT_STATE_SECONDS,
-            None,
-        );
-
-        relay
-            .get_execution_blocks_between(
-                finalized_slot + 1,
-                config_for_test.right_bound_in_slot_search,
-            )
-            .unwrap();
-    }
-
-    #[test]
     #[ignore]
     fn test_send_regular_light_client_update() {
         let config_for_test = get_test_config();
@@ -1257,19 +1200,6 @@ mod tests {
 
         let new_finalized_slot = get_finalized_slot(&relay);
         assert_ne!(finality_slot, new_finalized_slot);
-    }
-
-    #[test]
-    fn test_wrong_last_submitted_slot() {
-        let config_for_test = get_test_config();
-        let mut relay = get_relay(true, false, &config_for_test);
-        let finality_slot = get_finalized_slot(&relay);
-
-        let _finality_slot_on_eth = send_blocks_till_finalized_eth_slot(&mut relay, finality_slot);
-        assert!(!relay.send_light_client_updates_with_checks());
-
-        let new_finalized_slot = get_finalized_slot(&relay);
-        assert_eq!(finality_slot, new_finalized_slot);
     }
 
     #[test]

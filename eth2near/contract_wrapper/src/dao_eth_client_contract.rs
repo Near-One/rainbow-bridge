@@ -250,9 +250,7 @@ mod tests {
         }
 
         for block in &execution_blocks {
-            if !dao_client.is_known_block(&block.hash.unwrap()).unwrap() {
-                dao_client.send_headers(&vec![block.clone()], 0).unwrap();
-            }
+            dao_client.send_headers(&vec![block.clone()]).unwrap();
 
             if block.hash.unwrap()
                 == next_light_client_update

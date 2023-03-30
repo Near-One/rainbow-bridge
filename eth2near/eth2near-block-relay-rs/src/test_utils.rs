@@ -257,9 +257,7 @@ pub fn get_relay(
     let config = get_config(config_for_test);
     Eth2NearRelay::init(
         &config,
-        get_client_contract(from_file, config_for_test),
-        enable_binsearch,
-        false,
+        get_client_contract(from_file, config_for_test)
     )
 }
 
@@ -278,9 +276,7 @@ pub fn get_relay_with_update_from_file(
 
     Eth2NearRelay::init(
         &config,
-        get_client_contract(from_file, config_for_test),
-        enable_binsearch,
-        false,
+        get_client_contract(from_file, config_for_test)
     )
 }
 
@@ -300,8 +296,6 @@ pub fn get_relay_from_slot(
 
     Eth2NearRelay::init(
         &config,
-        Box::new(eth_client_contract),
-        enable_binsearch,
-        false,
+        Box::new(eth_client_contract)
     )
 }
