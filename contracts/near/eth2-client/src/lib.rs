@@ -138,6 +138,9 @@ impl Eth2Client {
     /// Returns finalized execution block hash
     #[result_serializer(borsh)]
     pub fn block_hash_safe(&self, #[serializer(borsh)] block_number: u64) -> Option<H256> {
+        if block_number > self.finalized_execution_header.get().unwrap().block_number {
+            return None;
+        }
         self.finalized_execution_blocks.get(&block_number)
     }
 
