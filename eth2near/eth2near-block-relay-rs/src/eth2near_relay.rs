@@ -20,6 +20,7 @@ use eth_types::BlockHeader;
 use log::{debug, info, trace, warn};
 use near_primitives::views::FinalExecutionStatus;
 use std::{cmp, fmt};
+use std::cmp::max;
 use std::error::Error;
 use std::fmt::Display;
 use std::thread;
@@ -298,19 +299,38 @@ impl Eth2NearRelay {
     }
 
     fn get_slot_by_block_number(&self, block_number: u64, max_slot: u64, min_slot: u64) -> Result<u64, Box<dyn Error>> {
-        let mut current_slot = max_slot;
-        while current_slot >= min_slot {
-            match self.beacon_rpc_client.get_block_number_for_slot(Slot::new(current_slot)) {
-                Ok(current_block_number) => {
-                    if current_block_number == block_number {
-                        return Ok(current_slot)
-                    }
-                    current_slot -= 1;
-                },
-                Err(err) => match err.downcast_ref::<NoBlockForSlotError>() {
-                    Some(_) => { current_slot -= 1; }
-                    None => return Err(err),
-                },
+        let mut left_bound = max_slot;
+        let mut right_bound = max_slot;
+        let mut step = 1;
+        while left_bound >= min_slot {
+            left_bound = self.beacon_rpc_client.get_left_non_empty_slot(left_bound)?;
+            let left_bound_block_number = self.beacon_rpc_client.get_block_number_for_slot(Slot::new(left_bound))?;
+            if left_bound_block_number == block_number {
+                return Ok(left_bound);
+            } else if left_bound_block_number > block_number {
+                right_bound = left_bound;
+                left_bound = max(left_bound - step, min_slot - 1);
+                step *= 2;
+            } else {
+                break;
+            }
+        }
+
+        while left_bound + 1 < right_bound {
+            let mid_slot = left_bound + (right_bound - left_bound)/2;
+            let mid_non_empty_slot = self.beacon_rpc_client.get_left_non_empty_slot(mid_slot)?;
+
+            if mid_non_empty_slot <= left_bound {
+                return Err(Box::new(SlotByBlockNumberNotFound));
+            }
+
+            let mid_block_number = self.beacon_rpc_client.get_block_number_for_slot(Slot::new(mid_non_empty_slot))?;
+            if mid_block_number == block_number {
+                return Ok(mid_non_empty_slot);
+            } else if mid_block_number > block_number {
+                right_bound = mid_non_empty_slot;
+            } else {
+                left_bound = mid_slot;
             }
         }
 
@@ -327,7 +347,7 @@ impl Eth2NearRelay {
         let min_block_number = return_val_on_fail!(self.eth_client_contract.get_last_block_number(),
                                                "Fail to get last block number",
                                                false);
-        let min_slot = return_val_on_fail!(self.get_slot_by_block_number(min_block_number, max_slot, 0),
+        let min_slot = return_val_on_fail!(self.get_slot_by_block_number(min_block_number, max_slot, 1),
             "Fail to get slot by block number",
             false);
         let mut current_slot = max_slot;
