@@ -40,14 +40,14 @@ mod tests {
 
     pub struct TestContext<'a> {
         contract: Eth2Client,
-        headers: &'a Vec<BlockHeader>,
+        headers: &'a Vec<Vec<BlockHeader>>,
         updates: &'a Vec<LightClientUpdate>,
     }
 
     pub fn get_test_context(init_options: Option<InitOptions>) -> TestContext<'static> {
         let (headers, updates, init_input) = get_test_data(init_options);
         let contract = Eth2Client::init(init_input);
-        assert_eq!(contract.last_block_number(), headers[0].number);
+        assert_eq!(contract.last_block_number(), headers[0][0].number);
 
         TestContext {
             contract,
@@ -62,8 +62,7 @@ mod tests {
     ) {
         for header in headers {
             contract.submit_execution_header(header.clone());
-            assert!(contract.is_known_execution_header(header.calculate_hash()));
-            assert!(contract.block_hash_safe(header.number).is_none());
+            assert!(contract.is_known_execution_header(header.number));
         }
     }
 
@@ -73,7 +72,8 @@ mod tests {
 
         #[test]
         pub fn test_header_root() {
-            let header = read_beacon_header(format!("./src/data/goerli/beacon_header_{}.json", 5258752));
+            let header =
+                read_beacon_header(format!("./src/data/goerli/beacon_header_{}.json", 5258752));
             assert_eq!(
                 H256(header.tree_hash_root()),
                 Vec::from_hex("cd669c0007ab6ff261a02cc3335ba470088e92f0460bf1efac451009efb9ec0a")
@@ -99,22 +99,17 @@ mod tests {
                 headers,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
-
-            contract.register_submitter();
-            // After submitting the execution header, it should be present in the execution headers list
-            // but absent in canonical chain blocks (not-finalized)
-            submit_and_check_execution_headers(&mut contract, headers.iter().skip(1).collect());
+            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter);
 
             contract.submit_beacon_chain_light_client_update(updates[1].clone());
 
-            // After Beacon Chain `LightClientUpdate` is submitted,
-            // all execution headers having a height lower than the update's height,
-            // should be removed from the execution headers list. Meantime, all these
-            // removed execution headers should become a part of the canonical chain blocks (finalized)
-            for header in headers.iter().skip(1) {
+            submit_and_check_execution_headers(
+                &mut contract,
+                headers[0].iter().skip(1).rev().collect(),
+            );
+
+            for header in headers[0].iter().skip(1) {
                 let header_hash = header.calculate_hash();
-                assert!(!contract.is_known_execution_header(header_hash));
                 assert!(
                     contract.block_hash_safe(header.number).unwrap_or_default() == header_hash,
                     "Execution block hash is not finalized: {:?}",
@@ -122,63 +117,35 @@ mod tests {
                 );
             }
 
-            assert_eq!(contract.last_block_number(), headers.last().unwrap().number);
-            assert!(!contract.is_known_execution_header(
-                contract
-                    .finalized_beacon_block_header()
-                    .execution_block_hash
-            ));
-
-            contract.unregister_submitter();
+            assert_eq!(
+                contract.last_block_number(),
+                headers[0].last().unwrap().number
+            );
         }
 
         #[test]
-        pub fn test_submit_execution_block_from_fork_chain() {
+        #[should_panic(expected = "The expected block hash is")]
+        pub fn test_panic_on_submit_execution_block_from_fork_chain() {
             let submitter = accounts(0);
             let TestContext {
                 mut contract,
                 headers,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
-
-            contract.register_submitter();
-            submit_and_check_execution_headers(&mut contract, headers.iter().skip(1).collect());
+            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter);
+            contract.submit_beacon_chain_light_client_update(updates[1].clone());
 
             // Submit execution header with different hash
-            let mut fork_header = headers[5].clone();
+            let mut fork_header = headers[0][1].clone();
             // Difficulty is modified just in order to get a different header hash. Any other field would be suitable too
             fork_header.difficulty = U256::from(ethereum_types::U256::from(99));
             contract.submit_execution_header(fork_header.clone());
-            contract.submit_beacon_chain_light_client_update(updates[1].clone());
-
-            for header in headers.iter().skip(1) {
-                let header_hash = header.calculate_hash();
-                assert!(!contract.is_known_execution_header(header_hash));
-                assert!(
-                    contract.block_hash_safe(header.number).unwrap_or_default() == header_hash,
-                    "Execution block hash is not finalized: {:?}",
-                    header_hash
-                );
-            }
-
-            // Check that forked execution header was not finalized
-            assert!(contract.is_known_execution_header(fork_header.calculate_hash()));
-            assert!(
-        contract
-            .block_hash_safe(fork_header.number)
-            .unwrap_or_default()
-            != fork_header.calculate_hash(),
-        "The fork's execution block header {:?} is expected not to be finalized, but it is finalized",
-        fork_header.calculate_hash()
-    );
-
-            assert_eq!(contract.last_block_number(), headers.last().unwrap().number);
         }
 
         #[test]
         pub fn test_gc_headers() {
             let submitter = accounts(0);
+            let hashes_gc_threshold: usize = 9500;
             let TestContext {
                 mut contract,
                 headers,
@@ -186,83 +153,59 @@ mod tests {
             } = get_test_context(Some(InitOptions {
                 validate_updates: true,
                 verify_bls_signatures: true,
-                hashes_gc_threshold: 500,
-                max_submitted_blocks_by_account: 10000,
+                hashes_gc_threshold: hashes_gc_threshold.try_into().unwrap(),
                 trusted_signer: None,
             }));
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
-
-            contract.register_submitter();
-            submit_and_check_execution_headers(&mut contract, headers.iter().skip(1).collect());
+            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter);
 
             contract.submit_beacon_chain_light_client_update(updates[1].clone());
 
-            // Last 500 execution headers are finalized
-            for header in headers.iter().skip(1).rev().take(500) {
-                assert!(!contract.is_known_execution_header(header.calculate_hash()));
+            submit_and_check_execution_headers(
+                &mut contract,
+                headers[0].iter().skip(1).rev().collect(),
+            );
+
+            // Execution headers are finalized
+            for header in headers[0].iter().skip(1) {
                 assert!(
                     contract.block_hash_safe(header.number).unwrap_or_default()
                         == header.calculate_hash(),
-                    "Execution block hash is not finalized: {:?}",
-                    header.calculate_hash()
+                    "Execution block is not finalized: {:?}",
+                    header.number
                 );
             }
 
-            assert_eq!(contract.last_block_number(), headers.last().unwrap().number);
+            contract.submit_beacon_chain_light_client_update(updates[2].clone());
+            submit_and_check_execution_headers(&mut contract, headers[1].iter().rev().collect());
 
-            // Headers older than last 500 hundred headers are both removed and are not present in execution header list
-            for header in headers.iter().skip(1).rev().skip(500) {
-                assert!(!contract.is_known_execution_header(header.calculate_hash()));
+            assert_eq!(
+                contract.last_block_number(),
+                headers[1].last().unwrap().number
+            );
+
+            // Execution headers are finalized
+            for header in headers[1].iter() {
+                assert!(
+                    contract.block_hash_safe(header.number).unwrap_or_default()
+                        == header.calculate_hash(),
+                    "Execution block is not finalized: {:?}",
+                    header.number
+                );
+            }
+
+            // Headers older than the hashes_gc_threshold headers are both removed and are not present in execution header list
+            for header in headers
+                .concat()
+                .iter()
+                .rev()
+                .skip(hashes_gc_threshold + 2)
+            {
                 assert!(
                     contract.block_hash_safe(header.number).is_none(),
-                    "Execution block hash was not removed: {:?}",
-                    header.calculate_hash()
+                    "Execution block was not removed: {:?}",
+                    header.number
                 );
             }
-        }
-
-        #[test]
-        #[should_panic(expected = "exhausted the limit of blocks")]
-        pub fn test_panic_on_exhausted_submit_limit() {
-            let submitter = accounts(0);
-            let TestContext {
-                mut contract,
-                headers,
-                updates: _,
-            } = get_test_context(Some(InitOptions {
-                validate_updates: true,
-                verify_bls_signatures: true,
-                hashes_gc_threshold: 7100,
-                max_submitted_blocks_by_account: 100,
-                trusted_signer: None,
-            }));
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
-            contract.register_submitter();
-
-            submit_and_check_execution_headers(&mut contract, headers.iter().skip(1).collect());
-        }
-
-        #[test]
-        pub fn test_max_submit_blocks_by_account_limit() {
-            let submitter = accounts(0);
-            let TestContext {
-                mut contract,
-                headers,
-                updates: _,
-            } = get_test_context(Some(InitOptions {
-                validate_updates: true,
-                verify_bls_signatures: true,
-                hashes_gc_threshold: 7100,
-                max_submitted_blocks_by_account: 100,
-                trusted_signer: None,
-            }));
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
-            contract.register_submitter();
-
-            submit_and_check_execution_headers(
-                &mut contract,
-                headers.iter().skip(1).take(100).collect(),
-            );
         }
 
         #[test]
@@ -277,7 +220,6 @@ mod tests {
                 validate_updates: true,
                 verify_bls_signatures: true,
                 hashes_gc_threshold: 7100,
-                max_submitted_blocks_by_account: 100,
                 trusted_signer: Some(trusted_signer),
             }));
             set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
@@ -365,7 +307,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Unknown execution block hash")]
+        #[should_panic(expected = "The expected block hash is")]
         pub fn test_panic_on_submit_update_with_missing_execution_blocks() {
             let submitter = accounts(0);
             let TestContext {
@@ -373,47 +315,30 @@ mod tests {
                 headers,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
-
-            contract.register_submitter();
-            submit_and_check_execution_headers(
-                &mut contract,
-                headers.iter().skip(1).take(5).collect(),
-            );
+            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter);
 
             contract.submit_beacon_chain_light_client_update(updates[1].clone());
+
+            submit_and_check_execution_headers(
+                &mut contract,
+                headers[0].iter().skip(1).take(5).collect(),
+            );
         }
 
         #[test]
-        #[should_panic(expected = "already submitted")]
+        #[should_panic(expected = "The expected block hash is")]
         pub fn test_panic_on_submit_same_execution_blocks() {
             let submitter = accounts(0);
             let TestContext {
                 mut contract,
                 headers,
-                updates: _,
+                updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
+            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter);
 
-            contract.register_submitter();
-            contract.submit_execution_header(headers[1].clone());
-            contract.submit_execution_header(headers[1].clone());
-        }
-
-        #[test]
-        #[should_panic(expected = "can't submit blocks because it is not registered")]
-        pub fn test_panic_on_submit_execution_block_after_submitter_unregistered() {
-            let submitter = accounts(0);
-            let TestContext {
-                mut contract,
-                headers,
-                updates: _,
-            } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
-
-            contract.register_submitter();
-            contract.unregister_submitter();
-            contract.submit_execution_header(headers[1].clone());
+            contract.submit_beacon_chain_light_client_update(updates[1].clone());
+            contract.submit_execution_header(headers[0].last().unwrap().clone());
+            contract.submit_execution_header(headers[0].last().unwrap().clone());
         }
 
         #[test]
@@ -441,67 +366,46 @@ mod tests {
                 headers: _,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
+            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter);
 
             contract.submit_beacon_chain_light_client_update(updates[0].clone());
         }
 
         #[test]
-        #[should_panic(expected = "Parent should be submitted first")]
+        #[should_panic(expected = "The expected block hash")]
         pub fn test_panic_on_submit_blocks_with_unknown_parent() {
             let submitter = accounts(0);
             let TestContext {
                 mut contract,
                 headers,
-                updates: _,
+                updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
+            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter);
 
-            assert_eq!(contract.last_block_number(), headers[0].number);
-            contract.register_submitter();
+            assert_eq!(contract.last_block_number(), headers[0][0].number);
 
-            contract.submit_execution_header(headers[1].clone());
+            contract.submit_beacon_chain_light_client_update(updates[1].clone());
+
+            let headers: Vec<_> = headers.iter().skip(1).rev().collect();
+            contract.submit_execution_header(headers[0][0].clone());
             // Skip 2th block
-            contract.submit_execution_header(headers[3].clone());
+            contract.submit_execution_header(headers[0][3].clone());
         }
 
         #[test]
-        #[should_panic(expected = "Can't unregister the account with used storage")]
-        pub fn test_panic_on_unregister_submitter() {
+        #[should_panic(expected = "== ClientMode::SubmitHeader")]
+        pub fn test_panic_on_submit_headers_in_worng_mode() {
             let submitter = accounts(0);
             let TestContext {
                 mut contract,
                 headers,
                 updates: _,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
+            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter);
 
-            assert_eq!(contract.last_block_number(), headers[0].number);
+            assert_eq!(contract.last_block_number(), headers[0][0].number);
 
-            contract.register_submitter();
-
-            submit_and_check_execution_headers(
-                &mut contract,
-                headers.iter().skip(1).take(5).collect(),
-            );
-
-            contract.unregister_submitter();
-        }
-
-        #[test]
-        #[should_panic(expected = "can't submit blocks because it is not registered")]
-        pub fn test_panic_on_skipping_register_submitter() {
-            let submitter = accounts(0);
-            let TestContext {
-                mut contract,
-                headers,
-                updates: _,
-            } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter, attached_deposit: contract.min_storage_balance_for_submitter());
-
-            assert_eq!(contract.last_block_number(), headers[0].number);
-
-            contract.submit_execution_header(headers[1].clone());
+            contract.submit_execution_header(headers[0][1].clone());
         }
 
         #[test]
@@ -563,7 +467,6 @@ mod tests {
                 validate_updates: true,
                 verify_bls_signatures: false,
                 hashes_gc_threshold: 500,
-                max_submitted_blocks_by_account: 7000,
                 trusted_signer: None,
             }));
 
@@ -580,7 +483,6 @@ mod tests {
                 validate_updates: true,
                 verify_bls_signatures: true,
                 hashes_gc_threshold: 500,
-                max_submitted_blocks_by_account: 7000,
                 trusted_signer: None,
             }));
 

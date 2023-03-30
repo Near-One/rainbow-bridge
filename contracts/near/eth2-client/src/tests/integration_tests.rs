@@ -39,7 +39,6 @@ mod integration_tests {
             validate_updates: false,
             verify_bls_signatures: false,
             hashes_gc_threshold: 51000,
-            max_submitted_blocks_by_account: 7000,
             trusted_signer: None,
         }));
         let (alice, contract) = initialize_client(init_input).await?;
@@ -51,19 +50,7 @@ mod integration_tests {
             .await?;
 
         let num_of_blocks_to_submit = 32;
-        let headers = &headers.as_slice()[1..num_of_blocks_to_submit];
-        for headers_chunk in headers.chunks(50) {
-            let mut transaction = alice.batch(contract.id());
-            for header in headers_chunk {
-                transaction = transaction.call(
-                    Function::new("submit_execution_header")
-                        .args(header.try_to_vec()?)
-                        .gas(parse_gas!("6 T") as u64),
-                );
-            }
-
-            let _result = transaction.transact().await?;
-        }
+        let headers = headers[0].as_slice()[1..num_of_blocks_to_submit].to_vec();
 
         let mut update = updates[1].clone();
         update.finality_update.header_update.execution_block_hash =
@@ -74,6 +61,21 @@ mod integration_tests {
             .gas(parse_gas!("300 T") as u64)
             .transact()
             .await?;
+        assert!(outcome.is_success());
+
+        for headers_chunk in headers.iter().rev().collect::<Vec<_>>().chunks(50) {
+            let mut transaction = alice.batch(contract.id());
+            for header in headers_chunk {
+                transaction = transaction.call(
+                    Function::new("submit_execution_header")
+                        .args(header.try_to_vec()?)
+                        .gas(parse_gas!("6 T") as u64),
+                );
+            }
+
+            let result = transaction.transact().await?;
+            assert!(result.is_success());
+        }
 
         for header in headers {
             let result: Option<H256> = contract
