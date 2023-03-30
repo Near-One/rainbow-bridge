@@ -2,6 +2,7 @@ use crate::eth_client_contract::EthClientContract;
 use crate::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::eth2::{LightClientState, LightClientUpdate};
 use eth_types::{BlockHeader, H256};
+use eth2_utility::types::ClientMode;
 use near_primitives::types::AccountId;
 use near_primitives::views::FinalExecutionOutcomeView;
 use near_sdk::Balance;
@@ -117,5 +118,13 @@ impl EthClientContractTrait for FileEthClientContract {
     fn get_max_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
         self.eth_client_contract
             .get_max_submitted_blocks_by_account()
+    }
+
+    fn get_client_mode(&self) -> Result<ClientMode, Box<dyn Error>> {
+        self.eth_client_contract.get_client_mode()
+    }
+
+    fn get_last_block_number(&self) -> Result<u64, Box<dyn Error>> {
+        self.eth_client_contract.get_last_block_number()
     }
 }

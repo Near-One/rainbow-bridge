@@ -1,5 +1,6 @@
 use eth_types::eth2::{LightClientState, LightClientUpdate};
 use eth_types::{BlockHeader, H256};
+use eth2_utility::types::ClientMode;
 use near_primitives::types::AccountId;
 use near_primitives::views::FinalExecutionOutcomeView;
 use near_sdk::Balance;
@@ -40,6 +41,8 @@ pub trait EthClientContractTrait {
     /// Gets the minimum required deposit for the registration of a new relay
     fn get_min_deposit(&self) -> Result<Balance, Box<dyn Error>>;
 
+    fn get_client_mode(&self) -> Result<ClientMode, Box<dyn Error>>;
+
     /// Registers the current relay in the Ethereum Light Client on NEAR
     fn register_submitter(&self) -> Result<FinalExecutionOutcomeView, Box<dyn Error>>;
 
@@ -57,4 +60,6 @@ pub trait EthClientContractTrait {
 
     /// Get max possible number of unfinalized blocks which can be stored on contract for one account
     fn get_max_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>>;
+
+    fn get_last_block_number(&self) -> Result<u64, Box<dyn Error>>;
 }

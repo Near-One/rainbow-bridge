@@ -6,6 +6,7 @@ use eth_types::eth2::{
     ExtendedBeaconBlockHeader, LightClientState, LightClientUpdate, SyncCommittee,
 };
 use eth_types::{BlockHeader, H256};
+use eth2_utility::types::ClientMode;
 use near_primitives::borsh::BorshSerialize;
 use near_primitives::types::AccountId;
 use near_primitives::views::FinalExecutionOutcomeView;
@@ -115,15 +116,6 @@ impl EthClientContractTrait for EthClientContract {
         return self.last_slot;
     }
 
-    fn is_known_block(&self, execution_block_hash: &H256) -> Result<bool, Box<dyn Error>> {
-        let result = self.contract_wrapper.call_view_function(
-            "is_known_execution_header".to_string(),
-            execution_block_hash.try_to_vec()?,
-        )?;
-        let is_known: bool = bool::try_from_slice(&result)?;
-        Ok(is_known)
-    }
-
     fn send_light_client_update(
         &mut self,
         light_client_update: LightClientUpdate,
@@ -152,6 +144,16 @@ impl EthClientContractTrait for EthClientContract {
         )?;
         let beacon_block_slot: u64 = u64::try_from_slice(&result)?;
         Ok(beacon_block_slot)
+    }
+
+    fn get_client_mode(&self) -> Result<ClientMode, Box<dyn Error>> {
+        let res = self.contract_wrapper.call_view_function(
+            "get_client_mode".to_string(),
+            json!({}).to_string().into_bytes()
+        )?;
+
+        let mode: ClientMode = ClientMode::try_from_slice(&res)?;
+        Ok(mode)
     }
 
     fn send_headers(
@@ -231,6 +233,20 @@ impl EthClientContractTrait for EthClientContract {
         )?;
 
         Ok(serde_json::from_slice(response.as_slice())?)
+    }
+
+    fn get_last_block_number(&self) -> Result<u64, Box<dyn Error>> {
+        let response = self.contract_wrapper.call_view_function(
+            "last_block_number".to_string(),
+            json!({}).to_string().into_bytes(),
+        )?;
+
+        let beacon_block_number: u64 = u64::try_from_slice(&response)?;
+        Ok(beacon_block_number)
+    }
+
+    fn is_known_block(&self, execution_block_hash: &H256) -> Result<bool, Box<dyn Error>> {
+        todo!()
     }
 }
 
