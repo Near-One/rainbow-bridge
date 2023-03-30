@@ -237,13 +237,15 @@ impl Eth2Client {
         if let Some(diff_between_unfinalized_head_and_tail) =
             self.get_diff_between_unfinalized_head_and_tail()
         {
-            let header_number_to_remove = finalized_execution_header.block_number
-                + diff_between_unfinalized_head_and_tail
-                - self.hashes_gc_threshold;
+            let header_number_to_remove = (finalized_execution_header.block_number
+                + diff_between_unfinalized_head_and_tail)
+                .checked_sub(self.hashes_gc_threshold)
+                .unwrap_or(0);
 
-            if header_number_to_remove > 0
-                && header_number_to_remove < finalized_execution_header.block_number
-            {
+            require!(header_number_to_remove < finalized_execution_header.block_number,
+                    "The `hashes_gc_threshold` is not enough to be able to apply gc correctly, please increase it");
+
+            if header_number_to_remove > 0 {
                 self.gc_finalized_execution_blocks(header_number_to_remove);
             }
         }
@@ -284,6 +286,11 @@ impl Eth2Client {
 
     pub fn get_trusted_signer(&self) -> Option<AccountId> {
         self.trusted_signer.clone()
+    }
+
+    #[private]
+    pub fn update_hashes_gc_threshold(&mut self, hashes_gc_threshold: u64) {
+        self.hashes_gc_threshold = hashes_gc_threshold;
     }
 }
 
@@ -477,6 +484,8 @@ impl Eth2Client {
     }
 
     /// Remove information about the headers that are at least as old as the given block number.
+    /// This method could go out of gas if the client was not synced for a while, to fix that
+    /// you need to increase the `hashes_gc_threshold` by calling `update_hashes_gc_threshold()`
     fn gc_finalized_execution_blocks(&mut self, mut header_number: u64) {
         loop {
             if self
