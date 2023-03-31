@@ -239,84 +239,44 @@ impl Eth2NearRelay {
         self.send_light_client_updates_with_checks()
     }
 
-    fn get_slot_by_block_number(&self, block_number: u64, max_slot: u64, min_slot: u64) -> Result<u64, Box<dyn Error>> {
-        let mut left_bound = max_slot;
-        let mut right_bound = max_slot;
-        let mut step = 1;
-        while left_bound >= min_slot {
-            left_bound = self.beacon_rpc_client.get_left_non_empty_slot(left_bound)?;
-            let left_bound_block_number = self.beacon_rpc_client.get_block_number_for_slot(Slot::new(left_bound))?;
-            if left_bound_block_number == block_number {
-                return Ok(left_bound);
-            } else if left_bound_block_number > block_number {
-                right_bound = left_bound;
-                left_bound = max(left_bound - step, min_slot - 1);
-                step *= 2;
-            } else {
-                break;
-            }
-        }
+    fn get_max_block_number(&mut self) -> Result<u64, Box<dyn Error>> {
+        Ok(self.eth_client_contract.get_unfinalized_tail_block_number()?.unwrap_or(
+            self.beacon_rpc_client.get_block_number_for_slot(
+                Slot::new(self.eth_client_contract.get_finalized_beacon_block_slot()?))? + 1) - 1)
 
-        while left_bound + 1 < right_bound {
-            let mid_slot = left_bound + (right_bound - left_bound)/2;
-            let mid_non_empty_slot = self.beacon_rpc_client.get_left_non_empty_slot(mid_slot)?;
-
-            if mid_non_empty_slot <= left_bound {
-                return Err(Box::new(SlotByBlockNumberNotFound));
-            }
-
-            let mid_block_number = self.beacon_rpc_client.get_block_number_for_slot(Slot::new(mid_non_empty_slot))?;
-            if mid_block_number == block_number {
-                return Ok(mid_non_empty_slot);
-            } else if mid_block_number > block_number {
-                right_bound = mid_non_empty_slot;
-            } else {
-                left_bound = mid_slot;
-            }
-        }
-
-        return Err(Box::new(SlotByBlockNumberNotFound));
     }
 
     fn submit_headers(&mut self) -> bool {
         info!(target: "relay", "Submit Headers mode");
-        let max_slot = return_val_on_fail!(self.eth_client_contract.get_finalized_beacon_block_slot(),
-            "Fail to get last finalized slot",
-            false
-        );
 
         let min_block_number = return_val_on_fail!(self.eth_client_contract.get_last_block_number(),
                                                "Fail to get last block number",
                                                false);
-        let min_slot = return_val_on_fail!(self.get_slot_by_block_number(min_block_number, max_slot, 1),
-            "Fail to get slot by block number",
-            false);
-        let mut current_slot = max_slot;
 
-        info!(target: "relay", "Submit headers from {} to {}", max_slot, min_slot);
-
-        while current_slot > min_slot {
+        loop {
             info!(target: "relay", "= Creating headers batch =");
 
-            let max_block_number = skip_fail!(self.eth_client_contract.get_unfinalized_tail_block_number(),
-                "Fail to fetch unfinalized tail block number",
-                self.sleep_time_on_sync_secs);
+            let current_block_number = return_val_on_fail!(self.get_max_block_number(),
+                "Fail to fetch max block number",
+                false);
 
-            if let Some(max_block_number) = max_block_number {
-                current_slot = skip_fail!(self.get_slot_by_block_number(max_block_number, current_slot + 1, min_slot), "Fail to get slot by block_number", 0) - 1;
-            }
+            info!(target: "relay", "Get headers from {} to {}", current_block_number, min_block_number);
 
-            let (headers, new_current_slot) = skip_fail!(
+            let (headers, new_current_block_number) = skip_fail!(
                     self.get_execution_blocks_between(
-                        current_slot,
-                        min_slot,
+                        current_block_number,
+                        min_block_number,
                     ),
                     "Network problems during fetching execution blocks",
                     self.sleep_time_on_sync_secs
                 );
 
-            if !self.submit_execution_blocks(headers, new_current_slot + 1, &mut current_slot) {
+            if !self.submit_execution_blocks(headers) {
                 return false;
+            }
+
+            if new_current_block_number <= min_block_number {
+                break;
             }
         }
 
@@ -370,47 +330,38 @@ impl Eth2NearRelay {
 
     fn get_execution_blocks_between(
         &self,
-        last_slot: u64,
-        first_slot: u64,
+        last_block_number: u64,
+        first_block_number: u64,
     ) -> Result<(Vec<BlockHeader>, u64), Box<dyn Error>> {
         let mut headers: Vec<BlockHeader> = vec![];
-        let mut current_slot = last_slot;
+        let mut current_block_number = last_block_number;
 
         let max_submitted_headers = self.headers_batch_size;
 
         while headers.len() < max_submitted_headers as usize
-            && current_slot > first_slot
+            && current_block_number > first_block_number
         {
-            debug!(target: "relay", "Try add block header for slot={}, headers len={}/{}", current_slot, headers.len(), self.headers_batch_size);
-            match self.get_execution_block_by_slot(current_slot) {
-                Ok(eth1_header) => headers.push(eth1_header),
-                Err(err) => match err.downcast_ref::<NoBlockForSlotError>() {
-                    Some(_) => {
-                        current_slot -= 1;
-                        continue;
-                    }
-                    None => return Err(err),
-                },
-            }
-            current_slot -= 1;
+            debug!(target: "relay", "Try add block header for block number={}, headers len={}/{}", current_block_number, headers.len(), self.headers_batch_size);
+            headers.push(self.eth1_rpc_client.get_block_header_by_number(current_block_number)?);
+            current_block_number -= 1;
         }
 
-        Ok((headers, current_slot))
+        Ok((headers, current_block_number))
     }
 
     fn submit_execution_blocks(
         &mut self,
         headers: Vec<BlockHeader>,
-        current_slot: u64,
-        last_eth2_slot_on_near: &mut u64,
     ) -> bool {
-        info!(target: "relay", "Try submit headers from slot={} to {} to NEAR", *last_eth2_slot_on_near + 1, current_slot - 1);
+        info!(target: "relay", "Try submit headers batch");
         let execution_outcome = return_val_on_fail!(
             self.eth_client_contract
                 .send_headers(&headers),
             "Error on header submission",
             false
         );
+
+        thread::sleep(Duration::from_secs(self.sleep_time_after_submission_secs));
 
         if let FinalExecutionStatus::Failure(error_message) = execution_outcome.status {
             FAILS_ON_HEADERS_SUBMISSION.inc();
@@ -419,11 +370,9 @@ impl Eth2NearRelay {
 
             return false;
         } else {
-            *last_eth2_slot_on_near = current_slot - 1;
             info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
                                   self.near_network_name, execution_outcome.transaction.hash);
 
-            thread::sleep(Duration::from_secs(self.sleep_time_after_submission_secs));
             return true;
         }
     }
