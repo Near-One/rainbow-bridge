@@ -194,12 +194,7 @@ mod tests {
             }
 
             // Headers older than the hashes_gc_threshold headers are both removed and are not present in execution header list
-            for header in headers
-                .concat()
-                .iter()
-                .rev()
-                .skip(hashes_gc_threshold + 2)
-            {
+            for header in headers.concat().iter().rev().skip(hashes_gc_threshold + 2) {
                 assert!(
                     contract.block_hash_safe(header.number).is_none(),
                     "Execution block was not removed: {:?}",

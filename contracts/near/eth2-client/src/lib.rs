@@ -85,9 +85,10 @@ impl Eth2Client {
             );
         }
 
+        let finalized_execution_header_hash = args.finalized_execution_header.calculate_hash();
+
         require!(
-            args.finalized_execution_header.calculate_hash()
-                == args.finalized_beacon_header.execution_block_hash,
+            finalized_execution_header_hash == args.finalized_beacon_header.execution_block_hash,
             "Invalid execution block"
         );
 
@@ -97,7 +98,7 @@ impl Eth2Client {
             submitter: env::predecessor_account_id(),
         };
 
-        Self {
+        let mut contract = Self {
             trusted_signer: args.trusted_signer,
             paused: Mask::default(),
             validate_updates: args.validate_updates,
@@ -121,7 +122,13 @@ impl Eth2Client {
             client_mode: ClientMode::SubmitLightClientUpdate,
             unfinalized_head_execution_header: None,
             unfinalized_tail_execution_header: None,
-        }
+        };
+
+        contract.finalized_execution_blocks.insert(
+            &args.finalized_execution_header.number,
+            &finalized_execution_header_hash,
+        );
+        contract
     }
 
     #[result_serializer(borsh)]
@@ -242,8 +249,10 @@ impl Eth2Client {
                 .checked_sub(self.hashes_gc_threshold)
                 .unwrap_or(0);
 
-            require!(header_number_to_remove < finalized_execution_header.block_number,
-                    "The `hashes_gc_threshold` is not enough to be able to apply gc correctly, please increase it");
+            require!(
+                header_number_to_remove < finalized_execution_header.block_number,
+                "The `hashes_gc_threshold` is not enough to be able to apply gc correctly"
+            );
 
             if header_number_to_remove > 0 {
                 self.gc_finalized_execution_blocks(header_number_to_remove);
@@ -251,6 +260,15 @@ impl Eth2Client {
         }
 
         if block_header.number == finalized_execution_header.block_number + 1 {
+            let finalized_execution_header_hash = self
+                .finalized_execution_blocks
+                .get(&finalized_execution_header.block_number)
+                .unwrap();
+            require!(
+                block_header.parent_hash == finalized_execution_header_hash,
+                "The chain cannot be closed"
+            );
+
             self.finalized_execution_header
                 .set(self.unfinalized_head_execution_header.as_ref().unwrap());
             self.unfinalized_tail_execution_header = None;
