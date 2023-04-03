@@ -219,7 +219,6 @@ mod tests {
             Some(true),
             Some(false),
             None,
-            None,
             Some(eth_client.contract_wrapper.get_signer_account_id()),
         );
 

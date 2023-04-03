@@ -51,7 +51,6 @@ impl EthClientContract {
         validate_updates: Option<bool>,
         verify_bls_signatures: Option<bool>,
         hashes_gc_threshold: Option<u64>,
-        max_submitted_blocks_by_account: Option<u32>,
         trusted_signer: Option<AccountId>,
     ) {
         #[derive(BorshSerialize, Serialize)]
@@ -64,7 +63,6 @@ impl EthClientContract {
             pub validate_updates: bool,
             pub verify_bls_signatures: bool,
             pub hashes_gc_threshold: u64,
-            pub max_submitted_blocks_by_account: u32,
             pub trusted_signer: Option<AccountId>,
         }
 
@@ -77,7 +75,6 @@ impl EthClientContract {
             validate_updates: validate_updates.unwrap_or(true),
             verify_bls_signatures: verify_bls_signatures.unwrap_or(false),
             hashes_gc_threshold: hashes_gc_threshold.unwrap_or(51_000),
-            max_submitted_blocks_by_account: max_submitted_blocks_by_account.unwrap_or(8000),
             trusted_signer,
         };
 
@@ -336,7 +333,6 @@ mod tests {
             next_sync_committee,
             Some(true),
             Some(false),
-            None,
             None,
             Option::<AccountId>::Some(trusted_signer.parse().unwrap()),
         );

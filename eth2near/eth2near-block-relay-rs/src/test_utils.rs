@@ -83,7 +83,6 @@ pub fn init_contract_from_files(
         Some(true),
         Some(false),
         None,
-        None,
         Some(eth_client_contract.contract_wrapper.get_signer_account_id()),
     );
     thread::sleep(time::Duration::from_secs(30));
@@ -152,7 +151,6 @@ pub fn init_contract_from_specific_slot(
         next_sync_committee,
         Some(true),
         Some(false),
-        None,
         None,
         Some(eth_client_contract.contract_wrapper.get_signer_account_id()),
     );
