@@ -699,6 +699,7 @@ impl Eth2NearRelay {
 
 #[cfg(test)]
 mod tests {
+    use std::cmp::min;
     use crate::config_for_tests::ConfigForTests;
     use crate::eth2near_relay::{Eth2NearRelay, ONE_EPOCH_IN_SLOTS};
     use crate::test_utils::{get_relay, get_relay_from_slot, get_relay_with_update_from_file};
@@ -964,11 +965,19 @@ mod tests {
     fn test_submit_execution_blocks() {
         let config_for_test = get_test_config();
         let mut relay = get_relay(true, &config_for_test);
-        let finalized_slot = get_finalized_slot(&relay);
+        let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
+            &std::fs::read_to_string(config_for_test.path_to_light_client_updates)
+                .expect("Unable to read file"),
+        ).unwrap();
+
+        relay.send_specific_light_client_update(light_client_updates[1].clone());
+
+        let min_block_number = relay.eth_client_contract.get_last_block_number().unwrap() + 1;
+        let max_block_number = relay.get_max_block_number().unwrap();
         let blocks = relay
             .get_execution_blocks_between(
-                finalized_slot + 1,
-                config_for_test.right_bound_in_slot_search,
+                 min_block_number,
+                max_block_number,
             )
             .unwrap();
         relay.submit_execution_blocks(blocks);
