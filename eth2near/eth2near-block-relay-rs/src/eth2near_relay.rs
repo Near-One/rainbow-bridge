@@ -10,7 +10,6 @@ use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use contract_wrapper::near_rpc_client::NearRPCClient;
 use eth2_utility::consensus::{EPOCHS_PER_SYNC_COMMITTEE_PERIOD, SLOTS_PER_EPOCH};
 use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
-use eth_rpc_client::errors::NoBlockForSlotError;
 use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
 use eth_rpc_client::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
 use eth_types::eth2::LightClientUpdate;
@@ -240,10 +239,12 @@ impl Eth2NearRelay {
     }
 
     fn get_max_block_number(&mut self) -> Result<u64, Box<dyn Error>> {
-        Ok(self.eth_client_contract.get_unfinalized_tail_block_number()?.unwrap_or(
+        if let Some(tail_block_number) = self.eth_client_contract.get_unfinalized_tail_block_number()? {
+            Ok(tail_block_number - 1)
+        } else {
             self.beacon_rpc_client.get_block_number_for_slot(
-                Slot::new(self.eth_client_contract.get_finalized_beacon_block_slot()?))? + 1) - 1)
-
+                Slot::new(self.eth_client_contract.get_finalized_beacon_block_slot()?))
+        }
     }
 
     fn submit_headers(&mut self) -> bool {
@@ -251,7 +252,7 @@ impl Eth2NearRelay {
 
         let min_block_number = return_val_on_fail!(self.eth_client_contract.get_last_block_number(),
                                                "Fail to get last block number",
-                                               false);
+                                               false) + 1;
 
         loop {
             info!(target: "relay", "= Creating headers batch =");
@@ -260,22 +261,25 @@ impl Eth2NearRelay {
                 "Fail to fetch max block number",
                 false);
 
-            info!(target: "relay", "Get headers from {} to {}", current_block_number, min_block_number);
+            let min_block_number_in_batch =
+                max(min_block_number, current_block_number - self.headers_batch_size + 1);
+            info!(target: "relay", "Get headers block_number=[{}, {}]", min_block_number_in_batch, current_block_number);
 
-            let (headers, new_current_block_number) = skip_fail!(
+            let mut headers = skip_fail!(
                     self.get_execution_blocks_between(
+                        min_block_number_in_batch,
                         current_block_number,
-                        min_block_number,
                     ),
                     "Network problems during fetching execution blocks",
                     self.sleep_time_on_sync_secs
                 );
+            headers.reverse();
 
             if !self.submit_execution_blocks(headers) {
                 return false;
             }
 
-            if new_current_block_number <= min_block_number {
+            if min_block_number_in_batch == min_block_number {
                 break;
             }
         }
@@ -328,25 +332,20 @@ impl Eth2NearRelay {
         }
     }
 
+    // Get the BlockHeaders for block number [min_block_number, max_block_number]
     fn get_execution_blocks_between(
         &self,
-        last_block_number: u64,
-        first_block_number: u64,
-    ) -> Result<(Vec<BlockHeader>, u64), Box<dyn Error>> {
+        min_block_number: u64,
+        max_block_number: u64,
+    ) -> Result<Vec<BlockHeader>, Box<dyn Error>> {
         let mut headers: Vec<BlockHeader> = vec![];
-        let mut current_block_number = last_block_number;
 
-        let max_submitted_headers = self.headers_batch_size;
-
-        while headers.len() < max_submitted_headers as usize
-            && current_block_number > first_block_number
-        {
-            debug!(target: "relay", "Try add block header for block number={}, headers len={}/{}", current_block_number, headers.len(), self.headers_batch_size);
+        for current_block_number in min_block_number..=max_block_number {
+            debug!(target: "relay", "Try add block header for block number={}", current_block_number);
             headers.push(self.eth1_rpc_client.get_block_header_by_number(current_block_number)?);
-            current_block_number -= 1;
         }
 
-        Ok((headers, current_block_number))
+        Ok(headers)
     }
 
     fn submit_execution_blocks(
@@ -400,18 +399,6 @@ impl Eth2NearRelay {
             light_client_update,
             sync_committee,
         )
-    }
-
-    fn get_execution_block_by_slot(&self, slot: u64) -> Result<BlockHeader, Box<dyn Error>> {
-        match self
-            .beacon_rpc_client
-            .get_block_number_for_slot(types::Slot::new(slot))
-        {
-            Ok(block_number) => self
-                .eth1_rpc_client
-                .get_block_header_by_number(block_number),
-            Err(err) => Err(err),
-        }
     }
 }
 

@@ -606,26 +606,6 @@ impl BeaconRPCClient {
         ))?
     }
 
-    pub fn get_left_non_empty_slot(
-        &self,
-        start_slot: u64,
-    ) -> Result<u64, Box<dyn Error>> {
-        for slot in (0..=start_slot).rev() {
-            match self.get_block_number_for_slot(types::Slot::new(slot)) {
-                Ok(_) => return Ok(slot),
-                Err(err) => match err.downcast_ref::<NoBlockForSlotError>() {
-                    Some(_) => continue,
-                    None => return Err(err),
-                },
-            }
-        }
-
-        Err(format!(
-            "Unable to get non empty slot less {}",
-            start_slot
-        ))?
-    }
-
     fn check_block_found_for_slot(&self, json_str: &str) -> Result<(), Box<dyn Error>> {
         let parse_json: Value = serde_json::from_str(json_str)?;
         if parse_json.is_object() {
