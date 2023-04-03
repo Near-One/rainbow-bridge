@@ -5,7 +5,6 @@ use bitvec::prelude::BitVec;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::eth2::*;
 use eth_types::H256;
-use near_sdk::{env, Balance};
 use tree_hash::TreeHash;
 
 pub const EPOCHS_PER_SYNC_COMMITTEE_PERIOD: u64 = 256;
@@ -189,15 +188,4 @@ pub fn validate_beacon_block_header_update(header_update: &HeaderUpdate) -> bool
         L1_BEACON_BLOCK_BODY_TREE_EXECUTION_PAYLOAD_INDEX,
         header_update.beacon_header.body_root.0,
     )
-}
-
-pub fn calculate_min_storage_balance_for_submitter(
-    max_submitted_blocks_by_account: u32,
-) -> Balance {
-    const STORAGE_BYTES_PER_BLOCK: u128 = 105; // prefix: 3B + key: 32B + HeaderInfo 70B
-    const STORAGE_BYTES_PER_ACCOUNT: u128 = 39; // prefix: 3B + account_id: 32B + counter 4B
-    let storage_bytes_per_account = (STORAGE_BYTES_PER_BLOCK
-        * max_submitted_blocks_by_account as u128)
-        + STORAGE_BYTES_PER_ACCOUNT;
-    storage_bytes_per_account * env::STORAGE_PRICE_PER_BYTE
 }
