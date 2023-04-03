@@ -203,7 +203,6 @@ mod tests {
     use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::BlockHeader;
     use near_primitives::types::AccountId;
-    use near_primitives::views::ExecutionStatusView::SuccessValue;
     use tokio::runtime::Runtime;
 
     // TODO: use a more clean approach to include binary
@@ -243,8 +242,7 @@ mod tests {
         }
 
         pub fn submit_block(&mut self, eth_client: &mut EthClientContract) {
-            let res = eth_client
-                .send_headers(
+            eth_client.send_headers(
                     &vec![self.execution_blocks[self.current_execution_block].clone()],
                 )
                 .unwrap();
@@ -258,8 +256,7 @@ mod tests {
         }
 
         pub fn submit_update(&mut self, eth_client: &mut EthClientContract) {
-            let res = eth_client
-                .send_light_client_update(
+            eth_client.send_light_client_update(
                     self.light_client_updates[self.current_light_client_update].clone(),
                 )
                 .unwrap();

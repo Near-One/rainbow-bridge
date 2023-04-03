@@ -250,7 +250,6 @@ pub fn get_client_contract(
 }
 
 pub fn get_relay(
-    enable_binsearch: bool,
     from_file: bool,
     config_for_test: &ConfigForTests,
 ) -> Eth2NearRelay {
@@ -262,7 +261,6 @@ pub fn get_relay(
 }
 
 pub fn get_relay_with_update_from_file(
-    enable_binsearch: bool,
     from_file: bool,
     next_sync_committee: bool,
     config_for_test: &ConfigForTests,
@@ -281,7 +279,6 @@ pub fn get_relay_with_update_from_file(
 }
 
 pub fn get_relay_from_slot(
-    enable_binsearch: bool,
     slot: u64,
     config_for_test: &ConfigForTests,
 ) -> Eth2NearRelay {
