@@ -95,6 +95,9 @@ impl Display for SlotByBlockNumberNotFound {
 
 impl Error for SlotByBlockNumberNotFound {}
 
+const EXPECTED_EPOCHS_BETWEEN_HEAD_AND_FINALIZED_BLOCKS: u64 = 2;
+
+
 pub struct Eth2NearRelay {
     beacon_rpc_client: BeaconRPCClient,
     eth1_rpc_client: Eth1RPCClient,
@@ -482,7 +485,7 @@ impl Eth2NearRelay {
             >= last_finalized_slot_on_near + self.max_epochs_to_submit * ONE_EPOCH_IN_SLOTS
         {
             info!(target: "relay", "Too big gap between slot of finalized block on NEAR and ETH. Sending hand made light client update");
-            self.send_hand_made_light_client_update(last_finalized_slot_on_near);
+            self.send_hand_made_light_client_update(last_finalized_slot_on_eth, last_finalized_slot_on_near);
         } else {
             self.send_regular_light_client_update(
                 last_finalized_slot_on_eth,
@@ -542,7 +545,7 @@ impl Eth2NearRelay {
         info!(target: "relay", "Last finalized slot/period on ethereum={}/{}", last_finalized_slot_on_eth, end_period);
 
         let last_epoch = last_finalized_slot_on_near / SLOTS_PER_EPOCH;
-        let mut update_epoch = std::cmp::min(last_epoch + self.max_epochs_to_submit, end_epoch) + 2;
+        let mut update_epoch = std::cmp::min(last_epoch + self.max_epochs_to_submit, end_epoch) + EXPECTED_EPOCHS_BETWEEN_HEAD_AND_FINALIZED_BLOCKS;
 
         if end_epoch < last_epoch + self.min_epochs_to_submit {
             info!(target: "relay", "The gap between last finalized epoch on eth and near is too small");
@@ -557,7 +560,7 @@ impl Eth2NearRelay {
             if let Ok(res) = res {
                 let update_period = BeaconRPCClient::get_period_for_slot(res.finality_update.header_update.beacon_header.slot);
 
-                if update_period > last_period {
+                if update_period > last_period + 1 {
                     debug!(target: "relay", "Finalized period on ETH and NEAR are different. Fetching sync commity update");
                     let res = return_val_on_fail!(
                         self.beacon_rpc_client
@@ -586,15 +589,16 @@ impl Eth2NearRelay {
         self.send_specific_light_client_update(light_client_update)
     }
 
-    fn get_attested_slot(
+    fn get_next_attested_slot_for_light_client_update(
         &mut self,
+        last_finalized_slot_on_eth: u64,
         last_finalized_slot_on_near: u64,
     ) -> Result<u64, Box<dyn Error>> {
-        const EXPECTED_EPOCHS_BETWEEN_HEAD_AND_FINALIZED_BLOCKS: u64 = 2;
         let next_finalized_slot = last_finalized_slot_on_near
-            + self.min_epochs_to_submit * ONE_EPOCH_IN_SLOTS;
-        let attested_slot = next_finalized_slot
-            + EXPECTED_EPOCHS_BETWEEN_HEAD_AND_FINALIZED_BLOCKS * ONE_EPOCH_IN_SLOTS;
+            + self.max_epochs_to_submit * ONE_EPOCH_IN_SLOTS;
+        let attested_slot = std::cmp::min(next_finalized_slot
+            + EXPECTED_EPOCHS_BETWEEN_HEAD_AND_FINALIZED_BLOCKS * ONE_EPOCH_IN_SLOTS,
+                                     last_finalized_slot_on_eth);
 
         let attested_slot: u64 = self
             .beacon_rpc_client
@@ -606,9 +610,13 @@ impl Eth2NearRelay {
         Ok(attested_slot)
     }
 
-    fn send_hand_made_light_client_update(&mut self, last_finalized_slot_on_near: u64) {
+    fn send_hand_made_light_client_update(&mut self,
+                                          last_finalized_slot_on_eth: u64,
+                                          last_finalized_slot_on_near: u64) {
         let mut attested_slot = return_on_fail!(
-            self.get_attested_slot(last_finalized_slot_on_near),
+            self.get_next_attested_slot_for_light_client_update(
+                last_finalized_slot_on_eth,
+                last_finalized_slot_on_near),
             "Error on getting attested slot"
         );
 
@@ -638,7 +646,7 @@ impl Eth2NearRelay {
             if finality_update_slot <= last_finalized_slot_on_near {
                 info!(target: "relay", "Finality update slot for hand made light client update <= last finality update on NEAR. Increment gap for attested slot and skipping light client update.");
                 attested_slot = return_on_fail!(
-                    self.get_attested_slot(last_finalized_slot_on_near + ONE_EPOCH_IN_SLOTS),
+                    self.get_next_attested_slot_for_light_client_update(last_finalized_slot_on_eth, last_finalized_slot_on_near + ONE_EPOCH_IN_SLOTS),
                     "Error on getting attested slot"
                 );
                 continue;
@@ -947,7 +955,7 @@ mod tests {
             .header_update
             .beacon_header
             .slot;
-        let attested_slot = relay.get_attested_slot(finalized_slot).unwrap();
+        let attested_slot = relay.get_next_attested_slot_for_light_client_update(finalized_slot).unwrap();
 
         match HandMadeFinalityLightClientUpdate::get_finality_light_client_update(
             &relay.beacon_rpc_client,
@@ -1006,7 +1014,7 @@ mod tests {
             panic!("possible attested slot has execution block");
         }
 
-        let attested_slot = relay.get_attested_slot(finalized_slot).unwrap();
+        let attested_slot = relay.get_next_attested_slot_for_light_client_update(finalized_slot).unwrap();
         get_execution_block_by_slot(&relay, attested_slot).unwrap();
     }
 
@@ -1147,7 +1155,7 @@ mod tests {
         relay.submit_execution_blocks(blocks);
 
         let attested_slot = relay
-            .get_attested_slot(config_for_test.finalized_slot_before_new_period)
+            .get_next_attested_slot_for_light_client_update(config_for_test.finalized_slot_before_new_period)
             .unwrap();
         let light_client_update =
             HandMadeFinalityLightClientUpdate::get_finality_light_client_update(
