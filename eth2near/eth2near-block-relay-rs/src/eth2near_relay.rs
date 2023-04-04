@@ -102,8 +102,8 @@ pub struct Eth2NearRelay {
     eth_client_contract: Box<dyn EthClientContractTrait>,
     headers_batch_size: u64,
     ethereum_network: String,
-    interval_between_light_client_updates_submission_in_epochs: u64,
-    max_blocks_for_finalization: u64,
+    min_epochs_to_submit: u64,
+    max_epochs_to_submit: u64,
     near_network_name: String,
     terminate: bool,
     next_light_client_update: Option<LightClientUpdate>,
@@ -136,9 +136,9 @@ impl Eth2NearRelay {
             near_rpc_client: NearRPCClient::new(&config.near_endpoint),
             headers_batch_size: config.headers_batch_size as u64,
             ethereum_network: config.ethereum_network.to_string(),
-            interval_between_light_client_updates_submission_in_epochs: config
-                .interval_between_light_client_updates_submission_in_epochs,
-            max_blocks_for_finalization: config.max_blocks_for_finalization,
+            min_epochs_to_submit: config
+                .min_epochs_to_submit,
+            max_epochs_to_submit: config.max_epochs_to_submit,
             near_network_name: config.near_network_id.to_string(),
             terminate: false,
             next_light_client_update,
@@ -410,10 +410,10 @@ impl Eth2NearRelay {
         last_finalized_slot_on_eth: u64,
     ) -> bool {
         if (last_finalized_slot_on_eth as i64) - (last_finalized_slot_on_near as i64)
-            < (ONE_EPOCH_IN_SLOTS * self.interval_between_light_client_updates_submission_in_epochs)
+            < (ONE_EPOCH_IN_SLOTS * self.min_epochs_to_submit)
                 as i64
         {
-            info!(target: "relay", "Light client update were send less then {} epochs ago. Skipping sending light client update", self.interval_between_light_client_updates_submission_in_epochs);
+            info!(target: "relay", "Light client update were send less then {} epochs ago. Skipping sending light client update", self.min_epochs_to_submit);
             return false;
         }
 
@@ -479,7 +479,7 @@ impl Eth2NearRelay {
         }
 
         if last_finalized_slot_on_eth
-            >= last_finalized_slot_on_near + self.max_blocks_for_finalization
+            >= last_finalized_slot_on_near + self.max_epochs_to_submit * ONE_EPOCH_IN_SLOTS
         {
             info!(target: "relay", "Too big gap between slot of finalized block on NEAR and ETH. Sending hand made light client update");
             self.send_hand_made_light_client_update(last_finalized_slot_on_near);
@@ -537,12 +537,17 @@ impl Eth2NearRelay {
             BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near);
         info!(target: "relay", "Last finalized slot/period on near={}/{}", last_finalized_slot_on_near, last_period);
 
+        let end_epoch = last_finalized_slot_on_eth / SLOTS_PER_EPOCH;
         let end_period = BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_eth);
         info!(target: "relay", "Last finalized slot/period on ethereum={}/{}", last_finalized_slot_on_eth, end_period);
 
         let last_epoch = last_finalized_slot_on_near / SLOTS_PER_EPOCH;
-        let mut update_epoch =
-            last_epoch + self.interval_between_light_client_updates_submission_in_epochs + 2;
+        let mut update_epoch = std::cmp::min(last_epoch + self.max_epochs_to_submit, end_epoch) + 2;
+
+        if end_epoch < last_epoch + self.min_epochs_to_submit {
+            info!(target: "relay", "The gap between last finalized epoch on eth and near is too small");
+            return false;
+        }
 
         let light_client_update = loop {
             let res = self
@@ -587,7 +592,7 @@ impl Eth2NearRelay {
     ) -> Result<u64, Box<dyn Error>> {
         const EXPECTED_EPOCHS_BETWEEN_HEAD_AND_FINALIZED_BLOCKS: u64 = 2;
         let next_finalized_slot = last_finalized_slot_on_near
-            + self.interval_between_light_client_updates_submission_in_epochs * ONE_EPOCH_IN_SLOTS;
+            + self.min_epochs_to_submit * ONE_EPOCH_IN_SLOTS;
         let attested_slot = next_finalized_slot
             + EXPECTED_EPOCHS_BETWEEN_HEAD_AND_FINALIZED_BLOCKS * ONE_EPOCH_IN_SLOTS;
 
@@ -994,7 +999,7 @@ mod tests {
         let finalized_slot = config_for_test.first_slot;
         let possible_attested_slot = finalized_slot
             + ONE_EPOCH_IN_SLOTS * 2
-            + ONE_EPOCH_IN_SLOTS * relay.interval_between_light_client_updates_submission_in_epochs;
+            + ONE_EPOCH_IN_SLOTS * relay.min_epochs_to_submit;
         if get_execution_block_by_slot(&relay, possible_attested_slot)
             .is_ok()
         {
@@ -1032,7 +1037,7 @@ mod tests {
     fn test_too_often_updates() {
         let config_for_test = get_test_config();
         let mut relay = get_relay(false, &config_for_test);
-        relay.interval_between_light_client_updates_submission_in_epochs = 2;
+        relay.min_epochs_to_submit = 2;
 
         let finality_slot = get_finalized_slot(&relay);
         assert!(!relay.send_light_client_updates_with_checks());
@@ -1064,7 +1069,7 @@ mod tests {
             &config_for_test,
         );
         relay.headers_batch_size = 33;
-        relay.max_blocks_for_finalization = 100;
+        relay.max_epochs_to_submit = 100;
 
         let blocks = relay
             .get_execution_blocks_between(
@@ -1101,7 +1106,7 @@ mod tests {
         let init_slot = config_for_test.finalized_slot_before_new_period - ONE_EPOCH_IN_SLOTS - 1;
         let mut relay = get_relay_from_slot( init_slot, &config_for_test);
         relay.headers_batch_size = 33;
-        relay.max_blocks_for_finalization = 100;
+        relay.max_epochs_to_submit = 100;
 
         let blocks = relay
             .get_execution_blocks_between(

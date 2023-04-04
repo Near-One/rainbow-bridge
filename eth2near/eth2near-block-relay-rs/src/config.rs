@@ -38,10 +38,10 @@ pub struct Config {
     pub contract_type: ContractType,
 
     // Period of submission light client updates. Once in N epochs.
-    pub interval_between_light_client_updates_submission_in_epochs: u64,
+    pub min_epochs_to_submit: u64,
 
-    // maximum gap in slots between submitting light client update
-    pub max_blocks_for_finalization: u64,
+    // maximum gap in epochs between submitting light client update
+    pub max_epochs_to_submit: u64,
 
     // NEAR network name (mainnet, testnet)
     pub near_network_id: NearNetwork,
@@ -77,16 +77,7 @@ pub struct Config {
     // Sleep time in seconds after blocks/light_client_update submission to client
     pub sleep_time_after_submission_secs: u64,
 
-    /// Max number of stored blocks in the storage of the eth2 client contract.
-    /// Events that happen past this threshold cannot be verified by the client.
-    /// It is used on initialization of the Eth2 client.
-    pub hashes_gc_threshold: Option<u64>,
-
-    /// Max number of unfinalized blocks allowed to be stored by one submitter account.
-    /// It is used on initialization of the Eth2 client.
-    pub max_submitted_blocks_by_account: Option<u32>,
-
-    // Beacon rpc version (V1_1, V1_2)
+    // Beacon rpc version (V1_1, V1_2, V1_5)
     pub beacon_rpc_version: BeaconRPCVersion,
 
     pub get_light_client_update_by_epoch: Option<bool>,
