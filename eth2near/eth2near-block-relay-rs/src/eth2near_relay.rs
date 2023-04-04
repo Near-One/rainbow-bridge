@@ -221,12 +221,12 @@ impl Eth2NearRelay {
                 self.sleep_time_on_sync_secs
             );
 
-            let were_submission_on_iter = match client_mode {
+            let submitted_in_this_iteration = match client_mode {
                 ClientMode::SubmitLightClientUpdate => self.submit_light_client_update(),
                 ClientMode::SubmitHeader => self.submit_headers()
             };
 
-            if !were_submission_on_iter {
+            if !submitted_in_this_iteration {
                 info!(target: "relay", "Sync with ETH network. Sleep {} secs", self.sleep_time_on_sync_secs);
                 thread::sleep(Duration::from_secs(self.sleep_time_on_sync_secs));
             }
@@ -250,16 +250,20 @@ impl Eth2NearRelay {
     fn submit_headers(&mut self) -> bool {
         info!(target: "relay", "Submit Headers mode");
 
-        let min_block_number = return_val_on_fail!(self.eth_client_contract.get_last_block_number(),
-                                               "Fail to get last block number",
-                                               false) + 1;
+        let min_block_number = return_val_on_fail!(
+            self.eth_client_contract.get_last_block_number(),
+            "Failed to get last block number",
+            false
+        ) + 1;
 
         loop {
             info!(target: "relay", "= Creating headers batch =");
 
-            let current_block_number = return_val_on_fail!(self.get_max_block_number(),
-                "Fail to fetch max block number",
-                false);
+            let current_block_number = return_val_on_fail!(
+                self.get_max_block_number(),
+                "Failed to fetch max block number",
+                false,
+            );
 
             let min_block_number_in_batch =
                 max(min_block_number, current_block_number - self.headers_batch_size + 1);
@@ -927,7 +931,7 @@ mod tests {
     fn test_get_attested_slot() {
         let config_for_test = get_test_config();
 
-        let mut relay = get_relay( true, &config_for_test);
+        let mut relay = get_relay(true, &config_for_test);
 
         let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
             &std::fs::read_to_string(config_for_test.path_to_light_client_updates)
@@ -987,7 +991,7 @@ mod tests {
     fn test_not_invalid_attested_slot() {
         let config_for_test = get_test_config();
 
-        let mut relay = get_relay( true, &config_for_test);
+        let mut relay = get_relay(true, &config_for_test);
         let finalized_slot = config_for_test.first_slot;
         let possible_attested_slot = finalized_slot
             + ONE_EPOCH_IN_SLOTS * 2
@@ -1042,7 +1046,7 @@ mod tests {
     #[ignore]
     fn test_run() {
         let config_for_test = get_test_config();
-        let mut relay = get_relay( true, &config_for_test);
+        let mut relay = get_relay(true, &config_for_test);
         let finality_slot = get_finalized_slot(&relay);
 
         relay.run(Some(5));
@@ -1096,7 +1100,7 @@ mod tests {
     fn test_base_update_for_same_period() {
         let config_for_test = get_test_config();
         let init_slot = config_for_test.finalized_slot_before_new_period - ONE_EPOCH_IN_SLOTS - 1;
-        let mut relay = get_relay_from_slot( init_slot, &config_for_test);
+        let mut relay = get_relay_from_slot(init_slot, &config_for_test);
         relay.headers_batch_size = 33;
         relay.max_blocks_for_finalization = 100;
 
@@ -1175,7 +1179,7 @@ mod tests {
     #[ignore]
     fn test_send_light_client_update_from_file_with_next_sync_committee() {
         let config_for_test = get_test_config();
-        let mut relay = get_relay_with_update_from_file( true, true, &config_for_test);
+        let mut relay = get_relay_with_update_from_file(true, true, &config_for_test);
         let finality_slot = get_finalized_slot(&relay);
         relay.run(None);
 
