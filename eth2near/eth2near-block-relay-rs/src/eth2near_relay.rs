@@ -262,7 +262,7 @@ impl Eth2NearRelay {
             let current_block_number = return_val_on_fail!(
                 self.get_max_block_number(),
                 "Failed to fetch max block number",
-                false,
+                false
             );
 
             let min_block_number_in_batch =
@@ -703,7 +703,6 @@ impl Eth2NearRelay {
 
 #[cfg(test)]
 mod tests {
-    use std::cmp::min;
     use crate::config_for_tests::ConfigForTests;
     use crate::eth2near_relay::{Eth2NearRelay, ONE_EPOCH_IN_SLOTS};
     use crate::test_utils::{get_relay, get_relay_from_slot, get_relay_with_update_from_file};
