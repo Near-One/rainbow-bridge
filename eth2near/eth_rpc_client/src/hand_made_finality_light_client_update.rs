@@ -32,8 +32,7 @@ impl HandMadeFinalityLightClientUpdate {
             )?;
         trace!(target: "relay", "New attested slot = {} and signature slot = {}", attested_slot, signature_slot);
         let beacon_state = beacon_rpc_client
-            .get_beacon_state(&format!("{}", attested_slot))
-            .unwrap();
+            .get_beacon_state(&format!("{}", attested_slot))?;
 
         Self::get_finality_light_client_update_for_state(
             beacon_rpc_client,

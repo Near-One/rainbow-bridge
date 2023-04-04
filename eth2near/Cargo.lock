@@ -763,6 +763,7 @@ dependencies = [
  "async-std",
  "borsh",
  "eth-types",
+ "eth2-utility",
  "futures",
  "near-chain-configs 0.16.0",
  "near-crypto 0.16.0",

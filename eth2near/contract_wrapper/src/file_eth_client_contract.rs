@@ -2,9 +2,8 @@ use crate::eth_client_contract::EthClientContract;
 use crate::eth_client_contract_trait::EthClientContractTrait;
 use eth_types::eth2::{LightClientState, LightClientUpdate};
 use eth_types::{BlockHeader, H256};
-use near_primitives::types::AccountId;
+use eth2_utility::types::ClientMode;
 use near_primitives::views::FinalExecutionOutcomeView;
-use near_sdk::Balance;
 use std::error::Error;
 use std::fs::File;
 use std::io::Write;
@@ -42,15 +41,6 @@ impl FileEthClientContract {
 }
 
 impl EthClientContractTrait for FileEthClientContract {
-    fn get_last_submitted_slot(&self) -> u64 {
-        self.eth_client_contract.get_last_submitted_slot()
-    }
-
-    fn is_known_block(&self, execution_block_hash: &H256) -> Result<bool, Box<dyn Error>> {
-        self.eth_client_contract
-            .is_known_block(execution_block_hash)
-    }
-
     fn send_light_client_update(
         &mut self,
         light_client_update: LightClientUpdate,
@@ -77,8 +67,7 @@ impl EthClientContractTrait for FileEthClientContract {
 
     fn send_headers(
         &mut self,
-        headers: &[BlockHeader],
-        end_slot: u64,
+        headers: &[BlockHeader]
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>> {
         for header in headers {
             self.blocks_headers_file
@@ -87,35 +76,22 @@ impl EthClientContractTrait for FileEthClientContract {
         }
         self.blocks_headers_file.flush()?;
 
-        self.eth_client_contract.send_headers(headers, end_slot)
-    }
-
-    fn get_min_deposit(&self) -> Result<Balance, Box<dyn Error>> {
-        self.eth_client_contract.get_min_deposit()
-    }
-
-    fn register_submitter(&self) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
-        self.eth_client_contract.register_submitter()
+        self.eth_client_contract.send_headers(headers)
     }
 
     fn get_light_client_state(&self) -> Result<LightClientState, Box<dyn Error>> {
         self.eth_client_contract.get_light_client_state()
     }
 
-    fn is_submitter_registered(
-        &self,
-        account_id: Option<AccountId>,
-    ) -> Result<bool, Box<dyn Error>> {
-        self.eth_client_contract.is_submitter_registered(account_id)
+    fn get_client_mode(&self) -> Result<ClientMode, Box<dyn Error>> {
+        self.eth_client_contract.get_client_mode()
     }
 
-    fn get_num_of_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
-        self.eth_client_contract
-            .get_num_of_submitted_blocks_by_account()
+    fn get_last_block_number(&self) -> Result<u64, Box<dyn Error>> {
+        self.eth_client_contract.get_last_block_number()
     }
 
-    fn get_max_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
-        self.eth_client_contract
-            .get_max_submitted_blocks_by_account()
+    fn get_unfinalized_tail_block_number(&self) -> Result<Option<u64>, Box<dyn Error>> {
+        self.eth_client_contract.get_unfinalized_tail_block_number()
     }
 }
