@@ -183,7 +183,7 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
         ethereum_network: config_for_test.network_name.clone(),
         contract_type: ContractType::Near,
         min_epochs_to_submit: 1,
-        max_epochs_to_submit: 5000,
+        max_epochs_to_submit: 50,
         near_network_id: NearNetwork::Testnet,
         prometheus_metrics_port: Some(32221),
         dao_contract_account_id: None,
@@ -195,8 +195,6 @@ fn get_config(config_for_test: &ConfigForTests) -> Config {
         near_requests_timeout_seconds: 30,
         sleep_time_on_sync_secs: 0,
         sleep_time_after_submission_secs: 5,
-        hashes_gc_threshold: None,
-        max_submitted_blocks_by_account: None,
         beacon_rpc_version: BeaconRPCVersion::V1_5,
         get_light_client_update_by_epoch: Some(false),
     }

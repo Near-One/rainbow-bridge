@@ -715,7 +715,6 @@ impl Eth2NearRelay {
 
 #[cfg(test)]
 mod tests {
-    use std::cmp::min;
     use crate::config_for_tests::ConfigForTests;
     use crate::eth2near_relay::{Eth2NearRelay, ONE_EPOCH_IN_SLOTS};
     use crate::test_utils::{get_relay, get_relay_from_slot, get_relay_with_update_from_file};
@@ -879,7 +878,7 @@ mod tests {
         let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, config_for_test.first_slot);
 
-        relay.send_hand_made_light_client_update(finalized_slot);
+        relay.send_hand_made_light_client_update(relay.get_last_finalized_slot_on_eth().unwrap(), finalized_slot);
         loop {
             let client_mode: ClientMode = relay.eth_client_contract.get_client_mode().unwrap();
 
@@ -955,7 +954,7 @@ mod tests {
             .header_update
             .beacon_header
             .slot;
-        let attested_slot = relay.get_next_attested_slot_for_light_client_update(finalized_slot).unwrap();
+        let attested_slot = relay.get_next_attested_slot_for_light_client_update(relay.get_last_finalized_slot_on_eth().unwrap(), finalized_slot).unwrap();
 
         match HandMadeFinalityLightClientUpdate::get_finality_light_client_update(
             &relay.beacon_rpc_client,
@@ -1014,7 +1013,7 @@ mod tests {
             panic!("possible attested slot has execution block");
         }
 
-        let attested_slot = relay.get_next_attested_slot_for_light_client_update(finalized_slot).unwrap();
+        let attested_slot = relay.get_next_attested_slot_for_light_client_update(relay.get_last_finalized_slot_on_eth().unwrap(), finalized_slot).unwrap();
         get_execution_block_by_slot(&relay, attested_slot).unwrap();
     }
 
@@ -1155,7 +1154,7 @@ mod tests {
         relay.submit_execution_blocks(blocks);
 
         let attested_slot = relay
-            .get_next_attested_slot_for_light_client_update(config_for_test.finalized_slot_before_new_period)
+            .get_next_attested_slot_for_light_client_update(relay.get_last_finalized_slot_on_eth().unwrap(),  config_for_test.finalized_slot_before_new_period)
             .unwrap();
         let light_client_update =
             HandMadeFinalityLightClientUpdate::get_finality_light_client_update(
