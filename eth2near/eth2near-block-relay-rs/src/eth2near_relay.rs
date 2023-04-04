@@ -8,7 +8,7 @@ use crate::prometheus_metrics::{
 use bitvec::macros::internal::funty::Fundamental;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use contract_wrapper::near_rpc_client::NearRPCClient;
-use eth2_utility::consensus::{EPOCHS_PER_SYNC_COMMITTEE_PERIOD, SLOTS_PER_EPOCH};
+use eth2_utility::consensus::SLOTS_PER_EPOCH;
 use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
 use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
 use eth_rpc_client::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
@@ -533,15 +533,14 @@ impl Eth2NearRelay {
         last_finalized_slot_on_eth: u64,
         last_finalized_slot_on_near: u64,
     ) -> bool {
-        let last_eth2_period_on_near_chain =
+        let last_period =
             BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near);
-        info!(target: "relay", "Last finalized slot/period on near={}/{}", last_finalized_slot_on_near, last_eth2_period_on_near_chain);
+        info!(target: "relay", "Last finalized slot/period on near={}/{}", last_finalized_slot_on_near, last_period);
 
         let end_period = BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_eth);
         info!(target: "relay", "Last finalized slot/period on ethereum={}/{}", last_finalized_slot_on_eth, end_period);
 
         let last_epoch = last_finalized_slot_on_near / SLOTS_PER_EPOCH;
-        let last_period = last_epoch / EPOCHS_PER_SYNC_COMMITTEE_PERIOD;
         let mut update_epoch =
             last_epoch + self.interval_between_light_client_updates_submission_in_epochs + 2;
 
@@ -551,11 +550,9 @@ impl Eth2NearRelay {
                 .get_light_client_update_by_epoch(update_epoch);
 
             if let Ok(res) = res {
-                let update_epoch =
-                    res.finality_update.header_update.beacon_header.slot / SLOTS_PER_EPOCH;
-                let update_period = update_epoch / EPOCHS_PER_SYNC_COMMITTEE_PERIOD;
+                let update_period = BeaconRPCClient::get_period_for_slot(res.finality_update.header_update.beacon_header.slot);
 
-                if update_period > last_period + 1 {
+                if update_period > last_period {
                     debug!(target: "relay", "Finalized period on ETH and NEAR are different. Fetching sync commity update");
                     let res = return_val_on_fail!(
                         self.beacon_rpc_client
@@ -566,13 +563,19 @@ impl Eth2NearRelay {
                     break res;
                 }
 
-                break res;
+                if self.verify_bls_signature_for_finality_update(&res).unwrap_or(false) {
+                    break res;
+                }
+            } else {
+                warn!(target: "relay", "Error: {}", res.unwrap_err());
+                thread::sleep(Duration::from_secs(5));
             }
 
-            warn!(target: "relay", "Error: {}", res.unwrap_err());
-            thread::sleep(Duration::from_secs(5));
-
             update_epoch -= 1;
+            if update_epoch <= last_epoch {
+                warn!(target: "relay", "Fail to find epoch with correct LightClientUpdate");
+                return false;
+            }
         };
 
         self.send_specific_light_client_update(light_client_update)
