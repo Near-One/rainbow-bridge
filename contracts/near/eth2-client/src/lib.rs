@@ -269,6 +269,19 @@ impl Eth2Client {
                 "The chain cannot be closed"
             );
 
+            #[cfg(feature = "logs")]
+            env::log_str(
+                format!(
+                    "Current finalized block number: {}, New finalized block number: {}",
+                    finalized_execution_header.block_number,
+                    self.unfinalized_head_execution_header
+                        .as_ref()
+                        .unwrap()
+                        .block_number
+                )
+                .as_str(),
+            );
+
             self.finalized_execution_header
                 .set(self.unfinalized_head_execution_header.as_ref().unwrap());
             self.unfinalized_tail_execution_header = None;
@@ -314,9 +327,6 @@ impl Eth2Client {
 
 impl Eth2Client {
     fn validate_light_client_update(&self, update: &LightClientUpdate) {
-        #[cfg(feature = "logs")]
-        env::log_str(format!("Validate update. Used gas: {}", env::used_gas().0).as_str());
-
         let finalized_period =
             compute_sync_committee_period(self.finalized_beacon_header.header.slot);
         self.verify_finality_branch(update, finalized_period);
@@ -346,9 +356,6 @@ impl Eth2Client {
         if self.verify_bls_signatures {
             self.verify_bls_signatures(update, sync_committee_bits, finalized_period);
         }
-
-        #[cfg(feature = "logs")]
-        env::log_str(format!("Finish validate update. Used gas: {}", env::used_gas().0).as_str());
     }
 
     fn verify_finality_branch(&self, update: &LightClientUpdate, finalized_period: u64) {
@@ -496,6 +503,16 @@ impl Eth2Client {
             self.next_sync_committee
                 .set(&update.sync_committee_update.unwrap().next_sync_committee);
         }
+
+        #[cfg(feature = "logs")]
+        env::log_str(
+            format!(
+                "Current finalized slot: {}, New finalized slot: {}",
+                self.finalized_beacon_header.header.slot,
+                finalized_header_update.beacon_header.slot
+            )
+            .as_str(),
+        );
 
         self.finalized_beacon_header = finalized_header_update.into();
         self.client_mode = ClientMode::SubmitHeader;
