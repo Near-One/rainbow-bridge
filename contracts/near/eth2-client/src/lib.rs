@@ -8,22 +8,24 @@ use eth2_utility::consensus::*;
 use eth2_utility::types::*;
 use eth_types::eth2::*;
 use eth_types::{BlockHeader, H256};
-use near_sdk::collections::{LookupMap, UnorderedMap};
-use near_sdk::{assert_self, env, near_bindgen, require, AccountId, PanicOnDefault};
-use near_sdk_inner::collections::LazyOption;
-use near_sdk_inner::{Balance, BorshStorageKey};
+use near_sdk::collections::{LazyOption, LookupMap};
+use near_sdk::{
+    assert_self, env, near_bindgen, require, AccountId, BorshStorageKey, PanicOnDefault,
+};
 use tree_hash::TreeHash;
 
 #[cfg(test)]
 mod tests;
+
+mod migrate;
 
 const PAUSE_SUBMIT_UPDATE: Mask = 1;
 
 #[derive(BorshSerialize, BorshStorageKey)]
 enum StorageKey {
     FinalizedExecutionBlocks,
-    UnfinalizedHeaders,
-    Submitters,
+    __DeprecatedUnfinalizedHeaders,
+    __DeprecatedSubmitters,
     FinalizedExecutionHeader,
     CurrentSyncCommittee,
     NextSyncCommittee,
@@ -51,17 +53,6 @@ pub struct Eth2Client {
     /// Hashes of the finalized execution blocks mapped to their numbers. Stores up to `hashes_gc_threshold` entries.
     /// Execution block number -> execution block hash
     finalized_execution_blocks: LookupMap<u64, H256>,
-    /// All unfinalized execution blocks' headers hashes mapped to their `HeaderInfo`.
-    /// Execution block hash -> ExecutionHeaderInfo object
-    __unfinalized_headers: UnorderedMap<H256, ExecutionHeaderInfo>,
-    /// `AccountId`s mapped to their number of submitted headers.
-    /// Submitter account -> Num of submitted headers
-    __submitters: LookupMap<AccountId, u32>,
-    /// Max number of unfinalized blocks allowed to be stored by one submitter account
-    /// This value should be at least 32 blocks (1 epoch), but the recommended value is 1024 (32 epochs)
-    __max_submitted_blocks_by_account: u32,
-    // The minimum balance that should be attached to register a new submitter account
-    __min_storage_balance_for_submitter: Balance,
     /// Light client state
     finalized_beacon_header: ExtendedBeaconBlockHeader,
     finalized_execution_header: LazyOption<ExecutionHeaderInfo>,
@@ -77,8 +68,6 @@ impl Eth2Client {
     #[init]
     #[private]
     pub fn init(#[serializer(borsh)] args: InitInput) -> Self {
-        let min_storage_balance_for_submitter =
-            calculate_min_storage_balance_for_submitter(args.max_submitted_blocks_by_account);
         let network =
             Network::from_str(args.network.as_str()).unwrap_or_else(|e| env::panic_str(e.as_str()));
 
@@ -96,9 +85,10 @@ impl Eth2Client {
             );
         }
 
+        let finalized_execution_header_hash = args.finalized_execution_header.calculate_hash();
+
         require!(
-            args.finalized_execution_header.calculate_hash()
-                == args.finalized_beacon_header.execution_block_hash,
+            finalized_execution_header_hash == args.finalized_beacon_header.execution_block_hash,
             "Invalid execution block"
         );
 
@@ -108,7 +98,7 @@ impl Eth2Client {
             submitter: env::predecessor_account_id(),
         };
 
-        Self {
+        let mut contract = Self {
             trusted_signer: args.trusted_signer,
             paused: Mask::default(),
             validate_updates: args.validate_updates,
@@ -116,10 +106,6 @@ impl Eth2Client {
             hashes_gc_threshold: args.hashes_gc_threshold,
             network,
             finalized_execution_blocks: LookupMap::new(StorageKey::FinalizedExecutionBlocks),
-            __unfinalized_headers: UnorderedMap::new(StorageKey::UnfinalizedHeaders),
-            __submitters: LookupMap::new(StorageKey::Submitters),
-            __max_submitted_blocks_by_account: args.max_submitted_blocks_by_account,
-            __min_storage_balance_for_submitter: min_storage_balance_for_submitter,
             finalized_beacon_header: args.finalized_beacon_header,
             finalized_execution_header: LazyOption::new(
                 StorageKey::FinalizedExecutionHeader,
@@ -136,7 +122,13 @@ impl Eth2Client {
             client_mode: ClientMode::SubmitLightClientUpdate,
             unfinalized_head_execution_header: None,
             unfinalized_tail_execution_header: None,
-        }
+        };
+
+        contract.finalized_execution_blocks.insert(
+            &args.finalized_execution_header.number,
+            &finalized_execution_header_hash,
+        );
+        contract
     }
 
     #[result_serializer(borsh)]
@@ -153,7 +145,16 @@ impl Eth2Client {
     /// Returns finalized execution block hash
     #[result_serializer(borsh)]
     pub fn block_hash_safe(&self, #[serializer(borsh)] block_number: u64) -> Option<H256> {
+        if block_number > self.finalized_execution_header.get().unwrap().block_number {
+            return None;
+        }
         self.finalized_execution_blocks.get(&block_number)
+    }
+
+    /// Checks if the execution header is already submitted.
+    #[result_serializer(borsh)]
+    pub fn is_known_execution_header(&self, block_number: u64) -> bool {
+        self.finalized_execution_blocks.get(&block_number).is_some()
     }
 
     /// Get finalized beacon block root
@@ -213,19 +214,19 @@ impl Eth2Client {
 
     #[result_serializer(borsh)]
     pub fn submit_execution_header(&mut self, #[serializer(borsh)] block_header: BlockHeader) {
-        require!(matches!(self.client_mode, ClientMode::SubmitHeader));
+        require!(self.client_mode == ClientMode::SubmitHeader);
 
         let block_hash = block_header.calculate_hash();
+        let expected_block_hash = self
+            .unfinalized_tail_execution_header
+            .as_ref()
+            .map(|header| header.parent_hash)
+            .unwrap_or(self.finalized_beacon_header.execution_block_hash);
         require!(
-            block_hash
-                == self
-                    .unfinalized_tail_execution_header
-                    .as_ref()
-                    .map(|header| header.parent_hash)
-                    .unwrap_or(self.finalized_beacon_header.execution_block_hash),
+            block_hash == expected_block_hash,
             format!(
-                "The block {:#?} has unknown parent {:#?}. Parent should be submitted first.",
-                block_hash, block_header.parent_hash
+                "The expected block hash is {:#?} but got {:#?}.",
+                expected_block_hash, block_hash
             )
         );
 
@@ -243,18 +244,31 @@ impl Eth2Client {
         if let Some(diff_between_unfinalized_head_and_tail) =
             self.get_diff_between_unfinalized_head_and_tail()
         {
-            let header_number_to_remove = finalized_execution_header.block_number
-                + diff_between_unfinalized_head_and_tail
-                - self.hashes_gc_threshold;
+            let header_number_to_remove = (finalized_execution_header.block_number
+                + diff_between_unfinalized_head_and_tail)
+                .checked_sub(self.hashes_gc_threshold)
+                .unwrap_or(0);
 
-            if header_number_to_remove > 0
-                && header_number_to_remove < finalized_execution_header.block_number
-            {
+            require!(
+                header_number_to_remove < finalized_execution_header.block_number,
+                "The `hashes_gc_threshold` is not enough to be able to apply gc correctly"
+            );
+
+            if header_number_to_remove > 0 {
                 self.gc_finalized_execution_blocks(header_number_to_remove);
             }
         }
 
         if block_header.number == finalized_execution_header.block_number + 1 {
+            let finalized_execution_header_hash = self
+                .finalized_execution_blocks
+                .get(&finalized_execution_header.block_number)
+                .unwrap();
+            require!(
+                block_header.parent_hash == finalized_execution_header_hash,
+                "The chain cannot be closed"
+            );
+
             self.finalized_execution_header
                 .set(self.unfinalized_head_execution_header.as_ref().unwrap());
             self.unfinalized_tail_execution_header = None;
@@ -290,6 +304,11 @@ impl Eth2Client {
 
     pub fn get_trusted_signer(&self) -> Option<AccountId> {
         self.trusted_signer.clone()
+    }
+
+    #[private]
+    pub fn update_hashes_gc_threshold(&mut self, hashes_gc_threshold: u64) {
+        self.hashes_gc_threshold = hashes_gc_threshold;
     }
 }
 
@@ -483,6 +502,8 @@ impl Eth2Client {
     }
 
     /// Remove information about the headers that are at least as old as the given block number.
+    /// This method could go out of gas if the client was not synced for a while, to fix that
+    /// you need to increase the `hashes_gc_threshold` by calling `update_hashes_gc_threshold()`
     fn gc_finalized_execution_blocks(&mut self, mut header_number: u64) {
         loop {
             if self
@@ -502,10 +523,7 @@ impl Eth2Client {
     }
 
     fn is_light_client_update_allowed(&self) {
-        require!(matches!(
-            self.client_mode,
-            ClientMode::SubmitLightClientUpdate
-        ));
+        require!(self.client_mode == ClientMode::SubmitLightClientUpdate);
         self.check_not_paused(PAUSE_SUBMIT_UPDATE);
 
         if let Some(trusted_signer) = &self.trusted_signer {

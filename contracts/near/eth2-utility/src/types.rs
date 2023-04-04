@@ -21,11 +21,10 @@ pub struct InitInput {
     pub validate_updates: bool,
     pub verify_bls_signatures: bool,
     pub hashes_gc_threshold: u64,
-    pub max_submitted_blocks_by_account: u32,
     pub trusted_signer: Option<AccountId>,
 }
 
-#[derive(Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Clone, BorshDeserialize, BorshSerialize, PartialEq)]
 pub enum ClientMode {
     SubmitLightClientUpdate,
     SubmitHeader,
