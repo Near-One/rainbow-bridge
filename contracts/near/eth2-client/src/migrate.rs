@@ -27,8 +27,7 @@ impl Eth2Client {
     #[private]
     #[init(ignore_state)]
     pub fn migrate() -> Self {
-        let mut old_state: Eth2ClientV1 = env::state_read().expect("failed");
-        old_state.unfinalized_headers.clear();
+        let old_state: Eth2ClientV1 = env::state_read().expect("failed");
 
         Self {
             trusted_signer: old_state.trusted_signer,
