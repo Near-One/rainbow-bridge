@@ -89,9 +89,6 @@ jobs:
       - name: Checkout LFS objects
         run: git lfs checkout
 
-      - name: Add wasm32-unknown-unknown
-        run: rustup target add wasm32-unknown-unknown
-
       - name: Execute
         env:
           ETH1_INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }} 
