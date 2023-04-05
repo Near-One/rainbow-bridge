@@ -24,11 +24,11 @@ env_logger = "0.9.0"
 borsh = "0.9.3"
 futures = { version = "0.3.21", default-features = false }
 async-std = "1.12.0"
-hex = "*"
+hex = "0.4.3"
 toml = "0.5.9"
 finality-update-verify = { path = "../finality-update-verify" }
 atomic_refcell = "0.1.8"
-bitvec = "*"
+bitvec = "1.0.0"
 
 prometheus = { version = "0.9", features = ["process"] }
 lazy_static = "1.4"
