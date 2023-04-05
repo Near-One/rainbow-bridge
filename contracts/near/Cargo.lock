@@ -1139,7 +1139,7 @@ dependencies = [
 
 [[package]]
 name = "eth2-client"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "admin-controlled",
  "anyhow",
@@ -1162,7 +1162,7 @@ dependencies = [
 
 [[package]]
 name = "eth2-utility"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "bitvec 1.0.1",
  "borsh",
