@@ -6,10 +6,10 @@ use eth_types::eth2::{
     ExtendedBeaconBlockHeader, LightClientState, LightClientUpdate, SyncCommittee,
 };
 use eth_types::{BlockHeader, H256};
+use eth2_utility::types::ClientMode;
 use near_primitives::borsh::BorshSerialize;
 use near_primitives::types::AccountId;
 use near_primitives::views::FinalExecutionOutcomeView;
-use near_sdk::Balance;
 use serde::Serialize;
 use serde_json::json;
 use std::error::Error;
@@ -18,9 +18,6 @@ use std::string::String;
 
 /// Implementation for interaction with Ethereum Light Client Contract on NEAR.
 pub struct EthClientContract {
-    /// last submitted slot by this relay
-    last_slot: u64,
-
     /// Wrapper for interacting with NEAR Contract
     pub contract_wrapper: Box<dyn ContractWrapper>,
 }
@@ -29,7 +26,6 @@ impl EthClientContract {
     /// Constructor for `EthClientContract`
     pub fn new(contract_wrapper: Box<dyn ContractWrapper>) -> Self {
         EthClientContract {
-            last_slot: 0,
             contract_wrapper,
         }
     }
@@ -55,7 +51,6 @@ impl EthClientContract {
         validate_updates: Option<bool>,
         verify_bls_signatures: Option<bool>,
         hashes_gc_threshold: Option<u64>,
-        max_submitted_blocks_by_account: Option<u32>,
         trusted_signer: Option<AccountId>,
     ) {
         #[derive(BorshSerialize, Serialize)]
@@ -68,7 +63,6 @@ impl EthClientContract {
             pub validate_updates: bool,
             pub verify_bls_signatures: bool,
             pub hashes_gc_threshold: u64,
-            pub max_submitted_blocks_by_account: u32,
             pub trusted_signer: Option<AccountId>,
         }
 
@@ -81,7 +75,6 @@ impl EthClientContract {
             validate_updates: validate_updates.unwrap_or(true),
             verify_bls_signatures: verify_bls_signatures.unwrap_or(false),
             hashes_gc_threshold: hashes_gc_threshold.unwrap_or(51_000),
-            max_submitted_blocks_by_account: max_submitted_blocks_by_account.unwrap_or(8000),
             trusted_signer,
         };
 
@@ -111,19 +104,6 @@ impl EthClientContract {
 }
 
 impl EthClientContractTrait for EthClientContract {
-    fn get_last_submitted_slot(&self) -> u64 {
-        return self.last_slot;
-    }
-
-    fn is_known_block(&self, execution_block_hash: &H256) -> Result<bool, Box<dyn Error>> {
-        let result = self.contract_wrapper.call_view_function(
-            "is_known_execution_header".to_string(),
-            execution_block_hash.try_to_vec()?,
-        )?;
-        let is_known: bool = bool::try_from_slice(&result)?;
-        Ok(is_known)
-    }
-
     fn send_light_client_update(
         &mut self,
         light_client_update: LightClientUpdate,
@@ -154,13 +134,20 @@ impl EthClientContractTrait for EthClientContract {
         Ok(beacon_block_slot)
     }
 
+    fn get_client_mode(&self) -> Result<ClientMode, Box<dyn Error>> {
+        let res = self.contract_wrapper.call_view_function(
+            "get_client_mode".to_string(),
+            json!({}).to_string().into_bytes()
+        )?;
+
+        let mode: ClientMode = ClientMode::try_from_slice(&res)?;
+        Ok(mode)
+    }
+
     fn send_headers(
         &mut self,
         headers: &[BlockHeader],
-        end_slot: u64,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>> {
-        self.last_slot = end_slot;
-
         if headers.len() == 0 {
             return Err(Box::new(crate::errors::TryToSubmitZeroHeaderError));
         }
@@ -175,36 +162,6 @@ impl EthClientContractTrait for EthClientContract {
             .call_change_method_batch(method_names, args, None, None)
     }
 
-    fn get_min_deposit(&self) -> Result<Balance, Box<dyn Error>> {
-        Ok(Balance::try_from_slice(
-            &self.contract_wrapper.call_view_function(
-                "min_storage_balance_for_submitter".to_string(),
-                json!({}).to_string().into_bytes(),
-            )?,
-        )?)
-    }
-
-    fn register_submitter(&self) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
-        self.contract_wrapper.call_change_method(
-            "register_submitter".to_string(),
-            json!({}).to_string().into_bytes(),
-            Some(self.get_min_deposit()?),
-            None,
-        )
-    }
-
-    fn is_submitter_registered(
-        &self,
-        account_id: Option<AccountId>,
-    ) -> Result<bool, Box<dyn Error>> {
-        let response = self.contract_wrapper.call_view_function(
-            "is_submitter_registered".to_string(),
-            json!({"account_id": account_id.unwrap_or(self.contract_wrapper.get_signer_account_id())}).to_string().into_bytes(),
-        )?;
-
-        Ok(serde_json::from_slice(response.as_slice())?)
-    }
-
     fn get_light_client_state(&self) -> Result<LightClientState, Box<dyn Error>> {
         let result = self
             .contract_wrapper
@@ -213,24 +170,24 @@ impl EthClientContractTrait for EthClientContract {
         Ok(LightClientState::try_from_slice(result.as_slice())?)
     }
 
-    fn get_num_of_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
+    fn get_last_block_number(&self) -> Result<u64, Box<dyn Error>> {
         let response = self.contract_wrapper.call_view_function(
-            "get_num_of_submitted_blocks_by_account".to_string(),
-            json!({"account_id": self.contract_wrapper.get_signer_account_id()})
-                .to_string()
-                .into_bytes(),
-        )?;
-
-        Ok(serde_json::from_slice(response.as_slice())?)
-    }
-
-    fn get_max_submitted_blocks_by_account(&self) -> Result<u32, Box<dyn Error>> {
-        let response = self.contract_wrapper.call_view_function(
-            "get_max_submitted_blocks_by_account".to_string(),
+            "last_block_number".to_string(),
             json!({}).to_string().into_bytes(),
         )?;
 
-        Ok(serde_json::from_slice(response.as_slice())?)
+        let beacon_block_number: u64 = u64::try_from_slice(&response)?;
+        Ok(beacon_block_number)
+    }
+
+    fn get_unfinalized_tail_block_number(&self) -> Result<Option<u64>, Box<dyn Error>> {
+        let response = self.contract_wrapper.call_view_function(
+            "get_unfinalized_tail_block_number".to_string(),
+            json!({}).to_string().into_bytes(),
+        )?;
+
+        let beacon_block_number: Option<u64> = Option::<u64>::try_from_slice(&response)?;
+        Ok(beacon_block_number)
     }
 }
 
@@ -282,12 +239,11 @@ mod tests {
         }
 
         pub fn submit_block(&mut self, eth_client: &mut EthClientContract) {
-            let res = eth_client
-                .send_headers(
+            eth_client.send_headers(
                     &vec![self.execution_blocks[self.current_execution_block].clone()],
-                    0,
                 )
                 .unwrap();
+
             self.current_execution_block += 1;
             while self.execution_blocks[self.current_execution_block].hash
                 == self.execution_blocks[self.current_execution_block - 1].hash
@@ -297,8 +253,7 @@ mod tests {
         }
 
         pub fn submit_update(&mut self, eth_client: &mut EthClientContract) {
-            let res = eth_client
-                .send_light_client_update(
+            eth_client.send_light_client_update(
                     self.light_client_updates[self.current_light_client_update].clone(),
                 )
                 .unwrap();
@@ -379,7 +334,6 @@ mod tests {
             Some(true),
             Some(false),
             None,
-            None,
             Option::<AccountId>::Some(trusted_signer.parse().unwrap()),
         );
         eth_state.current_light_client_update = 1;
@@ -411,7 +365,6 @@ mod tests {
         // Use `relay_account` as a signer for normal operations
         let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
         let mut eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
-        eth_client_contract.register_submitter().unwrap();
 
         let next_hash = eth_state.light_client_updates[eth_state.current_light_client_update]
             .clone()
@@ -423,13 +376,8 @@ mod tests {
                 [eth_state.current_execution_block]
                 .hash
                 .unwrap();
-            assert!(!eth_client_contract
-                .is_known_block(&current_execution_block_hash)
-                .unwrap());
+
             eth_state.submit_block(&mut eth_client_contract);
-            assert!(eth_client_contract
-                .is_known_block(&current_execution_block_hash)
-                .unwrap());
 
             if current_execution_block_hash == next_hash {
                 eth_state.submit_update(&mut eth_client_contract);

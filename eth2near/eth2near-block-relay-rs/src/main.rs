@@ -1,4 +1,4 @@
-use clap::{ArgAction, Parser};
+use clap::Parser;
 use contract_wrapper::contract_wrapper_trait::ContractWrapper;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use contract_wrapper::near_contract_wrapper::NearContractWrapper;
@@ -22,14 +22,6 @@ struct Arguments {
     #[clap(long, default_value_t = String::from("info"))]
     /// Log level (trace, debug, info, warn, error)
     log_level: String,
-
-    #[clap(long, action = ArgAction::Set, default_value_t = true)]
-    /// Enable binary search for last slot ETH block on NEAR
-    enable_binary_search: bool,
-
-    #[clap(long, action = ArgAction::Set, default_value_t = true)]
-    /// Submit to ETH2 Client only blocks before last finalized block on NEAR
-    submit_only_finalized_blocks: bool,
 }
 
 fn get_eth_contract_wrapper(config: &Config) -> Box<dyn ContractWrapper> {
@@ -111,9 +103,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut eth2near_relay = Eth2NearRelay::init(
         &config,
-        get_eth_client_contract(&config),
-        args.enable_binary_search,
-        args.submit_only_finalized_blocks,
+        get_eth_client_contract(&config)
     );
 
     eth2near_relay.run(None);

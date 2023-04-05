@@ -139,7 +139,6 @@ pub fn init_contract(
         config.validate_updates,
         config.verify_bls_signature,
         config.hashes_gc_threshold,
-        config.max_submitted_blocks_by_account,
         trusted_signature,
     );
 

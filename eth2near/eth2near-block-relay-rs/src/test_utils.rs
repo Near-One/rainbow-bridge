@@ -83,7 +83,6 @@ pub fn init_contract_from_files(
         Some(true),
         Some(false),
         None,
-        None,
         Some(eth_client_contract.contract_wrapper.get_signer_account_id()),
     );
     thread::sleep(time::Duration::from_secs(30));
@@ -152,7 +151,6 @@ pub fn init_contract_from_specific_slot(
         next_sync_committee,
         Some(true),
         Some(false),
-        None,
         None,
         Some(eth_client_contract.contract_wrapper.get_signer_account_id()),
     );
@@ -250,21 +248,17 @@ pub fn get_client_contract(
 }
 
 pub fn get_relay(
-    enable_binsearch: bool,
     from_file: bool,
     config_for_test: &ConfigForTests,
 ) -> Eth2NearRelay {
     let config = get_config(config_for_test);
     Eth2NearRelay::init(
         &config,
-        get_client_contract(from_file, config_for_test),
-        enable_binsearch,
-        false,
+        get_client_contract(from_file, config_for_test)
     )
 }
 
 pub fn get_relay_with_update_from_file(
-    enable_binsearch: bool,
     from_file: bool,
     next_sync_committee: bool,
     config_for_test: &ConfigForTests,
@@ -278,14 +272,11 @@ pub fn get_relay_with_update_from_file(
 
     Eth2NearRelay::init(
         &config,
-        get_client_contract(from_file, config_for_test),
-        enable_binsearch,
-        false,
+        get_client_contract(from_file, config_for_test)
     )
 }
 
 pub fn get_relay_from_slot(
-    enable_binsearch: bool,
     slot: u64,
     config_for_test: &ConfigForTests,
 ) -> Eth2NearRelay {
@@ -300,8 +291,6 @@ pub fn get_relay_from_slot(
 
     Eth2NearRelay::init(
         &config,
-        Box::new(eth_client_contract),
-        enable_binsearch,
-        false,
+        Box::new(eth_client_contract)
     )
 }
