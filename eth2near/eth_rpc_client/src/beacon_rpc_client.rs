@@ -558,19 +558,29 @@ impl BeaconRPCClient {
         let v: Value = serde_json::from_str(light_client_update_json_str)?;
         let next_sync_committee_branch_json_str = match self.routes.version {
             BeaconRPCVersion::V1_5 => {
-                serde_json::to_string(&v[0]["data"]["next_sync_committee_branch"])?
+                // The response might be in the different format depending on the request type
+                let mut res = serde_json::to_string(&v[0]["data"]["next_sync_committee_branch"])?;
+                if res == "null" {
+                    res = serde_json::to_string(&v["data"][0]["next_sync_committee_branch"])?;
+                }
+                res
             }
             _ => serde_json::to_string(&v["data"][0]["next_sync_committee_branch"])?,
         };
 
         let next_sync_committee_branch: Vec<eth_types::H256> =
             serde_json::from_str(&next_sync_committee_branch_json_str)?;
-
         let next_sync_committee_json_str = match self.routes.version {
-            BeaconRPCVersion::V1_5 => serde_json::to_string(&v[0]["data"]["next_sync_committee"])?,
+            BeaconRPCVersion::V1_5 => {
+                // The response might be in the different format depending on the request type
+                let mut res = serde_json::to_string(&v[0]["data"]["next_sync_committee"])?;
+                if res == "null" {
+                    res = serde_json::to_string(&v["data"][0]["next_sync_committee"])?;
+                }
+                res
+            }
             _ => serde_json::to_string(&v["data"][0]["next_sync_committee"])?,
         };
-
         let next_sync_committee: SyncCommittee =
             serde_json::from_str(&next_sync_committee_json_str)?;
 
