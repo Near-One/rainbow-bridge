@@ -66,6 +66,7 @@ contract NearBridge is INearBridge, UUPSUpgradeable, AdminControlled {
         uint256 lockDuration_,
         uint256 replaceDuration_,
         uint256 pausedFlags_
+        // address safeAddress_
     ) public initializer checkDuration(replaceDuration_, lockDuration_) {
         __UUPSUpgradeable_init();
         __AdminControlled_init(pausedFlags_);

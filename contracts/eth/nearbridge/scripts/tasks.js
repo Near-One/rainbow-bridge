@@ -1,6 +1,7 @@
 const os = require('os')
 const fs = require('fs')
 const path = require('path')
+const { upgrades } = require('hardhat')
 
 async function deployNearBridgeProxy (hre, args) {
   const {
@@ -62,4 +63,18 @@ async function deployNearBridgeProxy (hre, args) {
   data = JSON.stringify(rainbowConfig, null, 2)
   fs.writeFileSync(p, data, { flags: 'w+' })
 }
-exports.deployNearBridgeProxy = deployNearBridgeProxy
+
+async function transferOwnership(currentAdmin, newAdmin, bridgeAddress){
+  const NearBridgeFactory = await ethers.getContractFactory('NearBridge');
+  const NearBridgeContract = NearBridgeFactory.attach(bridgeAddress).connect(currentAdmin);
+  const tx = await NearBridgeContract.transferOwnership(newAdmin);
+  const receipt = await tx.wait();
+  if (receipt.status == 1){
+    console.log(`Transaction ${receipt.transactionHash} successfull: Ownership transferred from ${currentAdmin} to ${newAdmin}`);
+  } else{
+    console.log(`Transaction ${receipt.transactionHash} failed`);
+  }
+}
+
+module.exports = {deployNearBridgeProxy, transferOwnership};
+// exports.deployNearBridgeProxy = deployNearBridgeProxy
