@@ -6,15 +6,15 @@ const { upgrades } = require('hardhat')
 async function deployNearBridgeProxy (hre, args) {
   const {
     ed25519,
-    ethClientLockEthAmount,
+    ethclientlockethamount,
     admin,
-    ethClientLockDuration,
-    ethClientReplaceDuration,
-    pausedFlags
+    ethclientlockduration,
+    ethclientreplaceduration,
+    pausedflags
   } = args
 
-  let eClientLockDuration = Number(ethClientLockDuration)
-  let eClientReplaceDuration = Number(ethClientReplaceDuration)
+  let eClientLockDuration = Number(ethclientlockduration)
+  let eClientReplaceDuration = Number(ethclientreplaceduration)
 
   // replace duration should be at least twice as long as lock duration or 20 minutes longer
   const minAllowedReplaceDuration = Math.min(
@@ -32,18 +32,18 @@ async function deployNearBridgeProxy (hre, args) {
     )
   }
 
-  const lockEthAmount = hre.ethers.utils.parseEther(ethClientLockEthAmount)
-  const lockDuration = hre.ethers.utils.parseEther(ethClientLockDuration)
+  const lockEthAmount = hre.ethers.utils.parseEther(ethclientlockethamount)
+  const lockDuration = hre.ethers.utils.parseEther(ethclientlockduration)
 
   const replaceDuration = hre.ethers.utils
-    .parseEther(ethClientReplaceDuration)
+    .parseEther(ethclientreplaceduration)
     .mul(ethers.BigNumber.from("1000000000"))
   const NearBridgeFactory = await ethers.getContractFactory('NearBridge')
 
   // deploy the proxy contract
   const NearBridge = await upgrades.deployProxy(
     NearBridgeFactory,
-    [ed25519, lockEthAmount, lockDuration, replaceDuration, pausedFlags],
+    [ed25519, lockEthAmount, lockDuration, replaceDuration, pausedflags],
     { kind: 'uups' }
   )
 
@@ -64,15 +64,26 @@ async function deployNearBridgeProxy (hre, args) {
   fs.writeFileSync(p, data, { flags: 'w+' })
 }
 
-async function transferOwnership(currentAdmin, newAdmin, bridgeAddress){
-  const NearBridgeFactory = await ethers.getContractFactory('NearBridge');
-  const NearBridgeContract = NearBridgeFactory.attach(bridgeAddress).connect(currentAdmin);
-  const tx = await NearBridgeContract.transferOwnership(newAdmin);
-  const receipt = await tx.wait();
-  if (receipt.status == 1){
-    console.log(`Transaction ${receipt.transactionHash} successfull: Ownership transferred from ${currentAdmin} to ${newAdmin}`);
-  } else{
-    console.log(`Transaction ${receipt.transactionHash} failed`);
+async function transferOwnership(currentadmin, newadmin, bridgeaddress) {
+  const p = path.join(os.homedir(), ".rainbow/config.json");
+  const cfg = fs.readFileSync(p);
+  const rainbowConfig = JSON.parse(cfg);
+  const wallet = new ethers.Wallet(rainbowConfig.ethMasterSk);
+
+  if (currentadmin == wallet.address) {
+    const NearBridgeFactory = await ethers.getContractFactory("NearBridge");
+    const NearBridgeContract = NearBridgeFactory.attach(bridgeaddress);
+    const tx = await NearBridgeContract.transferOwnership(newadmin);
+    const receipt = await tx.wait();
+    if (receipt.status == 1) {
+      console.log(
+        `Transaction ${receipt.transactionHash} successfull: Ownership transferred from ${currentadmin} to ${newadmin}`
+      );
+    } else {
+      console.log(`Transaction ${receipt.transactionHash} failed`);
+    }
+  } else {
+    console.log("Present owner is invalid");
   }
 }
 

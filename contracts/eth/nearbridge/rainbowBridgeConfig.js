@@ -12,11 +12,11 @@ const { task } = require('hardhat/config');
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 
 task('deployNearBridgeProxy', 'Deploy NearBridge proxy')
-  .addParam('ethClientLockEthAmount', 'ethClientLockEthAmount')
-  .addParam('ethClientLockDuration', 'ethClientLockDuration')
-  .addParam('ethClientReplaceDuration', 'ethClientReplaceDuration')
+  .addParam('ethclientlockethamount', 'ethClientLockEthAmount')
+  .addParam('ethclientlockduration', 'ethClientLockDuration')
+  .addParam('ethclientreplaceduration', 'ethClientReplaceDuration')
   .addParam('ed25519', 'ed25519 address')
-  .addParam('pausedFlags', 'pausedFlags')
+  .addParam('pausedflags', 'pausedFlags')
   .addOptionalParam('admin', 'admin')
   .setAction(async (args, hre) => {
     const { deployNearBridgeProxy } = require('./scripts/tasks')
@@ -26,13 +26,13 @@ task('deployNearBridgeProxy', 'Deploy NearBridge proxy')
   })
 
 task('transferOwnership', 'Transfer the ownership of near-bridge contract')
-.addParam('currentAdmin', 'Current owner address of near-bridge contract')  
-.addParam('newAdmin', 'New owner address to set for near-bridge contract')  
-.addParam('bridgeAddress', 'Near bridge contract address')
+.addParam('currentadmin', 'Current owner address of near-bridge contract')  
+.addParam('newadmin', 'New owner address to set for near-bridge contract')  
+.addParam('bridgeaddress', 'Near bridge contract address')
 .setAction(async (args, hre) => {
   const { transferOwnership } = require('./scripts/tasks')
   await hre.run("compile");
-  await transferOwnership(args.currentAdmin, args.newAdmin, args.bridgeAddress);
+  await transferOwnership(args.currentadmin, args.newadmin, args.bridgeaddress);
 
 })
 function setupRainbowBridgeNetwork () {
