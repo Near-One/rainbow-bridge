@@ -1,5 +1,6 @@
 use admin_controlled::Mask;
 use borsh::{BorshDeserialize, BorshSerialize};
+use core::convert::TryFrom;
 use eth_types::*;
 use near_sdk::{env, ext_contract, near_bindgen, Gas, PanicOnDefault, PromiseOrValue};
 use rlp::Rlp;
@@ -112,7 +113,8 @@ impl EthProver {
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
 
         // Verify log_entry included in receipt
-        assert_eq!(receipt.logs[log_index as usize], log_entry);
+        let log_index_usize = usize::try_from(log_index).expect("Invalid log_index");
+        assert_eq!(receipt.logs[log_index_usize], log_entry);
 
         // Verify receipt included into header
         let data =
