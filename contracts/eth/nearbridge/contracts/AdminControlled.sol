@@ -3,6 +3,7 @@ pragma solidity ^0.8;
 
 contract AdminControlled {
     address public admin;
+    address public nominatedAdmin;
     uint public paused;
 
     constructor(address _admin, uint flags) {
@@ -10,7 +11,7 @@ contract AdminControlled {
         paused = flags;
     }
 
-    modifier onlyAdmin {
+    modifier onlyAdmin() {
         require(msg.sender == admin);
         _;
     }
@@ -41,8 +42,35 @@ contract AdminControlled {
         }
     }
 
+    function verifyAdminAddress(address newAdmin) internal view {
+        require(newAdmin != admin, "Nominated admin is the same as the current");
+        // Zero address shouldn't be allowed as a security measure.
+        // If it's needed to remove the admin consider using address with all "1" digits.
+        require(newAdmin != address(0), "Nominated admin shouldn't be zero address");
+    }
+
+    function nominateAdmin(address newAdmin) public onlyAdmin {
+        verifyAdminAddress(newAdmin);
+        nominatedAdmin = newAdmin;
+    }
+
+    function acceptAdmin() public {
+        verifyAdminAddress(nominatedAdmin);
+        // Only nominated admin could accept its admin rights
+        require(msg.sender == nominatedAdmin, "Caller must be the nominated admin");
+
+        admin = nominatedAdmin;
+        // Explicitly set not allowed zero address for `nominatedAdmin` so it's impossible to accidentally change
+        // the admin if calling the function twice
+        nominatedAdmin = address(0);
+    }
+
+    function rejectNominatedAdmin() public onlyAdmin {
+        nominatedAdmin = address(0);
+    }
+
     function adminSendEth(address payable destination, uint amount) public onlyAdmin {
-        destination.transfer(amount);
+        destination.call{value: amount}("");
     }
 
     function adminReceiveEth() public payable onlyAdmin {}

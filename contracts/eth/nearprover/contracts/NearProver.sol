@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8;
 
-import "./bridge/AdminControlled.sol";
-import "./bridge/INearBridge.sol";
-import "./bridge/NearDecoder.sol";
+import "rainbow-bridge-sol/nearbridge/contracts/AdminControlled.sol";
+import "rainbow-bridge-sol/nearbridge/contracts/INearBridge.sol";
+import "rainbow-bridge-sol/nearbridge/contracts/NearDecoder.sol";
 import "./ProofDecoder.sol";
 import "./INearProver.sol";
 
@@ -36,8 +36,10 @@ contract NearProver is INearProver, AdminControlled {
         ProofDecoder.FullOutcomeProof memory fullOutcomeProof = borsh.decodeFullOutcomeProof();
         borsh.done();
 
-        bytes32 hash =
-            _computeRoot(fullOutcomeProof.outcome_proof.outcome_with_id.hash, fullOutcomeProof.outcome_proof.proof);
+        bytes32 hash = _computeRoot(
+            fullOutcomeProof.outcome_proof.outcome_with_id.hash,
+            fullOutcomeProof.outcome_proof.proof
+        );
 
         hash = sha256(abi.encodePacked(hash));
 

@@ -45,7 +45,7 @@ rustup default stable
 rustup target add wasm32-unknown-unknown
 ```
 
-- Then install dependencies needed for the compilation of nearcore, [see](https://docs.near.org/docs/local-setup/running-testnet#compiling-and-running-official-node-without-docker).
+- Then install dependencies needed for the compilation of nearcore, [see](https://docs.near.org/docs/develop/node/validator/running-a-node#compiling-and-running-a-node-without-docker).
 - python3 pip , for nearup
 
 #### Install nearup
@@ -73,6 +73,8 @@ and obtains its address) will also be written into the config file. Arguments sh
 Note, you can use environment variables to pass sensitive data which will not lead to it being written into the config file.
 
 ## Security
+
+* [Guide](near2eth/watchdog/README.md) on how to quickly configure the watchdog for Mainnet
 
 Bridge is secure as long as majority (1/2) of Etherem mining power is honest and supermajority (2/3) of NEAR stake is honest.
 There are no additional security requirements, except that Ethereum should be able to accept 1 transaction within 4 hour period even in the worst congestion scenario.
@@ -307,7 +309,7 @@ Now you check the balance of `node0` again. You should notice the balance was ch
 
 Note, when we deployed ERC20 to the Ethereum blockchain we have minted a large number of tokens to the default master
 key of Ganache, so we have transferred ERC20 tokens from it to `node0` account.
-Notice that we are using `neartokenfactory` account here to pay for the NEAR gas fees, any account for which we know a secret key would've worked too.
+Notice that we are using `neartokenfactory.node0` account here to pay for the NEAR gas fees, any account for which we know a secret key would've worked too.
 You must observe blocks being submitted.
 
 You can also manually check the ERC20 balance of the receiver before and after receiving the transfer back from the NEAR side

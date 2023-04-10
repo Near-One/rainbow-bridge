@@ -1,0 +1,9 @@
+beacon_endpoint = "https://lodestar-goerli.chainsafe.io"
+eth1_endpoint = "https://goerli.infura.io/v3/API_KEY"
+path_to_attested_state_for_period = "./data/beacon_state_goerli_slot_5243067.json"
+path_to_light_client_update_for_attested_slot = "./data/beacon_light_client_update_goerli_slot_5243067.json"
+first_slot = 3885632
+eth1_number = 0x73cb47
+path_to_block = "./data/beacon_block_goerli_slot_3885632.json"
+path_to_header = "./data/beacon_header_goerli_slot_3885632.json"
+path_to_light_client_update = "./data/beacon_light_client_update_goerli_period_640.json"

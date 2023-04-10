@@ -1,0 +1,22 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ethereum-light-client-on-near
+  description: Ethereum Light Client on NEAR
+  tags:
+    - contract
+    - near
+  links: []
+  annotations:
+    aurora.dev/security-tier: "1"
+spec:
+  owner: bridge-team
+  type: contract
+  lifecycle: production
+  system: bridge-protocol
+  deployedAt:
+    - contract:near/mainnet/client.bridge.near
+    - contract:near/mainnet/client-eth2.bridge.near
+  interactsWith:
+    - relayer:near/mainnet/relayer.bridge.near

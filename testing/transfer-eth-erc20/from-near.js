@@ -14,6 +14,7 @@ const {
   backoff,
   nearJsonContractFunctionCall
 } = require('rainbow-bridge-utils')
+const ethers = require('ethers')
 const { NearMintableToken } = require('./near-mintable-token')
 
 let initialCmd
@@ -43,8 +44,10 @@ class TransferEthERC20FromNear {
         JSON.parse(
           fs.readFileSync(txLogFilename).toString()
         ) || {}
+      console.log('Transfer log found', log)
       return TransferEthERC20FromNear.parseBuffer(log)
     } catch (e) {
+      console.log("Coudn't find transfer log at ", txLogFilename)
       return {}
     }
   }
@@ -287,7 +290,7 @@ class TransferEthERC20FromNear {
     proverContract,
     proofRes,
     clientBlockHeight,
-    ethERC20Contract,
+    ethErc20Address,
     ethReceiverAddress,
     ethTokenLockerContract,
     ethMasterAccount,
@@ -298,20 +301,19 @@ class TransferEthERC20FromNear {
       // Check that the proof is correct.
       const borshProofRes = borshifyOutcomeProof(proofRes)
       clientBlockHeight = new BN(clientBlockHeight)
-      // Debugging output, uncomment for debugging.
-      // console.log(`proof: ${JSON.stringify(proofRes)}`);
-      // console.log(`client height: ${clientBlockHeight.toString()}`);
-      // console.log(`root: ${clientBlockMerkleRoot}`);
+
       await proverContract.methods
         .proveOutcome(borshProofRes, clientBlockHeight)
         .call()
 
-      const oldBalance = await ethERC20Contract.methods
-        .balanceOf(ethReceiverAddress)
-        .call()
+      const erc20 = new ethers.Contract(ethErc20Address, [
+        'function balanceOf(address owner) view returns (uint256)'
+      ], new ethers.providers.JsonRpcProvider(robustWeb3.ethNodeUrl))
+      const oldBalance = await erc20.balanceOf(ethReceiverAddress)
       console.log(
         `ERC20 balance of ${ethReceiverAddress} before the transfer: ${oldBalance}`
       )
+
       await robustWeb3.callContract(
         ethTokenLockerContract,
         'unlockToken',
@@ -323,9 +325,8 @@ class TransferEthERC20FromNear {
           gasPrice: new BN(await robustWeb3.web3.eth.getGasPrice()).mul(new BN(ethGasMultiplier))
         }
       )
-      const newBalance = await ethERC20Contract.methods
-        .balanceOf(ethReceiverAddress)
-        .call()
+
+      const newBalance = await erc20.balanceOf(ethReceiverAddress)
       console.log(
         `ERC20 balance of ${ethReceiverAddress} after the transfer: ${newBalance}`
       )
@@ -369,7 +370,7 @@ class TransferEthERC20FromNear {
       nodeUrl: nearNodeUrl,
       networkId: nearNetworkId,
       masterAccount: nearSenderAccountId,
-      deps: { keyStore: keyStore }
+      keyStore
     })
     const nearSenderAccount = new nearAPI.Account(
       near.connection,
@@ -416,14 +417,6 @@ class TransferEthERC20FromNear {
     const ethTokenLockerContract = new web3.eth.Contract(
       JSON.parse(fs.readFileSync(ethLockerAbiPath)),
       ethLockerAddress,
-      {
-        from: ethMasterAccount,
-        handleRevert: true
-      }
-    )
-    const ethERC20Contract = new web3.eth.Contract(
-      JSON.parse(fs.readFileSync(ethErc20AbiPath)),
-      ethErc20Address,
       {
         from: ethMasterAccount,
         handleRevert: true
@@ -479,7 +472,7 @@ class TransferEthERC20FromNear {
         proverContract,
         proofRes: transferLog.proofRes,
         clientBlockHeight: transferLog.clientBlockHeight,
-        ethERC20Contract,
+        ethErc20Address,
         ethReceiverAddress,
         ethTokenLockerContract,
         ethMasterAccount,

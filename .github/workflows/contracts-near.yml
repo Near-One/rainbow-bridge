@@ -1,11 +1,9 @@
----
 on:
   push:
     branches:
       - master
+      - the-merge
   pull_request:
-    branches:
-      - "*"
 name: Contracts (NEAR)
 jobs:
   test:
@@ -16,6 +14,10 @@ jobs:
         include:
           - job-name: build all rust contracts
             cmd: |
+              cd contracts/near/eth-client
+              ./build.sh
+              cd ../eth2-client
+              ./build.sh
               cd ../eth-prover
               ./build.sh
               git status
@@ -26,12 +28,69 @@ jobs:
               fi
             timeout-minutes: 40
 
+          - job-name: test eth-prover
+            cmd: |
+              cd contracts/near/eth-prover
+              ./test.sh
+            timeout-minutes: 40
+
+          - job-name: test eth-client
+            cmd: |
+              cd contracts/near/eth-client
+              ./test.sh
+            timeout-minutes: 40
+
+          - job-name: test eth2-client
+            cmd: |
+              cd contracts/near/eth2-client
+              ./test.sh
+            timeout-minutes: 40
+
+          - job-name: test eth2near/contract_wrapper
+            cmd: |
+              cd eth2near/contract_wrapper
+              ./test.sh
+            timeout-minutes: 20
+
+          - job-name: test eth2near/finality-update-verify
+            cmd: |
+              cd eth2near/finality-update-verify
+              ./test.sh
+            timeout-minutes: 20
+
+          - job-name: test eth2near/eth2-to-near-block-relay-rs
+            cmd: |
+              cd eth2near/eth2near-block-relay-rs
+              ./test.sh
+            timeout-minutes: 20
+
+          - job-name: test eth2near/eth2-contract-init
+            cmd: |
+              cd eth2near/eth2-contract-init
+              ./test.sh
+            timeout-minutes: 20
+
+          - job-name: test eth2near/eth_rpc_client
+            cmd: |
+              cd eth2near/eth_rpc_client
+              ./test.sh
+            timeout-minutes: 20
+
     name: ${{ matrix.job-name }}
     steps:
+      - name: Install LFS
+        run: apt-get install git-lfs
+
       - name: Clone the repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          lfs: 'true'
+
+      - name: Checkout LFS objects
+        run: git lfs checkout
 
       - name: Execute
+        env:
+          ETH1_INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }} 
         run: ${{ matrix.cmd }}
         timeout-minutes: ${{ matrix.timeout-minutes }}
-

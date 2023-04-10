@@ -1,0 +1,49 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ed25519-contract
+  description: |-
+    Verifies ED255519 signature in Ethereum.
+    It is expensive. Only used by watchdog in case an invalid block is posted.
+  tags:
+    - contract
+    - ethereum
+  links: []
+  annotations:
+    aurora.dev/security-tier: "1"
+    backstage.io/source-location: url:https://github.com/aurora-is-near/rainbow-bridge/blob/master/contracts/eth/nearbridge/contracts/Ed25519.sol
+spec:
+  owner: bridge-team
+  type: contract
+  lifecycle: production
+  system: bridge-protocol
+  deployedAt:
+    - contract:ethereum/mainnet/0x88f975d5a1153ea92af66e7c4292576a329c04b6
+  interactsWith: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: near-light-client-on-ethereum
+  title: "NEAR Light Client on Ethereum"
+  description: |-
+    Implementation of NEAR Light Client in Ethereum. API: add_block To add blocks from NEAR into this contract. And blockHashes(index) return the block at this height. Only one block per epoch (12 hours) is required.
+  tags:
+    - contract
+    - ethereum
+  links: []
+  annotations:
+    aurora.dev/security-tier: "1"
+    backstage.io/source-location: url:https://github.com/aurora-is-near/rainbow-bridge/blob/master/contracts/eth/nearbridge/contracts/NearBridge.sol
+spec:
+  owner: bridge-team
+  type: contract
+  lifecycle: production
+  system: bridge-protocol
+  deployedAt:
+    - contract:ethereum/mainnet/0x3FEFc5A4B1c02f21cBc8D3613643ba0635b9a873
+  interactsWith:
+    - relayer:ethereum/mainnet/0x015e634c7c1311a9034220c28d3d12b7f710a3b1
+  deprecated:
+    - contract:ethereum/mainnet/0x3be7df8db39996a837041bb8ee0dadf60f767038

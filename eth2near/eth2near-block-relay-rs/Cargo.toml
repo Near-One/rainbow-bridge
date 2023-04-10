@@ -1,0 +1,52 @@
+[package]
+name = "eth2_to_near_relay"
+version = "0.3.0"
+edition = "2021"
+
+[dependencies]
+types =  { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
+merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
+eth2_hashing = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
+eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
+eth-types = { path = "../../contracts/near/eth-types/" }
+eth2-utility  = { path = "../../contracts/near/eth2-utility" }
+
+contract_wrapper = { path = "../contract_wrapper" }
+finality-update-verify = { path = "../finality-update-verify" }
+
+log = { version = "0.4", features = ["std", "serde"] }
+serde_json = "1.0.74"
+serde = { version = "1.0", features = ["derive"] }
+ethereum-types = { version = "0.14.1", features = ["rlp", "serialize"],  default-features = false }
+reqwest = { version = "0.11", features = ["blocking"] }
+eth_rpc_client = { path = "../eth_rpc_client" }
+clap = { version = "3.1.6", features = ["derive"] }
+tokio = { version = "1.1", features = ["macros", "rt", "time"] }
+env_logger = "0.9.0"
+borsh = "0.9.3"
+near-sdk = "4.1.1"
+futures = { version = "0.3.21", default-features = false }
+async-std = "1.12.0"
+hex = "0.4.3"
+toml = "0.5.9"
+atomic_refcell = "0.1.8"
+bitvec = "1.0.0"
+eth2near-logger = { path = "../logger" }
+primitive-types = "0.12.1"
+
+near-jsonrpc-client = "0.5.0"
+near-crypto = "0.16.0"
+near-primitives = "0.16.0"
+near-chain-configs = "0.16.0"
+near-jsonrpc-primitives = "0.16.0"
+
+prometheus = { version = "0.9", features = ["process"] }
+lazy_static = "1.4"
+warp = "0.2"
+thread = "*"
+dotenv = "0.15.0"
+
+[dev-dependencies]
+workspaces = "0.7"
+eth2-contract-init = { path = "../eth2-contract-init" }

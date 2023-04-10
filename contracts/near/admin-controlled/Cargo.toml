@@ -2,10 +2,10 @@
 name = "admin-controlled"
 version = "0.1.0"
 authors = ["Near Inc <hello@nearprotocol.com>"]
-edition = "2018"
+edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-near-sdk = { git = "https://github.com/near/near-sdk-rs", rev = "613adcab6322e4f830efb4d5bde2a810ae642158" }
+near-sdk = "4.1.1"

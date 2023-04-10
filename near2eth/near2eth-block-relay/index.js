@@ -2,6 +2,7 @@ const fs = require('fs')
 const bs58 = require('bs58')
 const { toBuffer } = require('eth-util-lite')
 const { BN } = require('ethereumjs-util')
+const lodash = require('lodash')
 const {
   sleep,
   RobustWeb3,
@@ -37,9 +38,7 @@ class Near2EthRelay {
     this.near = await nearAPI.connect({
       nodeUrl: nearNodeUrl,
       networkId: nearNetworkId,
-      deps: {
-        keyStore: keyStore
-      }
+      keyStore
     })
 
     // Declare Near2EthClient contract.
@@ -70,7 +69,7 @@ class Near2EthRelay {
         // The finalized block is not immediately available so we wait for it to become available.
         let lightClientBlock = null
         let currentValidators = null
-        while (!lightClientBlock) {
+        while (lodash.isEmpty(lightClientBlock)) {
           currentValidators = await this.near.connection.provider.sendJsonRpc(
             'EXPERIMENTAL_validators_ordered',
             [lastFinalBlockHash]
@@ -83,9 +82,8 @@ class Near2EthRelay {
             'next_light_client_block',
             [lastFinalBlockHash]
           )
-          if (!lightClientBlock) {
+          if (lodash.isEmpty(lightClientBlock)) {
             await sleep(300)
-            continue
           }
         }
         console.log('Initializing with validators')
@@ -174,7 +172,12 @@ class Near2EthRelay {
     near2ethRelayMinDelay,
     near2ethRelayMaxDelay,
     near2ethRelayErrorDelay,
-    ethGasMultiplier
+    near2ethRelayBlockSelectDuration,
+    near2ethRelayNextBlockSelectDelayMs,
+    near2ethRelayAfterSubmitDelayMs,
+    ethGasMultiplier,
+    ethUseEip1559,
+    logVerbose
   }) {
     const clientContract = this.clientContract
     const robustWeb3 = this.robustWeb3
@@ -185,11 +188,58 @@ class Near2EthRelay {
     const minDelay = Number(near2ethRelayMinDelay)
     const maxDelay = Number(near2ethRelayMaxDelay)
     const errorDelay = Number(near2ethRelayErrorDelay)
+    const afterSubmitDelayMs = Number(near2ethRelayAfterSubmitDelayMs)
+
+    const selectDurationNs = web3.utils.toBN(Number(near2ethRelayBlockSelectDuration) * 1000_000_000)
+    const nextBlockSelectDelayMs = Number(near2ethRelayNextBlockSelectDelayMs)
+
+    ethGasMultiplier = Number(ethGasMultiplier)
+    ethUseEip1559 = ethUseEip1559 === 'true'
+    logVerbose = logVerbose === 'true'
 
     const httpPrometheus = new HttpPrometheus(this.metricsPort, 'near_bridge_near2eth_')
     const clientHeightGauge = httpPrometheus.gauge('client_height', 'amount of block client processed')
     const chainHeightGauge = httpPrometheus.gauge('chain_height', 'current chain height')
 
+    const nextBlockSelection = {
+      startedAt: 0,
+      borshBlock: null,
+      height: 0,
+      set: function ({ borshBlock, lightClientBlock }) {
+        if (this.isEmpty()) {
+          this.startedAt = lightClientBlock.inner_lite.timestamp
+        }
+        this.borshBlock = borshBlock
+        this.height = lightClientBlock.inner_lite.height
+        console.log(`The new optimal block is found at height ${this.height}, ${this.borshBlock.length} bytes`)
+      },
+      clean: function () {
+        this.startedAt = 0
+        this.borshBlock = null
+        this.height = 0
+      },
+      isEmpty: function () {
+        return !this.borshBlock
+      },
+      isSuitable: function ({ borshBlock, lightClientBlock }) {
+        return this.isEmpty() ||
+               (!this.isEmpty() &&
+                 this.height !== lightClientBlock.inner_lite.height &&
+                 this.borshBlock.length >= borshBlock.length)
+      }
+    }
+    const getGasOptions = async (useEip1559, gasMultiplier) => {
+      const gasOptions = {}
+      if (useEip1559) {
+        const feeData = await robustWeb3.getFeeData(gasMultiplier)
+        gasOptions.maxPriorityFeePerGas = feeData.maxPriorityFeePerGas
+        gasOptions.maxFeePerGas = feeData.maxFeePerGas
+      } else {
+        const gasPrice = new BN(await web3.eth.getGasPrice())
+        gasOptions.gasPrice = gasPrice.mul(new BN(gasMultiplier))
+      }
+      return gasOptions
+    }
     while (true) {
       try {
         // Determine the next action: sleep or attempt an update.
@@ -207,7 +257,7 @@ class Near2EthRelay {
           await clientContract.methods.replaceDuration().call()
         )
         const nextValidAt = web3.utils.toBN(bridgeState.nextValidAt)
-        let replaceDelay
+        let replaceDelay = web3.utils.toBN(0)
         if (!nextValidAt.isZero()) {
           replaceDelay = web3.utils
             .toBN(bridgeState.nextTimestamp)
@@ -217,8 +267,30 @@ class Near2EthRelay {
         // console.log({bridgeState, currentBlockHash, lastBlock, replaceDuration}) // DEBUG
         if (bridgeState.currentHeight < lastBlock.inner_lite.height) {
           if (nextValidAt.isZero() || replaceDelay.cmpn(0) <= 0) {
+            // Serialize once here to avoid multiple 'borshify(...)' function calls
+            const blockCouple = {
+              lightClientBlock: lastBlock,
+              borshBlock: borshify(lastBlock)
+            }
+
+            if (nextBlockSelection.isSuitable(blockCouple)) {
+              nextBlockSelection.set(blockCouple)
+            }
+
+            const selectDelayNs = selectDurationNs
+              .add(web3.utils.toBN(nextBlockSelection.startedAt))
+              .sub(web3.utils.toBN(lastBlock.inner_lite.timestamp))
+            if (selectDelayNs.cmpn(0) > 0) {
+              if (logVerbose) {
+                const selectDelaySeconds = selectDelayNs.div(web3.utils.toBN(1000_000_000))
+                console.log(`Last block height ${lastBlock.inner_lite.height}, ${blockCouple.borshBlock.length} bytes, ${selectDelaySeconds.toString()}s left`)
+              }
+              await sleep(nextBlockSelectDelayMs)
+              continue
+            }
+
             console.log(
-              `Trying to submit new block at height ${lastBlock.inner_lite.height}.`
+              `Trying to submit new block at height ${nextBlockSelection.height}, ${nextBlockSelection.borshBlock.length} bytes`
             )
 
             // Check whether master account has enough balance at stake.
@@ -232,31 +304,29 @@ class Near2EthRelay {
               console.log(
                 `The sender account does not have enough stake. Transferring ${lockEthAmount} wei.`
               )
+              const gasOptions = await getGasOptions(ethUseEip1559, ethGasMultiplier)
               await clientContract.methods.deposit().send({
                 from: ethMasterAccount,
                 gas: 1000000,
                 handleRevert: true,
                 value: new BN(lockEthAmount),
-                gasPrice: new BN(await web3.eth.getGasPrice()).mul(new BN(ethGasMultiplier))
+                ...gasOptions
               })
               console.log('Transferred.')
             }
 
-            const borshBlock = borshify(lastBlock)
             if (submitInvalidBlock) {
               console.log('Mutate block by one byte')
-              console.log(borshBlock)
-              borshBlock[Math.floor(borshBlock.length * Math.random())] += 1
+              console.log(nextBlockSelection.borshBlock)
+              nextBlockSelection.borshBlock[Math.floor(nextBlockSelection.borshBlock.length * Math.random())] += 1
             }
 
-            const gasPrice = new BN(await web3.eth.getGasPrice())
-            console.log('Gas price:', gasPrice.toNumber())
-
-            await clientContract.methods.addLightClientBlock(borshBlock).send({
+            const gasOptions = await getGasOptions(ethUseEip1559, ethGasMultiplier)
+            await clientContract.methods.addLightClientBlock(nextBlockSelection.borshBlock).send({
               from: ethMasterAccount,
               gas: 10000000,
               handleRevert: true,
-              gasPrice: gasPrice.mul(new BN(ethGasMultiplier))
+              ...gasOptions
             })
 
             if (submitInvalidBlock) {
@@ -265,7 +335,8 @@ class Near2EthRelay {
             }
 
             console.log('Submitted.')
-            await sleep(240000) // To prevent submitting the same block again
+            nextBlockSelection.clean()
+            await sleep(afterSubmitDelayMs) // To prevent submitting the same block again
             continue
           }
         }

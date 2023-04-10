@@ -10,7 +10,7 @@ const {
 } = require('rainbow-bridge-eth2near-block-relay')
 
 class InitNearContracts {
-  static async execute({
+  static async execute ({
     nearMasterAccount,
     nearMasterSk,
     nearClientAccount,
@@ -65,9 +65,7 @@ class InitNearContracts {
       nodeUrl: nearNodeUrl,
       networkId: nearNetworkId,
       masterAccount: nearMasterAccount,
-      deps: {
-        keyStore: keyStore
-      }
+      keyStore
     })
 
     console.log('Creating accounts and deploying the contracts.')

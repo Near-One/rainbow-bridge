@@ -1,20 +1,20 @@
 const BN = require('bn.js')
 const blockFromRpc = require('@ethereumjs/block/dist/from-rpc')
-const Common = require('@ethereumjs/common')
-const got = require('got');
+const Common = require('@ethereumjs/common').default
+const got = require('got')
 const {
   Web3,
   BorshContract,
   hexToBuffer,
   readerToHex,
-  sleep,
+  sleep
 } = require('rainbow-bridge-utils')
 const roots = require('./dag_merkle_roots.json')
 
 /// Get Ethereum block by number from RPC, and returns raw json object.
-async function getEthBlock(number, RobustWeb3) {
-  let attempts = 10;
-  let blockData;
+async function getEthBlock (number, RobustWeb3) {
+  let attempts = 10
+  let blockData
 
   while (attempts > 0) {
     /// Need to call RPC directly, since function `blockFromRpc` works
@@ -22,48 +22,48 @@ async function getEthBlock(number, RobustWeb3) {
     /// tools that abstract this calls are missing the field `baseFeePerGas`
     blockData = await got.post(RobustWeb3.ethNodeUrl, {
       json: {
-        "id": 0,
-        "jsonrpc": "2.0",
-        "method": "eth_getBlockByNumber",
-        "params": [
-          "0x" + number.toString(16),
+        id: 0,
+        jsonrpc: '2.0',
+        method: 'eth_getBlockByNumber',
+        params: [
+          '0x' + number.toString(16),
           false
         ]
       },
-      responseType: "json"
-    });
+      responseType: 'json'
+    })
 
     /// When the block to be queried is the last one produced, RPC can return null.
     /// Retrying fix this problem.
     if (blockData.body.result === null) {
-      attempts -= 1;
-      await sleep(800);
+      attempts -= 1
+      await sleep(800)
     } else {
-      break;
+      break
     }
   }
-  return blockData.body.result;
+  return blockData.body.result
 }
 
 /// bridgeId matches nearNetworkId. It is one of two strings [testnet / mainnet]
-function web3BlockToRlp(blockData, bridgeId) {
-  let chain;
-  if (bridgeId === "testnet") {
-    chain = "ropsten";
+function web3BlockToRlp (blockData, bridgeId) {
+  let chain
+  if (bridgeId === 'testnet') {
+    chain = 'ropsten'
   } else {
-    chain = "mainnet";
+    chain = 'mainnet'
   }
-  const common = new Common.default({ chain });
+  const common = new Common({ chain })
 
   /// baseFeePerGas was introduced after london hard fork.
   /// TODO: Use better way to detect current hard fork.
   if (blockData.baseFeePerGas !== undefined) {
-    common.setHardfork("london")
+    common.setHardfork('london')
     common.setEIPs([1559])
   }
 
-  const block = blockFromRpc.default(blockData, [], { common });
-  return block.header.serialize();
+  const block = blockFromRpc.default(blockData, [], { common })
+  return block.header.serialize()
 }
 
 const borshSchema = {
@@ -103,6 +103,13 @@ const borshSchema = {
       ['proof', ['H128']]
     ]
   },
+  updateDagMerkleRootsInput: {
+    kind: 'struct',
+    fields: [
+      ['dags_start_epoch', 'u64'],
+      ['dags_merkle_roots', ['H128']]
+    ]
+  },
   H128: {
     kind: 'function',
     ser: hexToBuffer,
@@ -128,8 +135,10 @@ const borshSchema = {
   }
 }
 
+const DAG_ROOT_EPOCH_0 = '0x55b891e842e58f58956a847cbbf67821'
+const DAG_ROOT_EPOCH_699 = '0xddff7537a9babc2e0d77f8bcce955753'
 class EthOnNearClientContract extends BorshContract {
-  constructor(account, contractId) {
+  constructor (account, contractId) {
     super(borshSchema, account, contractId, {
       viewMethods: [
         {
@@ -174,6 +183,11 @@ class EthOnNearClientContract extends BorshContract {
           methodName: 'add_block_header',
           inputFieldType: 'addBlockHeaderInput',
           outputFieldType: null
+        },
+        {
+          methodName: 'update_dags_merkle_roots',
+          inputFieldType: 'updateDagMerkleRootsInput',
+          outputFieldType: null
         }
       ]
     })
@@ -181,7 +195,7 @@ class EthOnNearClientContract extends BorshContract {
 
   // Call initialization methods on the contract.
   // If validateEthash is true will do ethash validation otherwise it won't.
-  async maybeInitialize(hashesGcThreshold, finalizedGcThreshold, numConfirmations, validateEthash, trustedSigner, robustWeb3, bridgeId) {
+  async maybeInitialize (hashesGcThreshold, finalizedGcThreshold, numConfirmations, validateEthash, trustedSigner, robustWeb3, bridgeId) {
     await this.accessKeyInit()
     let initialized = false
     try {
@@ -190,8 +204,8 @@ class EthOnNearClientContract extends BorshContract {
     if (!initialized) {
       console.log('EthOnNearClient is not initialized, initializing...')
       const lastBlockNumber = await robustWeb3.getBlockNumber()
-      const blockData = await getEthBlock(lastBlockNumber, robustWeb3);
-      const blockRlp = web3BlockToRlp(blockData, bridgeId);
+      const blockData = await getEthBlock(lastBlockNumber, robustWeb3)
+      const blockRlp = web3BlockToRlp(blockData, bridgeId)
       await this.init(
         {
           validate_ethash: validateEthash,
@@ -213,12 +227,12 @@ class EthOnNearClientContract extends BorshContract {
       epoch: 0
     })
     const lastRoot = await this.dag_merkle_root({
-      epoch: 511
+      epoch: 699
     })
     if (
       !(
-        firstRoot === '0x55b891e842e58f58956a847cbbf67821' &&
-        lastRoot === '0x7a9010568819de327a24fa495029adcb'
+        firstRoot === DAG_ROOT_EPOCH_0 &&
+        lastRoot === DAG_ROOT_EPOCH_699
       )
     ) {
       console.log(
@@ -227,8 +241,54 @@ class EthOnNearClientContract extends BorshContract {
       process.exit(1)
     }
   }
+
+  async updateDagMerkleRoots (dagsStartEpoch) {
+    if (dagsStartEpoch <= 0 || dagsStartEpoch >= roots.dag_merkle_roots.length) {
+      console.error('Invalid start epoch')
+      process.exit(1)
+    }
+
+    const trimmedRoots = roots.dag_merkle_roots.slice(dagsStartEpoch)
+    await this.accessKeyInit()
+    await this.update_dags_merkle_roots(
+      {
+        dags_start_epoch: dagsStartEpoch,
+        dags_merkle_roots: trimmedRoots
+      },
+      new BN('300000000000000')
+    )
+    console.log('DAG Merkle roots are updated')
+
+    console.log('Checking DAG Merkle roots for EthOnNearClient')
+    const firstRoot = await this.dag_merkle_root({
+      epoch: dagsStartEpoch
+    })
+    const lastRoot = await this.dag_merkle_root({
+      epoch: 699
+    })
+
+    console.log(
+      `The first and the last roots are ${firstRoot} and ${lastRoot}`
+    )
+
+    const expectedFirstRoot = trimmedRoots[0]
+    const expectedLastRoot = DAG_ROOT_EPOCH_699
+
+    if (
+      !(
+        firstRoot === expectedFirstRoot &&
+        lastRoot === expectedLastRoot
+      )
+    ) {
+      console.log(
+        `EthOnNearClient DAG Merkle roots were updated incorrectly! \nFirst root: expected ${expectedFirstRoot}, got ${firstRoot}. \nLast root: expected ${expectedLastRoot}, got: ${lastRoot}`
+      )
+      process.exit(1)
+    }
+  }
 }
 
+exports.dagMerkleRoots = roots
 exports.EthOnNearClientContract = EthOnNearClientContract
 exports.web3BlockToRlp = web3BlockToRlp
 exports.getEthBlock = getEthBlock

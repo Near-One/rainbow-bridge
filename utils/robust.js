@@ -1,9 +1,8 @@
 /// This module gives a few utils for robust error handling,
 /// and wrap web3 with error handling and retry
 const Web3 = require('web3')
-const _ = require('lodash')
+const lodash = require('lodash')
 const nearAPI = require('near-api-js')
-const got = require('got')
 
 const RETRY = 10
 const DELAY = 500
@@ -25,12 +24,55 @@ const backoff = (retries, fn, delay = DELAY, wait = BACKOFF) =>
 const SLOW_TX_ERROR_MSG = 'transaction not executed within 5 minutes'
 
 class RobustWeb3 {
-  constructor(ethNodeUrl) {
+  constructor (ethNodeUrl) {
     this.ethNodeUrl = ethNodeUrl
     this.web3 = new Web3(ethNodeUrl)
+
+    // The eth_maxPriorityFeePerGas method is not part of the Ethereum specification.
+    // This method was added by the Geth team and is not yet supported everywhere.
+    this.web3.extend({
+      property: 'extended',
+      methods: [{
+        name: 'maxPriorityFeePerGas',
+        call: 'eth_maxPriorityFeePerGas',
+        outputFormatter: this.web3.utils.hexToNumberString
+      }]
+    })
   }
 
-  async getBlockNumber() {
+  async maxPriorityFeePerGas () {
+    let value = '1500000000' // satisfactory default value
+    try {
+      // Providers such as Infura and Alchemy have implemented eth_maxPriorityFeePerGas,
+      // however not all pure eth clients or testing tools like Hardhat support it.
+      value = await this.web3.extended.maxPriorityFeePerGas()
+    } catch {
+      console.warn('Fallback maxPriorityFeePerGas calculation.')
+      const baseFeePerGas = (await this.getBlock('latest')).baseFeePerGas
+      const gasPrice = await this.web3.eth.getGasPrice()
+      value = this.web3.utils.toBN(gasPrice)
+        .sub(this.web3.utils.toBN(baseFeePerGas))
+        .toString()
+    }
+
+    return value
+  }
+
+  // Use the method name 'getFeeData' with similar functionality of ethers.js library
+  // https://docs.ethers.io/v5/api/providers/provider/#Provider-getFeeData
+  async getFeeData (multiplier = 1) {
+    const baseFeePerGas = this.web3.utils.toBN((await this.getBlock('latest')).baseFeePerGas)
+    const maxPriorityFeePerGas = this.web3.utils.toBN(await this.maxPriorityFeePerGas())
+      // Multiplying by an integer number can lead to overpayment, consider to implement a fee estimator
+      .mul(this.web3.utils.toBN(Math.max(1, multiplier)))
+    // Default: maxFeePerGas = maxPriorityFeePerGas + 2 * baseFeePerGas
+    const maxFeePerGas = this.web3.utils.toBN(2)
+      .mul(baseFeePerGas)
+      .add(maxPriorityFeePerGas)
+    return { baseFeePerGas, maxPriorityFeePerGas, maxFeePerGas }
+  }
+
+  async getBlockNumber () {
     return await backoff(RETRY, async () => {
       try {
         return await this.web3.eth.getBlockNumber()
@@ -43,7 +85,7 @@ class RobustWeb3 {
     })
   }
 
-  async getBlock(b) {
+  async getBlock (b) {
     return await backoff(RETRY, async () => {
       try {
         const block = await this.web3.eth.getBlock(b)
@@ -62,7 +104,7 @@ class RobustWeb3 {
     })
   }
 
-  async callContract(contract, method, args, options) {
+  async callContract (contract, method, args, options) {
     let gasPrice = await this.web3.eth.getGasPrice()
     let nonce = await this.web3.eth.getTransactionCount(options.from, 'pending')
     while (gasPrice < 10000 * 1e9) {
@@ -92,9 +134,9 @@ class RobustWeb3 {
           this.web3.eth.sendTransaction(tx),
           SLOW_TX_ERROR_MSG
         )
-        if (_.isArray(receipt.logs)) {
+        if (lodash.isArray(receipt.logs)) {
           // decode logs
-          const events = _.map(receipt.logs, function (log) {
+          const events = lodash.map(receipt.logs, function (log) {
             return contract._decodeEventABI.call(
               {
                 name: 'ALLEVENTS',
@@ -135,7 +177,8 @@ class RobustWeb3 {
           )
           gasPrice *= 2
         } else if (
-          e.message.indexOf("the tx doesn't have the correct nonce") >= 0
+          e.message.indexOf("the tx doesn't have the correct nonce") >= 0 ||
+          e.message.indexOf('replacement transaction underpriced') >= 0
         ) {
           console.log('nonce error, retrying with new nonce')
           nonce++
@@ -150,7 +193,7 @@ class RobustWeb3 {
     throw new Error('Cannot finish txn within 1e13 gas')
   }
 
-  async getTransactionReceipt(t) {
+  async getTransactionReceipt (t) {
     return await backoff(RETRY, async () => {
       try {
         return await this.web3.eth.getTransactionReceipt(t)
@@ -163,7 +206,7 @@ class RobustWeb3 {
     })
   }
 
-  destroy() {
+  destroy () {
     if (this.web3.currentProvider.connection && this.web3.currentProvider.connection.close) {
       // Only WebSocket provider has close, HTTPS don't
       this.web3.currentProvider.connection.close()
@@ -171,7 +214,7 @@ class RobustWeb3 {
   }
 }
 
-function normalizeEthKey(key) {
+function normalizeEthKey (key) {
   let result = key.toLowerCase()
   if (!result.startsWith('0x')) {
     result = '0x' + result
@@ -194,7 +237,7 @@ const promiseWithTimeout = (timeoutMs, promise, failureMessage) => {
   })
 }
 
-async function nearJsonContractFunctionCall(
+async function nearJsonContractFunctionCall (
   contractId,
   sender,
   method,
@@ -242,16 +285,16 @@ const signAndSendTransaction = async (
         const status = await account.connection.provider.status()
         let signedTx
           ;[txHash, signedTx] = await nearAPI.transactions.signTransaction(
-            receiverId,
-            ++accessKey.nonce,
-            actions,
-            nearAPI.utils.serialize.base_decode(
-              status.sync_info.latest_block_hash
-            ),
-            account.connection.signer,
-            account.accountId,
-            account.connection.networkId
-          )
+          receiverId,
+          ++accessKey.accessKey.nonce,
+          actions,
+          nearAPI.utils.serialize.base_decode(
+            status.sync_info.latest_block_hash
+          ),
+          account.connection.signer,
+          account.accountId,
+          account.connection.networkId
+        )
         const bytes = signedTx.encode()
         sendTxnAsync = async () => {
           await account.connection.provider.sendJsonRpc('broadcast_tx_async', [

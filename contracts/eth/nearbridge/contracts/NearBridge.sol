@@ -21,8 +21,6 @@ contract NearBridge is INearBridge, AdminControlled {
         uint256 stakeThreshold;
     }
 
-    // Whether the contract was initialized.
-    bool public initialized;
     uint256 public lockEthAmount;
     // lockDuration and replaceDuration shouldn't be extremely big, so adding them to an uint64 timestamp should not overflow uint256.
     uint256 public lockDuration;
@@ -30,24 +28,28 @@ contract NearBridge is INearBridge, AdminControlled {
     uint256 public replaceDuration;
     Ed25519 immutable edwards;
 
-    Epoch[3] epochs;
-    uint curEpoch;
-    uint64 curHeight;
+    // End of challenge period. If zero, untrusted* fields and lastSubmitter are not meaningful.
+    uint256 public lastValidAt;
 
+    uint64 curHeight;
     // The most recently added block. May still be in its challenge period, so should not be trusted.
     uint64 untrustedHeight;
-    uint256 untrustedTimestamp;
+
+    // Address of the account which submitted the last block.
+    address lastSubmitter;
+
+    // Whether the contract was initialized.
+    bool public initialized;
     bool untrustedNextEpoch;
     bytes32 untrustedHash;
     bytes32 untrustedMerkleRoot;
     bytes32 untrustedNextHash;
+    uint256 untrustedTimestamp;
     uint256 untrustedSignatureSet;
     NearDecoder.Signature[MAX_BLOCK_PRODUCERS] untrustedSignatures;
 
-    // Address of the account which submitted the last block.
-    address lastSubmitter;
-    // End of challenge period. If zero, untrusted* fields and lastSubmitter are not meaningful.
-    uint public lastValidAt;
+    Epoch[3] epochs;
+    uint256 curEpoch;
 
     mapping(uint64 => bytes32) blockHashes_;
     mapping(uint64 => bytes32) blockMerkleRoots_;
@@ -88,13 +90,13 @@ contract NearBridge is INearBridge, AdminControlled {
         payable(msg.sender).transfer(amount);
     }
 
-    function challenge(address payable receiver, uint signatureIndex) public override pausable(PAUSED_CHALLENGE) {
+    function challenge(address payable receiver, uint signatureIndex) external override pausable(PAUSED_CHALLENGE) {
         require(block.timestamp < lastValidAt, "No block can be challenged at this time");
         require(!checkBlockProducerSignatureInHead(signatureIndex), "Can't challenge valid signature");
 
         balanceOf[lastSubmitter] = balanceOf[lastSubmitter] - lockEthAmount;
-        receiver.transfer(lockEthAmount / 2);
         lastValidAt = 0;
+        receiver.call{value: lockEthAmount / 2}("");
     }
 
     function checkBlockProducerSignatureInHead(uint signatureIndex) public view override returns (bool) {
@@ -103,8 +105,12 @@ contract NearBridge is INearBridge, AdminControlled {
         unchecked {
             Epoch storage untrustedEpoch = epochs[untrustedNextEpoch ? (curEpoch + 1) % 3 : curEpoch];
             NearDecoder.Signature storage signature = untrustedSignatures[signatureIndex];
-            bytes memory message =
-                abi.encodePacked(uint8(0), untrustedNextHash, Utils.swapBytes8(untrustedHeight + 2), bytes23(0));
+            bytes memory message = abi.encodePacked(
+                uint8(0),
+                untrustedNextHash,
+                Utils.swapBytes8(untrustedHeight + 2),
+                bytes23(0)
+            );
             (bytes32 arg1, bytes9 arg2) = abi.decode(message, (bytes32, bytes9));
             return edwards.check(untrustedEpoch.keys[signatureIndex], signature.r, signature.s, arg1, arg2);
         }
@@ -257,7 +263,10 @@ contract NearBridge is INearBridge, AdminControlled {
 
     function setBlockProducers(NearDecoder.BlockProducer[] memory src, Epoch storage epoch) internal {
         uint cnt = src.length;
-        require(cnt <= MAX_BLOCK_PRODUCERS);
+        require(
+            cnt <= MAX_BLOCK_PRODUCERS,
+            "It is not expected having that many block producers for the provided block"
+        );
         epoch.numBPs = cnt;
         unchecked {
             for (uint i = 0; i < cnt; i++) {

@@ -39,7 +39,7 @@ class DeployToken {
       nodeUrl: nearNodeUrl,
       networkId: nearNetworkId,
       masterAccount: nearMasterAccount,
-      deps: { keyStore: keyStore }
+      keyStore
     })
 
     await verifyAccount(near, nearMasterAccount)
@@ -63,7 +63,7 @@ class DeployToken {
           address: remove0x(ethTokenAddress)
         },
         new BN('300000000000000'),
-        new BN('3000000000000000000000000')
+        new BN('3500000000000000000000000')
       )
     } catch (err) {
       console.log(

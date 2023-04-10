@@ -56,8 +56,30 @@ func main() {
 		}
 		cache, err = ethashproof.LoadCache(int(epoch))
 		if err != nil {
-			fmt.Printf("Getting cache failed after trying to creat it: %s. Abort.\n", err)
+			fmt.Printf("Getting cache failed after trying to create it: %s. Abort.\n", err)
 			return
+		}
+	}
+
+	// Remove outdated epoch
+	if epoch > 1 {
+		outdatedEpoch := epoch - 2
+		err = os.Remove(ethash.PathToDAG(outdatedEpoch, ethash.DefaultDir))
+		if err != nil {
+			if os.IsNotExist(err) {
+				fmt.Printf("DAG for previous epoch (%d) does not exist, nothing to remove.\n", outdatedEpoch)
+			} else {
+				fmt.Println(err)
+			}
+		}
+
+		err = os.Remove(ethashproof.PathToCache(outdatedEpoch))
+		if err != nil {
+			if os.IsNotExist(err) {
+				fmt.Printf("Cache for previous epoch (%d) does not exist, nothing to remove.\n", outdatedEpoch)
+			} else {
+				fmt.Println(err)
+			}
 		}
 	}
 

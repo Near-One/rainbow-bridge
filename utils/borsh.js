@@ -11,6 +11,9 @@ const {
   signAndSendTransaction
 } = require('./robust')
 
+const VALIDATOR_STAKE_V1 = 0
+const VALIDATOR_STAKE_V2 = 1
+
 class BorshError extends Error {
   constructor (message) {
     super(message)
@@ -21,15 +24,15 @@ class BorshError extends Error {
 
 function serializeField (schema, value, fieldType, writer) {
   if (fieldType === 'u8') {
-    writer.write_u8(value)
+    writer.writeU8(value)
   } else if (fieldType === 'u64') {
-    writer.write_u64(value)
+    writer.writeU64(value)
   } else if (fieldType === 'u128') {
-    writer.write_u128(value)
+    writer.writeU128(value)
   } else if (fieldType === 'bool') {
-    return writer.write_u8(value ? 1 : 0)
+    return writer.writeU8(value ? 1 : 0)
   } else if (fieldType === 'string') {
-    return writer.write_string(value)
+    return writer.writeString(value)
   } else if (fieldType instanceof Array) {
     if (typeof fieldType[0] === 'number') {
       if (value.length !== fieldType[0]) {
@@ -37,9 +40,9 @@ function serializeField (schema, value, fieldType, writer) {
           `Expecting byte array of length ${fieldType[0]}, but got ${value.length} bytes`
         )
       }
-      writer.write_fixed_array(value)
+      writer.writeFixedArray(value)
     } else {
-      writer.write_array(value, (item) => {
+      writer.writeArray(value, (item) => {
         serializeField(schema, item, fieldType[0], writer)
       })
     }
@@ -50,9 +53,9 @@ function serializeField (schema, value, fieldType, writer) {
     }
     if (structSchema.kind === 'option') {
       if (value === null) {
-        writer.write_u8(0)
+        writer.writeU8(0)
       } else {
-        writer.write_u8(1)
+        writer.writeU8(1)
         serializeField(schema, value, structSchema.type, writer)
       }
     } else if (structSchema.kind === 'struct') {
@@ -60,7 +63,7 @@ function serializeField (schema, value, fieldType, writer) {
         serializeField(schema, value[fieldName], fieldType, writer)
       )
     } else if (structSchema.kind === 'function') {
-      writer.write_buffer(structSchema.ser(value))
+      writer.writeBuffer(structSchema.ser(value))
     } else {
       throw new Error(
         `Unexpected schema kind: ${structSchema.kind} for ${fieldType}`
@@ -221,7 +224,7 @@ const signAndSendTransactionAsync = async (
   const status = await account.connection.provider.status()
   const [txHash, signedTx] = await nearAPI.transactions.signTransaction(
     receiverId,
-    ++accessKey.nonce,
+    ++accessKey.accessKey.nonce,
     actions,
     nearAPI.utils.serialize.base_decode(status.sync_info.latest_block_hash),
     account.connection.signer,
@@ -297,10 +300,13 @@ class BorshContract {
         value: async (args) => {
           args = serialize(borshSchema, d.inputFieldType, args)
           const result = await backoff(10, () =>
-            this.account.connection.provider.query(
-              `call/${this.contractId}/${d.methodName}`,
-              nearAPI.utils.serialize.base_encode(args)
-            )
+            this.account.connection.provider.query({
+              request_type: 'call_function',
+              finality: 'final',
+              account_id: this.contractId,
+              method_name: d.methodName,
+              args_base64: args.toString('base64')
+            })
           )
           if (result.logs) {
             this.account.printLogs(this.contractId, result.logs)
@@ -404,6 +410,9 @@ function borshify (block) {
     Buffer.concat(
       block.next_bps.map((nextBp) =>
         Buffer.concat([
+          Object.prototype.hasOwnProperty.call(nextBp, 'validator_stake_struct_version') && nextBp.validator_stake_struct_version === 'V2'
+            ? Buffer.from([VALIDATOR_STAKE_V2])
+            : Buffer.from([VALIDATOR_STAKE_V1]),
           Web3.utils.toBN(nextBp.account_id.length).toBuffer('le', 4),
           Buffer.from(nextBp.account_id),
           nextBp.public_key.substr(0, 8) === 'ed25519:'
@@ -438,6 +447,9 @@ function borshifyInitialValidators (initialValidators) {
     Buffer.concat(
       initialValidators.map((nextBp) =>
         Buffer.concat([
+          Object.prototype.hasOwnProperty.call(nextBp, 'validator_stake_struct_version') && nextBp.validator_stake_struct_version === 'V2'
+            ? Buffer.from([VALIDATOR_STAKE_V2])
+            : Buffer.from([VALIDATOR_STAKE_V1]),
           Web3.utils.toBN(nextBp.account_id.length).toBuffer('le', 4),
           Buffer.from(nextBp.account_id),
           nextBp.public_key.substr(0, 8) === 'ed25519:'

@@ -1,0 +1,16 @@
+beacon_endpoint = "https://lodestar-goerli.chainsafe.io"
+eth1_endpoint = "https://goerli.infura.io/v3/ETH1_INFURA_API_KEY"
+path_to_current_sync_committee = "./data/goerli_testdata/next_sync_committee_goerli_period_473.json"
+path_to_next_sync_committee = "./data/goerli_testdata/next_sync_committee_goerli_period_474.json"
+path_to_execution_blocks_headers = "./data/goerli_testdata/execution_block_headers_goerli_slots_3885697_3886176.json"
+path_to_light_client_updates = "./data/goerli_testdata/light_client_updates_goerli_slots_3885697_3886176.json"
+path_to_attested_state = "./data/goerli_testdata/beacon_state_goerli_slot_3885731.json"
+network_name = "Goerli"
+first_slot = 3885632
+slot_without_block = 3885649
+right_bound_in_slot_search = 3885800
+left_empty_slot = 3885722
+right_empty_slot = 3885723
+slot_without_block_2 = 3885743
+wasm_filepath = "../../contracts/near/res/eth2_client.wasm"
+finalized_slot_before_new_period = 3891168

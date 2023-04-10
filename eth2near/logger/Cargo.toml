@@ -1,0 +1,8 @@
+[package]
+name = "eth2near-logger"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+log = { version = "0.4", features = ["std", "serde"] }
+atomic_refcell = "0.1.8"
