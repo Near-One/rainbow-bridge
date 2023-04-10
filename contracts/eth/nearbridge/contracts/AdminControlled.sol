@@ -4,22 +4,30 @@ pragma solidity 0.8.7;
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 contract AdminControlled is AccessControlUpgradeable {
-    address public admin;
     uint public paused;
 
     bytes32 public constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
-    bytes32 public constant GNOSIS_SAFE_ROLE = keccak256("GNOSIS_SAFE_ROLE");
+    bytes32 public constant UPGRADER_ROLE = keccak256("BRIDGE_UPGRADER_ROLE");
 
     modifier pausable(uint flag) {
         require((paused & flag) == 0 || hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "Paused");
         _;
     }
 
-    function __AdminControlled_init(uint _flags) public onlyInitializing {
+    function __AdminControlled_init(uint _flags, address upgrader) public onlyInitializing {
         __AccessControl_init();
         paused = _flags;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(PAUSE_ROLE, msg.sender);
+        _grantRole(UPGRADER_ROLE, upgrader);
+    }
+
+    function transferUpgraderAdmin(address newUpgrader) public onlyRole(UPGRADER_ROLE) {
+        require(newUpgrader != address(0), "new upgrader is the zero address");
+        _grantRole(UPGRADER_ROLE, newUpgrader);
+        _revokeRole(UPGRADER_ROLE, _msgSender());
+        emit UpgraderOwnershipTransferred(_msgSender(), newUpgrader);
+
     }
 
     function adminPause(uint flags) external onlyRole(PAUSE_ROLE) {
@@ -30,7 +38,6 @@ contract AdminControlled is AccessControlUpgradeable {
         require(newAdmin != address(0), "Ownable: new owner is the zero address");
         _grantRole(DEFAULT_ADMIN_ROLE, newAdmin);
         _grantRole(PAUSE_ROLE, newAdmin);
-        admin = newAdmin;
 
         _revokeRole(PAUSE_ROLE, _msgSender());
         _revokeRole(DEFAULT_ADMIN_ROLE, _msgSender());
@@ -61,4 +68,5 @@ contract AdminControlled is AccessControlUpgradeable {
     function adminReceiveEth() external payable {}
 
     event OwnershipTransferred(address oldAdmin, address newAdmin);
+    event UpgraderOwnershipTransferred(address oldUpgrader, address newUpgrader);
 }

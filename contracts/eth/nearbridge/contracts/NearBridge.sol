@@ -65,11 +65,11 @@ contract NearBridge is INearBridge, UUPSUpgradeable, AdminControlled {
         uint256 lockEthAmount_,
         uint256 lockDuration_,
         uint256 replaceDuration_,
-        uint256 pausedFlags_
-        // address safeAddress_
+        uint256 pausedFlags_,
+        address upgraderAdmin_
     ) public initializer checkDuration(replaceDuration_, lockDuration_) {
         __UUPSUpgradeable_init();
-        __AdminControlled_init(pausedFlags_);
+        __AdminControlled_init(pausedFlags_, upgraderAdmin_);
 
         edwards = ed;
         setLockEthAmount(lockEthAmount_);
@@ -336,5 +336,5 @@ contract NearBridge is INearBridge, UUPSUpgradeable, AdminControlled {
         lockEthAmount = lockEthAmount_;
     }
 
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {}
 }
