@@ -45,6 +45,7 @@
         "lint:fix": "yarn lint:js:fix && yarn lint:sol:fix"
     },
     "dependencies": {
-        "ethereum-waffle": "^3.4.0"
+        "ethereum-waffle": "^3.4.0",
+        "@openzeppelin/hardhat-defender": "^1.8.2"
     }
 }

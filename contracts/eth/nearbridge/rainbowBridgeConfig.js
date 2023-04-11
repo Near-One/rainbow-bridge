@@ -12,7 +12,6 @@ const fs = require('fs');
 const os = require('os');
 const { task } = require('hardhat/config');
 
-const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 
 task('deployNearBridgeProxy', 'Deploy NearBridge proxy')
     .addParam('ethclientlockethamount', 'ethClientLockEthAmount')
@@ -53,7 +52,6 @@ function setupRainbowBridgeNetwork () {
     const p = path.join(os.homedir(), '.rainbow/config.json');
     const cfg = fs.readFileSync(p);
     const rainbowConfig = JSON.parse(cfg);
-    console.log("config: ", rainbowConfig);
     return {
         url: rainbowConfig.ethNodeUrl,
         accounts: [rainbowConfig.ethMasterSk],
@@ -98,13 +96,10 @@ module.exports = {
         },
     },
     etherscan: {
-        apiKey: '', // ETHERSCAN_API_KEY
+        apiKey: process.env.ETHERSCAN_API_KEY, // ETHERSCAN_API_KEY
     },
     defender: {
         apiKey: process.env.DEFENDER_TEAM_API_KEY,
         apiSecret: process.env.DEFENDER_TEAM_API_SECRET_KEY,
-    },
-    mocha: {
-        timeout: 60000,
-    },
+    }
 };

@@ -18,8 +18,8 @@ contract NearProver is INearProver, UUPSUpgradeable, AdminControlled {
     uint constant UNPAUSE_ALL = 0;
     uint constant PAUSED_VERIFY = 1;
 
-    function initialize(INearBridge _bridge, uint flag) public initializer {
-        __AdminControlled_init(flag);
+    function initialize(INearBridge _bridge, uint flag, address bridgeUpgrader) public initializer {
+        __AdminControlled_init(flag, bridgeUpgrader);
         bridge = _bridge;
     }
 
@@ -75,5 +75,5 @@ contract NearProver is INearProver, UUPSUpgradeable, AdminControlled {
         }
     }
 
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {}
 }

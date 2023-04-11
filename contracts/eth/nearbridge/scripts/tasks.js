@@ -64,7 +64,6 @@ async function deployNearBridgeProxy (hre, args) {
         .mul(ethers.BigNumber.from('1000000000'));
     let [signer] = await ethers.getSigners();
     const NearBridgeFactory = (await ethers.getContractFactory('NearBridge')).connect(signer);
-    console.log(await ethers.getSigners());
     // deploy the proxy contract
     const NearBridge = await upgrades.deployProxy(
         NearBridgeFactory,

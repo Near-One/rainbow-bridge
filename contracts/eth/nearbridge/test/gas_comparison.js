@@ -3,6 +3,9 @@ const { ethers, upgrades, network } = require('hardhat');
 
 const { borshify, borshifyInitialValidators } = require('rainbow-bridge-utils');
 
+// Gnosis safe address
+const bridgeUpgrader = '0xFb2C6465654024c03DC564d237713F620d1E9491';
+
 async function increaseTime (time) {
     await network.provider.send('evm_increaseTime', [time]);
     await network.provider.send('evm_mine', []);
@@ -26,6 +29,9 @@ describe('Test gas required by calls through proxy', () => {
                 ethers.BigNumber.from('10'), // lock duration
                 ethers.BigNumber.from('20000000000'), // replace duration
                 0,
+                bridgeUpgrader
+                
+
             ],
             { kind: 'uups' },
         );
@@ -80,6 +86,7 @@ describe('Test gas required by calls without proxy', () => {
             ethers.BigNumber.from('10'), // lock duration
             ethers.BigNumber.from('20000000000'), // replace duration
             0,
+            bridgeUpgrader
         );
 
         await NearBridge.deposit({ value: ethers.utils.parseEther('1') });
@@ -110,14 +117,14 @@ describe('Test gas required by calls without proxy', () => {
         expect(await NearBridge.blockHashes(9610)).to.be.equal(
             '0xf28629da269e59f2494c6bf283e9e67dadaa1c1f753607650d21e5e5b916a0dc',
         );
-        if (gasUsage.withProxy >= gasUsage.withProxy) {
+        if (gasUsage.withProxy >= gasUsage.withoutProxy) {
             console.log(
                 `Call 'addLightClientBlock' through proxy contract consumes ${gasUsage.withProxy} gas which is >  normal call ${gasUsage.withoutProxy} gas`,
             );
             console.log(
                 `Gas difference: ${gasUsage.withProxy - gasUsage.withoutProxy}`,
             );
-        } else if (gasUsage.withProxy < gasUsage.withProxy) {
+        } else if (gasUsage.withProxy < gasUsage.withoutProxy) {
             console.log(
                 `Call 'addLightClientBlock' through without proxy contract consumes ${gasUsage.withoutProxy} gas which is > call through proxy contract ${gasUsage.withProxy} gas`,
             );
