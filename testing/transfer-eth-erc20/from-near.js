@@ -370,7 +370,7 @@ class TransferEthERC20FromNear {
       nodeUrl: nearNodeUrl,
       networkId: nearNetworkId,
       masterAccount: nearSenderAccountId,
-      deps: { keyStore: keyStore }
+      keyStore
     })
     const nearSenderAccount = new nearAPI.Account(
       near.connection,

@@ -17,9 +17,7 @@ class AddressWatcher {
     this.near = await nearAPI.connect({
       nodeUrl: nearNodeUrl,
       networkId: networkId,
-      deps: {
-        keyStore: new nearAPI.keyStores.InMemoryKeyStore()
-      }
+      keyStore: new nearAPI.keyStores.InMemoryKeyStore()
     })
 
     this.metricsPort = metricsPort

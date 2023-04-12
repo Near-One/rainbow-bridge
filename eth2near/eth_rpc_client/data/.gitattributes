@@ -1,0 +1,5 @@
+beacon_state_goerli_slot_5243067.json filter=lfs diff=lfs merge=lfs -text
+beacon_state_goerli_slot_3887699.json filter=lfs diff=lfs merge=lfs -text
+beacon_state_goerli_slot_3887616.json filter=lfs diff=lfs merge=lfs -text
+beacon_state_* filter=lfs diff=lfs merge=lfs -text
+

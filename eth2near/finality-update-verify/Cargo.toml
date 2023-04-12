@@ -1,0 +1,18 @@
+[package]
+name = "finality-update-verify"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bls = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
+tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
+types =  { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
+eth-types = { path ="../../contracts/near/eth-types/" }
+eth2-utility  = { path ="../../contracts/near/eth2-utility"}
+bitvec = "1.0.0"
+
+[dev-dependencies]
+eth2_to_near_relay = { path = "../eth2near-block-relay-rs"}
+serde_json = "1.0.74"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.5.9"

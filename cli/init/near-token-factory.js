@@ -43,7 +43,7 @@ class InitNearTokenFactory {
       nodeUrl: nearNodeUrl,
       networkId: nearNetworkId,
       masterAccount: nearMasterAccount,
-      deps: { keyStore: keyStore }
+      keyStore
     })
 
     await verifyAccount(near, nearMasterAccount)

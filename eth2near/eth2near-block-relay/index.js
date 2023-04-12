@@ -11,7 +11,8 @@ const {
   web3BlockToRlp,
   EthOnNearClientContract,
   borshSchema,
-  getEthBlock
+  getEthBlock,
+  dagMerkleRoots
 } = require('./eth-on-near-client')
 const {
   EthOnNearProverContract
@@ -32,9 +33,12 @@ const MAX_GAS_PER_BLOCK = '300000000000000'
 
 function ethashproof (command, _callback) {
   return new Promise((resolve) =>
-    exec(command, (error, stdout, _stderr) => {
+    exec(command, (error, stdout, stderr) => {
       if (error) {
         console.error(error)
+      }
+      if (stderr) {
+        console.error(stderr)
       }
       resolve(stdout)
     })
@@ -77,6 +81,43 @@ async function binarySearchWithEstimate (limitLo, limitHi, estimatedPosition, pr
   return hi
 }
 
+const NUM_OF_BLOCKS_PER_EPOCH = 30000
+const NUM_OF_BLOCKS_TO_END_OF_EPOCH = 5000
+
+class Ethashproof {
+  constructor () {
+    this.nextEpochPromise = null
+    this.nextEpoch = null
+  }
+
+  async getParseBlock (blockNumber, blockRlp) {
+    const currentEpoch = Math.trunc(blockNumber / NUM_OF_BLOCKS_PER_EPOCH)
+    const remBlocksToEndOfEpoch = NUM_OF_BLOCKS_PER_EPOCH - (blockNumber % NUM_OF_BLOCKS_PER_EPOCH)
+
+    if (this.nextEpoch === currentEpoch && this.nextEpochPromise != null) {
+      await this.nextEpochPromise
+    }
+
+    const result = await ethashproof(
+        `${BRIDGE_SRC_DIR}/eth2near/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`
+    )
+
+    const nextEpoch = currentEpoch + 1
+    if (this.nextEpoch !== nextEpoch && remBlocksToEndOfEpoch < NUM_OF_BLOCKS_TO_END_OF_EPOCH) {
+      this.calculateNextEpoch(nextEpoch)
+    }
+
+    return result
+  }
+
+  calculateNextEpoch (nextEpoch) {
+    this.nextEpoch = nextEpoch
+    this.nextEpochPromise = ethashproof(
+        `${BRIDGE_SRC_DIR}/eth2near/ethashproof/cmd/cache/cache ${nextEpoch}`
+    )
+  }
+}
+
 class Eth2NearRelay {
   initialize (ethClientContract, {
     ethNodeUrl,
@@ -85,6 +126,7 @@ class Eth2NearRelay {
     nearNetworkId,
     metricsPort
   }) {
+    this.ethashproof = new Ethashproof()
     this.gasPerTransaction = new BN(gasPerTransaction)
     const limitSubmitBlock = new BN(MAX_GAS_PER_BLOCK).div(this.gasPerTransaction).toNumber()
     this.totalSubmitBlock = parseInt(totalSubmitBlock)
@@ -194,7 +236,7 @@ class Eth2NearRelay {
             actions.push(action)
           }
 
-          const task = this.ethClientContract.account.signAndSendTransaction(this.ethClientContract.contractId, actions)
+          const task = this.ethClientContract.account.signAndSendTransaction({ receiverId: this.ethClientContract.contractId, actions })
 
           console.log(
             `Submit txn to add block ${clientBlockNumber + 1
@@ -222,9 +264,7 @@ class Eth2NearRelay {
       const blockRlp = this.web3.utils.bytesToHex(
         web3BlockToRlp(block)
       )
-      const unparsedBlock = await ethashproof(
-        `${BRIDGE_SRC_DIR}/eth2near/ethashproof/cmd/relayer/relayer ${blockRlp} | sed -e '1,/Json output/d'`
-      )
+      const unparsedBlock = await this.ethashproof.getParseBlock(blockNumber, blockRlp)
       return JSON.parse(unparsedBlock)
     } catch (e) {
       console.error(`Failed to get or parse block ${blockNumber}: ${e}`)
@@ -271,3 +311,4 @@ exports.EthOnNearProverContract = EthOnNearProverContract
 exports.logFromWeb3 = logFromWeb3
 exports.receiptFromWeb3 = receiptFromWeb3
 exports.ethToNearFindProof = ethToNearFindProof
+exports.dagMerkleRoots = dagMerkleRoots

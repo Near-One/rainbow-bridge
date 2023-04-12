@@ -62,7 +62,7 @@ it('Set setLockEthAmount', async function () {
     .revertedWith('The lockEthAmount have to be an even and positive number')
 });
 
-it.only('should be ok', async function () {
+it('should be ok', async function () {
     const block120998 = borshify(require('./block_120998.json'));
     const block121498 = borshify(require('./block_121498.json'));
     const block121998 = borshify(require('./block_121998.json'));
@@ -94,6 +94,9 @@ it.only('should be ok', async function () {
 
 if (process.env.NEAR_HEADERS_DIR) {
     it('ok with many block headers', async function () {
+        // Skip until tests are upgraded having blocks after nearcore 1.23.0
+        this.skip();
+
         this.timeout(0);
         const blockFiles = await fs.readdir(process.env.NEAR_HEADERS_DIR);
         blockFiles.sort((a, b) => a.split('.')[0] - b.split('.')[0]);

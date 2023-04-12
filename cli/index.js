@@ -39,6 +39,7 @@ const { ETHDump } = require('./commands/eth-dump')
 const { NearDump } = require('./commands/near-dump')
 const { ethToNearFindProof } = require('rainbow-bridge-eth2near-block-relay')
 const { RainbowConfig } = require('rainbow-bridge-utils')
+const { UpdateDagMerkleRoots } = require('./commands/update-dag-merkle-roots')
 const {
   InitNearContracts,
   InitNearTokenFactory,
@@ -158,9 +159,19 @@ RainbowConfig.declareOption(
   '1'
 )
 RainbowConfig.declareOption(
+  'eth-use-eip-1559',
+  'Allow submitting transactions using the EIP-1559 pricing mechanism.',
+  'false'
+)
+RainbowConfig.declareOption(
   'metrics-port',
   'On which port to expose metrics for corresponding relayer, if not provided no metrics exposed',
   null
+)
+RainbowConfig.declareOption(
+  'log-verbose',
+  'Log more information than the standard logging process.',
+  'false'
 )
 
 // User-specific arguments.
@@ -279,6 +290,21 @@ RainbowConfig.declareOption(
   '1'
 )
 RainbowConfig.declareOption(
+  'near2eth-relay-block-select-duration',
+  'Number of seconds to select the optimal block to submit.',
+  '300'
+)
+RainbowConfig.declareOption(
+  'near2eth-relay-next-block-select-delay-ms',
+  'Number of ms until the next request in the optimal block selection algorithm.',
+  '1200'
+)
+RainbowConfig.declareOption(
+  'near2eth-relay-after-submit-delay-ms',
+  'Number of ms to wait after successfully submitting light client block to prevent submitting the same block again.',
+  '240000'
+)
+RainbowConfig.declareOption(
   'watchdog-delay',
   'Number of seconds to wait after validating all signatures.',
   '300'
@@ -366,9 +392,14 @@ RainbowConfig.addOptions(
     'near2eth-relay-min-delay',
     'near2eth-relay-max-delay',
     'near2eth-relay-error-delay',
+    'near2eth-relay-block-select-duration',
+    'near2eth-relay-next-block-select-delay-ms',
+    'near2eth-relay-after-submit-delay-ms',
     'eth-gas-multiplier',
+    'eth-use-eip-1559',
     'daemon',
-    'metrics-port'
+    'metrics-port',
+    'log-verbose'
   ]
 )
 
@@ -876,7 +907,12 @@ RainbowConfig.addOptions(
     'near2eth-relay-min-delay',
     'near2eth-relay-max-delay',
     'near2eth-relay-error-delay',
-    'eth-gas-multiplier'
+    'near2eth-relay-block-select-duration',
+    'near2eth-relay-next-block-select-delay-ms',
+    'near2eth-relay-after-submit-delay-ms',
+    'eth-gas-multiplier',
+    'eth-use-eip-1559',
+    'log-verbose'
   ]
 )
 
@@ -921,6 +957,23 @@ RainbowConfig.addOptions(
   ['near-node-url']
 )
 
+RainbowConfig.addOptions(
+  program
+    .command('eth-on-near-client-update-dag-merkle-roots <dags_start_epoch>')
+    .description(
+      'Update DAG Merkle roots for Eth on Near Client'
+    ),
+  async (dagsStartEpoch, args) => {
+    await UpdateDagMerkleRoots.execute({ dagsStartEpoch, ...args })
+  },
+  [
+    'near-network-id',
+    'near-node-url',
+    'eth-node-url',
+    'near-client-account',
+    'near-client-sk'
+  ]
+)
 ; (async () => {
   await program.parseAsync(process.argv)
 })()

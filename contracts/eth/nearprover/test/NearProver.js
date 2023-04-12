@@ -62,6 +62,7 @@ it('should be ok', async function () {
     await testProof('0x1f7129496c461c058fb3daf258d89bf7dacb4efad5742351f66098a00bb6fa53', 5563, './proof4.json');
     await testProof('0xa9cd8eb4dd92ba5f2fef47d68e1d73ac8c57047959f6f8a2dcc664419e74e4b8', 384, './proof5.json');
     await testProof('0xcc3954a51b7c1a86861df8809f79c2bf839741e3e380e28360b8b3970a5d90bd', 377, './proof6.json');
+    await testProof('0x8298c9cd1048df03e9ccefac4b022636a30a2f7e6a8c33cc4104901b92e08dfd', 93700915, './proof7.json');
 });
 
 if (process.env['NEAR_PROOFS_DIR']) {
@@ -81,7 +82,7 @@ if (process.env['NEAR_PROOFS_DIR']) {
 }
 
 describe('NearProver with admin access', () => {
-    const BRIDGE_ADDRESS_SLOT = 2;
+    const BRIDGE_ADDRESS_SLOT = 3;
 
     beforeEach(async () => {
         [deployerAccount] = await ethers.getSigners();

@@ -1,4 +1,5 @@
 .env
+*.env
 node_modules
 artifacts
 cache
@@ -8,9 +9,16 @@ node_modules
 target
 testdata
 vendor
+.history
+.DS_Store
+.vscode
+.history
 
 # Ignore ethashproof binaries
 eth2near/ethashproof/cmd/cache/cache
 eth2near/ethashproof/cmd/epoch/epoch
 eth2near/ethashproof/cmd/relayer/relayer
 
+.gitsecret/keys/random_seed
+!*.secret
+eth2near/eth2near-block-relay-rs/data/API_KEY

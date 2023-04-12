@@ -1,0 +1,18 @@
+[package]
+name = "eth2_hashing"
+version = "0.3.0"
+authors = ["Aurora <hello@aurora.dev>"]
+edition = "2021"
+license = "Apache-2.0"
+description = "Reimplemented eth2_hashing using near-sdk, for usage in NEAR WASM contracts"
+
+[dependencies]
+lazy_static = { version = "1.4.0", optional = true }
+near-sdk = "4.1.1"
+
+[dev-dependencies]
+rustc-hex = "2.1.0"
+
+[features]
+default = ["zero_hash_cache"]
+zero_hash_cache = ["lazy_static"]

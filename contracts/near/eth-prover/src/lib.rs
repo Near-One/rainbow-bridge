@@ -1,18 +1,17 @@
 use admin_controlled::Mask;
 use borsh::{BorshDeserialize, BorshSerialize};
+use core::convert::TryFrom;
 use eth_types::*;
 use near_sdk::{env, ext_contract, near_bindgen, Gas, PanicOnDefault, PromiseOrValue};
 use rlp::Rlp;
 
-near_sdk::setup_alloc!();
-
 type AccountId = String;
 
 /// Gas to call block_hash_safe
-const BLOCK_HASH_SAFE_GAS: Gas = 10_000_000_000_000;
+const BLOCK_HASH_SAFE_GAS: Gas = Gas(10_000_000_000_000);
 
 /// Gas to call on_block_hash
-const ON_BLOCK_HASH_GAS: Gas = 5_000_000_000_000;
+const ON_BLOCK_HASH_GAS: Gas = Gas(5_000_000_000_000);
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -53,11 +52,8 @@ const PAUSE_VERIFY: Mask = 1;
 #[near_bindgen]
 impl EthProver {
     #[init]
+    #[private]
     pub fn init(#[serializer(borsh)] bridge_smart_contract: AccountId) -> Self {
-        assert!(
-            env::state_read::<EthProver>().is_none(),
-            "The contract is already initialized"
-        );
         Self {
             bridge_smart_contract,
             paused: Mask::default(),
@@ -89,19 +85,15 @@ impl EthProver {
         #[serializer(borsh)] block_number: u64,
         #[serializer(borsh)] expected_block_hash: H256,
     ) -> PromiseOrValue<bool> {
-        eth_client::block_hash_safe(
-            block_number,
-            &self.bridge_smart_contract,
-            0,
-            BLOCK_HASH_SAFE_GAS,
-        )
-        .then(remote_self::on_block_hash(
-            expected_block_hash,
-            &env::current_account_id(),
-            0,
-            ON_BLOCK_HASH_GAS,
-        ))
-        .into()
+        eth_client::ext(self.bridge_smart_contract.parse().unwrap())
+            .with_static_gas(BLOCK_HASH_SAFE_GAS)
+            .block_hash_safe(block_number)
+            .then(
+                remote_self::ext(env::current_account_id())
+                    .with_static_gas(ON_BLOCK_HASH_GAS)
+                    .on_block_hash(expected_block_hash),
+            )
+            .into()
     }
 
     #[result_serializer(borsh)]
@@ -121,11 +113,12 @@ impl EthProver {
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
 
         // Verify log_entry included in receipt
-        assert_eq!(receipt.logs[log_index as usize], log_entry);
+        let log_index_usize = usize::try_from(log_index).expect("Invalid log_index");
+        assert_eq!(receipt.logs[log_index_usize], log_entry);
 
         // Verify receipt included into header
         let data =
-            Self::verify_trie_proof(header.receipts_root, rlp::encode(&receipt_index), proof);
+            Self::verify_trie_proof(header.receipts_root, rlp::encode(&receipt_index).to_vec(), proof);
         let verification_result = receipt_data == data;
         if verification_result && skip_bridge_call {
             return PromiseOrValue::Value(true);
@@ -134,19 +127,15 @@ impl EthProver {
         }
 
         // Verify block header was in the bridge
-        eth_client::block_hash_safe(
-            header.number,
-            &self.bridge_smart_contract,
-            0,
-            BLOCK_HASH_SAFE_GAS,
-        )
-        .then(remote_self::on_block_hash(
-            header.hash.unwrap(),
-            &env::current_account_id(),
-            0,
-            ON_BLOCK_HASH_GAS,
-        ))
-        .into()
+        eth_client::ext(self.bridge_smart_contract.parse().unwrap())
+            .with_static_gas(BLOCK_HASH_SAFE_GAS)
+            .block_hash_safe(header.number)
+            .then(
+                remote_self::ext(env::current_account_id())
+                    .with_static_gas(ON_BLOCK_HASH_GAS)
+                    .on_block_hash(header.hash.unwrap()),
+            )
+            .into()
     }
 
     /// Verify the proof recursively traversing through the key.
@@ -249,12 +238,12 @@ impl EthProver {
 
     pub fn set_bridge(&mut self, bridge: AccountId) {
         assert_self();
-        env::log(
+        env::log_str(
             format!(
                 "Old bridge account: {} New bridge account {}",
                 self.bridge_smart_contract, bridge
             )
-            .as_bytes(),
+            .as_str(),
         );
         self.bridge_smart_contract = bridge;
     }
