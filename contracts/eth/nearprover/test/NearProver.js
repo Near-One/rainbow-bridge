@@ -1,6 +1,6 @@
 const { expect } = require('chai');
 const { ethers, upgrades } = require('hardhat');
-const { borshifyOutcomeProof } = require(`rainbow-bridge-lib/rainbow/borsh`);
+const { borshifyOutcomeProof } = require(`rainbow-bridge-utils`);
 const fs = require('fs').promises;
 const { computeMerkleRoot } = require('../utils/utils');
 
@@ -8,18 +8,19 @@ let NearProver, NearBridgeMock, accounts;
 
 beforeEach(async function () {
     accounts = await ethers.getSigners();
+    [admin] = await ethers.getSigners();
     NearBridgeMock = await (await ethers.getContractFactory('NearBridgeMock')).deploy();
     const NearProverFactory = await ethers.getContractFactory('NearProver');
     NearProver = await upgrades.deployProxy(NearProverFactory, [
         NearBridgeMock.address,
         0,
+        admin.address
     ], { kind: 'uups' });
     await NearProver.deployed();
 });
 
 async function testProof(merkleRoot, height, proofPath) {
     let proof = require(proofPath);
-    console.log(computeMerkleRoot(proof).toString('hex'));
     expect(merkleRoot === '0x' + computeMerkleRoot(proof).toString('hex')).to.be.true;
     proof = borshifyOutcomeProof(proof);
     await NearBridgeMock.setBlockMerkleRoot(height, merkleRoot);
@@ -28,7 +29,7 @@ async function testProof(merkleRoot, height, proofPath) {
 
 it('upgarde the proxy', async function () {
     const NearProverV2Factory = await ethers.getContractFactory('NearProverV2');
-    NearProver = await upgrades.upgradeProxy(NearProver.address, NearProverV2Factory);
+    NearProver = await upgrades.upgradeProxy(NearProver.address, NearProverV2Factory, {kind: "uups"});
     expect(await NearProver.version()).eq('2.0.0');
 });
 
@@ -47,8 +48,8 @@ it('transfer contract ownership', async function () {
 });
 
 it('Fail to upgrade contract, Unauthorized', async function () {
-    expect(await NearProver.transferOwnership(accounts[1].address))
-        .emit(NearProver, 'OwnershipTransferred')
+    expect(await NearProver.transferUpgraderAdmin(accounts[1].address))
+        .emit(NearProver, 'UpgraderOwnershipTransferred')
         .withArgs(accounts[0].address, accounts[1].address);
     
     const NearProverV2Factory = await ethers.getContractFactory('NearProverV2');
@@ -91,12 +92,13 @@ describe('NearProver with admin access', () => {
         adminAccount = deployerAccount;
 
         nearBridgeMock = await (await ethers.getContractFactory('NearBridgeMock')).deploy();
-        nearProver = await (await ethers.getContractFactory('NearProver')).deploy(
+        const NearProverFactory = await ethers.getContractFactory('NearProver');
+        nearProver = await upgrades.deployProxy(NearProverFactory, [
             nearBridgeMock.address,
-            adminAccount.address,
-            0
-        );
-
+            0,
+            adminAccount.address
+        ], { kind: 'uups' });
+        await NearProver.deployed();
     });
 
     describe('Upgradability', async () => {
@@ -112,9 +114,7 @@ describe('NearProver with admin access', () => {
                 .not
                 .equal(initialBridgeAddress);
 
-            // Mask matches only on the latest 20 bytes (to store the address)
-            const mask = ethers.BigNumber.from("0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff");
-            nearProver.adminSstoreWithMask(BRIDGE_ADDRESS_SLOT, newBridge.address, mask);
+            await nearProver.setBridge(newBridge.address);
 
             expect(await nearProver.bridge())
                 .to
@@ -130,8 +130,7 @@ describe('NearProver with admin access', () => {
             const newBridgeAddress = '0x891B2749238B27fF58e951088e55b04de71Dc374';
             const newBridgeAddressBN = ethers.BigNumber.from(newBridgeAddress);
 
-            const mask = ethers.BigNumber.from("0x000000000000000000000000ffffffffffffffffffffffffffffffffffffffff");
-            nearProver.adminSstoreWithMask(BRIDGE_ADDRESS_SLOT, newBridgeAddressBN, mask);
+            await nearProver.setBridge(newBridgeAddress);
 
             expect(await nearProver.bridge())
                 .to

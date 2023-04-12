@@ -4,6 +4,7 @@ pragma solidity 0.8.7;
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 contract AdminControlled is AccessControlUpgradeable {
+    address public admin;
     uint public paused;
 
     bytes32 public constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
@@ -17,6 +18,7 @@ contract AdminControlled is AccessControlUpgradeable {
     function __AdminControlled_init(uint _flags, address upgrader) public onlyInitializing {
         __AccessControl_init();
         paused = _flags;
+        admin = msg.sender;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(PAUSE_ROLE, msg.sender);
         _grantRole(UPGRADER_ROLE, upgrader);
@@ -38,7 +40,8 @@ contract AdminControlled is AccessControlUpgradeable {
         require(newAdmin != address(0), "Ownable: new owner is the zero address");
         _grantRole(DEFAULT_ADMIN_ROLE, newAdmin);
         _grantRole(PAUSE_ROLE, newAdmin);
-
+        admin = newAdmin;
+        
         _revokeRole(PAUSE_ROLE, _msgSender());
         _revokeRole(DEFAULT_ADMIN_ROLE, _msgSender());
         emit OwnershipTransferred(_msgSender(), newAdmin);

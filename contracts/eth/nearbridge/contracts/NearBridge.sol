@@ -6,7 +6,6 @@ import "./INearBridge.sol";
 import "./NearDecoder.sol";
 import "./Ed25519.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "hardhat/console.sol";
 
 contract NearBridge is INearBridge, UUPSUpgradeable, AdminControlled {
     using Borsh for Borsh.Data;

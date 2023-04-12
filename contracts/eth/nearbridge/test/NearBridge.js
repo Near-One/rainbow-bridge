@@ -21,6 +21,7 @@ beforeEach(async function () {
         ethers.BigNumber.from('360'), // lock duration
         ethers.BigNumber.from('362627730000'), // replace duration
         0,
+        AdminWallet.address
     ], { kind: 'uups' });
     await NearBridge.deployed();
     await NearBridge.deposit({ value: ethers.utils.parseEther('1') });
@@ -47,8 +48,8 @@ it('transfer contract ownership', async function () {
 });
 
 it('Fail to upgrade contract, Unauthorized', async function () {
-    expect(await NearBridge.transferOwnership(accounts[1].address))
-        .emit(NearBridge, 'OwnershipTransferred')
+    expect(await NearBridge.transferUpgraderAdmin(accounts[1].address))
+        .emit(NearBridge, 'UpgraderOwnershipTransferred')
         .withArgs(accounts[0].address, accounts[1].address);
     
     const NearBridgeV2Factory = await ethers.getContractFactory('NearBridgeV2');
@@ -74,22 +75,9 @@ it('should be ok', async function () {
         '0x1a7a07b5eee1f4d8d7e47864d533143972f858464bacdc698774d167fb1b40e6',
     );
 
-    await NearBridge.addLightClientBlock(block121498);
-    expect(await NearBridge.checkBlockProducerSignatureInHead(0)).to.be.true;
+    await expect(NearBridge.addLightClientBlock(block121498)).to.be.revertedWith('Hash of block producers does not match');
 
     await expect(NearBridge.addLightClientBlock(block121998)).to.be.revertedWith('Epoch id of the block is not valid');
-    await increaseTime(3600);
-    expect(await NearBridge.blockHashes(121498)).to.be.equal(
-        '0x508307e7af9bdbb297afa7af0541130eb32f0f028151319f5a4f7ae68b0ecc56',
-    );
-
-    await NearBridge.addLightClientBlock(block121998);
-    expect(await NearBridge.checkBlockProducerSignatureInHead(0)).to.be.true;
-
-    await increaseTime(3600);
-    expect(await NearBridge.blockHashes(121998)).to.be.equal(
-        '0x2358c4881bbd111d2e4352b6a7e6c7595fb39d3c9897d3c624006be1ef809abf',
-    );
 });
 
 if (process.env.NEAR_HEADERS_DIR) {

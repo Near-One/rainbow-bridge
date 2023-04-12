@@ -20,6 +20,7 @@ beforeEach(async function () {
         ethers.BigNumber.from('10'), // lock duration
         ethers.BigNumber.from('20000000000'), // replace duration
         0,
+        AdminWallet.address
     ]);
     await NearBridge.deployed();
     await NearBridge.deposit({ value: ethers.utils.parseEther('1') });
@@ -168,12 +169,12 @@ it('Check challenge when setLockEthAmount is modified with new value', async fun
     await NearBridge.addLightClientBlock(borshify(block_77804000));
     await NearBridge.blockHashes(77804000);
 
-    await NearBridge.setLockEthAmount(ethers.utils.parseEther('2'))
+    await NearBridge.setLockEthAmount(ethers.utils.parseEther('0.5'))
 
     expect((await NearBridge.lastValidAt())).to.not.be.equal(0);
     await NearBridge.challenge(ethers.constants.AddressZero, 0);
     expect(await NearBridge.balanceOf(AdminWallet.address)).equal(0)
 
     expect(await ethers.provider.getBalance(NearBridge.address))
-        .equal(ethers.utils.parseEther('5').div(10));
+        .equal(ethers.utils.parseEther('75').div(100));
 })

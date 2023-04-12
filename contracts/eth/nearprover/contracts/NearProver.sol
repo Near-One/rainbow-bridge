@@ -19,6 +19,7 @@ contract NearProver is INearProver, UUPSUpgradeable, AdminControlled {
     uint constant PAUSED_VERIFY = 1;
 
     function initialize(INearBridge _bridge, uint flag, address bridgeUpgrader) public initializer {
+        __UUPSUpgradeable_init();
         __AdminControlled_init(flag, bridgeUpgrader);
         bridge = _bridge;
     }
