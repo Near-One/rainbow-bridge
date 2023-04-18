@@ -26,7 +26,7 @@
 
 * **Note:** Near-bridge can be upgraded by only multi-sig safe address provided as `upgrader` while deployment.
   * A proposal is created for upgradation through hardhat-defender where owners of safe can pass by signing threshold txn.
-  * All m of n owner's must be present to sign txn from hardhat defender to upgrade the contract.
+  * All m of n owner's in multi-sig must be present to sign txn from hardhat defender to upgrade the contract.
   * txn can be signed from defender after running the below command.
   * new implementation contract must be present in `./nearbridge/contracts` directory before running the command.
 * Run this command to upgrade the Near_Bridge upgradable contract:-
@@ -45,7 +45,7 @@
 ## To transfer ownership of Near-Prover Upgradable:question:
 * **Note:** 
   * Current owner is the address who initially deployed the upgradable contract.
-  * Only present owner of bridge can transfer their ownership to new owner. ie. `ethMasterSk` in `'home/.rainbow/config.json'` must be the pvt key of present owner.
+  * Only present owner of near prover can transfer their ownership to new owner. ie. `ethMasterSk` in `'home/.rainbow/config.json'` must be the pvt key of present owner.
 * To transfer ownership run the following command:-
   * ```npx hardhat transferOwnership --currentadmin <present_owner_address> --newadmin <new_owner_address> --proveraddress <near_prover_proxy_address> --config rainbowBridgeConfig.js --network <network_name>```
 
@@ -53,7 +53,7 @@
 
 * **Note:** Near-prover can be upgraded by only multi-sig safe address provided as `upgrader` while deployment.
   * A proposal is created for upgradation through hardhat-defender where owners of safe can pass by signing threshold txn.
-  * All m of n owner's must be present to sign txn from hardhat defender to upgrade the contract.
+  * All m of n owner's in multi-sig must be present to sign txn from hardhat defender to upgrade the contract.
   * txn can be signed from defender after running the below command.
   * new implementation contract must be present in `./nearbridge/contracts` directory before running the command.
 * Run this command to upgrade the Near_Prover upgradable contract:-
