@@ -55,7 +55,7 @@
   * A proposal is created for upgradation through hardhat-defender where owners of safe can pass by signing threshold txn.
   * All m of n owner's in multi-sig must be present to sign txn from hardhat defender to upgrade the contract.
   * txn can be signed from defender after running the below command.
-  * new implementation contract must be present in `./nearbridge/contracts` directory before running the command.
+  * new implementation contract must be present in `./nearprover/contracts` directory before running the command.
 * Run this command to upgrade the Near_Prover upgradable contract:-
   * ```npx hardhat proposeUpgrade --proxyaddress <near_prover_proxy_address> --newcontractname <new_implementation_contract_name> --upgrader <multi_sig_address> --config rainbowBridgeConfig.js --network <network_name>```
 ---
