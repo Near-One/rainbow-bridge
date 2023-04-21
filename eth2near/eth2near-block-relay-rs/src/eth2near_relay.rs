@@ -524,7 +524,7 @@ impl Eth2NearRelay {
             debug!(target: "relay", "Finalized period on ETH and NEAR are different. Fetching sync commity update");
             return_on_fail!(
                 self.beacon_rpc_client
-                    .get_light_client_update_for_last_period(),
+                    .get_light_client_update(last_eth2_period_on_near_chain + 1),
                 "Error on getting light client update. Skipping sending light client update"
             )
         };
