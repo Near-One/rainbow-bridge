@@ -139,7 +139,6 @@ mod tests {
         SyncAggregate, SyncCommitteeBits,
     };
     use near_crypto::{KeyType, PublicKey};
-    use near_primitives::serialize::to_base64;
     use near_primitives::types::AccountId;
     use near_primitives::views::{
         ExecutionOutcomeView, ExecutionOutcomeWithIdView, ExecutionStatusView,
@@ -152,7 +151,7 @@ mod tests {
     use std::time::Duration;
 
     fn get_default_result() -> FinalExecutionOutcomeView {
-        let status_str = to_base64("215");
+        let status_str = "215";
         FinalExecutionOutcomeView {
             status: FinalExecutionStatus::SuccessValue(status_str.into()),
             transaction: SignedTransactionView {

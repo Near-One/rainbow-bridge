@@ -337,19 +337,6 @@ impl BeaconRPCClient {
         })
     }
 
-    /// Returns the best light client update for the last period
-    ///
-    /// Best is defined by (in order of priority):
-    /// - Is finalized update
-    /// - Has most bits
-    /// - Oldest update
-    pub fn get_light_client_update_for_last_period(
-        &self,
-    ) -> Result<LightClientUpdate, Box<dyn Error>> {
-        let last_period = Self::get_period_for_slot(self.get_last_slot_number()?.as_u64());
-        self.get_light_client_update(last_period)
-    }
-
     pub fn get_beacon_state(
         &self,
         state_id: &str,
