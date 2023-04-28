@@ -64,8 +64,13 @@ pub fn init_contract(
     );
     let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
 
+    let last_period = BeaconRPCClient::get_period_for_slot(beacon_rpc_client
+        .get_last_slot_number()
+        .expect("Error on fetching last slot number")
+        .as_u64());
+
     let light_client_update_with_next_sync_committee = beacon_rpc_client
-        .get_light_client_update_for_last_period()
+        .get_light_client_update(last_period)
         .expect("Error on fetching finality light client update with sync committee update");
     let finality_light_client_update = beacon_rpc_client
         .get_finality_light_client_update()

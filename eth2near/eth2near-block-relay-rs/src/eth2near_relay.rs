@@ -794,9 +794,14 @@ mod tests {
 
         let relay = get_relay(true, &config_for_test);
 
+        let last_period = BeaconRPCClient::get_period_for_slot(relay.beacon_rpc_client
+            .get_last_slot_number()
+            .unwrap()
+            .as_u64());
+
         let light_client_update = relay
             .beacon_rpc_client
-            .get_light_client_update_for_last_period()
+            .get_light_client_update(last_period)
             .unwrap();
 
         let branch: Vec<ethereum_types::H256> = light_client_update
