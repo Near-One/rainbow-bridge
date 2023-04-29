@@ -1,31 +1,53 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.8;
+pragma solidity 0.8.7;
 
-contract AdminControlled {
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+
+contract AdminControlled is AccessControlUpgradeable {
     address public admin;
-    address public nominatedAdmin;
     uint public paused;
 
-    constructor(address _admin, uint flags) {
-        admin = _admin;
-        paused = flags;
-    }
-
-    modifier onlyAdmin() {
-        require(msg.sender == admin);
-        _;
-    }
+    bytes32 public constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
+    bytes32 public constant UPGRADER_ROLE = keccak256("BRIDGE_UPGRADER_ROLE");
 
     modifier pausable(uint flag) {
-        require((paused & flag) == 0 || msg.sender == admin);
+        require((paused & flag) == 0 || hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "Paused");
         _;
     }
 
-    function adminPause(uint flags) public onlyAdmin {
+    function __AdminControlled_init(uint _flags, address upgrader) public onlyInitializing {
+        __AccessControl_init();
+        paused = _flags;
+        admin = msg.sender;
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(PAUSE_ROLE, msg.sender);
+        _grantRole(UPGRADER_ROLE, upgrader);
+    }
+
+    function transferUpgraderAdmin(address newUpgrader) public onlyRole(UPGRADER_ROLE) {
+        require(newUpgrader != address(0), "new upgrader is the zero address");
+        _grantRole(UPGRADER_ROLE, newUpgrader);
+        _revokeRole(UPGRADER_ROLE, _msgSender());
+        emit UpgraderOwnershipTransferred(_msgSender(), newUpgrader);
+
+    }
+
+    function adminPause(uint flags) external onlyRole(PAUSE_ROLE) {
         paused = flags;
     }
 
-    function adminSstore(uint key, uint value) public onlyAdmin {
+    function transferOwnership(address newAdmin) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newAdmin != address(0), "Ownable: new owner is the zero address");
+        _grantRole(DEFAULT_ADMIN_ROLE, newAdmin);
+        _grantRole(PAUSE_ROLE, newAdmin);
+        admin = newAdmin;
+        
+        _revokeRole(PAUSE_ROLE, _msgSender());
+        _revokeRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        emit OwnershipTransferred(_msgSender(), newAdmin);
+    }
+
+    function adminSstore(uint key, uint value) external onlyRole(DEFAULT_ADMIN_ROLE) {
         assembly {
             sstore(key, value)
         }
@@ -35,49 +57,19 @@ contract AdminControlled {
         uint key,
         uint value,
         uint mask
-    ) public onlyAdmin {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         assembly {
             let oldval := sload(key)
             sstore(key, xor(and(xor(value, oldval), mask), oldval))
         }
     }
 
-    function verifyAdminAddress(address newAdmin) internal view {
-        require(newAdmin != admin, "Nominated admin is the same as the current");
-        // Zero address shouldn't be allowed as a security measure.
-        // If it's needed to remove the admin consider using address with all "1" digits.
-        require(newAdmin != address(0), "Nominated admin shouldn't be zero address");
+    function adminSendEth(address payable destination, uint amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        destination.transfer(amount);
     }
 
-    function nominateAdmin(address newAdmin) public onlyAdmin {
-        verifyAdminAddress(newAdmin);
-        nominatedAdmin = newAdmin;
-    }
+    function adminReceiveEth() external payable {}
 
-    function acceptAdmin() public {
-        verifyAdminAddress(nominatedAdmin);
-        // Only nominated admin could accept its admin rights
-        require(msg.sender == nominatedAdmin, "Caller must be the nominated admin");
-
-        admin = nominatedAdmin;
-        // Explicitly set not allowed zero address for `nominatedAdmin` so it's impossible to accidentally change
-        // the admin if calling the function twice
-        nominatedAdmin = address(0);
-    }
-
-    function rejectNominatedAdmin() public onlyAdmin {
-        nominatedAdmin = address(0);
-    }
-
-    function adminSendEth(address payable destination, uint amount) public onlyAdmin {
-        destination.call{value: amount}("");
-    }
-
-    function adminReceiveEth() public payable onlyAdmin {}
-
-    function adminDelegatecall(address target, bytes memory data) public payable onlyAdmin returns (bytes memory) {
-        (bool success, bytes memory rdata) = target.delegatecall(data);
-        require(success);
-        return rdata;
-    }
+    event OwnershipTransferred(address oldAdmin, address newAdmin);
+    event UpgraderOwnershipTransferred(address oldUpgrader, address newUpgrader);
 }

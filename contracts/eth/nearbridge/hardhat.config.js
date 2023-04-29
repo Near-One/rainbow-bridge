@@ -1,18 +1,11 @@
 require('@nomiclabs/hardhat-ethers');
 require('@nomiclabs/hardhat-waffle');
-require("hardhat-gas-reporter");
+require('@openzeppelin/hardhat-upgrades');
 require('solidity-coverage');
 
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
 module.exports = {
     solidity: {
-        version: '0.8.11',
-        gasReporter: {
-            currency: 'USD',
-            enabled: true,
-        },
+        version: '0.8.7',
         settings: {
             optimizer: {
                 enabled: true,

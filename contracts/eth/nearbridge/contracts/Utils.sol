@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.8;
+pragma solidity 0.8.7;
 
 library Utils {
     function swapBytes2(uint16 v) internal pure returns (uint16) {

@@ -22,6 +22,7 @@ const {
   ethCallContract
 } = require('./utils')
 const { maybeCreateAccount, verifyAccount } = require('./helpers')
+const { execAsync } = require('./exec')
 const path = require('path')
 
 function getScript (name) {
@@ -37,6 +38,7 @@ function JSONreplacer (key, value) {
 }
 
 module.exports = {
+  execAsync,
   getScript,
   backoff,
   nearAPI,

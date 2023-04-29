@@ -1,6 +1,6 @@
 const BN = require('bn.js')
 const fs = require('fs')
-const { Web3, normalizeEthKey, sleep } = require('rainbow-bridge-utils')
+const { Web3, normalizeEthKey, sleep, execAsync } = require('rainbow-bridge-utils')
 
 const RETRY_SEND_TX = 15
 
@@ -181,112 +181,59 @@ class InitEthLocker {
 
 class InitEthClient {
   static async execute ({
-    ethNodeUrl,
-    ethMasterSk,
     ethClientLockEthAmount,
     ethClientLockDuration,
     ethClientReplaceDuration,
-    ethEd25519Address,
-    ethClientArtifactPath,
-    ethAdminAddress,
-    ethGasMultiplier
+    ethEd25519Address
   }) {
-    if (ethAdminAddress === '') {
-      const web3 = new Web3('')
-      ethAdminAddress = web3.eth.accounts.privateKeyToAccount(ethMasterSk)
-        .address
-    }
+    console.log('Start deploy ETH client proxy')
 
-    ethClientLockDuration = Number(ethClientLockDuration)
-    ethClientReplaceDuration = Number(ethClientReplaceDuration)
+    const cmd = `
+    cd ./contracts/eth/nearbridge && \\
+    npx hardhat deployNearBridgeProxy \\
+    --ed25519 ${ethEd25519Address} \\
+    --eth-client-lock-eth-amount ${ethClientLockEthAmount} \\
+    --eth-client-lock-duration ${ethClientLockDuration} \\
+    --eth-client-replace-duration ${ethClientReplaceDuration} \\
+    --paused-flags 0 \\
+    --config rainbowBridgeConfig.js \\
+    --network rainbowBridge
+    `
+    await execAsync(cmd)
 
-    // replace duration should be at least twice as long as lock duration or 20 minutes longer
-    const minAllowedReplaceDuration = Math.min(
-      ethClientLockDuration + 20 * 60,
-      2 * ethClientLockDuration
-    )
+    console.log('ETH client proxy deployed!')
+  }
+}
 
-    if (ethClientReplaceDuration < minAllowedReplaceDuration) {
-      throw new Error(
-        `Invalid parameters ${JSON.stringify({
-          ethClientLockDuration,
-          ethClientReplaceDuration,
-          minAllowedReplaceDuration
-        })}`
-      )
-    }
+class VerifyAddress {
+  static async execute (address) {
+    console.log(`Start verify contract address ${address}`)
 
-    const ethContractInitializer = new EthContractInitializer()
-    const web3 = new Web3(ethNodeUrl)
-    const lockEthAmount = web3.utils.toBN(ethClientLockEthAmount)
-    const lockDuration = web3.utils.toBN(ethClientLockDuration)
-    const replaceDuration = web3.utils
-      .toBN(ethClientReplaceDuration)
-      .mul(new web3.utils.BN(1e9))
-    try {
-      // Only WebSocket provider can close.
-      web3.currentProvider.connection.close()
-    } catch (e) {}
-    const success = await ethContractInitializer.execute(
-      {
-        args: [
-          ethEd25519Address,
-          lockEthAmount,
-          lockDuration,
-          replaceDuration,
-          ethAdminAddress,
-          0
-        ],
-        gas: 5000000,
-        ethContractArtifactPath: ethClientArtifactPath,
-        ethNodeUrl,
-        ethMasterSk,
-        ethGasMultiplier
-      }
-    )
-    if (!success) {
-      console.log("Can't deploy", ethClientArtifactPath)
-      process.exit(1)
-    }
-    return {
-      ethClientAddress: success.ethContractAddress
-    }
+    const cmd = `cd ./contracts/eth/nearbridge && npx hardhat verify ${address} \\
+    --config rainbowBridgeConfig.js --network rainbowBridge
+    `
+    await execAsync(cmd)
+
+    console.log(`Contract address ${address} verified!`)
   }
 }
 
 class InitEthProver {
   static async execute ({
-    ethNodeUrl,
-    ethMasterSk,
-    ethClientAddress,
-    ethProverArtifactPath,
-    ethAdminAddress,
-    ethGasMultiplier
+    ethClientAddress
   }) {
-    if (ethAdminAddress === '') {
-      const web3 = new Web3('')
-      ethAdminAddress = web3.eth.accounts.privateKeyToAccount(ethMasterSk)
-        .address
-    }
+    console.log('Start deploy ETH prover proxy')
 
-    const ethContractInitializer = new EthContractInitializer()
-    const success = await ethContractInitializer.execute(
-      {
-        args: [ethClientAddress, ethAdminAddress, 0],
-        gas: 3000000,
-        ethContractArtifactPath: ethProverArtifactPath,
-        ethNodeUrl,
-        ethMasterSk,
-        ethGasMultiplier
-      }
-    )
-    if (!success) {
-      console.log("Can't deploy", ethProverArtifactPath)
-      process.exit(1)
-    }
-    return {
-      ethProverAddress: success.ethContractAddress
-    }
+    const cmd = `
+    cd ./contracts/eth/nearprover && npx hardhat deployNearProverProxy \\
+    --eth-client-address ${ethClientAddress} \\
+    --paused-flags 0 \\
+    --config rainbowBridgeConfig.js \\
+    --network rainbowBridge
+    `
+    await execAsync(cmd)
+
+    console.log('ETH prover proxy deployed!')
   }
 }
 
@@ -295,3 +242,4 @@ exports.InitEthErc20 = InitEthErc20
 exports.InitEthLocker = InitEthLocker
 exports.InitEthClient = InitEthClient
 exports.InitEthProver = InitEthProver
+exports.VerifyAddress = VerifyAddress

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.8;
+pragma solidity 0.8.7;
 
 interface INearBridge {
     event BlockHashAdded(uint64 indexed height, bytes32 blockHash);

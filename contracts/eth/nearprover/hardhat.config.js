@@ -1,4 +1,6 @@
 require('@nomiclabs/hardhat-ethers');
+require('@nomiclabs/hardhat-waffle');
+require('@openzeppelin/hardhat-upgrades');
 require('solidity-coverage');
 
 require('dotenv').config();
@@ -55,7 +57,7 @@ task('get-slots-data', 'Display slots')
  */
 module.exports = {
     solidity: {
-        version: '0.8.11',
+        version: '0.8.7',
         settings: {
             optimizer: {
                 enabled: true,

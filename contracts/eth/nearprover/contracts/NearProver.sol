@@ -1,32 +1,35 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.8;
+pragma solidity 0.8.7;
 
 import "rainbow-bridge-sol/nearbridge/contracts/AdminControlled.sol";
 import "rainbow-bridge-sol/nearbridge/contracts/INearBridge.sol";
 import "rainbow-bridge-sol/nearbridge/contracts/NearDecoder.sol";
 import "./ProofDecoder.sol";
 import "./INearProver.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-contract NearProver is INearProver, AdminControlled {
+contract NearProver is INearProver, UUPSUpgradeable, AdminControlled {
     using Borsh for Borsh.Data;
     using NearDecoder for Borsh.Data;
     using ProofDecoder for Borsh.Data;
 
     INearBridge public bridge;
 
-    constructor(
-        INearBridge _bridge,
-        address _admin,
-        uint _pausedFlags
-    ) AdminControlled(_admin, _pausedFlags) {
-        bridge = _bridge;
-    }
-
     uint constant UNPAUSE_ALL = 0;
     uint constant PAUSED_VERIFY = 1;
 
+    function initialize(INearBridge _bridge, uint flag, address bridgeUpgrader) public initializer {
+        __UUPSUpgradeable_init();
+        __AdminControlled_init(flag, bridgeUpgrader);
+        bridge = _bridge;
+    }
+
+    function setBridge(INearBridge _bridge) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        bridge = _bridge;
+    }
+
     function proveOutcome(bytes memory proofData, uint64 blockHeight)
-        public
+        external
         view
         override
         pausable(PAUSED_VERIFY)
@@ -72,4 +75,6 @@ contract NearProver is INearProver, AdminControlled {
             }
         }
     }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {}
 }
