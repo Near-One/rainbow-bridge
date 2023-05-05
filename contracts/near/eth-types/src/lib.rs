@@ -10,6 +10,9 @@ use rlp::{
 use rlp_derive::RlpDecodable as RlpDecodableDerive;
 #[cfg(not(target_arch = "wasm32"))]
 use serde::{Deserialize, Serialize};
+#[cfg(not(target_arch = "wasm32"))]
+use sha3::{Digest, Keccak256, Keccak512};
+
 use std::io::{Error, Write};
 #[cfg(feature = "eth2")]
 use tree_hash::{PackedEncoding, TreeHash, TreeHashType};
@@ -368,13 +371,23 @@ pub fn near_sha256(data: &[u8]) -> [u8; 32] {
 }
 
 pub fn near_keccak256(data: &[u8]) -> [u8; 32] {
-    let mut buffer = [0u8; 32];
-    buffer.copy_from_slice(near_sdk::env::keccak256(data).as_slice());
-    buffer
+    #[cfg(target_arch = "wasm32")]
+    {
+        near_sdk::env::keccak256(data).try_into().unwrap()
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        Keccak256::digest(data).try_into().unwrap()
+    }
 }
 
 pub fn near_keccak512(data: &[u8]) -> [u8; 64] {
-    let mut buffer = [0u8; 64];
-    buffer.copy_from_slice(near_sdk::env::keccak512(data).as_slice());
-    buffer
+    #[cfg(target_arch = "wasm32")]
+    {
+        near_sdk::env::keccak512(data).try_into().unwrap()
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        Keccak512::digest(data).try_into().unwrap()
+    }
 }
