@@ -58,8 +58,6 @@ it('should be ok', async function () {
 
 if (process.env.NEAR_HEADERS_DIR) {
     it('ok with many block headers', async function () {
-        // Skip until tests are upgraded having blocks after nearcore 1.23.0
-        this.skip();
 
         this.timeout(0);
         const blockFiles = await fs.readdir(process.env.NEAR_HEADERS_DIR);
