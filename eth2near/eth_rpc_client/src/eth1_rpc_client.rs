@@ -49,6 +49,7 @@ impl Eth1RPCClient {
         block_json = block_json.replace("transactionsRoot", "transactions_root");
         block_json = block_json.replace("parentHash", "parent_hash");
         block_json = block_json.replace("miner", "author");
+        block_json = block_json.replace("withdrawalsRoot", "withdrawals_root");
 
         let block_header: BlockHeader = serde_json::from_str(&block_json)?;
         Ok(block_header)

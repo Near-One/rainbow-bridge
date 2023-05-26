@@ -1,1 +1,2 @@
-stable-2022-07-19
+[toolchain]
+channel = "1.68.0"

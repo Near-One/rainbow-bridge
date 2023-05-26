@@ -1,2 +1,0 @@
-beacon_state_kiln_slot_812544.json filter=lfs diff=lfs merge=lfs -text
-beacon_state_kiln_slot_812637_period_99.json filter=lfs diff=lfs merge=lfs -text

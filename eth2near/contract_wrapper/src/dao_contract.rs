@@ -1,4 +1,6 @@
+use crate::contract_wrapper_trait::ContractWrapper;
 use crate::dao_types;
+use crate::utils::status_as_success_decoded;
 use eth_types::eth2::LightClientUpdate;
 use near_primitives::views::FinalExecutionOutcomeView;
 use near_sdk::borsh::BorshSerialize;
@@ -6,7 +8,6 @@ use near_sdk::json_types::Base64VecU8;
 use near_sdk::{AccountId, Gas};
 use serde_json::json;
 use std::error::Error;
-use crate::contract_wrapper_trait::ContractWrapper;
 
 /// Implementation for interaction with DAO Contract on NEAR.
 pub struct DAOContract {
@@ -65,10 +66,7 @@ impl DAOContract {
 
         Ok((
             serde_json::from_slice(
-                response
-                    .clone()
-                    .status
-                    .as_success_decoded()
+                status_as_success_decoded(response.clone().status)
                     .ok_or("Failed to add proposal")?
                     .as_slice(),
             )?,
@@ -141,7 +139,6 @@ mod tests {
         SyncAggregate, SyncCommitteeBits,
     };
     use near_crypto::{KeyType, PublicKey};
-    use near_primitives::serialize::to_base64;
     use near_primitives::types::AccountId;
     use near_primitives::views::{
         ExecutionOutcomeView, ExecutionOutcomeWithIdView, ExecutionStatusView,
@@ -154,9 +151,9 @@ mod tests {
     use std::time::Duration;
 
     fn get_default_result() -> FinalExecutionOutcomeView {
-        let status_str = to_base64("215");
+        let status_str = "215";
         FinalExecutionOutcomeView {
-            status: FinalExecutionStatus::SuccessValue(status_str),
+            status: FinalExecutionStatus::SuccessValue(status_str.into()),
             transaction: SignedTransactionView {
                 signer_id: "accout.testnet".parse().unwrap(),
                 public_key: PublicKey::empty(KeyType::ED25519),
@@ -722,6 +719,7 @@ mod tests {
             SIGNER_ACCOUNT_ID,
             SIGNER_PRIVATE_KEY,
             DAO_CONTRACT_ACCOUNT_ID,
+            None,
         );
 
         let mut dao_contract = DAOContract::new(Box::new(near_contract_wrapper));

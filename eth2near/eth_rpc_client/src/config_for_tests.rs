@@ -1,5 +1,6 @@
-use std::env;
+use dotenv::dotenv;
 use serde::Deserialize;
+use std::env;
 use std::io::Read;
 use std::path::PathBuf;
 
@@ -10,7 +11,7 @@ pub struct ConfigForTests {
     pub first_slot: u64,
     pub eth1_number: u64,
     pub path_to_attested_state_for_period: String,
-    pub path_to_finality_state_for_period: String,
+    pub path_to_light_client_update_for_attested_slot: String,
     pub path_to_block: String,
     pub path_to_header: String,
     pub path_to_light_client_update: String,
@@ -23,6 +24,7 @@ impl ConfigForTests {
         config.read_to_string(&mut content).unwrap();
 
         let mut config: Self = toml::from_str(content.as_str()).unwrap();
+        dotenv().ok();
 
         let api_key_string = env::var("ETH1_INFURA_API_KEY").unwrap();
         config.eth1_endpoint = config.eth1_endpoint.replace("API_KEY", &api_key_string);

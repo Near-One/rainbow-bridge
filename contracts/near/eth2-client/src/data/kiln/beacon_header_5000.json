@@ -1,8 +1,0 @@
-
-{
-    "slot": 5000,
-    "proposer_index": 83889,
-    "parent_root": "0x91770717455346b00bfe97124c227847950bf265642b64e5aa60ca63d2f9013d",
-    "state_root": "0x5b307edf46e936907055286c06ad852a2b94f2af8b5eba328dbdcb4010a7cedc",
-    "body_root": "0x6627267cd57e0c4bed003a1a50f645efb4e1017aa3c4df00b487d2269115c48b"
-}

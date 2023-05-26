@@ -5,7 +5,6 @@ use bitvec::prelude::BitVec;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::eth2::*;
 use eth_types::H256;
-use near_sdk::{env, Balance};
 use tree_hash::TreeHash;
 
 pub const EPOCHS_PER_SYNC_COMMITTEE_PERIOD: u64 = 256;
@@ -31,8 +30,6 @@ pub const EXECUTION_PROOF_SIZE: usize =
 #[derive(PartialEq, BorshSerialize, BorshDeserialize)]
 pub enum Network {
     Mainnet,
-    Kiln,
-    Ropsten,
     Goerli,
 }
 
@@ -41,8 +38,6 @@ impl FromStr for Network {
     fn from_str(input: &str) -> Result<Network, Self::Err> {
         match input {
             "mainnet" => Ok(Network::Mainnet),
-            "kiln" => Ok(Network::Kiln),
-            "ropsten" => Ok(Network::Ropsten),
             "goerli" => Ok(Network::Goerli),
             _ => Err(format!("Unknown network {}", input)),
         }
@@ -53,6 +48,8 @@ pub struct NetworkConfig {
     pub genesis_validators_root: [u8; 32],
     pub bellatrix_fork_version: ForkVersion,
     pub bellatrix_fork_epoch: u64,
+    pub capella_fork_version: ForkVersion,
+    pub capella_fork_epoch: u64,
 }
 
 impl NetworkConfig {
@@ -66,6 +63,8 @@ impl NetworkConfig {
                 ],
                 bellatrix_fork_version: [0x02, 0x00, 0x00, 0x00],
                 bellatrix_fork_epoch: 144896,
+                capella_fork_version: [0x03, 0x00, 0x00, 0x00],
+                capella_fork_epoch: 194048,
             },
             Network::Goerli => Self {
                 genesis_validators_root: [
@@ -75,29 +74,17 @@ impl NetworkConfig {
                 ],
                 bellatrix_fork_version: [0x02, 0x00, 0x10, 0x20],
                 bellatrix_fork_epoch: 112260,
-            },
-            Network::Kiln => Self {
-                genesis_validators_root: [
-                    0x99, 0xb0, 0x9f, 0xcd, 0x43, 0xe5, 0x90, 0x52, 0x36, 0xc3, 0x70, 0xf1, 0x84,
-                    0x05, 0x6b, 0xec, 0x6e, 0x66, 0x38, 0xcf, 0xc3, 0x1a, 0x32, 0x3b, 0x30, 0x4f,
-                    0xc4, 0xaa, 0x78, 0x9c, 0xb4, 0xad,
-                ],
-                bellatrix_fork_version: [0x70, 0x00, 0x00, 0x71],
-                bellatrix_fork_epoch: 150,
-            },
-            Network::Ropsten => Self {
-                genesis_validators_root: [
-                    0x44, 0xf1, 0xe5, 0x62, 0x83, 0xca, 0x88, 0xb3, 0x5c, 0x78, 0x9f, 0x7f, 0x44,
-                    0x9e, 0x52, 0x33, 0x9b, 0xc1, 0xfe, 0xfe, 0x3a, 0x45, 0x91, 0x3a, 0x43, 0xa6,
-                    0xd1, 0x6e, 0xdc, 0xd3, 0x3c, 0xf1,
-                ],
-                bellatrix_fork_version: [0x80, 0x00, 0x00, 0x71],
-                bellatrix_fork_epoch: 750,
+                capella_fork_version: [0x03, 0x00, 0x10, 0x20],
+                capella_fork_epoch: 162304,
             },
         }
     }
 
     pub fn compute_fork_version(&self, epoch: Epoch) -> Option<ForkVersion> {
+        if epoch >= self.capella_fork_epoch {
+            return Some(self.capella_fork_version);
+        }
+
         if epoch >= self.bellatrix_fork_epoch {
             return Some(self.bellatrix_fork_version);
         }
@@ -201,15 +188,4 @@ pub fn validate_beacon_block_header_update(header_update: &HeaderUpdate) -> bool
         L1_BEACON_BLOCK_BODY_TREE_EXECUTION_PAYLOAD_INDEX,
         header_update.beacon_header.body_root.0,
     )
-}
-
-pub fn calculate_min_storage_balance_for_submitter(
-    max_submitted_blocks_by_account: u32,
-) -> Balance {
-    const STORAGE_BYTES_PER_BLOCK: u128 = 105; // prefix: 3B + key: 32B + HeaderInfo 70B
-    const STORAGE_BYTES_PER_ACCOUNT: u128 = 39; // prefix: 3B + account_id: 32B + counter 4B
-    let storage_bytes_per_account = (STORAGE_BYTES_PER_BLOCK
-        * max_submitted_blocks_by_account as u128)
-        + STORAGE_BYTES_PER_ACCOUNT;
-    storage_bytes_per_account * env::STORAGE_PRICE_PER_BYTE
 }
