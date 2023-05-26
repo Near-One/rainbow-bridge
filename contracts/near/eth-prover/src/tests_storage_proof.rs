@@ -270,7 +270,7 @@ mod tests_storage_proof {
     }
 
     #[test]
-    pub fn test_verify_storage_proof_with_wrong_header_data_except_stateroot() {
+    pub fn test_verify_storage_proof_with_future_header_data() {
         testing_env!(get_context(vec![]));
         let contract = EthProver::init("ethbridge".to_string());
         // Header-Data[state root-> block: 8487596 || other data in Header-data -> block: 8492954]
