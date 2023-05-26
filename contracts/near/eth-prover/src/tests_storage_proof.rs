@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests_unlock {
+mod tests_storage_proof {
     use crate::EthProver;
     use eth_types::H256;
     use near_sdk::serde_json;
