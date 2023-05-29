@@ -438,8 +438,7 @@ dependencies = [
  "eth2_hashing",
  "eth2_serde_utils",
  "eth2_ssz",
- "ethereum-types 0.9.2",
- "getrandom 0.2.7",
+ "ethereum-types 0.14.1",
  "hex 0.4.3",
  "milagro_bls",
  "rand 0.7.3",
@@ -1086,7 +1085,6 @@ dependencies = [
  "borsh",
  "eth-types",
  "ethash",
- "futures",
  "hex 0.4.3",
  "indicatif",
  "lazy_static",
@@ -2386,35 +2384,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2e7cf8061a5752132480327a7b8ecc6154068143f21054fea8ae8baa81705eea"
 dependencies = [
  "actix",
- "anyhow",
- "borsh",
- "chrono",
- "near-crypto 0.14.0",
- "near-primitives 0.14.0",
- "serde",
- "strum",
- "tokio 1.20.1",
- "tracing",
-]
-
-[[package]]
-name = "near-primitives"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a2ba19282e79a4485a77736b679d276b09870bbf8042a18e0f0ae36347489c5"
-dependencies = [
- "borsh",
- "byteorder",
- "bytesize",
- "chrono",
- "derive_more 0.99.17",
- "easy-ext",
- "hex 0.4.3",
- "near-crypto 0.13.0",
- "near-primitives-core 0.13.0",
- "near-rpc-error-macro 0.13.0",
- "near-vm-errors 0.13.0",
- "num-rational",
+ "atty",
+ "clap",
+ "near-crypto 0.16.0",
+ "near-primitives-core 0.16.0",
  "once_cell",
  "opentelemetry",
  "opentelemetry-otlp",
@@ -4619,16 +4592,7 @@ dependencies = [
  "byteorder",
  "crunchy",
  "hex 0.4.3",
- "static_assertions 1.1.0",
-]
-
-[[package]]
-name = "unicase"
-version = "1.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f4765f83163b74f957c797ad9253caf97f103fb064d3999aea9568d09fc8a33"
-dependencies = [
- "version_check 0.1.5",
+ "static_assertions",
 ]
 
 [[package]]
