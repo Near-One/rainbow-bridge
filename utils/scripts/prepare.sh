@@ -38,24 +38,24 @@ esac
 if test -z "$LOCAL_CORE_SRC"
 then
   echo "near-core home not specified..."
-  if [ "$MACHINE" == "Linux" ]; then
-    if [[ -z "$NEAR_CHAIN_ID" ]]; then
-      NEAR_CHAIN_ID=testnet
-    fi
-    NEAR_RELEASE=$(curl https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore-deploy/$NEAR_CHAIN_ID/latest_release)
-    NEAR_DEPLOY=$(curl https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore-deploy/$NEAR_CHAIN_ID/latest_deploy)
-    NEAR_CORE_BINARY_URL="https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/Linux/$NEAR_RELEASE/$NEAR_DEPLOY/neard"
-    NEAR_CORE_BINARY_DIR="$CORE_SRC/target/debug"
-    NEAR_CORE_BINARY_PATH="$NEAR_CORE_BINARY_DIR/neard"
-    mkdir -p $NEAR_CORE_BINARY_DIR
-    status=$(curl $NEAR_CORE_BINARY_URL --output $NEAR_CORE_BINARY_PATH --write-out "%{http_code}")
-    if [ "$status" != "200" ]; then
-      echo "Download neard failed"
-      exit 1
-    fi
-    chmod +x $NEAR_CORE_BINARY_PATH
-  else
-    git clone "https://github.com/nearprotocol/nearcore" $CORE_SRC
+  # if [ "$MACHINE" == "Linux" ]; then
+  #   if [[ -z "$NEAR_CHAIN_ID" ]]; then
+  #     NEAR_CHAIN_ID=testnet
+  #   fi
+  #   NEAR_RELEASE=$(curl https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore-deploy/$NEAR_CHAIN_ID/latest_release)
+  #   NEAR_DEPLOY=$(curl https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore-deploy/$NEAR_CHAIN_ID/latest_deploy)
+  #   NEAR_CORE_BINARY_URL="https://s3-us-west-1.amazonaws.com/build.nearprotocol.com/nearcore/Linux/$NEAR_RELEASE/$NEAR_DEPLOY/neard"
+  #   NEAR_CORE_BINARY_DIR="$CORE_SRC/target/debug"
+  #   NEAR_CORE_BINARY_PATH="$NEAR_CORE_BINARY_DIR/neard"
+  #   mkdir -p $NEAR_CORE_BINARY_DIR
+  #   status=$(curl $NEAR_CORE_BINARY_URL --output $NEAR_CORE_BINARY_PATH --write-out "%{http_code}")
+  #   if [ "$status" != "200" ]; then
+  #     echo "Download neard failed"
+  #     exit 1
+  #   fi
+  #   chmod +x $NEAR_CORE_BINARY_PATH
+  # else
+    git clone --depth 1 --branch "1.27.0" "https://github.com/nearprotocol/nearcore" $CORE_SRC
     cd $CORE_SRC
     cargo build --package neard --bin neard
   fi
