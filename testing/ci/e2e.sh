@@ -42,6 +42,7 @@ node index.js init-eth-client --eth-client-lock-eth-amount 1000000000000000000 -
 node index.js init-eth-prover
 node index.js init-eth-erc20
 node index.js init-eth-locker
+echo "ETH contracts deployed"
 node index.js init-near-token-factory
 # First start pm2 daemon
 yarn run pm2 ping
