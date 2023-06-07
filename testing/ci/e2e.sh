@@ -22,9 +22,12 @@ while ! curl localhost:3030; do
   sleep 1
 done
 
-while ! curl localhost:8545; do
-  sleep 1
-done
+# while ! curl 127.0.0.1:9545; do
+#   sleep 1
+# done
+if ! curl 127.0.0.1:9545; then
+sleep 10
+fi 
 
 node index.js init-near-contracts --num-confirmations 2
 (cd $ROOT_DIR/contracts/eth/nearbridge
