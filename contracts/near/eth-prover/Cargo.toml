@@ -18,7 +18,7 @@ rlp = "0.5.2"
 hex = "0.4.2"
 
 [dev-dependencies]
-hex = "0.4.2"
+hex = { version = "0.4.3", features = ["serde"] }
 indicatif = "0.14"
 lazy_static = "*"
 near-crypto = "0.16.0"
