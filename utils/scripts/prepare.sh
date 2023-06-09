@@ -55,7 +55,7 @@ then
   #   fi
   #   chmod +x $NEAR_CORE_BINARY_PATH
   # else
-    git clone --depth 1 --branch "1.32.0" "https://github.com/nearprotocol/nearcore" $CORE_SRC
+    git clone --depth 1 --branch "1.31.0" "https://github.com/nearprotocol/nearcore" $CORE_SRC
     cd $CORE_SRC
     cargo build --package neard --bin neard
   fi
