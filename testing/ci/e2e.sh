@@ -30,6 +30,7 @@ sleep 10
 fi 
 
 node index.js init-near-contracts --num-confirmations 2
+echo "near contracts deployed"
 (cd $ROOT_DIR/contracts/eth/nearbridge
 yarn
 yarn build)
