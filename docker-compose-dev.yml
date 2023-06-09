@@ -11,7 +11,7 @@ services:
     network_mode: host
     command: bash -c "node index.js start ganache --daemon false"
     ports:
-      - 9545:9545
+      - 9545:8545
   eth2near-relay:
     image: rainbow-image
     network_mode: host

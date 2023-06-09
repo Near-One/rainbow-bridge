@@ -24,7 +24,7 @@ while ! curl localhost:3030; do
   sleep 1
 done
 
-while ! curl localhost:9545; do
+while ! curl localhost:8545; do
   sleep 1
 done
 

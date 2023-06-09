@@ -2,7 +2,7 @@ const ProcessManager = require('pm2')
 const util = require('util')
 
 const NEAR_PORT = 3030
-const GANACHE_PORT = 9545
+const GANACHE_PORT = 8545
 
 function spawnProcess (name, config) {
   ProcessManager.describe(name, (err, process) => {
