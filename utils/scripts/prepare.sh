@@ -58,7 +58,7 @@ then
     git clone --depth 1 --branch "1.31.0" "https://github.com/nearprotocol/nearcore" $CORE_SRC
     cd $CORE_SRC
     cargo build --package neard --bin neard
-  fi
+  # fi
 else
   echo "Linking the specified local repo from ${LOCAL_CORE_SRC} to ${CORE_SRC}"
   ln -s $LOCAL_CORE_SRC $CORE_SRC

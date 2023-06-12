@@ -31,7 +31,7 @@ hardhat node
 Deploy ED25519 Solidity contract:
 ```bash
 cli/index.js init-eth-ed25519 \
-    --eth-node-url http://127.0.0.1:8545/ \
+    --eth-node-url http://127.0.0.1:9545/ \
     --eth-master-sk 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 ```
 Address of deployed contract: `0x5fbdb2315678afecb367f032d93f642f64180aa3`
@@ -52,7 +52,7 @@ Address of deployed contract: `0xe7f1725e7734ce288f8367e1bb143e90bb3f0512`
 Start Near2EthRelay:
 ```bash
 cli/index.js start near2eth-relay \
-    --eth-node-url http://127.0.0.1:8545/ \
+    --eth-node-url http://127.0.0.1:9545/ \
     --eth-master-sk 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
     --near-node-url https://rpc.testnet.near.org/ \
     --near-network-id testnet \

@@ -22,7 +22,7 @@ while ! curl localhost:3030; do
   sleep 1
 done
 
-while ! curl localhost:8545; do
+while ! curl localhost:9545; do
   sleep 1
 done
 
@@ -43,7 +43,7 @@ node index.js init-near-token-factory
 
 # deploy myerc20 token
 node index.js DANGER deploy_test_erc20 \
---eth-node-url http://localhost:8545 \
+--eth-node-url http://localhost:9545 \
 > /tmp/eth2neartransfer.out
 cat /tmp/eth2neartransfer.out | xargs node index.js deploy-token myerc20
 

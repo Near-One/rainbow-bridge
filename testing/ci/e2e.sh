@@ -22,12 +22,9 @@ while ! curl localhost:3030; do
   sleep 1
 done
 
-# while ! curl 127.0.0.1:8545; do
-#   sleep 1
-# done
-if ! curl 127.0.0.1:8545; then
-sleep 10
-fi 
+while ! curl 127.0.0.1:9545; do
+  sleep 1
+done
 
 node index.js init-near-contracts --num-confirmations 2
 echo "near contracts deployed"

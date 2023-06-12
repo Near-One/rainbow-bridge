@@ -24,7 +24,7 @@ function getConfig (env) {
         nearEthClientId: 'client.test.near',
         nearEthProverId: 'prover.test.near',
         // Ethereum configuration.
-        ethNodeUrl: 'http://localhost:8545',
+        ethNodeUrl: 'http://localhost:9545',
         ethFromSecretKey: '0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200',
         ethProverAddress: ''
       }
