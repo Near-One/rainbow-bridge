@@ -61,11 +61,11 @@ it('2023-05-09 Example', async function () {
 
 it('Add second block in first epoch should be verifiable', async function () {
     // Get "initial validators" that will produce block 304
-    const block244 = require('./244.json');
+    const block244 = require('./block_244.json');
     const initialValidators = block244.next_bps;
 
-    const block304 = require('./304.json');
-    const block308 = require('./308.json');
+    const block304 = require('./block_304.json');
+    const block308 = require('./block_308.json');
 
     await NearBridge.initWithValidators(borshifyInitialValidators(initialValidators));
     await NearBridge.initWithBlock(borshify(block304));
@@ -84,13 +84,12 @@ it('Add second block in first epoch should be verifiable', async function () {
 });
 
 it('Test adding blocks in new epoch when bps change', async function () {
-
-    const block126313429 = require('./126313429.json');
-    const block126315547 = require('./126315547.json');
-    const block126315744 = require('./126315744.json');
-    const block126315811 = require('./126315811.json');
-    const block126315892 = require('./126315892.json');
-    const block126315927 = require('./126315927.json');
+    const block126313429 = require('./block_126313429.json');
+    const block126315547 = require('./block_126315547.json');
+    const block126315744 = require('./block_126315744.json');
+    const block126315811 = require('./block_126315811.json');
+    const block126315892 = require('./block_126315892.json');
+    const block126315927 = require('./block_126315927.json');
 
     await NearBridge.initWithValidators(borshifyInitialValidators(block126313429.next_bps));
     await NearBridge.initWithBlock(borshify(block126315547));
@@ -119,11 +118,11 @@ it('Test adding blocks in new epoch when bps change', async function () {
 
 it('After challenge prev should be revert to prev epoch of latest valid block', async function () {
 
-    const block126313429 = require('./126313429.json');
-    const block126315547 = require('./126315547.json');
-    const block126315744 = require('./126315744.json');
-    const block126315811 = require('./126315811.json');
-    const block126315892 = require('./126315892.json');
+    const block126313429 = require('./block_126313429.json');
+    const block126315547 = require('./block_126315547.json');
+    const block126315744 = require('./block_126315744.json');
+    const block126315811 = require('./block_126315811.json');
+    const block126315892 = require('./block_126315892.json');
 
     await NearBridge.initWithValidators(borshifyInitialValidators(block126313429.next_bps));
     await NearBridge.initWithBlock(borshify(block126315547));
