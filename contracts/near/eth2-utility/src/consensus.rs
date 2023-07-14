@@ -31,6 +31,7 @@ pub const EXECUTION_PROOF_SIZE: usize =
 pub enum Network {
     Mainnet,
     Goerli,
+    Sepolia,
 }
 
 impl FromStr for Network {
@@ -76,6 +77,17 @@ impl NetworkConfig {
                 bellatrix_fork_epoch: 112260,
                 capella_fork_version: [0x03, 0x00, 0x10, 0x20],
                 capella_fork_epoch: 162304,
+            },
+            Network::Sepolia => Self {
+                genesis_validators_root: [
+                    0xd8, 0xea, 0x17, 0x1f, 0x3c, 0x94, 0xae, 0xa2, 0x1e, 0xbc, 0x42, 0xa1, 0xed,
+                    0x61, 0x05, 0x2a, 0xcf, 0x3f, 0x92, 0x09, 0xc0, 0x0e, 0x4e, 0xfb, 0xaa, 0xdd,
+                    0xac, 0x09, 0xed, 0x9b, 0x80, 0x78,
+                ],
+                bellatrix_fork_version: [0x90, 0x00, 0x00, 0x71],
+                bellatrix_fork_epoch: 100,
+                capella_fork_version: [0x90, 0x00, 0x00, 0x72],
+                capella_fork_epoch: 56832,
             },
         }
     }
