@@ -159,6 +159,16 @@ pub struct BlockHeader {
     )]
     pub base_fee_per_gas: Option<u64>,
     pub withdrawals_root: Option<H256>,
+    #[cfg_attr(
+        all(feature = "eth2", not(target_arch = "wasm32")),
+        serde(deserialize_with = "u64_hex_be_option")
+    )]
+    pub data_gas_used: Option<u64>,
+    #[cfg_attr(
+        all(feature = "eth2", not(target_arch = "wasm32")),
+        serde(deserialize_with = "u64_hex_be_option")
+    )]
+    pub excess_data_gas: Option<u64>,
 
     pub hash: Option<H256>,
     pub partial_hash: Option<H256>,
@@ -192,6 +202,12 @@ impl BlockHeader {
         if self.withdrawals_root.is_some() {
             list_size += 1;
         }
+        if self.data_gas_used.is_some() {
+            list_size += 1;
+        }
+        if self.excess_data_gas.is_some() {
+            list_size += 1;
+        }
 
         stream.begin_list(list_size);
 
@@ -220,6 +236,14 @@ impl BlockHeader {
 
         if let Some(withdrawals_root) = &self.withdrawals_root {
             stream.append(withdrawals_root);
+        }
+
+        if let Some(data_gas_used) = &self.data_gas_used {
+            stream.append(data_gas_used);
+        }
+
+        if let Some(excess_data_gas) = &self.excess_data_gas {
+            stream.append(excess_data_gas);
         }
     }
 
@@ -259,6 +283,8 @@ impl RlpDecodable for BlockHeader {
             nonce: serialized.val_at(14)?,
             base_fee_per_gas: serialized.val_at(15).ok(),
             withdrawals_root: serialized.val_at(16).ok(),
+            data_gas_used: serialized.val_at(17).ok(),
+            excess_data_gas: serialized.val_at(18).ok(),
             hash: None,
             partial_hash: None,
         };
