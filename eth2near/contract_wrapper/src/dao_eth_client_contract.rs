@@ -63,7 +63,9 @@ impl EthClientContractTrait for DaoEthClientContract {
                 light_client_update,
             )?;
 
-        loop {
+        let max_num_of_iterations = 10;
+        let mut count = 0;
+        while count < max_num_of_iterations {
             let proposal_status = self.dao_contract.get_proposal(proposal_id);
             if let Ok(staus) = proposal_status {
                 if staus.proposal.status != dao_types::ProposalStatus::InProgress {
@@ -72,6 +74,7 @@ impl EthClientContractTrait for DaoEthClientContract {
             }
 
             thread::sleep(Duration::from_secs(10));
+            count += 1;
         }
 
         Ok(execution_outcome)
