@@ -18,5 +18,6 @@ spec:
   deployedAt:
     - contract:near/mainnet/prover.bridge.near
     - contract:near/mainnet/prover_v2.bridge.near
+    - contract:near/testnet/prover.goerli.testnet
   interactsWith:
     - contract:near/mainnet/client.bridge.near
