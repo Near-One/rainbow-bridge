@@ -19,6 +19,5 @@ spec:
     - contract:near/mainnet/client.bridge.near
     - contract:near/mainnet/client-eth2.bridge.near
     - contract:near/testnet/client-eth2.goerli.testnet
-    - contract:near/testnet/client6.goerli.testnet
   interactsWith:
     - relayer:near/mainnet/relayer.bridge.near
