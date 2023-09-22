@@ -421,6 +421,21 @@ impl Eth2NearRelay {
     }
 
     fn send_light_client_updates_with_checks(&mut self) -> bool {
+        if !return_val_on_fail!(
+            self.eth_client_contract
+                .is_ready_to_submit_light_client_update(),
+            "Fail to send light client update",
+            false
+        ) {
+            warn!(
+                target: "relay", "Wait {} secs, before submiting new light client update",
+                self.sleep_time_on_in_progress_proposal_secs
+            );
+            thread::sleep(Duration::from_secs(
+                self.sleep_time_on_in_progress_proposal_secs,
+            ));
+        }
+
         let last_finalized_slot_on_near: u64 = return_val_on_fail!(
             self.get_last_finalized_slot_on_near(),
             "Error on getting finalized block slot on NEAR. Skipping sending light client update",
@@ -651,17 +666,6 @@ impl Eth2NearRelay {
         } else {
             warn!(target: "relay", "NOT PASS bls signature verification. Skip sending this light client update");
             return false;
-        }
-
-        if !return_val_on_fail!(
-            self.eth_client_contract
-                .is_ready_to_submit_light_client_update(),
-            "Fail to send light client update",
-            false
-        ) {
-            thread::sleep(Duration::from_secs(
-                self.sleep_time_on_in_progress_proposal_secs,
-            ));
         }
 
         let execution_outcome = return_val_on_fail_and_sleep!(
