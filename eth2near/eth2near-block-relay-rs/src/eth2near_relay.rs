@@ -94,6 +94,7 @@ pub struct Eth2NearRelay {
     next_light_client_update: Option<LightClientUpdate>,
     sleep_time_on_sync_secs: u64,
     sleep_time_after_submission_secs: u64,
+    sleep_time_on_in_progress_proposal_secs: u64,
     get_light_client_update_by_epoch: bool,
 }
 
@@ -126,6 +127,7 @@ impl Eth2NearRelay {
             next_light_client_update,
             sleep_time_on_sync_secs: config.sleep_time_on_sync_secs,
             sleep_time_after_submission_secs: config.sleep_time_after_submission_secs,
+            sleep_time_on_in_progress_proposal_secs: config.sleep_time_on_in_progress_proposal_secs,
             get_light_client_update_by_epoch: config
                 .get_light_client_update_by_epoch
                 .unwrap_or(false),
@@ -649,6 +651,17 @@ impl Eth2NearRelay {
         } else {
             warn!(target: "relay", "NOT PASS bls signature verification. Skip sending this light client update");
             return false;
+        }
+
+        if !return_val_on_fail!(
+            self.eth_client_contract
+                .is_ready_to_submit_light_client_update(),
+            "Fail to send light client update",
+            false
+        ) {
+            thread::sleep(Duration::from_secs(
+                self.sleep_time_on_in_progress_proposal_secs,
+            ));
         }
 
         let execution_outcome = return_val_on_fail_and_sleep!(

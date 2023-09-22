@@ -36,26 +36,6 @@ impl EthClientContractTrait for DaoEthClientContract {
         &mut self,
         light_client_update: LightClientUpdate,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
-        // Check for already submitted updates
-        let last_proposal_id = self.dao_contract.get_last_proposal_id()?;
-        if last_proposal_id > 0 {
-            let last_proposal_output = self.dao_contract.get_proposal(last_proposal_id - 1)?;
-            if last_proposal_output.proposal.status == dao_types::ProposalStatus::InProgress
-                && last_proposal_output.proposal.proposer.to_string()
-                    == self
-                        .dao_contract
-                        .contract_wrapper
-                        .get_signer_account_id()
-                        .to_string()
-            {
-                return Err(format!(
-                    "A proposal {} has already been submitted by this relayer which is in progress",
-                    last_proposal_id
-                )
-                .into());
-            }
-        }
-
         // Submmit new proposal
         let (proposal_id, execution_outcome) =
             self.dao_contract.submit_light_client_update_proposal(
@@ -78,6 +58,26 @@ impl EthClientContractTrait for DaoEthClientContract {
         }
 
         Ok(execution_outcome)
+    }
+
+    fn is_ready_to_submit_light_client_update(&self) -> Result<bool, Box<dyn Error>> {
+        // Check for already submitted updates
+        let last_proposal_id = self.dao_contract.get_last_proposal_id()?;
+        if last_proposal_id > 0 {
+            let last_proposal_output = self.dao_contract.get_proposal(last_proposal_id - 1)?;
+            if last_proposal_output.proposal.status == dao_types::ProposalStatus::InProgress
+                && last_proposal_output.proposal.proposer.to_string()
+                    == self
+                        .dao_contract
+                        .contract_wrapper
+                        .get_signer_account_id()
+                        .to_string()
+            {
+                return Ok(false);
+            }
+        }
+
+        return Ok(true);
     }
 
     fn get_finalized_beacon_block_hash(&self) -> Result<H256, Box<dyn Error>> {
