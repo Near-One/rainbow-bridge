@@ -1,8 +1,8 @@
 use crate::eth_client_contract::EthClientContract;
 use crate::eth_client_contract_trait::EthClientContractTrait;
+use eth2_utility::types::ClientMode;
 use eth_types::eth2::{LightClientState, LightClientUpdate};
 use eth_types::{BlockHeader, H256};
-use eth2_utility::types::ClientMode;
 use near_primitives::views::FinalExecutionOutcomeView;
 use std::error::Error;
 use std::fs::File;
@@ -67,7 +67,7 @@ impl EthClientContractTrait for FileEthClientContract {
 
     fn send_headers(
         &mut self,
-        headers: &[BlockHeader]
+        headers: &[BlockHeader],
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>> {
         for header in headers {
             self.blocks_headers_file

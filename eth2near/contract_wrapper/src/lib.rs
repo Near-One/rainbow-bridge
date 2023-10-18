@@ -10,5 +10,6 @@ pub mod file_eth_client_contract;
 pub mod near_contract_wrapper;
 pub mod near_network;
 pub mod near_rpc_client;
+#[cfg(test)]
 pub mod sandbox_contract_wrapper;
 pub mod utils;
