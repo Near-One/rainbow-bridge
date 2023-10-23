@@ -1,6 +1,6 @@
+use eth2_utility::types::ClientMode;
 use eth_types::eth2::{LightClientState, LightClientUpdate};
 use eth_types::{BlockHeader, H256};
-use eth2_utility::types::ClientMode;
 use near_primitives::views::FinalExecutionOutcomeView;
 use std::error::Error;
 
@@ -25,7 +25,7 @@ pub trait EthClientContractTrait {
     /// * `headers` - the list of headers for submission to Eth Client
     fn send_headers(
         &mut self,
-        headers: &[BlockHeader]
+        headers: &[BlockHeader],
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>>;
 
     fn get_client_mode(&self) -> Result<ClientMode, Box<dyn Error>>;
