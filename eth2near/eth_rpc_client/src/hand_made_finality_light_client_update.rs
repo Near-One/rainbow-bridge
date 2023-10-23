@@ -107,12 +107,12 @@ impl HandMadeFinalityLightClientUpdate {
                 .map(|x| x.count_ones())
                 .sum();
             if sync_committee_bits_sum * 3 < (64 * 8 * 2) {
-                current_attested_slot = signature_slot;
+                current_attested_slot -= 1;
                 continue;
             }
 
             if signature_beacon_body.attestations().is_empty() {
-                current_attested_slot = signature_slot;
+                current_attested_slot -= 1;
                 continue;
             }
 

@@ -8,10 +8,10 @@ use eth2_utility::consensus::*;
 use eth2_utility::types::*;
 use eth_types::eth2::*;
 use eth_types::{BlockHeader, H256};
-use near_sdk::collections::{LazyOption, LookupMap};
-use near_sdk::{
-    assert_self, env, near_bindgen, require, AccountId, BorshStorageKey, PanicOnDefault,
-};
+use near_sdk::collections::{LookupMap, UnorderedMap};
+use near_sdk::{assert_self, env, near_bindgen, require, AccountId, PanicOnDefault};
+use near_sdk_inner::collections::LazyOption;
+use near_sdk_inner::{Balance, BorshStorageKey};
 use tree_hash::TreeHash;
 
 #[cfg(test)]
