@@ -10,8 +10,13 @@ jobs:
     name: Sigma Prime security testing
     steps:
 
+      - name: Install LFS
+        run: apt-get install git-lfs
+
       - name: Clone the repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          lfs: 'true'
 
       - name: Clone sigma prime security testing repository
         uses: actions/checkout@v2

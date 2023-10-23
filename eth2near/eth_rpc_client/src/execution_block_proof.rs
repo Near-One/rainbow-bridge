@@ -1,11 +1,11 @@
 use crate::beacon_block_body_merkle_tree::{BeaconBlockBodyMerkleTree, ExecutionPayloadMerkleTree};
+use crate::errors::{MerkleTreeError, MissExecutionPayload};
 use eth2_hashing;
 use ethereum_types::H256;
 use std::error::Error;
 use std::fmt;
 use std::fmt::Display;
-use types::{BeaconBlockBody, MainnetEthSpec};
-use crate::errors::MissExecutionPayload;
+use types::{BeaconBlockBody, ExecutionPayload, MainnetEthSpec};
 
 /// `ExecutionBlockProof` contains a `block_hash` (execution block) and
 /// a proof of its inclusion in the `BeaconBlockBody` tree hash.
@@ -46,7 +46,7 @@ impl ExecutionBlockProof {
             &beacon_block_body
                 .execution_payload()
                 .map_err(|_| MissExecutionPayload)?
-                .execution_payload,
+                .into(),
         );
 
         let l1_execution_payload_proof = beacon_block_merkle_tree
@@ -55,6 +55,7 @@ impl ExecutionBlockProof {
                 Self::L1_BEACON_BLOCK_BODY_TREE_EXECUTION_PAYLOAD_INDEX,
                 Self::L1_BEACON_BLOCK_BODY_PROOF_SIZE,
             )
+            .map_err(|err| MerkleTreeError(err))?
             .1;
         let mut block_proof = execution_payload_merkle_tree
             .0
@@ -62,16 +63,16 @@ impl ExecutionBlockProof {
                 Self::L2_EXECUTION_PAYLOAD_TREE_EXECUTION_BLOCK_INDEX,
                 Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE,
             )
+            .map_err(|err| MerkleTreeError(err))?
             .1;
         block_proof.extend(&l1_execution_payload_proof);
 
+        let execution_payload: ExecutionPayload<MainnetEthSpec> = beacon_block_body
+            .execution_payload()
+            .map_err(|_| MissExecutionPayload)?
+            .into();
         Ok(Self {
-            block_hash: beacon_block_body
-                .execution_payload()
-                .map_err(|_| MissExecutionPayload)?
-                .execution_payload
-                .block_hash
-                .into_root(),
+            block_hash: execution_payload.block_hash().into_root(),
             proof: block_proof.as_slice().try_into()?,
         })
     }
@@ -153,8 +154,8 @@ impl Error for IncorrectBranchLength {}
 mod tests {
     use crate::config_for_tests::ConfigForTests;
     use crate::utils::read_json_file_from_data_dir;
-    use types::BeaconBlockBody;
     use types::MainnetEthSpec;
+    use types::{BeaconBlockBody, ExecutionPayload};
 
     const TIMEOUT_SECONDS: u64 = 30;
     const TIMEOUT_STATE_SECONDS: u64 = 1000;
@@ -166,7 +167,7 @@ mod tests {
     #[test]
     fn test_beacon_block_body_root_verification() {
         let beacon_block_body_json_str =
-            read_json_file_from_data_dir("beacon_block_body_kiln_slot_741888.json");
+            read_json_file_from_data_dir("beacon_block_body_goerli_slot_5262172.json");
 
         let beacon_block_body: BeaconBlockBody<MainnetEthSpec> =
             serde_json::from_str(&beacon_block_body_json_str).unwrap();
@@ -178,7 +179,7 @@ mod tests {
 
         assert_eq!(
             format!("{:?}", beacon_block_body_merkle_tree.0.hash()),
-            "0xd7f1c80baaceb9a1d3301e4f740fe8b5de9970153dc2ab254a4be39fe054addc"
+            "0x5f3a9eda5c6d2f5c30e4ad2f9c5221334deec7ea2e3ba2b21b78cf10c7f9b1fe"
         );
 
         let execution_block_proof =
@@ -187,12 +188,10 @@ mod tests {
             )
             .unwrap();
 
+        let execution_payload: ExecutionPayload<MainnetEthSpec> =
+            beacon_block_body.execution_payload().unwrap().into();
         assert_eq!(
-            beacon_block_body
-                .execution_payload()
-                .unwrap()
-                .execution_payload
-                .block_hash,
+            execution_payload.block_hash(),
             types::ExecutionBlockHash::from_root(execution_block_proof.get_execution_block_hash())
         );
 

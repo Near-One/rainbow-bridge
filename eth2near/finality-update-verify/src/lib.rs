@@ -94,17 +94,13 @@ pub fn is_correct_finality_update(
 
 #[cfg(test)]
 mod tests {
-    use crate::is_correct_finality_update;
     use crate::config_for_tests::ConfigForTests;
+    use crate::is_correct_finality_update;
     use eth_types::eth2::LightClientUpdate;
     use eth_types::eth2::SyncCommittee;
 
     fn get_config() -> ConfigForTests {
-        ConfigForTests::load_from_toml(
-            "config_for_tests.toml"
-                .try_into()
-                .unwrap(),
-        )
+        ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
     }
 
     #[test]

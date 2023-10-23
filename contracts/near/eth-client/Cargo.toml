@@ -8,16 +8,16 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-eth-types =  { path = "../eth-types", default-features = false }
-near-sdk = "4.0.0"
-rlp = "0.4.2"
-futures = "0.1.26"
+eth-types = { path = "../eth-types", default-features = false }
+admin-controlled = { path = "../admin-controlled" }
+near-sdk = "4.1.1"
+borsh = "0.9.3"
+rlp = "0.5.2"
 primal = "0.2.3"
 arrutil = "0.1.2"
-ethash = { git = "https://github.com/nearprotocol/rust-ethash" }
+ethash = { git = "https://github.com/aurora-is-near/rust-ethash", tag = "0.2.0", default-features = false }
 hex = "0.4.0"
 rustc-hex = "2.1.0"
-borsh = "0.9.3"
 near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", rev = "8920f9a72631f1b224ed93405640bc062f2a0191" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -25,12 +25,15 @@ near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", rev = "
 serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
-web3 = "0.8.0"
+tokio = "1.19"
+primitive-types = { version = "0.7.2", default-features = false, features = [
+    "rlp",
+] }
+web3 = "0.18.0"
 lazy_static = "1.4.0"
 serde_json = "1.0"
 indicatif = "0.14"
 
 [features]
-default = ["eip1559"]
+default = []
 expensive_tests = []
-eip1559 = ["eth-types/eip1559"]

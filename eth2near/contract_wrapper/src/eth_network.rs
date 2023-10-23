@@ -1,8 +1,8 @@
+use serde::Deserialize;
 use std::error::Error;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
 pub enum EthNetwork {
@@ -38,7 +38,7 @@ impl EthNetwork {
             EthNetwork::Mainnet => "mainnet",
             EthNetwork::Kiln => "kiln",
             EthNetwork::Goerli => "goerli",
-            EthNetwork::Ropsten => "ropsten"
+            EthNetwork::Ropsten => "ropsten",
         }
     }
 }

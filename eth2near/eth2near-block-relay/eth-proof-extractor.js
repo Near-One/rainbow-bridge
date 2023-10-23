@@ -1,5 +1,5 @@
 const Tree = require('merkle-patricia-tree')
-const { Header, Proof, Receipt, Log } = require('eth-object')
+const { Header, Proof, Receipt, Log, Account } = require('eth-object')
 const utils = require('ethereumjs-util')
 const { encode } = require('eth-util-lite')
 const { promisfy } = require('promisfy')
@@ -25,6 +25,22 @@ class EthProofExtractor {
 
   async extractBlock (blockNumber) {
     return await this.robustWeb3.getBlock(blockNumber)
+  }
+
+  async extractStorageProof (contractAddress, slotKey, blockNumber) {
+    const proofFromWeb3 = await this.web3.eth.getProof(contractAddress, [slotKey], blockNumber)
+    const blockData = await this.web3.eth.getBlock(blockNumber)
+    const header = Header.fromWeb3(blockData)
+    proofFromWeb3.nonce = this.web3.utils.toHex(proofFromWeb3.nonce)
+    proofFromWeb3.balance = this.web3.utils.toHex(proofFromWeb3.balance)
+    const account = Account.fromRpc(proofFromWeb3)
+    return {
+      header_rlp: header.serialize(),
+      account_rlp: account.serialize(),
+      account_proof: proofFromWeb3.accountProof,
+      storage_proof: proofFromWeb3.storageProof[0].proof,
+      value: proofFromWeb3.storageProof[0].value
+    }
   }
 
   async buildTrie (block) {
@@ -127,6 +143,33 @@ async function ethToNearFindProof ({ lockedEventRaw, ethNodeUrl }) {
   web3.currentProvider.connection.close()
 }
 
+async function ethToNearFindStorageProof ({ contractAddress, storageKey, blockNumber, ethNodeUrl }) {
+  const robustWeb3 = new RobustWeb3(ethNodeUrl)
+  const web3 = robustWeb3.web3
+  try {
+    const extractor = new EthProofExtractor()
+    extractor.initialize(ethNodeUrl)
+
+    const extractedProof = await extractor.extractStorageProof(contractAddress, storageKey, blockNumber)
+    extractor.destroy()
+
+    const proof = {
+      contract_address: utils.stripHexPrefix(contractAddress.toLowerCase()),
+      storage_key: utils.stripHexPrefix(storageKey),
+      block_number: blockNumber,
+      header_data: extractedProof.header_rlp.toString('hex'),
+      account_proof: extractedProof.account_proof.map(x => utils.stripHexPrefix(x)),
+      expected_account_state: extractedProof.account_rlp.toString('hex'),
+      storage_key_hash: utils.stripHexPrefix(web3.utils.keccak256(storageKey)),
+      storage_proof: extractedProof.storage_proof.map(x => utils.stripHexPrefix(x)),
+      value: utils.padToEven(utils.stripHexPrefix(extractedProof.value))
+    }
+    console.log(JSON.stringify(proof, JSONreplacer))
+  } catch (error) {
+    console.log('Failed', error.toString())
+  }
+}
+
 EthProofExtractor.fromWeb3 = (web3) => {
   const extractor = new EthProofExtractor()
   extractor.robustWeb3 = new RobustWeb3(web3.currentProvider.host)
@@ -138,3 +181,4 @@ exports.EthProofExtractor = EthProofExtractor
 exports.receiptFromWeb3 = receiptFromWeb3
 exports.logFromWeb3 = logFromWeb3
 exports.ethToNearFindProof = ethToNearFindProof
+exports.ethToNearFindStorageProof = ethToNearFindStorageProof

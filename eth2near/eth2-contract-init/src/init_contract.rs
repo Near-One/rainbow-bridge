@@ -1,19 +1,21 @@
+use crate::config::Config;
 use contract_wrapper::eth_client_contract::EthClientContract;
+use contract_wrapper::near_network::NearNetwork;
+use eth2_utility::consensus;
 use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
 use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
+use eth_rpc_client::light_client_snapshot_with_proof::LightClientSnapshotWithProof;
 use eth_types::eth2::ExtendedBeaconBlockHeader;
 use eth_types::BlockHeader;
 use log::info;
 use std::{thread, time};
-use contract_wrapper::near_network::NearNetwork;
-use eth_rpc_client::light_client_snapshot_with_proof::LightClientSnapshotWithProof;
-use crate::config::Config;
-use eth2_utility::consensus;
 use tree_hash::TreeHash;
+use types::{ExecutionPayload, MainnetEthSpec};
 
 const CURRENT_SYNC_COMMITTEE_INDEX: u32 = 54;
 const CURRENT_SYNC_COMMITTEE_TREE_DEPTH: u32 = consensus::floorlog2(CURRENT_SYNC_COMMITTEE_INDEX);
-const CURRENT_SYNC_COMMITTEE_TREE_INDEX: u32 = consensus::get_subtree_index(CURRENT_SYNC_COMMITTEE_INDEX);
+const CURRENT_SYNC_COMMITTEE_TREE_INDEX: u32 =
+    consensus::get_subtree_index(CURRENT_SYNC_COMMITTEE_INDEX);
 
 pub fn verify_light_client_snapshot(
     block_root: String,
@@ -47,7 +49,10 @@ pub fn init_contract(
     info!(target: "relay", "=== Contract initialization ===");
 
     if let NearNetwork::Mainnet = config.near_network_id {
-        assert!(config.validate_updates.unwrap_or(true), "The updates validation can't be disabled for mainnet");
+        assert!(
+            config.validate_updates.unwrap_or(true),
+            "The updates validation can't be disabled for mainnet"
+        );
         assert!(config.verify_bls_signature.unwrap_or(false) || config.trusted_signer_account_id.is_some(), "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet");
     }
 
@@ -59,8 +64,13 @@ pub fn init_contract(
     );
     let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
 
+    let last_period = BeaconRPCClient::get_period_for_slot(beacon_rpc_client
+        .get_last_slot_number()
+        .expect("Error on fetching last slot number")
+        .as_u64());
+
     let light_client_update_with_next_sync_committee = beacon_rpc_client
-        .get_light_client_update_for_last_period()
+        .get_light_client_update(last_period)
         .expect("Error on fetching finality light client update with sync committee update");
     let finality_light_client_update = beacon_rpc_client
         .get_finality_light_client_update()
@@ -80,14 +90,12 @@ pub fn init_contract(
         .get_beacon_block_body_for_block_id(&block_id)
         .expect("Error on fetching finalized body");
 
+    let execution_payload: ExecutionPayload<MainnetEthSpec> = finalized_body
+        .execution_payload()
+        .expect("No execution payload in finalized body")
+        .into();
     let finalized_execution_header: BlockHeader = eth1_rpc_client
-        .get_block_header_by_number(
-            finalized_body
-                .execution_payload()
-                .expect("No execution payload in finalized body")
-                .execution_payload
-                .block_number,
-        )
+        .get_block_header_by_number(execution_payload.block_number())
         .expect("Error on fetching finalized execution header");
 
     let next_sync_committee = light_client_update_with_next_sync_committee
@@ -95,10 +103,10 @@ pub fn init_contract(
         .expect("No sync_committee update in light client update")
         .next_sync_committee;
 
-    let init_block_root= match config.init_block_root.clone() {
+    let init_block_root = match config.init_block_root.clone() {
         None => beacon_rpc_client
-                .get_checkpoint_root()
-                .expect("Fail to get last checkpoint"),
+            .get_checkpoint_root()
+            .expect("Fail to get last checkpoint"),
         Some(init_block_str) => init_block_str,
     };
 
@@ -120,7 +128,11 @@ pub fn init_contract(
 
     let mut trusted_signature: Option<near_primitives::types::AccountId> = Option::None;
     if let Some(trusted_signature_name) = config.trusted_signer_account_id.clone() {
-        trusted_signature = Option::Some(trusted_signature_name.parse().expect("Error on parsing trusted signature account"));
+        trusted_signature = Option::Some(
+            trusted_signature_name
+                .parse()
+                .expect("Error on parsing trusted signature account"),
+        );
     }
 
     eth_client_contract.init_contract(
@@ -132,7 +144,6 @@ pub fn init_contract(
         config.validate_updates,
         config.verify_bls_signature,
         config.hashes_gc_threshold,
-        config.max_submitted_blocks_by_account,
         trusted_signature,
     );
 
@@ -142,15 +153,15 @@ pub fn init_contract(
 
 #[cfg(test)]
 mod tests {
-    use contract_wrapper::eth_client_contract::EthClientContract;
-    use tokio::runtime::Runtime;
-    use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
-    use workspaces::{Account, Contract};
-    use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
-    use crate::init_contract::init_contract;
-    use contract_wrapper::near_network::NearNetwork;
-    use eth_rpc_client::beacon_rpc_client::{BeaconRPCClient, BeaconRPCVersion};
     use crate::config_for_tests::ConfigForTests;
+    use crate::init_contract::init_contract;
+    use contract_wrapper::eth_client_contract::EthClientContract;
+    use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
+    use contract_wrapper::near_network::NearNetwork;
+    use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
+    use eth_rpc_client::beacon_rpc_client::{BeaconRPCClient, BeaconRPCVersion};
+    use tokio::runtime::Runtime;
+    use workspaces::{Account, Contract};
 
     const ONE_EPOCH_IN_SLOTS: u64 = 32;
 
@@ -167,7 +178,10 @@ mod tests {
         (owner, contract)
     }
 
-    fn get_init_config(config_for_test: &ConfigForTests,  eth_client_contract: &EthClientContract) -> crate::config::Config {
+    fn get_init_config(
+        config_for_test: &ConfigForTests,
+        eth_client_contract: &EthClientContract,
+    ) -> crate::config::Config {
         return crate::config::Config {
             beacon_endpoint: config_for_test.beacon_endpoint.to_string(),
             eth1_endpoint: config_for_test.eth1_endpoint.to_string(),
@@ -183,16 +197,19 @@ mod tests {
             verify_bls_signature: Some(false),
             hashes_gc_threshold: Some(51000),
             max_submitted_blocks_by_account: Some(8000),
-            trusted_signer_account_id: Some(eth_client_contract.get_signer_account_id().to_string()),
+            trusted_signer_account_id: Some(
+                eth_client_contract.get_signer_account_id().to_string(),
+            ),
             init_block_root: None,
             beacon_rpc_version: BeaconRPCVersion::V1_1,
-        }
+        };
     }
 
     #[test]
     #[should_panic(expected = "The updates validation can't be disabled for mainnet")]
     fn test_init_contract_on_mainnet_without_validation() {
-        let config_for_test = ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap());
+        let config_for_test =
+            ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap());
 
         let (relay_account, contract) = create_contract(&config_for_test);
         let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
@@ -205,11 +222,13 @@ mod tests {
         init_contract(&init_config, &mut eth_client_contract).unwrap();
     }
 
-
     #[test]
-    #[should_panic(expected = "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet")]
+    #[should_panic(
+        expected = "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet"
+    )]
     fn test_init_contract_on_mainnet_without_trusted_signature() {
-        let config_for_test = ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap());
+        let config_for_test =
+            ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap());
 
         let (relay_account, contract) = create_contract(&config_for_test);
         let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
@@ -224,13 +243,15 @@ mod tests {
 
     #[test]
     fn test_sync_with_eth_after_init() {
-        let config_for_test = ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap());
+        let config_for_test =
+            ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap());
 
         let (relay_account, contract) = create_contract(&config_for_test);
         let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
 
         let mut eth_client_contract = EthClientContract::new(contract_wrapper);
-        let init_config = get_init_config(&config_for_test, &eth_client_contract);
+        let mut init_config = get_init_config(&config_for_test, &eth_client_contract);
+        init_config.beacon_rpc_version = BeaconRPCVersion::V1_5;
 
         init_contract(&init_config, &mut eth_client_contract).unwrap();
 
@@ -251,8 +272,10 @@ mod tests {
 
         const MAX_GAP_IN_EPOCH_BETWEEN_FINALIZED_SLOTS: u64 = 3;
 
-        assert!(last_finalized_slot_eth_client +
-            ONE_EPOCH_IN_SLOTS * MAX_GAP_IN_EPOCH_BETWEEN_FINALIZED_SLOTS
-            >= last_finalized_slot_eth_network.as_u64());
+        assert!(
+            last_finalized_slot_eth_client
+                + ONE_EPOCH_IN_SLOTS * MAX_GAP_IN_EPOCH_BETWEEN_FINALIZED_SLOTS
+                >= last_finalized_slot_eth_network.as_u64()
+        );
     }
 }
