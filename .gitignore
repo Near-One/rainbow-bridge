@@ -7,7 +7,6 @@ coverage
 coverage.json
 node_modules
 target
-testdata
 vendor
 .history
 .DS_Store
