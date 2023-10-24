@@ -37,7 +37,7 @@ const {
 } = require('rainbow-bridge-testing')
 const { ETHDump } = require('./commands/eth-dump')
 const { NearDump } = require('./commands/near-dump')
-const { ethToNearFindProof } = require('rainbow-bridge-eth2near-block-relay')
+const { ethToNearFindProof, ethToNearFindStorageProof } = require('rainbow-bridge-eth2near-block-relay')
 const { RainbowConfig } = require('rainbow-bridge-utils')
 const { UpdateDagMerkleRoots } = require('./commands/update-dag-merkle-roots')
 const {
@@ -643,6 +643,18 @@ RainbowConfig.addOptions(
     .description('Get eth-to-near proof by locked event.'),
   async (lockedEventRaw, args) => {
     await ethToNearFindProof({ lockedEventRaw, ...args })
+  },
+  [
+    'eth-node-url'
+  ]
+)
+
+RainbowConfig.addOptions(
+  program
+    .command('eth-to-near-find-storage-proof <contract-address> <storage_key> <block-number>')
+    .description('Get eth-to-near storage proof for provided storage key.'),
+  async (contractAddress, storageKey, blockNumber, args) => {
+    await ethToNearFindStorageProof({ contractAddress, storageKey, blockNumber, ...args })
   },
   [
     'eth-node-url'

@@ -20,6 +20,7 @@ spec:
   system: bridge-protocol
   deployedAt:
     - contract:ethereum/mainnet/0x88f975d5a1153ea92af66e7c4292576a329c04b6
+    - contract:ethereum/goerli/0x6f2C9EbFB1e3Ff065E6725A715B458EF13206097
   interactsWith: []
 ---
 apiVersion: backstage.io/v1alpha1
@@ -43,6 +44,7 @@ spec:
   system: bridge-protocol
   deployedAt:
     - contract:ethereum/mainnet/0x3FEFc5A4B1c02f21cBc8D3613643ba0635b9a873
+    - contract:ethereum/goerli/0x37c2d89b55bfd95532637554711441017efabfef
   interactsWith:
     - relayer:ethereum/mainnet/0x015e634c7c1311a9034220c28d3d12b7f710a3b1
   deprecated:

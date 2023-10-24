@@ -138,6 +138,71 @@ impl EthProver {
             .into()
     }
 
+    /// WARNING: When the value is not found, `eth_getProof` will return "0x0" at
+    /// the StorageProof `value` field.  In order to verify the proof of non
+    /// existence, you must set `value` to empty vec, *not* the RLP encoding of 0 or null
+    /// (which would be 0x80).
+    #[result_serializer(borsh)]
+    pub fn verify_storage_proof(
+        &self,
+        #[serializer(borsh)] header_data: Vec<u8>,
+        #[serializer(borsh)] account_proof: Vec<Vec<u8>>, // account proof
+        #[serializer(borsh)] contract_address: Vec<u8>,   // eth address
+        #[serializer(borsh)] expected_account_state: Vec<u8>, // encoded account state
+        #[serializer(borsh)] storage_key_hash: Vec<u8>,   // keccak256 of storage key
+        #[serializer(borsh)] storage_proof: Vec<Vec<u8>>, // storage proof
+        #[serializer(borsh)] expected_storage_value: Vec<u8>, // storage value
+        #[serializer(borsh)] min_header_height: Option<u64>,
+        #[serializer(borsh)] max_header_height: Option<u64>,
+        #[serializer(borsh)] skip_bridge_call: bool,
+    ) -> PromiseOrValue<bool> {
+        self.check_not_paused(PAUSE_VERIFY);
+        let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
+
+        if let Some(min_header_height) = min_header_height {
+            if header.number < min_header_height {
+                env::log_str(format!("Block height {} < Minimum header height {}", header.number, min_header_height).as_str());
+                return PromiseOrValue::Value(false);
+            }
+        }
+
+        if let Some(max_header_height) = max_header_height {
+            if header.number > max_header_height {
+                env::log_str(format!("Block height {} > Maximum header height {}", header.number, max_header_height).as_str());
+                return PromiseOrValue::Value(false);
+            }
+        }
+
+        let account_key = near_keccak256(&contract_address).to_vec();
+        let account_state = Self::verify_trie_proof(header.state_root, account_key, account_proof);
+        if account_state != expected_account_state {
+            env::log_str("account_state != expected_account_state");
+            return PromiseOrValue::Value(false);
+        }
+
+        let storage_hash: H256 = Rlp::new(&account_state).val_at(2).unwrap();
+        let storage_value = Self::verify_trie_proof(storage_hash, storage_key_hash, storage_proof);
+        if storage_value != expected_storage_value {
+            env::log_str("storage_value != expected_storage_value");
+            return PromiseOrValue::Value(false);
+        }
+
+        if skip_bridge_call {
+            return PromiseOrValue::Value(true);
+        }
+
+        // Verify block header was in the bridge
+        eth_client::ext(self.bridge_smart_contract.parse().unwrap())
+            .with_static_gas(BLOCK_HASH_SAFE_GAS)
+            .block_hash_safe(header.number)
+            .then(
+                remote_self::ext(env::current_account_id())
+                    .with_static_gas(ON_BLOCK_HASH_GAS)
+                    .on_block_hash(header.hash.unwrap()),
+            )
+            .into()
+    }
+
     /// Verify the proof recursively traversing through the key.
     /// Return the value at the end of the key, in case the proof is valid.
     ///
@@ -184,18 +249,23 @@ impl EthProver {
 
         if node.iter().count() == 17 {
             // Branch node
-            if key_index == key.len() {
+            if key_index >= key.len() {
                 assert_eq!(proof_index + 1, proof.len());
                 get_vec(&node, 16)
             } else {
                 let new_expected_root = get_vec(&node, key[key_index] as usize);
-                Self::_verify_trie_proof(
-                    new_expected_root,
-                    key,
-                    proof,
-                    key_index + 1,
-                    proof_index + 1,
-                )
+                if !new_expected_root.is_empty() {
+                    Self::_verify_trie_proof(
+                        new_expected_root,
+                        key,
+                        proof,
+                        key_index + 1,
+                        proof_index + 1,
+                    )
+                } else {
+                    // not included in proof
+                    vec![]
+                }
             }
         } else {
             // Leaf or extension node
@@ -211,19 +281,23 @@ impl EthProver {
             if head % 2 == 1 {
                 path.push(path_u8[0] % 16);
             }
-            for val in path_u8.into_iter().skip(1) {
+            for val in path_u8.iter().skip(1) {
                 path.push(val / 16);
                 path.push(val % 16);
             }
-            assert_eq!(path.as_slice(), &key[key_index..key_index + path.len()]);
 
             if head >= 2 {
                 // Leaf node
                 assert_eq!(proof_index + 1, proof.len());
                 assert_eq!(key_index + path.len(), key.len());
-                get_vec(&node, 1)
+                if path.as_slice() == &key[key_index..key_index + path.len()] {
+                    get_vec(&node, 1)
+                } else {
+                    vec![]
+                }
             } else {
                 // Extension node
+                assert_eq!(path.as_slice(), &key[key_index..key_index + path.len()]);
                 let new_expected_root = get_vec(&node, 1);
                 Self::_verify_trie_proof(
                     new_expected_root,
@@ -253,3 +327,4 @@ admin_controlled::impl_admin_controlled!(EthProver, paused);
 
 #[cfg(test)]
 mod tests;
+mod tests_storage_proof;

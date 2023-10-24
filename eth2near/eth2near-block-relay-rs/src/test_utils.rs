@@ -247,15 +247,9 @@ pub fn get_client_contract(
     Box::new(eth_client_contract)
 }
 
-pub fn get_relay(
-    from_file: bool,
-    config_for_test: &ConfigForTests,
-) -> Eth2NearRelay {
+pub fn get_relay(from_file: bool, config_for_test: &ConfigForTests) -> Eth2NearRelay {
     let config = get_config(config_for_test);
-    Eth2NearRelay::init(
-        &config,
-        get_client_contract(from_file, config_for_test)
-    )
+    Eth2NearRelay::init(&config, get_client_contract(from_file, config_for_test))
 }
 
 pub fn get_relay_with_update_from_file(
@@ -270,16 +264,10 @@ pub fn get_relay_with_update_from_file(
         config.include_next_sync_committee_to_light_client = true;
     }
 
-    Eth2NearRelay::init(
-        &config,
-        get_client_contract(from_file, config_for_test)
-    )
+    Eth2NearRelay::init(&config, get_client_contract(from_file, config_for_test))
 }
 
-pub fn get_relay_from_slot(
-    slot: u64,
-    config_for_test: &ConfigForTests,
-) -> Eth2NearRelay {
+pub fn get_relay_from_slot(slot: u64, config_for_test: &ConfigForTests) -> Eth2NearRelay {
     let config = get_config(config_for_test);
 
     let (relay_account, contract) = create_contract(&config_for_test);
@@ -289,8 +277,5 @@ pub fn get_relay_from_slot(
 
     init_contract_from_specific_slot(&mut eth_client_contract, slot, config_for_test);
 
-    Eth2NearRelay::init(
-        &config,
-        Box::new(eth_client_contract)
-    )
+    Eth2NearRelay::init(&config, Box::new(eth_client_contract))
 }

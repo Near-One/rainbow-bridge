@@ -1,0 +1,720 @@
+{
+    "prev_block_hash": "6rHDvJYaMzPE7zxq6Xp7RusUZX2o6Ch3bc32u2TDa66V",
+    "inner_lite": {
+        "block_merkle_root": "CSZgN4otVzP2N848HF44rQ5KL47fNYab1apwozFBDykU",
+        "epoch_id": "658x3BmdfXa5H1QszavHGPUyWkUCtat4jMtBfPLWob3",
+        "height": 91522620,
+        "next_bp_hash": "5JNt7bwzytrTNntPACjcYiy35J9fY7oZuUmQ6SeUwYcf",
+        "next_epoch_id": "BgKytezdDtWYo4xRhCdKniaiBKCeTRFf4wyXem6K6PXj",
+        "outcome_root": "Q8nDU1Dba3mm5j4snjQVnDPtkrnLA8cUpZyqxcmemR7",
+        "prev_state_root": "68kbVMc3mq9xTUAGYgM8gkFLEUpn37uMp6rkQYQxA9fy",
+        "timestamp": 1683712956123816400,
+        "timestamp_nanosec": "1683712956123816422"
+    },
+    "next_block_inner_hash": "5pCBKRhuYijQoW2LPKdo4E4sVWWn1AHFXKiHAuzZsJyD",
+    "inner_rest_hash": "EeGuBjjHFPQaZPEMVp4YQMasUedKTnpSyV2jFUrDEW66",
+    "next_bps": [
+        {
+            "account_id": "staked.poolv1.near",
+            "public_key": "ed25519:3JBVXqenru2ErAM1kHQ8qfd29dCkURLd6JKrFgtmcDTZ",
+            "stake": "39740810189671662194768218484679",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "figment.poolv1.near",
+            "public_key": "ed25519:7RjyY1bRKDqkshbKZtgpQdwsdxou8j9my8g1hPKZ9ngM",
+            "stake": "39510403156550832840342170171364",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "astro-stakers.poolv1.near",
+            "public_key": "ed25519:2nPSBCzjqikgwrqUMcuEVReJhmkC91eqJGPGqH9sZc28",
+            "stake": "26836509754866305947283619254078",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "bzam6yjpnfnxsdmjf6pw.poolv1.near",
+            "public_key": "ed25519:2ZJqaaCAisK4u8E2i611zFfvNmrvevovnU3M7SpGHkLY",
+            "stake": "23445337079803231176888585351285",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "zavodil.poolv1.near",
+            "public_key": "ed25519:HHARoU1hANWF9hu7YRstDDvgyigBhUeUuqecRVr8dpUz",
+            "stake": "18759510611743838448038779015135",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "binancenode1.poolv1.near",
+            "public_key": "ed25519:Bb7uPEocbsiQwRfPmsiiiM88DodtuYnBDi6dKZ4JZo2N",
+            "stake": "14154374950239173464878055307343",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "yes_protocol1.poolv1.near",
+            "public_key": "ed25519:4bnrmHSMYkvsgjbQSaCY3AFwrfS1w17ACEUQdn7aC4iT",
+            "stake": "13871748327185424026754284887094",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "epic.poolv1.near",
+            "public_key": "ed25519:68HExKDtw1CjGzopZ8fMAMhMSZRVKRhwLzLQmGKtFNzT",
+            "stake": "13719540703953876810819065244479",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "staking_yes_protocol1.poolv1.near",
+            "public_key": "ed25519:CVVcLtfAWj6k1DqKJwhYBQwjMQFmXzFY2NBdMxp1RqL1",
+            "stake": "13564090518195844681898859210486",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "electric.poolv1.near",
+            "public_key": "ed25519:GpSr5KAZMZ1Cb4dHMRUVhmp95y2fmWtm4dEjAr8iAva5",
+            "stake": "13280985998179636822420074961103",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "stake1.poolv1.near",
+            "public_key": "ed25519:7EiVt9i7SmULDKEnAXBFSMzwUmZdxUYDFkP73MZuCH1h",
+            "stake": "11928154402776100168819639044835",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "mockingbird.poolv1.near",
+            "public_key": "ed25519:4eiRurZog2f791jN7BiVM2EbFBgb97xaXQXAEL2emxZd",
+            "stake": "11431014878116879316873815550776",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "sweat_validator.poolv1.near",
+            "public_key": "ed25519:677kArWPFPRDgWEBHqHj6BCmEdTVBsAcjQAc75Gtyq2j",
+            "stake": "10936705420598441819134887328480",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "dqw9k3e4422cxt92masmy.poolv1.near",
+            "public_key": "ed25519:EPNc2bHqRCz6TKLstNiusv9qZCRBL63zViwUAcgoZJZj",
+            "stake": "10661982297925218418933836454072",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "rekt.poolv1.near",
+            "public_key": "ed25519:FoAaUdVKEHtVokG1aVmJNou61YcfQhXmaZ5Hnfsz4fHC",
+            "stake": "10489638359458122252908060358704",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "aurora.pool.near",
+            "public_key": "ed25519:FZKXoWHFCXMrKiXjAKFdHo5g9PDom4bWMRFERBfufi2Y",
+            "stake": "10218178201377048146159063464203",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "future_is_near.poolv1.near",
+            "public_key": "ed25519:F3vEGwYYGisaXwKJWrYgorB95DfArDby8bK5wydxD5fp",
+            "stake": "10185333591247478786821390612663",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "finoa.poolv1.near",
+            "public_key": "ed25519:62gxgzoie7FiK9dnWuiwM1bbuvhpceYDavK7SgdfEMJc",
+            "stake": "6724304868059418082720810583755",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "d1.poolv1.near",
+            "public_key": "ed25519:7ZhMRwnSHGJtWjGBZiRhhSi6XyqKeNHtnEXsVTNdrsk6",
+            "stake": "6635876973033777870178339747233",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "kiln.poolv1.near",
+            "public_key": "ed25519:GAekByYrSuo3seuaGQx7V1ZTC3gWZY8JxZJ4aWW76LiT",
+            "stake": "6211390119952903874401801705299",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "blockdaemon.poolv1.near",
+            "public_key": "ed25519:3GNFSJiFQQ1rnR68T4eZRff2omPhg1CTewUHBJpQAdyc",
+            "stake": "5881373715658507832814455371947",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "stakin.poolv1.near",
+            "public_key": "ed25519:85UGfKdVoxX9u86JsBMxmVHBguYonnM3vTR2WoD5GkEg",
+            "stake": "5785486177357987810044022468303",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "hashquark.poolv1.near",
+            "public_key": "ed25519:3YDdmN1vhF7yAWnYxGMHY46jcLE9h11HvEeF6Kntugeq",
+            "stake": "5687395768717398166833154900848",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "neardevgov.poolv1.near",
+            "public_key": "ed25519:FsZH8qQGfHRxFUbrK5pCEDgN758ZmqUtcUtYRWWGCcAG",
+            "stake": "5649879613236408999189716941160",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "foundry.poolv1.near",
+            "public_key": "ed25519:5Qx8Fq3SK4Vu1sRRpf2HsNGLAqdNqgkKEebHMniLWhkW",
+            "stake": "5629140099695756251557421678493",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "near-fans.poolv1.near",
+            "public_key": "ed25519:AgV97ssnHm7qN8JhYZjwyDtuaT6Ms3Fgbw3WeAC8M3iF",
+            "stake": "5486236215714436013677106338806",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "chorusone.poolv1.near",
+            "public_key": "ed25519:AZwJAgu2qRxHwdpj8ioZEFGcc2jbaZGN7ZvUe7CuXtM7",
+            "stake": "5449347663763034079520517989257",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "everstake.poolv1.near",
+            "public_key": "ed25519:4JLvwa1r2eAxHLyKeDJnpqMG5f2Z9rr49rwuTwb9g8u2",
+            "stake": "5044394391097353619860585575657",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "legends.poolv1.near",
+            "public_key": "ed25519:DNK46DeHKeJPF9YetmNxZnqtpkeLjdUb9ezSRCue3TpB",
+            "stake": "4973924606957280795421763935068",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "p2p-org.poolv1.near",
+            "public_key": "ed25519:J441YAvvYvjWs3aVzjc5KLLWRzmhQTEMaymPyWFkMGeG",
+            "stake": "4809853235167655482467678504008",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "northernlights.poolv1.near",
+            "public_key": "ed25519:7HXh6iS9Rh92Uj1c5T9fPjQXPLnti4Rr2cJQcJEYpdGV",
+            "stake": "4786771280339982406144207669913",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "nearfans.poolv1.near",
+            "public_key": "ed25519:GM8vWM4TqTt7jh3sXYCAs2KPyn4vEmAceteBGEFYhyku",
+            "stake": "4735842419701028462563178659550",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "openshards.poolv1.near",
+            "public_key": "ed25519:4Xm73PiAGMZu3mZg4gF7j96iTAFHGbPvqzxBaTgKP4ub",
+            "stake": "4419578835547297140808141179644",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "08investinwomen_runbybisontrails.poolv1.near",
+            "public_key": "ed25519:C6yqxQ3suwjmm8ufG5e3BsHiwxUs9h839FCneF41V7TM",
+            "stake": "4306086969811570934923756632094",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "cryptium.poolv1.near",
+            "public_key": "ed25519:5Y9hW8cKBb5RnsJBqttHHC5ujz5zcZZ5xnrJPwkCWmGQ",
+            "stake": "4296348939912338047603743485017",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "pandora.poolv1.near",
+            "public_key": "ed25519:53N7KBhSkEP6tLuQmxZV9fAK16D1C2kWnuzes8KNyS7P",
+            "stake": "4213614091128748856003091229763",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "bisontrails.poolv1.near",
+            "public_key": "ed25519:Emk6wQJtpQZRJCvvPmmwP9GD2Pk37xxRpmb5uRvJpX62",
+            "stake": "4188657630347399539674351676464",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "dokiacapital.poolv1.near",
+            "public_key": "ed25519:FGcJJeWMyx1xDbfkcPM2oMeUeGaADJuPmeqx5rjsHn7t",
+            "stake": "4188515634244926078593528812130",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "smart-stake.poolv1.near",
+            "public_key": "ed25519:A6wpkLQiYqPZ1rbd9s5S1Bg3LxccVsQqiCRDUXwzJ6Hx",
+            "stake": "4092048763814948391671377700361",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "stakesabai.poolv1.near",
+            "public_key": "ed25519:6abauNvvWnEkagjVpWRy2tZJdzPkmqurUjteMTKk5KQF",
+            "stake": "3840426816299377261452074130579",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "ideocolabventures.poolv1.near",
+            "public_key": "ed25519:6NFuvrmnJiokXibR9Z7TUHjB4NJnD1rJAHhBu9JWmBdh",
+            "stake": "3836673678138347524237646777893",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "buildlinks.poolv1.near",
+            "public_key": "ed25519:Hd3irGt4zEqRPAzcFszX3oTkVWRFFxdecDvShCJSS1Wg",
+            "stake": "3581628575957131087306234044126",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "sharpdarts.poolv1.near",
+            "public_key": "ed25519:9XMHXqv7rM3QQxzjUu7dfKD7GhMkq8CEceaPdkhiBQUX",
+            "stake": "3500776385510082082231044635250",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "nodeasy.poolv1.near",
+            "public_key": "ed25519:8mjespqqUePSYSsxYxPqCUsZUuMxVJr1vjBRwFeCke5K",
+            "stake": "3472207571393518084726533114675",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "hb436_pool.poolv1.near",
+            "public_key": "ed25519:7oU4C3vWqkeup7aMfjyV1ojt7yKX7ShLfvNCahBRy1eW",
+            "stake": "3311069199158739837289514631199",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "consensus_finoa_01.poolv1.near",
+            "public_key": "ed25519:3LqCGkM3uLjQjPmd3yVyaEnceinEL4cBfUm9vp5hJRTJ",
+            "stake": "3262548221399004384774854902618",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "consensus_finoa_00.poolv1.near",
+            "public_key": "ed25519:62c41nzrrZAspLnPBC2A112PXBhJuj1cGkVE3ANwbzat",
+            "stake": "3189187232126561514104136725166",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "dsrvlabs.poolv1.near",
+            "public_key": "ed25519:9SACdsDDgXA2WZLfJvpkKbu22Exxtc4CMbeHmVnN2P4a",
+            "stake": "3126221442346525324045588144799",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "lux.poolv1.near",
+            "public_key": "ed25519:HzTGTDfTz63QGvvUdMGozFeaENFGyYAoSrqYJb23qZFN",
+            "stake": "3022445156470446790329641597133",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "lunanova.poolv1.near",
+            "public_key": "ed25519:qkfP4NsSuHybdLhdvvYQ2Y9xWPsd249thEvrzbJBKNc",
+            "stake": "2893236520018765472445601617201",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "fish.poolv1.near",
+            "public_key": "ed25519:27KegJd17HeXHk9h5MqkT35QAuvYvo5GFgPTpSVU4kPN",
+            "stake": "2877548141106146930256155653486",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "ledgerbyfigment.poolv1.near",
+            "public_key": "ed25519:4JJTNeMaSb8W3NELh2rkkrDCqG1VpM3gdJ1hc9HFTBmN",
+            "stake": "2837107735683979130140979854660",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "baziliknear.poolv1.near",
+            "public_key": "ed25519:E4LAWdgLifBEoaWvhRNy5vpdAnUc3GsUHePeiAurZY5v",
+            "stake": "2726959612270263521150960808314",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "zkv_staketosupportprivacy.poolv1.near",
+            "public_key": "ed25519:2kAo86DW8mDaLDg37rFhQY8UYSZVq1CtegUHBEDvpSMA",
+            "stake": "2686290302223722829799673318788",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "erm.poolv1.near",
+            "public_key": "ed25519:88nnN6LAuCbJaj9wucd1WUMfTtdv2s3njpvozHft8oQ5",
+            "stake": "2514561039469128133803444319399",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "01node.poolv1.near",
+            "public_key": "ed25519:5xz7EbcnPqabwoFezdJBxieK8S7XLsdHHuLwM4vLLhFt",
+            "stake": "2493792162806589603238970726925",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "anonymous.poolv1.near",
+            "public_key": "ed25519:Hoj7LbPwNwAkLFhf8z2aDF1BG6NDSrq1BfkdaKqPfbXx",
+            "stake": "2265433266343335249707964659187",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "allnodes.poolv1.near",
+            "public_key": "ed25519:AGEeyukQdMtg8EttsU39YLgryhao8yQeVwQTut5bbWdL",
+            "stake": "2208116233241773223036569578110",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "brea.poolv1.near",
+            "public_key": "ed25519:8dce49J5G28yMGRcSiDnYNFh7GBSma8TmYaw5mGTSH1Z",
+            "stake": "2158351424663597178017164414574",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "republic.poolv1.near",
+            "public_key": "ed25519:5sT6xtwxvLARW6y3KURYmyFd5SokJFhiK4jyqbamzzZ6",
+            "stake": "2155669249640148789072228684806",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "masternode24.poolv1.near",
+            "public_key": "ed25519:5ZyaXsGCya4Sch5bqUfohvo7iRFYB9ancRouggWRsiDU",
+            "stake": "2150024242972885896026029035230",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "stardust.poolv1.near",
+            "public_key": "ed25519:6rxCJpTnrT6NFuGg6d5Dj3FEUz1ScNU9u35ywB3dYhrX",
+            "stake": "2144651265840008618883557640106",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "moonlet.poolv1.near",
+            "public_key": "ed25519:GkDwzPckMfhkdYgyFG69Uph8RJ12BcV9xNeZW2q93ZJD",
+            "stake": "2089461900222398987916608425024",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "appload.poolv1.near",
+            "public_key": "ed25519:6LbMVL6otkvZbpuC9sN3z7EXSMo3PT9noPeBdBZTFneM",
+            "stake": "1964593874849367288963278003850",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "nearkoreahub.poolv1.near",
+            "public_key": "ed25519:HUKmMJ59Hht8rcGG6uZ9M4qWsfbTCDtBgyV93YZnPXGE",
+            "stake": "1867061989694273123181728764443",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "atomic-nodes.poolv1.near",
+            "public_key": "ed25519:CpVAHE3JpfDoEPqjBDgYEjgG8JhM5BFKbjUD2N1EuvAL",
+            "stake": "1853620762042243087910289682661",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "inotel.poolv1.near",
+            "public_key": "ed25519:DmEDRntb9NwfbfdvDf6wzjsw1vxzQcJAAhFL2J75iLwr",
+            "stake": "1814375073535694434549287255757",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "accomplice.poolv1.near",
+            "public_key": "ed25519:5ck255MtkoGQxh9LfjNtdb4M7WHkUmjU7SBJCEkZP2B7",
+            "stake": "1759251942651472050273521655716",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "qbit.poolv1.near",
+            "public_key": "ed25519:5DqZLnDu6PMEyhJzc5NhiMsoWeYMWG1bC4AULyafoXMv",
+            "stake": "1684341728497392604556217088448",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "avado.poolv1.near",
+            "public_key": "ed25519:FdLWsf42e3Sc7bdKMtxJMgWRP21ysZDSXFnS2vTwTaaA",
+            "stake": "1597917865283720109751322207578",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "fresh.poolv1.near",
+            "public_key": "ed25519:6YHLXhohY8kMnkp5Jw4HrJ52xtdyt1rcP6AaWkKzh3ED",
+            "stake": "1541193011332587019252439080570",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "satori.poolv1.near",
+            "public_key": "ed25519:9r8HYmw8mbys2Ng9BaKeQqZnaQTGCcBUbMatV5NeeWJj",
+            "stake": "1508138271377716850959904220160",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "jazza.poolv1.near",
+            "public_key": "ed25519:EW66Fkv7XcE9FiybuYtVURjHhYeEgwWWpzF685Vi7foY",
+            "stake": "1436490579143816275074527830690",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "pandateam.poolv1.near",
+            "public_key": "ed25519:Cu83NRziNLiT6HLu9kJ8svFoftZQ9wVmjScxjqCybppt",
+            "stake": "1405356812791874528517482053424",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "calimero.pool.near",
+            "public_key": "ed25519:7A9aFJtr9yWh5eyAUUUSdXMoxzi1qBjshiVCjsDWWa1J",
+            "stake": "1236750016859759282061021646907",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "nonli-near.poolv1.near",
+            "public_key": "ed25519:91jusDFxjY32h51tfq2HoKhoPbGs66s88t1v2oZPBSxC",
+            "stake": "1202724150564733194551896779317",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "staking_sp2.poolv1.near",
+            "public_key": "ed25519:CS4uHAipvtxGz9irnoCX7SxT6d8zKpDj8Y3Fyf2zVgBp",
+            "stake": "1191453478853361059995495230895",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "stakely_io.poolv1.near",
+            "public_key": "ed25519:HWp9E3gP91s25ddMS9xUWuzbJUpVGiPoitu5bT6hqMHs",
+            "stake": "1045256405031331028536480792248",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "staking_opp_disc.poolv1.near",
+            "public_key": "ed25519:8XbCfLQVSwtwaBajvByG87CxPPbaFdryz5qEkde1fSGv",
+            "stake": "945508264176829737422006730999",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "bitcoinsuisse.poolv1.near",
+            "public_key": "ed25519:Cy2sboVqjDk6d3d2A2AJZBdFvokjk7sjZpYATLjcQSCj",
+            "stake": "902664656457768658691361888966",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "kiln-1.poolv1.near",
+            "public_key": "ed25519:8ZNqVxH3Ndq44qYjyt3FZjKYEwfXxkHK7fN4bPmobLTP",
+            "stake": "868560613511777029894320295146",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "optimusvalidatornetwork.poolv1.near",
+            "public_key": "ed25519:C3CJMKaWdEzkqyNCKwnKud6wDNnzs7Ura63k16zm4LUU",
+            "stake": "838103905350264826585249980618",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "cryptogarik.poolv1.near",
+            "public_key": "ed25519:45zFAC8pLgwn1d5pSBpBHesWbzngfRgd92zaom7K8m8j",
+            "stake": "813032236478326365621642998214",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "cryptoblossom.poolv1.near",
+            "public_key": "ed25519:5opTNJEkCBYuyMgAghY2Sxp4bBtXYQtbEvZ3Wc5Awohb",
+            "stake": "777124102934918753676525293970",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "galactic.poolv1.near",
+            "public_key": "ed25519:GFK83N32DbERtFg8rkpfNBsKtkFpmNQzyKFM9kJvPCMG",
+            "stake": "770664689645754725492089858662",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "pathrocknetwork.poolv1.near",
+            "public_key": "ed25519:2iJQLVXubWafG7K1NzGVvjP54UJCgVg3cuPMktw8r7uQ",
+            "stake": "757561386636558886170751856695",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "staking-power.poolv1.near",
+            "public_key": "ed25519:42ikqyV1BYmSnhHJ9EsLLy9kgeAg1mC3qqU1AJGaTEaW",
+            "stake": "740207943761860918217017873171",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "continue.poolv1.near",
+            "public_key": "ed25519:9rDZywYL3tnvzj6hnePw3MaPFPfSeSCLxBp1niTGbMaK",
+            "stake": "719378175476265451829595394944",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "dexagon.poolv1.near",
+            "public_key": "ed25519:AQHwptR3Ho348BpFXJDjkxpWMW5ZwN7xWM3XWAWSEEgs",
+            "stake": "717617849198711882204643738611",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "wackazong.poolv1.near",
+            "public_key": "ed25519:6REdNqRNpkm5buNzuHujhZfaSGyHqLbTFSTWvY3JYvNs",
+            "stake": "715034877160377884787222991545",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "infiniteloop.poolv1.near",
+            "public_key": "ed25519:9BUwtDegzwKcmJBjLgUDLHc3pePgPKcWJXYGcZb33Nyr",
+            "stake": "697580363054866073188042752530",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "prophet.poolv1.near",
+            "public_key": "ed25519:BV5b4DpgCUy1TEitE4TVPhpTY7uDNpHc8DBPyH6cYCBq",
+            "stake": "680223078332880344391595397496",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "readylayerone_staking.poolv1.near",
+            "public_key": "ed25519:6AuBsxxSCYHkuJW9Rhf7HK2qYKErtThZUrN5HFDnQ9eg",
+            "stake": "642881434985680874360191907431",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "dragonfly.poolv1.near",
+            "public_key": "ed25519:6Gj8MRp9KqfdiXa35LJcZnqeBNNEZoYk6ysvpzHaruvq",
+            "stake": "622704430442610556873587202002",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "kosmos_and_p2p.poolv1.near",
+            "public_key": "ed25519:41GWxdQHe4Y2fuisvz5k5G2NwDFEavRkisoZkB5tfJuC",
+            "stake": "619169702695338590671196045597",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "pangdao.poolv1.near",
+            "public_key": "ed25519:C35kAQVW6MHoWtUZ599WHXamRXVZnrHMVD1q85FERiem",
+            "stake": "598628830939644297238676753913",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "v2krox0bkni00p4p.poolv1.near",
+            "public_key": "ed25519:Dg7cBrd2DD81ZJHvixwVBcAq4kRotjQdEeSu6gVziy8t",
+            "stake": "504731647447634975413497694048",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "hapi.poolv1.near",
+            "public_key": "ed25519:H3hLJX38sfxHdtJTFZWhWCeo4YCWihTyPsgxjqm1XDan",
+            "stake": "499484472814691697028730485159",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "grassets.poolv1.near",
+            "public_key": "ed25519:GS8uhr7mhsBWB5c1JgvsJzpwZDGrcnB9Xnw7YRyMSQP5",
+            "stake": "470610790738775714374681622127",
+            "validator_stake_struct_version": "V1"
+        },
+        {
+            "account_id": "n0ok.poolv1.near",
+            "public_key": "ed25519:EC1p3w9hd4XkYoUiAKc8PSQGVFGiUXTDJvqkurRdAFz5",
+            "stake": "457834763945740743691791561130",
+            "validator_stake_struct_version": "V1"
+        }
+    ],
+    "approvals_after_next": [
+        "ed25519:4Se2XJgnkWvTDUyckP1MT9NttQ3dahihKCmcGBjBbRSvLyQTDTGNiH9UjTvpVMp9iHAcFVw4iW9stWD7kJrq4dr3",
+        "ed25519:5trbK1yLhSUPZBgo9TegUXvYNNCYvHa7ck4Y4FNyLvi5omHPEnfV14sHhafq1pipnYqt3d5qC3TLeL9qs4NHcqum",
+        "ed25519:4CZsuRExAa3eo88EVB7X5a4XrCMtN1id87ArLzzGQhQgRAFpwiuBorbe7Vx4mvL8gHrrK2vnpFGR517de3qVxuLE",
+        null,
+        null,
+        "ed25519:5qLbGpAByiuJdG7AoRw41K4Yz9maHefehzMgDN8hdm1hoAj3ReLspUkfh7tKV1HUE5vycNifHpsEVW5iuW4RJjg3",
+        "ed25519:5YWEmtyKJg9tvKXPGACktF2SfwJtzT3rTM2hicgoUD2rcmebK5BgQ176sSwdjNuqbxWxvW8j46BAQcnjZsnrAxhX",
+        null,
+        null,
+        "ed25519:3yJyZfVPMQzavUu7pYZS6AbTemSC1R2d4zbDBuAE5dcEowG2gyvsJ7vcerp8ihigKoh1EHwAoHmayNqGCWM9qoL9",
+        null,
+        "ed25519:SrMBnenPKEfNSxucpk8c8G4tMFH7sEeGDa24YzEZx95NLviJcccUx98zrqN8z9BZc12Fh6kgowekKCeVtByCSZ8",
+        "ed25519:5n3Na1VTraU682YG2MVB8VNoDPAR5xr6KmHMyVPZeCQhZFWAbyefN1LTToCQZPLhQfBkwvmGP4H4KuFj76SXpVNw",
+        "ed25519:4sBRpgmhV4L3uFCMKLAun2zykDWR3P5xnumKnAcrgZ5TSNwdB38WtEjvwf5qxy41dqSBDWFuAt3mG9pJAEg47BFm",
+        "ed25519:2FzhKGwwAtjLA4FehEwJrbw3C8HnWTDkkfJBS3UzR6Dr2qm9Uu8WgWLXcHKskScjzFN344Q6ipibLfPnVD4Po6Sy",
+        null,
+        "ed25519:5ErBNmxB9JjR6AH1SwMcXk5cyrj7MDmSkmEtFkYuvZ4ez4m2ri4TzpfbQuUFYbPwjhAnKGcfJ4tx8YSEebQ5YpgS",
+        "ed25519:2iqW5fT8pHL1SyuQ8tnto56J7tYQs5N8prXxwDm1PxK1iSJaWcRMzJACUzRQy4RZEEsJRudTcsiWuq8dNZdDaqBc",
+        null,
+        "ed25519:29vqk7KsffZLzoDMrfNf8PQzrUuse56Ra81swx2Ec2axAB66A6S8SwF9A3wKrmKGqumxzzVnMnkxV2fthSPK3G3B",
+        "ed25519:rkFP6dUNfACAbfNL4z63RTDeai9dDLnW9CTYctJUvaLSuPE3gRkf4is6Lk9L1HfKJ8v94xxq5ksoroK8yUjvdCj",
+        "ed25519:r7c4aiUZvS7121z9hp6GHzro7wUWBquaRm85ArqmWpFrbuJ4Waa22U3J8ud5C5VAM3JwGX3ndLVNcaDhuMtGcYF",
+        null,
+        null,
+        null,
+        "ed25519:uYeRBBUqEaXzBSisSj52kru7A9T3jtavpS9NNjUX8agyY2vwNVHBUoJD8gdMmdwJEyX8VH6raSSP9GcV72zxach",
+        "ed25519:61bhFzHm78icH7uSzKBb5RDh3M28Bn8Q8j18BR2eSxayQ5ukpLAmXjBE3pYxsR3wZVpEQqgTtmjb8kPVhh26N9Mp",
+        null,
+        "ed25519:59WhqLvNuaDq7MUsxcw5FNQ5gMU2tNwRnBehX5kNXcRBCL6NZgUWs4LYMZeDBVuqi3kRCKSQ6iBuvKLWGWDtxDiC",
+        null,
+        "ed25519:2maZLR7TRLPAZL2xseUVBpfZYB8TXxBqFkcUEjFK8BmE5iC62oU1KEXbdcptFtfUeRBCyAiJM7cxpRLSeEZubkWN",
+        "ed25519:5eSX4et3VZH1kTm7YspCNd2sikNouCbQKmBPy2XSNr2zdGa9tiR3hoRP9VXeHvLSNbLLfTDFbEXpYycu6t16A8K5",
+        "ed25519:2ZxjjfcWWyYH7HgrMnULZVCDXvZH2BpYJmf21x7eDUgGwvGe1i9K29BqABy54YbDB2z9HZsCxBp5kK4LSBvf4q6i",
+        "ed25519:4ket3Kk2Yw6J1SEt6Y7a2uhbhjAahd14PWTFm9a6qZ5Ex6wd5NaZNiEaAiBWfzNJge9HCRWdBzbWhmdWDSH6pyrX",
+        "ed25519:5iXroZXBaYV63XC5cXucw9JHdvtuyTm8DQaW8EbxB5ve2gDCnGraE2bsaMVDy6gVQJHJqK7bgcvro6nwpLn7JVMn",
+        "ed25519:5VuvkEuLWGUqHH3TPEzbr5msbFgBTx1YRZaMS2xmfnunKP7eFDVYJ3dGaw7iXn7bxvwPTwcdB2Pk69tbNN8tX7Yd",
+        null,
+        "ed25519:4zTv3c9pV69ouYBtLFTfjNCssCzDcxRyGwoLHyBbN2xbatwJaJRfFNKJBnU8Go1a3jnW1UMKfoLED6oCGXhyjcPK",
+        "ed25519:4uCf2oeATh1k4i6NhwtP4wJ4Rb3YYmQKiF3X57YcVmdNxYCB3pgEA1psJnBUP2VbsFG5ueqj9tzkZ15yWNeNtL6L",
+        null,
+        "ed25519:5uAybdUKoQDNo9M7u4VwuTz4d8Lqsmkp41SCeBNcgg1mXtau8TYwuRYWcRLqufW6es4TeJf6V4tQP99o5suWjaTe",
+        "ed25519:3UAmJUoeUQU5UJFYWtKHKeG3WtkmPN8SBcgKpfVZ82nAW9SiLP226WrjuwEjXTNu7TwhtqUixC3HjCw2fKzVRDCv",
+        "ed25519:VUCd3WY1DeU9RksoAj72h7Yk8NJPnfa1Svr6Tys9rTN1TcShfijTjYuinAUeNCEL9UeFhh7hkqzDm8mmTKXJY71",
+        null,
+        null,
+        null,
+        "ed25519:3Pi4etqnX3cgVk3zWQxeVwxv1VcMm67pd7UB5jQ56boBZg1jC73M8nbmagyYdECvKmr3uG6ajH6W6DQTcDkfZMir",
+        "ed25519:3ivasduRo3VNAjCTYwxhSt1kdwHxBKgup8aPd9QLWZmxhNUPe2NECfKRrjPeToddzJB7viDnP3NYpzyEgZodNeTm",
+        "ed25519:3HLcZ9xsWfN7hr4WwNjHY2NAWz9mftqtHUs6mS7w57SCyJN82HPxZ59e5GxhvunLkzouqjwaAHD5eG1QNjc6RRax",
+        null,
+        "ed25519:33b8ESwBQceyx9NiQaBuvy6T3SRDxJGWJoFsRy89VrytLv7q8K6MMTGPnCdPgKu5DGsWr16rBs5DiNeCwDWW8JCe",
+        "ed25519:22a51wBWrepSXCzSRb4rmf44RCrcprtpNMCrpp2dBXJQJKJZKWVmQxxnyfojK2qpYXGrNTuLmpjYm7ZRYg9xq8gE",
+        "ed25519:Vr82XXSymwwPckZKjjZAhHGBZawKhrG3viGvZMQAkRq7LaW6DZCdkw3Pu3rQRMmHQERXvkSTGMdsuiyDz6rjdcC",
+        "ed25519:43Ess5YV8qXFaAzc3zfnKK6Pv9XBxvFdkmr6Bb3EGkaz6ignWHDvivJ4dCaZif3WK4u56y7HJB18VTdFxcxxEgx5",
+        null,
+        null,
+        "ed25519:FVjFTioYbsY9DNwDmKHNiwRzMyz5GTf2hYeSEt54nwQdZsDXXQJVssZGaV8pC6ALDTZ6MLLCwhirLCo6dHcjw1v",
+        "ed25519:5LW4ZfRE81ShapBKrdGZLGgn14Tdx6kycs9BAGFRLxABPBmrVwXL2XHiJzaS9nKsJ712qtURz1AWhEQE3LyHwFJD",
+        "ed25519:5QSzUFAnjPArZ1zYhbEnXxZChA2WwchkubH1ry7CvBNRAc4rMpYBW4rwhkW8VH2a2rUuVwBJrDpa82Raf1bbyReZ",
+        "ed25519:2nJCxM9efBnFG8ip7afHQgafzRL8waRyNt6Mi5SqFiyEffAAqFXv7ksBbaxnH81MACohs5kzdgU8cCmZZ6nbw3fs",
+        null,
+        "ed25519:3b3jyckvqirj3MAg5y3CweNB48awJNyApHTc8wCF2eWoEzFs4RYpvAf55NcTkg5169gA1p2YDL36wCf8TAaxGgSs",
+        "ed25519:3ntxmSR7tnCt3ZpRMBrpCdpR6W9juPcHgohiLXLMqJ1wXMdPry5Hi2TTTswnkRKBXT9fGVygqu48ANsDXrCjGaiA",
+        "ed25519:4Bm2uMWFAiCKT8dAgy68VqPwRTJm5pZ5DK92AfW2zcpz4ypYrdu9XZR9cK8J2vtajp5MTZ4pZGtFbkzttRCtu4kq",
+        "ed25519:285xG2mURyBHem3RfQs5Ki8JAcmxYTU1dyjeamxvB1MYVArEyh4EJhBLSYA9FuDxsqAjarTDcK36ENZp6TAzmPXP",
+        "ed25519:3xMHxRNTsHgAZ8ew6GN3ofo9pGC2pskxF8ZzHi1f4SasDgaFi7e9nYrccUZPRQSYaiop8zM1MTF3mpNgczPJeJQH",
+        null,
+        null,
+        "ed25519:3JFLe1Ld5nq2FfMr4cbUGvnrsziWKRii5izA79zR3ffmPn8iFMXB6kotoT2kHvfdGz8YwUfnFx8S1Bc44Divyj56",
+        null,
+        "ed25519:12621kf5eiRoJnbgEthpqLffWy8d4uHyYbBdCb48Zz47p15gqmjkLzUGs5oFVmtof16b55HBJq8ci3edFE7ZbAsW",
+        "ed25519:59StGr3nHQz6raY7K1AKjxaF2g6JnmSCpZGSbDzGSbMq5jymPaKcw8TfEhYhXmstsJSt4xes4Ubzu6omDaQpqin8",
+        null,
+        null,
+        "ed25519:54GXsetUq8onLwSBmCB3ZxGZMdKTYaLAiFSoaHLQ5Gxrzk7mZN4AwABxAvqqRbss7jMP96kHWrq1Pk96yxgqfepX",
+        null,
+        null,
+        null,
+        "ed25519:3EUSxdmkoDCC1d7qRqB1CKcXuWtVJkmCLN4EaH7j3yUtBm8LYaZn9xqmudwqNMg31qQsp37nnT84DaXJTFWwpJB1",
+        null,
+        null,
+        null,
+        null,
+        "ed25519:3TrFU3tHhSWBgDye33FkSputW2Wm69hH8njxhprs7XLjkfCqTpa1o7rEC53MDEzb3SK55fEDCtHboDyY9w1pip9",
+        null,
+        "ed25519:G2SGWdfUtvwCcyo3WMDHq38U4YN1NLVWmFHj5hL1uBFc2t4U7HAVgt3FTWjocVqXULeS34LtGvvDG8JPcMs9wyW",
+        "ed25519:2vWhj6NauppEyPLhbgbkvsUNgbyZte7sw5bpamrSr4sLMt6V9HdtjiVdrWxQGFxQ9NqeKqYX8WMKqibm5LTfRCs3",
+        "ed25519:5Qu4FA2uPP3YLmazBnAYaSroKXHeNrJcG2gR9bYcGvafsh8Noagpt5KppSREU6gv2Zzx4QT6qoWpQeBWPiPSJ4wn",
+        null,
+        "ed25519:5AajLtnhJSp1XN8wjybBb8umVuKo2juESKhBZwigUS4MuyfdrLimwqhc9N4j8hg1sEN6SgepzyRCqQtMxLL5qopF",
+        "ed25519:2KpfBdr76zU2LM9zHjMdZMwknVA7hqHP5eD9HvLNRPHsnj21582cgfwdermupbVS3kP2wdXXbNR1HAUjrJTepNww",
+        "ed25519:kVPL7DQuSxPABnhk6PyeTz88mAFCAszKqWCUpA5JXfS9VyNRvyPZiiWkW2doZEGRmhiK47dsVcVvGHr1oS1KpVZ",
+        "ed25519:3T9z2VUsHHBuAzFKhKDgwrtb2i8YznP9QScaFbhnxNVpc7oTfnCRKgG1KJrbTCNLbgLqDdGwS8gbCZBcPGxpXNV2",
+        "ed25519:rFVkjwQP5YbBnyqXRM45KNNCykL87vnH3NuaD65dQzT6u3kUE2WxtRZzsopWw8qmAWV3j9Are9BPnrLx2wi2vFm",
+        null,
+        "ed25519:3cbVJXUy2581LFay1XFgbcED6Vh61V22matK1RXmfNZn1tscgXNMu1Y3VgDjxrmRAboKdz43hq5nckeqCK7wYVPV",
+        "ed25519:4k3XLpTQgqFSotzPP6NEDiXsBHqqfSqnwrjFsYsmTbkDEVYSdoR9j8Qmvaf9iuCEVam8Tr6w6biffCqYm39DtUzP",
+        "ed25519:5xYw21wo8kLKaB6UH15qRMXxkQamx6JqTfnWTB5C3wVLGMeTJGExsAZYDLx6PCBdKEggGXJZygCz5VQCRGRiVWrq",
+        null,
+        "ed25519:5z5hkvrQ441tC5ePLAkaoViBBnZ35nQXQyGYuGNQZ32o8rTTF7AsGZd2HnuEuaSY4W5Cgcx2VrEsf3bvPRPuD5CZ"
+    ]
+}
