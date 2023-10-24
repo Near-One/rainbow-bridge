@@ -83,6 +83,7 @@ pub struct Eth2Client {
     client_mode: ClientMode,
     unfinalized_head_execution_header: Option<ExecutionHeaderInfo>,
     unfinalized_tail_execution_header: Option<ExecutionHeaderInfo>,
+    trusted_blocks_submitter: Option<AccountId>,
 }
 
 #[near_bindgen]
@@ -145,6 +146,7 @@ impl Eth2Client {
             client_mode: ClientMode::SubmitLightClientUpdate,
             unfinalized_head_execution_header: None,
             unfinalized_tail_execution_header: None,
+            trusted_blocks_submitter: None,
         };
 
         contract.finalized_execution_blocks.insert(
@@ -241,6 +243,13 @@ impl Eth2Client {
     #[result_serializer(borsh)]
     #[pause(except(roles(Role::UnrestrictedSubmitExecutionHeader, Role::DAO)))]
     pub fn submit_execution_header(&mut self, #[serializer(borsh)] block_header: BlockHeader) {
+        if let Some(trusted_blocks_submitter) = &self.trusted_blocks_submitter {
+            require!(
+                &env::predecessor_account_id() == trusted_blocks_submitter,
+                "Eth-client is deployed as trust mode, only trusted_blocks_submitter can submit blocks"
+            );
+        }
+
         require!(self.client_mode == ClientMode::SubmitHeader);
 
         let block_hash = block_header.calculate_hash();
@@ -344,6 +353,15 @@ impl Eth2Client {
 
     pub fn get_trusted_signer(&self) -> Option<AccountId> {
         self.trusted_signer.clone()
+    }
+
+    #[access_control_any(roles(Role::DAO))]
+    pub fn update_trusted_blocks_submitter(&mut self, trusted_blocks_submitter: Option<AccountId>) {
+        self.trusted_blocks_submitter = trusted_blocks_submitter;
+    }
+
+    pub fn get_trusted_blocks_submitter(&self) -> Option<AccountId> {
+        self.trusted_blocks_submitter.clone()
     }
 
     #[access_control_any(roles(Role::DAO))]
