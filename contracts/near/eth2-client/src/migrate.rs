@@ -44,6 +44,7 @@ impl Eth2Client {
             client_mode: ClientMode::SubmitLightClientUpdate,
             unfinalized_head_execution_header: None,
             unfinalized_tail_execution_header: None,
+            trusted_blocks_submitter: None,
         }
     }
 }
