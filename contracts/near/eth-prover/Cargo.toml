@@ -1,6 +1,6 @@
 [package]
 name = "eth-prover"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Near Inc <hello@nearprotocol.com>"]
 edition = "2021"
 
@@ -15,7 +15,7 @@ near-sdk = "4.1.1"
 borsh = "0.9.3"
 rlp = "0.5.2"
 hex = "0.4.2"
-near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", rev = "8920f9a72631f1b224ed93405640bc062f2a0191" }
+near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", tag = "v0.1.0" }
 
 [dev-dependencies]
 hex = { version = "0.4.3", features = ["serde"] }

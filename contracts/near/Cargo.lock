@@ -1102,7 +1102,7 @@ dependencies = [
 
 [[package]]
 name = "eth-prover"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "borsh",
  "eth-types",
@@ -1143,7 +1143,7 @@ dependencies = [
 
 [[package]]
 name = "eth2-client"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "bitvec 1.0.1",
@@ -2410,7 +2410,7 @@ dependencies = [
 [[package]]
 name = "near-plugins"
 version = "0.1.0"
-source = "git+https://github.com/aurora-is-near/near-plugins?rev=8920f9a72631f1b224ed93405640bc062f2a0191#8920f9a72631f1b224ed93405640bc062f2a0191"
+source = "git+https://github.com/aurora-is-near/near-plugins?tag=v0.1.0#64c512f96d4b51ccdd1a1aed683ed90fd1ca8c57"
 dependencies = [
  "bitflags",
  "near-plugins-derive",
@@ -2421,7 +2421,7 @@ dependencies = [
 [[package]]
 name = "near-plugins-derive"
 version = "0.1.0"
-source = "git+https://github.com/aurora-is-near/near-plugins?rev=8920f9a72631f1b224ed93405640bc062f2a0191#8920f9a72631f1b224ed93405640bc062f2a0191"
+source = "git+https://github.com/aurora-is-near/near-plugins?tag=v0.1.0#64c512f96d4b51ccdd1a1aed683ed90fd1ca8c57"
 dependencies = [
  "darling",
  "proc-macro-crate 0.1.5",

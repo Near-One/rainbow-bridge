@@ -13,7 +13,9 @@ use eth2_utility::types::*;
 use eth_types::eth2::*;
 use eth_types::{BlockHeader, H256};
 use near_sdk::collections::{LazyOption, LookupMap};
-use near_sdk::{env, near_bindgen, require, AccountId, BorshStorageKey, PanicOnDefault};
+use near_sdk::{
+    env, near_bindgen, require, AccountId, BorshStorageKey, PanicOnDefault, Promise, PublicKey,
+};
 use tree_hash::TreeHash;
 
 mod migrate;
@@ -34,24 +36,23 @@ enum StorageKey {
 #[serde(crate = "near_sdk::serde")]
 pub enum Role {
     PauseManager,
-    UpgradableManager,
     UpgradableCodeStager,
     UpgradableCodeDeployer,
-    UpgradableDurationManager,
-    ConfigManager,
     UnrestrictedSubmitLightClientUpdate,
+    UnrestrictedSubmitExecutionHeader,
+    DAO,
 }
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Pausable, Upgradable)]
 #[access_control(role_type(Role))]
-#[pausable(manager_roles(Role::PauseManager))]
+#[pausable(manager_roles(Role::PauseManager, Role::DAO))]
 #[upgradable(access_control_roles(
-    code_stagers(Role::UpgradableCodeStager, Role::UpgradableManager),
-    code_deployers(Role::UpgradableCodeDeployer, Role::UpgradableManager),
-    duration_initializers(Role::UpgradableDurationManager, Role::UpgradableManager),
-    duration_update_stagers(Role::UpgradableDurationManager, Role::UpgradableManager),
-    duration_update_appliers(Role::UpgradableDurationManager, Role::UpgradableManager),
+    code_stagers(Role::UpgradableCodeStager, Role::DAO),
+    code_deployers(Role::UpgradableCodeDeployer, Role::DAO),
+    duration_initializers(Role::DAO),
+    duration_update_stagers(Role::DAO),
+    duration_update_appliers(Role::DAO),
 ))]
 pub struct Eth2Client {
     /// If set, only light client updates by the trusted signer will be accepted
@@ -223,7 +224,7 @@ impl Eth2Client {
             .map(|header| header.block_number)
     }
 
-    #[pause(except(roles(Role::UnrestrictedSubmitLightClientUpdate)))]
+    #[pause(except(roles(Role::UnrestrictedSubmitLightClientUpdate, Role::DAO)))]
     pub fn submit_beacon_chain_light_client_update(
         &mut self,
         #[serializer(borsh)] update: LightClientUpdate,
@@ -238,6 +239,7 @@ impl Eth2Client {
     }
 
     #[result_serializer(borsh)]
+    #[pause(except(roles(Role::UnrestrictedSubmitExecutionHeader, Role::DAO)))]
     pub fn submit_execution_header(&mut self, #[serializer(borsh)] block_header: BlockHeader) {
         require!(self.client_mode == ClientMode::SubmitHeader);
 
@@ -335,7 +337,7 @@ impl Eth2Client {
         );
     }
 
-    #[access_control_any(roles(Role::ConfigManager))]
+    #[access_control_any(roles(Role::DAO))]
     pub fn update_trusted_signer(&mut self, trusted_signer: Option<AccountId>) {
         self.trusted_signer = trusted_signer;
     }
@@ -344,9 +346,22 @@ impl Eth2Client {
         self.trusted_signer.clone()
     }
 
-    #[private]
+    #[access_control_any(roles(Role::DAO))]
     pub fn update_hashes_gc_threshold(&mut self, hashes_gc_threshold: u64) {
         self.hashes_gc_threshold = hashes_gc_threshold;
+    }
+
+    pub fn get_hashes_gc_threshold(&self) -> u64 {
+        self.hashes_gc_threshold
+    }
+
+    #[access_control_any(roles(Role::DAO))]
+    pub fn attach_full_access_key(&self, public_key: PublicKey) -> Promise {
+        Promise::new(env::current_account_id()).add_full_access_key(public_key)
+    }
+
+    pub fn version(&self) -> String {
+        env!("CARGO_PKG_VERSION").to_owned()
     }
 }
 

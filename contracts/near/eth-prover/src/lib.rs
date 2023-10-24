@@ -5,7 +5,9 @@ use near_plugins::{
 };
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{env, ext_contract, near_bindgen, Gas, PanicOnDefault, PromiseOrValue};
+use near_sdk::{
+    env, ext_contract, near_bindgen, Gas, PanicOnDefault, Promise, PromiseOrValue, PublicKey,
+};
 use rlp::Rlp;
 
 type AccountId = String;
@@ -22,11 +24,9 @@ pub enum Role {
     PauseManager,
     UnrestrictedVerifyLogEntry,
     UnrestrictedVerifyStorageProof,
-    UpgradableManager,
     UpgradableCodeStager,
     UpgradableCodeDeployer,
-    UpgradableDurationManager,
-    ConfigManager,
+    DAO,
 }
 
 #[near_bindgen]
@@ -34,11 +34,11 @@ pub enum Role {
 #[access_control(role_type(Role))]
 #[pausable(manager_roles(Role::PauseManager))]
 #[upgradable(access_control_roles(
-    code_stagers(Role::UpgradableCodeStager, Role::UpgradableManager),
-    code_deployers(Role::UpgradableCodeDeployer, Role::UpgradableManager),
-    duration_initializers(Role::UpgradableDurationManager, Role::UpgradableManager),
-    duration_update_stagers(Role::UpgradableDurationManager, Role::UpgradableManager),
-    duration_update_appliers(Role::UpgradableDurationManager, Role::UpgradableManager),
+    code_stagers(Role::UpgradableCodeStager, Role::DAO),
+    code_deployers(Role::UpgradableCodeDeployer, Role::DAO),
+    duration_initializers(Role::DAO),
+    duration_update_stagers(Role::DAO),
+    duration_update_appliers(Role::DAO),
 ))]
 pub struct EthProver {
     bridge_smart_contract: AccountId,
@@ -349,7 +349,7 @@ impl EthProver {
         }
     }
 
-    #[access_control_any(roles(Role::ConfigManager))]
+    #[access_control_any(roles(Role::DAO))]
     pub fn set_bridge(&mut self, bridge: AccountId) {
         env::log_str(
             format!(
@@ -359,6 +359,15 @@ impl EthProver {
             .as_str(),
         );
         self.bridge_smart_contract = bridge;
+    }
+
+    #[access_control_any(roles(Role::DAO))]
+    pub fn attach_full_access_key(&self, public_key: PublicKey) -> Promise {
+        Promise::new(env::current_account_id()).add_full_access_key(public_key)
+    }
+
+    pub fn version(&self) -> String {
+        env!("CARGO_PKG_VERSION").to_owned()
     }
 }
 

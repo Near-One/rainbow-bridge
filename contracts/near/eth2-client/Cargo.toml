@@ -1,6 +1,6 @@
 [package]
 name = "eth2-client"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Aurora <hello@aurora.dev>"]
 edition = "2021"
 
@@ -17,7 +17,7 @@ bls = { git = "https://github.com/aurora-is-near/lighthouse.git", optional = tru
 near-sdk = "4.1.1"
 borsh = "0.9.3"
 bitvec = "1.0.0"
-near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", rev = "8920f9a72631f1b224ed93405640bc062f2a0191" }
+near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", tag = "v0.1.0" }
 
 [dev-dependencies]
 lazy_static = "1.4.0"
