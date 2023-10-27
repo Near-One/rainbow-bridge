@@ -63,12 +63,10 @@ pub struct HeaderInfo {
 #[serde(crate = "near_sdk::serde")]
 pub enum Role {
     PauseManager,
-    UpgradableManager,
     UpgradableCodeStager,
     UpgradableCodeDeployer,
-    UpgradableDurationManager,
-    ConfigManager,
     UnrestrictedAddBlockHeader,
+    DAO,
 }
 
 #[near_bindgen]
@@ -76,11 +74,11 @@ pub enum Role {
 #[access_control(role_type(Role))]
 #[pausable(manager_roles(Role::PauseManager))]
 #[upgradable(access_control_roles(
-    code_stagers(Role::UpgradableCodeStager, Role::UpgradableManager),
-    code_deployers(Role::UpgradableCodeDeployer, Role::UpgradableManager),
-    duration_initializers(Role::UpgradableDurationManager, Role::UpgradableManager),
-    duration_update_stagers(Role::UpgradableDurationManager, Role::UpgradableManager),
-    duration_update_appliers(Role::UpgradableDurationManager, Role::UpgradableManager),
+    code_stagers(Role::UpgradableCodeStager, Role::DAO),
+    code_deployers(Role::UpgradableCodeDeployer, Role::DAO),
+    duration_initializers(Role::DAO),
+    duration_update_stagers(Role::DAO),
+    duration_update_appliers(Role::DAO),
 ))]
 pub struct EthClient {
     /// Whether client validates the PoW when accepting the header. Should only be set to `false`
@@ -252,7 +250,7 @@ impl EthClient {
         self.record_header(header);
     }
 
-    #[access_control_any(roles(Role::ConfigManager))]
+    #[access_control_any(roles(Role::DAO))]
     pub fn update_trusted_signer(&mut self, trusted_signer: Option<AccountId>) {
         self.trusted_signer = trusted_signer;
     }
@@ -261,7 +259,7 @@ impl EthClient {
         self.trusted_signer.clone()
     }
 
-    #[access_control_any(roles(Role::ConfigManager))]
+    #[access_control_any(roles(Role::DAO))]
     pub fn update_dags_merkle_roots(
         &mut self,
         #[serializer(borsh)] dags_start_epoch: u64,
