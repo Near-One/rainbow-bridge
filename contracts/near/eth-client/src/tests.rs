@@ -297,7 +297,7 @@ fn update_dags_merkle_roots() {
         None,
     );
 
-    contract.acl_grant_role(crate::Role::ConfigManager.into(), context.predecessor_account_id);
+    contract.acl_grant_role(crate::Role::DAO.into(), context.predecessor_account_id);
     contract.update_dags_merkle_roots(0, dmr.dag_merkle_roots.clone());
 
     for i in 0..699 {
