@@ -1080,7 +1080,6 @@ dependencies = [
 name = "eth-client"
 version = "0.1.0"
 dependencies = [
- "admin-controlled",
  "arrutil",
  "borsh",
  "eth-types",

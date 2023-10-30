@@ -9,7 +9,6 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 eth-types = { path = "../eth-types", default-features = false }
-admin-controlled = { path = "../admin-controlled" }
 near-sdk = "4.1.1"
 borsh = "0.9.3"
 rlp = "0.5.2"
