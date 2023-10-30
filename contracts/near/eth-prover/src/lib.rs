@@ -120,7 +120,7 @@ impl EthProver {
             .into()
     }
 
-    #[pause(except(roles(Role::UnrestrictedVerifyLogEntry)))]
+    #[pause(except(roles(Role::UnrestrictedVerifyLogEntry, Role::DAO)))]
     #[result_serializer(borsh)]
     pub fn verify_log_entry(
         &self,
@@ -169,7 +169,7 @@ impl EthProver {
     /// the StorageProof `value` field.  In order to verify the proof of non
     /// existence, you must set `value` to empty vec, *not* the RLP encoding of 0 or null
     /// (which would be 0x80).
-    #[pause(except(roles(Role::UnrestrictedVerifyLogEntry)))]
+    #[pause(except(roles(Role::UnrestrictedVerifyStorageProof, Role::DAO)))]
     #[result_serializer(borsh)]
     pub fn verify_storage_proof(
         &self,

@@ -219,7 +219,7 @@ impl EthClient {
     /// Add the block header to the client.
     /// `block_header` -- RLP-encoded Ethereum header;
     /// `dag_nodes` -- dag nodes with their merkle proofs.
-    #[pause(except(roles(Role::UnrestrictedAddBlockHeader)))]
+    #[pause(except(roles(Role::UnrestrictedAddBlockHeader, Role::DAO)))]
     #[result_serializer(borsh)]
     pub fn add_block_header(
         &mut self,
