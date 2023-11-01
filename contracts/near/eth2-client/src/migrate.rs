@@ -6,7 +6,8 @@ use near_sdk::Balance;
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Eth2ClientV1 {
     trusted_signer: Option<AccountId>,
-    paused: Mask,
+    #[deprecated]
+    paused: u128,
     validate_updates: bool,
     verify_bls_signatures: bool,
     hashes_gc_threshold: u64,
@@ -28,7 +29,7 @@ impl Eth2Client {
     #[init(ignore_state)]
     pub fn migrate() -> Self {
         let old_state: Eth2ClientV1 = env::state_read().expect("failed");
-
+        #[allow(deprecated)]
         Self {
             trusted_signer: old_state.trusted_signer,
             paused: old_state.paused,

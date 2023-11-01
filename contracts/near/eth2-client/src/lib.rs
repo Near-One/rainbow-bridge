@@ -1,6 +1,10 @@
+use near_plugins::{
+    access_control, access_control_any, pause, AccessControlRole, AccessControllable, Pausable,
+    Upgradable,
+};
+use near_sdk::serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-use admin_controlled::Mask;
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -10,16 +14,13 @@ use eth_types::eth2::*;
 use eth_types::{BlockHeader, H256};
 use near_sdk::collections::{LazyOption, LookupMap};
 use near_sdk::{
-    assert_self, env, near_bindgen, require, AccountId, BorshStorageKey, PanicOnDefault,
+    env, near_bindgen, require, AccountId, BorshStorageKey, PanicOnDefault, Promise, PublicKey,
 };
 use tree_hash::TreeHash;
 
+mod migrate;
 #[cfg(test)]
 mod tests;
-
-mod migrate;
-
-const PAUSE_SUBMIT_UPDATE: Mask = 1;
 
 #[derive(BorshSerialize, BorshStorageKey)]
 enum StorageKey {
@@ -31,13 +32,34 @@ enum StorageKey {
     NextSyncCommittee,
 }
 
+#[derive(AccessControlRole, Deserialize, Serialize, Copy, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub enum Role {
+    PauseManager,
+    UpgradableCodeStager,
+    UpgradableCodeDeployer,
+    UnrestrictedSubmitLightClientUpdate,
+    UnrestrictedSubmitExecutionHeader,
+    DAO,
+}
+
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Pausable, Upgradable)]
+#[access_control(role_type(Role))]
+#[pausable(manager_roles(Role::PauseManager, Role::DAO))]
+#[upgradable(access_control_roles(
+    code_stagers(Role::UpgradableCodeStager, Role::DAO),
+    code_deployers(Role::UpgradableCodeDeployer, Role::DAO),
+    duration_initializers(Role::DAO),
+    duration_update_stagers(Role::DAO),
+    duration_update_appliers(Role::DAO),
+))]
 pub struct Eth2Client {
     /// If set, only light client updates by the trusted signer will be accepted
     trusted_signer: Option<AccountId>,
     /// Mask determining all paused functions
-    paused: Mask,
+    #[deprecated]
+    paused: u128,
     /// Whether the client validates the updates.
     /// Should only be set to `false` for debugging, testing, and diagnostic purposes
     validate_updates: bool,
@@ -99,9 +121,10 @@ impl Eth2Client {
             submitter: env::predecessor_account_id(),
         };
 
+        #[allow(deprecated)]
         let mut contract = Self {
             trusted_signer: args.trusted_signer,
-            paused: Mask::default(),
+            paused: 0,
             validate_updates: args.validate_updates,
             verify_bls_signatures: args.verify_bls_signatures,
             hashes_gc_threshold: args.hashes_gc_threshold,
@@ -130,6 +153,8 @@ impl Eth2Client {
             &args.finalized_execution_header.number,
             &finalized_execution_header_hash,
         );
+
+        contract.acl_init_super_admin(env::predecessor_account_id());
         contract
     }
 
@@ -201,6 +226,7 @@ impl Eth2Client {
             .map(|header| header.block_number)
     }
 
+    #[pause(except(roles(Role::UnrestrictedSubmitLightClientUpdate, Role::DAO)))]
     pub fn submit_beacon_chain_light_client_update(
         &mut self,
         #[serializer(borsh)] update: LightClientUpdate,
@@ -215,6 +241,7 @@ impl Eth2Client {
     }
 
     #[result_serializer(borsh)]
+    #[pause(except(roles(Role::UnrestrictedSubmitExecutionHeader, Role::DAO)))]
     pub fn submit_execution_header(&mut self, #[serializer(borsh)] block_header: BlockHeader) {
         if let Some(trusted_blocks_submitter) = &self.trusted_blocks_submitter {
             require!(
@@ -319,8 +346,8 @@ impl Eth2Client {
         );
     }
 
+    #[access_control_any(roles(Role::DAO))]
     pub fn update_trusted_signer(&mut self, trusted_signer: Option<AccountId>) {
-        assert_self();
         self.trusted_signer = trusted_signer;
     }
 
@@ -328,7 +355,7 @@ impl Eth2Client {
         self.trusted_signer.clone()
     }
 
-    #[private]
+    #[access_control_any(roles(Role::DAO))]
     pub fn update_trusted_blocks_submitter(&mut self, trusted_blocks_submitter: Option<AccountId>) {
         self.trusted_blocks_submitter = trusted_blocks_submitter;
     }
@@ -337,9 +364,22 @@ impl Eth2Client {
         self.trusted_blocks_submitter.clone()
     }
 
-    #[private]
+    #[access_control_any(roles(Role::DAO))]
     pub fn update_hashes_gc_threshold(&mut self, hashes_gc_threshold: u64) {
         self.hashes_gc_threshold = hashes_gc_threshold;
+    }
+
+    pub fn get_hashes_gc_threshold(&self) -> u64 {
+        self.hashes_gc_threshold
+    }
+
+    #[access_control_any(roles(Role::DAO))]
+    pub fn attach_full_access_key(&self, public_key: PublicKey) -> Promise {
+        Promise::new(env::current_account_id()).add_full_access_key(public_key)
+    }
+
+    pub fn version(&self) -> String {
+        env!("CARGO_PKG_VERSION").to_owned()
     }
 }
 
@@ -559,7 +599,6 @@ impl Eth2Client {
 
     fn is_light_client_update_allowed(&self) {
         require!(self.client_mode == ClientMode::SubmitLightClientUpdate);
-        self.check_not_paused(PAUSE_SUBMIT_UPDATE);
 
         if let Some(trusted_signer) = &self.trusted_signer {
             require!(
@@ -582,5 +621,3 @@ impl Eth2Client {
         Some(head_block_number - tail_block_number)
     }
 }
-
-admin_controlled::impl_admin_controlled!(Eth2Client, paused);

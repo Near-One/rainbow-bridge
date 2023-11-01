@@ -172,7 +172,7 @@ fn get_context() -> VMContext {
         signer_account_pk: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
             .parse()
             .unwrap(),
-        predecessor_account_id: "carol.near".parse().unwrap(),
+        predecessor_account_id: "alice.near".parse().unwrap(),
         input: vec![],
         block_index: 0,
         block_timestamp: 0,
@@ -278,6 +278,8 @@ fn add_dags_merkle_roots() {
 
 #[test]
 fn update_dags_merkle_roots() {
+    use near_plugins::AccessControllable;
+
     let block = read_block(format!("./src/data/{}.json", 12_965_000).to_string());
     let mut context = get_context();
     context.predecessor_account_id = context.current_account_id.clone();
@@ -295,6 +297,7 @@ fn update_dags_merkle_roots() {
         None,
     );
 
+    contract.acl_grant_role(crate::Role::DAO.into(), context.predecessor_account_id);
     contract.update_dags_merkle_roots(0, dmr.dag_merkle_roots.clone());
 
     for i in 0..699 {

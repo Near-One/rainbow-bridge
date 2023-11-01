@@ -1,8 +1,13 @@
-use admin_controlled::Mask;
-use borsh::{BorshDeserialize, BorshSerialize};
-use core::convert::TryFrom;
 use eth_types::*;
-use near_sdk::{env, ext_contract, near_bindgen, Gas, PanicOnDefault, PromiseOrValue};
+use near_plugins::{
+    access_control, access_control_any, pause, AccessControlRole, AccessControllable, Pausable,
+    Upgradable,
+};
+use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::serde::{Deserialize, Serialize};
+use near_sdk::{
+    env, ext_contract, near_bindgen, Gas, PanicOnDefault, Promise, PromiseOrValue, PublicKey,
+};
 use rlp::Rlp;
 
 type AccountId = String;
@@ -13,15 +18,32 @@ const BLOCK_HASH_SAFE_GAS: Gas = Gas(10_000_000_000_000);
 /// Gas to call on_block_hash
 const ON_BLOCK_HASH_GAS: Gas = Gas(5_000_000_000_000);
 
-#[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-pub struct EthProver {
-    bridge_smart_contract: AccountId,
-    paused: Mask,
+#[derive(AccessControlRole, Deserialize, Serialize, Copy, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub enum Role {
+    PauseManager,
+    UnrestrictedVerifyLogEntry,
+    UnrestrictedVerifyStorageProof,
+    UpgradableCodeStager,
+    UpgradableCodeDeployer,
+    DAO,
 }
 
-fn assert_self() {
-    assert_eq!(env::current_account_id(), env::predecessor_account_id());
+#[near_bindgen]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Pausable, Upgradable)]
+#[access_control(role_type(Role))]
+#[pausable(manager_roles(Role::PauseManager))]
+#[upgradable(access_control_roles(
+    code_stagers(Role::UpgradableCodeStager, Role::DAO),
+    code_deployers(Role::UpgradableCodeDeployer, Role::DAO),
+    duration_initializers(Role::DAO),
+    duration_update_stagers(Role::DAO),
+    duration_update_appliers(Role::DAO),
+))]
+pub struct EthProver {
+    bridge_smart_contract: AccountId,
+    #[deprecated]
+    paused: u128,
 }
 
 /// Defines an interface to call EthProver back as a callback with the result from the
@@ -47,17 +69,19 @@ fn get_vec(data: &Rlp, pos: usize) -> Vec<u8> {
     data.at(pos).unwrap().as_val::<Vec<u8>>().unwrap()
 }
 
-const PAUSE_VERIFY: Mask = 1;
-
 #[near_bindgen]
 impl EthProver {
     #[init]
     #[private]
     pub fn init(#[serializer(borsh)] bridge_smart_contract: AccountId) -> Self {
-        Self {
+        #[allow(deprecated)]
+        let mut contract = Self {
             bridge_smart_contract,
-            paused: Mask::default(),
-        }
+            paused: 0,
+        };
+
+        contract.acl_init_super_admin(near_sdk::env::predecessor_account_id());
+        contract
     }
 
     /// Implementation of the callback when the EthClient returns data.
@@ -65,6 +89,7 @@ impl EthProver {
     /// - `block_hash` is the actual data from the EthClient call
     /// - `expected_block_hash` is the block hash that we expect to be passed by us.
     #[result_serializer(borsh)]
+    #[private]
     pub fn on_block_hash(
         &self,
         #[callback]
@@ -72,7 +97,6 @@ impl EthProver {
         block_hash: Option<H256>,
         #[serializer(borsh)] expected_block_hash: H256,
     ) -> bool {
-        assert_self();
         return block_hash == Some(expected_block_hash);
     }
 
@@ -96,6 +120,7 @@ impl EthProver {
             .into()
     }
 
+    #[pause(except(roles(Role::UnrestrictedVerifyLogEntry, Role::DAO)))]
     #[result_serializer(borsh)]
     pub fn verify_log_entry(
         &self,
@@ -107,7 +132,6 @@ impl EthProver {
         #[serializer(borsh)] proof: Vec<Vec<u8>>,
         #[serializer(borsh)] skip_bridge_call: bool,
     ) -> PromiseOrValue<bool> {
-        self.check_not_paused(PAUSE_VERIFY);
         let log_entry: LogEntry = rlp::decode(log_entry_data.as_slice()).unwrap();
         let receipt: Receipt = rlp::decode(receipt_data.as_slice()).unwrap();
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
@@ -117,8 +141,11 @@ impl EthProver {
         assert_eq!(receipt.logs[log_index_usize], log_entry);
 
         // Verify receipt included into header
-        let data =
-            Self::verify_trie_proof(header.receipts_root, rlp::encode(&receipt_index).to_vec(), proof);
+        let data = Self::verify_trie_proof(
+            header.receipts_root,
+            rlp::encode(&receipt_index).to_vec(),
+            proof,
+        );
         let verification_result = receipt_data == data;
         if verification_result && skip_bridge_call {
             return PromiseOrValue::Value(true);
@@ -142,6 +169,7 @@ impl EthProver {
     /// the StorageProof `value` field.  In order to verify the proof of non
     /// existence, you must set `value` to empty vec, *not* the RLP encoding of 0 or null
     /// (which would be 0x80).
+    #[pause(except(roles(Role::UnrestrictedVerifyStorageProof, Role::DAO)))]
     #[result_serializer(borsh)]
     pub fn verify_storage_proof(
         &self,
@@ -156,19 +184,30 @@ impl EthProver {
         #[serializer(borsh)] max_header_height: Option<u64>,
         #[serializer(borsh)] skip_bridge_call: bool,
     ) -> PromiseOrValue<bool> {
-        self.check_not_paused(PAUSE_VERIFY);
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
 
         if let Some(min_header_height) = min_header_height {
             if header.number < min_header_height {
-                env::log_str(format!("Block height {} < Minimum header height {}", header.number, min_header_height).as_str());
+                env::log_str(
+                    format!(
+                        "Block height {} < Minimum header height {}",
+                        header.number, min_header_height
+                    )
+                    .as_str(),
+                );
                 return PromiseOrValue::Value(false);
             }
         }
 
         if let Some(max_header_height) = max_header_height {
             if header.number > max_header_height {
-                env::log_str(format!("Block height {} > Maximum header height {}", header.number, max_header_height).as_str());
+                env::log_str(
+                    format!(
+                        "Block height {} > Maximum header height {}",
+                        header.number, max_header_height
+                    )
+                    .as_str(),
+                );
                 return PromiseOrValue::Value(false);
             }
         }
@@ -310,8 +349,8 @@ impl EthProver {
         }
     }
 
+    #[access_control_any(roles(Role::DAO))]
     pub fn set_bridge(&mut self, bridge: AccountId) {
-        assert_self();
         env::log_str(
             format!(
                 "Old bridge account: {} New bridge account {}",
@@ -321,9 +360,16 @@ impl EthProver {
         );
         self.bridge_smart_contract = bridge;
     }
-}
 
-admin_controlled::impl_admin_controlled!(EthProver, paused);
+    #[access_control_any(roles(Role::DAO))]
+    pub fn attach_full_access_key(&self, public_key: PublicKey) -> Promise {
+        Promise::new(env::current_account_id()).add_full_access_key(public_key)
+    }
+
+    pub fn version(&self) -> String {
+        env!("CARGO_PKG_VERSION").to_owned()
+    }
+}
 
 #[cfg(test)]
 mod tests;

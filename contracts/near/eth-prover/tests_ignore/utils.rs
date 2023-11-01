@@ -1,19 +1,11 @@
 #![allow(dead_code)]
-use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
 use hex::FromHex;
-use near_crypto::{InMemorySigner, KeyType, Signer};
-use near_primitives::{
-    account::{AccessKey, Account},
-    errors::{RuntimeError, TxExecutionError},
-    hash::CryptoHash,
-    transaction::{ExecutionOutcome, ExecutionStatus, Transaction},
-    types::{AccountId, Balance},
-};
-use near_runtime_standalone::init_runtime_and_signer;
-pub use near_runtime_standalone::RuntimeStandalone;
+use near_primitives::transaction::{ExecutionOutcome, ExecutionStatus};
+use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 pub use near_sdk::VMContext;
 use serde::{Deserialize, Deserializer};
+use workspaces::{network::Sandbox, AccountId, Contract, Worker};
 
 type TxResult = Result<ExecutionOutcome, ExecutionOutcome>;
 
@@ -69,182 +61,67 @@ lazy_static::lazy_static! {
     static ref ETH_CLIENT_WASM_BYTES: &'static [u8] = include_bytes!("../../res/eth_client.wasm").as_ref();
 }
 
-pub fn ntoy(near_amount: Balance) -> Balance {
-    near_amount * 10u128.pow(24)
+pub async fn init_eth_client(worker: &Worker<Sandbox>, validate_ethash: bool) -> Contract {
+    let block = read_block("../eth-client/src/data/12965000.json".to_string());
+    let init_args = EthClientInitArgs {
+        validate_ethash,
+        dags_start_epoch: 0,
+        dags_merkle_roots: read_roots_collection().dag_merkle_roots,
+        first_header: block.header(),
+        hashes_gc_threshold: 400000,
+        finalized_gc_threshold: 500,
+        num_confirmations: 5,
+        trusted_signer: None,
+    };
+
+    let contract = worker.dev_deploy(&ETH_CLIENT_WASM_BYTES).await.unwrap();
+
+    let _result = worker
+        .root_account()
+        .unwrap()
+        .transfer_near(&contract.id(), 30)
+        .await
+        .unwrap();
+
+    let _result = contract
+        .call("init")
+        .args(init_args.try_to_vec().unwrap())
+        .max_gas()
+        .transact()
+        .await
+        .unwrap()
+        .unwrap();
+
+    contract
 }
 
-pub struct ExternalUser {
-    pub account_id: AccountId,
-    pub signer: InMemorySigner,
-}
+pub async fn init_eth_prover(
+    worker: &Worker<Sandbox>,
+    eth_client_account_id: AccountId,
+) -> Contract {
+    let init_args = EthProverInitArgs {
+        bridge_smart_contract: eth_client_account_id,
+    };
 
-impl ExternalUser {
-    pub fn new(account_id: AccountId, signer: InMemorySigner) -> Self {
-        Self { account_id, signer }
-    }
+    let contract = worker.dev_deploy(&ETH_PROVER_WASM_BYTES).await.unwrap();
 
-    #[allow(dead_code)]
-    pub fn account_id(&self) -> &AccountId {
-        &self.account_id
-    }
+    let _result = worker
+        .root_account()
+        .unwrap()
+        .transfer_near(&contract.id(), 30)
+        .await
+        .unwrap();
 
-    #[allow(dead_code)]
-    pub fn signer(&self) -> &InMemorySigner {
-        &self.signer
-    }
+    let _result = contract
+        .call("init")
+        .args(init_args.try_to_vec().unwrap())
+        .max_gas()
+        .transact()
+        .await
+        .unwrap()
+        .unwrap();
 
-    pub fn account(&self, runtime: &RuntimeStandalone) -> Account {
-        runtime
-            .view_account(&self.account_id)
-            .expect("Account should be there")
-    }
-
-    pub fn create_external(
-        &self,
-        runtime: &mut RuntimeStandalone,
-        new_account_id: AccountId,
-        amount: Balance,
-    ) -> Result<ExternalUser, ExecutionOutcome> {
-        let new_signer =
-            InMemorySigner::from_seed(&new_account_id, KeyType::ED25519, &new_account_id);
-        let tx = self
-            .new_tx(runtime, new_account_id.clone())
-            .create_account()
-            .add_key(new_signer.public_key(), AccessKey::full_access())
-            .transfer(amount)
-            .sign(&self.signer);
-        let res = runtime.resolve_tx(tx);
-
-        // TODO: this temporary hack, must be rewritten
-        if let Err(err) = res.clone() {
-            if let RuntimeError::InvalidTxError(tx_err) = err {
-                let mut out = ExecutionOutcome::default();
-                out.status = ExecutionStatus::Failure(TxExecutionError::InvalidTxError(tx_err));
-                return Err(out);
-            } else {
-                unreachable!();
-            }
-        } else {
-            outcome_into_result(res.unwrap())?;
-            runtime.process_all().unwrap();
-            Ok(ExternalUser {
-                account_id: new_account_id,
-                signer: new_signer,
-            })
-        }
-    }
-
-    pub fn transfer(
-        &self,
-        runtime: &mut RuntimeStandalone,
-        receiver_id: &str,
-        amount: Balance,
-    ) -> TxResult {
-        let tx = self
-            .new_tx(runtime, receiver_id.to_string())
-            .transfer(amount)
-            .sign(&self.signer);
-        let res = runtime.resolve_tx(tx).unwrap();
-        runtime.process_all().unwrap();
-        outcome_into_result(res)
-    }
-
-    pub fn function_call(
-        &self,
-        runtime: &mut RuntimeStandalone,
-        receiver_id: &str,
-        method: &str,
-        args: &[u8],
-        deposit: u128,
-    ) -> TxResult {
-        let tx = self
-            .new_tx(runtime, receiver_id.to_string())
-            .function_call(method.into(), args.to_vec(), 300000000000000, deposit)
-            .sign(&self.signer);
-        let res = runtime.resolve_tx(tx).unwrap();
-        runtime.process_all().unwrap();
-        outcome_into_result(res)
-    }
-
-    pub fn init_eth_client(
-        &self,
-        runtime: &mut RuntimeStandalone,
-        eth_client_account_id: AccountId,
-        validate_ethash: bool,
-    ) -> TxResult {
-        let block = read_block("../eth-client/src/data/10234001.json".to_string());
-        let init_args = EthClientInitArgs {
-            validate_ethash,
-            dags_start_epoch: 0,
-            dags_merkle_roots: read_roots_collection().dag_merkle_roots,
-            first_header: block.header(),
-            hashes_gc_threshold: 400000,
-            finalized_gc_threshold: 500,
-            num_confirmations: 10,
-            trusted_signer: None,
-        };
-        let tx = self
-            .new_tx(runtime, eth_client_account_id)
-            .create_account()
-            .transfer(ntoy(30))
-            .deploy_contract(ETH_CLIENT_WASM_BYTES.to_vec())
-            .function_call(
-                "init".into(),
-                init_args.try_to_vec().unwrap(),
-                1000000000000000,
-                0,
-            )
-            .sign(&self.signer);
-        let res = runtime.resolve_tx(tx).unwrap();
-        runtime.process_all().unwrap();
-        outcome_into_result(res)
-    }
-
-    pub fn init_eth_prover(
-        &self,
-        runtime: &mut RuntimeStandalone,
-        eth_prover_account_id: AccountId,
-        eth_client_account_id: AccountId,
-    ) -> TxResult {
-        let init_args = EthProverInitArgs {
-            bridge_smart_contract: eth_client_account_id,
-        };
-        let tx = self
-            .new_tx(runtime, eth_prover_account_id)
-            .create_account()
-            .transfer(ntoy(30))
-            .deploy_contract(ETH_PROVER_WASM_BYTES.to_vec())
-            .function_call(
-                "init".into(),
-                init_args.try_to_vec().unwrap(),
-                1000000000000000,
-                0,
-            )
-            .sign(&self.signer);
-        let res = runtime.resolve_tx(tx).unwrap();
-        runtime.process_all().unwrap();
-        outcome_into_result(res)
-    }
-
-    fn new_tx(&self, runtime: &RuntimeStandalone, receiver_id: AccountId) -> Transaction {
-        let nonce = runtime
-            .view_access_key(&self.account_id, &self.signer.public_key())
-            .unwrap()
-            .nonce
-            + 1;
-        Transaction::new(
-            self.account_id.clone(),
-            self.signer.public_key(),
-            receiver_id,
-            nonce,
-            CryptoHash::default(),
-        )
-    }
-}
-
-pub fn new_root(account_id: AccountId) -> (RuntimeStandalone, ExternalUser) {
-    let (runtime, signer) = init_runtime_and_signer(&account_id);
-    (runtime, ExternalUser { account_id, signer })
+    contract
 }
 
 fn read_roots_collection() -> RootsCollection {
@@ -380,12 +257,12 @@ pub struct AssertEthbridgeHashArgs {
     pub expected_block_hash: H256,
 }
 
-pub fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
+pub fn get_context(input: Vec<u8>) -> VMContext {
     VMContext {
-        current_account_id: "alice.near".to_string(),
-        signer_account_id: "bob.near".to_string(),
-        signer_account_pk: vec![0, 1, 2],
-        predecessor_account_id: "carol.near".to_string(),
+        current_account_id: "alice.near".parse().unwrap(),
+        signer_account_id: "bob.near".parse().unwrap(),
+        signer_account_pk: vec![0u8; 33].try_into().unwrap(),
+        predecessor_account_id: "carol.near".parse().unwrap(),
         input,
         block_index: 0,
         block_timestamp: 0,
@@ -394,9 +271,9 @@ pub fn get_context(input: Vec<u8>, is_view: bool) -> VMContext {
         epoch_height: 0,
         storage_usage: 0,
         attached_deposit: 0,
-        prepaid_gas: 10u64.pow(18),
-        random_seed: vec![0, 1, 2],
-        is_view,
+        prepaid_gas: near_sdk::Gas(10u64.pow(18)),
+        random_seed: vec![1; 32].try_into().unwrap(),
+        view_config: None,
         output_data_receivers: vec![],
     }
 }
