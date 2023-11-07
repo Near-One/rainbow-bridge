@@ -336,15 +336,18 @@ impl EthProver {
                 }
             } else {
                 // Extension node
-                assert_eq!(path.as_slice(), &key[key_index..key_index + path.len()]);
-                let new_expected_root = get_vec(&node, 1);
-                Self::_verify_trie_proof(
-                    new_expected_root,
-                    key,
-                    proof,
-                    key_index + path.len(),
-                    proof_index + 1,
-                )
+                if path.as_slice() == &key[key_index..key_index + path.len()] {
+                    let new_expected_root = get_vec(&node, 1);
+                    Self::_verify_trie_proof(
+                        new_expected_root,
+                        key,
+                        proof,
+                        key_index + path.len(),
+                        proof_index + 1,
+                    )
+                } else {
+                    vec![]
+                }
             }
         }
     }
