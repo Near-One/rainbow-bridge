@@ -125,7 +125,7 @@ impl Config {
     }
 
     fn check_account_id(&self) {
-        let near_rpc_client = NearRPCClient::new(&self.near_endpoint);
+        let near_rpc_client = NearRPCClient::new(&self.near_endpoint, &self.near_endpoint_api_key);
 
         // check `signer_account_id`
         let _signer_account_id: near_sdk::AccountId = self

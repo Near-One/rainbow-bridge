@@ -116,7 +116,7 @@ impl Eth2NearRelay {
             beacon_rpc_client,
             eth1_rpc_client: Eth1RPCClient::new(&config.eth1_endpoint),
             eth_client_contract: eth_contract,
-            near_rpc_client: NearRPCClient::new(&config.near_endpoint),
+            near_rpc_client: NearRPCClient::new(&config.near_endpoint, &config.near_endpoint_api_key),
             headers_batch_size: config.headers_batch_size as u64,
             ethereum_network: config.ethereum_network.to_string(),
             interval_between_light_client_updates_submission_in_epochs: config
