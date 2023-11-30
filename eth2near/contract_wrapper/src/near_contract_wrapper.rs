@@ -10,10 +10,12 @@ use near_sdk::{Balance, Gas};
 use serde_json::Value;
 use std::error::Error;
 use std::string::String;
+use std::time;
 use std::vec::Vec;
 use tokio::runtime::Runtime;
 
 pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
+pub const DEFAULT_WAIT_FINAL_OUTCOME_TIMEOUT_SEC: u64 = 500;
 
 /// Implementation of interaction with a contract on NEAR.
 pub struct NearContractWrapper {
@@ -193,15 +195,42 @@ impl ContractWrapper for NearContractWrapper {
             actions,
         };
 
-        let request = methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest {
+        let request = methods::broadcast_tx_async::RpcBroadcastTxAsyncRequest {
             signed_transaction: transaction.sign(&self.signer),
         };
 
-        let request_result = rt.block_on(async_std::future::timeout(
-            std::time::Duration::from_secs(600),
-            self.client.call(&request),
-        ))?;
-        Ok(request_result?)
+        let hash = rt.block_on(self.client.call(&request))?;
+        let sent_at = time::Instant::now();
+        let tx_info = methods::tx::TransactionInfo::TransactionId {
+            hash,
+            account_id: self.signer.account_id.clone(),
+        };
+
+        loop {
+            let response =
+                rt.block_on(self.client.call(methods::tx::RpcTransactionStatusRequest {
+                    transaction_info: tx_info.clone(),
+                }));
+
+            let delta = (time::Instant::now() - sent_at).as_secs();
+            if delta > DEFAULT_WAIT_FINAL_OUTCOME_TIMEOUT_SEC {
+                Err(format!(
+                    "Timeout on waiting for final transaction outcome {}",
+                    hash.to_string()
+                ))?;
+            }
+
+            match response {
+                Err(err) => match err.handler_error() {
+                    Some(_err) => {
+                        std::thread::sleep(time::Duration::from_secs(2));
+                        continue;
+                    }
+                    _ => Err(format!("RpcTransactionError {}", err))?,
+                },
+                Ok(response) => return Ok(response),
+            }
+        }
     }
 
     fn call_change_method(
@@ -218,4 +247,13 @@ impl ContractWrapper for NearContractWrapper {
             gas,
         )
     }
+
+    // fn wait_for_tx_final_outcome(
+    //     hash: CryptoHash,
+    //     account_id: AccountId,
+    //     server_addr: url::Url,
+    //     timeout_sec: u64,
+    // ) -> Result<FinalExecutionOutcomeView, CustomError> {
+
+    // }
 }
