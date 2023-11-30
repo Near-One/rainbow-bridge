@@ -42,12 +42,18 @@ impl NearContractWrapper {
         signer_secret_key: &str,
         contract_account_id: &str,
         timeout: Option<std::time::Duration>,
+        api_key: Option<String>,
     ) -> NearContractWrapper {
         let signer_account_id = account_id
             .parse()
             .expect("Error on parsing account id during creation near contract wrapper");
-        let client =
+        let mut client =
             JsonRpcClient::with(utils::new_near_rpc_client(timeout)).connect(near_endpoint);
+
+        if let Some(api_key) = api_key {
+            client = client.header(near_jsonrpc_client::auth::ApiKey::new(api_key).unwrap());
+        }
+
         let contract_account = contract_account_id
             .parse()
             .expect("Error on parsing contract account id during creation near contract wrapper");
@@ -80,6 +86,7 @@ impl NearContractWrapper {
         path_to_signer_secret_key: &str,
         contract_account_id: &str,
         timeout: Option<std::time::Duration>,
+        api_key: Option<String>,
     ) -> NearContractWrapper {
         let v: Value = serde_json::from_str(
             &std::fs::read_to_string(path_to_signer_secret_key).expect("Unable to read file"),
@@ -96,6 +103,7 @@ impl NearContractWrapper {
             &signer_secret_key,
             contract_account_id,
             timeout,
+            api_key,
         )
     }
 }

@@ -169,6 +169,7 @@ mod tests {
             &signer_private_key,
             CONTRACT_ACCOUNT_ID,
             None,
+            None,
         ));
 
         let eth_client = eth_client_contract::EthClientContract::new(near_contract_wrapper);

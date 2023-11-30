@@ -22,6 +22,9 @@ pub struct Config {
     // endpoint for a full node on the NEAR chain
     pub near_endpoint: String,
 
+    // api key for the NEAR endpoint
+    pub near_endpoint_api_key: Option<String>,
+
     // Account id from which relay make requests
     pub signer_account_id: String,
 
