@@ -187,7 +187,7 @@ impl EthProver {
         #[serializer(borsh)] skip_bridge_call: bool,
     ) -> PromiseOrValue<bool> {
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
-        if !Self::verify_heights_range(header.number, min_header_height, max_header_height) {
+        if !Self::is_block_height_in_bound(header.number, min_header_height, max_header_height) {
             return PromiseOrValue::Value(false);
         }
 
@@ -243,7 +243,7 @@ impl EthProver {
         #[serializer(borsh)] skip_bridge_call: bool,
     ) -> PromiseOrValue<bool> {
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
-        if !Self::verify_heights_range(header.number, min_header_height, max_header_height) {
+        if !Self::is_block_height_in_bound(header.number, min_header_height, max_header_height) {
             return PromiseOrValue::Value(false);
         }
 
@@ -277,7 +277,7 @@ impl EthProver {
             .into()
     }
 
-    fn verify_heights_range(
+    fn is_block_height_in_bound(
         header_height: u64,
         min_header_height: Option<u64>,
         max_header_height: Option<u64>,
