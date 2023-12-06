@@ -32,7 +32,7 @@ pub enum Role {
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Pausable, Upgradable)]
 #[access_control(role_type(Role))]
-#[pausable(manager_roles(Role::PauseManager))]
+#[pausable(manager_roles(Role::PauseManager, Role::DAO))]
 #[upgradable(access_control_roles(
     code_stagers(Role::UpgradableCodeStager, Role::DAO),
     code_deployers(Role::UpgradableCodeDeployer, Role::DAO),
