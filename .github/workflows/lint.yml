@@ -10,14 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     name: Lint
     steps:
-      - name: Install LFS
-        run: apt-get install git-lfs
-
       - name: Clone the repository
         uses: actions/checkout@v3
         with:
           lfs: 'true'
-
       - name: Lint
         run: |
           yarn
