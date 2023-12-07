@@ -32,7 +32,7 @@ pub enum Role {
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Pausable, Upgradable)]
 #[access_control(role_type(Role))]
-#[pausable(manager_roles(Role::PauseManager))]
+#[pausable(manager_roles(Role::PauseManager, Role::DAO))]
 #[upgradable(access_control_roles(
     code_stagers(Role::UpgradableCodeStager, Role::DAO),
     code_deployers(Role::UpgradableCodeDeployer, Role::DAO),
@@ -132,9 +132,67 @@ impl EthProver {
         #[serializer(borsh)] proof: Vec<Vec<u8>>,
         #[serializer(borsh)] skip_bridge_call: bool,
     ) -> PromiseOrValue<bool> {
+        let min_header_height = None;
+        let max_header_height = None;
+        self.verify_log_entry_internal(
+            log_index,
+            log_entry_data,
+            receipt_index,
+            receipt_data,
+            header_data,
+            proof,
+            min_header_height,
+            max_header_height,
+            skip_bridge_call,
+        )
+    }
+
+    #[pause(except(roles(Role::UnrestrictedVerifyLogEntry, Role::DAO)))]
+    #[result_serializer(borsh)]
+    pub fn verify_log_entry_in_bound(
+        &self,
+        #[serializer(borsh)] log_index: u64,
+        #[serializer(borsh)] log_entry_data: Vec<u8>,
+        #[serializer(borsh)] receipt_index: u64,
+        #[serializer(borsh)] receipt_data: Vec<u8>,
+        #[serializer(borsh)] header_data: Vec<u8>,
+        #[serializer(borsh)] proof: Vec<Vec<u8>>,
+        #[serializer(borsh)] min_header_height: Option<u64>,
+        #[serializer(borsh)] max_header_height: Option<u64>,
+        #[serializer(borsh)] skip_bridge_call: bool,
+    ) -> PromiseOrValue<bool> {
+        self.verify_log_entry_internal(
+            log_index,
+            log_entry_data,
+            receipt_index,
+            receipt_data,
+            header_data,
+            proof,
+            min_header_height,
+            max_header_height,
+            skip_bridge_call,
+        )
+    }
+
+    fn verify_log_entry_internal(
+        &self,
+        #[serializer(borsh)] log_index: u64,
+        #[serializer(borsh)] log_entry_data: Vec<u8>,
+        #[serializer(borsh)] receipt_index: u64,
+        #[serializer(borsh)] receipt_data: Vec<u8>,
+        #[serializer(borsh)] header_data: Vec<u8>,
+        #[serializer(borsh)] proof: Vec<Vec<u8>>,
+        #[serializer(borsh)] min_header_height: Option<u64>,
+        #[serializer(borsh)] max_header_height: Option<u64>,
+        #[serializer(borsh)] skip_bridge_call: bool,
+    ) -> PromiseOrValue<bool> {
+        let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
+        if !Self::is_block_height_in_bound(header.number, min_header_height, max_header_height) {
+            return PromiseOrValue::Value(false);
+        }
+
         let log_entry: LogEntry = rlp::decode(log_entry_data.as_slice()).unwrap();
         let receipt: Receipt = rlp::decode(receipt_data.as_slice()).unwrap();
-        let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
 
         // Verify log_entry included in receipt
         let log_index_usize = usize::try_from(log_index).expect("Invalid log_index");
@@ -185,31 +243,8 @@ impl EthProver {
         #[serializer(borsh)] skip_bridge_call: bool,
     ) -> PromiseOrValue<bool> {
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
-
-        if let Some(min_header_height) = min_header_height {
-            if header.number < min_header_height {
-                env::log_str(
-                    format!(
-                        "Block height {} < Minimum header height {}",
-                        header.number, min_header_height
-                    )
-                    .as_str(),
-                );
-                return PromiseOrValue::Value(false);
-            }
-        }
-
-        if let Some(max_header_height) = max_header_height {
-            if header.number > max_header_height {
-                env::log_str(
-                    format!(
-                        "Block height {} > Maximum header height {}",
-                        header.number, max_header_height
-                    )
-                    .as_str(),
-                );
-                return PromiseOrValue::Value(false);
-            }
+        if !Self::is_block_height_in_bound(header.number, min_header_height, max_header_height) {
+            return PromiseOrValue::Value(false);
         }
 
         let account_key = near_keccak256(&contract_address).to_vec();
@@ -240,6 +275,40 @@ impl EthProver {
                     .on_block_hash(header.hash.unwrap()),
             )
             .into()
+    }
+
+    fn is_block_height_in_bound(
+        header_height: u64,
+        min_header_height: Option<u64>,
+        max_header_height: Option<u64>,
+    ) -> bool {
+        if let Some(min_header_height) = min_header_height {
+            if header_height < min_header_height {
+                env::log_str(
+                    format!(
+                        "Block height {} < Minimum header height {}",
+                        header_height, min_header_height
+                    )
+                    .as_str(),
+                );
+                return false;
+            }
+        }
+
+        if let Some(max_header_height) = max_header_height {
+            if header_height > max_header_height {
+                env::log_str(
+                    format!(
+                        "Block height {} > Maximum header height {}",
+                        header_height, max_header_height
+                    )
+                    .as_str(),
+                );
+                return false;
+            }
+        }
+
+        true
     }
 
     /// Verify the proof recursively traversing through the key.
