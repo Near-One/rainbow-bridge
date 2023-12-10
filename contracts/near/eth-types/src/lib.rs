@@ -163,12 +163,13 @@ pub struct BlockHeader {
         all(feature = "eth2", not(target_arch = "wasm32")),
         serde(deserialize_with = "u64_hex_be_option")
     )]
-    pub data_gas_used: Option<u64>,
+    pub blob_gas_used: Option<u64>,
     #[cfg_attr(
         all(feature = "eth2", not(target_arch = "wasm32")),
         serde(deserialize_with = "u64_hex_be_option")
     )]
-    pub excess_data_gas: Option<u64>,
+    pub excess_blob_gas: Option<u64>,
+    pub parent_beacon_block_root: Option<H256>,
 
     pub hash: Option<H256>,
     pub partial_hash: Option<H256>,
@@ -202,10 +203,13 @@ impl BlockHeader {
         if self.withdrawals_root.is_some() {
             list_size += 1;
         }
-        if self.data_gas_used.is_some() {
+        if self.blob_gas_used.is_some() {
             list_size += 1;
         }
-        if self.excess_data_gas.is_some() {
+        if self.excess_blob_gas.is_some() {
+            list_size += 1;
+        }
+        if self.parent_beacon_block_root.is_some() {
             list_size += 1;
         }
 
@@ -238,12 +242,16 @@ impl BlockHeader {
             stream.append(withdrawals_root);
         }
 
-        if let Some(data_gas_used) = &self.data_gas_used {
-            stream.append(data_gas_used);
+        if let Some(blob_gas_used) = &self.blob_gas_used {
+            stream.append(blob_gas_used);
         }
 
-        if let Some(excess_data_gas) = &self.excess_data_gas {
-            stream.append(excess_data_gas);
+        if let Some(excess_blob_gas) = &self.excess_blob_gas {
+            stream.append(excess_blob_gas);
+        }
+
+        if let Some(parent_beacon_block_root) = &self.parent_beacon_block_root {
+            stream.append(parent_beacon_block_root);
         }
     }
 
@@ -283,8 +291,9 @@ impl RlpDecodable for BlockHeader {
             nonce: serialized.val_at(14)?,
             base_fee_per_gas: serialized.val_at(15).ok(),
             withdrawals_root: serialized.val_at(16).ok(),
-            data_gas_used: serialized.val_at(17).ok(),
-            excess_data_gas: serialized.val_at(18).ok(),
+            blob_gas_used: serialized.val_at(17).ok(),
+            excess_blob_gas: serialized.val_at(18).ok(),
+            parent_beacon_block_root: serialized.val_at(19).ok(),
             hash: None,
             partial_hash: None,
         };
