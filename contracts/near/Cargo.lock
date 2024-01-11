@@ -98,7 +98,7 @@ dependencies = [
 [[package]]
 name = "amcl"
 version = "0.3.0"
-source = "git+https://github.com/sigp/milagro_bls?tag=v1.4.2#16655aa033175a90c10ef02aa144e2835de23aec"
+source = "git+https://github.com/sigp/milagro_bls?tag=v1.5.1#d3fc0a40cfe8b72ccda46ba050ee6786a59ce753"
 
 [[package]]
 name = "android_system_properties"
@@ -433,17 +433,17 @@ dependencies = [
 [[package]]
 name = "bls"
 version = "0.2.0"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?tag=v3.5.1-wasm#ce4e2b44630f5ddc04eda933eaa69c33d582c3f0"
+source = "git+https://github.com/aurora-is-near/lighthouse.git?tag=v4.6.0-wasm#7f7b139b5f9d81bcb9ed8bbdd5561cfb9e38bb12"
 dependencies = [
- "eth2_hashing",
- "eth2_serde_utils",
- "eth2_ssz",
+ "arbitrary",
  "ethereum-types 0.14.1",
+ "ethereum_hashing",
+ "ethereum_serde_utils",
+ "ethereum_ssz",
  "hex 0.4.3",
  "milagro_bls",
- "rand 0.7.3",
+ "rand 0.8.5",
  "serde",
- "serde_derive",
  "tree_hash",
  "zeroize",
 ]
@@ -1125,10 +1125,10 @@ version = "0.1.0"
 dependencies = [
  "borsh",
  "derive_more",
- "eth2_serde_utils",
- "eth2_ssz",
- "eth2_ssz_derive",
  "ethereum-types 0.14.1",
+ "ethereum_serde_utils",
+ "ethereum_ssz",
+ "ethereum_ssz_derive",
  "hex 0.4.3",
  "near-sdk",
  "rlp 0.5.2",
@@ -1153,7 +1153,6 @@ dependencies = [
  "ethereum-types 0.14.1",
  "hex 0.4.3",
  "lazy_static",
- "merkle_proof",
  "near-plugins",
  "near-sdk",
  "near-units",
@@ -1171,53 +1170,12 @@ dependencies = [
  "borsh",
  "eth-types",
  "ethereum-types 0.14.1",
+ "ethereum_hashing",
  "hex 0.4.3",
  "lazy_static",
- "merkle_proof",
  "near-sdk",
  "serde_json",
  "tree_hash",
-]
-
-[[package]]
-name = "eth2_hashing"
-version = "0.3.0"
-dependencies = [
- "lazy_static",
- "near-sdk",
-]
-
-[[package]]
-name = "eth2_serde_utils"
-version = "0.1.1"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?tag=v3.5.1-wasm#ce4e2b44630f5ddc04eda933eaa69c33d582c3f0"
-dependencies = [
- "ethereum-types 0.14.1",
- "hex 0.4.3",
- "serde",
- "serde_derive",
- "serde_json",
-]
-
-[[package]]
-name = "eth2_ssz"
-version = "0.4.1"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?tag=v3.5.1-wasm#ce4e2b44630f5ddc04eda933eaa69c33d582c3f0"
-dependencies = [
- "ethereum-types 0.14.1",
- "itertools",
- "smallvec 1.10.0",
-]
-
-[[package]]
-name = "eth2_ssz_derive"
-version = "0.3.1"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?tag=v3.5.1-wasm#ce4e2b44630f5ddc04eda933eaa69c33d582c3f0"
-dependencies = [
- "darling",
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -1232,7 +1190,7 @@ dependencies = [
  "serde_json",
  "sha3 0.9.1",
  "thiserror",
- "uint 0.9.5",
+ "uint 0.9.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1254,7 +1212,7 @@ checksum = "bfb684ac8fa8f6c5759f788862bb22ec6fe3cb392f6bfd08e3c64b603661e3f8"
 dependencies = [
  "crunchy",
  "fixed-hash 0.7.0",
- "impl-rlp 0.3.0",
+ "impl-rlp 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "impl-serde 0.3.2",
  "tiny-keccak",
 ]
@@ -1262,12 +1220,11 @@ dependencies = [
 [[package]]
 name = "ethbloom"
 version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c22d4b5885b6aa2fe5e8b9329fb8d232bf739e434e6b87347c63bdd00c120f60"
+source = "git+https://github.com/aurora-is-near/parity-common?tag=v0.14.1-wasm#2594d5a479cb9eb4962edf9d82434219be1c8f4f"
 dependencies = [
  "crunchy",
  "fixed-hash 0.8.0",
- "impl-rlp 0.3.0",
+ "impl-rlp 0.3.0 (git+https://github.com/aurora-is-near/parity-common?tag=v0.14.1-wasm)",
  "impl-serde 0.4.0",
  "tiny-keccak",
 ]
@@ -1280,24 +1237,67 @@ checksum = "05136f7057fe789f06e6d41d07b34e6f70d8c86e5693b60f97aaa6553553bdaf"
 dependencies = [
  "ethbloom 0.11.1",
  "fixed-hash 0.7.0",
- "impl-rlp 0.3.0",
+ "impl-rlp 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "impl-serde 0.3.2",
  "primitive-types 0.10.1",
- "uint 0.9.5",
+ "uint 0.9.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "ethereum-types"
 version = "0.14.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02d215cbf040552efcbe99a38372fe80ab9d00268e20012b79fcd0f073edd8ee"
+source = "git+https://github.com/aurora-is-near/parity-common?tag=v0.14.1-wasm#2594d5a479cb9eb4962edf9d82434219be1c8f4f"
 dependencies = [
  "ethbloom 0.13.0",
  "fixed-hash 0.8.0",
- "impl-rlp 0.3.0",
+ "impl-rlp 0.3.0 (git+https://github.com/aurora-is-near/parity-common?tag=v0.14.1-wasm)",
  "impl-serde 0.4.0",
  "primitive-types 0.12.1",
- "uint 0.9.5",
+ "uint 0.9.5 (git+https://github.com/aurora-is-near/parity-common?tag=v0.14.1-wasm)",
+]
+
+[[package]]
+name = "ethereum_hashing"
+version = "1.0.0-beta.2"
+dependencies = [
+ "lazy_static",
+ "near-sdk",
+]
+
+[[package]]
+name = "ethereum_serde_utils"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "de4d5951468846963c24e8744c133d44f39dff2cd3a233f6be22b370d08a524f"
+dependencies = [
+ "ethereum-types 0.14.1",
+ "hex 0.4.3",
+ "serde",
+ "serde_derive",
+ "serde_json",
+]
+
+[[package]]
+name = "ethereum_ssz"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e61ffea29f26e8249d35128a82ec8d3bd4fbc80179ea5f5e5e3daafef6a80fcb"
+dependencies = [
+ "ethereum-types 0.14.1",
+ "itertools",
+ "smallvec 1.10.0",
+]
+
+[[package]]
+name = "ethereum_ssz_derive"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6085d7fd3cf84bd2b8fec150d54c8467fb491d8db9c460607c5534f653a0ee38"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -1373,8 +1373,7 @@ dependencies = [
 [[package]]
 name = "fixed-hash"
 version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "835c052cb0c08c1acf6ffd71c022172e18723949c8282f2b9f27efbc51e64534"
+source = "git+https://github.com/aurora-is-near/parity-common?tag=v0.14.1-wasm#2594d5a479cb9eb4962edf9d82434219be1c8f4f"
 dependencies = [
  "byteorder",
  "rustc-hex",
@@ -1890,6 +1889,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "impl-rlp"
+version = "0.3.0"
+source = "git+https://github.com/aurora-is-near/parity-common?tag=v0.14.1-wasm#2594d5a479cb9eb4962edf9d82434219be1c8f4f"
+dependencies = [
+ "rlp 0.5.2",
+]
+
+[[package]]
 name = "impl-serde"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1901,8 +1908,7 @@ dependencies = [
 [[package]]
 name = "impl-serde"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ebc88fc67028ae3db0c853baa36269d398d5f45b6982f95549ff5def78c935cd"
+source = "git+https://github.com/aurora-is-near/parity-common?tag=v0.14.1-wasm#2594d5a479cb9eb4962edf9d82434219be1c8f4f"
 dependencies = [
  "serde",
 ]
@@ -2123,25 +2129,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8452105ba047068f40ff7093dd1d9da90898e63dd61736462e9cdda6a90ad3c3"
 
 [[package]]
-name = "merkle_proof"
-version = "0.2.0"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?tag=v3.5.1-wasm#ce4e2b44630f5ddc04eda933eaa69c33d582c3f0"
-dependencies = [
- "eth2_hashing",
- "ethereum-types 0.14.1",
- "lazy_static",
- "safe_arith",
-]
-
-[[package]]
 name = "milagro_bls"
-version = "1.4.2"
-source = "git+https://github.com/sigp/milagro_bls?tag=v1.4.2#16655aa033175a90c10ef02aa144e2835de23aec"
+version = "1.5.1"
+source = "git+https://github.com/sigp/milagro_bls?tag=v1.5.1#d3fc0a40cfe8b72ccda46ba050ee6786a59ce753"
 dependencies = [
  "amcl",
  "hex 0.4.3",
  "lazy_static",
- "rand 0.7.3",
+ "rand 0.8.5",
  "zeroize",
 ]
 
@@ -3230,21 +3225,20 @@ checksum = "05e4722c697a58a99d5d06a08c30821d7c082a4632198de1eaa5a6c22ef42373"
 dependencies = [
  "fixed-hash 0.7.0",
  "impl-codec",
- "impl-rlp 0.3.0",
+ "impl-rlp 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "impl-serde 0.3.2",
- "uint 0.9.5",
+ "uint 0.9.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "primitive-types"
 version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f3486ccba82358b11a77516035647c34ba167dfa53312630de83b12bd4f3d66"
+source = "git+https://github.com/aurora-is-near/parity-common?tag=v0.14.1-wasm#2594d5a479cb9eb4962edf9d82434219be1c8f4f"
 dependencies = [
  "fixed-hash 0.8.0",
- "impl-rlp 0.3.0",
+ "impl-rlp 0.3.0 (git+https://github.com/aurora-is-near/parity-common?tag=v0.14.1-wasm)",
  "impl-serde 0.4.0",
- "uint 0.9.5",
+ "uint 0.9.5 (git+https://github.com/aurora-is-near/parity-common?tag=v0.14.1-wasm)",
 ]
 
 [[package]]
@@ -3595,8 +3589,7 @@ dependencies = [
 [[package]]
 name = "rlp"
 version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb919243f34364b6bd2fc10ef797edbfa75f33c252e7998527479c6d6b47e1ec"
+source = "git+https://github.com/aurora-is-near/parity-common?tag=v0.14.1-wasm#2594d5a479cb9eb4962edf9d82434219be1c8f4f"
 dependencies = [
  "bytes",
  "rustc-hex",
@@ -3605,8 +3598,7 @@ dependencies = [
 [[package]]
 name = "rlp-derive"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e33d7b2abe0c340d8797fe2907d3f20d3b5ea5908683618bfe80df7f621f672a"
+source = "git+https://github.com/aurora-is-near/parity-common?tag=v0.14.1-wasm#2594d5a479cb9eb4962edf9d82434219be1c8f4f"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3671,11 +3663,6 @@ name = "ryu"
 version = "1.0.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f91339c0467de62360649f8d3e185ca8de4224ff281f66000de5eb2a77a79041"
-
-[[package]]
-name = "safe_arith"
-version = "0.1.0"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?tag=v3.5.1-wasm#ce4e2b44630f5ddc04eda933eaa69c33d582c3f0"
 
 [[package]]
 name = "schannel"
@@ -4567,18 +4554,20 @@ dependencies = [
 
 [[package]]
 name = "tree_hash"
-version = "0.4.1"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?tag=v3.5.1-wasm#ce4e2b44630f5ddc04eda933eaa69c33d582c3f0"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c998ac5fe2b07c025444bdd522e6258110b63861c6698eedc610c071980238d"
 dependencies = [
- "eth2_hashing",
  "ethereum-types 0.14.1",
+ "ethereum_hashing",
  "smallvec 1.10.0",
 ]
 
 [[package]]
 name = "tree_hash_derive"
-version = "0.4.0"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?tag=v3.5.1-wasm#ce4e2b44630f5ddc04eda933eaa69c33d582c3f0"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "84303a9c7cda5f085a3ed9cd241d1e95e04d88aab1d679b02f212e653537ba86"
 dependencies = [
  "darling",
  "quote",
@@ -4614,6 +4603,17 @@ name = "uint"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "76f64bba2c53b04fcab63c01a7d7427eadc821e3bc48c34dc9ba29c501164b52"
+dependencies = [
+ "byteorder",
+ "crunchy",
+ "hex 0.4.3",
+ "static_assertions",
+]
+
+[[package]]
+name = "uint"
+version = "0.9.5"
+source = "git+https://github.com/aurora-is-near/parity-common?tag=v0.14.1-wasm#2594d5a479cb9eb4962edf9d82434219be1c8f4f"
 dependencies = [
  "byteorder",
  "crunchy",

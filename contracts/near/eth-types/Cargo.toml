@@ -9,18 +9,18 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
-near-sdk = "4.1.1"
-borsh = "0.9.3"
-rlp = "0.5.2"
-rlp-derive = "0.1.0"
-ethereum-types = { version = "0.14.1", features = ["rlp", "serialize"],  default-features = false }
-derive_more = "^0.99.2"
-eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm", optional = true }
-eth2_ssz_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm", optional = true }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm", optional = true }
-tree_hash_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm", optional = true }
-eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm", optional = true }
-hex = "0.4.0"
+near-sdk.workspace = true
+borsh.workspace = true
+rlp.workspace = true
+rlp-derive.workspace = true
+ethereum-types.workspace = true
+derive_more.workspace = true
+ethereum_ssz = { workspace = true, optional = true }
+ethereum_ssz_derive = { workspace = true, optional = true }
+tree_hash = { workspace = true, optional = true }
+tree_hash_derive = { workspace = true, optional = true }
+ethereum_serde_utils = { workspace = true, optional = true }
+hex.workspace = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 serde-big-array = "0.4.1"
@@ -28,4 +28,4 @@ sha3 = "0.10.0"
 
 [features]
 default = ["eth2"]
-eth2 = ["dep:eth2_ssz", "dep:eth2_ssz_derive", "dep:tree_hash", "dep:tree_hash_derive", "dep:eth2_serde_utils"]
+eth2 = ["dep:ethereum_ssz", "dep:ethereum_ssz_derive", "dep:tree_hash", "dep:tree_hash_derive", "dep:ethereum_serde_utils"]

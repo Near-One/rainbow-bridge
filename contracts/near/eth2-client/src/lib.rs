@@ -449,18 +449,19 @@ impl Eth2Client {
 
         // Verify that the `finality_branch`, confirms `finalized_header`
         // to match the finalized checkpoint root saved in the state of `attested_header`.
-        let branch = convert_branch(&update.finality_update.finality_branch);
         require!(
-            merkle_proof::verify_merkle_proof(
-                update
-                    .finality_update
-                    .header_update
-                    .beacon_header
-                    .tree_hash_root(),
-                &branch,
+            verify_merkle_proof(
+                H256(
+                    update
+                        .finality_update
+                        .header_update
+                        .beacon_header
+                        .tree_hash_root()
+                ),
+                &update.finality_update.finality_branch,
                 FINALITY_TREE_DEPTH.try_into().unwrap(),
                 FINALITY_TREE_INDEX.try_into().unwrap(),
-                update.attested_beacon_header.state_root.0
+                update.attested_beacon_header.state_root
             ),
             "Invalid finality proof"
         );
@@ -476,14 +477,13 @@ impl Eth2Client {
                 .sync_committee_update
                 .as_ref()
                 .unwrap_or_else(|| env::panic_str("The sync committee update is missed"));
-            let branch = convert_branch(&sync_committee_update.next_sync_committee_branch);
             require!(
-                merkle_proof::verify_merkle_proof(
-                    sync_committee_update.next_sync_committee.tree_hash_root(),
-                    &branch,
+                verify_merkle_proof(
+                    H256(sync_committee_update.next_sync_committee.tree_hash_root()),
+                    &sync_committee_update.next_sync_committee_branch,
                     SYNC_COMMITTEE_TREE_DEPTH.try_into().unwrap(),
                     SYNC_COMMITTEE_TREE_INDEX.try_into().unwrap(),
-                    update.attested_beacon_header.state_root.0
+                    update.attested_beacon_header.state_root
                 ),
                 "Invalid next sync committee proof"
             );

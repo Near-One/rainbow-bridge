@@ -8,16 +8,15 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-ethereum-types = { version = "0.14.1", features = ["rlp", "serialize"],  default-features = false }
 eth-types =  { path = "../eth-types" }
 eth2-utility =  { path = "../eth2-utility" }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
-merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
-bls = { git = "https://github.com/aurora-is-near/lighthouse.git", optional = true, tag = "v3.5.1-wasm", default-features = false, features = ["milagro"]}
-near-sdk = "4.1.1"
-borsh = "0.9.3"
-bitvec = "1.0.0"
-near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", tag = "v0.1.0" }
+bls = { git = "https://github.com/aurora-is-near/lighthouse.git", optional = true, tag = "v4.6.0-wasm", default-features = false, features = ["milagro"]}
+ethereum-types.workspace = true
+tree_hash.workspace = true
+near-sdk.workspace = true
+borsh.workspace = true
+bitvec.workspace = true
+near-plugins.workspace = true
 
 [dev-dependencies]
 lazy_static = "1.4.0"

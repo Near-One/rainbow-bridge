@@ -1,14 +1,14 @@
 [package]
-name = "eth2_hashing"
-version = "0.3.0"
+name = "ethereum_hashing"
+version = "1.0.0-beta.2"
 authors = ["Aurora <hello@aurora.dev>"]
 edition = "2021"
 license = "Apache-2.0"
-description = "Reimplemented eth2_hashing using near-sdk, for usage in NEAR WASM contracts"
+description = "Reimplemented ethereum_hashing using near-sdk, for usage in NEAR WASM contracts"
 
 [dependencies]
 lazy_static = { version = "1.4.0", optional = true }
-near-sdk = "4.1.1"
+near-sdk.workspace = true
 
 [dev-dependencies]
 rustc-hex = "2.1.0"

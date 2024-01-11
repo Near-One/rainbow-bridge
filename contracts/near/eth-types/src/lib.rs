@@ -136,19 +136,19 @@ pub struct BlockHeader {
     pub difficulty: U256,
     #[cfg_attr(
         all(feature = "eth2", not(target_arch = "wasm32")),
-        serde(with = "eth2_serde_utils::u64_hex_be")
+        serde(with = "serde_utils::u64_hex_be")
     )]
     pub number: u64,
     pub gas_limit: U256,
     pub gas_used: U256,
     #[cfg_attr(
         all(feature = "eth2", not(target_arch = "wasm32")),
-        serde(with = "eth2_serde_utils::u64_hex_be")
+        serde(with = "serde_utils::u64_hex_be")
     )]
     pub timestamp: u64,
     #[cfg_attr(
         all(feature = "eth2", not(target_arch = "wasm32")),
-        serde(with = "eth2_serde_utils::hex_vec")
+        serde(with = "serde_utils::hex_vec")
     )]
     pub extra_data: Vec<u8>,
     pub mix_hash: H256,
@@ -161,14 +161,17 @@ pub struct BlockHeader {
     pub withdrawals_root: Option<H256>,
     #[cfg_attr(
         all(feature = "eth2", not(target_arch = "wasm32")),
-        serde(deserialize_with = "u64_hex_be_option")
+        serde(deserialize_with = "u64_hex_be_option"),
+        serde(default)
     )]
     pub blob_gas_used: Option<u64>,
     #[cfg_attr(
         all(feature = "eth2", not(target_arch = "wasm32")),
-        serde(deserialize_with = "u64_hex_be_option")
+        serde(deserialize_with = "u64_hex_be_option"),
+        serde(default)
     )]
     pub excess_blob_gas: Option<u64>,
+    #[cfg_attr(all(feature = "eth2", not(target_arch = "wasm32")), serde(default))]
     pub parent_beacon_block_root: Option<H256>,
 
     pub hash: Option<H256>,
@@ -180,9 +183,7 @@ fn u64_hex_be_option<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    Ok(Some(eth2_serde_utils::u64_hex_be::deserialize(
-        deserializer,
-    )?))
+    Ok(Some(serde_utils::u64_hex_be::deserialize(deserializer)?))
 }
 
 impl BlockHeader {
