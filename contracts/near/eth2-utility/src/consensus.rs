@@ -101,6 +101,10 @@ impl NetworkConfig {
     }
 
     pub fn compute_fork_version(&self, epoch: Epoch) -> Option<ForkVersion> {
+        if epoch >= self.deneb_fork_epoch {
+            return Some(self.deneb_fork_version);
+        }
+
         if epoch >= self.capella_fork_epoch {
             return Some(self.capella_fork_version);
         }
