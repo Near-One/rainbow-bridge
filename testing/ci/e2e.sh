@@ -22,11 +22,12 @@ while ! curl localhost:3030; do
   sleep 1
 done
 
-while ! curl localhost:9545; do
+while ! curl 127.0.0.1:9545; do
   sleep 1
 done
 
 node index.js init-near-contracts --num-confirmations 2
+echo "near contracts deployed"
 (cd $ROOT_DIR/contracts/eth/nearbridge
 yarn
 yarn build)
@@ -39,6 +40,7 @@ node index.js init-eth-client --eth-client-lock-eth-amount 1000000000000000000 -
 node index.js init-eth-prover
 node index.js init-eth-erc20
 node index.js init-eth-locker
+echo "ETH contracts deployed"
 node index.js init-near-token-factory
 # First start pm2 daemon
 yarn run pm2 ping

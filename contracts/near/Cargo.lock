@@ -1080,7 +1080,6 @@ dependencies = [
 name = "eth-client"
 version = "0.1.0"
 dependencies = [
- "admin-controlled",
  "arrutil",
  "borsh",
  "eth-types",
@@ -1088,6 +1087,7 @@ dependencies = [
  "hex 0.4.3",
  "indicatif",
  "lazy_static",
+ "near-plugins",
  "near-sdk",
  "primal",
  "primitive-types 0.7.3",
@@ -1101,20 +1101,22 @@ dependencies = [
 
 [[package]]
 name = "eth-prover"
-version = "0.1.0"
+version = "2.0.0"
 dependencies = [
- "admin-controlled",
  "borsh",
  "eth-types",
  "hex 0.4.3",
  "indicatif",
  "lazy_static",
  "near-crypto 0.16.0",
+ "near-plugins",
  "near-primitives 0.16.0",
  "near-sdk",
  "rlp 0.5.2",
  "serde",
  "serde_json",
+ "tokio",
+ "workspaces 0.6.1",
 ]
 
 [[package]]
@@ -1140,9 +1142,8 @@ dependencies = [
 
 [[package]]
 name = "eth2-client"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
- "admin-controlled",
  "anyhow",
  "bitvec 1.0.1",
  "bls",
@@ -1153,12 +1154,13 @@ dependencies = [
  "hex 0.4.3",
  "lazy_static",
  "merkle_proof",
+ "near-plugins",
  "near-sdk",
  "near-units",
  "serde_json",
  "tokio",
  "tree_hash",
- "workspaces",
+ "workspaces 0.7.0",
 ]
 
 [[package]]
@@ -2405,6 +2407,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "near-plugins"
+version = "0.1.0"
+source = "git+https://github.com/aurora-is-near/near-plugins?tag=v0.1.0#64c512f96d4b51ccdd1a1aed683ed90fd1ca8c57"
+dependencies = [
+ "bitflags",
+ "near-plugins-derive",
+ "near-sdk",
+ "serde",
+]
+
+[[package]]
+name = "near-plugins-derive"
+version = "0.1.0"
+source = "git+https://github.com/aurora-is-near/near-plugins?tag=v0.1.0#64c512f96d4b51ccdd1a1aed683ed90fd1ca8c57"
+dependencies = [
+ "darling",
+ "proc-macro-crate 0.1.5",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "near-primitives"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2772,7 +2797,7 @@ dependencies = [
  "ripemd",
  "serde",
  "sha2 0.10.6",
- "sha3 0.9.1",
+ "sha3 0.10.8",
  "zeropool-bn",
 ]
 
@@ -4989,6 +5014,39 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "80d0f4e272c85def139476380b12f9ac60926689dd2e01d4923222f40580869d"
 dependencies = [
  "winapi",
+]
+
+[[package]]
+name = "workspaces"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f54d9286e6dc20dd6d7676de27ace7b0d4f755164fe14c1f07bcbdd08d54052"
+dependencies = [
+ "async-process",
+ "async-trait",
+ "base64 0.13.1",
+ "borsh",
+ "bs58",
+ "chrono",
+ "dirs 3.0.2",
+ "hex 0.4.3",
+ "libc",
+ "near-account-id 0.15.0",
+ "near-crypto 0.15.0",
+ "near-jsonrpc-client",
+ "near-jsonrpc-primitives",
+ "near-primitives 0.15.0",
+ "near-sandbox-utils",
+ "portpicker",
+ "rand 0.8.5",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tokio-retry",
+ "tracing",
+ "url",
 ]
 
 [[package]]

@@ -2,9 +2,9 @@ use crate::dao_contract::DAOContract;
 use crate::dao_types;
 use crate::eth_client_contract::EthClientContract;
 use crate::eth_client_contract_trait::EthClientContractTrait;
+use eth2_utility::types::ClientMode;
 use eth_types::eth2::{LightClientState, LightClientUpdate};
 use eth_types::{BlockHeader, H256};
-use eth2_utility::types::ClientMode;
 use near_primitives::views::FinalExecutionOutcomeView;
 use std::error::Error;
 use std::str::FromStr;
@@ -100,7 +100,7 @@ impl EthClientContractTrait for DaoEthClientContract {
         self.eth_client_contract.get_light_client_state()
     }
 
-   fn get_last_block_number(&self) -> Result<u64, Box<dyn Error>> {
+    fn get_last_block_number(&self) -> Result<u64, Box<dyn Error>> {
         self.eth_client_contract.get_last_block_number()
     }
 

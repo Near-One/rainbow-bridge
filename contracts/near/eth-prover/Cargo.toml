@@ -1,6 +1,6 @@
 [package]
 name = "eth-prover"
-version = "0.1.0"
+version = "2.0.0"
 authors = ["Near Inc <hello@nearprotocol.com>"]
 edition = "2021"
 
@@ -8,14 +8,14 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-eth-types =  { path = "../eth-types", default-features = false }
-admin-controlled =  { path = "../admin-controlled" }
+eth-types = { path = "../eth-types", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 near-sdk = "4.1.1"
 borsh = "0.9.3"
 rlp = "0.5.2"
 hex = "0.4.2"
+near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", tag = "v0.1.0" }
 
 [dev-dependencies]
 hex = { version = "0.4.3", features = ["serde"] }
@@ -23,6 +23,8 @@ indicatif = "0.14"
 lazy_static = "*"
 near-crypto = "0.16.0"
 near-primitives = "0.16.0"
+workspaces = "0.6.0"
+tokio = { version = "1.18.1", features = ["full"] }
 
 [features]
 default = []

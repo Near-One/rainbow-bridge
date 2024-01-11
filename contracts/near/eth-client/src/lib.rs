@@ -1,12 +1,12 @@
-use admin_controlled::Mask;
 use borsh::{BorshDeserialize, BorshSerialize};
 use eth_types::*;
+use near_plugins::{
+    access_control, access_control_any, pause, AccessControlRole, AccessControllable, Pausable,
+    Upgradable,
+};
 use near_sdk::collections::UnorderedMap;
-use near_sdk::{assert_self, AccountId};
-use near_sdk::{env, near_bindgen, PanicOnDefault};
-
-#[cfg(not(target_arch = "wasm32"))]
-use serde::{Deserialize, Serialize};
+use near_sdk::serde::{Deserialize, Serialize};
+use near_sdk::{env, near_bindgen, AccountId, PanicOnDefault};
 
 #[cfg(not(target_arch = "wasm32"))]
 #[cfg(test)]
@@ -59,10 +59,27 @@ pub struct HeaderInfo {
     pub number: u64,
 }
 
-const PAUSE_ADD_BLOCK_HEADER: Mask = 1;
+#[derive(AccessControlRole, Deserialize, Serialize, Copy, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub enum Role {
+    PauseManager,
+    UpgradableCodeStager,
+    UpgradableCodeDeployer,
+    UnrestrictedAddBlockHeader,
+    DAO,
+}
 
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Pausable, Upgradable)]
+#[access_control(role_type(Role))]
+#[pausable(manager_roles(Role::PauseManager))]
+#[upgradable(access_control_roles(
+    code_stagers(Role::UpgradableCodeStager, Role::DAO),
+    code_deployers(Role::UpgradableCodeDeployer, Role::DAO),
+    duration_initializers(Role::DAO),
+    duration_update_stagers(Role::DAO),
+    duration_update_appliers(Role::DAO),
+))]
 pub struct EthClient {
     /// Whether client validates the PoW when accepting the header. Should only be set to `false`
     /// for debugging, testing, diagnostic purposes when used with Ganache or in PoA testnets
@@ -102,7 +119,8 @@ pub struct EthClient {
     /// others will be immediately rejected, used in PoA testnets
     trusted_signer: Option<AccountId>,
     /// Mask determining all paused functions
-    paused: Mask,
+    #[deprecated]
+    paused: u128,
 }
 
 #[near_bindgen]
@@ -122,6 +140,7 @@ impl EthClient {
         let header: BlockHeader = rlp::decode(first_header.as_slice()).unwrap();
         let header_hash = header.hash.unwrap().clone();
         let header_number = header.number;
+        #[allow(deprecated)]
         let mut res = Self {
             validate_ethash,
             dags_start_epoch,
@@ -135,7 +154,7 @@ impl EthClient {
             headers: UnorderedMap::new(b"h".to_vec()),
             infos: UnorderedMap::new(b"i".to_vec()),
             trusted_signer,
-            paused: Mask::default(),
+            paused: 0,
         };
         res.canonical_header_hashes
             .insert(&header_number, &header_hash);
@@ -150,6 +169,8 @@ impl EthClient {
                 number: header_number,
             },
         );
+
+        res.acl_init_super_admin(near_sdk::env::predecessor_account_id());
         res
     }
 
@@ -198,6 +219,7 @@ impl EthClient {
     /// Add the block header to the client.
     /// `block_header` -- RLP-encoded Ethereum header;
     /// `dag_nodes` -- dag nodes with their merkle proofs.
+    #[pause(except(roles(Role::UnrestrictedAddBlockHeader, Role::DAO)))]
     #[result_serializer(borsh)]
     pub fn add_block_header(
         &mut self,
@@ -205,7 +227,6 @@ impl EthClient {
         #[serializer(borsh)] dag_nodes: Vec<DoubleNodeWithMerkleProof>,
     ) {
         env::log_str("Add block header");
-        self.check_not_paused(PAUSE_ADD_BLOCK_HEADER);
         let header: BlockHeader = rlp::decode(block_header.as_slice()).unwrap();
 
         if let Some(trusted_signer) = &self.trusted_signer {
@@ -229,8 +250,8 @@ impl EthClient {
         self.record_header(header);
     }
 
+    #[access_control_any(roles(Role::DAO))]
     pub fn update_trusted_signer(&mut self, trusted_signer: Option<AccountId>) {
-        assert_self();
         self.trusted_signer = trusted_signer;
     }
 
@@ -238,12 +259,12 @@ impl EthClient {
         self.trusted_signer.clone()
     }
 
+    #[access_control_any(roles(Role::DAO))]
     pub fn update_dags_merkle_roots(
         &mut self,
         #[serializer(borsh)] dags_start_epoch: u64,
         #[serializer(borsh)] dags_merkle_roots: Vec<H128>,
     ) {
-        assert_self();
         self.dags_start_epoch = dags_start_epoch;
         self.dags_merkle_roots = dags_merkle_roots;
     }
@@ -454,5 +475,3 @@ impl EthClient {
         (H256(pair.0), H256(pair.1))
     }
 }
-
-admin_controlled::impl_admin_controlled!(EthClient, paused);

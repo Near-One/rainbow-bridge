@@ -6,11 +6,11 @@ edition = "2021"
 [dependencies]
 tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
 merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
-types =  { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
-eth2_to_near_relay = { path = "../eth2near-block-relay-rs"}
+types = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
+eth2_to_near_relay = { path = "../eth2near-block-relay-rs" }
 eth_rpc_client = { path = "../eth_rpc_client" }
 eth-types = { path = "../../contracts/near/eth-types/" }
-eth2-utility  = { path = "../../contracts/near/eth2-utility" }
+eth2-utility = { path = "../../contracts/near/eth2-utility" }
 contract_wrapper = { path = "../contract_wrapper" }
 log = { version = "0.4", features = ["std", "serde"] }
 clap = { version = "3.1.6", features = ["derive"] }
@@ -26,3 +26,4 @@ dotenv = "0.15.0"
 [dev-dependencies]
 workspaces = "0.7"
 tokio = { version = "1.1", features = ["macros", "rt", "time"] }
+contract_wrapper = { path = "../contract_wrapper", features = ["sandbox"] }

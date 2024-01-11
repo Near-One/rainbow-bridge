@@ -2,11 +2,11 @@ use crate::contract_wrapper_trait::ContractWrapper;
 use crate::eth_client_contract_trait::EthClientContractTrait;
 use crate::eth_network::EthNetwork;
 use borsh::BorshDeserialize;
+use eth2_utility::types::ClientMode;
 use eth_types::eth2::{
     ExtendedBeaconBlockHeader, LightClientState, LightClientUpdate, SyncCommittee,
 };
 use eth_types::{BlockHeader, H256};
-use eth2_utility::types::ClientMode;
 use near_primitives::borsh::BorshSerialize;
 use near_primitives::types::AccountId;
 use near_primitives::views::FinalExecutionOutcomeView;
@@ -25,9 +25,7 @@ pub struct EthClientContract {
 impl EthClientContract {
     /// Constructor for `EthClientContract`
     pub fn new(contract_wrapper: Box<dyn ContractWrapper>) -> Self {
-        EthClientContract {
-            contract_wrapper,
-        }
+        EthClientContract { contract_wrapper }
     }
 
     /// Initializes the Ethereum Light Client Contract on NEAR.
@@ -137,7 +135,7 @@ impl EthClientContractTrait for EthClientContract {
     fn get_client_mode(&self) -> Result<ClientMode, Box<dyn Error>> {
         let res = self.contract_wrapper.call_view_function(
             "get_client_mode".to_string(),
-            json!({}).to_string().into_bytes()
+            json!({}).to_string().into_bytes(),
         )?;
 
         let mode: ClientMode = ClientMode::try_from_slice(&res)?;
@@ -239,9 +237,10 @@ mod tests {
         }
 
         pub fn submit_block(&mut self, eth_client: &mut EthClientContract) {
-            eth_client.send_headers(
-                    &vec![self.execution_blocks[self.current_execution_block].clone()],
-                )
+            eth_client
+                .send_headers(&vec![
+                    self.execution_blocks[self.current_execution_block].clone()
+                ])
                 .unwrap();
 
             self.current_execution_block += 1;
@@ -253,7 +252,8 @@ mod tests {
         }
 
         pub fn submit_update(&mut self, eth_client: &mut EthClientContract) {
-            eth_client.send_light_client_update(
+            eth_client
+                .send_light_client_update(
                     self.light_client_updates[self.current_light_client_update].clone(),
                 )
                 .unwrap();
