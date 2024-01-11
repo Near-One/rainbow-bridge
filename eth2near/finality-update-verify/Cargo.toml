@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bls = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
-types =  { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
+bls = { workspace = true }
+tree_hash = { workspace = true }
+types =  { workspace = true }
 eth-types = { path ="../../contracts/near/eth-types/" }
 eth2-utility  = { path ="../../contracts/near/eth2-utility"}
 bitvec = "1.0.0"
