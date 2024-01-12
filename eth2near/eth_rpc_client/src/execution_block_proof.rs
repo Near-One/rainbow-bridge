@@ -1,6 +1,6 @@
 use crate::beacon_block_body_merkle_tree::{BeaconBlockBodyMerkleTree, ExecutionPayloadMerkleTree};
 use crate::errors::{MerkleTreeError, MissExecutionPayload};
-use eth2_hashing;
+use ethereum_hashing;
 use ethereum_types::H256;
 use std::error::Error;
 use std::fmt;
@@ -124,11 +124,11 @@ impl ExecutionBlockProof {
             let ith_bit = (index >> i) & 0x01;
             if ith_bit == 1 {
                 merkle_root =
-                    eth2_hashing::hash32_concat(leaf.as_bytes(), &merkle_root)[..].to_vec();
+                    ethereum_hashing::hash32_concat(leaf.as_bytes(), &merkle_root)[..].to_vec();
             } else {
                 let mut input = merkle_root;
                 input.extend_from_slice(leaf.as_bytes());
-                merkle_root = eth2_hashing::hash(&input);
+                merkle_root = ethereum_hashing::hash(&input);
             }
         }
 

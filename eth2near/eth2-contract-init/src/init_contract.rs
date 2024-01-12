@@ -30,15 +30,16 @@ pub fn verify_light_client_snapshot(
         return false;
     }
 
-    let branch = consensus::convert_branch(&light_client_snapshot.current_sync_committee_branch);
-    merkle_proof::verify_merkle_proof(
-        light_client_snapshot
-            .current_sync_committee
-            .tree_hash_root(),
-        &branch,
+    consensus::verify_merkle_proof(
+        eth_types::H256(
+            light_client_snapshot
+                .current_sync_committee
+                .tree_hash_root(),
+        ),
+        &light_client_snapshot.current_sync_committee_branch,
         CURRENT_SYNC_COMMITTEE_TREE_DEPTH.try_into().unwrap(),
         CURRENT_SYNC_COMMITTEE_TREE_INDEX.try_into().unwrap(),
-        light_client_snapshot.beacon_header.state_root.0,
+        light_client_snapshot.beacon_header.state_root,
     )
 }
 
@@ -64,10 +65,12 @@ pub fn init_contract(
     );
     let eth1_rpc_client = Eth1RPCClient::new(&config.eth1_endpoint);
 
-    let last_period = BeaconRPCClient::get_period_for_slot(beacon_rpc_client
-        .get_last_slot_number()
-        .expect("Error on fetching last slot number")
-        .as_u64());
+    let last_period = BeaconRPCClient::get_period_for_slot(
+        beacon_rpc_client
+            .get_last_slot_number()
+            .expect("Error on fetching last slot number")
+            .as_u64(),
+    );
 
     let light_client_update_with_next_sync_committee = beacon_rpc_client
         .get_light_client_update(last_period)

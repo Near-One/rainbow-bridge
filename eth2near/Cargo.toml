@@ -10,19 +10,11 @@ members = [
 ]
 
 [workspace.dependencies]
-bls = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
-types =  { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
-merkle_proof = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
-eth2_hashing = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
-eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
-
-[patch]
-[patch.crates-io]
-eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm"  }
-eth2_ssz_types = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm"  }
-eth2_hashing = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm"  }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm"}
-tree_hash_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm"}
-eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
-eth2_ssz_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
+bls = { git = "https://github.com/sigp/lighthouse.git", tag = "v4.6.0-rc.0" }
+types =  { git = "https://github.com/sigp/lighthouse.git", tag = "v4.6.0-rc.0" }
+merkle_proof = { git = "https://github.com/sigp/lighthouse.git", tag = "v4.6.0-rc.0" }
+tree_hash = "0.5"
+tree_hash_derive = "0.5"
+ethereum_ssz = "0.5"
+ethereum_hashing = "1.0.0-beta.2"
+smallvec = "1.11.0"

@@ -4,11 +4,12 @@ version = "0.3.0"
 edition = "2021"
 
 [dependencies]
+smallvec = "1"
 types = { workspace = true }
 tree_hash = { workspace = true }
 merkle_proof = { workspace = true }
-eth2_hashing = { workspace = true }
-eth2_ssz = { workspace = true }
+ethereum_hashing = { workspace = true }
+ethereum_ssz = { workspace = true }
 eth-types = { path = "../../contracts/near/eth-types/" }
 eth2-utility  = { path = "../../contracts/near/eth2-utility" }
 

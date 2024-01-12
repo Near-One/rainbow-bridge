@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 tree_hash = { workspace = true }
-merkle_proof = { workspace = true }
 types = { workspace = true }
 eth2_to_near_relay = { path = "../eth2near-block-relay-rs"}
 eth_rpc_client = { path = "../eth_rpc_client" }

@@ -27,7 +27,7 @@ tree_hash_derive = "0.5"
 ethereum_ssz = "0.5"
 ethereum_ssz_derive = "0.5"
 ethereum_serde_utils = "0.5"
-ethereum_hashing = { version = "1.0.0-beta.2", default-features = false }
+ethereum_hashing = "1.0.0-beta.2"
 derive_more = "^0.99.2"
 hex = "0.4.2"
 bitvec = "1.0.0"

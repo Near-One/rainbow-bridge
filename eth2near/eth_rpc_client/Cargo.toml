@@ -9,8 +9,8 @@ edition = "2021"
 types = { workspace = true }
 tree_hash = { workspace = true }
 merkle_proof = { workspace = true }
-eth2_hashing = { workspace = true }
-eth2_ssz = { workspace = true }
+ethereum_hashing = { workspace = true }
+ethereum_ssz = { workspace = true }
 log = { version = "0.4", features = ["std", "serde"] }
 serde_json = "1.0.74"
 serde = { version = "1.0", features = ["derive"] }
