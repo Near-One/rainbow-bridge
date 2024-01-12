@@ -42,6 +42,12 @@ mod integration_tests {
         pub partial_hash: Option<H256>,
     }
 
+    impl From<eth_types::BlockHeader> for BlockHeaderV1 {
+        fn from(item: eth_types::BlockHeader) -> Self {
+            serde_json::from_str(&serde_json::to_string(&item).unwrap()).unwrap()
+        }
+    }
+
     #[derive(Clone, BorshDeserialize, BorshSerialize)]
     pub struct InitInputV1 {
         pub network: String,
@@ -58,13 +64,9 @@ mod integration_tests {
 
     impl From<InitInput> for InitInputV1 {
         fn from(message: InitInput) -> Self {
-            let finalized_execution_header: BlockHeaderV1 = serde_json::from_str(
-                &serde_json::to_string(&message.finalized_execution_header).unwrap(),
-            )
-            .unwrap();
             Self {
                 network: message.network,
-                finalized_execution_header,
+                finalized_execution_header: message.finalized_execution_header.into(),
                 finalized_beacon_header: message.finalized_beacon_header,
                 current_sync_committee: message.current_sync_committee,
                 next_sync_committee: message.next_sync_committee,
@@ -181,9 +183,10 @@ mod integration_tests {
         for headers_chunk in headers.chunks(50) {
             let mut transaction = alice.batch(contract.id());
             for header in headers_chunk {
+                let header_v1: BlockHeaderV1 = header.clone().into();
                 transaction = transaction.call(
                     Function::new("submit_execution_header")
-                        .args(header.try_to_vec()?)
+                        .args(header_v1.try_to_vec()?)
                         .gas(parse_gas!("6 T") as u64),
                 );
             }
