@@ -19,7 +19,9 @@ bitvec.workspace = true
 near-plugins.workspace = true
 
 [dev-dependencies]
+ethereum_serde_utils.workspace = true
 lazy_static = "1.4.0"
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 hex = "0.4.0"
 workspaces = "0.7"

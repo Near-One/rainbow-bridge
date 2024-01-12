@@ -4,19 +4,48 @@ mod integration_tests {
     use borsh::{BorshDeserialize, BorshSerialize};
     use eth2_utility::types::InitInput;
     use eth_types::eth2::{ExtendedBeaconBlockHeader, SyncCommittee};
-    use eth_types::H256;
+    use eth_types::{Address, Bloom, H256, H64, U256};
     use near_sdk::ONE_NEAR;
     use near_units::*;
+    use serde::{Deserialize, Serialize};
     use workspaces::operations::Function;
     use workspaces::{Account, Contract};
 
     const WASM_FILEPATH: &str = "../target/wasm32-unknown-unknown/release/eth2_client.wasm";
     const WASM_V_0_1_0_FILEPATH: &str = "src/data/eth2_client_v0.1.0_testnet.wasm";
 
+    #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+    pub struct BlockHeaderV1 {
+        pub parent_hash: H256,
+        pub uncles_hash: H256,
+        pub author: Address,
+        pub state_root: H256,
+        pub transactions_root: H256,
+        pub receipts_root: H256,
+        pub log_bloom: Bloom,
+        pub difficulty: U256,
+        #[serde(with = "serde_utils::u64_hex_be")]
+        pub number: u64,
+        pub gas_limit: U256,
+        pub gas_used: U256,
+        #[serde(with = "serde_utils::u64_hex_be")]
+        pub timestamp: u64,
+        #[serde(with = "serde_utils::hex_vec")]
+        pub extra_data: Vec<u8>,
+        pub mix_hash: H256,
+        pub nonce: H64,
+        #[serde(with = "eth_types::u64_hex_be_option")]
+        pub base_fee_per_gas: Option<u64>,
+        pub withdrawals_root: Option<H256>,
+
+        pub hash: Option<H256>,
+        pub partial_hash: Option<H256>,
+    }
+
     #[derive(Clone, BorshDeserialize, BorshSerialize)]
     pub struct InitInputV1 {
         pub network: String,
-        pub finalized_execution_header: eth_types::BlockHeader,
+        pub finalized_execution_header: BlockHeaderV1,
         pub finalized_beacon_header: ExtendedBeaconBlockHeader,
         pub current_sync_committee: SyncCommittee,
         pub next_sync_committee: SyncCommittee,
@@ -29,9 +58,13 @@ mod integration_tests {
 
     impl From<InitInput> for InitInputV1 {
         fn from(message: InitInput) -> Self {
+            let finalized_execution_header: BlockHeaderV1 = serde_json::from_str(
+                &serde_json::to_string(&message.finalized_execution_header).unwrap(),
+            )
+            .unwrap();
             Self {
                 network: message.network,
-                finalized_execution_header: message.finalized_execution_header,
+                finalized_execution_header,
                 finalized_beacon_header: message.finalized_beacon_header,
                 current_sync_committee: message.current_sync_committee,
                 next_sync_committee: message.next_sync_committee,

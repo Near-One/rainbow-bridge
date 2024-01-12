@@ -155,19 +155,19 @@ pub struct BlockHeader {
     pub nonce: H64,
     #[cfg_attr(
         all(feature = "eth2", not(target_arch = "wasm32")),
-        serde(deserialize_with = "u64_hex_be_option")
+        serde(with = "u64_hex_be_option")
     )]
     pub base_fee_per_gas: Option<u64>,
     pub withdrawals_root: Option<H256>,
     #[cfg_attr(
         all(feature = "eth2", not(target_arch = "wasm32")),
-        serde(deserialize_with = "u64_hex_be_option"),
+        serde(with = "u64_hex_be_option"),
         serde(default)
     )]
     pub blob_gas_used: Option<u64>,
     #[cfg_attr(
         all(feature = "eth2", not(target_arch = "wasm32")),
-        serde(deserialize_with = "u64_hex_be_option"),
+        serde(with = "u64_hex_be_option"),
         serde(default)
     )]
     pub excess_blob_gas: Option<u64>,
@@ -177,13 +177,25 @@ pub struct BlockHeader {
     pub hash: Option<H256>,
     pub partial_hash: Option<H256>,
 }
-
 #[cfg(all(feature = "eth2", not(target_arch = "wasm32")))]
-fn u64_hex_be_option<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    Ok(Some(serde_utils::u64_hex_be::deserialize(deserializer)?))
+pub mod u64_hex_be_option {
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Ok(Some(serde_utils::u64_hex_be::deserialize(deserializer)?))
+    }
+
+    pub fn serialize<S>(num: &Option<u64>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        if let Some(num) = num {
+            serde_utils::u64_hex_be::serialize(num, serializer)
+        } else {
+            serializer.serialize_none()
+        }
+    }
 }
 
 impl BlockHeader {
