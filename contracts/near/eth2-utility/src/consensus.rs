@@ -19,13 +19,14 @@ pub const FINALITY_TREE_INDEX: u32 = get_subtree_index(FINALIZED_ROOT_INDEX);
 pub const SYNC_COMMITTEE_TREE_DEPTH: u32 = floorlog2(NEXT_SYNC_COMMITTEE_INDEX);
 pub const SYNC_COMMITTEE_TREE_INDEX: u32 = get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX);
 
-pub const BEACON_BLOCK_BODY_TREE_DEPTH: usize = 4;
-pub const L1_BEACON_BLOCK_BODY_TREE_EXECUTION_PAYLOAD_INDEX: usize = 9;
-pub const L2_EXECUTION_PAYLOAD_TREE_EXECUTION_BLOCK_INDEX: usize = 12;
-pub const L1_BEACON_BLOCK_BODY_PROOF_SIZE: usize = 4;
-pub const L2_EXECUTION_PAYLOAD_PROOF_SIZE: usize = 4;
-pub const EXECUTION_PROOF_SIZE: usize =
-    L1_BEACON_BLOCK_BODY_PROOF_SIZE + L2_EXECUTION_PAYLOAD_PROOF_SIZE;
+pub struct ProofSize {
+    pub beacon_block_body_tree_depth: usize,
+    pub l1_beacon_block_body_tree_execution_payload_index: usize,
+    pub l2_execution_payload_tree_execution_block_index: usize,
+    pub l1_beacon_block_body_proof_size: usize,
+    pub l2_execution_payload_proof_size: usize,
+    pub execution_proof_size: usize,
+}
 
 #[derive(PartialEq, BorshSerialize, BorshDeserialize)]
 pub enum Network {
@@ -119,6 +120,57 @@ impl NetworkConfig {
     pub fn compute_fork_version_by_slot(&self, slot: Slot) -> Option<ForkVersion> {
         self.compute_fork_version(compute_epoch_at_slot(slot))
     }
+
+    pub fn compute_proof_size(&self, epoch: Epoch) -> ProofSize {
+        if epoch >= self.deneb_fork_epoch {
+            return ProofSize {
+                beacon_block_body_tree_depth: 4,
+                l1_beacon_block_body_tree_execution_payload_index: 9,
+                l2_execution_payload_tree_execution_block_index: 12,
+                l1_beacon_block_body_proof_size: 4,
+                l2_execution_payload_proof_size: 5,
+                execution_proof_size: 9,
+            };
+        }
+
+        ProofSize {
+            beacon_block_body_tree_depth: 4,
+            l1_beacon_block_body_tree_execution_payload_index: 9,
+            l2_execution_payload_tree_execution_block_index: 12,
+            l1_beacon_block_body_proof_size: 4,
+            l2_execution_payload_proof_size: 4,
+            execution_proof_size: 8,
+        }
+    }
+
+    pub fn compute_proof_size_by_slot(&self, slot: Slot) -> ProofSize {
+        self.compute_proof_size(compute_epoch_at_slot(slot))
+    }
+
+    pub fn validate_beacon_block_header_update(&self, header_update: &HeaderUpdate) -> bool {
+        let branch = &header_update.execution_hash_branch;
+        let proof_size = self.compute_proof_size_by_slot(header_update.beacon_header.slot);
+        if branch.len() != proof_size.execution_proof_size {
+            return false;
+        }
+
+        let l2_proof = &branch[0..proof_size.l2_execution_payload_proof_size];
+        let l1_proof =
+            &branch[proof_size.l2_execution_payload_proof_size..proof_size.execution_proof_size];
+        let execution_payload_hash = merkle_root_from_branch(
+            header_update.execution_block_hash,
+            l2_proof,
+            proof_size.l2_execution_payload_proof_size,
+            proof_size.l2_execution_payload_tree_execution_block_index,
+        );
+        verify_merkle_proof(
+            execution_payload_hash,
+            l1_proof,
+            proof_size.beacon_block_body_tree_depth,
+            proof_size.l1_beacon_block_body_tree_execution_payload_index,
+            header_update.beacon_header.body_root,
+        )
+    }
 }
 
 pub const fn compute_epoch_at_slot(slot: Slot) -> u64 {
@@ -185,29 +237,6 @@ pub fn get_participant_pubkeys(
         }
     }
     result
-}
-
-pub fn validate_beacon_block_header_update(header_update: &HeaderUpdate) -> bool {
-    let branch = &header_update.execution_hash_branch;
-    if branch.len() != EXECUTION_PROOF_SIZE {
-        return false;
-    }
-
-    let l2_proof = &branch[0..L2_EXECUTION_PAYLOAD_PROOF_SIZE];
-    let l1_proof = &branch[L2_EXECUTION_PAYLOAD_PROOF_SIZE..EXECUTION_PROOF_SIZE];
-    let execution_payload_hash = merkle_root_from_branch(
-        header_update.execution_block_hash,
-        l2_proof,
-        L2_EXECUTION_PAYLOAD_PROOF_SIZE,
-        L2_EXECUTION_PAYLOAD_TREE_EXECUTION_BLOCK_INDEX,
-    );
-    verify_merkle_proof(
-        execution_payload_hash,
-        l1_proof,
-        BEACON_BLOCK_BODY_TREE_DEPTH,
-        L1_BEACON_BLOCK_BODY_TREE_EXECUTION_PAYLOAD_INDEX,
-        header_update.beacon_header.body_root,
-    )
 }
 
 /// Verify a proof that `leaf` exists at `index` in a Merkle tree rooted at `root`.

@@ -465,8 +465,9 @@ impl Eth2Client {
             ),
             "Invalid finality proof"
         );
+        let config = NetworkConfig::new(&self.network);
         require!(
-            validate_beacon_block_header_update(&update.finality_update.header_update),
+            config.validate_beacon_block_header_update(&update.finality_update.header_update),
             "Invalid execution block hash proof"
         );
 
