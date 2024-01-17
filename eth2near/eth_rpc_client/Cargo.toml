@@ -17,6 +17,7 @@ serde = { version = "1.0", features = ["derive"] }
 ethereum-types = { version = "0.14.1", features = ["rlp", "serialize"],  default-features = false }
 reqwest = { version = "0.11", features = ["blocking"] }
 eth-types = { path = "../../contracts/near/eth-types/" }
+eth2-utility = { path = "../../contracts/near/eth2-utility/" }
 contract_wrapper = { path = "../contract_wrapper" }
 clap = { version = "3.1.6", features = ["derive"] }
 tokio = { version = "1.1", features = ["macros", "rt", "time"] }

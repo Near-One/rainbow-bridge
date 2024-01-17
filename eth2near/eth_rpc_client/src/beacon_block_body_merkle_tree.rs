@@ -10,7 +10,7 @@ use types::{BeaconBlockBody, BeaconState, ExecutionPayload, MainnetEthSpec};
 pub struct BeaconBlockBodyMerkleTree(pub MerkleTree);
 
 impl BeaconBlockBodyMerkleTree {
-    pub const BEACON_BLOCK_BODY_TREE_NUM_LEAVES: usize = 11;
+    pub const BEACON_BLOCK_BODY_TREE_NUM_LEAVES: usize = 12;
     pub const BEACON_BLOCK_BODY_TREE_DEPTH: usize = 4;
 
     pub fn new(beacon_block_body: &BeaconBlockBody<MainnetEthSpec>) -> Self {
@@ -38,6 +38,12 @@ impl BeaconBlockBodyMerkleTree {
             } else {
                 H256::zero()
             },
+
+            if let Ok(blob_kzg_commitments) = beacon_block_body.blob_kzg_commitments() {
+                blob_kzg_commitments.tree_hash_root()
+            } else {
+                H256::zero()
+            }
         ];
 
         Self(MerkleTree::create(
@@ -56,11 +62,9 @@ impl BeaconBlockBodyMerkleTree {
 pub struct ExecutionPayloadMerkleTree(pub MerkleTree);
 
 impl ExecutionPayloadMerkleTree {
-    pub const TREE_NUM_LEAVES: usize = 15;
-    pub const TREE_DEPTH: usize = 4;
-
     pub fn new(execution_payload: &ExecutionPayload<MainnetEthSpec>) -> Self {
-        let leaves: [H256; Self::TREE_NUM_LEAVES] = [
+        let mut depth: usize = 4;
+        let mut leaves: Vec<H256> = vec![
             execution_payload.parent_hash().tree_hash_root(),
             execution_payload.fee_recipient().tree_hash_root(),
             execution_payload.state_root().tree_hash_root(),
@@ -82,7 +86,16 @@ impl ExecutionPayloadMerkleTree {
             },
         ];
 
-        Self(MerkleTree::create(&leaves, Self::TREE_DEPTH))
+        if let Ok(blob_gas_used) = execution_payload.blob_gas_used() {
+            depth += 1;
+            leaves.push(blob_gas_used.tree_hash_root());
+        }
+
+        if let Ok(excess_blob_gas) = execution_payload.excess_blob_gas() {
+            leaves.push(excess_blob_gas.tree_hash_root());
+        }
+
+        Self(MerkleTree::create(&leaves, depth))
     }
 }
 

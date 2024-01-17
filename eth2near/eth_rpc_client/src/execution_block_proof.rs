@@ -5,7 +5,9 @@ use ethereum_types::H256;
 use std::error::Error;
 use std::fmt;
 use std::fmt::Display;
-use types::{BeaconBlockBody, ExecutionPayload, MainnetEthSpec};
+use eth_types::eth2::Epoch;
+use types::{BeaconBlockBody, ExecutionPayload, ForkName, MainnetEthSpec};
+use eth2_utility::consensus::NetworkConfig;
 
 /// `ExecutionBlockProof` contains a `block_hash` (execution block) and
 /// a proof of its inclusion in the `BeaconBlockBody` tree hash.
@@ -17,29 +19,30 @@ use types::{BeaconBlockBody, ExecutionPayload, MainnetEthSpec};
 /// The proof starts from the leaf.
 pub struct ExecutionBlockProof {
     block_hash: H256,
-    proof: [H256; Self::PROOF_SIZE],
+    proof: Vec<H256>,
 }
 
 impl ExecutionBlockProof {
     pub const L1_BEACON_BLOCK_BODY_TREE_EXECUTION_PAYLOAD_INDEX: usize = 9;
+    pub const L1_BEACON_BLOCK_BODY_PROOF_SIZE: usize = 4;
     pub const L2_EXECUTION_PAYLOAD_TREE_EXECUTION_BLOCK_INDEX: usize = 12;
 
-    pub const L1_BEACON_BLOCK_BODY_PROOF_SIZE: usize =
-        BeaconBlockBodyMerkleTree::BEACON_BLOCK_BODY_TREE_DEPTH;
-    pub const L2_EXECUTION_PAYLOAD_PROOF_SIZE: usize = ExecutionPayloadMerkleTree::TREE_DEPTH;
-    pub const PROOF_SIZE: usize =
-        Self::L1_BEACON_BLOCK_BODY_PROOF_SIZE + Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE;
-
-    pub fn construct_from_raw_data(block_hash: &H256, proof: &[H256; Self::PROOF_SIZE]) -> Self {
+    pub fn construct_from_raw_data(block_hash: &H256, proof: Vec<H256>) -> Self {
         Self {
             block_hash: *block_hash,
-            proof: *proof,
+            proof,
         }
     }
 
     pub fn construct_from_beacon_block_body(
         beacon_block_body: &BeaconBlockBody<MainnetEthSpec>,
     ) -> Result<Self, Box<dyn Error>> {
+        let l2_execution_payload_proof_size: usize = if let ForkName::Deneb = beacon_block_body.to_ref().fork_name() {
+            5
+        } else {
+            4
+        };
+
         let beacon_block_merkle_tree = &BeaconBlockBodyMerkleTree::new(beacon_block_body);
 
         let execution_payload_merkle_tree = &ExecutionPayloadMerkleTree::new(
@@ -61,7 +64,7 @@ impl ExecutionBlockProof {
             .0
             .generate_proof(
                 Self::L2_EXECUTION_PAYLOAD_TREE_EXECUTION_BLOCK_INDEX,
-                Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE,
+                l2_execution_payload_proof_size,
             )
             .map_err(|err| MerkleTreeError(err))?
             .1;
@@ -77,8 +80,8 @@ impl ExecutionBlockProof {
         })
     }
 
-    pub fn get_proof(&self) -> [H256; Self::PROOF_SIZE] {
-        self.proof
+    pub fn get_proof(&self) -> Vec<H256> {
+        self.proof.clone()
     }
 
     pub fn get_execution_block_hash(&self) -> H256 {
@@ -88,22 +91,26 @@ impl ExecutionBlockProof {
     pub fn verify_proof_for_hash(
         &self,
         beacon_block_body_hash: &H256,
+        network_config: NetworkConfig,
+        epoch: Epoch
     ) -> Result<bool, IncorrectBranchLength> {
-        let l2_proof: &[H256] = &self.proof[0..Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE];
+        let proof_size = network_config.compute_proof_size(epoch);
+
+        let l2_proof: &[H256] = &self.proof[0..proof_size.l2_execution_payload_proof_size];
         let l1_proof: &[H256] =
-            &self.proof[Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE..Self::PROOF_SIZE];
+            &self.proof[proof_size.l2_execution_payload_proof_size..proof_size.execution_proof_size];
         let execution_payload_hash = Self::merkle_root_from_branch(
             self.block_hash,
             l2_proof,
-            Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE,
-            Self::L2_EXECUTION_PAYLOAD_TREE_EXECUTION_BLOCK_INDEX,
+            proof_size.l2_execution_payload_proof_size,
+            proof_size.l2_execution_payload_tree_execution_block_index,
         )?;
 
         Ok(merkle_proof::verify_merkle_proof(
             execution_payload_hash,
             l1_proof,
             BeaconBlockBodyMerkleTree::BEACON_BLOCK_BODY_TREE_DEPTH,
-            Self::L1_BEACON_BLOCK_BODY_TREE_EXECUTION_PAYLOAD_INDEX,
+            proof_size.l1_beacon_block_body_tree_execution_payload_index,
             *beacon_block_body_hash,
         ))
     }

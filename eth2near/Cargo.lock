@@ -1433,6 +1433,7 @@ dependencies = [
  "dotenv",
  "env_logger",
  "eth-types",
+ "eth2-utility",
  "ethereum-types",
  "ethereum_hashing",
  "ethereum_ssz",

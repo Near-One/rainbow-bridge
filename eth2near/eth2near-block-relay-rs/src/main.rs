@@ -101,10 +101,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     init_log(&args, &config);
 
-    let mut eth2near_relay = Eth2NearRelay::init(
-        &config,
-        get_eth_client_contract(&config)
-    );
+    let mut eth2near_relay = Eth2NearRelay::init(&config, get_eth_client_contract(&config));
 
     eth2near_relay.run(None);
     Ok(())
