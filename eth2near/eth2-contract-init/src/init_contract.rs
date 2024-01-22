@@ -256,12 +256,6 @@ mod tests {
         let mut init_config = get_init_config(&config_for_test, &eth_client_contract);
         init_config.beacon_rpc_version = BeaconRPCVersion::V1_5;
 
-        init_contract(&init_config, &mut eth_client_contract).unwrap();
-
-        let last_finalized_slot_eth_client = eth_client_contract
-            .get_finalized_beacon_block_slot()
-            .expect("Error on getting last finalized beacon block slot(Eth client)");
-
         let beacon_rpc_client = BeaconRPCClient::new(
             &init_config.beacon_endpoint,
             init_config.eth_requests_timeout_seconds.unwrap_or(10),
@@ -273,8 +267,14 @@ mod tests {
             .get_last_finalized_slot_number()
             .expect("Error on getting last finalized beacon block slot");
 
-        const MAX_GAP_IN_EPOCH_BETWEEN_FINALIZED_SLOTS: u64 = 3;
+        init_contract(&init_config, &mut eth_client_contract).unwrap();
 
+        let last_finalized_slot_eth_client = eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .expect("Error on getting last finalized beacon block slot(Eth client)");
+
+        const MAX_GAP_IN_EPOCH_BETWEEN_FINALIZED_SLOTS: u64 = 3;
+        
         assert!(
             last_finalized_slot_eth_client
                 + ONE_EPOCH_IN_SLOTS * MAX_GAP_IN_EPOCH_BETWEEN_FINALIZED_SLOTS
