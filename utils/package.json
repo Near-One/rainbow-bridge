@@ -22,7 +22,7 @@
     "bsert": "^0.0.10",
     "change-case": "^4.1.1",
     "configstore": "^5.0.1",
-    "eth-object": "https://github.com/aurora-is-near/eth-object#a84d1420fdde87a768b96c6a3b3d0ee435998f72",
+    "eth-object": "https://github.com/aurora-is-near/eth-object#378b8dbf44a71f7049666cea5a16ab88d45aed06",
     "eth-util-lite": "near/eth-util-lite#master",
     "lodash": "^4.17.20",
     "near-api-js": "^1.1.0",
