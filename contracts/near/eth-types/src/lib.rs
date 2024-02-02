@@ -272,6 +272,7 @@ impl RlpDecodable for BlockHeader {
             .into(),
         );
 
+        #[cfg(not(feature = "disable_check_header_hash"))]
         if block_header.hash.unwrap() != near_keccak256(serialized.as_raw()).into() {
             return Err(RlpDecoderError::RlpInconsistentLengthAndData);
         }

@@ -29,3 +29,4 @@ sha3 = "0.10.0"
 [features]
 default = ["eth2"]
 eth2 = ["dep:eth2_ssz", "dep:eth2_ssz_derive", "dep:tree_hash", "dep:tree_hash_derive", "dep:eth2_serde_utils"]
+disable_check_header_hash = []
