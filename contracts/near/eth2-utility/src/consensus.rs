@@ -70,7 +70,7 @@ impl NetworkConfig {
                 capella_fork_version: [0x03, 0x00, 0x00, 0x00],
                 capella_fork_epoch: 194048,
                 deneb_fork_version: [0x04, 0x00, 0x00, 0x00],
-                deneb_fork_epoch: u64::MAX,
+                deneb_fork_epoch: 269568,
             },
             Network::Goerli => Self {
                 genesis_validators_root: [
@@ -95,7 +95,7 @@ impl NetworkConfig {
                 bellatrix_fork_epoch: 100,
                 capella_fork_version: [0x90, 0x00, 0x00, 0x72],
                 capella_fork_epoch: 56832,
-                deneb_fork_version: [0x04, 0x00, 0x10, 0x20],
+                deneb_fork_version: [0x90, 0x00, 0x00, 0x73],
                 deneb_fork_epoch: 132608,
             },
         }
