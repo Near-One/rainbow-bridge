@@ -78,7 +78,7 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'near-client-account',
   'The account of the Near Client contract that can be used to accept ETH headers.',
-  'rainbow_bridge_eth_on_near_client'
+  'eth_on_near_client.node0'
 )
 RainbowConfig.declareOption(
   'near-client-sk',
@@ -125,7 +125,7 @@ RainbowConfig.declareOption(
 RainbowConfig.declareOption(
   'near-prover-account',
   'The account of the Near Prover contract that can be used to accept ETH headers.',
-  'rainbow_bridge_eth_on_near_prover'
+  'eth_on_near_prover.node0'
 )
 RainbowConfig.declareOption(
   'near-prover-sk',
