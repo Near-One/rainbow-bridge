@@ -41,6 +41,7 @@ impl FromStr for Network {
         match input {
             "mainnet" => Ok(Network::Mainnet),
             "goerli" => Ok(Network::Goerli),
+            "sepolia" => Ok(Network::Sepolia),
             _ => Err(format!("Unknown network {}", input)),
         }
     }
