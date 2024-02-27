@@ -10,6 +10,7 @@ pub enum EthNetwork {
     Kiln,
     Ropsten,
     Goerli,
+    Sepolia,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -19,7 +20,7 @@ impl Display for IncorrectEthNetwork {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Unknown Ethereum network. Possible networks: 'Mainnet', 'Kiln', 'Goerli', 'Ropsten'"
+            "Unknown Ethereum network. Possible networks: 'Mainnet', 'Kiln', 'Goerli', 'Ropsten', 'Sepolia'"
         )
     }
 }
@@ -39,6 +40,7 @@ impl EthNetwork {
             EthNetwork::Kiln => "kiln",
             EthNetwork::Goerli => "goerli",
             EthNetwork::Ropsten => "ropsten",
+            EthNetwork::Sepolia => "sepolia",
         }
     }
 }
@@ -52,6 +54,7 @@ impl FromStr for EthNetwork {
             "kiln" => Ok(EthNetwork::Kiln),
             "goerli" => Ok(EthNetwork::Goerli),
             "ropsten" => Ok(EthNetwork::Ropsten),
+            "sepolia" => Ok(EthNetwork::Sepolia),
             _ => Err(IncorrectEthNetwork),
         }
     }

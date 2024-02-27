@@ -16,11 +16,26 @@ debug = false
 panic = "abort"
 overflow-checks = true
 
+[workspace.dependencies]
+near-sdk = "4.1.1"
+borsh = "0.9.3"
+rlp = "0.5.2"
+rlp-derive = "0.1.0"
+ethereum-types = "0.14.1"
+tree_hash = "0.5"
+tree_hash_derive = "0.5"
+ethereum_ssz = "0.5"
+ethereum_ssz_derive = "0.5"
+ethereum_serde_utils = "0.5"
+ethereum_hashing = "1.0.0-beta.2"
+derive_more = "^0.99.2"
+hex = "0.4.2"
+bitvec = "1.0.0"
+near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", tag = "v0.1.0" }
+
 [patch]
 [patch.crates-io]
-eth2_hashing = { path = "eth2_hashing" }
-eth2_ssz = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm"  }
-tree_hash = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm"}
-tree_hash_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm"}
-eth2_serde_utils = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
-eth2_ssz_derive = { git = "https://github.com/aurora-is-near/lighthouse.git", tag = "v3.5.1-wasm" }
+ethereum_hashing = { path = "eth2_hashing" }
+ethereum-types = { git = "https://github.com/aurora-is-near/parity-common", tag = "v0.14.1-wasm" }
+rlp = { git = "https://github.com/aurora-is-near/parity-common", tag = "v0.14.1-wasm" }
+rlp-derive = { git = "https://github.com/aurora-is-near/parity-common", tag = "v0.14.1-wasm" }

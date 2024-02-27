@@ -80,7 +80,10 @@ macro_rules! arr_wrapper_impl_tree_hash_and_borsh {
 
         #[cfg(not(target_arch = "wasm32"))]
         impl Serialize for $name {
-            fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
+            fn serialize<S>(
+                &self,
+                serializer: S,
+            ) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
             where
                 S: Serializer,
             {

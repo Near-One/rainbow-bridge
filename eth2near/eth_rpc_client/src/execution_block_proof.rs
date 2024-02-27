@@ -1,11 +1,12 @@
 use crate::beacon_block_body_merkle_tree::{BeaconBlockBodyMerkleTree, ExecutionPayloadMerkleTree};
 use crate::errors::{MerkleTreeError, MissExecutionPayload};
-use eth2_hashing;
+use eth2_utility::consensus::ProofSize;
+use ethereum_hashing;
 use ethereum_types::H256;
 use std::error::Error;
 use std::fmt;
 use std::fmt::Display;
-use types::{BeaconBlockBody, ExecutionPayload, MainnetEthSpec};
+use types::{BeaconBlockBody, ExecutionPayload, ForkName, MainnetEthSpec};
 
 /// `ExecutionBlockProof` contains a `block_hash` (execution block) and
 /// a proof of its inclusion in the `BeaconBlockBody` tree hash.
@@ -17,29 +18,26 @@ use types::{BeaconBlockBody, ExecutionPayload, MainnetEthSpec};
 /// The proof starts from the leaf.
 pub struct ExecutionBlockProof {
     block_hash: H256,
-    proof: [H256; Self::PROOF_SIZE],
+    proof: Vec<H256>,
 }
 
 impl ExecutionBlockProof {
     pub const L1_BEACON_BLOCK_BODY_TREE_EXECUTION_PAYLOAD_INDEX: usize = 9;
+    pub const L1_BEACON_BLOCK_BODY_PROOF_SIZE: usize = 4;
     pub const L2_EXECUTION_PAYLOAD_TREE_EXECUTION_BLOCK_INDEX: usize = 12;
 
-    pub const L1_BEACON_BLOCK_BODY_PROOF_SIZE: usize =
-        BeaconBlockBodyMerkleTree::BEACON_BLOCK_BODY_TREE_DEPTH;
-    pub const L2_EXECUTION_PAYLOAD_PROOF_SIZE: usize = ExecutionPayloadMerkleTree::TREE_DEPTH;
-    pub const PROOF_SIZE: usize =
-        Self::L1_BEACON_BLOCK_BODY_PROOF_SIZE + Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE;
-
-    pub fn construct_from_raw_data(block_hash: &H256, proof: &[H256; Self::PROOF_SIZE]) -> Self {
-        Self {
-            block_hash: *block_hash,
-            proof: *proof,
-        }
+    pub fn construct_from_raw_data(block_hash: H256, proof: Vec<H256>) -> Self {
+        Self { block_hash, proof }
     }
 
     pub fn construct_from_beacon_block_body(
         beacon_block_body: &BeaconBlockBody<MainnetEthSpec>,
     ) -> Result<Self, Box<dyn Error>> {
+        let l2_execution_payload_proof_size = match beacon_block_body.to_ref().fork_name() {
+            ForkName::Base | ForkName::Altair | ForkName::Merge | ForkName::Capella => 4,
+            _ => 5,
+        };
+
         let beacon_block_merkle_tree = &BeaconBlockBodyMerkleTree::new(beacon_block_body);
 
         let execution_payload_merkle_tree = &ExecutionPayloadMerkleTree::new(
@@ -61,7 +59,7 @@ impl ExecutionBlockProof {
             .0
             .generate_proof(
                 Self::L2_EXECUTION_PAYLOAD_TREE_EXECUTION_BLOCK_INDEX,
-                Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE,
+                l2_execution_payload_proof_size,
             )
             .map_err(|err| MerkleTreeError(err))?
             .1;
@@ -77,8 +75,8 @@ impl ExecutionBlockProof {
         })
     }
 
-    pub fn get_proof(&self) -> [H256; Self::PROOF_SIZE] {
-        self.proof
+    pub fn get_proof(&self) -> Vec<H256> {
+        self.proof.clone()
     }
 
     pub fn get_execution_block_hash(&self) -> H256 {
@@ -88,22 +86,23 @@ impl ExecutionBlockProof {
     pub fn verify_proof_for_hash(
         &self,
         beacon_block_body_hash: &H256,
+        proof_size: &ProofSize,
     ) -> Result<bool, IncorrectBranchLength> {
-        let l2_proof: &[H256] = &self.proof[0..Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE];
-        let l1_proof: &[H256] =
-            &self.proof[Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE..Self::PROOF_SIZE];
+        let l2_proof = &self.proof[0..proof_size.l2_execution_payload_proof_size];
+        let l1_proof = &self.proof
+            [proof_size.l2_execution_payload_proof_size..proof_size.execution_proof_size];
         let execution_payload_hash = Self::merkle_root_from_branch(
             self.block_hash,
             l2_proof,
-            Self::L2_EXECUTION_PAYLOAD_PROOF_SIZE,
-            Self::L2_EXECUTION_PAYLOAD_TREE_EXECUTION_BLOCK_INDEX,
+            proof_size.l2_execution_payload_proof_size,
+            proof_size.l2_execution_payload_tree_execution_block_index,
         )?;
 
         Ok(merkle_proof::verify_merkle_proof(
             execution_payload_hash,
             l1_proof,
             BeaconBlockBodyMerkleTree::BEACON_BLOCK_BODY_TREE_DEPTH,
-            Self::L1_BEACON_BLOCK_BODY_TREE_EXECUTION_PAYLOAD_INDEX,
+            proof_size.l1_beacon_block_body_tree_execution_payload_index,
             *beacon_block_body_hash,
         ))
     }
@@ -124,11 +123,11 @@ impl ExecutionBlockProof {
             let ith_bit = (index >> i) & 0x01;
             if ith_bit == 1 {
                 merkle_root =
-                    eth2_hashing::hash32_concat(leaf.as_bytes(), &merkle_root)[..].to_vec();
+                    ethereum_hashing::hash32_concat(leaf.as_bytes(), &merkle_root)[..].to_vec();
             } else {
                 let mut input = merkle_root;
                 input.extend_from_slice(leaf.as_bytes());
-                merkle_root = eth2_hashing::hash(&input);
+                merkle_root = ethereum_hashing::hash(&input);
             }
         }
 
@@ -154,6 +153,7 @@ impl Error for IncorrectBranchLength {}
 mod tests {
     use crate::config_for_tests::ConfigForTests;
     use crate::utils::read_json_file_from_data_dir;
+    use eth2_utility::consensus::{Network, NetworkConfig};
     use types::MainnetEthSpec;
     use types::{BeaconBlockBody, ExecutionPayload};
 
@@ -166,8 +166,10 @@ mod tests {
 
     #[test]
     fn test_beacon_block_body_root_verification() {
+        let slot = 5262172;
+        let config = NetworkConfig::new(&Network::Goerli);
         let beacon_block_body_json_str =
-            read_json_file_from_data_dir("beacon_block_body_goerli_slot_5262172.json");
+            read_json_file_from_data_dir(&format!("beacon_block_body_goerli_slot_{slot}.json"));
 
         let beacon_block_body: BeaconBlockBody<MainnetEthSpec> =
             serde_json::from_str(&beacon_block_body_json_str).unwrap();
@@ -195,17 +197,18 @@ mod tests {
             types::ExecutionBlockHash::from_root(execution_block_proof.get_execution_block_hash())
         );
 
+        let proof_size = config.compute_proof_size_by_slot(slot);
         assert!(execution_block_proof
-            .verify_proof_for_hash(&beacon_block_body_merkle_tree.0.hash())
+            .verify_proof_for_hash(&beacon_block_body_merkle_tree.0.hash(), &proof_size)
             .unwrap());
 
         let execution_block_proof_copy =
             crate::execution_block_proof::ExecutionBlockProof::construct_from_raw_data(
-                &execution_block_proof.get_execution_block_hash(),
-                &execution_block_proof.get_proof(),
+                execution_block_proof.get_execution_block_hash(),
+                execution_block_proof.get_proof(),
             );
         assert!(execution_block_proof_copy
-            .verify_proof_for_hash(&beacon_block_body_merkle_tree.0.hash())
+            .verify_proof_for_hash(&beacon_block_body_merkle_tree.0.hash(), &proof_size)
             .unwrap());
     }
 

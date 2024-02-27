@@ -19,18 +19,20 @@ pub const FINALITY_TREE_INDEX: u32 = get_subtree_index(FINALIZED_ROOT_INDEX);
 pub const SYNC_COMMITTEE_TREE_DEPTH: u32 = floorlog2(NEXT_SYNC_COMMITTEE_INDEX);
 pub const SYNC_COMMITTEE_TREE_INDEX: u32 = get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX);
 
-pub const BEACON_BLOCK_BODY_TREE_DEPTH: usize = 4;
-pub const L1_BEACON_BLOCK_BODY_TREE_EXECUTION_PAYLOAD_INDEX: usize = 9;
-pub const L2_EXECUTION_PAYLOAD_TREE_EXECUTION_BLOCK_INDEX: usize = 12;
-pub const L1_BEACON_BLOCK_BODY_PROOF_SIZE: usize = 4;
-pub const L2_EXECUTION_PAYLOAD_PROOF_SIZE: usize = 4;
-pub const EXECUTION_PROOF_SIZE: usize =
-    L1_BEACON_BLOCK_BODY_PROOF_SIZE + L2_EXECUTION_PAYLOAD_PROOF_SIZE;
+pub struct ProofSize {
+    pub beacon_block_body_tree_depth: usize,
+    pub l1_beacon_block_body_tree_execution_payload_index: usize,
+    pub l2_execution_payload_tree_execution_block_index: usize,
+    pub l1_beacon_block_body_proof_size: usize,
+    pub l2_execution_payload_proof_size: usize,
+    pub execution_proof_size: usize,
+}
 
 #[derive(PartialEq, BorshSerialize, BorshDeserialize)]
 pub enum Network {
     Mainnet,
     Goerli,
+    Sepolia,
 }
 
 impl FromStr for Network {
@@ -39,6 +41,7 @@ impl FromStr for Network {
         match input {
             "mainnet" => Ok(Network::Mainnet),
             "goerli" => Ok(Network::Goerli),
+            "sepolia" => Ok(Network::Sepolia),
             _ => Err(format!("Unknown network {}", input)),
         }
     }
@@ -50,6 +53,8 @@ pub struct NetworkConfig {
     pub bellatrix_fork_epoch: u64,
     pub capella_fork_version: ForkVersion,
     pub capella_fork_epoch: u64,
+    pub deneb_fork_version: ForkVersion,
+    pub deneb_fork_epoch: u64,
 }
 
 impl NetworkConfig {
@@ -65,6 +70,8 @@ impl NetworkConfig {
                 bellatrix_fork_epoch: 144896,
                 capella_fork_version: [0x03, 0x00, 0x00, 0x00],
                 capella_fork_epoch: 194048,
+                deneb_fork_version: [0x04, 0x00, 0x00, 0x00],
+                deneb_fork_epoch: 269568,
             },
             Network::Goerli => Self {
                 genesis_validators_root: [
@@ -76,11 +83,30 @@ impl NetworkConfig {
                 bellatrix_fork_epoch: 112260,
                 capella_fork_version: [0x03, 0x00, 0x10, 0x20],
                 capella_fork_epoch: 162304,
+                deneb_fork_version: [0x04, 0x00, 0x10, 0x20],
+                deneb_fork_epoch: 231680,
+            },
+            Network::Sepolia => Self {
+                genesis_validators_root: [
+                    0xd8, 0xea, 0x17, 0x1f, 0x3c, 0x94, 0xae, 0xa2, 0x1e, 0xbc, 0x42, 0xa1, 0xed,
+                    0x61, 0x05, 0x2a, 0xcf, 0x3f, 0x92, 0x09, 0xc0, 0x0e, 0x4e, 0xfb, 0xaa, 0xdd,
+                    0xac, 0x09, 0xed, 0x9b, 0x80, 0x78,
+                ],
+                bellatrix_fork_version: [0x90, 0x00, 0x00, 0x71],
+                bellatrix_fork_epoch: 100,
+                capella_fork_version: [0x90, 0x00, 0x00, 0x72],
+                capella_fork_epoch: 56832,
+                deneb_fork_version: [0x90, 0x00, 0x00, 0x73],
+                deneb_fork_epoch: 132608,
             },
         }
     }
 
     pub fn compute_fork_version(&self, epoch: Epoch) -> Option<ForkVersion> {
+        if epoch >= self.deneb_fork_epoch {
+            return Some(self.deneb_fork_version);
+        }
+
         if epoch >= self.capella_fork_epoch {
             return Some(self.capella_fork_version);
         }
@@ -94,6 +120,57 @@ impl NetworkConfig {
 
     pub fn compute_fork_version_by_slot(&self, slot: Slot) -> Option<ForkVersion> {
         self.compute_fork_version(compute_epoch_at_slot(slot))
+    }
+
+    pub fn compute_proof_size(&self, epoch: Epoch) -> ProofSize {
+        if epoch >= self.deneb_fork_epoch {
+            return ProofSize {
+                beacon_block_body_tree_depth: 4,
+                l1_beacon_block_body_tree_execution_payload_index: 9,
+                l2_execution_payload_tree_execution_block_index: 12,
+                l1_beacon_block_body_proof_size: 4,
+                l2_execution_payload_proof_size: 5,
+                execution_proof_size: 9,
+            };
+        }
+
+        ProofSize {
+            beacon_block_body_tree_depth: 4,
+            l1_beacon_block_body_tree_execution_payload_index: 9,
+            l2_execution_payload_tree_execution_block_index: 12,
+            l1_beacon_block_body_proof_size: 4,
+            l2_execution_payload_proof_size: 4,
+            execution_proof_size: 8,
+        }
+    }
+
+    pub fn compute_proof_size_by_slot(&self, slot: Slot) -> ProofSize {
+        self.compute_proof_size(compute_epoch_at_slot(slot))
+    }
+
+    pub fn validate_beacon_block_header_update(&self, header_update: &HeaderUpdate) -> bool {
+        let branch = &header_update.execution_hash_branch;
+        let proof_size = self.compute_proof_size_by_slot(header_update.beacon_header.slot);
+        if branch.len() != proof_size.execution_proof_size {
+            return false;
+        }
+
+        let l2_proof = &branch[0..proof_size.l2_execution_payload_proof_size];
+        let l1_proof =
+            &branch[proof_size.l2_execution_payload_proof_size..proof_size.execution_proof_size];
+        let execution_payload_hash = merkle_root_from_branch(
+            header_update.execution_block_hash,
+            l2_proof,
+            proof_size.l2_execution_payload_proof_size,
+            proof_size.l2_execution_payload_tree_execution_block_index,
+        );
+        verify_merkle_proof(
+            execution_payload_hash,
+            l1_proof,
+            proof_size.beacon_block_body_tree_depth,
+            proof_size.l1_beacon_block_body_tree_execution_payload_index,
+            header_update.beacon_header.body_root,
+        )
     }
 }
 
@@ -163,29 +240,41 @@ pub fn get_participant_pubkeys(
     result
 }
 
-pub fn convert_branch(branch: &[H256]) -> Vec<ethereum_types::H256> {
-    branch.iter().map(|x| x.0).collect()
+/// Verify a proof that `leaf` exists at `index` in a Merkle tree rooted at `root`.
+///
+/// The `branch` argument is the main component of the proof: it should be a list of internal
+/// node hashes such that the root can be reconstructed (in bottom-up order).
+pub fn verify_merkle_proof(
+    leaf: H256,
+    branch: &[H256],
+    depth: usize,
+    index: usize,
+    root: H256,
+) -> bool {
+    if branch.len() == depth {
+        merkle_root_from_branch(leaf, branch, depth, index) == root
+    } else {
+        false
+    }
 }
 
-pub fn validate_beacon_block_header_update(header_update: &HeaderUpdate) -> bool {
-    let branch = convert_branch(&header_update.execution_hash_branch);
-    if branch.len() != EXECUTION_PROOF_SIZE {
-        return false;
+/// Compute a root hash from a leaf and a Merkle proof.
+pub fn merkle_root_from_branch(leaf: H256, branch: &[H256], depth: usize, index: usize) -> H256 {
+    assert_eq!(branch.len(), depth, "proof length should equal depth");
+
+    let mut merkle_root = leaf.0.as_bytes().to_vec();
+
+    for (i, leaf) in branch.iter().enumerate().take(depth) {
+        let ith_bit = (index >> i) & 0x01;
+        if ith_bit == 1 {
+            merkle_root =
+                ethereum_hashing::hash32_concat(leaf.0.as_bytes(), &merkle_root)[..].to_vec();
+        } else {
+            let mut input = merkle_root;
+            input.extend_from_slice(leaf.0.as_bytes());
+            merkle_root = ethereum_hashing::hash(&input);
+        }
     }
 
-    let l2_proof = &branch[0..L2_EXECUTION_PAYLOAD_PROOF_SIZE];
-    let l1_proof = &branch[L2_EXECUTION_PAYLOAD_PROOF_SIZE..EXECUTION_PROOF_SIZE];
-    let execution_payload_hash = merkle_proof::merkle_root_from_branch(
-        header_update.execution_block_hash.0,
-        l2_proof,
-        L2_EXECUTION_PAYLOAD_PROOF_SIZE,
-        L2_EXECUTION_PAYLOAD_TREE_EXECUTION_BLOCK_INDEX,
-    );
-    merkle_proof::verify_merkle_proof(
-        execution_payload_hash,
-        l1_proof,
-        BEACON_BLOCK_BODY_TREE_DEPTH,
-        L1_BEACON_BLOCK_BODY_TREE_EXECUTION_PAYLOAD_INDEX,
-        header_update.beacon_header.body_root.0,
-    )
+    H256(ethereum_types::H256::from_slice(&merkle_root))
 }

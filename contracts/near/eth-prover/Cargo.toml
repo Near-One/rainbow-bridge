@@ -9,15 +9,14 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 eth-types = { path = "../eth-types", default-features = false }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-near-sdk = "4.1.1"
-borsh = "0.9.3"
-rlp = "0.5.2"
-hex = "0.4.2"
-near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", tag = "v0.1.0" }
+near-sdk.workspace = true
+borsh.workspace = true
+rlp.workspace = true
+near-plugins.workspace = true
 
 [dev-dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 hex = { version = "0.4.3", features = ["serde"] }
 indicatif = "0.14"
 lazy_static = "*"

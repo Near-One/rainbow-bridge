@@ -71,14 +71,14 @@ mod tests {
     #[cfg(not(feature = "mainnet"))]
     mod generic_tests {
         use super::*;
-        use bitvec::order::Lsb0;
         use bitvec::bitarr;
-        use near_sdk::test_utils::accounts;
+        use bitvec::order::Lsb0;
         use eth2_utility::consensus::*;
         use eth_types::{H256, U256};
-        use near_plugins::Pausable;
-        use tree_hash::TreeHash;
         use hex::FromHex;
+        use near_plugins::Pausable;
+        use near_sdk::test_utils::accounts;
+        use tree_hash::TreeHash;
 
         #[test]
         pub fn test_header_root() {

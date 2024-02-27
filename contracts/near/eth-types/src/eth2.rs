@@ -32,15 +32,9 @@ arr_wrapper_impl_tree_hash_and_borsh!(SyncCommitteeBits, SYNC_COMMITTEE_BITS_SIZ
 #[derive(Debug, Clone, BorshDeserialize, BorshSerialize, tree_hash_derive::TreeHash)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct BeaconBlockHeader {
-    #[cfg_attr(
-        not(target_arch = "wasm32"),
-        serde(with = "eth2_serde_utils::quoted_u64")
-    )]
+    #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::quoted_u64"))]
     pub slot: Slot,
-    #[cfg_attr(
-        not(target_arch = "wasm32"),
-        serde(with = "eth2_serde_utils::quoted_u64")
-    )]
+    #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::quoted_u64"))]
     pub proposer_index: u64,
     pub parent_root: H256,
     pub state_root: H256,
@@ -124,10 +118,7 @@ pub struct FinalizedHeaderUpdate {
 pub struct LightClientUpdate {
     pub attested_beacon_header: BeaconBlockHeader,
     pub sync_aggregate: SyncAggregate,
-    #[cfg_attr(
-        not(target_arch = "wasm32"),
-        serde(with = "eth2_serde_utils::quoted_u64")
-    )]
+    #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::quoted_u64"))]
     pub signature_slot: Slot,
     pub finality_update: FinalizedHeaderUpdate,
     pub sync_committee_update: Option<SyncCommitteeUpdate>,

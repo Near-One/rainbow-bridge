@@ -136,42 +136,66 @@ pub struct BlockHeader {
     pub difficulty: U256,
     #[cfg_attr(
         all(feature = "eth2", not(target_arch = "wasm32")),
-        serde(with = "eth2_serde_utils::u64_hex_be")
+        serde(with = "serde_utils::u64_hex_be")
     )]
     pub number: u64,
     pub gas_limit: U256,
     pub gas_used: U256,
     #[cfg_attr(
         all(feature = "eth2", not(target_arch = "wasm32")),
-        serde(with = "eth2_serde_utils::u64_hex_be")
+        serde(with = "serde_utils::u64_hex_be")
     )]
     pub timestamp: u64,
     #[cfg_attr(
         all(feature = "eth2", not(target_arch = "wasm32")),
-        serde(with = "eth2_serde_utils::hex_vec")
+        serde(with = "serde_utils::hex_vec")
     )]
     pub extra_data: Vec<u8>,
     pub mix_hash: H256,
     pub nonce: H64,
     #[cfg_attr(
         all(feature = "eth2", not(target_arch = "wasm32")),
-        serde(deserialize_with = "u64_hex_be_option")
+        serde(with = "u64_hex_be_option")
     )]
     pub base_fee_per_gas: Option<u64>,
     pub withdrawals_root: Option<H256>,
+    #[cfg_attr(
+        all(feature = "eth2", not(target_arch = "wasm32")),
+        serde(with = "u64_hex_be_option"),
+        serde(default)
+    )]
+    pub blob_gas_used: Option<u64>,
+    #[cfg_attr(
+        all(feature = "eth2", not(target_arch = "wasm32")),
+        serde(with = "u64_hex_be_option"),
+        serde(default)
+    )]
+    pub excess_blob_gas: Option<u64>,
+    #[cfg_attr(all(feature = "eth2", not(target_arch = "wasm32")), serde(default))]
+    pub parent_beacon_block_root: Option<H256>,
 
     pub hash: Option<H256>,
     pub partial_hash: Option<H256>,
 }
-
 #[cfg(all(feature = "eth2", not(target_arch = "wasm32")))]
-fn u64_hex_be_option<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    Ok(Some(eth2_serde_utils::u64_hex_be::deserialize(
-        deserializer,
-    )?))
+pub mod u64_hex_be_option {
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Ok(Some(serde_utils::u64_hex_be::deserialize(deserializer)?))
+    }
+
+    pub fn serialize<S>(num: &Option<u64>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        if let Some(num) = num {
+            serde_utils::u64_hex_be::serialize(num, serializer)
+        } else {
+            serializer.serialize_none()
+        }
+    }
 }
 
 impl BlockHeader {
@@ -190,6 +214,15 @@ impl BlockHeader {
             list_size += 1;
         }
         if self.withdrawals_root.is_some() {
+            list_size += 1;
+        }
+        if self.blob_gas_used.is_some() {
+            list_size += 1;
+        }
+        if self.excess_blob_gas.is_some() {
+            list_size += 1;
+        }
+        if self.parent_beacon_block_root.is_some() {
             list_size += 1;
         }
 
@@ -220,6 +253,18 @@ impl BlockHeader {
 
         if let Some(withdrawals_root) = &self.withdrawals_root {
             stream.append(withdrawals_root);
+        }
+
+        if let Some(blob_gas_used) = &self.blob_gas_used {
+            stream.append(blob_gas_used);
+        }
+
+        if let Some(excess_blob_gas) = &self.excess_blob_gas {
+            stream.append(excess_blob_gas);
+        }
+
+        if let Some(parent_beacon_block_root) = &self.parent_beacon_block_root {
+            stream.append(parent_beacon_block_root);
         }
     }
 
@@ -259,6 +304,9 @@ impl RlpDecodable for BlockHeader {
             nonce: serialized.val_at(14)?,
             base_fee_per_gas: serialized.val_at(15).ok(),
             withdrawals_root: serialized.val_at(16).ok(),
+            blob_gas_used: serialized.val_at(17).ok(),
+            excess_blob_gas: serialized.val_at(18).ok(),
+            parent_beacon_block_root: serialized.val_at(19).ok(),
             hash: None,
             partial_hash: None,
         };
