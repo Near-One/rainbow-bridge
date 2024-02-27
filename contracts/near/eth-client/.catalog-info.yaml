@@ -16,7 +16,6 @@ spec:
   lifecycle: production
   system: bridge-protocol
   deployedAt:
-    - contract:near/mainnet/client.bridge.near
     - contract:near/mainnet/client-eth2.bridge.near
     - contract:near/testnet/client-eth2.goerli.testnet
   interactsWith:
