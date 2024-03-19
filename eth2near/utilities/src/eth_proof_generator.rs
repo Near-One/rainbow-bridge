@@ -22,10 +22,9 @@ pub struct Proof {
 pub fn get_proof_for_event(tx_hash: &str, log_index: u64, node_url: &str,) -> Result<Proof, Box<dyn Error>> {
     let client = EthRPCClient::new(node_url);
 
-    let tx_bytes: [u8; 32] = hex::decode(&tx_hash[2..])
-        .expect("Invalid hex string")
+    let tx_bytes: [u8; 32] = hex::decode(&tx_hash[2..])?
         .try_into()
-        .expect("Invalid hex string");
+        .map_err(|_| Box::<dyn Error>::from("Invalid hex string length"))?;
 
     let receipt = client.get_transaction_receipt_by_hash(&FixedBytes(tx_bytes))?;
     let block_header = client.get_block_by_number(receipt.block_number)?;
@@ -37,7 +36,7 @@ pub fn get_proof_for_event(tx_hash: &str, log_index: u64, node_url: &str,) -> Re
     let proof = trie.get_proof(&receipt_key)?;
 
     let mut log_data: Option<Vec<u8>> = None;
-    for (_, log) in receipt.logs.iter().enumerate() {
+    for log in &receipt.logs {
         if log.log_index == log_index {
             log_data = Some(encode_log(log));
         }
@@ -45,7 +44,7 @@ pub fn get_proof_for_event(tx_hash: &str, log_index: u64, node_url: &str,) -> Re
 
     Ok(Proof {
         log_index,
-        log_entry_data: log_data.expect("Log not found"),
+        log_entry_data: log_data.ok_or("Log not found")?,
         receipt_index: receipt.transaction_index,
         receipt_data: encode_receipt(&receipt),
         header_data: encode_header(&block_header),
@@ -56,9 +55,9 @@ pub fn get_proof_for_event(tx_hash: &str, log_index: u64, node_url: &str,) -> Re
 fn build_receipt_trie(receipts: &[TransactionReceipt],) -> Result<PatriciaTrie<MemoryDB, HasherKeccak>, TrieError> {
     let memdb = Arc::new(MemoryDB::new(true));
     let hasher = Arc::new(HasherKeccak::new());
-    let mut trie = PatriciaTrie::new(Arc::clone(&memdb), Arc::clone(&hasher));
+    let mut trie = PatriciaTrie::new(memdb, hasher);
 
-    for (_, receipt) in receipts.iter().enumerate() {
+    for receipt in receipts {
         let receipt_key = rlp::encode(&receipt.transaction_index).to_vec();
         let receipt_data = encode_receipt(receipt);
 
@@ -79,16 +78,16 @@ fn encode_receipt(receipt: &TransactionReceipt) -> Vec<u8> {
     stream
         .append(&receipt.status)
         .append(&receipt.cumulative_gas_used.0)
-        .append(&receipt.logs_bloom.0.to_vec());
+        .append(&receipt.logs_bloom.0.as_slice());
 
     stream.begin_list(receipt.logs.len());
-    for (_, log) in receipt.logs.iter().enumerate() {
+    for log in &receipt.logs {
         stream.begin_list(3);
-        stream.append(&log.address.0.to_vec());
+        stream.append(&log.address.0.as_slice());
 
         stream.begin_list(log.topics.len());
-        for (_, topic) in log.topics.iter().enumerate() {
-            stream.append(&topic.0.to_vec());
+        for topic in &log.topics {
+            stream.append(&topic.0.as_slice());
         }
 
         stream.append(&log.data.0);
@@ -101,11 +100,11 @@ fn encode_log(log: &Log) -> Vec<u8> {
     let mut stream = RlpStream::new();
     stream.begin_list(3);
 
-    stream.append(&log.address.0.to_vec());
+    stream.append(&log.address.0.as_slice());
 
     stream.begin_list(log.topics.len());
-    for (_, topic) in log.topics.iter().enumerate() {
-        stream.append(&topic.0.to_vec());
+    for topic in &log.topics {
+        stream.append(&topic.0.as_slice());
     }
 
     stream.append(&log.data.0);
@@ -118,44 +117,33 @@ fn encode_header(header: &BlockHeader) -> Vec<u8> {
     stream.begin_unbounded_list();
 
     stream
-        .append(&header.parent_hash.0.to_vec())
-        .append(&header.sha3_uncles.0.to_vec())
-        .append(&header.miner.0.to_vec())
-        .append(&header.state_root.0.to_vec())
-        .append(&header.transactions_root.0.to_vec())
-        .append(&header.receipts_root.0.to_vec())
-        .append(&header.logs_bloom.0.to_vec())
+        .append(&header.parent_hash.0.as_slice())
+        .append(&header.sha3_uncles.0.as_slice())
+        .append(&header.miner.0.as_slice())
+        .append(&header.state_root.0.as_slice())
+        .append(&header.transactions_root.0.as_slice())
+        .append(&header.receipts_root.0.as_slice())
+        .append(&header.logs_bloom.0.as_slice())
         .append(&header.difficulty)
         .append(&header.number.0)
         .append(&header.gas_limit.0)
         .append(&header.gas_used.0)
         .append(&header.timestamp.0)
-        .append(&header.extra_data.0.to_vec())
-        .append(&header.mix_hash.0.to_vec())
-        .append(&header.nonce.0.to_vec());
+        .append(&header.extra_data.0.as_slice())
+        .append(&header.mix_hash.0.as_slice())
+        .append(&header.nonce.0.as_slice());
 
-    if header.base_fee_per_gas.is_some() {
-        stream.append(&header.base_fee_per_gas.unwrap());
-    }
-
-    if header.withdrawals_root.is_some() {
-        stream.append(&header.withdrawals_root.clone().unwrap().0.to_vec());
-    }
-
-    if header.blob_gas_used.is_some() {
-        stream.append(&header.blob_gas_used.unwrap());
-    }
-
-    if header.excess_blob_gas.is_some() {
-        stream.append(&header.excess_blob_gas.unwrap());
-    }
-
-    if header.parent_beacon_block_root.is_some() {
-        stream.append(&header.parent_beacon_block_root.clone().unwrap().0.to_vec());
-    }
+    header.base_fee_per_gas.map(|v| stream.append(&v));
+    header.withdrawals_root
+        .as_ref()
+        .map(|v| stream.append(&v.0.as_slice()));
+    header.blob_gas_used.map(|v| stream.append(&v));
+    header.excess_blob_gas.map(|v| stream.append(&v));
+    header.parent_beacon_block_root
+        .as_ref()
+        .map(|v| stream.append(&v.0.as_slice()));
 
     stream.finalize_unbounded_list();
-
     stream.out().to_vec()
 }
 
