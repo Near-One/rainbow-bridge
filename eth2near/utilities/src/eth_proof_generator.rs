@@ -70,13 +70,13 @@ fn build_receipt_trie(receipts: &[TransactionReceipt],) -> Result<PatriciaTrie<M
 fn encode_receipt(receipt: &TransactionReceipt) -> Vec<u8> {
     let mut stream = RlpStream::new();
 
-    if receipt.transaction_type != 0 {
-        stream.append(&receipt.transaction_type);
+    if receipt.transaction_type.0 != 0 {
+        stream.append(&receipt.transaction_type.0);
     }
 
     stream.begin_list(4);
     stream
-        .append(&receipt.status)
+        .append(&receipt.status.0)
         .append(&receipt.cumulative_gas_used.0)
         .append(&receipt.logs_bloom.0.as_slice());
 
@@ -158,9 +158,13 @@ pub mod tests {
         const TX_HASH: &'static str = "0x9298954a9db8026ca28bce4d71ffb7ba0aac70e91f0667ffb7398c67e60b84fa";
         let proof = get_proof_for_event(TX_HASH, 377, RPC_URL).unwrap();
 
+        const EXPECTED_HEADER: &'static str = "14ffc7718ede2f244f3abcdf513cade51d60a50bfd503a10079b5b540af5dee0";
+
         let hasher = HasherKeccak::new();
 
         println!("Header {:x?}", hasher.digest(&proof.header_data));
         println!("Proof {:x?}", &proof.proof);
+        
+        assert_eq!(hasher.digest(&proof.header_data), hex::decode(EXPECTED_HEADER).unwrap());
     }
 }

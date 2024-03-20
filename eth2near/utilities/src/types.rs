@@ -50,11 +50,10 @@ pub struct TransactionReceipt {
     pub block_number: u64,
     #[serde(deserialize_with = "hex_to_int")]
     pub transaction_index: u64,
-    #[serde(rename = "type", deserialize_with = "hex_to_int")]
-    pub transaction_type: u8,
+    #[serde(rename = "type")]
+    pub transaction_type: Byte,
     pub cumulative_gas_used: Bytes,
     pub logs_bloom: Bloom,
     pub logs: Vec<Log>,
-    #[serde(deserialize_with = "hex_to_int")]
-    pub status: u8,
+    pub status: Byte,
 }
