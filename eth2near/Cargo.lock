@@ -5503,9 +5503,9 @@ name = "utilities"
 version = "0.1.0"
 dependencies = [
  "cita_trie",
+ "ethereum-types",
  "hasher",
  "hex 0.4.3",
- "num-traits",
  "reqwest",
  "rlp",
  "serde",

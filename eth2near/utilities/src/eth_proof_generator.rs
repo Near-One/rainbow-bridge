@@ -1,32 +1,29 @@
 use crate::{
     eth_rpc_client::EthRPCClient,
-    primitives::*,
     types::{BlockHeader, Log, TransactionReceipt},
+    primitives::U8
 };
 use cita_trie::{MemoryDB, PatriciaTrie, Trie, TrieError};
 use hasher::HasherKeccak;
 use rlp::RlpStream;
 use std::error::Error;
 use std::sync::Arc;
+use ethereum_types::{H256, U64};
 
 #[derive(Debug)]
 pub struct Proof {
-    pub log_index: u64,
+    pub log_index: U64,
     pub log_entry_data: Vec<u8>,
-    pub receipt_index: u64,
+    pub receipt_index: U64,
     pub receipt_data: Vec<u8>,
     pub header_data: Vec<u8>,
     pub proof: Vec<Vec<u8>>,
 }
 
-pub fn get_proof_for_event(tx_hash: &str, log_index: u64, node_url: &str,) -> Result<Proof, Box<dyn Error>> {
+pub fn get_proof_for_event(tx_hash: H256, log_index: u64, node_url: &str) -> Result<Proof, Box<dyn Error>> {
     let client = EthRPCClient::new(node_url);
 
-    let tx_bytes: [u8; 32] = hex::decode(&tx_hash[2..])?
-        .try_into()
-        .map_err(|_| Box::<dyn Error>::from("Invalid hex string length"))?;
-
-    let receipt = client.get_transaction_receipt_by_hash(&FixedBytes(tx_bytes))?;
+    let receipt = client.get_transaction_receipt_by_hash(&tx_hash)?;
     let block_header = client.get_block_by_number(receipt.block_number)?;
     let block_receipts = client.get_block_receipts(receipt.block_number)?;
 
@@ -39,14 +36,14 @@ pub fn get_proof_for_event(tx_hash: &str, log_index: u64, node_url: &str,) -> Re
     let mut log_data: Option<Vec<u8>> = None;
     let mut log_index_in_receipt = 0;
     for (i, log) in receipt.logs.iter().enumerate() {
-        if log.log_index == log_index {
+        if log.log_index == log_index.into() {
             log_data = Some(encode_log(log));
-            log_index_in_receipt = i as u64;
+            log_index_in_receipt = i;
         }
     }
 
     Ok(Proof {
-        log_index: log_index_in_receipt,
+        log_index: log_index_in_receipt.into(),
         log_entry_data: log_data.ok_or("Log not found")?,
         receipt_index: receipt.transaction_index,
         receipt_data: encode_receipt(&receipt),
@@ -73,27 +70,27 @@ fn build_receipt_trie(receipts: &[TransactionReceipt],) -> Result<PatriciaTrie<M
 fn encode_receipt(receipt: &TransactionReceipt) -> Vec<u8> {
     let mut stream = RlpStream::new();
 
-    if receipt.transaction_type.0 != 0 {
-        stream.append(&receipt.transaction_type.0);
+    if receipt.transaction_type != U8(0) {
+        stream.append(&receipt.transaction_type);
     }
 
     stream.begin_list(4);
     stream
-        .append(&receipt.status.0)
-        .append(&receipt.cumulative_gas_used.0)
-        .append(&receipt.logs_bloom.0.as_slice());
+        .append(&receipt.status)
+        .append(&receipt.cumulative_gas_used)
+        .append(&receipt.logs_bloom);
 
     stream.begin_list(receipt.logs.len());
     for log in &receipt.logs {
         stream.begin_list(3);
-        stream.append(&log.address.0.as_slice());
+        stream.append(&log.address);
 
         stream.begin_list(log.topics.len());
         for topic in &log.topics {
-            stream.append(&topic.0.as_slice());
+            stream.append(topic);
         }
 
-        stream.append(&log.data.0);
+        stream.append(&log.data);
     }
 
     stream.out().to_vec()
@@ -103,14 +100,14 @@ fn encode_log(log: &Log) -> Vec<u8> {
     let mut stream = RlpStream::new();
     stream.begin_list(3);
 
-    stream.append(&log.address.0.as_slice());
+    stream.append(&log.address);
 
     stream.begin_list(log.topics.len());
     for topic in &log.topics {
-        stream.append(&topic.0.as_slice());
+        stream.append(topic);
     }
 
-    stream.append(&log.data.0);
+    stream.append(&log.data);
 
     stream.out().to_vec()
 }
@@ -120,31 +117,31 @@ fn encode_header(header: &BlockHeader) -> Vec<u8> {
     stream.begin_unbounded_list();
 
     stream
-        .append(&header.parent_hash.0.as_slice())
-        .append(&header.sha3_uncles.0.as_slice())
-        .append(&header.miner.0.as_slice())
-        .append(&header.state_root.0.as_slice())
-        .append(&header.transactions_root.0.as_slice())
-        .append(&header.receipts_root.0.as_slice())
-        .append(&header.logs_bloom.0.as_slice())
+        .append(&header.parent_hash)
+        .append(&header.sha3_uncles)
+        .append(&header.miner)
+        .append(&header.state_root)
+        .append(&header.transactions_root)
+        .append(&header.receipts_root)
+        .append(&header.logs_bloom)
         .append(&header.difficulty)
-        .append(&header.number.0)
-        .append(&header.gas_limit.0)
-        .append(&header.gas_used.0)
-        .append(&header.timestamp.0)
-        .append(&header.extra_data.0.as_slice())
-        .append(&header.mix_hash.0.as_slice())
-        .append(&header.nonce.0.as_slice());
+        .append(&header.number)
+        .append(&header.gas_limit)
+        .append(&header.gas_used)
+        .append(&header.timestamp)
+        .append(&header.extra_data)
+        .append(&header.mix_hash)
+        .append(&header.nonce);
 
     header.base_fee_per_gas.map(|v| stream.append(&v));
     header.withdrawals_root
         .as_ref()
-        .map(|v| stream.append(&v.0.as_slice()));
+        .map(|v| stream.append(v));
     header.blob_gas_used.map(|v| stream.append(&v));
     header.excess_blob_gas.map(|v| stream.append(&v));
     header.parent_beacon_block_root
         .as_ref()
-        .map(|v| stream.append(&v.0.as_slice()));
+        .map(|v| stream.append(v));
 
     stream.finalize_unbounded_list();
     stream.out().to_vec()
@@ -152,13 +149,15 @@ fn encode_header(header: &BlockHeader) -> Vec<u8> {
 
 #[cfg(test)]
 pub mod tests {
+    use std::str::FromStr;
+
     use super::*;
     use hasher::Hasher;
     const RPC_URL: &'static str = "https://eth.llamarpc.com";
 
     #[test]
     fn generate_proof_pre_shapella() {
-        let tx_hash = "0xc4a6c5cde1d243b26b013f805f71f6de91536f66c993abfee746f373203b68cc";
+        let tx_hash = H256::from_str("0xc4a6c5cde1d243b26b013f805f71f6de91536f66c993abfee746f373203b68cc").unwrap();
         let proof = get_proof_for_event(tx_hash, 251, RPC_URL).unwrap();
 
         let expected_log_index = 0;
@@ -177,8 +176,8 @@ pub mod tests {
         let hasher = HasherKeccak::new();
         assert_eq!(hasher.digest(&proof.header_data), hex::decode(expected_header).unwrap());
 
-        assert_eq!(proof.log_index, expected_log_index);
-        assert_eq!(proof.receipt_index, expected_receipt_index);
+        assert_eq!(proof.log_index, expected_log_index.into());
+        assert_eq!(proof.receipt_index, expected_receipt_index.into());
         assert_eq!(proof.receipt_data, hex::decode(expected_receipt).unwrap());
         assert_eq!(proof.log_entry_data, hex::decode(expected_log).unwrap());
         assert_eq!(proof.proof.len(), expected_proof.len());
@@ -187,7 +186,7 @@ pub mod tests {
 
     #[test]
     fn generate_proof_post_shapella() {
-        let tx_hash = "0xd6ae351d6946f98c4b63589e2154db668e703e8c09fbd4e5c6807b5d356453c3";
+        let tx_hash = H256::from_str("0xd6ae351d6946f98c4b63589e2154db668e703e8c09fbd4e5c6807b5d356453c3").unwrap();
         let proof = get_proof_for_event(tx_hash, 172, RPC_URL).unwrap();
 
         let expected_log_index = 0;
@@ -204,8 +203,8 @@ pub mod tests {
         let hasher = HasherKeccak::new();
         assert_eq!(hasher.digest(&proof.header_data), hex::decode(expected_header).unwrap());
 
-        assert_eq!(proof.log_index, expected_log_index);
-        assert_eq!(proof.receipt_index, expected_receipt_index);
+        assert_eq!(proof.log_index, expected_log_index.into());
+        assert_eq!(proof.receipt_index, expected_receipt_index.into());
         assert_eq!(proof.receipt_data, hex::decode(expected_receipt).unwrap());
         assert_eq!(proof.log_entry_data, hex::decode(expected_log).unwrap());
         assert_eq!(proof.proof.len(), expected_proof.len());
@@ -214,7 +213,7 @@ pub mod tests {
     
     #[test]
     fn generate_proof_post_dencun() {
-        let tx_hash = "0x42639810a1238a76ca947b848f5b88a854ac36471d1c4f6a15631393790f89af";
+        let tx_hash = H256::from_str("0x42639810a1238a76ca947b848f5b88a854ac36471d1c4f6a15631393790f89af").unwrap();
         let proof = get_proof_for_event(tx_hash, 360, RPC_URL).unwrap();
 
         let expected_log_index = 0;
@@ -233,8 +232,8 @@ pub mod tests {
         let hasher = HasherKeccak::new();
         assert_eq!(hasher.digest(&proof.header_data), hex::decode(expected_header).unwrap());
 
-        assert_eq!(proof.log_index, expected_log_index);
-        assert_eq!(proof.receipt_index, expected_receipt_index);
+        assert_eq!(proof.log_index, expected_log_index.into());
+        assert_eq!(proof.receipt_index, expected_receipt_index.into());
         assert_eq!(proof.receipt_data, hex::decode(expected_receipt).unwrap());
         assert_eq!(proof.log_entry_data, hex::decode(expected_log).unwrap());
         assert_eq!(proof.proof.len(), expected_proof.len());

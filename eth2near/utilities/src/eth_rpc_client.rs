@@ -1,11 +1,9 @@
-use crate::{
-    primitives::U256,
-    types::{BlockHeader, TransactionReceipt},
-};
+use crate::types::{BlockHeader, TransactionReceipt};
 use reqwest::blocking::Client;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use std::error::Error;
+use ethereum_types::{H256, U64};
 
 pub struct EthRPCClient {
     endpoint_url: String,
@@ -20,7 +18,7 @@ impl EthRPCClient {
         }
     }
 
-    pub fn get_transaction_receipt_by_hash(&self, tx_hash: &U256,) -> Result<TransactionReceipt, Box<dyn Error>> {
+    pub fn get_transaction_receipt_by_hash(&self, tx_hash: &H256) -> Result<TransactionReceipt, Box<dyn Error>> {
         let json_value = json!({
             "id": 1,
             "jsonrpc": "2.0",
@@ -41,7 +39,7 @@ impl EthRPCClient {
         Ok(receipt)
     }
 
-    pub fn get_block_by_number(&self, block_number: u64) -> Result<BlockHeader, Box<dyn Error>> {
+    pub fn get_block_by_number(&self, block_number: U64) -> Result<BlockHeader, Box<dyn Error>> {
         let json_value = json!({
             "id": 1,
             "jsonrpc": "2.0",
@@ -64,7 +62,7 @@ impl EthRPCClient {
 
     pub fn get_block_receipts(
         &self,
-        block_number: u64,
+        block_number: U64,
     ) -> Result<Vec<TransactionReceipt>, Box<dyn Error>> {
         let json_value = json!({
             "id": 1,

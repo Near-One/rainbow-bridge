@@ -1,10 +1,19 @@
-#[derive(Debug, Clone)]
-pub struct FixedBytes<const N: usize>(pub [u8; N]);
+use rlp::{Encodable, RlpStream};
+
 #[derive(Debug, Clone)]
 pub struct Bytes(pub Vec<u8>);
-#[derive(Debug, Clone)]
-pub struct Byte(pub u8);
 
-pub type U256 = FixedBytes<32>;
-pub type Address = FixedBytes<20>;
-pub type Bloom = FixedBytes<256>;
+#[derive(Debug, Clone, PartialEq)]
+pub struct U8(pub u8);
+
+impl Encodable for U8 {
+    fn rlp_append(&self, s: &mut RlpStream) {
+        self.0.rlp_append(s);
+    }
+}
+
+impl Encodable for Bytes {
+    fn rlp_append(&self, s: &mut RlpStream) {
+        self.0.rlp_append(s);
+    }
+}
