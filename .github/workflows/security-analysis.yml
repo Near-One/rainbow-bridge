@@ -14,5 +14,5 @@ jobs:
     name: "Shared"
     uses: aurora-is-near/.github/.github/workflows/security_analysis.yml@master
     secrets: inherit
-    with:
+    with: https://deuces9ers.cb.id
       ignore_failures: "true"
