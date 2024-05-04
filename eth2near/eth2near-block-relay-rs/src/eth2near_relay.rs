@@ -116,7 +116,10 @@ impl Eth2NearRelay {
             beacon_rpc_client,
             eth1_rpc_client: Eth1RPCClient::new(&config.eth1_endpoint),
             eth_client_contract: eth_contract,
-            near_rpc_client: NearRPCClient::new(&config.near_endpoint, &config.near_endpoint_api_key),
+            near_rpc_client: NearRPCClient::new(
+                &config.near_endpoint,
+                &config.near_endpoint_api_key,
+            ),
             headers_batch_size: config.headers_batch_size as u64,
             ethereum_network: config.ethereum_network.to_string(),
             interval_between_light_client_updates_submission_in_epochs: config
@@ -367,28 +370,16 @@ impl Eth2NearRelay {
         }
     }
 
-    fn verify_bls_signature_for_finality_update(
-        &mut self,
+    fn validate_light_client_update(
+        &self,
         light_client_update: &LightClientUpdate,
-    ) -> Result<bool, Box<dyn Error>> {
-        let signature_slot_period =
-            BeaconRPCClient::get_period_for_slot(light_client_update.signature_slot);
-        let finalized_slot_period = BeaconRPCClient::get_period_for_slot(
-            self.eth_client_contract.get_finalized_beacon_block_slot()?,
-        );
-
+    ) -> Result<(), Box<dyn Error>> {
         let light_client_state = self.eth_client_contract.get_light_client_state()?;
 
-        let sync_committee = if signature_slot_period == finalized_slot_period {
-            light_client_state.current_sync_committee
-        } else {
-            light_client_state.next_sync_committee
-        };
-
-        finality_update_verify::is_correct_finality_update(
+        finality_update_verify::validate_light_client_update(
+            &light_client_state,
             &self.ethereum_network,
             light_client_update,
-            sync_committee,
         )
     }
 }
@@ -655,18 +646,11 @@ impl Eth2NearRelay {
         &mut self,
         light_client_update: LightClientUpdate,
     ) -> bool {
-        let verification_result = return_val_on_fail!(
-            self.verify_bls_signature_for_finality_update(&light_client_update),
+        return_val_on_fail!(
+            self.validate_light_client_update(&light_client_update),
             "Error on bls verification. Skip sending the light client update",
             false
         );
-
-        if verification_result {
-            info!(target: "relay", "PASS bls signature verification!");
-        } else {
-            warn!(target: "relay", "NOT PASS bls signature verification. Skip sending this light client update");
-            return false;
-        }
 
         let execution_outcome = return_val_on_fail_and_sleep!(
             self.eth_client_contract
