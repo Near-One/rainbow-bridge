@@ -2887,6 +2887,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "omni-prover"
+version = "2.0.0"
+dependencies = [
+ "borsh",
+ "near-plugins",
+ "near-sdk",
+ "rlp 0.5.2",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
