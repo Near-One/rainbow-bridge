@@ -5,6 +5,7 @@ members = [
     "eth-prover",
     "eth-types",
     "omni-prover/omni-prover",
+    "omni-prover/rainbow-omni-prover-proxy",
     "admin-controlled"
 ]
 
