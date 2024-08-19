@@ -1,10 +1,18 @@
 use near_plugins::{
     access_control, access_control_any, AccessControlRole, AccessControllable, Pausable,
-    Upgradable,
+    Upgradable, pause
 };
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{AccountId, near_bindgen, PanicOnDefault};
+use near_sdk::{AccountId, env, ext_contract, near_bindgen, PanicOnDefault, Promise};
+
+#[ext_contract(ext_omni_prover_proxy)]
+pub trait OmniProverProxy {
+    fn verify_proof(
+        &self,
+        msg: Vec<u8>,
+    ) -> bool;
+}
 
 #[derive(AccessControlRole, Deserialize, Serialize, Copy, Clone)]
 #[serde(crate = "near_sdk::serde")]
@@ -14,6 +22,7 @@ pub enum Role {
     UpgradableCodeDeployer,
     DAO,
     BridgesManager,
+    UnrestrictedValidateProof,
 }
 
 #[derive(BorshSerialize, near_sdk::BorshStorageKey)]
@@ -66,5 +75,13 @@ impl OmniProver {
         self.bridges.iter().collect::<Vec<_>>()
     }
 
-    
+    #[pause(except(roles(Role::UnrestrictedValidateProof, Role::DAO)))]
+    pub fn validate_proof(&self, chain_kind: ChainKind, message: Vec<u8>) -> Promise {
+        let bridge_account_id = self.bridges.get(&chain_kind).unwrap_or_else(|| env::panic_str("BridgeForChainKindNotRegistered"));
+
+        ext_omni_prover_proxy::ext(bridge_account_id)
+            .with_static_gas(near_sdk::Gas::ONE_TERA * 50u64)
+            .with_attached_deposit(0)
+            .verify_proof(message)
+    }
 }
