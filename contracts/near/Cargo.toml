@@ -6,6 +6,7 @@ members = [
     "eth-types",
     "omni-prover/omni-prover",
     "omni-prover/rainbow-omni-prover-proxy",
+    "omni-prover/wormhole-omni-prover-proxy",
     "admin-controlled"
 ]
 

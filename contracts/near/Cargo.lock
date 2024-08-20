@@ -5105,6 +5105,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "wormhole-omni-prover-proxy"
+version = "2.0.0"
+dependencies = [
+ "borsh",
+ "near-plugins",
+ "near-sdk",
+ "rlp 0.5.2",
+]
+
+[[package]]
 name = "wyz"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
