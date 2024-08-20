@@ -62,6 +62,7 @@ impl WormholeOmniProverProxy {
         msg: Vec<u8>,
     ) -> Promise {
         let vaa = String::from_utf8(msg).unwrap_or_else(|_| env::panic_str("ErrorOnVaaParsing"));
+        env::log_str(&format!("{}", vaa));
 
         ext_prover::ext(self.prover_account.clone())
             .with_static_gas(VERIFY_LOG_ENTRY_GAS)
