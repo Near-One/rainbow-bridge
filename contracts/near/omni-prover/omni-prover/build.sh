@@ -22,11 +22,11 @@ fi
 
 docker run \
      --rm \
-     --mount type=bind,source=$DIR/..,target=/host \
+     --mount type=bind,source=$DIR/../..,target=/host \
      --cap-add=SYS_PTRACE --security-opt seccomp=unconfined $userflag \
-     -w /host/eth-prover \
+     -w /host/omni-prover/omni-prover \
      -e RUSTFLAGS='-C link-arg=-s' \
      nearprotocol/contract-builder$tag \
      /bin/bash -c "rustup target add wasm32-unknown-unknown; cargo build --target wasm32-unknown-unknown --release"
 
-cp $DIR/../target/wasm32-unknown-unknown/release/eth_prover.wasm $DIR/../res/
+cp $DIR/../../target/wasm32-unknown-unknown/release/omni_prover.wasm $DIR/../../res/
