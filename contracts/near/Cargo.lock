@@ -2893,7 +2893,15 @@ dependencies = [
  "borsh",
  "near-plugins",
  "near-sdk",
+ "omni-types",
  "rlp 0.5.2",
+]
+
+[[package]]
+name = "omni-types"
+version = "2.0.0"
+dependencies = [
+ "near-sdk",
 ]
 
 [[package]]

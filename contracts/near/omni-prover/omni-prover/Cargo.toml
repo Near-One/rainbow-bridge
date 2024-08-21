@@ -12,3 +12,4 @@ near-sdk.workspace = true
 borsh.workspace = true
 rlp.workspace = true
 near-plugins.workspace = true
+omni-types = { path = "../omni-types" }
