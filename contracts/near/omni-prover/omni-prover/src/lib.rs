@@ -80,7 +80,7 @@ impl OmniProver {
         let bridge_account_id = self.bridges.get(&chain_kind).unwrap_or_else(|| env::panic_str("BridgeForChainKindNotRegistered"));
 
         ext_omni_prover_proxy::ext(bridge_account_id)
-            .with_static_gas(near_sdk::Gas::ONE_TERA * 50u64)
+            .with_static_gas(near_sdk::Gas::ONE_TERA * 200u64)
             .with_attached_deposit(0)
             .verify_proof(message)
     }
