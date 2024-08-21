@@ -12,7 +12,7 @@ pub trait OmniProverProxy {
     fn verify_proof(
         &self,
         msg: Vec<u8>,
-    ) -> BridgeMessage;
+    ) -> Option<BridgeMessage>;
 }
 
 #[derive(AccessControlRole, Deserialize, Serialize, Copy, Clone)]

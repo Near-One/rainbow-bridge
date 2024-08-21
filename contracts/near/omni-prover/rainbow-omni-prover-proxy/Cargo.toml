@@ -12,3 +12,8 @@ near-sdk.workspace = true
 borsh.workspace = true
 rlp.workspace = true
 near-plugins.workspace = true
+
+omni-types = { path = "../omni-types" }
+bridge-common = { git = "https://github.com/Near-One/rainbow-token-connector.git" }
+ethabi = "12.0.0"
+hex = "0.4.2"
