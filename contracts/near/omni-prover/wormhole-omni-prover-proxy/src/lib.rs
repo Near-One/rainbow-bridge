@@ -5,6 +5,14 @@ use near_plugins::{
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{AccountId, Gas, env, ext_contract, near_bindgen, PanicOnDefault, Promise, PromiseError};
+use omni_types::{OmniAddress, BridgeMessage};
+
+mod byte_utils;
+mod parsed_vaa;
+
+use crate::byte_utils::{
+    ByteUtils,
+};
 
 /// Gas to call verify_log_entry on prover.
 pub const VERIFY_LOG_ENTRY_GAS: Gas = Gas(Gas::ONE_TERA.0 * 50);
@@ -66,23 +74,41 @@ impl WormholeOmniProverProxy {
 
         ext_prover::ext(self.prover_account.clone())
             .with_static_gas(VERIFY_LOG_ENTRY_GAS)
-            .verify_vaa(vaa)
+            .verify_vaa(vaa.clone())
             .then(
                 Self::ext(env::current_account_id())
                     .with_static_gas(VERIFY_LOG_ENTRY_GAS)
-                    .verify_vaa_callback()
+                    .verify_vaa_callback(vaa)
             )
     }
 
     #[private]
     pub fn verify_vaa_callback(
         &mut self,
+        vaa: String,
         #[callback_result] gov_idx: Result<u32, PromiseError>,
-    ) -> bool {
+    ) -> Option<BridgeMessage> {
         if gov_idx.is_err() {
-            return false;
+            return None;
         }
 
-        return true;
+        let h = hex::decode(vaa).expect("invalidVaa");
+        let parsed_vaa = parsed_vaa::ParsedVAA::parse(&h);
+        let data: &[u8] = &parsed_vaa.payload[1..];
+
+        let amount = data.get_u256(0);
+        let token_address = data.get_bytes32(32).to_vec();
+        let token_chain = data.get_u16(64);
+        let recipient = data.get_bytes32(66).to_vec();
+        let recipient_chain = data.get_u16(98);
+
+        
+
+        return Some(BridgeMessage{
+            token_id: OmniAddress{chain: "near".to_string(), account: "".to_string()},
+            sender: OmniAddress{chain: "eth".to_string(), account: "".to_string()},
+            receiver: OmniAddress{chain: "near".to_string(), account: "".to_string()},
+            amount: 0
+        });
     }
 }

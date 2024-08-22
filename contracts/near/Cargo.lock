@@ -5249,8 +5249,10 @@ name = "wormhole-omni-prover-proxy"
 version = "2.0.0"
 dependencies = [
  "borsh",
+ "hex 0.4.3",
  "near-plugins",
  "near-sdk",
+ "omni-types",
  "rlp 0.5.2",
 ]
 
