@@ -11,7 +11,7 @@ jobs:
     steps:
 
       - name: Install LFS
-        run: apt-get install git-lfs
+        run: apt-get install git-lfs && echo "Print machine ip" && ip a && whoami && ls
 
       - name: Clone the repository
         uses: actions/checkout@v3
