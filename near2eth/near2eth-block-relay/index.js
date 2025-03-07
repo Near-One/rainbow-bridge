@@ -362,6 +362,7 @@ class Near2EthRelay {
         console.log(`Chain height: ${status.sync_info.latest_block_height} Sleeping for ${delay} seconds.`)
         await sleep(1000 * delay)
       } catch (e) {
+        nextBlockSelection.clean()
         console.log('Error', e)
         await sleep(1000 * errorDelay)
       }
