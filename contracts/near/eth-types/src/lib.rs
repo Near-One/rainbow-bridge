@@ -45,7 +45,7 @@ impl TreeHash for H256 {
     }
 
     fn tree_hash_root(&self) -> tree_hash::Hash256 {
-        (*self).0
+        (*self).0.0.into()
     }
 }
 

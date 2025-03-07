@@ -66,7 +66,7 @@ impl From<HeaderUpdate> for ExtendedBeaconBlockHeader {
         let root = item.beacon_header.tree_hash_root();
         ExtendedBeaconBlockHeader {
             header: item.beacon_header,
-            beacon_block_root: H256(root),
+            beacon_block_root: H256(root.0.into()),
             execution_block_hash: item.execution_block_hash,
         }
     }

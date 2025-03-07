@@ -209,7 +209,7 @@ pub fn compute_domain(
     domain[0..4].copy_from_slice(&domain_constant);
     domain[4..].copy_from_slice(
         fork_data_root
-            .as_bytes()
+            .as_slice()
             .get(..28)
             .expect("fork has is 32 bytes so first 28 bytes should exist"),
     );
@@ -223,7 +223,9 @@ pub fn compute_signing_root(object_root: H256, domain: H256) -> H256 {
             object_root,
             domain,
         }
-        .tree_hash_root(),
+        .tree_hash_root()
+        .0
+        .into(),
     )
 }
 

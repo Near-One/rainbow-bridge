@@ -1,7 +1,6 @@
-use ethereum_types::H256;
 use merkle_proof::MerkleTree;
 use tree_hash::TreeHash;
-use types::{BeaconBlockBody, BeaconState, ExecutionPayload, MainnetEthSpec};
+use types::{BeaconBlockBody, BeaconState, ExecutionPayload, Hash256, MainnetEthSpec};
 
 /// `BeaconBlockBodyMerkleTree` is built on the `BeaconBlockBody` data structure,
 /// where the leaves of the Merkle Tree are the hashes of the
@@ -14,40 +13,8 @@ impl BeaconBlockBodyMerkleTree {
     pub const BEACON_BLOCK_BODY_TREE_DEPTH: usize = 4;
 
     pub fn new(beacon_block_body: &BeaconBlockBody<MainnetEthSpec>) -> Self {
-        let leaves: [H256; Self::BEACON_BLOCK_BODY_TREE_NUM_LEAVES] = [
-            beacon_block_body.randao_reveal().tree_hash_root(),
-            beacon_block_body.eth1_data().tree_hash_root(),
-            beacon_block_body.graffiti().tree_hash_root(),
-            beacon_block_body.proposer_slashings().tree_hash_root(),
-            beacon_block_body.attester_slashings().tree_hash_root(),
-            beacon_block_body.attestations().tree_hash_root(),
-            beacon_block_body.deposits().tree_hash_root(),
-            beacon_block_body.voluntary_exits().tree_hash_root(),
-            if let Ok(sync_aggregate) = beacon_block_body.sync_aggregate() {
-                sync_aggregate.tree_hash_root()
-            } else {
-                H256::zero()
-            },
-            if let Ok(execution_payload) = beacon_block_body.execution_payload() {
-                execution_payload.tree_hash_root()
-            } else {
-                H256::zero()
-            },
-            if let Ok(bls_to_execution_changes) = beacon_block_body.bls_to_execution_changes() {
-                bls_to_execution_changes.tree_hash_root()
-            } else {
-                H256::zero()
-            },
-
-            if let Ok(blob_kzg_commitments) = beacon_block_body.blob_kzg_commitments() {
-                blob_kzg_commitments.tree_hash_root()
-            } else {
-                H256::zero()
-            }
-        ];
-
         Self(MerkleTree::create(
-            &leaves,
+            &beacon_block_body.to_ref().body_merkle_leaves(), // Verify if it can be replaced with `block_body_merkle_proof`
             Self::BEACON_BLOCK_BODY_TREE_DEPTH,
         ))
     }
@@ -64,7 +31,7 @@ pub struct ExecutionPayloadMerkleTree(pub MerkleTree);
 impl ExecutionPayloadMerkleTree {
     pub fn new(execution_payload: &ExecutionPayload<MainnetEthSpec>) -> Self {
         let mut depth: usize = 4;
-        let mut leaves: Vec<H256> = vec![
+        let mut leaves: Vec<_> = vec![
             execution_payload.parent_hash().tree_hash_root(),
             execution_payload.fee_recipient().tree_hash_root(),
             execution_payload.state_root().tree_hash_root(),
@@ -82,7 +49,7 @@ impl ExecutionPayloadMerkleTree {
             if let Ok(withdrawals) = execution_payload.withdrawals() {
                 withdrawals.tree_hash_root()
             } else {
-                H256::zero()
+                Hash256::ZERO
             },
         ];
 
@@ -106,7 +73,7 @@ impl BeaconStateMerkleTree {
     pub const TREE_DEPTH: usize = 5;
 
     pub fn new(beacon_state: &BeaconState<MainnetEthSpec>) -> Self {
-        let leaves: [H256; Self::TREE_NUM_LEAVES] = [
+        let leaves: [_; Self::TREE_NUM_LEAVES] = [
             beacon_state.genesis_time().tree_hash_root(),
             beacon_state.genesis_validators_root().tree_hash_root(),
             beacon_state.slot().tree_hash_root(),
@@ -125,12 +92,12 @@ impl BeaconStateMerkleTree {
             if let Ok(previous_epoch_participation) = beacon_state.previous_epoch_participation() {
                 previous_epoch_participation.tree_hash_root()
             } else {
-                H256::zero()
+                Hash256::ZERO
             },
             if let Ok(current_epoch_participation) = beacon_state.current_epoch_participation() {
                 current_epoch_participation.tree_hash_root()
             } else {
-                H256::zero()
+                Hash256::ZERO
             },
             beacon_state.justification_bits().tree_hash_root(),
             beacon_state
@@ -141,41 +108,41 @@ impl BeaconStateMerkleTree {
             if let Ok(inactivity_scores) = beacon_state.inactivity_scores() {
                 inactivity_scores.tree_hash_root()
             } else {
-                H256::zero()
+                Hash256::ZERO
             },
             if let Ok(current_sync_committee) = beacon_state.current_sync_committee() {
                 current_sync_committee.tree_hash_root()
             } else {
-                H256::zero()
+                Hash256::ZERO
             },
             if let Ok(next_sync_committee) = beacon_state.next_sync_committee() {
                 next_sync_committee.tree_hash_root()
             } else {
-                H256::zero()
+                Hash256::ZERO
             },
             if let Ok(latest_execution_payload_header) =
                 beacon_state.latest_execution_payload_header()
             {
                 latest_execution_payload_header.tree_hash_root()
             } else {
-                H256::zero()
+                Hash256::ZERO
             },
             if let Ok(next_withdrawal_index) = beacon_state.next_withdrawal_index() {
                 next_withdrawal_index.tree_hash_root()
             } else {
-                H256::zero()
+                Hash256::ZERO
             },
             if let Ok(next_withdrawal_validator_index) =
                 beacon_state.next_withdrawal_validator_index()
             {
                 next_withdrawal_validator_index.tree_hash_root()
             } else {
-                H256::zero()
+                Hash256::ZERO
             },
             if let Ok(historical_summaries) = beacon_state.historical_summaries() {
                 historical_summaries.tree_hash_root()
             } else {
-                H256::zero()
+                Hash256::ZERO
             },
         ];
 
