@@ -457,6 +457,8 @@ impl Eth2Client {
                         .header_update
                         .beacon_header
                         .tree_hash_root()
+                        .0
+                        .into()
                 ),
                 &update.finality_update.finality_branch,
                 FINALITY_TREE_DEPTH.try_into().unwrap(),
@@ -480,7 +482,13 @@ impl Eth2Client {
                 .unwrap_or_else(|| env::panic_str("The sync committee update is missed"));
             require!(
                 verify_merkle_proof(
-                    H256(sync_committee_update.next_sync_committee.tree_hash_root()),
+                    H256(
+                        sync_committee_update
+                            .next_sync_committee
+                            .tree_hash_root()
+                            .0
+                            .into()
+                    ),
                     &sync_committee_update.next_sync_committee_branch,
                     SYNC_COMMITTEE_TREE_DEPTH.try_into().unwrap(),
                     SYNC_COMMITTEE_TREE_INDEX.try_into().unwrap(),
