@@ -1,9 +1,6 @@
 use crate::beacon_block_body_merkle_tree::BeaconStateMerkleTree;
 use crate::beacon_rpc_client::BeaconRPCClient;
-use crate::errors::{
-    ErrorOnUnwrapSignatureBit, MerkleTreeError, MissNextSyncCommittee, MissSyncAggregationError,
-    NoBlockForSlotError,
-};
+use crate::errors::{ErrorOnUnwrapSignatureBit, MerkleTreeError, MissAttestationsError, MissNextSyncCommittee, MissSyncAggregationError, NoBlockForSlotError};
 use crate::execution_block_proof::ExecutionBlockProof;
 use eth_types::eth2::{
     FinalizedHeaderUpdate, HeaderUpdate, LightClientUpdate, SignatureBytes, SyncCommittee,
@@ -25,14 +22,12 @@ impl HandMadeFinalityLightClientUpdate {
         attested_slot: u64,
         include_next_sync_committee: bool,
     ) -> Result<LightClientUpdate, Box<dyn Error>> {
-        panic!("FIX ME");
-        let signature_slot= 0;
-        // let (attested_slot, signature_slot) =
-        //     Self::get_attested_slot_with_enough_sync_committee_bits_sum(
-        //         beacon_rpc_client,
-        //         attested_slot,
-        //     )?;
-        // trace!(target: "relay", "New attested slot = {} and signature slot = {}", attested_slot, signature_slot);
+        let (attested_slot, signature_slot) =
+             Self::get_attested_slot_with_enough_sync_committee_bits_sum(
+                 beacon_rpc_client,
+                 attested_slot,
+             )?;
+        trace!(target: "relay", "New attested slot = {} and signature slot = {}", attested_slot, signature_slot);
         let beacon_state = beacon_rpc_client
             .get_beacon_state(&format!("{}", attested_slot))?;
 
@@ -88,65 +83,65 @@ impl HandMadeFinalityLightClientUpdate {
 }
 
 impl HandMadeFinalityLightClientUpdate {
-    // FIX me
-    // fn get_attested_slot_with_enough_sync_committee_bits_sum(
-    //     beacon_rpc_client: &BeaconRPCClient,
-    //     attested_slot: u64,
-    // ) -> Result<(u64, u64), Box<dyn Error>> {
-    //     let mut current_attested_slot = attested_slot;
-    //     loop {
-    //         let signature_slot = beacon_rpc_client
-    //             .get_non_empty_beacon_block_header(current_attested_slot + 1)?
-    //             .slot
-    //             .into();
-    //         let signature_beacon_body = beacon_rpc_client
-    //             .get_beacon_block_body_for_block_id(&format!("{}", signature_slot))?;
-    //         let sync_aggregate = signature_beacon_body
-    //             .sync_aggregate()
-    //             .map_err(|_| MissSyncAggregationError)?;
-    //         let sync_committee_bits: [u8; 64] = Self::get_sync_committee_bits(sync_aggregate)?;
-    //         let sync_committee_bits_sum: u32 = sync_committee_bits
-    //             .into_iter()
-    //             .map(|x| x.count_ones())
-    //             .sum();
-    //         if sync_committee_bits_sum * 3 < (64 * 8 * 2) {
-    //             current_attested_slot = signature_slot;
-    //             continue;
-    //         }
+    fn get_attested_slot_with_enough_sync_committee_bits_sum(
+         beacon_rpc_client: &BeaconRPCClient,
+         attested_slot: u64,
+    ) -> Result<(u64, u64), Box<dyn Error>> {
+         let mut current_attested_slot = attested_slot;
+         loop {
+             let signature_slot = beacon_rpc_client
+                 .get_non_empty_beacon_block_header(current_attested_slot + 1)?
+                 .slot
+                 .into();
+             let signature_beacon_body = beacon_rpc_client
+                 .get_beacon_block_body_for_block_id(&format!("{}", signature_slot))?;
+             let sync_aggregate = signature_beacon_body
+                 .sync_aggregate()
+                 .map_err(|_| MissSyncAggregationError)?;
+             let sync_committee_bits: [u8; 64] = Self::get_sync_committee_bits(sync_aggregate)?;
+             let sync_committee_bits_sum: u32 = sync_committee_bits
+                 .into_iter()
+                 .map(|x| x.count_ones())
+                 .sum();
+             if sync_committee_bits_sum * 3 < (64 * 8 * 2) {
+                 current_attested_slot = signature_slot;
+                 continue;
+             }
 
-    //         if signature_beacon_body.attestations().is_empty() {
-    //             current_attested_slot = signature_slot;
-    //             continue;
-    //         }
+             if signature_beacon_body.attestations_base().map_err(|_| MissAttestationsError)?.is_empty() {
+                 current_attested_slot = signature_slot;
+                 continue;
+             }
 
-    //         let mut attested_slots: Vec<u64> = signature_beacon_body
-    //             .attestations()
-    //             .into_iter()
-    //             .map(|attestation| attestation.data.slot.as_u64())
-    //             .collect();
-    //         attested_slots.sort();
+             let mut attested_slots: Vec<u64> = signature_beacon_body
+                 .attestations_base()
+                 .map_err(|_| MissAttestationsError)?
+                 .into_iter()
+                 .map(|attestation| attestation.data.slot.as_u64())
+                 .collect();
+             attested_slots.sort();
 
-    //         for i in (0..attested_slots.len()).rev() {
-    //             if (i == attested_slots.len() - 1 || attested_slots[i + 1] != attested_slots[i])
-    //                 && attested_slots[i] >= attested_slot
-    //             {
-    //                 current_attested_slot = attested_slots[i];
+             for i in (0..attested_slots.len()).rev() {
+                 if (i == attested_slots.len() - 1 || attested_slots[i + 1] != attested_slots[i])
+                     && attested_slots[i] >= attested_slot
+                 {
+                     current_attested_slot = attested_slots[i];
 
-    //                 if let Err(err) = beacon_rpc_client
-    //                     .get_beacon_block_header_for_block_id(&format!("{}", current_attested_slot))
-    //                 {
-    //                     if let None = err.downcast_ref::<NoBlockForSlotError>() {
-    //                         return Err(err);
-    //                     }
-    //                 } else {
-    //                     return Ok((current_attested_slot, signature_slot));
-    //                 }
-    //             }
-    //         }
+                     if let Err(err) = beacon_rpc_client
+                         .get_beacon_block_header_for_block_id(&format!("{}", current_attested_slot))
+                     {
+                         if let None = err.downcast_ref::<NoBlockForSlotError>() {
+                             return Err(err);
+                         }
+                     } else {
+                         return Ok((current_attested_slot, signature_slot));
+                     }
+                 }
+             }
 
-    //         current_attested_slot = signature_slot;
-    //     }
-    // }
+             current_attested_slot = signature_slot;
+         }
+    }
 
     fn get_state_from_file(file_name: &str) -> Result<BeaconState<MainnetEthSpec>, Box<dyn Error>> {
         let beacon_state_json: String =

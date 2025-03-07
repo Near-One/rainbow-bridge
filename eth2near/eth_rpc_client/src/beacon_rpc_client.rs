@@ -774,7 +774,7 @@ mod tests {
             std::fs::read_to_string(config.path_to_block).expect("Unable to read file");
         let v: Value = serde_json::from_str(&block_json_str).unwrap();
         assert_eq!(
-            beacon_block_body.attestations().len(),
+            beacon_block_body.attestations_base().unwrap().len(),
             v["data"]["message"]["body"]["attestations"]
                 .as_array()
                 .unwrap()
@@ -964,5 +964,20 @@ mod tests {
             serde_json::to_string(&sync_committe_update.next_sync_committee_branch[1]).unwrap(),
             format!("{}", v[0]["data"]["next_sync_committee_branch"][1])
         );
+    }
+
+    #[test]
+    fn test_fetch_light_client_update_test() {
+        let config = get_test_config();
+        println!("Config: {:?}", config);
+
+        let beacon_rpc_client = BeaconRPCClient::new(
+            &config.beacon_endpoint,
+            TIMEOUT_SECONDS,
+            TIMEOUT_STATE_SECONDS,
+            Some(BeaconRPCVersion::V1_5),
+        );
+
+        let light_client_update = beacon_rpc_client.get_light_client_update(870).unwrap();
     }
 }
