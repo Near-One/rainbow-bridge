@@ -3,6 +3,7 @@ name = "eth2-client"
 version = "0.4.0"
 authors = ["Aurora <hello@aurora.dev>"]
 edition = "2021"
+repository.workspace = true
 
 # fields to configure build with WASM reproducibility, according to specs
 # in https://github.com/near/NEPs/blob/master/neps/nep-0330.md

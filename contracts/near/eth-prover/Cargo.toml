@@ -3,6 +3,7 @@ name = "eth-prover"
 version = "2.0.0"
 authors = ["Near Inc <hello@nearprotocol.com>"]
 edition = "2021"
+repository.workspace = true
 
 # fields to configure build with WASM reproducibility, according to specs
 # in https://github.com/near/NEPs/blob/master/neps/nep-0330.md
