@@ -12,13 +12,6 @@ pub const MIN_SYNC_COMMITTEE_PARTICIPANTS: u64 = 1;
 pub const SLOTS_PER_EPOCH: u64 = 32;
 pub const DOMAIN_SYNC_COMMITTEE: DomainType = [0x07, 0x00, 0x00, 0x00];
 
-pub const FINALIZED_ROOT_INDEX: u32 = 105;
-pub const NEXT_SYNC_COMMITTEE_INDEX: u32 = 55;
-pub const FINALITY_TREE_DEPTH: u32 = floorlog2(FINALIZED_ROOT_INDEX);
-pub const FINALITY_TREE_INDEX: u32 = get_subtree_index(FINALIZED_ROOT_INDEX);
-pub const SYNC_COMMITTEE_TREE_DEPTH: u32 = floorlog2(NEXT_SYNC_COMMITTEE_INDEX);
-pub const SYNC_COMMITTEE_TREE_INDEX: u32 = get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX);
-
 pub struct ProofSize {
     pub beacon_block_body_tree_depth: usize,
     pub l1_beacon_block_body_tree_execution_payload_index: usize,
@@ -26,6 +19,13 @@ pub struct ProofSize {
     pub l1_beacon_block_body_proof_size: usize,
     pub l2_execution_payload_proof_size: usize,
     pub execution_proof_size: usize,
+}
+
+pub struct GeneralizedIndex {
+    pub finality_tree_depth: u32,
+    pub finality_tree_index: u32,
+    pub sync_committee_tree_depth: u32,
+    pub sync_committee_tree_index: u32,
 }
 
 #[derive(PartialEq, BorshSerialize, BorshDeserialize)]
@@ -153,6 +153,31 @@ impl NetworkConfig {
             l1_beacon_block_body_proof_size: 4,
             l2_execution_payload_proof_size: 4,
             execution_proof_size: 8,
+        }
+    }
+
+    pub const fn get_generalized_index_constants(&self, slot: Slot) -> GeneralizedIndex {
+        pub const FINALIZED_ROOT_INDEX: u32 = 105;
+        pub const NEXT_SYNC_COMMITTEE_INDEX: u32 = 55;
+        pub const FINALIZED_ROOT_INDEX_ELECTRA: u32 = 169;
+        pub const NEXT_SYNC_COMMITTEE_INDEX_ELECTRA: u32 = 87;
+
+        let epoch = compute_epoch_at_slot(slot);
+
+        if epoch >= self.electra_fork_epoch {
+            GeneralizedIndex {
+                finality_tree_depth: floorlog2(FINALIZED_ROOT_INDEX_ELECTRA),
+                finality_tree_index: get_subtree_index(FINALIZED_ROOT_INDEX_ELECTRA),
+                sync_committee_tree_depth: floorlog2(NEXT_SYNC_COMMITTEE_INDEX_ELECTRA),
+                sync_committee_tree_index: get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX_ELECTRA),
+            }
+        } else {
+            GeneralizedIndex {
+                finality_tree_depth: floorlog2(FINALIZED_ROOT_INDEX),
+                finality_tree_index: get_subtree_index(FINALIZED_ROOT_INDEX),
+                sync_committee_tree_depth: floorlog2(NEXT_SYNC_COMMITTEE_INDEX),
+                sync_committee_tree_index: get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX),
+            }
         }
     }
 

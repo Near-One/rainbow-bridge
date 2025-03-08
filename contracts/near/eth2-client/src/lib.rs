@@ -447,8 +447,13 @@ impl Eth2Client {
             )
         );
 
+        let config = NetworkConfig::new(&self.network);
+
         // Verify that the `finality_branch`, confirms `finalized_header`
         // to match the finalized checkpoint root saved in the state of `attested_header`.
+        let generalized_index = config.get_generalized_index_constants(
+            update.finality_update.header_update.beacon_header.slot,
+        );
         require!(
             verify_merkle_proof(
                 H256(
@@ -461,13 +466,13 @@ impl Eth2Client {
                         .into()
                 ),
                 &update.finality_update.finality_branch,
-                FINALITY_TREE_DEPTH.try_into().unwrap(),
-                FINALITY_TREE_INDEX.try_into().unwrap(),
+                generalized_index.finality_tree_depth.try_into().unwrap(),
+                generalized_index.finality_tree_index.try_into().unwrap(),
                 update.attested_beacon_header.state_root
             ),
             "Invalid finality proof"
         );
-        let config = NetworkConfig::new(&self.network);
+
         require!(
             config.validate_beacon_block_header_update(&update.finality_update.header_update),
             "Invalid execution block hash proof"
@@ -476,6 +481,9 @@ impl Eth2Client {
         // Verify that the `next_sync_committee`, if present, actually is the next sync committee saved in the
         // state of the `active_header`
         if update_period != finalized_period {
+            let generalized_index =
+                config.get_generalized_index_constants(update.attested_beacon_header.slot);
+
             let sync_committee_update = update
                 .sync_committee_update
                 .as_ref()
@@ -490,8 +498,14 @@ impl Eth2Client {
                             .into()
                     ),
                     &sync_committee_update.next_sync_committee_branch,
-                    SYNC_COMMITTEE_TREE_DEPTH.try_into().unwrap(),
-                    SYNC_COMMITTEE_TREE_INDEX.try_into().unwrap(),
+                    generalized_index
+                        .sync_committee_tree_depth
+                        .try_into()
+                        .unwrap(),
+                    generalized_index
+                        .sync_committee_tree_index
+                        .try_into()
+                        .unwrap(),
                     update.attested_beacon_header.state_root
                 ),
                 "Invalid next sync committee proof"
