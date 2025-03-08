@@ -1,6 +1,6 @@
 [package]
 name = "ethereum_hashing"
-version = "1.0.0-beta.2"
+version = "0.7.0"
 authors = ["Aurora <hello@aurora.dev>"]
 edition = "2021"
 license = "Apache-2.0"

@@ -59,7 +59,7 @@ impl EthClientContractTrait for DaoEthClientContract {
         // Submmit new proposal
         let (proposal_id, execution_outcome) =
             self.dao_contract.submit_light_client_update_proposal(
-                near_sdk::AccountId::from_str(&self.eth_client_contract.get_account_id())?,
+                near_sdk::AccountId::from_str(self.eth_client_contract.get_account_id().as_str())?,
                 light_client_update,
             )?;
 

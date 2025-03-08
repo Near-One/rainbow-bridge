@@ -11,11 +11,22 @@ members = [
 ]
 
 [workspace.dependencies]
-bls = { git = "https://github.com/sigp/lighthouse.git", tag = "v4.6.0-rc.0" }
-types =  { git = "https://github.com/sigp/lighthouse.git", tag = "v4.6.0-rc.0" }
-merkle_proof = { git = "https://github.com/sigp/lighthouse.git", tag = "v4.6.0-rc.0" }
-tree_hash = "0.5"
-tree_hash_derive = "0.5"
-ethereum_ssz = "0.5"
-ethereum_hashing = "1.0.0-beta.2"
+bls = { git = "https://github.com/Near-One/lighthouse", branch = "v7.0.0-beta.2-pub-block-tree" }
+types =  { git = "https://github.com/Near-One/lighthouse", branch = "v7.0.0-beta.2-pub-block-tree" }
+merkle_proof = { git = "https://github.com/Near-One/lighthouse", branch = "v7.0.0-beta.2-pub-block-tree" }
+tree_hash = "0.8"
+tree_hash_derive = "0.8"
+ethereum_ssz = "0.7"
+ethereum_hashing = "0.7.0"
 smallvec = "1.11.0"
+tokio = { version = "1.27", features = ["full"] }
+near-jsonrpc-client = "0.16.0"
+near-crypto = "0.29.1"
+near-primitives = "0.29.1"
+near-chain-configs = "0.29.1"
+near-jsonrpc-primitives = "0.29.1"
+
+[patch]
+[patch.crates-io]
+parity-secp256k1 = { git = "https://github.com/paritytech/rust-secp256k1" }
+

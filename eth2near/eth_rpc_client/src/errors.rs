@@ -48,6 +48,20 @@ impl Display for MissSyncAggregationError {
 impl Error for MissSyncAggregationError {}
 
 #[derive(Debug)]
+pub struct MissAttestationsError;
+
+impl Display for MissAttestationsError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Attestations not found."
+        )
+    }
+}
+
+impl Error for MissAttestationsError {}
+
+#[derive(Debug)]
 pub struct NoBlockForSlotError;
 
 impl Display for NoBlockForSlotError {

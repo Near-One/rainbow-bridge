@@ -1,9 +1,9 @@
 use crate::contract_wrapper_trait::ContractWrapper;
 use crate::utils;
-use near_crypto::InMemorySigner;
+use near_crypto::{InMemorySigner, Signer};
 use near_jsonrpc_client::{methods, JsonRpcClient};
 use near_jsonrpc_primitives::types::query::QueryResponseKind;
-use near_primitives::transaction::{Action, FunctionCallAction, Transaction};
+use near_primitives::transaction::{Action, FunctionCallAction, Transaction, TransactionV0};
 use near_primitives::types::{AccountId, BlockReference, Finality, FunctionArgs};
 use near_primitives::views::{FinalExecutionOutcomeView, QueryRequest};
 use near_sdk::{Balance, Gas};
@@ -24,7 +24,7 @@ pub struct NearContractWrapper {
     contract_account: AccountId,
 
     /// Account that signs the transactions
-    signer: InMemorySigner,
+    signer: Signer,
 }
 
 impl NearContractWrapper {
@@ -106,7 +106,7 @@ impl ContractWrapper for NearContractWrapper {
     }
 
     fn get_signer_account_id(&self) -> AccountId {
-        self.signer.account_id.clone()
+        self.signer.get_account_id()
     }
 
     fn call_view_function(
@@ -148,8 +148,8 @@ impl ContractWrapper for NearContractWrapper {
             rt.block_on(self.client.call(methods::query::RpcQueryRequest {
                 block_reference: BlockReference::latest(),
                 request: near_primitives::views::QueryRequest::ViewAccessKey {
-                    account_id: self.signer.account_id.clone(),
-                    public_key: self.signer.public_key.clone(),
+                    account_id: self.signer.get_account_id(),
+                    public_key: self.signer.public_key(),
                 },
             }))?;
 
@@ -168,22 +168,22 @@ impl ContractWrapper for NearContractWrapper {
         let mut actions = Vec::new();
 
         for i in 0..method_name.len() {
-            actions.push(Action::FunctionCall(FunctionCallAction {
+            actions.push(Action::FunctionCall(Box::new(FunctionCallAction {
                 method_name: method_name[i].clone(),
                 args: args[i].clone(),
                 gas: attached_gas_per_promise_in_batch.0,
                 deposit: deposit.as_ref().map(|d| d[i]).unwrap_or(0),
-            }));
+            })));
         }
 
-        let transaction = Transaction {
-            signer_id: self.signer.account_id.clone(),
-            public_key: self.signer.public_key.clone(),
+        let transaction = Transaction::V0(TransactionV0 {
+            signer_id: self.signer.get_account_id().clone(),
+            public_key: self.signer.public_key().clone(),
             nonce: current_nonce + 1,
             receiver_id: self.contract_account.clone(),
             block_hash: access_key_query_response.block_hash,
             actions,
-        };
+        });
 
         let request = methods::broadcast_tx_commit::RpcBroadcastTxCommitRequest {
             signed_transaction: transaction.sign(&self.signer),

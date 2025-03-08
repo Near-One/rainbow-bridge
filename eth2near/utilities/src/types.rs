@@ -25,6 +25,7 @@ pub struct BlockHeader {
     pub blob_gas_used: Option<U64>,
     pub excess_blob_gas: Option<U64>,
     pub parent_beacon_block_root: Option<H256>,
+    pub requests_hash: Option<H256>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
