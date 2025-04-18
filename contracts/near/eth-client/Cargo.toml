@@ -9,7 +9,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 eth-types = { path = "../eth-types", default-features = false }
-near-sdk = "4.1.1"
+near-sdk = "5.12.0"
 borsh = "0.9.3"
 rlp = "0.5.2"
 primal = "0.2.3"
@@ -17,7 +17,7 @@ arrutil = "0.1.2"
 ethash = { git = "https://github.com/aurora-is-near/rust-ethash", tag = "0.2.0", default-features = false }
 hex = "0.4.0"
 rustc-hex = "2.1.0"
-near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", tag = "v0.1.0" }
+near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", tag = "v0.5.0" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # serde's Serialize and Deserialize traits are required for `near_bindgen` macro for non-wasm32 targets

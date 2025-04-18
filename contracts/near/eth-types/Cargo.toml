@@ -10,7 +10,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 near-sdk.workspace = true
-borsh.workspace = true
+borsh = "1.5.6"
 rlp.workspace = true
 rlp-derive.workspace = true
 ethereum-types.workspace = true

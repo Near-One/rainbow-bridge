@@ -69,7 +69,7 @@ pub enum Role {
     DAO,
 }
 
-#[near_bindgen]
+#[near]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Pausable, Upgradable)]
 #[access_control(role_type(Role))]
 #[pausable(manager_roles(Role::PauseManager))]
@@ -123,7 +123,7 @@ pub struct EthClient {
     paused: u128,
 }
 
-#[near_bindgen]
+#[near]
 impl EthClient {
     #[init]
     #[private]

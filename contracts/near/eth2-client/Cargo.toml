@@ -14,7 +14,7 @@ bls = { git = "https://github.com/aurora-is-near/lighthouse.git", optional = tru
 ethereum-types.workspace = true
 tree_hash.workspace = true
 near-sdk.workspace = true
-borsh.workspace = true
+borsh = "1.5.6"
 bitvec.workspace = true
 near-plugins.workspace = true
 

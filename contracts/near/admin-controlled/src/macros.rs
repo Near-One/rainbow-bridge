@@ -4,7 +4,7 @@ macro_rules! impl_admin_controlled {
         use admin_controlled::{AdminControlled as AdminControlledInner, Mask as MaskInner};
         use near_sdk as near_sdk_inner;
 
-        #[near_bindgen]
+        #[near]
         impl AdminControlledInner for $contract {
             #[result_serializer(borsh)]
             fn get_paused(&self) -> MaskInner {

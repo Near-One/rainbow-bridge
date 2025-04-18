@@ -12,9 +12,9 @@ use eth2_utility::consensus::*;
 use eth2_utility::types::*;
 use eth_types::eth2::*;
 use eth_types::{BlockHeader, H256};
-use near_sdk::collections::{LazyOption, LookupMap};
+use near_sdk::store::{LazyOption, LookupMap};
 use near_sdk::{
-    env, near_bindgen, require, AccountId, BorshStorageKey, PanicOnDefault, Promise, PublicKey,
+    env, near, require, AccountId, BorshStorageKey, PanicOnDefault, Promise, PublicKey,
 };
 use tree_hash::TreeHash;
 
@@ -50,12 +50,16 @@ pub enum Role {
     UnrestrictedSubmitLightClientUpdate,
     UnrestrictedSubmitExecutionHeader,
     DAO,
+    UnpauseManager,
 }
 
-#[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Pausable, Upgradable)]
+#[near(contract_state)]
+#[derive(PanicOnDefault, Pausable, Upgradable)]
 #[access_control(role_type(Role))]
-#[pausable(manager_roles(Role::PauseManager, Role::DAO))]
+#[pausable(
+    pause_roles(Role::PauseManager, Role::DAO),
+    unpause_roles(Role::UnpauseManager, Role::DAO)
+)]
 #[upgradable(access_control_roles(
     code_stagers(Role::UpgradableCodeStager, Role::DAO),
     code_deployers(Role::UpgradableCodeDeployer, Role::DAO),
@@ -95,7 +99,7 @@ pub struct Eth2Client {
     trusted_blocks_submitter: Option<AccountId>,
 }
 
-#[near_bindgen]
+#[near]
 impl Eth2Client {
     #[init]
     #[private]
@@ -142,15 +146,15 @@ impl Eth2Client {
             finalized_beacon_header: args.finalized_beacon_header,
             finalized_execution_header: LazyOption::new(
                 StorageKey::FinalizedExecutionHeader,
-                Some(&finalized_execution_header_info),
+                Some(finalized_execution_header_info),
             ),
             current_sync_committee: LazyOption::new(
                 StorageKey::CurrentSyncCommittee,
-                Some(&args.current_sync_committee),
+                Some(args.current_sync_committee),
             ),
             next_sync_committee: LazyOption::new(
                 StorageKey::NextSyncCommittee,
-                Some(&args.next_sync_committee),
+                Some(args.next_sync_committee),
             ),
             client_mode: ClientMode::SubmitLightClientUpdate,
             unfinalized_head_execution_header: None,
@@ -159,8 +163,8 @@ impl Eth2Client {
         };
 
         contract.finalized_execution_blocks.insert(
-            &args.finalized_execution_header.number,
-            &finalized_execution_header_hash,
+            args.finalized_execution_header.number,
+            finalized_execution_header_hash,
         );
 
         contract.acl_init_super_admin(env::predecessor_account_id());
@@ -175,16 +179,16 @@ impl Eth2Client {
     /// Returns finalized execution block number
     #[result_serializer(borsh)]
     pub fn last_block_number(&self) -> u64 {
-        self.finalized_execution_header.get().unwrap().block_number
+        self.finalized_execution_header.get().clone().unwrap().block_number
     }
 
     /// Returns finalized execution block hash
     #[result_serializer(borsh)]
     pub fn block_hash_safe(&self, #[serializer(borsh)] block_number: u64) -> Option<H256> {
-        if block_number > self.finalized_execution_header.get().unwrap().block_number {
+        if block_number > self.finalized_execution_header.get().clone().unwrap().block_number {
             return None;
         }
-        self.finalized_execution_blocks.get(&block_number)
+        self.finalized_execution_blocks.get(&block_number).copied()
     }
 
     /// Checks if the execution header is already submitted.
@@ -216,8 +220,8 @@ impl Eth2Client {
     pub fn get_light_client_state(&self) -> LightClientState {
         LightClientState {
             finalized_beacon_header: self.finalized_beacon_header.clone(),
-            current_sync_committee: self.current_sync_committee.get().unwrap(),
-            next_sync_committee: self.next_sync_committee.get().unwrap(),
+            current_sync_committee: self.current_sync_committee.get().clone().unwrap(),
+            next_sync_committee: self.next_sync_committee.get().clone().unwrap(),
         }
     }
 
@@ -277,14 +281,14 @@ impl Eth2Client {
 
         let insert_result = self
             .finalized_execution_blocks
-            .insert(&block_header.number, &block_hash);
+            .insert(block_header.number, block_hash);
 
         require!(
             insert_result.is_none(),
             format!("The block {:#?} already submitted!", &block_hash)
         );
 
-        let finalized_execution_header = self.finalized_execution_header.get().unwrap();
+        let finalized_execution_header = self.finalized_execution_header.get().clone().unwrap();
         // Apply gc
         if let Some(diff_between_unfinalized_head_and_tail) =
             self.get_diff_between_unfinalized_head_and_tail()
@@ -310,7 +314,7 @@ impl Eth2Client {
                 .get(&finalized_execution_header.block_number)
                 .unwrap();
             require!(
-                block_header.parent_hash == finalized_execution_header_hash,
+                block_header.parent_hash == *finalized_execution_header_hash,
                 "The chain cannot be closed"
             );
 
@@ -328,7 +332,7 @@ impl Eth2Client {
             );
 
             self.finalized_execution_header
-                .set(self.unfinalized_head_execution_header.as_ref().unwrap());
+                .set(Some(self.unfinalized_head_execution_header.as_ref().unwrap().clone()));
             self.unfinalized_tail_execution_header = None;
             self.unfinalized_head_execution_header = None;
             self.client_mode = ClientMode::SubmitLightClientUpdate;
@@ -597,9 +601,9 @@ impl Eth2Client {
 
         if update_period == finalized_period + 1 {
             self.current_sync_committee
-                .set(&self.next_sync_committee.get().unwrap());
+                .set(Some(self.next_sync_committee.get().clone().unwrap()));
             self.next_sync_committee
-                .set(&update.sync_committee_update.unwrap().next_sync_committee);
+                .set(Some(update.sync_committee_update.unwrap().next_sync_committee));
         }
 
         #[cfg(feature = "logs")]

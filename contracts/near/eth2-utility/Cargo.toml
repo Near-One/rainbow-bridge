@@ -13,7 +13,7 @@ ethereum-types.workspace = true
 tree_hash.workspace = true
 ethereum_hashing.workspace = true
 near-sdk.workspace = true
-borsh.workspace = true
+borsh = "1.5.6"
 bitvec.workspace = true
 
 [dev-dependencies]

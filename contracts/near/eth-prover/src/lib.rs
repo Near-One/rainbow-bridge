@@ -29,7 +29,7 @@ pub enum Role {
     DAO,
 }
 
-#[near_bindgen]
+#[near]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Pausable, Upgradable)]
 #[access_control(role_type(Role))]
 #[pausable(manager_roles(Role::PauseManager, Role::DAO))]
@@ -69,7 +69,7 @@ fn get_vec(data: &Rlp, pos: usize) -> Vec<u8> {
     data.at(pos).unwrap().as_val::<Vec<u8>>().unwrap()
 }
 
-#[near_bindgen]
+#[near]
 impl EthProver {
     #[init]
     #[private]
