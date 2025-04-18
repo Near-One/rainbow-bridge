@@ -17,7 +17,7 @@ panic = "abort"
 overflow-checks = true
 
 [workspace.dependencies]
-near-sdk = "4.1.1"
+near-sdk = { git = "https://github.com/near/near-sdk-rs.git", branch = "bls-support" }
 borsh = "0.9.3"
 rlp = "0.5.2"
 rlp-derive = "0.1.0"
