@@ -3,7 +3,6 @@ use crate::dao_types;
 use crate::utils::status_as_success_decoded;
 use eth_types::eth2::LightClientUpdate;
 use near_primitives::views::FinalExecutionOutcomeView;
-use near_sdk::borsh::BorshSerialize;
 use near_sdk::json_types::Base64VecU8;
 use near_sdk::{AccountId, Gas};
 use serde_json::json;
@@ -100,11 +99,11 @@ impl DAOContract {
         receiver_id: AccountId,
         update: LightClientUpdate,
     ) -> Result<(u64, FinalExecutionOutcomeView), Box<dyn Error>> {
-        let raw_update = update.try_to_vec()?;
+        let raw_update = borsh::to_vec(&update)?;
         let update_hash = near_primitives::hash::hash(&raw_update);
         let args = Base64VecU8::from(raw_update);
 
-        const GAS_FOR_SUBMIT_LIGHT_CLIENT_UPDATE: u64 = 270 * Gas::ONE_TERA.0;
+        const GAS_FOR_SUBMIT_LIGHT_CLIENT_UPDATE: u64 = Gas::from_tgas(270).as_gas();
         let action = dao_types::ActionCall {
             method_name: "submit_beacon_chain_light_client_update".to_string(),
             args,
@@ -144,7 +143,7 @@ mod tests {
         ExecutionOutcomeView, ExecutionOutcomeWithIdView, ExecutionStatusView,
         FinalExecutionOutcomeView, FinalExecutionStatus, SignedTransactionView,
     };
-    use near_sdk::{Balance, Gas};
+    use near_sdk::Gas;
     use serde_json::Value;
     use std::error::Error;
     use std::thread::sleep;
@@ -162,6 +161,7 @@ mod tests {
                 actions: vec![],
                 signature: Default::default(),
                 hash: Default::default(),
+                priority_fee: Default::default(),
             },
             transaction_outcome: ExecutionOutcomeWithIdView {
                 proof: vec![],

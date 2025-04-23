@@ -14,7 +14,7 @@ use eth_types::eth2::*;
 use eth_types::{BlockHeader, H256};
 use near_sdk::collections::{LazyOption, LookupMap};
 use near_sdk::{
-    env, near_bindgen, require, AccountId, BorshStorageKey, PanicOnDefault, Promise, PublicKey,
+    env, near, require, AccountId, BorshStorageKey, PanicOnDefault, Promise, PublicKey,
 };
 use tree_hash::TreeHash;
 
@@ -43,8 +43,8 @@ pub enum Role {
     DAO,
 }
 
-#[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Pausable, Upgradable)]
+#[near(contract_state)]
+#[derive(PanicOnDefault, Pausable, Upgradable)]
 #[access_control(role_type(Role))]
 #[pausable(manager_roles(Role::PauseManager, Role::DAO))]
 #[upgradable(access_control_roles(
@@ -86,7 +86,7 @@ pub struct Eth2Client {
     trusted_blocks_submitter: Option<AccountId>,
 }
 
-#[near_bindgen]
+#[near]
 impl Eth2Client {
     #[init]
     #[private]
@@ -552,7 +552,7 @@ impl Eth2Client {
             config.genesis_validators_root.into(),
         );
         let signing_root = compute_signing_root(
-            eth_types::H256(update.attested_beacon_header.tree_hash_root()),
+            eth_types::H256(update.attested_beacon_header.tree_hash_root().0.into()),
             domain,
         );
 

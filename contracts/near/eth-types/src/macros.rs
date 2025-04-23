@@ -32,16 +32,9 @@ macro_rules! arr_wrapper_impl_tree_hash_and_borsh {
 
         impl BorshDeserialize for $name {
             #[inline]
-            fn deserialize(buf: &mut &[u8]) -> Result<Self, Error> {
-                if buf.len() < $len {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::InvalidInput,
-                        "Unexpected length of input",
-                    ));
-                }
+            fn deserialize_reader<R: Read>(reader: &mut R) -> Result<Self, Error> {
                 let mut data = [0u8; $len];
-                data.copy_from_slice(&buf[..$len]);
-                *buf = &buf[$len..];
+                reader.read_exact(&mut data)?;
                 Ok($name(data.into()))
             }
         }
@@ -178,16 +171,9 @@ macro_rules! arr_ethereum_types_wrapper_impl_borsh_serde_ssz {
 
         impl BorshDeserialize for $name {
             #[inline]
-            fn deserialize(buf: &mut &[u8]) -> Result<Self, Error> {
-                if buf.len() < $len {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::InvalidInput,
-                        "Unexpected length of input",
-                    ));
-                }
+            fn deserialize_reader<R: Read>(reader: &mut R) -> Result<Self, Error> {
                 let mut data = [0u8; $len];
-                data.copy_from_slice(&buf[..$len]);
-                *buf = &buf[$len..];
+                reader.read_exact(&mut data)?;
                 Ok($name(data.into()))
             }
         }
@@ -223,6 +209,18 @@ macro_rules! arr_ethereum_types_wrapper_impl_borsh_serde_ssz {
                 } else {
                     Ok(bytes.into())
                 }
+            }
+        }
+
+        impl Ord for $name {
+            fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+                self.0.cmp(&other.0)
+            }
+        }
+
+        impl PartialOrd for $name {
+            fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+                Some(self.cmp(other))
             }
         }
 

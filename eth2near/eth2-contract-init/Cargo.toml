@@ -17,7 +17,7 @@ reqwest = { version = "0.12", features = ["blocking"] }
 serde_json = "1.0.74"
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.5.9"
-near-sdk = "4.1.1"
+near-sdk.workspace = true
 near-primitives.workspace = true
 eth2near-logger = { path = "../logger" }
 dotenv = "0.15.0"

@@ -25,6 +25,8 @@ near-crypto = "0.29.1"
 near-primitives = "0.29.1"
 near-chain-configs = "0.29.1"
 near-jsonrpc-primitives = "0.29.1"
+near-sdk = "5.12"
+borsh = "1"
 
 [patch]
 [patch.crates-io]

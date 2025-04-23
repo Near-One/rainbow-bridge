@@ -7,7 +7,7 @@ on:
 name: Contracts (NEAR)
 jobs:
   test:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:

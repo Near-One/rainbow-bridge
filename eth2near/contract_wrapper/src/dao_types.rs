@@ -173,9 +173,9 @@ pub enum ProposalKind {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub enum Vote {
-    Approve = 0x0,
-    Reject = 0x1,
-    Remove = 0x2,
+    Approve,
+    Reject,
+    Remove,
 }
 
 /// Proposal that are sent to this DAO.

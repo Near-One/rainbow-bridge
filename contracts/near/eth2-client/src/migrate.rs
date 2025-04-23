@@ -1,8 +1,6 @@
 use crate::*;
 use near_sdk::collections::UnorderedMap;
-use near_sdk::Balance;
 
-#[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Eth2ClientV1 {
     trusted_signer: Option<AccountId>,
@@ -16,14 +14,14 @@ pub struct Eth2ClientV1 {
     unfinalized_headers: UnorderedMap<H256, ExecutionHeaderInfo>,
     submitters: LookupMap<AccountId, u32>,
     max_submitted_blocks_by_account: u32,
-    min_storage_balance_for_submitter: Balance,
+    min_storage_balance_for_submitter: u128,
     finalized_beacon_header: ExtendedBeaconBlockHeader,
     finalized_execution_header: LazyOption<ExecutionHeaderInfo>,
     current_sync_committee: LazyOption<SyncCommittee>,
     next_sync_committee: LazyOption<SyncCommittee>,
 }
 
-#[near_bindgen]
+#[near]
 impl Eth2Client {
     #[private]
     #[init(ignore_state)]

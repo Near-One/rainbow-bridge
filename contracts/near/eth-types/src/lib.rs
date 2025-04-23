@@ -1,3 +1,4 @@
+use borsh::io::Read;
 use borsh::{BorshDeserialize, BorshSerialize};
 use derive_more::{
     Add, AddAssign, Display, Div, DivAssign, From, Into, Mul, MulAssign, Rem, RemAssign, Sub,
@@ -89,10 +90,10 @@ macro_rules! uint_declare_wrapper_and_serde {
 
         impl BorshDeserialize for $name {
             #[inline]
-            fn deserialize(buf: &mut &[u8]) -> Result<Self, Error> {
+            fn deserialize_reader<R: Read>(reader: &mut R) -> borsh::io::Result<Self> {
                 let mut data = [0u64; $len];
                 for i in 0..$len {
-                    data[i] = borsh::de::BorshDeserialize::deserialize(buf)?;
+                    data[i] = u64::deserialize_reader(reader)?;
                 }
                 Ok($name(ethereum_types::$name(data)))
             }

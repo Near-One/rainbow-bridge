@@ -83,7 +83,7 @@ impl EthClientContract {
         self.contract_wrapper
             .call_change_method(
                 "init".to_string(),
-                init_input.try_to_vec().expect("Error on parse init_input"),
+                borsh::to_vec(&init_input).expect("Error on parse init_input"),
                 None,
                 None,
             )
@@ -107,7 +107,7 @@ impl EthClientContractTrait for EthClientContract {
     ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
         self.contract_wrapper.call_change_method(
             "submit_beacon_chain_light_client_update".to_string(),
-            light_client_update.try_to_vec()?,
+            borsh::to_vec(&light_client_update)?,
             None,
             None,
         )
@@ -152,7 +152,7 @@ impl EthClientContractTrait for EthClientContract {
         let method_names = vec!["submit_execution_header".to_string(); headers.len()];
         let args = headers
             .iter()
-            .filter_map(|header| header.try_to_vec().ok())
+            .filter_map(|header| borsh::to_vec(&header).ok())
             .collect();
 
         self.contract_wrapper

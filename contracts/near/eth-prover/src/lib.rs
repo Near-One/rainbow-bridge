@@ -3,20 +3,18 @@ use near_plugins::{
     access_control, access_control_any, pause, AccessControlRole, AccessControllable, Pausable,
     Upgradable,
 };
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::borsh::BorshDeserialize;
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{
-    env, ext_contract, near_bindgen, Gas, PanicOnDefault, Promise, PromiseOrValue, PublicKey,
-};
+use near_sdk::{env, ext_contract, near, Gas, PanicOnDefault, Promise, PromiseOrValue, PublicKey};
 use rlp::Rlp;
 
 type AccountId = String;
 
 /// Gas to call block_hash_safe
-const BLOCK_HASH_SAFE_GAS: Gas = Gas(10_000_000_000_000);
+const BLOCK_HASH_SAFE_GAS: Gas = Gas::from_tgas(10);
 
 /// Gas to call on_block_hash
-const ON_BLOCK_HASH_GAS: Gas = Gas(5_000_000_000_000);
+const ON_BLOCK_HASH_GAS: Gas = Gas::from_tgas(5);
 
 #[derive(AccessControlRole, Deserialize, Serialize, Copy, Clone)]
 #[serde(crate = "near_sdk::serde")]
@@ -29,8 +27,8 @@ pub enum Role {
     DAO,
 }
 
-#[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault, Pausable, Upgradable)]
+#[near(contract_state)]
+#[derive(PanicOnDefault, Pausable, Upgradable)]
 #[access_control(role_type(Role))]
 #[pausable(manager_roles(Role::PauseManager, Role::DAO))]
 #[upgradable(access_control_roles(
@@ -69,7 +67,7 @@ fn get_vec(data: &Rlp, pos: usize) -> Vec<u8> {
     data.at(pos).unwrap().as_val::<Vec<u8>>().unwrap()
 }
 
-#[near_bindgen]
+#[near]
 impl EthProver {
     #[init]
     #[private]
@@ -176,15 +174,15 @@ impl EthProver {
 
     fn verify_log_entry_internal(
         &self,
-        #[serializer(borsh)] log_index: u64,
-        #[serializer(borsh)] log_entry_data: Vec<u8>,
-        #[serializer(borsh)] receipt_index: u64,
-        #[serializer(borsh)] receipt_data: Vec<u8>,
-        #[serializer(borsh)] header_data: Vec<u8>,
-        #[serializer(borsh)] proof: Vec<Vec<u8>>,
-        #[serializer(borsh)] min_header_height: Option<u64>,
-        #[serializer(borsh)] max_header_height: Option<u64>,
-        #[serializer(borsh)] skip_bridge_call: bool,
+        log_index: u64,
+        log_entry_data: Vec<u8>,
+        receipt_index: u64,
+        receipt_data: Vec<u8>,
+        header_data: Vec<u8>,
+        proof: Vec<Vec<u8>>,
+        min_header_height: Option<u64>,
+        max_header_height: Option<u64>,
+        skip_bridge_call: bool,
     ) -> PromiseOrValue<bool> {
         let header: BlockHeader = rlp::decode(header_data.as_slice()).unwrap();
         if !Self::is_block_height_in_bound(header.number, min_header_height, max_header_height) {

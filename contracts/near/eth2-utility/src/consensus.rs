@@ -75,7 +75,7 @@ impl NetworkConfig {
                 deneb_fork_version: [0x04, 0x00, 0x00, 0x00],
                 deneb_fork_epoch: 269568,
                 electra_fork_version: [0x00, 0x00, 0x00, 0x00], // Not supported
-                electra_fork_epoch: 0,                          // Not supported
+                electra_fork_epoch: u64::MAX,                   // Not supported
             },
             Network::Goerli => Self {
                 genesis_validators_root: [
@@ -90,7 +90,7 @@ impl NetworkConfig {
                 deneb_fork_version: [0x04, 0x00, 0x10, 0x20],
                 deneb_fork_epoch: 231680,
                 electra_fork_version: [0x00, 0x00, 0x00, 0x00], // Not supported
-                electra_fork_epoch: 0,                          // Not supported
+                electra_fork_epoch: u64::MAX,                   // Not supported
             },
             Network::Sepolia => Self {
                 genesis_validators_root: [

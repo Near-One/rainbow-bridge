@@ -5,7 +5,6 @@ repository = "https://github.com/Near-One/rainbow-bridge"
 [workspace]
 members = [
     "eth2-client",
-    "eth-prover",
     "eth-types"
 ]
 
@@ -19,8 +18,8 @@ panic = "abort"
 overflow-checks = true
 
 [workspace.dependencies]
-near-sdk = "4.1.1"
-borsh = "0.9.3"
+near-sdk = { version = "5.12", features = ["legacy", "unit-testing"] }
+borsh = "1"
 rlp = "0.5.2"
 rlp-derive = "0.1.0"
 ethereum-types = "0.14.1"
@@ -33,7 +32,7 @@ ethereum_hashing = "0.7.0"
 derive_more = "^0.99.2"
 hex = "0.4.2"
 bitvec = "1.0.0"
-near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", tag = "v0.1.0" }
+near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", tag = "v0.4.1" }
 
 [patch]
 [patch.crates-io]
