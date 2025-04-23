@@ -5,15 +5,13 @@ mod integration_tests {
     use eth2_utility::types::InitInput;
     use eth_types::eth2::{ExtendedBeaconBlockHeader, SyncCommittee};
     use eth_types::{Address, Bloom, H256, H64, U256};
-    use near_sdk::ONE_NEAR;
-    use near_units::*;
+    use near_sdk::{Gas, NearToken};
+    use near_workspaces::operations::Function;
+    use near_workspaces::{Account, Contract};
     use serde::{Deserialize, Serialize};
-    use workspaces::operations::Function;
-    use workspaces::{Account, Contract};
 
-    const WASM_FILEPATH: &str = "../target/wasm32-unknown-unknown/release/eth2_client.wasm";
+    const WASM_FILEPATH: &str = "../target/near/eth2_client/eth2_client.wasm";
     const WASM_V_0_1_0_FILEPATH: &str = "src/data/eth2_client_v0.1.0_testnet.wasm";
-
     #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
     pub struct BlockHeaderV1 {
         pub parent_hash: H256,
@@ -83,7 +81,7 @@ mod integration_tests {
         init_input: U,
         file_path: &str,
     ) -> anyhow::Result<(Account, Contract)> {
-        let worker = workspaces::sandbox().await?;
+        let worker = near_workspaces::sandbox().await?;
         let wasm = std::fs::read(file_path)?;
         let contract = worker.dev_deploy(&wasm).await?;
 
@@ -91,7 +89,7 @@ mod integration_tests {
         let owner = worker.root_account()?;
         let alice = owner
             .create_subaccount("alice")
-            .initial_balance(parse_near!("30 N"))
+            .initial_balance(NearToken::from_near(30))
             .transact()
             .await?
             .into_result()?;
@@ -125,7 +123,7 @@ mod integration_tests {
         let outcome = alice
             .call(contract.id(), "submit_beacon_chain_light_client_update")
             .args_borsh(update)
-            .gas(parse_gas!("300 T") as u64)
+            .gas(Gas::from_tgas(300))
             .transact()
             .await?;
         assert!(outcome.is_success());
@@ -135,8 +133,8 @@ mod integration_tests {
             for header in headers_chunk {
                 transaction = transaction.call(
                     Function::new("submit_execution_header")
-                        .args(header.try_to_vec()?)
-                        .gas(parse_gas!("6 T") as u64),
+                        .args(borsh::to_vec(&header)?)
+                        .gas(Gas::from_tgas(6)),
                 );
             }
 
@@ -152,10 +150,7 @@ mod integration_tests {
                 .borsh()?;
             assert!(result.is_some())
         }
-        println!(
-            "Gas burnt: {}",
-            gas::to_human(outcome.total_gas_burnt as u128)
-        );
+        println!("Gas burnt: {}", outcome.total_gas_burnt);
         Ok(())
     }
 
@@ -174,7 +169,7 @@ mod integration_tests {
 
         let result = alice
             .call(contract.id(), "register_submitter")
-            .deposit(20 * ONE_NEAR)
+            .deposit(NearToken::from_near(20))
             .transact()
             .await?;
         assert!(result.is_success());
@@ -186,8 +181,8 @@ mod integration_tests {
                 let header_v1: BlockHeaderV1 = header.clone().into();
                 transaction = transaction.call(
                     Function::new("submit_execution_header")
-                        .args(header_v1.try_to_vec()?)
-                        .gas(parse_gas!("6 T") as u64),
+                        .args(borsh::to_vec(&header_v1)?)
+                        .gas(Gas::from_tgas(6)),
                 );
             }
 
@@ -202,7 +197,7 @@ mod integration_tests {
         let outcome = alice
             .call(contract.id(), "submit_beacon_chain_light_client_update")
             .args_borsh(update)
-            .gas(parse_gas!("300 T") as u64)
+            .gas(Gas::from_tgas(300))
             .transact()
             .await?;
         assert!(outcome.is_success());
@@ -228,7 +223,7 @@ mod integration_tests {
         // Migrate
         let result = contract
             .call("migrate")
-            .gas(parse_gas!("300 T") as u64)
+            .gas(Gas::from_tgas(300))
             .transact()
             .await?;
         assert!(result.is_success());
@@ -254,7 +249,7 @@ mod integration_tests {
         let result = alice
             .call(contract.id(), "submit_beacon_chain_light_client_update")
             .args_borsh(update)
-            .gas(parse_gas!("300 T") as u64)
+            .gas(Gas::from_tgas(300))
             .transact()
             .await?;
         assert!(result.is_success());
@@ -265,8 +260,8 @@ mod integration_tests {
             for header in headers_chunk {
                 transaction = transaction.call(
                     Function::new("submit_execution_header")
-                        .args(header.try_to_vec()?)
-                        .gas(parse_gas!("6 T") as u64),
+                        .args(borsh::to_vec(header)?)
+                        .gas(Gas::from_tgas(6)),
                 );
             }
 

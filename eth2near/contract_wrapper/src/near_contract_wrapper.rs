@@ -4,16 +4,16 @@ use near_crypto::{InMemorySigner, Signer};
 use near_jsonrpc_client::{methods, JsonRpcClient};
 use near_jsonrpc_primitives::types::query::QueryResponseKind;
 use near_primitives::transaction::{Action, FunctionCallAction, Transaction, TransactionV0};
-use near_primitives::types::{AccountId, BlockReference, Finality, FunctionArgs};
+use near_primitives::types::{AccountId, Balance, BlockReference, Finality, FunctionArgs};
 use near_primitives::views::{FinalExecutionOutcomeView, QueryRequest};
-use near_sdk::{Balance, Gas};
+use near_sdk::Gas;
 use serde_json::Value;
 use std::error::Error;
 use std::string::String;
 use std::vec::Vec;
 use tokio::runtime::Runtime;
 
-pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
+pub const MAX_GAS: Gas = Gas::from_tgas(300);
 
 /// Implementation of interaction with a contract on NEAR.
 pub struct NearContractWrapper {
@@ -164,14 +164,14 @@ impl ContractWrapper for NearContractWrapper {
             return Err(Box::new(crate::errors::TryToSubmitZeroHeaderError));
         }
 
-        let attached_gas_per_promise_in_batch = gas.unwrap_or(MAX_GAS) / num_blocks_in_batch;
+        let attached_gas_per_promise_in_batch = gas.unwrap_or(MAX_GAS).as_gas() / num_blocks_in_batch;
         let mut actions = Vec::new();
 
         for i in 0..method_name.len() {
             actions.push(Action::FunctionCall(Box::new(FunctionCallAction {
                 method_name: method_name[i].clone(),
                 args: args[i].clone(),
-                gas: attached_gas_per_promise_in_batch.0,
+                gas: attached_gas_per_promise_in_batch,
                 deposit: deposit.as_ref().map(|d| d[i]).unwrap_or(0),
             })));
         }

@@ -1,6 +1,6 @@
-use near_primitives::types::AccountId;
+use near_primitives::types::{AccountId, Balance};
 use near_primitives::views::FinalExecutionOutcomeView;
-use near_sdk::{Balance, Gas};
+use near_sdk::Gas;
 
 /// `ContractWrapper` trait provides API for interaction with Contract on NEAR.
 pub trait ContractWrapper {

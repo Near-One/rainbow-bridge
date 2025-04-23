@@ -7,7 +7,7 @@ on:
 name: Contracts (ETH)
 jobs:
   test:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -44,10 +44,10 @@ jobs:
     name: ${{ matrix.job-name }}
     steps:
       - name: Install LFS
-        run: apt-get install git-lfs
+        run: sudo apt-get install git-lfs
 
       - name: Clone the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           lfs: 'true'
 

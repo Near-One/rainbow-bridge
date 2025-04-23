@@ -7,36 +7,21 @@ on:
 name: Contracts (NEAR)
 jobs:
   test:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - job-name: build all rust contracts
+          - job-name: build rust contracts
             cmd: |
-              cd contracts/near/eth-client
-              ./build.sh
-              cd ../eth2-client
-              ./build.sh
-              cd ../eth-prover
-              ./build.sh
-              git status
-              changed_files=$(git status --porcelain --untracked-files=no | wc -l)
-              if [ $changed_files -gt 0 ]; then
-                echo 'contract changed, please rebuild contract'
-                exit 1
-              fi
+              cd contracts/near
+              rustup target add wasm32-unknown-unknown
+              make build
             timeout-minutes: 40
 
           - job-name: test eth-prover
             cmd: |
               cd contracts/near/eth-prover
-              ./test.sh
-            timeout-minutes: 40
-
-          - job-name: test eth-client
-            cmd: |
-              cd contracts/near/eth-client
               ./test.sh
             timeout-minutes: 40
 
@@ -78,11 +63,14 @@ jobs:
 
     name: ${{ matrix.job-name }}
     steps:
+      - name: Install cargo-near
+        run: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/latest/download/cargo-near-installer.sh | sh
+
       - name: Install LFS
-        run: apt-get install git-lfs
+        run: sudo apt-get install git-lfs
 
       - name: Clone the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           lfs: 'true'
 

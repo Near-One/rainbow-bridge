@@ -4,9 +4,9 @@ version = "0.3.0"
 edition = "2021"
 
 [dependencies]
-borsh = "0.9.3"
+borsh.workspace = true
 async-std = "1.12.0"
-near-sdk = "4.1.1"
+near-sdk.workspace = true
 near-jsonrpc-client.workspace = true
 near-crypto.workspace = true
 near-primitives.workspace = true

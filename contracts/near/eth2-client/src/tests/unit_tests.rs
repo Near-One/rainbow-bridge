@@ -5,7 +5,7 @@ mod tests {
     use eth_types::eth2::LightClientUpdate;
     use eth_types::BlockHeader;
     use near_sdk::test_utils::VMContextBuilder;
-    use near_sdk::{testing_env, AccountId, VMConfig};
+    use near_sdk::{test_vm_config, testing_env, AccountId};
 
     macro_rules! inner_set_env {
         ($builder:ident) => {
@@ -25,9 +25,11 @@ mod tests {
             let mut builder = VMContextBuilder::new();
             let mut builder = &mut builder;
             builder = inner_set_env!(builder, $($key: $value),*);
-            let mut vm_config = VMConfig::free();
+            let mut vm_config = test_vm_config();
             vm_config.limit_config.max_number_logs = u64::MAX;
             vm_config.limit_config.max_total_log_length = u64::MAX;
+            vm_config.limit_config.max_total_prepaid_gas = u64::MAX;
+            vm_config.limit_config.max_gas_burnt = u64::MAX;
             testing_env!(builder.build(), vm_config);
         };
     }
@@ -78,6 +80,7 @@ mod tests {
         use hex::FromHex;
         use near_plugins::Pausable;
         use near_sdk::test_utils::accounts;
+        use near_sdk::Gas;
         use tree_hash::TreeHash;
 
         #[test]
@@ -85,7 +88,7 @@ mod tests {
             let header =
                 read_beacon_header(format!("./src/data/goerli/beacon_header_{}.json", 5258752));
             assert_eq!(
-                H256(header.tree_hash_root()),
+                H256(header.tree_hash_root().0.into()),
                 Vec::from_hex("cd669c0007ab6ff261a02cc3335ba470088e92f0460bf1efac451009efb9ec0a")
                     .unwrap()
                     .into()
@@ -94,7 +97,7 @@ mod tests {
             let header =
                 read_beacon_header(format!("./src/data/mainnet/beacon_header_{}.json", 4100000));
             assert_eq!(
-                H256(header.tree_hash_root()),
+                H256(header.tree_hash_root().0.into()),
                 Vec::from_hex("342ca1455e976f300cc96a209106bed2cbdf87243167fab61edc6e2250a0be6c")
                     .unwrap()
                     .into()
@@ -109,7 +112,7 @@ mod tests {
                 headers,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter);
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: submitter);
 
             contract.submit_beacon_chain_light_client_update(updates[1].clone());
 
@@ -142,7 +145,7 @@ mod tests {
                 headers,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter);
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: submitter);
             contract.submit_beacon_chain_light_client_update(updates[1].clone());
 
             // Submit execution header with different hash
@@ -166,7 +169,7 @@ mod tests {
                 hashes_gc_threshold: hashes_gc_threshold.try_into().unwrap(),
                 trusted_signer: None,
             }));
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter);
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: submitter);
 
             contract.submit_beacon_chain_light_client_update(updates[1].clone());
 
@@ -227,7 +230,7 @@ mod tests {
                 hashes_gc_threshold: 7100,
                 trusted_signer: Some(trusted_signer),
             }));
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             contract.submit_beacon_chain_light_client_update(updates[1].clone());
         }
 
@@ -239,7 +242,7 @@ mod tests {
                 headers: _,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
             update.finality_update.finality_branch[5] = H256::from(
                 hex::decode("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
@@ -256,7 +259,7 @@ mod tests {
                 headers: _,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
             update.finality_update.finality_branch = vec![];
             contract.submit_beacon_chain_light_client_update(update);
@@ -270,7 +273,7 @@ mod tests {
                 headers: _,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
             update.finality_update.header_update.execution_hash_branch[5] = H256::from(
                 hex::decode("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
@@ -287,7 +290,7 @@ mod tests {
                 headers: _,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
             update.finality_update.header_update.execution_hash_branch = vec![];
             contract.submit_beacon_chain_light_client_update(update);
@@ -301,7 +304,7 @@ mod tests {
                 headers: _,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
             update.finality_update.header_update.beacon_header.slot =
                 update.signature_slot + EPOCHS_PER_SYNC_COMMITTEE_PERIOD * SLOTS_PER_EPOCH * 10;
@@ -320,7 +323,7 @@ mod tests {
                 headers,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter);
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: submitter);
 
             contract.submit_beacon_chain_light_client_update(updates[1].clone());
 
@@ -339,7 +342,7 @@ mod tests {
                 headers,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter);
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: submitter);
 
             contract.submit_beacon_chain_light_client_update(updates[1].clone());
             contract.submit_execution_header(headers[0].last().unwrap().clone());
@@ -354,9 +357,9 @@ mod tests {
                 headers: _,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: eth2_client_account(), current_account_id: eth2_client_account());
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: eth2_client_account(), current_account_id: eth2_client_account());
             contract.pa_pause_feature("submit_beacon_chain_light_client_update".to_string());
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(1), current_account_id: accounts(0));
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(1), current_account_id: accounts(0));
             contract.submit_beacon_chain_light_client_update(updates[1].clone());
         }
 
@@ -371,7 +374,7 @@ mod tests {
                 headers: _,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter);
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: submitter);
 
             contract.submit_beacon_chain_light_client_update(updates[0].clone());
         }
@@ -385,7 +388,7 @@ mod tests {
                 headers,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter);
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: submitter);
 
             assert_eq!(contract.last_block_number(), headers[0][0].number);
 
@@ -406,7 +409,7 @@ mod tests {
                 headers,
                 updates: _,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: submitter);
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: submitter);
 
             assert_eq!(contract.last_block_number(), headers[0][0].number);
 
@@ -423,7 +426,7 @@ mod tests {
                 headers: _,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
 
             let mut sync_committee_bits = bitarr![u8, Lsb0; 0; 512];
@@ -452,7 +455,7 @@ mod tests {
                 headers: _,
                 updates,
             } = get_test_context(None);
-            set_env!(prepaid_gas: 10u64.pow(18), predecessor_account_id: accounts(0));
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
             update.sync_committee_update = None;
             contract.submit_beacon_chain_light_client_update(update);
