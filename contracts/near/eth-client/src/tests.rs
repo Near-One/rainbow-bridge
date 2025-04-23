@@ -181,7 +181,7 @@ fn get_context() -> VMContext {
         epoch_height: 0,
         storage_usage: 0,
         attached_deposit: 0,
-        prepaid_gas: near_sdk::Gas(10u64.pow(18)),
+        prepaid_gas: near_sdk::Gas(1_000_000),
         random_seed: vec![1; 32].try_into().unwrap(),
         view_config: None,
         output_data_receivers: vec![],

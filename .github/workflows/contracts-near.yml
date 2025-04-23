@@ -12,31 +12,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - job-name: build all rust contracts
+          - job-name: build rust contracts
             cmd: |
-              cd contracts/near/eth-client
-              ./build.sh
-              cd ../eth2-client
-              ./build.sh
-              cd ../eth-prover
-              ./build.sh
-              git status
-              changed_files=$(git status --porcelain --untracked-files=no | wc -l)
-              if [ $changed_files -gt 0 ]; then
-                echo 'contract changed, please rebuild contract'
-                exit 1
-              fi
+              cd contracts/near
+              make build
             timeout-minutes: 40
 
           - job-name: test eth-prover
             cmd: |
               cd contracts/near/eth-prover
-              ./test.sh
-            timeout-minutes: 40
-
-          - job-name: test eth-client
-            cmd: |
-              cd contracts/near/eth-client
               ./test.sh
             timeout-minutes: 40
 

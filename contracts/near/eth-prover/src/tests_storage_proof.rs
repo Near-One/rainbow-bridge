@@ -80,7 +80,7 @@ mod tests_storage_proof {
 
     // TESTS
 
-    use near_sdk::{testing_env, VMContext};
+    use near_sdk::{testing_env, VMContext, NearToken};
 
     fn get_context(input: Vec<u8>) -> VMContext {
         VMContext {
@@ -94,11 +94,11 @@ mod tests_storage_proof {
             block_index: 0,
             block_timestamp: 0,
             epoch_height: 0,
-            account_balance: 0,
-            account_locked_balance: 0,
+            account_balance: NearToken::from_near(0),
+            account_locked_balance: NearToken::from_near(0),
             storage_usage: 0,
-            attached_deposit: 0,
-            prepaid_gas: near_sdk::Gas(10u64.pow(18)),
+            attached_deposit: NearToken::from_near(0),
+            prepaid_gas: near_sdk::Gas::from_tgas(1_000_000),
             random_seed: vec![1; 32].try_into().unwrap(),
             view_config: None,
             output_data_receivers: vec![],
@@ -145,7 +145,7 @@ mod tests_storage_proof {
     }
 
     #[test]
-    #[should_panic(expected = "assertion failed: `(left == right)")]
+    #[should_panic(expected = "assertion `left == right` failed")]
     pub fn test_verify_storage_proof_with_wrong_account_proof() {
         testing_env!(get_context(vec![]));
         let contract = EthProver::init("ethbridge".to_string());
@@ -170,7 +170,7 @@ mod tests_storage_proof {
     }
 
     #[test]
-    #[should_panic(expected = "assertion failed: `(left == right)")]
+    #[should_panic(expected = "assertion `left == right` failed")]
     pub fn test_verify_storage_proof_with_wrong_state_proof() {
         testing_env!(get_context(vec![]));
         let contract = EthProver::init("ethbridge".to_string());

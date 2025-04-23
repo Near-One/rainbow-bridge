@@ -5,6 +5,7 @@ repository = "https://github.com/Near-One/rainbow-bridge"
 [workspace]
 members = [
     "eth2-client",
+    "eth-prover",
     "eth-types"
 ]
 

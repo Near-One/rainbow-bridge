@@ -30,7 +30,7 @@ mod tests {
 
     // TESTS
 
-    use near_sdk::{testing_env, VMContext};
+    use near_sdk::{testing_env, VMContext, NearToken};
 
     fn get_context(input: Vec<u8>) -> VMContext {
         VMContext {
@@ -44,11 +44,11 @@ mod tests {
             block_index: 0,
             block_timestamp: 0,
             epoch_height: 0,
-            account_balance: 0,
-            account_locked_balance: 0,
+            account_balance: NearToken::from_near(0),
+            account_locked_balance: NearToken::from_near(0),
             storage_usage: 0,
-            attached_deposit: 0,
-            prepaid_gas: near_sdk::Gas(10u64.pow(18)),
+            attached_deposit: NearToken::from_near(0),
+            prepaid_gas: near_sdk::Gas::from_tgas(1_000_000),
             random_seed: vec![1; 32].try_into().unwrap(),
             view_config: None,
             output_data_receivers: vec![],
@@ -351,13 +351,16 @@ mod tests {
         let actual_borsh_skip_bridge_call = "01";
 
         use borsh::BorshSerialize;
-        let borsh_log_index = log_index.try_to_vec().unwrap().encode_hex::<String>();
-        let borsh_log_entry_data = log_entry.try_to_vec().unwrap().encode_hex::<String>();
-        let borsh_receipt_index = receipt_index.try_to_vec().unwrap().encode_hex::<String>();
-        let borsh_receipt_data = receipt_data.try_to_vec().unwrap().encode_hex::<String>();
-        let borsh_header_data = header_data.try_to_vec().unwrap().encode_hex::<String>();
-        let borsh_proof = proof.try_to_vec().unwrap().encode_hex::<String>();
-        let borsh_skip_bridge_call = true.try_to_vec().unwrap().encode_hex::<String>();
+
+        let borsh_log_index = borsh::to_vec(&log_index).unwrap().encode_hex::<String>();
+        let borsh_log_entry_data = borsh::to_vec(&log_entry).unwrap().encode_hex::<String>();
+        let borsh_receipt_index = borsh::to_vec(&receipt_index)
+            .unwrap()
+            .encode_hex::<String>();
+        let borsh_receipt_data = borsh::to_vec(&receipt_data).unwrap().encode_hex::<String>();
+        let borsh_header_data = borsh::to_vec(&header_data).unwrap().encode_hex::<String>();
+        let borsh_proof = borsh::to_vec(&proof).unwrap().encode_hex::<String>();
+        let borsh_skip_bridge_call = borsh::to_vec(&true).unwrap().encode_hex::<String>();
 
         assert_eq!(borsh_log_index, actual_borsh_log_index);
         assert_eq!(borsh_log_entry_data, actual_borsh_log_entry_data);
