@@ -1,13 +1,12 @@
 use crate::contract_wrapper_trait::ContractWrapper;
 use crate::eth_client_contract_trait::EthClientContractTrait;
 use crate::eth_network::EthNetwork;
-use borsh::BorshDeserialize;
+use borsh::{BorshDeserialize, BorshSerialize};
 use eth2_utility::types::ClientMode;
 use eth_types::eth2::{
     ExtendedBeaconBlockHeader, LightClientState, LightClientUpdate, SyncCommittee,
 };
 use eth_types::{BlockHeader, H256};
-use near_primitives::borsh::BorshSerialize;
 use near_primitives::types::AccountId;
 use near_primitives::views::FinalExecutionOutcomeView;
 use serde::Serialize;
@@ -61,7 +60,7 @@ impl EthClientContract {
             pub validate_updates: bool,
             pub verify_bls_signatures: bool,
             pub hashes_gc_threshold: u64,
-            pub trusted_signer: Option<AccountId>,
+            pub trusted_signer: Option<String>,
         }
 
         let init_input = InitInput {
@@ -73,7 +72,7 @@ impl EthClientContract {
             validate_updates: validate_updates.unwrap_or(true),
             verify_bls_signatures: verify_bls_signatures.unwrap_or(false),
             hashes_gc_threshold: hashes_gc_threshold.unwrap_or(51_000),
-            trusted_signer,
+            trusted_signer: trusted_signer.map(|account_id| account_id.to_string()),
         };
 
         println!(

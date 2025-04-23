@@ -45,7 +45,7 @@ impl TreeHash for H256 {
     }
 
     fn tree_hash_root(&self) -> tree_hash::Hash256 {
-        (*self).0
+        (*self).0 .0.into()
     }
 }
 
@@ -173,6 +173,8 @@ pub struct BlockHeader {
     pub excess_blob_gas: Option<u64>,
     #[cfg_attr(all(feature = "eth2", not(target_arch = "wasm32")), serde(default))]
     pub parent_beacon_block_root: Option<H256>,
+    #[cfg_attr(all(feature = "eth2", not(target_arch = "wasm32")), serde(default))]
+    pub requests_hash: Option<H256>,
 
     pub hash: Option<H256>,
     pub partial_hash: Option<H256>,
@@ -225,6 +227,9 @@ impl BlockHeader {
         if self.parent_beacon_block_root.is_some() {
             list_size += 1;
         }
+        if self.requests_hash.is_some() {
+            list_size += 1;
+        }
 
         stream.begin_list(list_size);
 
@@ -265,6 +270,10 @@ impl BlockHeader {
 
         if let Some(parent_beacon_block_root) = &self.parent_beacon_block_root {
             stream.append(parent_beacon_block_root);
+        }
+
+        if let Some(requests_hash) = &self.requests_hash {
+            stream.append(requests_hash);
         }
     }
 
@@ -307,6 +316,7 @@ impl RlpDecodable for BlockHeader {
             blob_gas_used: serialized.val_at(17).ok(),
             excess_blob_gas: serialized.val_at(18).ok(),
             parent_beacon_block_root: serialized.val_at(19).ok(),
+            requests_hash: serialized.val_at(20).ok(),
             hash: None,
             partial_hash: None,
         };

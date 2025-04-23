@@ -34,7 +34,9 @@ pub fn verify_light_client_snapshot(
         eth_types::H256(
             light_client_snapshot
                 .current_sync_committee
-                .tree_hash_root(),
+                .tree_hash_root()
+                .0
+                .into(),
         ),
         &light_client_snapshot.current_sync_committee_branch,
         CURRENT_SYNC_COMMITTEE_TREE_DEPTH.try_into().unwrap(),
@@ -274,7 +276,7 @@ mod tests {
             .expect("Error on getting last finalized beacon block slot(Eth client)");
 
         const MAX_GAP_IN_EPOCH_BETWEEN_FINALIZED_SLOTS: u64 = 3;
-        
+
         assert!(
             last_finalized_slot_eth_client
                 + ONE_EPOCH_IN_SLOTS * MAX_GAP_IN_EPOCH_BETWEEN_FINALIZED_SLOTS

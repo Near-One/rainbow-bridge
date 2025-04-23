@@ -53,6 +53,7 @@ impl Eth1RPCClient {
         block_json = block_json.replace("blobGasUsed", "blob_gas_used");
         block_json = block_json.replace("excessBlobGas", "excess_blob_gas");
         block_json = block_json.replace("parentBeaconBlockRoot", "parent_beacon_block_root");
+        block_json = block_json.replace("requestsHash", "requests_hash");
 
         let block_header: BlockHeader = serde_json::from_str(&block_json)?;
         Ok(block_header)

@@ -115,7 +115,7 @@ macro_rules! vec_wrapper_impl_tree_hash {
 
                 for item in &self.0 {
                     hasher
-                        .write(item.tree_hash_root().as_bytes())
+                        .write(item.tree_hash_root().as_slice())
                         .expect("ssz_types vec should not contain more elements than max");
                 }
 

@@ -143,6 +143,10 @@ fn encode_header(header: &BlockHeader) -> Vec<u8> {
         .as_ref()
         .map(|v| stream.append(v));
 
+    header.requests_hash
+        .as_ref()
+        .map(|v| stream.append(v));
+
     stream.finalize_unbounded_list();
     stream.out().to_vec()
 }
@@ -154,7 +158,7 @@ pub mod tests {
     use hasher::Hasher;
     use serde_json::Value;
     use std::path::PathBuf;
-    
+
     const RPC_URL: &str = "https://eth.llamarpc.com";
 
     /*
@@ -182,7 +186,7 @@ pub mod tests {
         let proof = get_proof_for_event(tx_hash, 172, RPC_URL).unwrap();
         verify_proof(proof, "post_shapella_proof.json");
     }
-    
+
     #[test]
     fn generate_proof_post_dencun() {
         let tx_hash = H256::from_str("0x42639810a1238a76ca947b848f5b88a854ac36471d1c4f6a15631393790f89af").unwrap();
