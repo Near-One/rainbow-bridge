@@ -15,6 +15,7 @@ jobs:
           - job-name: build rust contracts
             cmd: |
               cd contracts/near
+              rustup add wasm32-unknown-unknown
               make build
             timeout-minutes: 40
 
