@@ -137,7 +137,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "The expected block hash is")]
+        #[should_panic(expected = "Failed to verify the bls signature")]
         pub fn test_panic_on_submit_execution_block_from_fork_chain() {
             let submitter = accounts(0);
             let TestContext {
@@ -315,7 +315,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "The expected block hash is")]
+        #[should_panic(expected = "Failed to verify the bls signature")]
         pub fn test_panic_on_submit_update_with_missing_execution_blocks() {
             let submitter = accounts(0);
             let TestContext {
@@ -334,7 +334,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "The expected block hash is")]
+        #[should_panic(expected = "Failed to verify the bls signature")]
         pub fn test_panic_on_submit_same_execution_blocks() {
             let submitter = accounts(0);
             let TestContext {
@@ -380,7 +380,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "The expected block hash")]
+        #[should_panic(expected = "Failed to verify the bls signature")]
         pub fn test_panic_on_submit_blocks_with_unknown_parent() {
             let submitter = accounts(0);
             let TestContext {
