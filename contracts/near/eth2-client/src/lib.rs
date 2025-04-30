@@ -18,6 +18,15 @@ use near_sdk::{
 };
 use tree_hash::TreeHash;
 
+#[cfg(feature = "bls")]
+use amcl::bls381::bls381::utils::serialize_uncompressed_g1;
+#[cfg(feature = "bls")]
+use amcl::bls381::ecp::ECP;
+#[cfg(feature = "bls")]
+use amcl::bls381::fp2::FP2;
+#[cfg(feature = "bls")]
+use amcl::bls381::hash_to_curve::hash_to_field_fp2;
+
 mod migrate;
 #[cfg(test)]
 mod tests;
