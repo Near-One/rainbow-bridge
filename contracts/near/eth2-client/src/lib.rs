@@ -561,7 +561,7 @@ impl Eth2Client {
             config.genesis_validators_root.into(),
         );
         let signing_root = compute_signing_root(
-            eth_types::H256(update.attested_beacon_header.tree_hash_root().0.into()),
+            eth_types::H256(update.attested_beacon_header.tree_hash_root()),
             domain,
         );
 
