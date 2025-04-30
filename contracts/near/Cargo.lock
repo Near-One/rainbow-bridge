@@ -87,6 +87,11 @@ version = "0.3.0"
 source = "git+https://github.com/sigp/milagro_bls?tag=v1.5.1#d3fc0a40cfe8b72ccda46ba050ee6786a59ce753"
 
 [[package]]
+name = "amcl"
+version = "0.3.0"
+source = "git+https://github.com/sigp/incubator-milagro-crypto-rust.git#4e0d0c60a18c4b418932145002f12ad672f7f4de"
+
+[[package]]
 name = "android-tzdata"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1295,6 +1300,7 @@ dependencies = [
 name = "eth2-client"
 version = "0.5.0"
 dependencies = [
+ "amcl 0.3.0 (git+https://github.com/sigp/incubator-milagro-crypto-rust.git)",
  "anyhow",
  "bitvec",
  "bls",
@@ -2314,7 +2320,7 @@ name = "milagro_bls"
 version = "1.5.1"
 source = "git+https://github.com/sigp/milagro_bls?tag=v1.5.1#d3fc0a40cfe8b72ccda46ba050ee6786a59ce753"
 dependencies = [
- "amcl",
+ "amcl 0.3.0 (git+https://github.com/sigp/milagro_bls?tag=v1.5.1)",
  "hex",
  "lazy_static",
  "rand",
