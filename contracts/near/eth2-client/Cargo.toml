@@ -31,7 +31,7 @@ eth2-utility =  { path = "../eth2-utility" }
 bls = { git = "https://github.com/aurora-is-near/lighthouse.git", optional = true, tag = "v4.6.0-wasm", default-features = false, features = ["milagro"]}
 ethereum-types.workspace = true
 tree_hash.workspace = true
-near-sdk = { git = "https://github.com/near/near-sdk-rs.git", branch = "master" }
+near-sdk.workspace = true
 borsh.workspace = true
 bitvec.workspace = true
 near-plugins.workspace = true
