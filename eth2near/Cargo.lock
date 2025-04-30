@@ -847,7 +847,7 @@ dependencies = [
  "near-jsonrpc-client",
  "near-jsonrpc-primitives",
  "near-primitives",
- "near-sdk",
+ "near-sdk 5.12.0 (git+https://github.com/near/near-sdk-rs.git?branch=master)",
  "reqwest",
  "serde",
  "serde_json",
@@ -1381,7 +1381,7 @@ dependencies = [
  "ethereum_ssz",
  "ethereum_ssz_derive",
  "hex",
- "near-sdk",
+ "near-sdk 5.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rlp",
  "rlp-derive",
  "serde",
@@ -1405,7 +1405,7 @@ dependencies = [
  "eth_rpc_client",
  "log",
  "near-primitives",
- "near-sdk",
+ "near-sdk 5.12.0 (git+https://github.com/near/near-sdk-rs.git?branch=master)",
  "reqwest",
  "serde",
  "serde_json",
@@ -1424,7 +1424,7 @@ dependencies = [
  "eth-types",
  "ethereum-types",
  "ethereum_hashing",
- "near-sdk",
+ "near-sdk 5.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tree_hash",
 ]
 
@@ -1472,7 +1472,7 @@ dependencies = [
  "near-jsonrpc-client",
  "near-jsonrpc-primitives",
  "near-primitives",
- "near-sdk",
+ "near-sdk 5.12.0 (git+https://github.com/near/near-sdk-rs.git?branch=master)",
  "primitive-types 0.12.2",
  "prometheus",
  "reqwest",
@@ -3128,10 +3128,29 @@ dependencies = [
  "near-parameters",
  "near-primitives",
  "near-primitives-core",
- "near-sdk-macros",
- "near-sys",
+ "near-sdk-macros 5.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "near-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "near-token",
  "near-vm-runner",
+ "once_cell",
+ "serde",
+ "serde_json",
+ "wee_alloc",
+]
+
+[[package]]
+name = "near-sdk"
+version = "5.12.0"
+source = "git+https://github.com/near/near-sdk-rs.git?branch=master#99a6fdf61ba2a8aa951cdf129937700da29a24a5"
+dependencies = [
+ "base64 0.22.1",
+ "borsh",
+ "bs58 0.5.1",
+ "near-account-id",
+ "near-gas",
+ "near-sdk-macros 5.12.0 (git+https://github.com/near/near-sdk-rs.git?branch=master)",
+ "near-sys 0.2.2 (git+https://github.com/near/near-sdk-rs.git?branch=master)",
+ "near-token",
  "once_cell",
  "serde",
  "serde_json",
@@ -3156,6 +3175,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "near-sdk-macros"
+version = "5.12.0"
+source = "git+https://github.com/near/near-sdk-rs.git?branch=master#99a6fdf61ba2a8aa951cdf129937700da29a24a5"
+dependencies = [
+ "Inflector",
+ "darling 0.20.10",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "serde_json",
+ "strum 0.26.3",
+ "strum_macros 0.26.4",
+ "syn 2.0.99",
+]
+
+[[package]]
 name = "near-stdx"
 version = "0.29.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3166,6 +3201,11 @@ name = "near-sys"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dbf4ca5c805cb78700e10e43484902d8da05f25788db277999d209568aaf4c8e"
+
+[[package]]
+name = "near-sys"
+version = "0.2.2"
+source = "git+https://github.com/near/near-sdk-rs.git?branch=master#99a6fdf61ba2a8aa951cdf129937700da29a24a5"
 
 [[package]]
 name = "near-time"
