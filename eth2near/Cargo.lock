@@ -3116,7 +3116,7 @@ checksum = "d0906c4a3962bc31e9737da0884e3595065b37eb3117848c6d73be3746cc734b"
 [[package]]
 name = "near-sdk"
 version = "5.12.0"
-source = "git+https://github.com/near/near-sdk-rs.git?branch=master#99a6fdf61ba2a8aa951cdf129937700da29a24a5"
+source = "git+https://github.com/near/near-sdk-rs.git?branch=bls-pairing-check#3afb242450fc7035d8f3c6ca22479790b852eb5d"
 dependencies = [
  "base64 0.22.1",
  "borsh",
@@ -3140,7 +3140,7 @@ dependencies = [
 [[package]]
 name = "near-sdk-macros"
 version = "5.12.0"
-source = "git+https://github.com/near/near-sdk-rs.git?branch=master#99a6fdf61ba2a8aa951cdf129937700da29a24a5"
+source = "git+https://github.com/near/near-sdk-rs.git?branch=bls-pairing-check#3afb242450fc7035d8f3c6ca22479790b852eb5d"
 dependencies = [
  "Inflector",
  "darling 0.20.10",
@@ -3162,7 +3162,7 @@ checksum = "9259168eb4953dddd96a27aafdeabae2c3909658ea66f60f6836859662cfdf2f"
 [[package]]
 name = "near-sys"
 version = "0.2.2"
-source = "git+https://github.com/near/near-sdk-rs.git?branch=master#99a6fdf61ba2a8aa951cdf129937700da29a24a5"
+source = "git+https://github.com/near/near-sdk-rs.git?branch=bls-pairing-check#3afb242450fc7035d8f3c6ca22479790b852eb5d"
 
 [[package]]
 name = "near-time"

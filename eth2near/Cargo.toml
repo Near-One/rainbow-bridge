@@ -25,7 +25,7 @@ near-crypto = "0.29.1"
 near-primitives = "0.29.1"
 near-chain-configs = "0.29.1"
 near-jsonrpc-primitives = "0.29.1"
-near-sdk = { git = "https://github.com/near/near-sdk-rs.git", branch = "master", features = ["legacy", "unit-testing"] }
+near-sdk = { git = "https://github.com/near/near-sdk-rs.git", branch = "bls-pairing-check", features = ["legacy", "unit-testing"] }
 borsh = "1"
 
 [patch]
