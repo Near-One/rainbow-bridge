@@ -380,7 +380,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "The expected block hash is")]
+        #[should_panic(expected = "The expected block hash")]
         pub fn test_panic_on_submit_blocks_with_unknown_parent() {
             let submitter = accounts(0);
             let TestContext {
