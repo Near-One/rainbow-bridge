@@ -74,8 +74,8 @@ impl NetworkConfig {
                 capella_fork_epoch: 194048,
                 deneb_fork_version: [0x04, 0x00, 0x00, 0x00],
                 deneb_fork_epoch: 269568,
-                electra_fork_version: [0x00, 0x00, 0x00, 0x00], // Not supported
-                electra_fork_epoch: u64::MAX,                   // Not supported
+                electra_fork_version: [0x05, 0x00, 0x00, 0x00],
+                electra_fork_epoch: 364032,
             },
             Network::Goerli => Self {
                 genesis_validators_root: [
