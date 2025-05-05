@@ -29,15 +29,16 @@ pub fn get_sepolia_test_data(
         // load the one header window:
         static ref HEADERS: Vec<Vec<BlockHeader>> = vec![
             read_sepolia_headers(
-                "./src/data/sepolia/execution_blocks_8262175_8262224.json"
+                "./src/data/sepolia/execution_blocks_8262469_8262518.json"
             ),
             // duplicate or stub the second window so indexing won’t panic:
             read_sepolia_headers(
-                "./src/data/sepolia/execution_blocks_8262175_8262224.json"
+                "./src/data/sepolia/execution_blocks_8262469_8262518.json"
             ),
         ];
-        // load all three periods:
+        // load all four periods:
         static ref UPDATES: Vec<LightClientUpdate> = vec![
+            read_sepolia_updates("./src/data/sepolia/light_client_update_period_918.json")[0].clone(),
             read_sepolia_updates("./src/data/sepolia/light_client_update_period_919.json")[0].clone(),
             read_sepolia_updates("./src/data/sepolia/light_client_update_period_920.json")[0].clone(),
             read_sepolia_updates("./src/data/sepolia/light_client_update_period_921.json")[0].clone(),
@@ -46,7 +47,7 @@ pub fn get_sepolia_test_data(
         static ref BEACON: ExtendedBeaconBlockHeader = {
             let mut hdr: ExtendedBeaconBlockHeader = serde_json::from_reader(
                 std::fs::File::open(
-                    "./src/data/sepolia/beacon_header_7560768.json"
+                    "./src/data/sepolia/beacon_header_7561088.json"
                 ).unwrap()
             ).unwrap();
             hdr

@@ -1,0 +1,1 @@
+contracts/near/eth2-client/src/data/sepolia/* filter=lfs diff=lfs merge=lfs -text
