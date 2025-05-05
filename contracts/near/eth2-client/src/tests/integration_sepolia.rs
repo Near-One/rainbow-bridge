@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod sepolia_integration_tests {
     use super::*;
-    use crate::tests::sepolia_utils::get_sepolia_test_data;
+    use crate::tests::utils::get_sepolia_test_data;
     use crate::tests::utils::InitOptions;
     use eth2_utility::types::InitInput;
     use eth_types::eth2::{ExtendedBeaconBlockHeader, SyncCommittee};
