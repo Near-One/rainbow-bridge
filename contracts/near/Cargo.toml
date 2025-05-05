@@ -19,7 +19,7 @@ panic = "abort"
 overflow-checks = true
 
 [workspace.dependencies]
-near-sdk = { version = "5.12", features = ["legacy", "unit-testing"] }
+near-sdk = { git = "https://github.com/near/near-sdk-rs.git", branch = "bls-pairing-check", features = ["legacy", "unit-testing"] }
 borsh = "1"
 rlp = "0.5.2"
 rlp-derive = "0.1.0"
@@ -41,3 +41,4 @@ ethereum_hashing = { path = "eth2_hashing" }
 ethereum-types = { git = "https://github.com/aurora-is-near/parity-common", tag = "v0.14.1-wasm" }
 rlp = { git = "https://github.com/aurora-is-near/parity-common", tag = "v0.14.1-wasm" }
 rlp-derive = { git = "https://github.com/aurora-is-near/parity-common", tag = "v0.14.1-wasm" }
+near-sdk = { git = "https://github.com/near/near-sdk-rs.git", branch = "bls-pairing-check", features = ["legacy", "unit-testing"] }
