@@ -1,0 +1,5 @@
+contracts/near/eth2-client/src/data/sepolia/beacon_header_7560768.json filter=lfs diff=lfs merge=lfs -text
+contracts/near/eth2-client/src/data/sepolia/execution_blocks_8262175_8262224.json filter=lfs diff=lfs merge=lfs -text
+contracts/near/eth2-client/src/data/sepolia/light_client_update_period_919.json filter=lfs diff=lfs merge=lfs -text
+contracts/near/eth2-client/src/data/sepolia/light_client_update_period_920.json filter=lfs diff=lfs merge=lfs -text
+contracts/near/eth2-client/src/data/sepolia/light_client_update_period_921.json filter=lfs diff=lfs merge=lfs -text

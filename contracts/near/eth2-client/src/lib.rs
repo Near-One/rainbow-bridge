@@ -121,7 +121,10 @@ impl Eth2Client {
 
         require!(
             finalized_execution_header_hash == args.finalized_beacon_header.execution_block_hash,
-            "Invalid execution block"
+            format!(
+                "Invalid execution block: finalized_execution_header_hash={:?}, beacon_execution_block_hash={:?}",
+                finalized_execution_header_hash, args.finalized_beacon_header.execution_block_hash
+            )
         );
 
         let finalized_execution_header_info = ExecutionHeaderInfo {
@@ -608,7 +611,6 @@ impl Eth2Client {
         let ok = env::bls12381_pairing_check(&pairing_input);
         require!(ok, "Failed to verify the bls signature");
     }
-
 
     fn commit_light_client_update(&mut self, update: LightClientUpdate) {
         // Update finalized header
