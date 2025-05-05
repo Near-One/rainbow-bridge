@@ -72,7 +72,8 @@ def dump_recent_execution_blocks(window: int):
     head = w3.eth.block_number
     start = max(0, head - window + 1)
     print(f"⛏ Dumping execution blocks {start}→{head}")
-    blocks = [fetch_execution_block(n) for n in range(start, head + 1)]
+    blocks_raw = [fetch_execution_block(n) for n in range(start, head + 1)]
+    blocks = [normalize_block(b) for b in blocks_raw]
     path = os.path.join(OUT_DIR, f"execution_blocks_{start}_{head}.json")
     with open(path, "w") as f:
         json.dump(blocks, f, indent=2)
@@ -132,6 +133,30 @@ def dump_light_client_updates(periods: List[int]):
             print(f"✔ Wrote {len(updates)} update(s) → {path}")
         except requests.HTTPError as e:
             print(f"⚠️  Skipping period {p}: {e}")
+
+
+def normalize_block(raw: dict) -> dict:
+    return {
+        # Core fields (must all be present)
+        "parent_hash": raw["parentHash"],
+        "uncles_hash": raw.get("sha3Uncles", "0x1dcc4de8dec75..."),
+        "author": raw["miner"],
+        "state_root": raw["stateRoot"],
+        "transactions_root": raw["transactionsRoot"],
+        "receipts_root": raw["receiptsRoot"],
+        "log_bloom": raw["logsBloom"],
+        "difficulty": raw["difficulty"],
+        "number": raw["number"],
+        "gas_limit": raw["gasLimit"],
+        "gas_used": raw["gasUsed"],
+        "timestamp": raw["timestamp"],
+        "extra_data": raw["extraData"],
+        "mix_hash": raw["mixHash"],
+        "nonce": raw["nonce"],
+        "base_fee_per_gas": raw.get("baseFeePerGas"),
+        "withdrawals_root": raw.get("withdrawalsRoot"),
+        # drop everything else
+    }
 
 
 # ─────────── MAIN ───────────
