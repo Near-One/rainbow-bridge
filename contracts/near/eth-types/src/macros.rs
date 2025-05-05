@@ -127,6 +127,27 @@ macro_rules! arr_ethereum_types_wrapper_impl_borsh_serde_ssz {
         #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
         pub struct $name(pub ethereum_types::$name);
 
+        // For hash types (H64, H128, H160, etc.)
+        impl borsh::BorshSchema for $name {
+            fn declaration() -> String {
+                stringify!($name).to_string()
+            }
+
+            fn add_definitions_recursively(
+                definitions: &mut std::collections::BTreeMap<String, borsh::schema::Definition>,
+            ) {
+                // Define as a fixed-length byte array
+                let definition = borsh::schema::Definition::Sequence {
+                    length_width: borsh::schema::Definition::ARRAY_LENGTH_WIDTH, // 0 for fixed-size arrays
+                    length_range: $len as u64..=$len as u64,                     // Fixed length
+                    elements: u8::declaration(),
+                };
+
+                borsh::schema::add_definition(Self::declaration(), definition, definitions);
+                u8::add_definitions_recursively(definitions);
+            }
+        }
+
         impl From<&[u8; $len]> for $name {
             fn from(item: &[u8; $len]) -> Self {
                 $name(item.into())

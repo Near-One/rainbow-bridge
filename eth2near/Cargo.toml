@@ -26,7 +26,7 @@ near-primitives = "0.29.1"
 near-chain-configs = "0.29.1"
 near-jsonrpc-primitives = "0.29.1"
 near-sdk = "5.12"
-borsh = "1"
+borsh = { version = "1.5.7", features = ["unstable__schema"] }
 
 [patch]
 [patch.crates-io]

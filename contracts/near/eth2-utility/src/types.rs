@@ -1,17 +1,20 @@
-use borsh::{BorshDeserialize, BorshSerialize};
+use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 use eth_types::eth2::*;
 use eth_types::H256;
+use near_sdk::near;
 use near_sdk::AccountId;
 
 /// Minimal information about a header.
-#[derive(Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Clone)]
+#[near(serializers=[borsh])]
 pub struct ExecutionHeaderInfo {
     pub parent_hash: H256,
     pub block_number: u64,
     pub submitter: AccountId,
 }
 
-#[derive(Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Clone)]
+#[near(serializers=[borsh])]
 pub struct InitInput {
     pub network: String,
     pub finalized_execution_header: eth_types::BlockHeader,
@@ -24,7 +27,7 @@ pub struct InitInput {
     pub trusted_signer: Option<AccountId>,
 }
 
-#[derive(Clone, BorshDeserialize, BorshSerialize, PartialEq)]
+#[derive(Clone, BorshDeserialize, BorshSerialize, PartialEq, BorshSchema)]
 pub enum ClientMode {
     SubmitLightClientUpdate,
     SubmitHeader,
