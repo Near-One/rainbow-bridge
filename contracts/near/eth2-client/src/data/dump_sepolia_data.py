@@ -29,7 +29,7 @@ os.makedirs(OUT_DIR, exist_ok=True)
 BLOCK_WINDOW = int(os.environ.get("BLOCK_WINDOW", "50"))
 
 # How many past completed sync-committee periods to dump
-PERIOD_WINDOW = int(os.environ.get("PERIOD_WINDOW", "4"))
+PERIOD_WINDOW = int(os.environ.get("PERIOD_WINDOW", "20"))
 
 # ─────────── HELPERS ───────────
 
@@ -82,7 +82,7 @@ def dump_recent_execution_blocks(window: int):
 
 def fetch_beacon_header(block_id: str) -> dict:
     """
-    Fetch a SignedBeaconHeader at block_id (“finalized”, “head” or a slot number).
+    Fetch a SignedBeaconHeader at block_id ("finalized", "head" or a slot number).
     """
     url = f"{CONSENSUS_API}/eth/v1/beacon/headers/{block_id}"
     r = requests.get(url)
@@ -107,7 +107,7 @@ def compute_period(slot: int) -> int:
     return slot // 8192
 
 
-def fetch_light_client_update(period: int) -> List[dict]:
+def fetch_light_client_update(period: int) -> dict:
     """
     Call Lodestar's light-client updates endpoint.
     """
@@ -119,18 +119,96 @@ def fetch_light_client_update(period: int) -> List[dict]:
     return data
 
 
+def convert_to_old_format(update: dict) -> dict:
+    """
+    Convert a light client update from the new format to the old format.
+    """
+    old_format = {}
+
+    # Convert attested_header.beacon to attested_beacon_header
+    if "attested_header" in update and "beacon" in update["attested_header"]:
+        old_format["attested_beacon_header"] = update["attested_header"]["beacon"]
+
+    att = update["attested_header"]
+    if "execution" in att:
+        old_format["attested_beacon_header"]["execution_block_hash"] = att["execution"][
+            "block_hash"
+        ]
+    if "execution_branch" in att:
+        old_format["attested_beacon_header"]["execution_branch"] = att[
+            "execution_branch"
+        ]
+
+    # Copy sync_aggregate as is (structure seems the same)
+    if "sync_aggregate" in update:
+        old_format["sync_aggregate"] = update["sync_aggregate"]
+
+    # Copy signature_slot if present
+    if "signature_slot" in update:
+        old_format["signature_slot"] = update["signature_slot"]
+
+    # Handle finality_update
+    if "finalized_header" in update:
+        # Create the header_update structure
+        header_update = {
+            "beacon_header": update.get("finalized_header", {}).get("beacon", {})
+        }
+
+        # Add execution_block_hash from the finalized_header.execution.block_hash
+        if "execution" in update.get("finalized_header", {}):
+            execution_block_hash = update["finalized_header"]["execution"].get(
+                "block_hash"
+            )
+            if execution_block_hash:
+                header_update["execution_block_hash"] = execution_block_hash
+
+        # Add execution_hash_branch from the finalized_header.execution_branch
+        if "execution_branch" in update.get("finalized_header", {}):
+            header_update["execution_hash_branch"] = update["finalized_header"][
+                "execution_branch"
+            ]
+
+        # Set up the finality_update structure
+        old_format["finality_update"] = {"header_update": header_update}
+
+        # Copy finality_branch if present
+        if "finality_branch" in update:
+            old_format["finality_update"]["finality_branch"] = update["finality_branch"]
+
+    # Handle sync_committee_update
+    old_format["sync_committee_update"] = {}
+
+    # Add next_sync_committee if present
+    if "next_sync_committee" in update:
+        old_format["sync_committee_update"]["next_sync_committee"] = update[
+            "next_sync_committee"
+        ]
+
+    # Check for next_sync_committee_branch in various possible locations
+    if "next_sync_committee_branch" in update:
+        old_format["sync_committee_update"]["next_sync_committee_branch"] = update[
+            "next_sync_committee_branch"
+        ]
+
+    return old_format
+
+
 def dump_light_client_updates(periods: List[int]):
     for p in periods:
         try:
             print(f"🔄  Fetching LightClientUpdate for period {p}")
-            updates = fetch_light_client_update(p)
-            if not updates:
+            update = fetch_light_client_update(p)
+            if not update:
                 print(f"⚠️  No updates available for period {p}, skipping.")
                 continue
+
+            # Convert each update to old format
+            old_format_update = convert_to_old_format(update)
+
             path = os.path.join(OUT_DIR, f"light_client_update_period_{p}.json")
             with open(path, "w") as f:
-                json.dump(updates, f, indent=2)
-            print(f"✔ Wrote {len(updates)} update(s) → {path}")
+                json.dump(old_format_update, f, indent=2)
+            print(f"✔ Wrote {len(old_format_update)} update(s) → {path}")
         except requests.HTTPError as e:
             print(f"⚠️  Skipping period {p}: {e}")
 
@@ -163,7 +241,7 @@ def normalize_block(raw: dict) -> dict:
 
 if __name__ == "__main__":
     # 1) Dump execution blocks
-    dump_recent_execution_blocks(BLOCK_WINDOW)
+    # dump_recent_execution_blocks(BLOCK_WINDOW)
 
     # 2) Dump the finalized beacon header with numeric slot in filename
     finalized_slot = dump_beacon_header_with_slot()
