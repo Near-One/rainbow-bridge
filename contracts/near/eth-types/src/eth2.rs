@@ -18,18 +18,20 @@ pub type Epoch = u64;
 pub type ForkVersion = [u8; 4];
 pub type DomainType = [u8; 4];
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, BorshSchema)]
 pub struct PublicKeyBytes(pub [u8; PUBLIC_KEY_BYTES_LEN]);
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, BorshSchema)]
 pub struct SignatureBytes(pub [u8; SIGNATURE_BYTES_LEN]);
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, BorshSchema)]
 pub struct SyncCommitteeBits(pub [u8; SYNC_COMMITTEE_BITS_SIZE_IN_BYTES]);
 
 arr_wrapper_impl_tree_hash_and_borsh!(PublicKeyBytes, PUBLIC_KEY_BYTES_LEN);
 arr_wrapper_impl_tree_hash_and_borsh!(SignatureBytes, SIGNATURE_BYTES_LEN);
 arr_wrapper_impl_tree_hash_and_borsh!(SyncCommitteeBits, SYNC_COMMITTEE_BITS_SIZE_IN_BYTES);
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, tree_hash_derive::TreeHash)]
+#[derive(
+    Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize, tree_hash_derive::TreeHash,
+)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct BeaconBlockHeader {
     #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::quoted_u64"))]
@@ -53,7 +55,7 @@ pub struct SigningData {
     pub domain: H256,
 }
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct ExtendedBeaconBlockHeader {
     pub header: BeaconBlockHeader,
@@ -72,33 +74,35 @@ impl From<HeaderUpdate> for ExtendedBeaconBlockHeader {
     }
 }
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct SyncCommitteePublicKeys(pub Vec<PublicKeyBytes>);
 vec_wrapper_impl_tree_hash!(SyncCommitteePublicKeys);
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize, tree_hash_derive::TreeHash)]
+#[derive(
+    Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize, tree_hash_derive::TreeHash,
+)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct SyncCommittee {
     pub pubkeys: SyncCommitteePublicKeys,
     pub aggregate_pubkey: PublicKeyBytes,
 }
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct SyncAggregate {
     pub sync_committee_bits: SyncCommitteeBits,
     pub sync_committee_signature: SignatureBytes,
 }
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct SyncCommitteeUpdate {
     pub next_sync_committee: SyncCommittee,
     pub next_sync_committee_branch: Vec<H256>,
 }
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct HeaderUpdate {
     pub beacon_header: BeaconBlockHeader,
@@ -106,14 +110,14 @@ pub struct HeaderUpdate {
     pub execution_hash_branch: Vec<H256>,
 }
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct FinalizedHeaderUpdate {
     pub header_update: HeaderUpdate,
     pub finality_branch: Vec<H256>,
 }
 
-#[derive(Debug, Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct LightClientUpdate {
     pub attested_beacon_header: BeaconBlockHeader,
@@ -124,7 +128,7 @@ pub struct LightClientUpdate {
     pub sync_committee_update: Option<SyncCommitteeUpdate>,
 }
 
-#[derive(Clone, BorshDeserialize, BorshSerialize)]
+#[derive(Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
 pub struct LightClientState {
     pub finalized_beacon_header: ExtendedBeaconBlockHeader,
     pub current_sync_committee: SyncCommittee,

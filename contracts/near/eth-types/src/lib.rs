@@ -1,5 +1,5 @@
 use borsh::io::Read;
-use borsh::{BorshDeserialize, BorshSerialize};
+use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 use derive_more::{
     Add, AddAssign, Display, Div, DivAssign, From, Into, Mul, MulAssign, Rem, RemAssign, Sub,
     SubAssign,
@@ -78,6 +78,27 @@ macro_rules! uint_declare_wrapper_and_serde {
         #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
         pub struct $name(pub ethereum_types::$name);
 
+        // For uint types (U64, U128, U256)
+        impl borsh::BorshSchema for $name {
+            fn declaration() -> String {
+                stringify!($name).to_string()
+            }
+
+            fn add_definitions_recursively(
+                definitions: &mut std::collections::BTreeMap<String, borsh::schema::Definition>,
+            ) {
+                // Define as a sequence of u64 values
+                let definition = borsh::schema::Definition::Sequence {
+                    length_width: borsh::schema::Definition::ARRAY_LENGTH_WIDTH, // 0 for fixed-size
+                    length_range: $len as u64..=$len as u64,                     // Fixed length
+                    elements: u64::declaration(),
+                };
+
+                borsh::schema::add_definition(Self::declaration(), definition, definitions);
+                u64::add_definitions_recursively(definitions);
+            }
+        }
+
         impl BorshSerialize for $name {
             #[inline]
             fn serialize<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
@@ -124,7 +145,7 @@ pub type Signature = H520;
 
 // Block Header
 
-#[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize, BorshSchema)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct BlockHeader {
     pub parent_hash: H256,

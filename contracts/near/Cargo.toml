@@ -20,7 +20,7 @@ overflow-checks = true
 
 [workspace.dependencies]
 near-sdk = { version = "5.12", features = ["legacy", "unit-testing"] }
-borsh = "1"
+borsh = { version = "1.5.7", features = ["unstable__schema"] }
 rlp = "0.5.2"
 rlp-derive = "0.1.0"
 ethereum-types = "0.14.1"

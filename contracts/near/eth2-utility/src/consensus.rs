@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
-use borsh::{BorshDeserialize, BorshSerialize};
+use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 use eth_types::eth2::*;
 use eth_types::H256;
 use tree_hash::TreeHash;
@@ -28,7 +28,7 @@ pub struct GeneralizedIndex {
     pub sync_committee_tree_index: u32,
 }
 
-#[derive(PartialEq, BorshSerialize, BorshDeserialize)]
+#[derive(PartialEq, BorshSerialize, BorshDeserialize, BorshSchema)]
 pub enum Network {
     Mainnet,
     Goerli,
