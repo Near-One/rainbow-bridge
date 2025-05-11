@@ -18,6 +18,15 @@ use near_sdk::{
 };
 use tree_hash::TreeHash;
 
+#[cfg(feature = "bls")]
+use amcl::bls381::bls381::utils::serialize_uncompressed_g1;
+#[cfg(feature = "bls")]
+use amcl::bls381::ecp::ECP;
+#[cfg(feature = "bls")]
+use amcl::bls381::fp2::FP2;
+#[cfg(feature = "bls")]
+use amcl::bls381::hash_to_curve::hash_to_field_fp2;
+
 mod migrate;
 #[cfg(test)]
 mod tests;
@@ -556,19 +565,50 @@ impl Eth2Client {
             domain,
         );
 
-        let aggregate_signature =
-            bls::AggregateSignature::deserialize(&update.sync_aggregate.sync_committee_signature.0)
-                .unwrap();
-        let pubkeys: Vec<bls::PublicKey> = participant_pubkeys
+        let msg_bytes = signing_root.0.as_bytes().to_vec();
+        let signature_bytes = update.sync_aggregate.sync_committee_signature.0.to_vec();
+        let pubkeys_bytes: Vec<Vec<u8>> = participant_pubkeys
             .into_iter()
-            .map(|x| bls::PublicKey::deserialize(&x.0).unwrap())
+            .map(|x| x.0.to_vec())
             .collect();
-        require!(
-            aggregate_signature
-                .fast_aggregate_verify(signing_root.0, &pubkeys.iter().collect::<Vec<_>>()),
-            "Failed to verify the bls signature"
-        );
+
+        let dst: &[u8] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
+        let msg_fp2 = hash_to_field_fp2(msg_bytes.as_slice(), 2, dst)
+            .expect("hash to field should not fail for given parameters");
+
+        let mut msg_fp2_0 = [0u8; 96];
+        let mut msg_fp2_1 = [0u8; 96];
+        Self::fp2_to_u8(&msg_fp2[0], &mut msg_fp2_0);
+        Self::fp2_to_u8(&msg_fp2[1], &mut msg_fp2_1);
+
+        let mut msg_g2_0 = env::bls12381_map_fp2_to_g2(&msg_fp2_0);
+        let mut msg_g2_1 = env::bls12381_map_fp2_to_g2(&msg_fp2_1);
+        let mut msg_g2_concat = vec![0u8; 1];
+        msg_g2_concat.append(&mut msg_g2_0);
+        msg_g2_concat.push(0);
+        msg_g2_concat.append(&mut msg_g2_1);
+
+        let msg_g2 = env::bls12381_p2_sum(&msg_g2_concat);
+
+        let pubkeys_ser: Vec<u8> = pubkeys_bytes.concat();
+        let pks_decompress = env::bls12381_p1_decompress(&pubkeys_ser);
+        let mut pks_with_sign = Vec::new();
+        for chunk in pks_decompress.chunks(96) {
+            pks_with_sign.push(0u8);
+            pks_with_sign.extend_from_slice(chunk);
+        }
+        let pk_agg = env::bls12381_p1_sum(&pks_with_sign);
+
+        let mut gen = ECP::generator();
+        gen.neg();
+        let gneg = serialize_uncompressed_g1(&gen);
+
+        let sig_des = env::bls12381_p2_decompress(&signature_bytes);
+        let pairing_input = [pk_agg, msg_g2, gneg.to_vec(), sig_des].concat();
+        let ok = env::bls12381_pairing_check(&pairing_input);
+        require!(ok, "Failed to verify the bls signature");
     }
+
 
     fn commit_light_client_update(&mut self, update: LightClientUpdate) {
         // Update finalized header
@@ -642,5 +682,11 @@ impl Eth2Client {
             .map(|header| header.block_number)?;
 
         Some(head_block_number - tail_block_number)
+    }
+
+    #[cfg(feature = "bls")]
+    fn fp2_to_u8(u: &FP2, out: &mut [u8; 96]) {
+        u.getb().to_byte_array(&mut out[0..48], 0);
+        u.geta().to_byte_array(&mut out[48..96], 0);
     }
 }

@@ -37,6 +37,7 @@ bitvec.workspace = true
 near-plugins.workspace = true
 near-abi = "0.4.3"
 schemars = "0.8.22"
+amcl = { git = "https://github.com/sigp/incubator-milagro-crypto-rust.git", default-features = false, features = ["bls381"]}
 
 [dev-dependencies]
 ethereum_serde_utils.workspace = true
