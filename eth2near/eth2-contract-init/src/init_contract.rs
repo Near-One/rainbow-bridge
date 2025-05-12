@@ -165,14 +165,16 @@ mod tests {
     use contract_wrapper::near_network::NearNetwork;
     use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
     use eth_rpc_client::beacon_rpc_client::{BeaconRPCClient, BeaconRPCVersion};
+    use near_workspaces::{Account, Contract};
     use tokio::runtime::Runtime;
-    use workspaces::{Account, Contract};
 
     const ONE_EPOCH_IN_SLOTS: u64 = 32;
 
     fn create_contract(config_for_test: &ConfigForTests) -> (Account, Contract) {
         let rt = Runtime::new().unwrap();
-        let worker = rt.block_on(workspaces::sandbox()).unwrap();
+        let worker = rt
+            .block_on(async { near_workspaces::sandbox().await })
+            .unwrap();
 
         // create accounts
         let owner: Account = worker.root_account().unwrap();
