@@ -2,6 +2,7 @@ use crate::contract_wrapper_trait::ContractWrapper;
 use crate::dao_types;
 use crate::utils::status_as_success_decoded;
 use eth_types::eth2::LightClientUpdate;
+use near_primitives::types::Balance;
 use near_primitives::views::FinalExecutionOutcomeView;
 use near_sdk::json_types::Base64VecU8;
 use near_sdk::{AccountId, Gas};
@@ -138,7 +139,7 @@ mod tests {
         SyncAggregate, SyncCommitteeBits,
     };
     use near_crypto::{KeyType, PublicKey};
-    use near_primitives::types::AccountId;
+    use near_primitives::types::{AccountId, Balance};
     use near_primitives::views::{
         ExecutionOutcomeView, ExecutionOutcomeWithIdView, ExecutionStatusView,
         FinalExecutionOutcomeView, FinalExecutionStatus, SignedTransactionView,
