@@ -5,7 +5,7 @@ from pathlib import Path
 import requests
 from web3 import Web3
 from web3.types import BlockData, HexBytes
-from typing import List
+from typing import Dict, List
 from tqdm import tqdm
 import time
 
@@ -27,7 +27,29 @@ CONSENSUS_API = os.getenv(
 )
 BLOCK_WINDOW = int(os.getenv("BLOCK_WINDOW", "50"))
 
+# Batch size for RPC calls
+BATCH_SIZE = int(os.getenv("BATCH_SIZE", "50"))
+
 w3 = Web3(Web3.HTTPProvider(EXECUTION_RPC))
+
+
+def batch_fetch_execution_blocks(numbers: List[int]) -> Dict[int, BlockData]:
+    """Fetch multiple blocks using Web3.py batch requests."""
+    batch = w3.batch_requests()
+
+    # Add all block requests to the batch
+    for number in numbers:
+        batch.add(w3.eth.get_block(number, full_transactions=True))
+
+    # Execute the batch
+    results = batch.execute()
+
+    # Map results back to block numbers
+    blocks = {}
+    for i, block in enumerate(results):
+        blocks[numbers[i]] = block
+
+    return blocks
 
 
 def fetch_execution_block(number: int) -> BlockData:
@@ -61,6 +83,7 @@ def normalize_block(raw: BlockData) -> dict:
 def dump_execution_blocks(start: int, end: int):
     """
     Dump execution blocks from start to end inclusive, with progress, retries, and streaming to file.
+    Uses batch requests by default for better performance.
     """
 
     def hb_default(o):
@@ -70,37 +93,63 @@ def dump_execution_blocks(start: int, end: int):
 
     total = end - start + 1
     path = OUT_DIR / f"execution_blocks_{start}_{end}.json"
-    print(f"⛏ Dumping execution blocks {start}→{end}")
+    print(f"⛏ Dumping execution blocks {start}→{end} (batch size: {BATCH_SIZE})")
 
     with path.open("w") as f:
         f.write("[\n")
         with tqdm(total=total, desc="Fetching blocks") as pbar:
-            for number in range(start, end + 1):
-                # Retry logic
+            # Process blocks in batches
+            for batch_start in range(start, end + 1, BATCH_SIZE):
+                batch_end = min(batch_start + BATCH_SIZE - 1, end)
+                batch_numbers = list(range(batch_start, batch_end + 1))
+
+                # Retry logic for batch
                 for attempt in range(1, MAX_RETRIES + 1):
                     try:
-                        raw = fetch_execution_block(number)
-                        block = normalize_block(raw)
+                        blocks = batch_fetch_execution_blocks(batch_numbers)
                         break
                     except Exception as e:
                         print(
-                            f"⚠️ Error fetching block {number} (attempt {attempt}/{MAX_RETRIES}): {e}"
+                            f"⚠️ Error fetching batch {batch_start}-{batch_end} (attempt {attempt}/{MAX_RETRIES}): {e}"
                         )
                         if attempt < MAX_RETRIES:
                             time.sleep(RETRY_DELAY)
                         else:
-                            raise RuntimeError(
-                                f"Failed to fetch block {number} after {MAX_RETRIES} attempts"
+                            # Fall back to individual fetching for this batch
+                            print(
+                                f"⚠️ Falling back to individual fetching for batch {batch_start}-{batch_end}"
                             )
+                            blocks = {}
+                            for number in batch_numbers:
+                                for single_attempt in range(1, MAX_RETRIES + 1):
+                                    try:
+                                        raw = w3.eth.get_block(
+                                            number, full_transactions=True
+                                        )
+                                        blocks[number] = raw
+                                        break
+                                    except Exception as e:
+                                        print(
+                                            f"⚠️ Error fetching block {number} (attempt {single_attempt}/{MAX_RETRIES}): {e}"
+                                        )
+                                        if single_attempt < MAX_RETRIES:
+                                            time.sleep(RETRY_DELAY)
+                                        else:
+                                            raise RuntimeError(
+                                                f"Failed to fetch block {number} after {MAX_RETRIES} attempts"
+                                            )
 
-                # Stream write to JSON array
-                f.write(json.dumps(block, default=hb_default))
-                if number < end:
-                    f.write(",\n")
-                else:
-                    f.write("\n")
-                f.flush()
-                pbar.update(1)
+                # Write blocks in order
+                for number in batch_numbers:
+                    if number in blocks:
+                        block = normalize_block(blocks[number])
+                        f.write(json.dumps(block, default=hb_default))
+                        if number < end:
+                            f.write(",\n")
+                        else:
+                            f.write("\n")
+                        f.flush()
+                    pbar.update(1)
 
         f.write("]")
 
