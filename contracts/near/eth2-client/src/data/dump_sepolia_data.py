@@ -1,126 +1,138 @@
 #!/usr/bin/env python3
 import os
 import json
+import logging
+from pathlib import Path
 import requests
 from web3 import Web3
+from web3.types import BlockData
 from typing import List
 
 # ─────────── CONFIG ───────────
+NETWORK = os.getenv("NETWORK", "sepolia")
+OUT_DIR = Path(f"./{NETWORK}")
+OUT_DIR.mkdir(exist_ok=True)
 
-# Fallback list of completely free Sepolia RPC endpoints
+# Sepolia RPC endpoints (fallbacks)
 EXECUTION_RPCS = [
-    os.environ.get("EXECUTION_RPC", ""),
-    "https://ethereum-sepolia-rpc.publicnode.com",  # PublicNode
-    "https://rpc.sepolia.org",  # RPC.Sepolia.org
+    os.getenv("EXECUTION_RPC"),
+    "https://ethereum-sepolia-rpc.publicnode.com",
+    "https://rpc.sepolia.org",
     "https://ethereum-sepolia.blockpi.network/v1/rpc/public",
     "https://endpoints.omniatech.io/v1/eth/sepolia/public",
 ]
 
-# Beacon-node REST API (must support /eth/v1/beacon/headers and /eth/v1/beacon/light_client/updates)
-CONSENSUS_API = (
-    os.environ.get("CONSENSUS_API") or "http://unstable.sepolia.beacon-api.nimbus.team"
+# Beacon-node REST API endpoint
+CONSENSUS_API = os.getenv(
+    "CONSENSUS_API", "http://unstable.sepolia.beacon-api.nimbus.team"
 )
+BLOCK_WINDOW = int(os.getenv("BLOCK_WINDOW", "50"))
 
-NETWORK = "sepolia"
-OUT_DIR = f"./{NETWORK}"
-os.makedirs(OUT_DIR, exist_ok=True)
+# Initialize logging
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger(__name__)
 
-# HARDCODED TARGET
-TARGET_BLOCK_NUMBER = 8303247
-TARGET_SLOT = 7602176
+# Pick a working execution RPC and initialize Web3
 
 
-# How many execution blocks to pull (counting backwards from head)
-BLOCK_WINDOW = int(os.environ.get("BLOCK_WINDOW", "50"))
+def pick_rpc(candidates: List[str]) -> str:
+    for url in filter(None, candidates):
+        try:
+            w3 = Web3(Web3.HTTPProvider(url))
+            if w3.is_connected():
+                logger.info(f"✅ Connected to execution RPC: {url}")
+                return url
+        except Exception:
+            continue
+    raise SystemExit("❌ No execution RPC available!")
 
-# How many past completed sync-committee periods to dump
-PERIOD_WINDOW = int(os.environ.get("PERIOD_WINDOW", "20"))
+
+EXECUTION_RPC = pick_rpc(EXECUTION_RPCS)
+w3 = Web3(Web3.HTTPProvider(EXECUTION_RPC))
 
 # ─────────── HELPERS ───────────
 
 
-def pick_rpc(candidates: List[str]) -> str:
-    for url in candidates:
-        if not url:
-            continue
-        try:
-            w3 = Web3(Web3.HTTPProvider(url))
-            if w3.is_connected():
-                print(f"✅ Connected to execution RPC: {url}")
-                return url
-        except Exception:
-            pass
-    raise SystemExit("❌ No execution RPC available!")
+def fetch_execution_block(number: int) -> BlockData:
+    """Fetch full block by number via Web3."""
+    block = w3.eth.get_block(number, full_transactions=True)
+    return block
 
 
-# Pick a working execution RPC
-EXECUTION_RPC = pick_rpc(EXECUTION_RPCS)
-w3 = Web3(Web3.HTTPProvider(EXECUTION_RPC))
-
-
-def fetch_execution_block(number: int) -> dict:
-    payload = {
-        "jsonrpc": "2.0",
-        "method": "eth_getBlockByNumber",
-        "params": [hex(number), True],
-        "id": 1,
+def normalize_block(raw: BlockData) -> dict:
+    return {
+        "parent_hash": raw.get("parentHash") or raw.get("parent_hash"),
+        "uncles_hash": raw.get(
+            "sha3Uncles", raw.get("unclesHash", "0x1dcc4de8dec75...")
+        ),
+        "author": raw.get("miner") or raw.get("author"),
+        "state_root": raw.get("stateRoot") or raw.get("state_root"),
+        "transactions_root": raw.get("transactionsRoot")
+        or raw.get("transactions_root"),
+        "receipts_root": raw.get("receiptsRoot") or raw.get("receipts_root"),
+        "log_bloom": raw.get("logsBloom") or raw.get("logs_bloom"),
+        "difficulty": raw.get("difficulty"),
+        "number": hex(raw.get("number", 0)),
+        "gas_limit": raw.get("gasLimit") or raw.get("gas_limit"),
+        "gas_used": raw.get("gasUsed") or raw.get("gas_used"),
+        "timestamp": raw.get("timestamp"),
+        "extra_data": raw.get("extraData") or raw.get("extra_data"),
+        "mix_hash": raw.get("mixHash") or raw.get("mix_hash"),
+        "nonce": raw.get("nonce"),
+        "base_fee_per_gas": raw.get("baseFeePerGas") or raw.get("base_fee_per_gas"),
+        "withdrawals_root": raw.get("withdrawalsRoot") or raw.get("withdrawals_root"),
     }
-    r = requests.post(EXECUTION_RPC, json=payload)
-    r.raise_for_status()
-    blk = r.json().get("result")
-    if blk is None:
-        raise RuntimeError(f"No block data for {number}")
-    return blk
 
 
-def dump_execution_blocks(start: int, window: int):
-    end = start + window
-    print(f"⛏ Dumping execution blocks {start}→{end}")
-    blocks_raw = [fetch_execution_block(n) for n in range(start, end + 1)]
-    blocks = [normalize_block(b) for b in blocks_raw]
-    path = os.path.join(OUT_DIR, f"execution_blocks_{start}_{end}.json")
-    with open(path, "w") as f:
+def dump_execution_blocks(start: int, end: int):
+    logger.info(f"⛏ Dumping execution blocks {start}→{end}")
+    blocks = [normalize_block(fetch_execution_block(n)) for n in range(start, end + 1)]
+    path = OUT_DIR / f"execution_blocks_{start}_{end}.json"
+    with path.open("w") as f:
         json.dump(blocks, f, indent=2)
-    print(f"✔ Wrote {len(blocks)} blocks → {path}")
+    logger.info(f"✔ Wrote {len(blocks)} blocks → {path}")
 
 
 def fetch_beacon_header(block_id: str) -> dict:
-    """
-    Fetch a SignedBeaconHeader at block_id ("finalized", "head" or a slot number).
-    """
     url = f"{CONSENSUS_API}/eth/v1/beacon/headers/{block_id}"
-    r = requests.get(url)
-    r.raise_for_status()
-    return r.json().get("data", {}).get("header", {})
+    resp = requests.get(url)
+    resp.raise_for_status()
+    return resp.json().get("data", {}).get("header", {})
 
 
-def dump_beacon_header_with_slot():
+def dump_beacon_header_with_slot() -> int:
     header = fetch_beacon_header("finalized")
     slot = int(header["message"]["slot"])
-    filename = f"beacon_header_{slot}.json"
-    path = os.path.join(OUT_DIR, filename)
-    with open(path, "w") as f:
-        # Dump only the message part
+    path = OUT_DIR / f"beacon_header_{slot}.json"
+    with path.open("w") as f:
         json.dump(header["message"], f, indent=2)
-    print(f"✔ Wrote Beacon header message (slot {slot}) → {path}")
+    logger.info(f"✔ Wrote Beacon header message (slot {slot}) → {path}")
     return slot
 
 
 def compute_period(slot: int) -> int:
-    # 32 slots/epoch × 256 epochs/period = 8192 slots/period
     return slot // 8192
 
 
+def get_recent_light_client_updates(count: int = 4) -> List[int]:
+    header = fetch_beacon_header("finalized")
+    current_slot = int(header["message"]["slot"])
+    current_period = compute_period(current_slot)
+    periods = [current_period - i for i in range(count)]
+
+    logger.info(f"Current slot: {current_slot}")
+    logger.info(f"Current period: {current_period}")
+    logger.info(f"Fetching periods: {periods}")
+
+    dump_light_client_updates(periods)
+    return periods
+
+
 def fetch_light_client_update(period: int) -> dict:
-    """
-    Call Lodestar's light-client updates endpoint.
-    """
     url = f"{CONSENSUS_API}/eth/v1/beacon/light_client/updates"
-    r = requests.get(url, params={"start_period": period, "count": 1})
-    r.raise_for_status()
-    # extract the list of updates directly
-    data = r.json()[0].get("data", [])
-    return data
+    resp = requests.get(url, params={"start_period": period, "count": 1})
+    resp.raise_for_status()
+    return resp.json()[0].get("data", {})
 
 
 def convert_to_old_format(update: dict) -> dict:
@@ -200,77 +212,46 @@ def convert_to_old_format(update: dict) -> dict:
 def dump_light_client_updates(periods: List[int]):
     for p in periods:
         try:
-            print(f"🔄  Fetching LightClientUpdate for period {p}")
-            update = fetch_light_client_update(p)
-            if not update:
-                print(f"⚠️  No updates available for period {p}, skipping.")
+            logger.info(f"🔄 Fetching LightClientUpdate for period {p}")
+            upd = fetch_light_client_update(p)
+            if not upd:
+                logger.warning(f"⚠️ No updates for period {p}, skipping.")
                 continue
 
-            # Convert each update to old format
-            old_format_update = convert_to_old_format(update)
-
-            path = os.path.join(OUT_DIR, f"light_client_update_period_{p}.json")
-            with open(path, "w") as f:
-                json.dump(old_format_update, f, indent=2)
-            print(f"✔ Wrote {len(old_format_update)} update(s) → {path}")
+            formatted = convert_to_old_format(upd)
+            path = OUT_DIR / f"light_client_update_period_{p}.json"
+            with path.open("w") as f:
+                json.dump(formatted, f, indent=2)
+            logger.info(f"✔ Wrote update → {path}")
         except requests.HTTPError as e:
-            print(f"⚠️  Skipping period {p}: {e}")
+            logger.warning(f"⚠️ Skipping period {p}: {e}")
 
 
-def normalize_block(raw: dict) -> dict:
-    return {
-        # Core fields (must all be present)
-        "parent_hash": raw["parentHash"],
-        "uncles_hash": raw.get("sha3Uncles", "0x1dcc4de8dec75..."),
-        "author": raw["miner"],
-        "state_root": raw["stateRoot"],
-        "transactions_root": raw["transactionsRoot"],
-        "receipts_root": raw["receiptsRoot"],
-        "log_bloom": raw["logsBloom"],
-        "difficulty": raw["difficulty"],
-        "number": raw["number"],
-        "gas_limit": raw["gasLimit"],
-        "gas_used": raw["gasUsed"],
-        "timestamp": raw["timestamp"],
-        "extra_data": raw["extraData"],
-        "mix_hash": raw["mixHash"],
-        "nonce": raw["nonce"],
-        "base_fee_per_gas": raw.get("baseFeePerGas"),
-        "withdrawals_root": raw.get("withdrawalsRoot"),
-        # drop everything else
-    }
+def load_update(period: int) -> dict:
+    path = OUT_DIR / f"light_client_update_period_{period}.json"
+    with path.open() as f:
+        return json.load(f)
 
 
-# ─────────── MAIN ───────────
+def get_block_number_for_period(period: int) -> int:
+    upd = load_update(period)
+    block_hash = upd["attested_beacon_header"]["execution_block_hash"]
+    block = w3.eth.get_block(block_hash, full_transactions=False)
+    return block["number"]
+
+
+def main():
+    periods = get_recent_light_client_updates(count=4)
+    logger.info(f"🎉 Updates fetched for periods: {periods}")
+
+    rev = list(reversed(periods))
+    start = get_block_number_for_period(rev[1])
+    end = get_block_number_for_period(rev[2])
+    logger.info(f"Blocks range: {start} - {end}")
+
+    dump_execution_blocks(start, end)
+    dump_execution_blocks(end + 1, end + 1 + BLOCK_WINDOW)
+
 
 if __name__ == "__main__":
-    # 1) Fetch and dump the execution blocks
-    # dump_execution_blocks(TARGET_BLOCK_NUMBER, BLOCK_WINDOW)
-
-    # 2) Fetch and dump the beacon header for the target slot
-    print(f"🔄 Fetching beacon header for slot {TARGET_SLOT}")
-    beacon_header = fetch_beacon_header(str(TARGET_SLOT))
-    beacon_path = os.path.join(OUT_DIR, f"beacon_header_{TARGET_SLOT}.json")
-    with open(beacon_path, "w") as f:
-        # Dump only the message part
-        json.dump(beacon_header["message"], f, indent=2)
-    print(f"✔ Wrote beacon header → {beacon_path}")
-
-    # 3) Fetch the light client update for the period containing this slot
-    period = TARGET_SLOT // 8192
-    print(f"🔄 Fetching light client update for period {period}")
-    try:
-        update = fetch_light_client_update(period)
-        if update:
-            old_format_update = convert_to_old_format(update)
-            update_path = os.path.join(
-                OUT_DIR, f"light_client_update_period_{period}.json"
-            )
-            with open(update_path, "w") as f:
-                json.dump(old_format_update, f, indent=2)
-            print(f"✔ Wrote light client update → {update_path}")
-    except Exception as e:
-        print(f"⚠️ Could not fetch light client update: {e}")
-
-    dump_light_client_updates([926, 927])
-    print("🎉 All done!")
+    main()
