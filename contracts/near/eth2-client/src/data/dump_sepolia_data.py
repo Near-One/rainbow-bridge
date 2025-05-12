@@ -79,6 +79,10 @@ def normalize_block(raw: BlockData) -> dict:
         if raw.get("baseFeePerGas") is not None
         else None,  # Convert to hex
         "withdrawals_root": raw.get("withdrawalsRoot"),
+        "blob_gas_used": hex(raw.get("blobGasUsed", 0)),
+        "excess_blob_gas": hex(raw.get("excessBlobGas", 0)),
+        "parent_beacon_block_root": raw.get("parentBeaconBlockRoot"),
+        "requests_hash": raw.get("requestsHash"),
     }
 
 
