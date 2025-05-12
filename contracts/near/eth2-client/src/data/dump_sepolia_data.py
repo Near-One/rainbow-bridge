@@ -67,15 +67,17 @@ def normalize_block(raw: BlockData) -> dict:
         "transactions_root": raw.get("transactionsRoot"),
         "receipts_root": raw.get("receiptsRoot"),
         "log_bloom": raw.get("logsBloom"),
-        "difficulty": raw.get("difficulty"),
+        "difficulty": hex(raw.get("difficulty", 0)),
         "number": hex(raw.get("number", 0)),
-        "gas_limit": raw.get("gasLimit"),
-        "gas_used": raw.get("gasUsed"),
-        "timestamp": raw.get("timestamp"),
+        "gas_limit": hex(raw.get("gasLimit", 0)),
+        "gas_used": hex(raw.get("gasUsed", 0)),
+        "timestamp": hex(raw.get("timestamp", 0)),
         "extra_data": raw.get("extraData"),
         "mix_hash": raw.get("mixHash"),
         "nonce": raw.get("nonce"),
-        "base_fee_per_gas": raw.get("baseFeePerGas"),
+        "base_fee_per_gas": hex(raw.get("baseFeePerGas", 0))
+        if raw.get("baseFeePerGas") is not None
+        else None,  # Convert to hex
         "withdrawals_root": raw.get("withdrawalsRoot"),
     }
 
@@ -294,7 +296,7 @@ def load_update(period: int) -> dict:
 
 def get_block_number_for_period(period: int) -> int:
     upd = load_update(period)
-    block_hash = upd["attested_beacon_header"]["execution_block_hash"]
+    block_hash = upd["finality_update"]["header_update"]["execution_block_hash"]
     block = w3.eth.get_block(block_hash, full_transactions=False)
     return block["number"]
 
