@@ -18,12 +18,17 @@ EXECUTION_RPCS = [
 
 # Beacon-node REST API (must support /eth/v1/beacon/headers and /eth/v1/beacon/light_client/updates)
 CONSENSUS_API = (
-    os.environ.get("CONSENSUS_API") or "https://lodestar-sepolia.chainsafe.io"
+    os.environ.get("CONSENSUS_API") or "http://unstable.sepolia.beacon-api.nimbus.team"
 )
 
 NETWORK = "sepolia"
 OUT_DIR = f"./{NETWORK}"
 os.makedirs(OUT_DIR, exist_ok=True)
+
+# HARDCODED TARGET
+TARGET_BLOCK_NUMBER = 8303247
+TARGET_SLOT = 7602176
+
 
 # How many execution blocks to pull (counting backwards from head)
 BLOCK_WINDOW = int(os.environ.get("BLOCK_WINDOW", "50"))
@@ -68,13 +73,12 @@ def fetch_execution_block(number: int) -> dict:
     return blk
 
 
-def dump_recent_execution_blocks(window: int):
-    head = w3.eth.block_number
-    start = max(0, head - window + 1)
-    print(f"⛏ Dumping execution blocks {start}→{head}")
-    blocks_raw = [fetch_execution_block(n) for n in range(start, head + 1)]
+def dump_execution_blocks(start: int, window: int):
+    end = start + window
+    print(f"⛏ Dumping execution blocks {start}→{end}")
+    blocks_raw = [fetch_execution_block(n) for n in range(start, end + 1)]
     blocks = [normalize_block(b) for b in blocks_raw]
-    path = os.path.join(OUT_DIR, f"execution_blocks_{start}_{head}.json")
+    path = os.path.join(OUT_DIR, f"execution_blocks_{start}_{end}.json")
     with open(path, "w") as f:
         json.dump(blocks, f, indent=2)
     print(f"✔ Wrote {len(blocks)} blocks → {path}")
@@ -240,19 +244,33 @@ def normalize_block(raw: dict) -> dict:
 # ─────────── MAIN ───────────
 
 if __name__ == "__main__":
-    # 1) Dump execution blocks
-    # dump_recent_execution_blocks(BLOCK_WINDOW)
+    # 1) Fetch and dump the execution blocks
+    # dump_execution_blocks(TARGET_BLOCK_NUMBER, BLOCK_WINDOW)
 
-    # 2) Dump the finalized beacon header with numeric slot in filename
-    finalized_slot = dump_beacon_header_with_slot()
+    # 2) Fetch and dump the beacon header for the target slot
+    print(f"🔄 Fetching beacon header for slot {TARGET_SLOT}")
+    beacon_header = fetch_beacon_header(str(TARGET_SLOT))
+    beacon_path = os.path.join(OUT_DIR, f"beacon_header_{TARGET_SLOT}.json")
+    with open(beacon_path, "w") as f:
+        # Dump only the message part
+        json.dump(beacon_header["message"], f, indent=2)
+    print(f"✔ Wrote beacon header → {beacon_path}")
 
-    # 3) Determine which periods to fetch updates for
-    current_period = compute_period(finalized_slot)
-    periods = [
-        current_period - i
-        for i in range(1, PERIOD_WINDOW + 1)
-        if current_period - i >= 0
-    ]
-    dump_light_client_updates(periods)
+    # 3) Fetch the light client update for the period containing this slot
+    period = TARGET_SLOT // 8192
+    print(f"🔄 Fetching light client update for period {period}")
+    try:
+        update = fetch_light_client_update(period)
+        if update:
+            old_format_update = convert_to_old_format(update)
+            update_path = os.path.join(
+                OUT_DIR, f"light_client_update_period_{period}.json"
+            )
+            with open(update_path, "w") as f:
+                json.dump(old_format_update, f, indent=2)
+            print(f"✔ Wrote light client update → {update_path}")
+    except Exception as e:
+        print(f"⚠️ Could not fetch light client update: {e}")
 
+    dump_light_client_updates([926, 927])
     print("🎉 All done!")

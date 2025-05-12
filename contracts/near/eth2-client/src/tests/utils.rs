@@ -108,12 +108,12 @@ pub fn get_sepolia_test_data(
     const NETWORK: &str = "sepolia";
     lazy_static! {
         static ref INIT_UPDATE: LightClientUpdate =
-            read_client_updates(NETWORK.to_string(), 919, 919)[0].clone();
+            read_client_updates(NETWORK.to_string(), 927, 927)[0].clone();
         static ref UPDATES: Vec<LightClientUpdate> =
-            read_client_updates(NETWORK.to_string(), 920, 922);
+            read_client_updates(NETWORK.to_string(), 928, 928);
         static ref HEADERS: Vec<Vec<BlockHeader>> = vec![read_headers(format!(
             "./src/data/{}/execution_blocks_{}_{}.json",
-            NETWORK, 8262760, 8262809
+            NETWORK, 8303247, 8303297
         ))];
     };
 
