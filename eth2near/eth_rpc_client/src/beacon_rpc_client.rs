@@ -789,7 +789,7 @@ mod tests {
     #[test]
     fn test_is_sync() {
         assert!(!BeaconRPCClient::new(
-            "https://lodestar-goerli.chainsafe.io",
+            "https://lodestar-sepolia.chainsafe.io",
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
             None
