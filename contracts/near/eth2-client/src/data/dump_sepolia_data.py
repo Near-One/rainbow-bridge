@@ -4,8 +4,13 @@ import json
 from pathlib import Path
 import requests
 from web3 import Web3
-from web3.types import BlockData
+from web3.types import BlockData, HexBytes
 from typing import List
+from tqdm import tqdm
+import time
+
+MAX_RETRIES = 3
+RETRY_DELAY = 1
 
 NETWORK = os.getenv("NETWORK", "sepolia")
 OUT_DIR = Path(f"./{NETWORK}")
@@ -54,12 +59,52 @@ def normalize_block(raw: BlockData) -> dict:
 
 
 def dump_execution_blocks(start: int, end: int):
-    print(f"⛏ Dumping execution blocks {start}→{end}")
-    blocks = [normalize_block(fetch_execution_block(n)) for n in range(start, end + 1)]
+    """
+    Dump execution blocks from start to end inclusive, with progress, retries, and streaming to file.
+    """
+
+    def hb_default(o):
+        if isinstance(o, (bytes, HexBytes)):
+            return "0x" + o.hex()
+        raise TypeError
+
+    total = end - start + 1
     path = OUT_DIR / f"execution_blocks_{start}_{end}.json"
+    print(f"⛏ Dumping execution blocks {start}→{end}")
+
     with path.open("w") as f:
-        json.dump(blocks, f, indent=2)
-    print(f"✔ Wrote {len(blocks)} blocks → {path}")
+        f.write("[\n")
+        with tqdm(total=total, desc="Fetching blocks") as pbar:
+            for number in range(start, end + 1):
+                # Retry logic
+                for attempt in range(1, MAX_RETRIES + 1):
+                    try:
+                        raw = fetch_execution_block(number)
+                        block = normalize_block(raw)
+                        break
+                    except Exception as e:
+                        print(
+                            f"⚠️ Error fetching block {number} (attempt {attempt}/{MAX_RETRIES}): {e}"
+                        )
+                        if attempt < MAX_RETRIES:
+                            time.sleep(RETRY_DELAY)
+                        else:
+                            raise RuntimeError(
+                                f"Failed to fetch block {number} after {MAX_RETRIES} attempts"
+                            )
+
+                # Stream write to JSON array
+                f.write(json.dumps(block, default=hb_default))
+                if number < end:
+                    f.write(",\n")
+                else:
+                    f.write("\n")
+                f.flush()
+                pbar.update(1)
+
+        f.write("]")
+
+    print(f"✔ Wrote {total} blocks → {path}")
 
 
 def fetch_beacon_header(block_id: str) -> dict:
