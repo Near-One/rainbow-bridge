@@ -41,4 +41,3 @@ ethereum_hashing = { path = "eth2_hashing" }
 ethereum-types = { git = "https://github.com/aurora-is-near/parity-common", tag = "v0.14.1-wasm" }
 rlp = { git = "https://github.com/aurora-is-near/parity-common", tag = "v0.14.1-wasm" }
 rlp-derive = { git = "https://github.com/aurora-is-near/parity-common", tag = "v0.14.1-wasm" }
-near-sdk = { git = "https://github.com/near/near-sdk-rs.git", branch = "bls-pairing-check", features = ["legacy", "unit-testing"] }
