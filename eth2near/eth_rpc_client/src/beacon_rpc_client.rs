@@ -690,7 +690,11 @@ mod tests {
         let beacon_rpc_client =
             BeaconRPCClient::new(&url, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS, None);
         let rpc_json_str = beacon_rpc_client.get_json_from_raw_request(&url);
-        assert_eq!(rpc_json_str.unwrap(), file_json_str.trim());
+
+        let rpc_json_str = rpc_json_str.unwrap();
+        let rpc_json: Value = serde_json::from_str(&rpc_json_str).unwrap();
+        let file_json: Value = serde_json::from_str(&file_json_str).unwrap();
+        assert_eq!(rpc_json, file_json);
     }
 
     #[test]
@@ -733,27 +737,25 @@ mod tests {
 
         assert_eq!(
             beacon_block_header.slot,
-            trim_quotes(v["data"]["header"]["message"]["slot"].to_string())
-                .parse::<u64>()
-                .unwrap()
+            trim_quotes(v["slot"].to_string()).parse::<u64>().unwrap()
         );
         assert_eq!(
             beacon_block_header.proposer_index,
-            trim_quotes(v["data"]["header"]["message"]["proposer_index"].to_string())
+            trim_quotes(v["proposer_index"].to_string())
                 .parse::<u64>()
                 .unwrap()
         );
         assert_eq!(
             format!("{:?}", beacon_block_header.body_root),
-            trim_quotes(v["data"]["header"]["message"]["body_root"].to_string())
+            trim_quotes(v["body_root"].to_string())
         );
         assert_eq!(
             format!("{:?}", beacon_block_header.parent_root),
-            trim_quotes(v["data"]["header"]["message"]["parent_root"].to_string())
+            trim_quotes(v["parent_root"].to_string())
         );
         assert_eq!(
             format!("{:?}", beacon_block_header.state_root),
-            trim_quotes(v["data"]["header"]["message"]["state_root"].to_string())
+            trim_quotes(v["state_root"].to_string())
         );
     }
 
@@ -774,7 +776,7 @@ mod tests {
             std::fs::read_to_string(config.path_to_block).expect("Unable to read file");
         let v: Value = serde_json::from_str(&block_json_str).unwrap();
         assert_eq!(
-            beacon_block_body.attestations_base().unwrap().len(),
+            beacon_block_body.attestations_electra().unwrap().len(),
             v["data"]["message"]["body"]["attestations"]
                 .as_array()
                 .unwrap()
