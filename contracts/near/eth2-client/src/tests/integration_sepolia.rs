@@ -15,7 +15,6 @@ mod sepolia_integration_tests {
     const WASM_FILEPATH: &str = "../target/near/eth2_client/eth2_client.wasm";
 
     #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
-    #[serde(rename_all = "camelCase")]
     struct BlockHeaderV1 {         
         pub parent_hash: H256,
         pub uncles_hash: H256,
@@ -148,58 +147,135 @@ mod sepolia_integration_tests {
         Ok(())
     }
 
+
     #[tokio::test]
     async fn sepolia_migration_check() -> anyhow::Result<()> {
-        // Very similar to above, but with your migration flow
-        let (headers, updates, init_input) = get_sepolia_test_data(None);
-        let init_v1: InitInputV1 = init_input.into();
-        let (alice, contract) = initialize_client(init_v1, WASM_FILEPATH).await?;
+        let (headers_data, updates, init_input) = get_sepolia_test_data(Some(InitOptions {
+            validate_updates: false,
+            verify_bls_signatures: false,
+            hashes_gc_threshold: 51000,
+            trusted_signer: None,
+        }));
+        let init_input: InitInputV1 = init_input.into();
+        let (alice, contract) = initialize_client(init_input, WASM_FILEPATH).await?;
+        let num_of_blocks_to_submit = 32;
+        let headers = headers_data[0].as_slice()[1..num_of_blocks_to_submit].to_vec();
 
-        // Register a submitter
-        let result = alice.call(contract.id(), "register_submitter")
+        let result = alice
+            .call(contract.id(), "register_submitter")
             .deposit(NearToken::from_near(20))
-            .transact().await?;
+            .transact()
+            .await?;
         assert!(result.is_success());
 
-        // Submit the first 32 execution headers
-        let first_slice = &headers[0][1..33];
-        for chunk in first_slice.chunks(50) {
-            let mut tx = alice.batch(contract.id());
-            for h in chunk {
-                let h_v1: BlockHeaderV1 = h.clone().into();
-                tx = tx.call(
+        // Submit blocks [1..num_of_blocks_to_submit]
+        for headers_chunk in headers.chunks(50) {
+            let mut transaction = alice.batch(contract.id());
+            for header in headers_chunk {
+                let header_v1: BlockHeaderV1 = header.clone().into();
+                transaction = transaction.call(
                     Function::new("submit_execution_header")
-                        .args(borsh::to_vec(&h_v1)?)
-                        .gas(Gas::from_tgas(6))
+                        .args(borsh::to_vec(&header_v1)?)
+                        .gas(Gas::from_tgas(6)),
                 );
             }
-            let result = tx.transact().await?;
+
+            let result = transaction.transact().await?;
             assert!(result.is_success());
         }
 
-        // Submit and finalize a light‐client update
-        let last = first_slice.last().unwrap().calculate_hash();
-        let mut upd = updates[1].clone();
-        upd.finality_update.header_update.execution_block_hash = last;
-        let result = alice.call(contract.id(), "submit_beacon_chain_light_client_update")
-            .args_borsh(upd)
+        // Submit light client update and finilized submited blocks
+        let mut update = updates[1].clone();
+        update.finality_update.header_update.execution_block_hash =
+            headers.last().unwrap().calculate_hash();
+        let outcome = alice
+            .call(contract.id(), "submit_beacon_chain_light_client_update")
+            .args_borsh(update)
             .gas(Gas::from_tgas(300))
-            .transact().await?;
+            .transact()
+            .await?;
+        assert!(outcome.is_success());
+
+        // Verify finilized blocks
+        for header in &headers {
+            let result: Option<H256> = contract
+                .view("block_hash_safe")
+                .args_borsh(header.number)
+                .await?
+                .borsh()?;
+            assert!(result.is_some())
+        }
+
+        // Deploy new version
+        let contract = contract
+            .as_account()
+            .deploy(&(std::fs::read(WASM_FILEPATH).unwrap()))
+            .await
+            .unwrap()
+            .result;
+
+        // Migrate
+        let result = contract
+            .call("migrate")
+            .gas(Gas::from_tgas(300))
+            .transact()
+            .await?;
         assert!(result.is_success());
 
-        // Deploy new wasm and migrate
-        let new_wasm = std::fs::read(WASM_FILEPATH)?;
-        let contract = contract.as_account().deploy(&new_wasm).await?.result;
-        let result = contract.call("migrate").gas(Gas::from_tgas(300)).transact().await?;
+        // Verify finilized blocks after migration
+        for header in headers {
+            let result: Option<H256> = contract
+                .view("block_hash_safe")
+                .args_borsh(header.number)
+                .await?
+                .borsh()?;
+            assert!(result.is_some())
+        }
+
+        let headers = headers_data[0].as_slice()
+            [num_of_blocks_to_submit..num_of_blocks_to_submit * 2]
+            .to_vec();
+        let mut update = updates[2].clone();
+        update.finality_update.header_update.execution_block_hash =
+            headers.last().unwrap().calculate_hash();
+
+        // Submit light client update
+        let result = alice
+            .call(contract.id(), "submit_beacon_chain_light_client_update")
+            .args_borsh(update)
+            .gas(Gas::from_tgas(300))
+            .transact()
+            .await?;
         assert!(result.is_success());
 
-        // Verify first slice still present after migration
-        for h in first_slice {
-            let result: Option<H256> = contract.view("block_hash_safe")
-                .args_borsh(h.number).await?.borsh()?;
-            assert!(result.is_some());
+        // Submit and finilize blocks [num_of_blocks_to_submit..num_of_blocks_to_submit*2]
+        for headers_chunk in headers.iter().rev().collect::<Vec<_>>().chunks(50) {
+            let mut transaction = alice.batch(contract.id());
+            for header in headers_chunk {
+                transaction = transaction.call(
+                    Function::new("submit_execution_header")
+                        .args(borsh::to_vec(header)?)
+                        .gas(Gas::from_tgas(6)),
+                );
+            }
+
+            let result = transaction.transact().await?;
+            assert!(result.is_success());
+        }
+
+        // Verify finilized blocks [1..num_of_blocks_to_submit*2]
+        let headers = headers_data[0].as_slice()[1..num_of_blocks_to_submit * 2].to_vec();
+        for header in headers {
+            let result: Option<H256> = contract
+                .view("block_hash_safe")
+                .args_borsh(header.number)
+                .await?
+                .borsh()?;
+            assert!(result.is_some())
         }
 
         Ok(())
     }
+
+
 }
