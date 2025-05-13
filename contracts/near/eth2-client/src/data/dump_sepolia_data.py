@@ -343,10 +343,9 @@ def main():
     rev = list(reversed(periods))
     start = get_block_number_for_period(rev[1])
     end = get_block_number_for_period(rev[2])
-    print(f"Blocks range: {start} - {end}")
-
+    next_end = get_block_number_for_period(rev[3])
     dump_execution_blocks(start, end)
-    dump_execution_blocks(end + 1, end + 1 + BLOCK_WINDOW)
+    dump_execution_blocks(end + 1, next_end)
 
 
 if __name__ == "__main__":
