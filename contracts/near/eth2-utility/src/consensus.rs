@@ -21,14 +21,17 @@ pub struct ProofSize {
     pub execution_proof_size: usize,
 }
 
+#[derive(Debug)]
 pub struct GeneralizedIndex {
     pub finality_tree_depth: u32,
     pub finality_tree_index: u32,
+    pub current_sync_committee_tree_depth: u32,
+    pub current_sync_committee_tree_index: u32,
     pub sync_committee_tree_depth: u32,
     pub sync_committee_tree_index: u32,
 }
 
-#[derive(PartialEq, BorshSerialize, BorshDeserialize, BorshSchema)]
+#[derive(PartialEq, BorshSerialize, BorshDeserialize, BorshSchema, Debug)]
 pub enum Network {
     Mainnet,
     Goerli,
@@ -157,9 +160,14 @@ impl NetworkConfig {
     }
 
     pub const fn get_generalized_index_constants(&self, slot: Slot) -> GeneralizedIndex {
+        // Altair
         pub const FINALIZED_ROOT_INDEX: u32 = 105;
+        pub const CURRENT_SYNC_COMMITTEE_INDEX: u32 = 55;
         pub const NEXT_SYNC_COMMITTEE_INDEX: u32 = 55;
+
+        // Electra
         pub const FINALIZED_ROOT_INDEX_ELECTRA: u32 = 169;
+        pub const CURRENT_SYNC_COMMITTEE_INDEX_ELECTRA: u32 = 86;
         pub const NEXT_SYNC_COMMITTEE_INDEX_ELECTRA: u32 = 87;
 
         let epoch = compute_epoch_at_slot(slot);
@@ -168,6 +176,10 @@ impl NetworkConfig {
             GeneralizedIndex {
                 finality_tree_depth: floorlog2(FINALIZED_ROOT_INDEX_ELECTRA),
                 finality_tree_index: get_subtree_index(FINALIZED_ROOT_INDEX_ELECTRA),
+                current_sync_committee_tree_depth: floorlog2(CURRENT_SYNC_COMMITTEE_INDEX_ELECTRA),
+                current_sync_committee_tree_index: get_subtree_index(
+                    CURRENT_SYNC_COMMITTEE_INDEX_ELECTRA,
+                ),
                 sync_committee_tree_depth: floorlog2(NEXT_SYNC_COMMITTEE_INDEX_ELECTRA),
                 sync_committee_tree_index: get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX_ELECTRA),
             }
@@ -175,6 +187,8 @@ impl NetworkConfig {
             GeneralizedIndex {
                 finality_tree_depth: floorlog2(FINALIZED_ROOT_INDEX),
                 finality_tree_index: get_subtree_index(FINALIZED_ROOT_INDEX),
+                current_sync_committee_tree_depth: floorlog2(CURRENT_SYNC_COMMITTEE_INDEX),
+                current_sync_committee_tree_index: get_subtree_index(CURRENT_SYNC_COMMITTEE_INDEX),
                 sync_committee_tree_depth: floorlog2(NEXT_SYNC_COMMITTEE_INDEX),
                 sync_committee_tree_index: get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX),
             }
