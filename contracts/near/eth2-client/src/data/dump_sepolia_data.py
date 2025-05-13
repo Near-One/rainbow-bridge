@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-import os
 import json
+import os
+import time
 from pathlib import Path
+from typing import Dict, List
+
 import requests
+from eth2spec.electra.mainnet import (
+    EXECUTION_PAYLOAD_GINDEX,
+    SignedBeaconBlock,
+    compute_merkle_proof,
+    get_generalized_index,
+)
+from tqdm import tqdm
 from web3 import Web3
 from web3.types import BlockData, HexBytes
-from typing import Dict, List
-from tqdm import tqdm
-import time
-from eth2spec.electra.mainnet import (
-    SignedBeaconBlock,
-    get_generalized_index,
-    compute_merkle_proof,
-    EXECUTION_PAYLOAD_GINDEX,
-)
-
 
 MAX_RETRIES = 3
 RETRY_DELAY = 1
@@ -52,9 +52,9 @@ def batch_fetch_execution_blocks(numbers: List[int]) -> Dict[int, BlockData]:
     results = batch.execute()
 
     # Map results back to block numbers
-    blocks = {}
+    blocks: Dict[int, BlockData] = {}
     for i, block in enumerate(results):
-        blocks[numbers[i]] = block
+        blocks[numbers[i]] = block  # type: ignore
 
     return blocks
 

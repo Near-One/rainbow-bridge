@@ -12,3 +12,10 @@ dependencies = [
 
 [tool.uv.sources]
 eth2spec = { git = "https://github.com/ethereum/consensus-specs" }
+
+[dependency-groups]
+dev = [
+    "mypy>=1.15.0",
+    "ruff>=0.11.9",
+    "types-tqdm>=4.67.0.20250417",
+]
