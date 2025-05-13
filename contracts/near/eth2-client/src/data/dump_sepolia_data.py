@@ -8,6 +8,13 @@ from web3.types import BlockData, HexBytes
 from typing import Dict, List
 from tqdm import tqdm
 import time
+from eth2spec.electra.mainnet import (
+    SignedBeaconBlock,
+    get_generalized_index,
+    compute_merkle_proof,
+    EXECUTION_PAYLOAD_GINDEX,
+)
+
 
 MAX_RETRIES = 3
 RETRY_DELAY = 1
@@ -197,79 +204,103 @@ def fetch_light_client_update(period: int) -> dict:
     url = f"{CONSENSUS_API}/eth/v1/beacon/light_client/updates"
     resp = requests.get(url, params={"start_period": period, "count": 1})
     resp.raise_for_status()
+    with open("raw.json", "w") as f:
+        f.write(resp.text)
     return resp.json()[0].get("data", {})
+
+
+def fetch_beacon_block_body(slot: int):
+    url = f"{CONSENSUS_API}/eth/v2/beacon/blocks/{slot}"
+    resp = requests.get(url)
+    resp.raise_for_status()
+    with open("body.json", "w") as f:
+        f.write(resp.text)
+    return resp.json()["data"]
+
+
+def get_proof(beacon_body: dict) -> tuple[str, list[str]]:
+    signed_block = SignedBeaconBlock.from_obj(beacon_body)
+    l1_execution_payload_proof = compute_merkle_proof(
+        signed_block.message.body, EXECUTION_PAYLOAD_GINDEX
+    )
+    l1_proof = ["0x" + i.hex() for i in l1_execution_payload_proof]
+
+    BLOCK_HASH_GINDEX = get_generalized_index(
+        signed_block.message.body.execution_payload, "block_hash"
+    )
+    block_proof = compute_merkle_proof(
+        signed_block.message.body.execution_payload, BLOCK_HASH_GINDEX
+    )
+    block_proof = ["0x" + i.hex() for i in block_proof]
+    full_proof = block_proof + l1_proof
+
+    block_hash = str(signed_block.message.body.execution_payload.block_hash)
+    return block_hash, full_proof
 
 
 def convert_to_old_format(update: dict) -> dict:
     """
-    Convert a light client update from the new format to the old format.
+    Convert a light client update from the new format to match the Rust output format.
     """
     old_format = {}
 
-    # Convert attested_header.beacon to attested_beacon_header
+    # 1. Convert attested_header.beacon to attested_beacon_header (just the beacon part)
     if "attested_header" in update and "beacon" in update["attested_header"]:
         old_format["attested_beacon_header"] = update["attested_header"]["beacon"]
 
-    att = update["attested_header"]
-    if "execution" in att:
-        old_format["attested_beacon_header"]["execution_block_hash"] = att["execution"][
-            "block_hash"
-        ]
-    if "execution_branch" in att:
-        old_format["attested_beacon_header"]["execution_branch"] = att[
-            "execution_branch"
-        ]
-
-    # Copy sync_aggregate as is (structure seems the same)
+    # 2. Copy sync_aggregate as is
     if "sync_aggregate" in update:
         old_format["sync_aggregate"] = update["sync_aggregate"]
 
-    # Copy signature_slot if present
+    # 3. Copy signature_slot if present
     if "signature_slot" in update:
         old_format["signature_slot"] = update["signature_slot"]
 
-    # Handle finality_update
+    # 4. Handle finality_update - this is the key difference
+    finality_update = {}
+
     if "finalized_header" in update:
         # Create the header_update structure
-        header_update = {
-            "beacon_header": update.get("finalized_header", {}).get("beacon", {})
-        }
+        header_update = {}
 
-        # Add execution_block_hash from the finalized_header.execution.block_hash
-        if "execution" in update.get("finalized_header", {}):
-            execution_block_hash = update["finalized_header"]["execution"].get(
-                "block_hash"
-            )
-            if execution_block_hash:
-                header_update["execution_block_hash"] = execution_block_hash
+        # Set beacon_header from finalized_header.beacon
+        if "beacon" in update["finalized_header"]:
+            header_update["beacon_header"] = update["finalized_header"]["beacon"]
 
-        # Add execution_hash_branch from the finalized_header.execution_branch
-        if "execution_branch" in update.get("finalized_header", {}):
-            header_update["execution_hash_branch"] = update["finalized_header"][
-                "execution_branch"
-            ]
+        finality_update["header_update"] = header_update
 
-        # Set up the finality_update structure
-        old_format["finality_update"] = {"header_update": header_update}
+    # Copy finality_branch if present (at the root level)
+    if "finality_branch" in update:
+        finality_update["finality_branch"] = update["finality_branch"]
 
-        # Copy finality_branch if present
-        if "finality_branch" in update:
-            old_format["finality_update"]["finality_branch"] = update["finality_branch"]
+    old_format["finality_update"] = finality_update
 
-    # Handle sync_committee_update
-    old_format["sync_committee_update"] = {}
+    slot = update["finalized_header"]["beacon"]["slot"]
+    body = fetch_beacon_block_body(slot)
+    block_hash, full_proof = get_proof(body)
+    old_format["finality_update"]["header_update"]["execution_block_hash"] = block_hash
+    old_format["finality_update"]["header_update"]["execution_hash_branch"] = full_proof
+
+    # 5. Handle sync_committee_update - make it optional as Some(update) in Rust
+    sync_committee_update = {}
 
     # Add next_sync_committee if present
     if "next_sync_committee" in update:
-        old_format["sync_committee_update"]["next_sync_committee"] = update[
-            "next_sync_committee"
-        ]
+        sync_committee_update["next_sync_committee"] = update["next_sync_committee"]
 
-    # Check for next_sync_committee_branch in various possible locations
+    # Add next_sync_committee_branch if present
     if "next_sync_committee_branch" in update:
-        old_format["sync_committee_update"]["next_sync_committee_branch"] = update[
+        sync_committee_update["next_sync_committee_branch"] = update[
             "next_sync_committee_branch"
         ]
+
+    # Only add sync_committee_update if it has content (similar to Some() in Rust)
+    if sync_committee_update:
+        old_format["sync_committee_update"] = sync_committee_update
+    else:
+        # Rust might expect None, but in JSON this could be null or omitted
+        # You might need to adjust based on what your Rust code expects
+        old_format["sync_committee_update"] = None
 
     return old_format
 
