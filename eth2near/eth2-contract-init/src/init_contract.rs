@@ -2,24 +2,22 @@ use crate::config::Config;
 use contract_wrapper::eth_client_contract::EthClientContract;
 use contract_wrapper::near_network::NearNetwork;
 use eth2_utility::consensus;
+use eth2_utility::consensus::{Network, NetworkConfig};
 use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
 use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
 use eth_rpc_client::light_client_snapshot_with_proof::LightClientSnapshotWithProof;
 use eth_types::eth2::ExtendedBeaconBlockHeader;
 use eth_types::BlockHeader;
 use log::info;
+use std::str::FromStr;
 use std::{thread, time};
 use tree_hash::TreeHash;
 use types::{ExecutionPayload, MainnetEthSpec};
 
-const CURRENT_SYNC_COMMITTEE_INDEX: u32 = 54;
-const CURRENT_SYNC_COMMITTEE_TREE_DEPTH: u32 = consensus::floorlog2(CURRENT_SYNC_COMMITTEE_INDEX);
-const CURRENT_SYNC_COMMITTEE_TREE_INDEX: u32 =
-    consensus::get_subtree_index(CURRENT_SYNC_COMMITTEE_INDEX);
-
 pub fn verify_light_client_snapshot(
     block_root: String,
     light_client_snapshot: &LightClientSnapshotWithProof,
+    network: &Network,
 ) -> bool {
     let expected_block_root = format!(
         "{:#x}",
@@ -30,6 +28,11 @@ pub fn verify_light_client_snapshot(
         return false;
     }
 
+    // Get the correct indices based on the slot
+    let network_config = NetworkConfig::new(network);
+    let slot = light_client_snapshot.beacon_header.slot;
+    let indices = network_config.get_generalized_index_constants(slot);
+
     consensus::verify_merkle_proof(
         eth_types::H256(
             light_client_snapshot
@@ -39,8 +42,14 @@ pub fn verify_light_client_snapshot(
                 .into(),
         ),
         &light_client_snapshot.current_sync_committee_branch,
-        CURRENT_SYNC_COMMITTEE_TREE_DEPTH.try_into().unwrap(),
-        CURRENT_SYNC_COMMITTEE_TREE_INDEX.try_into().unwrap(),
+        indices
+            .current_sync_committee_tree_depth
+            .try_into()
+            .unwrap(),
+        indices
+            .current_sync_committee_tree_index
+            .try_into()
+            .unwrap(),
         light_client_snapshot.beacon_header.state_root,
     )
 }
@@ -58,6 +67,7 @@ pub fn init_contract(
         );
         assert!(config.verify_bls_signature.unwrap_or(false) || config.trusted_signer_account_id.is_some(), "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet");
     }
+    let eth_network = Network::from_str(&config.ethereum_network.to_string())?;
 
     let beacon_rpc_client = BeaconRPCClient::new(
         &config.beacon_endpoint,
@@ -127,7 +137,7 @@ pub fn init_contract(
         panic!("Period for init_block_root different from current period. Please use snapshot for current period");
     }
 
-    if !verify_light_client_snapshot(init_block_root, &light_client_snapshot) {
+    if !verify_light_client_snapshot(init_block_root, &light_client_snapshot, &eth_network) {
         return Err("Invalid light client snapshot".into());
     }
 
@@ -165,14 +175,16 @@ mod tests {
     use contract_wrapper::near_network::NearNetwork;
     use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
     use eth_rpc_client::beacon_rpc_client::{BeaconRPCClient, BeaconRPCVersion};
+    use near_workspaces::{Account, Contract};
     use tokio::runtime::Runtime;
-    use workspaces::{Account, Contract};
 
     const ONE_EPOCH_IN_SLOTS: u64 = 32;
 
     fn create_contract(config_for_test: &ConfigForTests) -> (Account, Contract) {
         let rt = Runtime::new().unwrap();
-        let worker = rt.block_on(workspaces::sandbox()).unwrap();
+        let worker = rt
+            .block_on(async { near_workspaces::sandbox().await })
+            .unwrap();
 
         // create accounts
         let owner: Account = worker.root_account().unwrap();

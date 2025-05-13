@@ -1,3 +1,4 @@
+//eth2near/eth2near-block-relay-rs/src/eth2near_relay.rs
 use crate::config::Config;
 use crate::prometheus_metrics;
 use crate::prometheus_metrics::{
@@ -16,6 +17,8 @@ use eth_rpc_client::hand_made_finality_light_client_update::HandMadeFinalityLigh
 use eth_types::eth2::LightClientUpdate;
 use eth_types::BlockHeader;
 use log::{debug, info, trace, warn};
+use types::Hash256;
+
 use near_primitives::views::FinalExecutionStatus;
 use std::cmp::max;
 use std::error::Error;
@@ -707,6 +710,7 @@ mod tests {
     use eth_types::BlockHeader;
     use std::error::Error;
     use tree_hash::TreeHash;
+    use types::Hash256;
 
     fn get_test_config() -> ConfigForTests {
         ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
@@ -804,12 +808,13 @@ mod tests {
             .get_light_client_update(last_period)
             .unwrap();
 
-        let branch: Vec<ethereum_types::H256> = light_client_update
+        let branch: Vec<Hash256> = light_client_update
             .finality_update
             .finality_branch
             .iter()
-            .map(|h| h.0)
+            .map(|h| Hash256::from_slice(h.0.as_bytes()))
             .collect();
+
         assert!(
             merkle_proof::verify_merkle_proof(
                 light_client_update
@@ -820,19 +825,26 @@ mod tests {
                 branch.as_slice(),
                 TREE_FINALITY_DEPTH,
                 TREE_FINALITY_INDEX,
-                light_client_update.attested_beacon_header.state_root.0
+                Hash256::from_slice(
+                    light_client_update
+                        .attested_beacon_header
+                        .state_root
+                        .0
+                        .as_bytes()
+                )
             ),
             "Incorrect proof of inclusion the finality checkpoint to attested beacon state"
         );
 
-        let branch = light_client_update
+        let branch: Vec<Hash256> = light_client_update
             .sync_committee_update
             .as_ref()
             .unwrap()
             .next_sync_committee_branch
             .iter()
-            .map(|h| h.0)
-            .collect::<Vec<ethereum_types::H256>>();
+            .map(|h| Hash256::from_slice(h.0.as_bytes()))
+            .collect();
+
         assert!(
             merkle_proof::verify_merkle_proof(
                 light_client_update
@@ -844,7 +856,13 @@ mod tests {
                 branch.as_slice(),
                 TREE_NEXT_SYNC_COMMITTEE_DEPTH,
                 TREE_NEXT_SYNC_COMMITTEE_INDEX,
-                light_client_update.attested_beacon_header.state_root.0
+                Hash256::from_slice(
+                    light_client_update
+                        .attested_beacon_header
+                        .state_root
+                        .0
+                        .as_bytes()
+                )
             ),
             "Incorrect proof of inclusion the next sync committee to finality beacon state"
         );

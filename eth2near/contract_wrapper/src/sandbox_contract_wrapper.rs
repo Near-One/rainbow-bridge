@@ -3,17 +3,18 @@ use near_crypto::KeyType::ED25519;
 use near_crypto::PublicKey;
 use near_primitives::errors::{ActionError, ActionErrorKind, TxExecutionError};
 use near_primitives::types::AccountId;
+use near_primitives::types::Balance;
 use near_primitives::views::{
     ExecutionOutcomeView, ExecutionOutcomeWithIdView, ExecutionStatusView,
     FinalExecutionOutcomeView, FinalExecutionStatus, SignedTransactionView,
 };
-use near_sdk::{Balance, Gas};
+use near_sdk::{Gas, NearToken};
+use near_workspaces::{Account, Contract};
 use std::error::Error;
 use std::future::IntoFuture;
 use tokio::runtime::Runtime;
-use workspaces::{Account, Contract};
 
-pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
+pub const MAX_GAS: Gas = Gas::from_tgas(300);
 
 /// Implementation for interaction with NEAR contract in Sandbox emulator for testing purposes.
 /// Implemented using https://github.com/near/workspaces-rs
@@ -35,7 +36,7 @@ impl SandboxContractWrapper {
     }
 
     fn get_final_execution_outcome_view_from_call_execution_details(
-        call_execution_details: workspaces::result::ExecutionFinalResult,
+        call_execution_details: near_workspaces::result::ExecutionFinalResult,
     ) -> FinalExecutionOutcomeView {
         let status = match call_execution_details.is_success() {
             true => FinalExecutionStatus::SuccessValue("".into()),
@@ -59,6 +60,7 @@ impl SandboxContractWrapper {
                 actions: vec![],
                 signature: Default::default(),
                 hash: Default::default(),
+                priority_fee: Default::default(),
             },
             transaction_outcome: ExecutionOutcomeWithIdView {
                 proof: vec![],
@@ -67,9 +69,9 @@ impl SandboxContractWrapper {
                 outcome: ExecutionOutcomeView {
                     logs: outcome.clone().logs,
                     receipt_ids: vec![],
-                    gas_burnt: outcome.gas_burnt,
-                    tokens_burnt: outcome.tokens_burnt,
-                    executor_id: outcome.executor_id.parse().unwrap(),
+                    gas_burnt: outcome.gas_burnt.as_gas(),
+                    tokens_burnt: outcome.tokens_burnt.as_near(),
+                    executor_id: outcome.executor_id.clone(),
                     status: ExecutionStatusView::Unknown,
                     metadata: Default::default(),
                 },
@@ -81,11 +83,11 @@ impl SandboxContractWrapper {
 
 impl ContractWrapper for SandboxContractWrapper {
     fn get_account_id(&self) -> AccountId {
-        self.contract.id().parse().unwrap()
+        self.contract.id().clone()
     }
 
     fn get_signer_account_id(&self) -> AccountId {
-        self.signer_account.id().to_string().parse().unwrap()
+        self.signer_account.id().clone()
     }
 
     fn call_view_function(
@@ -141,12 +143,12 @@ impl ContractWrapper for SandboxContractWrapper {
                     self.signer_account
                         .call(self.contract.id(), &method_name)
                         .deposit(match deposit {
-                            Some(deposit) => deposit,
-                            None => 0,
+                            Some(deposit) => NearToken::from_yoctonear(deposit),
+                            None => NearToken::from_yoctonear(0),
                         })
                         .gas(match gas {
-                            Some(gas) => gas.0,
-                            None => MAX_GAS.0,
+                            Some(gas) => gas,
+                            None => MAX_GAS,
                         })
                         .args(args)
                         .transact(),

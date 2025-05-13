@@ -150,7 +150,9 @@ mod tests {
 
         let rt = Runtime::new().unwrap();
 
-        let worker = rt.block_on(workspaces::testnet()).unwrap();
+        let worker = rt
+            .block_on(async { near_workspaces::testnet().await })
+            .unwrap();
         let signer = rt.block_on(worker.dev_create_account()).unwrap();
         let signer_private_key: String =
             utils::trim_quotes(serde_json::to_string(&signer.secret_key()).unwrap());

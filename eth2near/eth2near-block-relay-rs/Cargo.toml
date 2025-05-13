@@ -50,3 +50,4 @@ dotenv = "0.15.0"
 [dev-dependencies]
 eth2-contract-init = { path = "../eth2-contract-init" }
 contract_wrapper = { path = "../contract_wrapper" }
+near-workspaces = "0.18"

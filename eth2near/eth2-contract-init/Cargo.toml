@@ -24,4 +24,5 @@ dotenv = "0.15.0"
 
 [dev-dependencies]
 tokio.workspace = true
+near-workspaces = "0.18"
 contract_wrapper = { path = "../contract_wrapper" }
