@@ -118,7 +118,7 @@ pub fn get_sepolia_test_data(
             )),
             read_headers(format!(
                 "./src/data/{}/execution_blocks_{}_{}.json",
-                NETWORK, 8295112, 8303246
+                NETWORK, 8295113, 8303246
             ))
         ];
     };
