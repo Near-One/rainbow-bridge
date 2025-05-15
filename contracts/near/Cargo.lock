@@ -93,11 +93,6 @@ dependencies = [
 [[package]]
 name = "amcl"
 version = "0.3.0"
-source = "git+https://github.com/sigp/milagro_bls?tag=v1.5.1#d3fc0a40cfe8b72ccda46ba050ee6786a59ce753"
-
-[[package]]
-name = "amcl"
-version = "0.3.0"
 source = "git+https://github.com/sigp/incubator-milagro-crypto-rust.git#4e0d0c60a18c4b418932145002f12ad672f7f4de"
 
 [[package]]
@@ -412,24 +407,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3078c7629b62d3f0439517fa394996acacc5cbc91c5a20d8c658e77abd503a71"
 dependencies = [
  "generic-array",
-]
-
-[[package]]
-name = "bls"
-version = "0.2.0"
-source = "git+https://github.com/aurora-is-near/lighthouse.git?tag=v4.6.0-wasm#7f7b139b5f9d81bcb9ed8bbdd5561cfb9e38bb12"
-dependencies = [
- "arbitrary",
- "ethereum-types",
- "ethereum_hashing 1.0.0-beta.2",
- "ethereum_serde_utils 0.5.2",
- "ethereum_ssz 0.5.4",
- "hex",
- "milagro_bls",
- "rand 0.8.5",
- "serde",
- "tree_hash 0.5.2",
- "zeroize",
 ]
 
 [[package]]
@@ -1376,8 +1353,8 @@ dependencies = [
  "borsh",
  "derive_more 0.99.20",
  "ethereum-types",
- "ethereum_serde_utils 0.7.0",
- "ethereum_ssz 0.7.1",
+ "ethereum_serde_utils",
+ "ethereum_ssz",
  "ethereum_ssz_derive",
  "hex",
  "near-sdk",
@@ -1386,7 +1363,7 @@ dependencies = [
  "serde",
  "serde-big-array",
  "sha3",
- "tree_hash 0.8.0",
+ "tree_hash",
  "tree_hash_derive",
 ]
 
@@ -1394,16 +1371,15 @@ dependencies = [
 name = "eth2-client"
 version = "0.5.0"
 dependencies = [
- "amcl 0.3.0 (git+https://github.com/sigp/incubator-milagro-crypto-rust.git)",
+ "amcl",
  "anyhow",
  "bitvec",
- "bls",
  "borsh",
  "cargo-near-build",
  "eth-types",
  "eth2-utility",
  "ethereum-types",
- "ethereum_serde_utils 0.7.0",
+ "ethereum_serde_utils",
  "hex",
  "lazy_static",
  "near-abi",
@@ -1416,7 +1392,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
- "tree_hash 0.8.0",
+ "tree_hash",
 ]
 
 [[package]]
@@ -1427,12 +1403,12 @@ dependencies = [
  "borsh",
  "eth-types",
  "ethereum-types",
- "ethereum_hashing 0.7.0",
+ "ethereum_hashing",
  "hex",
  "lazy_static",
  "near-sdk",
  "serde_json",
- "tree_hash 0.8.0",
+ "tree_hash",
 ]
 
 [[package]]
@@ -1469,31 +1445,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ethereum_hashing"
-version = "1.0.0-beta.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "233dc6f434ce680dbabf4451ee3380cec46cb3c45d66660445a435619710dd35"
-dependencies = [
- "cpufeatures",
- "lazy_static",
- "ring 0.16.20",
- "sha2",
-]
-
-[[package]]
-name = "ethereum_serde_utils"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de4d5951468846963c24e8744c133d44f39dff2cd3a233f6be22b370d08a524f"
-dependencies = [
- "ethereum-types",
- "hex",
- "serde",
- "serde_derive",
- "serde_json",
-]
-
-[[package]]
 name = "ethereum_serde_utils"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1504,17 +1455,6 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
-]
-
-[[package]]
-name = "ethereum_ssz"
-version = "0.5.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d3627f83d8b87b432a5fad9934b4565260722a141a2c40f371f8080adec9425"
-dependencies = [
- "ethereum-types",
- "itertools 0.10.5",
- "smallvec",
 ]
 
 [[package]]
@@ -2420,7 +2360,7 @@ version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 dependencies = [
- "spin 0.9.8",
+ "spin",
 ]
 
 [[package]]
@@ -2534,18 +2474,6 @@ name = "memory_units"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8452105ba047068f40ff7093dd1d9da90898e63dd61736462e9cdda6a90ad3c3"
-
-[[package]]
-name = "milagro_bls"
-version = "1.5.1"
-source = "git+https://github.com/sigp/milagro_bls?tag=v1.5.1#d3fc0a40cfe8b72ccda46ba050ee6786a59ce753"
-dependencies = [
- "amcl 0.3.0 (git+https://github.com/sigp/milagro_bls?tag=v1.5.1)",
- "hex",
- "lazy_static",
- "rand 0.8.5",
- "zeroize",
-]
 
 [[package]]
 name = "mime"
@@ -3819,21 +3747,6 @@ dependencies = [
 
 [[package]]
 name = "ring"
-version = "0.16.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3053cf52e236a3ed746dfc745aa9cacf1b791d846bdaf412f60a8d7d6e17c8fc"
-dependencies = [
- "cc",
- "libc",
- "once_cell",
- "spin 0.5.2",
- "untrusted 0.7.1",
- "web-sys",
- "winapi",
-]
-
-[[package]]
-name = "ring"
 version = "0.17.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4689e6c2294d81e88dc6261c768b63bc4fcdb852be6d1352498b114f61383b7"
@@ -3842,7 +3755,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "getrandom 0.2.16",
  "libc",
- "untrusted 0.9.0",
+ "untrusted",
  "windows-sys 0.52.0",
 ]
 
@@ -4007,7 +3920,7 @@ checksum = "730944ca083c1c233a75c09f199e973ca499344a2b7ba9e755c457e86fb4a321"
 dependencies = [
  "log",
  "once_cell",
- "ring 0.17.14",
+ "ring",
  "rustls-pki-types",
  "rustls-webpki",
  "subtle",
@@ -4038,9 +3951,9 @@ version = "0.103.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e4a72fe2bcf7a6ac6fd7d0b9e5cb68aeb7d4c0a0271730218b3e92d43b4eb435"
 dependencies = [
- "ring 0.17.14",
+ "ring",
  "rustls-pki-types",
- "untrusted 0.9.0",
+ "untrusted",
 ]
 
 [[package]]
@@ -4453,12 +4366,6 @@ dependencies = [
  "libc",
  "windows-sys 0.52.0",
 ]
-
-[[package]]
-name = "spin"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "spin"
@@ -4977,23 +4884,12 @@ dependencies = [
 
 [[package]]
 name = "tree_hash"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c998ac5fe2b07c025444bdd522e6258110b63861c6698eedc610c071980238d"
-dependencies = [
- "ethereum-types",
- "ethereum_hashing 1.0.0-beta.2",
- "smallvec",
-]
-
-[[package]]
-name = "tree_hash"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "373495c23db675a5192de8b610395e1bec324d596f9e6111192ce903dc11403a"
 dependencies = [
  "alloy-primitives",
- "ethereum_hashing 0.7.0",
+ "ethereum_hashing",
  "smallvec",
 ]
 
@@ -5079,12 +4975,6 @@ name = "unsafe-libyaml"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "673aac59facbab8a9007c7f6108d11f63b603f7cabff99fabf650fea5c32b861"
-
-[[package]]
-name = "untrusted"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
 
 [[package]]
 name = "untrusted"
