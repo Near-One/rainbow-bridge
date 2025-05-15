@@ -567,10 +567,6 @@ impl Eth2Client {
 
         let msg_bytes = signing_root.0.as_bytes().to_vec();
         let signature_bytes = update.sync_aggregate.sync_committee_signature.0.to_vec();
-        let pubkeys_bytes: Vec<Vec<u8>> = participant_pubkeys
-            .into_iter()
-            .map(|x| x.0.to_vec())
-            .collect();
 
         let dst: &[u8] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
         let msg_fp2 = hash_to_field_fp2(msg_bytes.as_slice(), 2, dst)
@@ -590,8 +586,12 @@ impl Eth2Client {
 
         let msg_g2 = env::bls12381_p2_sum(&msg_g2_concat);
 
-        let pubkeys_ser: Vec<u8> = pubkeys_bytes.concat();
-        let pks_decompress = env::bls12381_p1_decompress(&pubkeys_ser);
+        let pubkeys_bytes: Vec<u8> = participant_pubkeys
+            .iter()
+            .flat_map(|x| x.0.iter())
+            .copied()
+            .collect();
+        let pks_decompress = env::bls12381_p1_decompress(&pubkeys_bytes);
         let mut pks_with_sign = Vec::new();
         for chunk in pks_decompress.chunks(96) {
             pks_with_sign.push(0u8);
@@ -608,7 +608,6 @@ impl Eth2Client {
         let ok = env::bls12381_pairing_check(&pairing_input);
         require!(ok, "Failed to verify the bls signature");
     }
-
 
     fn commit_light_client_update(&mut self, update: LightClientUpdate) {
         // Update finalized header

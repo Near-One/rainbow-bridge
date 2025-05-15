@@ -54,7 +54,7 @@ rstest = "0.24.0"
 
 
 [features]
-default = ["logs", "mainnet"]
+default = ["logs", "mainnet", "bls"]
 bls = ["dep:bls"]
 logs = []
 mainnet = []
