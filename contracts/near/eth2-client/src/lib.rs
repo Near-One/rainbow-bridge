@@ -387,6 +387,11 @@ impl Eth2Client {
         Promise::new(env::current_account_id()).add_full_access_key(public_key)
     }
 
+    #[access_control_any(roles(Role::DAO))]
+    pub fn set_verify_bls_signatures(&mut self, enabled: bool) {
+        self.verify_bls_signatures = enabled;
+    }
+
     pub fn version(&self) -> String {
         env!("CARGO_PKG_VERSION").to_owned()
     }
