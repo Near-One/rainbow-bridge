@@ -18,7 +18,12 @@ serde_json = "1.0.74"
 serde = { version = "1.0", features = ["derive"] }
 eth-types = { path = "../../contracts/near/eth-types/" }
 eth2-utility = { path = "../../contracts/near/eth2-utility/" }
+near-workspaces = "0.18"
 
 [dev-dependencies]
 futures = "0.3.21"
 anyhow = "1.0"
+
+[features]
+default = []
+sandbox = []
