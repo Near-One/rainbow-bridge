@@ -1,3 +1,0 @@
-# TODO: this repo not detected by codechecks, asked codechecks team
-checks:
-  - name: eth-gas-reporter/codechecks
