@@ -7,7 +7,6 @@ use std::str::FromStr;
 #[derive(Debug, Clone, Deserialize)]
 pub enum ContractType {
     Near,
-    Dao,
     File,
 }
 
@@ -18,7 +17,7 @@ impl Display for IncorrectContractType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Unknown contract type. Possible contract types: 'Near', 'Dao', 'File'"
+            "Unknown contract type. Possible contract types: 'Near', 'File'"
         )
     }
 }
@@ -35,7 +34,6 @@ impl ContractType {
     pub fn as_str(&self) -> &str {
         match self {
             ContractType::Near => "Near",
-            ContractType::Dao => "Dao",
             ContractType::File => "File",
         }
     }
@@ -47,7 +45,6 @@ impl FromStr for ContractType {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "near" => Ok(ContractType::Near),
-            "dao" => Ok(ContractType::Dao),
             "file" => Ok(ContractType::File),
             _ => Err(IncorrectContractType),
         }

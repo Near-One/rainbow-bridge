@@ -12,6 +12,7 @@ ethereum_hashing = { workspace = true }
 ethereum_ssz = { workspace = true }
 eth-types = { path = "../../contracts/near/eth-types/" }
 eth2-utility  = { path = "../../contracts/near/eth2-utility" }
+near-workspaces = "0.18"
 
 contract_wrapper = { path = "../contract_wrapper" }
 finality-update-verify = { path = "../finality-update-verify" }

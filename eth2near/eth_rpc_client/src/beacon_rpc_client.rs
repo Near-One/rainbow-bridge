@@ -123,6 +123,9 @@ impl BeaconRPCClient {
             "{}/{}/{}",
             self.endpoint_url, self.routes.get_block, block_id
         );
+        let url = url.replace("//", "/");
+        let url = url.replace("http:/", "http://");
+        println!("URL: {}", url);
 
         let json_str = &self.get_json_from_raw_request(&url)?;
 
@@ -147,6 +150,10 @@ impl BeaconRPCClient {
             "{}/{}/{}",
             self.endpoint_url, self.routes.get_block_header, block_id
         );
+        // Strip double slashes
+        let url = url.replace("//", "/");
+        let url = url.replace("https:/", "https://");
+        println!("URL: {}", url);
 
         let json_str = &self.get_json_from_raw_request(&url)?;
         self.check_block_found_for_slot(json_str)?;
@@ -168,6 +175,10 @@ impl BeaconRPCClient {
             "{}/{}?start_period={}&count=1",
             self.endpoint_url, self.routes.get_light_client_update, period
         );
+        // Strip double slashes
+        let url = url.replace("//", "/");
+        let url = url.replace("http:/", "http://");
+        println!("URL: {}", url);
         let light_client_update_json_str = self.get_json_from_raw_request(&url)?;
         self.light_client_update_from_json_str(light_client_update_json_str)
     }
@@ -203,6 +214,11 @@ impl BeaconRPCClient {
             "{}/{}?epoch={}",
             self.endpoint_url, self.routes.get_light_client_update_by_epoch, epoch
         );
+        // Strip double slashes
+        let url = url.replace("//", "/");
+        let url = url.replace("https:/", "https://");
+        println!("URL: {}", url);
+
         let mut light_client_update_json_str = self.get_json_from_raw_request(&url)?;
         let v: Value = serde_json::from_str(light_client_update_json_str.as_str())?;
         let object = json!({
@@ -240,6 +256,10 @@ impl BeaconRPCClient {
             "{}/{}/{}",
             self.endpoint_url, self.routes.get_bootstrap, block_root
         );
+        // Strip double slashes
+        let url = url.replace("//", "/");
+        let url = url.replace("http:/", "http://");
+        println!("URL: {}", url);
 
         let light_client_snapshot_json_str = self.get_json_from_raw_request(&url)?;
         let parsed_json: Value = serde_json::from_str(&light_client_snapshot_json_str)?;
@@ -266,6 +286,10 @@ impl BeaconRPCClient {
             "{}/eth/v1/beacon/states/finalized/finality_checkpoints",
             self.endpoint_url
         );
+        // Strip double slashes
+        let url = url.replace("//", "/");
+        let url = url.replace("http:/", "http://");
+        println!("URL: {}", url);
         let checkpoint_json_str = self.get_json_from_raw_request(&url)?;
         let parsed_json: Value = serde_json::from_str(&checkpoint_json_str)?;
 
@@ -295,6 +319,10 @@ impl BeaconRPCClient {
             "{}/{}/{}",
             self.endpoint_url, self.routes.get_block, beacon_block_hash_str
         );
+        // Strip double slashes
+        let url = url.replace("//", "/");
+        let url = url.replace("http:/", "http://");
+        println!("URL: {}", url);
         let block_json_str = &self.get_json_from_raw_request(&url)?;
         let v: Value = serde_json::from_str(block_json_str)?;
         let slot = utils::trim_quotes(v["data"]["message"]["slot"].to_string()).parse::<u64>()?;
@@ -317,7 +345,10 @@ impl BeaconRPCClient {
             "{}/{}",
             self.endpoint_url, self.routes.get_light_client_finality_update,
         );
-
+        // Strip double slashes
+        let url = url.replace("//", "/");
+        let url = url.replace("http:/", "http://");
+        println!("URL: {}", url);
         let light_client_update_json_str = self.get_json_from_raw_request(&url)?;
         let v: Value = serde_json::from_str(&light_client_update_json_str)?;
         let light_client_update_json_str = serde_json::to_string(&json!({"data": [v["data"]]}))?;
@@ -345,6 +376,10 @@ impl BeaconRPCClient {
             "{}/{}/{}",
             self.endpoint_url, self.routes.get_state, state_id
         );
+        // Strip double slashes
+        let url_request = url_request.replace("//", "/");
+        let url_request = url_request.replace("http:/", "http://");
+        println!("URL: {}", url_request);
         let json_str = Self::get_json_from_client(&self.client_state_request, &url_request)?;
 
         let v: Value = serde_json::from_str(&json_str)?;
@@ -690,7 +725,11 @@ mod tests {
         let beacon_rpc_client =
             BeaconRPCClient::new(&url, TIMEOUT_SECONDS, TIMEOUT_STATE_SECONDS, None);
         let rpc_json_str = beacon_rpc_client.get_json_from_raw_request(&url);
-        assert_eq!(rpc_json_str.unwrap(), file_json_str.trim());
+
+        let rpc_json_str = rpc_json_str.unwrap();
+        let rpc_json: Value = serde_json::from_str(&rpc_json_str).unwrap();
+        let file_json: Value = serde_json::from_str(&file_json_str).unwrap();
+        assert_eq!(rpc_json, file_json);
     }
 
     #[test]
@@ -733,27 +772,25 @@ mod tests {
 
         assert_eq!(
             beacon_block_header.slot,
-            trim_quotes(v["data"]["header"]["message"]["slot"].to_string())
-                .parse::<u64>()
-                .unwrap()
+            trim_quotes(v["slot"].to_string()).parse::<u64>().unwrap()
         );
         assert_eq!(
             beacon_block_header.proposer_index,
-            trim_quotes(v["data"]["header"]["message"]["proposer_index"].to_string())
+            trim_quotes(v["proposer_index"].to_string())
                 .parse::<u64>()
                 .unwrap()
         );
         assert_eq!(
             format!("{:?}", beacon_block_header.body_root),
-            trim_quotes(v["data"]["header"]["message"]["body_root"].to_string())
+            trim_quotes(v["body_root"].to_string())
         );
         assert_eq!(
             format!("{:?}", beacon_block_header.parent_root),
-            trim_quotes(v["data"]["header"]["message"]["parent_root"].to_string())
+            trim_quotes(v["parent_root"].to_string())
         );
         assert_eq!(
             format!("{:?}", beacon_block_header.state_root),
-            trim_quotes(v["data"]["header"]["message"]["state_root"].to_string())
+            trim_quotes(v["state_root"].to_string())
         );
     }
 
@@ -774,7 +811,7 @@ mod tests {
             std::fs::read_to_string(config.path_to_block).expect("Unable to read file");
         let v: Value = serde_json::from_str(&block_json_str).unwrap();
         assert_eq!(
-            beacon_block_body.attestations_base().unwrap().len(),
+            beacon_block_body.attestations_electra().unwrap().len(),
             v["data"]["message"]["body"]["attestations"]
                 .as_array()
                 .unwrap()
@@ -789,7 +826,7 @@ mod tests {
     #[test]
     fn test_is_sync() {
         assert!(!BeaconRPCClient::new(
-            "https://lodestar-goerli.chainsafe.io",
+            "https://lodestar-sepolia.chainsafe.io",
             TIMEOUT_SECONDS,
             TIMEOUT_STATE_SECONDS,
             None
