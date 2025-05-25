@@ -9,6 +9,7 @@ use eth_types::eth2::{
 use eth_types::{BlockHeader, H256};
 use near_primitives::types::AccountId;
 use near_primitives::views::FinalExecutionOutcomeView;
+use near_primitives::views::FinalExecutionStatus;
 use serde::Serialize;
 use serde_json::json;
 use std::error::Error;
