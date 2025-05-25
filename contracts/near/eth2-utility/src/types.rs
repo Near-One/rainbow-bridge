@@ -27,7 +27,7 @@ pub struct InitInput {
     pub trusted_signer: Option<AccountId>,
 }
 
-#[derive(Clone, BorshDeserialize, BorshSerialize, PartialEq, BorshSchema)]
+#[derive(Clone, BorshDeserialize, BorshSerialize, PartialEq, BorshSchema, Debug)]
 pub enum ClientMode {
     SubmitLightClientUpdate,
     SubmitHeader,
