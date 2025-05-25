@@ -1523,6 +1523,7 @@ dependencies = [
  "log",
  "near-primitives",
  "near-sdk",
+ "near-workspaces",
  "reqwest",
  "serde",
  "serde_json",

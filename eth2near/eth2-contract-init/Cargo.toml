@@ -21,6 +21,7 @@ near-sdk.workspace = true
 near-primitives.workspace = true
 eth2near-logger = { path = "../logger" }
 dotenv = "0.15.0"
+near-workspaces = "0.18"
 
 [dev-dependencies]
 tokio.workspace = true
