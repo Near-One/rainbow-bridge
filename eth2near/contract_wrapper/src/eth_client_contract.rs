@@ -193,10 +193,13 @@ mod tests {
     use crate::eth_client_contract;
     use crate::eth_client_contract::EthClientContract;
     use crate::eth_client_contract_trait::EthClientContractTrait;
+
     use crate::sandbox_contract_wrapper::SandboxContractWrapper;
+
     use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::BlockHeader;
     use near_primitives::types::AccountId;
+    use near_sdk::NearToken;
     use tokio::runtime::Runtime;
 
     // TODO: use a more clean approach to include binary
@@ -260,10 +263,12 @@ mod tests {
         }
     }
 
-    fn create_contract() -> (workspaces::Account, workspaces::Contract) {
+    fn create_contract() -> (near_workspaces::Account, near_workspaces::Contract) {
         let rt = Runtime::new().unwrap();
 
-        let worker = rt.block_on(workspaces::sandbox()).unwrap();
+        let worker = rt
+            .block_on(async { near_workspaces::sandbox().await })
+            .unwrap();
         let wasm = std::fs::read(WASM_FILEPATH).unwrap();
 
         // create accounts
@@ -272,7 +277,7 @@ mod tests {
             .block_on(
                 owner
                     .create_subaccount("relay_account")
-                    .initial_balance(30 * near_sdk::ONE_NEAR)
+                    .initial_balance(NearToken::from_near(30))
                     .transact(),
             )
             .unwrap()
