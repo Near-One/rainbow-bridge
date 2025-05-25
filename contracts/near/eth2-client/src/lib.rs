@@ -255,7 +255,10 @@ impl Eth2Client {
             );
         }
 
-        require!(self.client_mode == ClientMode::SubmitHeader);
+        require!(
+            self.client_mode == ClientMode::SubmitHeader,
+            "Client is not in SubmitHeader mode"
+        );
 
         let block_hash = block_header.calculate_hash();
         let expected_block_hash = self
@@ -659,7 +662,10 @@ impl Eth2Client {
     }
 
     fn is_light_client_update_allowed(&self) {
-        require!(self.client_mode == ClientMode::SubmitLightClientUpdate);
+        require!(
+            self.client_mode == ClientMode::SubmitLightClientUpdate,
+            "Client is not in SubmitLightClientUpdate mode"
+        );
 
         if let Some(trusted_signer) = &self.trusted_signer {
             require!(

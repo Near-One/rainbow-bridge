@@ -38,17 +38,37 @@ impl SandboxContractWrapper {
     fn get_final_execution_outcome_view_from_call_execution_details(
         call_execution_details: near_workspaces::result::ExecutionFinalResult,
     ) -> FinalExecutionOutcomeView {
-        let status = match call_execution_details.is_success() {
-            true => FinalExecutionStatus::SuccessValue("".into()),
-            false => FinalExecutionStatus::Failure(TxExecutionError::ActionError(ActionError {
-                index: None,
-                kind: ActionErrorKind::AccountAlreadyExists {
-                    account_id: "fail.testnet".parse().unwrap(),
-                },
-            })),
-        };
+        println!("Execution outcome: {:?}", call_execution_details);
 
         let outcome = call_execution_details.outcome();
+
+        // Check if the execution was successful
+        let status = if call_execution_details.is_success() {
+            FinalExecutionStatus::SuccessValue("".into())
+        } else {
+            // Try to extract the real error from logs or outcome
+            let error_msg = if !outcome.logs.is_empty() {
+                // Look for error information in logs
+                outcome.logs.join("; ")
+            } else {
+                format!(
+                    "Contract execution failed. Gas burnt: {}, Tokens burnt: {}",
+                    outcome.gas_burnt.as_gas(),
+                    outcome.tokens_burnt.as_near()
+                )
+            };
+
+            println!("Contract execution failed: {}", error_msg);
+            println!("Full outcome logs: {:?}", outcome.logs);
+
+            // Create a more informative error
+            FinalExecutionStatus::Failure(TxExecutionError::ActionError(ActionError {
+                index: None,
+                kind: ActionErrorKind::FunctionCallError(
+                    near_primitives::errors::FunctionCallError::ExecutionError(error_msg),
+                ),
+            }))
+        };
 
         FinalExecutionOutcomeView {
             status: status,

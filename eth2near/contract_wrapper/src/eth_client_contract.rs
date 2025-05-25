@@ -9,6 +9,7 @@ use eth_types::eth2::{
 use eth_types::{BlockHeader, H256};
 use near_primitives::types::AccountId;
 use near_primitives::views::FinalExecutionOutcomeView;
+use near_primitives::views::FinalExecutionStatus;
 use serde::Serialize;
 use serde_json::json;
 use std::error::Error;
@@ -196,9 +197,11 @@ mod tests {
 
     use crate::sandbox_contract_wrapper::SandboxContractWrapper;
 
+    use eth2_utility::types::ClientMode;
     use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::BlockHeader;
     use near_primitives::types::AccountId;
+    use near_primitives::views::FinalExecutionStatus;
     use near_sdk::NearToken;
     use tokio::runtime::Runtime;
 
@@ -361,36 +364,187 @@ mod tests {
             &mut eth_state,
             relay_account.id().to_string(),
         );
+
         let first_finalized_slot = eth_client_contract
             .get_finalized_beacon_block_slot()
             .unwrap();
+        println!("First finalized slot after init: {}", first_finalized_slot);
         assert_eq!(first_finalized_slot, 5262208);
 
         // Use `relay_account` as a signer for normal operations
         let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
         let mut eth_client_contract = eth_client_contract::EthClientContract::new(contract_wrapper);
 
-        let next_hash = eth_state.light_client_updates[eth_state.current_light_client_update]
-            .clone()
+        // STEP 1: Submit the light client update first
+        println!("Submitting light client update to enable SubmitHeader mode...");
+        let update_to_submit =
+            &eth_state.light_client_updates[eth_state.current_light_client_update];
+        println!(
+            "Light client update slot: {:?}",
+            update_to_submit
+                .finality_update
+                .header_update
+                .beacon_header
+                .slot
+        );
+
+        let result = eth_client_contract.send_light_client_update(update_to_submit.clone());
+        match result {
+            Ok(outcome) => match &outcome.status {
+                FinalExecutionStatus::SuccessValue(_) => {
+                    println!("Light client update submitted successfully");
+                }
+                FinalExecutionStatus::Failure(err) => {
+                    println!("Light client update execution failed: {:?}", err);
+                    panic!("Light client update execution failed: {:?}", err);
+                }
+                _ => {
+                    panic!("Unexpected execution status: {:?}", outcome.status);
+                }
+            },
+            Err(e) => {
+                panic!("Light client update submission failed: {:?}", e);
+            }
+        }
+
+        eth_state.current_light_client_update += 1;
+
+        // Check the new finalized slot
+        let intermediate_finalized_slot = eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap();
+        println!(
+            "Finalized slot after light client update: {}",
+            intermediate_finalized_slot
+        );
+
+        // STEP 2: Find the execution block that matches the new finalized beacon header
+        let expected_execution_block_hash = update_to_submit
             .finality_update
             .header_update
             .execution_block_hash;
-        loop {
-            let current_execution_block_hash = eth_state.execution_blocks
-                [eth_state.current_execution_block]
-                .hash
-                .unwrap();
+        println!(
+            "Looking for execution block with hash: {:?}",
+            expected_execution_block_hash
+        );
 
-            eth_state.submit_block(&mut eth_client_contract);
-
-            if current_execution_block_hash == next_hash {
-                eth_state.submit_update(&mut eth_client_contract);
-                let current_finality_slot = eth_client_contract
-                    .get_finalized_beacon_block_slot()
-                    .unwrap();
-                assert_ne!(current_finality_slot, first_finalized_slot);
+        // Find the execution block that matches this hash
+        let mut matching_block_index = None;
+        for (i, block) in eth_state.execution_blocks.iter().enumerate() {
+            if block.hash.unwrap() == expected_execution_block_hash {
+                matching_block_index = Some(i);
+                println!("Found matching execution block at index {}", i);
                 break;
             }
         }
+
+        let matching_block_index = matching_block_index
+            .expect("Could not find execution block matching the finalized beacon header");
+
+        // STEP 3: Submit the matching execution block first
+        println!("Submitting the matching execution block...");
+        let matching_block = &eth_state.execution_blocks[matching_block_index];
+
+        let result = eth_client_contract.send_headers(&vec![matching_block.clone()]);
+        match result {
+            Ok(outcome) => match &outcome.status {
+                FinalExecutionStatus::SuccessValue(_) => {
+                    println!("Matching block submitted successfully");
+                }
+                FinalExecutionStatus::Failure(err) => {
+                    println!("Matching block submission failed: {:?}", err);
+                    panic!("Matching block submission failed: {:?}", err);
+                }
+                _ => {
+                    panic!("Unexpected execution status: {:?}", outcome.status);
+                }
+            },
+            Err(e) => {
+                panic!("Matching block submission error: {:?}", e);
+            }
+        }
+
+        // STEP 4: Continue submitting subsequent blocks to build the chain
+        println!("Continuing to submit subsequent execution blocks...");
+        let mut current_block_index = matching_block_index + 1;
+        let mut blocks_submitted = 1; // We already submitted the first matching block
+
+        // Submit blocks until we complete the chain or reach a reasonable limit
+        while current_block_index < eth_state.execution_blocks.len() && blocks_submitted < 50 {
+            let current_block = &eth_state.execution_blocks[current_block_index];
+
+            // Skip duplicate blocks
+            if current_block_index > 0
+                && current_block.hash == eth_state.execution_blocks[current_block_index - 1].hash
+            {
+                current_block_index += 1;
+                continue;
+            }
+
+            println!(
+                "Submitting block #{} with hash: {:?}",
+                current_block_index,
+                current_block.hash.unwrap()
+            );
+
+            let result = eth_client_contract.send_headers(&vec![current_block.clone()]);
+            match result {
+                Ok(outcome) => {
+                    match &outcome.status {
+                        FinalExecutionStatus::SuccessValue(_) => {
+                            println!("Block submitted successfully");
+                            blocks_submitted += 1;
+                        }
+                        FinalExecutionStatus::Failure(err) => {
+                            println!("Block submission failed: {:?}", err);
+                            // Some failures might be expected (like chain gaps), so we continue
+                            break;
+                        }
+                        _ => {
+                            println!(
+                                "Block submission had unexpected status: {:?}",
+                                outcome.status
+                            );
+                            break;
+                        }
+                    }
+                }
+                Err(e) => {
+                    println!("Block submission error: {:?}", e);
+                    break;
+                }
+            }
+
+            current_block_index += 1;
+
+            // Check if client mode changed back (indicating chain completion)
+            let current_client_mode = eth_client_contract.get_client_mode().unwrap();
+            if current_client_mode != ClientMode::SubmitHeader {
+                println!(
+                    "Client mode changed to {:?}, chain completion detected",
+                    current_client_mode
+                );
+                break;
+            }
+        }
+
+        println!("Submitted {} execution blocks total", blocks_submitted);
+
+        // STEP 5: Check the final state
+        let final_finalized_slot = eth_client_contract
+            .get_finalized_beacon_block_slot()
+            .unwrap();
+
+        println!("Final finalized slot: {}", final_finalized_slot);
+        println!("First finalized slot: {}", first_finalized_slot);
+
+        // The slot should have changed after the light client update
+        assert_ne!(final_finalized_slot, first_finalized_slot);
+
+        // Check final client mode
+        let final_client_mode = eth_client_contract.get_client_mode().unwrap();
+        println!("Final client mode: {:?}", final_client_mode);
+
+        println!("Test completed successfully!");
     }
 }

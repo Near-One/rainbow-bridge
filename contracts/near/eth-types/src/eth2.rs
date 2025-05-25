@@ -128,7 +128,7 @@ pub struct LightClientUpdate {
     pub sync_committee_update: Option<SyncCommitteeUpdate>,
 }
 
-#[derive(Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
+#[derive(Clone, BorshDeserialize, BorshSchema, BorshSerialize, Debug)]
 pub struct LightClientState {
     pub finalized_beacon_header: ExtendedBeaconBlockHeader,
     pub current_sync_committee: SyncCommittee,
