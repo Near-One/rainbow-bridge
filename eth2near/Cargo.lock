@@ -1591,6 +1591,7 @@ dependencies = [
  "near-jsonrpc-primitives",
  "near-primitives",
  "near-sdk",
+ "near-workspaces",
  "primitive-types 0.12.2",
  "prometheus",
  "reqwest",

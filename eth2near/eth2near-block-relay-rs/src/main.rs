@@ -2,9 +2,7 @@ use clap::Parser;
 use contract_wrapper::contract_wrapper_trait::ContractWrapper;
 use contract_wrapper::eth_client_contract_trait::EthClientContractTrait;
 use contract_wrapper::near_contract_wrapper::NearContractWrapper;
-use contract_wrapper::{
-    dao_contract, dao_eth_client_contract, eth_client_contract, file_eth_client_contract,
-};
+use contract_wrapper::{eth_client_contract, file_eth_client_contract};
 use eth2_to_near_relay::config::Config;
 use eth2_to_near_relay::contract_type::ContractType;
 use eth2_to_near_relay::eth2near_relay::Eth2NearRelay;
@@ -36,30 +34,11 @@ fn get_eth_contract_wrapper(config: &Config) -> Box<dyn ContractWrapper> {
     ))
 }
 
-fn get_dao_contract_wrapper(config: &Config) -> Box<dyn ContractWrapper> {
-    let dao_contract_account_id = config.dao_contract_account_id.clone();
-
-    Box::new(NearContractWrapper::new(
-        &config.near_endpoint,
-        &config.signer_account_id,
-        &config.path_to_signer_secret_key,
-        &dao_contract_account_id
-            .expect("No DAO contract account ID provided for relay running in DAO mode"),
-        Some(std::time::Duration::from_secs(
-            config.near_requests_timeout_seconds,
-        )),
-    ))
-}
-
 fn get_eth_client_contract(config: &Config) -> Box<dyn EthClientContractTrait> {
     let eth_contract_wrapper = get_eth_contract_wrapper(config);
     let eth_client = eth_client_contract::EthClientContract::new(eth_contract_wrapper);
 
     match config.contract_type {
-        ContractType::Dao => Box::new(dao_eth_client_contract::DaoEthClientContract::new(
-            eth_client,
-            dao_contract::DAOContract::new(get_dao_contract_wrapper(config)),
-        )),
         ContractType::File => Box::new(file_eth_client_contract::FileEthClientContract::new(
             eth_client,
             config

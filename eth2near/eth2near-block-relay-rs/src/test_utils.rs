@@ -12,11 +12,11 @@ use eth_rpc_client::beacon_rpc_client::{BeaconRPCClient, BeaconRPCVersion};
 use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
 use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
 use eth_types::BlockHeader;
+use near_workspaces::{Account, Contract};
 use std::{thread, time};
 use tokio::runtime::Runtime;
 use tree_hash::TreeHash;
 use types::{ExecutionPayload, MainnetEthSpec};
-use workspaces::{Account, Contract};
 
 pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
     let mut json_file_path = std::env::current_exe().unwrap();
@@ -119,12 +119,12 @@ pub fn init_contract_from_specific_slot(
         .get_beacon_block_header_for_block_id(&format!("{}", finality_slot))
         .unwrap();
 
-    let finality_header = eth_types::eth2::BeaconBlockHeader {
+    let finality_header: eth_types::eth2::BeaconBlockHeader = eth_types::eth2::BeaconBlockHeader {
         slot: finality_header.slot.as_u64(),
         proposer_index: finality_header.proposer_index,
-        parent_root: finality_header.parent_root.into(),
-        state_root: finality_header.state_root.into(),
-        body_root: finality_header.body_root.into(),
+        parent_root: finality_header.parent_root.0.into(),
+        state_root: finality_header.state_root.0.into(),
+        body_root: finality_header.body_root.0.into(),
     };
 
     let finalized_body = beacon_rpc_client
@@ -135,8 +135,8 @@ pub fn init_contract_from_specific_slot(
         finalized_body.execution_payload().unwrap().into();
     let finalized_beacon_header = ExtendedBeaconBlockHeader {
         header: finality_header.clone(),
-        beacon_block_root: eth_types::H256(finality_header.tree_hash_root()),
-        execution_block_hash: execution_payload.block_hash().into_root().into(),
+        beacon_block_root: eth_types::H256(finality_header.tree_hash_root().0.into()),
+        execution_block_hash: execution_payload.block_hash().into_root().0.into(),
     };
 
     let finalized_execution_header: BlockHeader = eth1_rpc_client
@@ -160,7 +160,9 @@ pub fn init_contract_from_specific_slot(
 
 fn create_contract(config_for_test: &ConfigForTests) -> (Account, Contract) {
     let rt = Runtime::new().unwrap();
-    let worker = rt.block_on(workspaces::sandbox()).unwrap();
+    let worker = rt
+        .block_on(async { near_workspaces::sandbox().await })
+        .unwrap();
 
     // create accounts
     let owner = worker.root_account().unwrap();
