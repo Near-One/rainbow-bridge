@@ -201,6 +201,7 @@ mod tests {
 
     use eth_types::BlockHeader;
     use eth_types::eth2::FinalizedHeader;
+    use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::eth2::{LightClientUpdate, SyncCommittee};
     use eth2_utility::types::ClientMode;
     use near_primitives::types::AccountId;
@@ -382,7 +383,11 @@ mod tests {
             &eth_state.light_client_updates[eth_state.current_light_client_update];
         println!(
             "Light client update slot: {:?}",
-            update_to_submit.finalized_header.beacon.slot
+            update_to_submit
+                .finality_update
+                .header_update
+                .beacon_header
+                .slot
         );
 
         let result = eth_client_contract.send_light_client_update(update_to_submit.clone());
@@ -416,7 +421,10 @@ mod tests {
         );
 
         // STEP 2: Find the execution block that matches the new finalized beacon header
-        let expected_execution_block_hash = update_to_submit.finalized_header.execution.block_hash;
+        let expected_execution_block_hash = update_to_submit
+            .finality_update
+            .header_update
+            .execution_block_hash;
         println!(
             "Looking for execution block with hash: {:?}",
             expected_execution_block_hash
