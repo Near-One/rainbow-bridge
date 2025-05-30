@@ -72,12 +72,7 @@ fn init_log(args: &Arguments, config: &Config) {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Arguments::parse();
-    let config = Config::load_from_toml(
-        args.config
-            .clone()
-            .try_into()
-            .expect("Error on config parsing"),
-    );
+    let config = Config::load_from_toml(args.config.clone().into());
     init_log(&args, &config);
 
     let mut eth2near_relay = Eth2NearRelay::init(&config, get_eth_client_contract(&config));

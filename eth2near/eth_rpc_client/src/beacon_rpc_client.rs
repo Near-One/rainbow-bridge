@@ -113,8 +113,8 @@ impl BeaconRPCClient {
     /// # Arguments
     ///
     /// * `block_id` - Block identifier. Can be one of: "head" (canonical head in node's view),
-    /// "genesis", "finalized", <slot>, <hex encoded blockRoot with 0x prefix>
-    /// (see https://ethereum.github.io/beacon-APIs/#/Beacon/getBlockV2)
+    ///   "genesis", "finalized", <slot>, <hex encoded blockRoot with 0x prefix>
+    ///   (see https://ethereum.github.io/beacon-APIs/#/Beacon/getBlockV2)
     pub fn get_beacon_block_body_for_block_id(
         &self,
         block_id: &str,
@@ -140,8 +140,8 @@ impl BeaconRPCClient {
     /// # Arguments
     ///
     /// * `block_id` - Block identifier. Can be one of: "head" (canonical head in node's view),
-    /// "genesis", "finalized", <slot>, <hex encoded blockRoot with 0x prefix>
-    /// (see https://ethereum.github.io/beacon-APIs/#/Beacon/getBlockHeader)
+    ///   "genesis", "finalized", <slot>, <hex encoded blockRoot with 0x prefix>
+    ///   (see https://ethereum.github.io/beacon-APIs/#/Beacon/getBlockHeader)
     pub fn get_beacon_block_header_for_block_id(
         &self,
         block_id: &str,
@@ -166,7 +166,7 @@ impl BeaconRPCClient {
     /// # Arguments
     ///
     /// * `period` - period id for which `LightClientUpdate` is fetched.
-    /// On Mainnet, one period consists of 256 epochs, and one epoch consists of 32 slots
+    ///   On Mainnet, one period consists of 256 epochs, and one epoch consists of 32 slots
     pub fn get_light_client_update(
         &self,
         period: u64,
@@ -401,7 +401,7 @@ impl BeaconRPCClient {
     fn get_json_from_client(client: &Client, url: &str) -> Result<String, Box<dyn Error>> {
         trace!(target: "relay", "Beacon chain request: {}", url);
         let json_str = client.get(url).send()?.text()?;
-        if let Err(_) = serde_json::from_str::<Value>(&json_str) {
+        if serde_json::from_str::<Value>(&json_str).is_err() {
             return Err(Box::new(FailOnGettingJson { response: json_str }));
         }
 
@@ -665,7 +665,7 @@ mod tests {
     const TIMEOUT_STATE_SECONDS: u64 = 1000;
 
     fn get_test_config() -> ConfigForTests {
-        ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
+        ConfigForTests::load_from_toml("config_for_tests.toml".into())
     }
 
     #[test]
@@ -1015,6 +1015,6 @@ mod tests {
             Some(BeaconRPCVersion::V1_5),
         );
 
-        let light_client_update = beacon_rpc_client.get_light_client_update(870).unwrap();
+        let _light_client_update = beacon_rpc_client.get_light_client_update(870).unwrap();
     }
 }

@@ -1,9 +1,9 @@
 use crate::types::{BlockHeader, TransactionReceipt};
+use ethereum_types::{H256, U64};
 use reqwest::blocking::Client;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use std::error::Error;
-use ethereum_types::{H256, U64};
 
 pub struct EthRPCClient {
     endpoint_url: String,
@@ -18,7 +18,10 @@ impl EthRPCClient {
         }
     }
 
-    pub fn get_transaction_receipt_by_hash(&self, tx_hash: &H256) -> Result<TransactionReceipt, Box<dyn Error>> {
+    pub fn get_transaction_receipt_by_hash(
+        &self,
+        tx_hash: &H256,
+    ) -> Result<TransactionReceipt, Box<dyn Error>> {
         let json_value = json!({
             "id": 1,
             "jsonrpc": "2.0",

@@ -150,17 +150,17 @@ pub fn init_contract(
         );
     }
 
-    eth_client_contract.init_contract(
-        config.ethereum_network.clone(),
+    eth_client_contract.init_contract(contract_wrapper::eth_client_contract::InitContractArgs {
+        ethereum_network: config.ethereum_network.clone(),
         finalized_execution_header,
-        finalized_header,
-        light_client_snapshot.current_sync_committee,
+        finalized_beacon_header: finalized_header,
+        current_sync_committee: light_client_snapshot.current_sync_committee,
         next_sync_committee,
-        config.validate_updates,
-        config.verify_bls_signature,
-        config.hashes_gc_threshold,
-        trusted_signature,
-    );
+        validate_updates: config.validate_updates,
+        verify_bls_signatures: config.verify_bls_signature,
+        hashes_gc_threshold: config.hashes_gc_threshold,
+        trusted_signer: trusted_signature,
+    });
 
     thread::sleep(time::Duration::from_secs(30));
     Ok(())
@@ -199,7 +199,7 @@ mod tests {
         config_for_test: &ConfigForTests,
         eth_client_contract: &EthClientContract,
     ) -> crate::config::Config {
-        return crate::config::Config {
+        crate::config::Config {
             beacon_endpoint: config_for_test.beacon_endpoint.to_string(),
             eth1_endpoint: config_for_test.eth1_endpoint.to_string(),
             near_endpoint: "https://rpc.testnet.near.org".to_string(),
@@ -219,14 +219,13 @@ mod tests {
             ),
             init_block_root: None,
             beacon_rpc_version: BeaconRPCVersion::V1_1,
-        };
+        }
     }
 
     #[test]
     #[should_panic(expected = "The updates validation can't be disabled for mainnet")]
     fn test_init_contract_on_mainnet_without_validation() {
-        let config_for_test =
-            ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap());
+        let config_for_test = ConfigForTests::load_from_toml("config_for_tests.toml".into());
 
         let (relay_account, contract) = create_contract(&config_for_test);
         let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
@@ -244,8 +243,7 @@ mod tests {
         expected = "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet"
     )]
     fn test_init_contract_on_mainnet_without_trusted_signature() {
-        let config_for_test =
-            ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap());
+        let config_for_test = ConfigForTests::load_from_toml("config_for_tests.toml".into());
 
         let (relay_account, contract) = create_contract(&config_for_test);
         let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
@@ -260,8 +258,7 @@ mod tests {
 
     #[test]
     fn test_sync_with_eth_after_init() {
-        let config_for_test =
-            ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap());
+        let config_for_test = ConfigForTests::load_from_toml("config_for_tests.toml".into());
 
         let (relay_account, contract) = create_contract(&config_for_test);
         let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));

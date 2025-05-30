@@ -3,20 +3,20 @@ mod sepolia_integration_tests {
     use super::*;
     use crate::tests::utils::get_sepolia_test_data;
     use crate::tests::utils::InitOptions;
+    use borsh::{BorshDeserialize, BorshSerialize};
     use eth2_utility::types::InitInput;
     use eth_types::eth2::{ExtendedBeaconBlockHeader, SyncCommittee};
     use eth_types::{Address, Bloom, H256, H64, U256};
-    use borsh::{BorshDeserialize, BorshSerialize};
     use near_sdk::{Gas, NearToken};
-    use near_workspaces::{Account, Contract};
     use near_workspaces::operations::Function;
+    use near_workspaces::{Account, Contract};
     use serde::{Deserialize, Serialize};
 
     const WASM_FILEPATH: &str = "../target/near/eth2_client/eth2_client.wasm";
     const WASM_V_0_1_0_FILEPATH: &str = "src/data/eth2_client_v0.1.0_testnet.wasm";
 
     #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
-    struct BlockHeaderV1 {         
+    struct BlockHeaderV1 {
         pub parent_hash: H256,
         pub uncles_hash: H256,
         pub author: Address,
@@ -43,14 +43,14 @@ mod sepolia_integration_tests {
         pub partial_hash: Option<H256>,
     }
 
-    impl From<eth_types::BlockHeader> for BlockHeaderV1 { 
+    impl From<eth_types::BlockHeader> for BlockHeaderV1 {
         fn from(item: eth_types::BlockHeader) -> Self {
             serde_json::from_str(&serde_json::to_string(&item).unwrap()).unwrap()
         }
     }
 
     #[derive(Clone, BorshDeserialize, BorshSerialize)]
-    struct InitInputV1 { 
+    struct InitInputV1 {
         pub network: String,
         pub finalized_execution_header: BlockHeaderV1,
         pub finalized_beacon_header: ExtendedBeaconBlockHeader,
@@ -63,7 +63,7 @@ mod sepolia_integration_tests {
         pub trusted_signer: Option<near_sdk::AccountId>,
     }
 
-    impl From<InitInput> for InitInputV1 { 
+    impl From<InitInput> for InitInputV1 {
         fn from(message: InitInput) -> Self {
             Self {
                 network: message.network,
@@ -91,9 +91,14 @@ mod sepolia_integration_tests {
         let alice = owner
             .create_subaccount("alice")
             .initial_balance(NearToken::from_near(30))
-            .transact().await?
+            .transact()
+            .await?
             .into_result()?;
-        let _ = contract.call("init").args_borsh(init_input).transact().await?;
+        let _ = contract
+            .call("init")
+            .args_borsh(init_input)
+            .transact()
+            .await?;
         Ok((alice, contract))
     }
 
@@ -117,10 +122,12 @@ mod sepolia_integration_tests {
         update.finality_update.header_update.execution_block_hash = last;
 
         // Submit the light‐client update
-        let outcome = alice.call(contract.id(), "submit_beacon_chain_light_client_update")
+        let outcome = alice
+            .call(contract.id(), "submit_beacon_chain_light_client_update")
             .args_borsh(update)
             .gas(Gas::from_tgas(300))
-            .transact().await?;
+            .transact()
+            .await?;
         assert!(outcome.is_success(), "update failed");
 
         // Submit execution headers in reverse order
@@ -130,7 +137,7 @@ mod sepolia_integration_tests {
                 tx = tx.call(
                     Function::new("submit_execution_header")
                         .args(borsh::to_vec(h)?)
-                        .gas(Gas::from_tgas(6))
+                        .gas(Gas::from_tgas(6)),
                 );
             }
             let result = tx.transact().await?;
@@ -139,14 +146,14 @@ mod sepolia_integration_tests {
 
         // Verify that each block’s hash is stored
         for h in slice {
-            let result: Option<H256> = contract.view("block_hash_safe")
-                .args_borsh(h.number).await?
+            let result: Option<H256> = contract
+                .view("block_hash_safe")
+                .args_borsh(h.number)
+                .await?
                 .borsh()?;
             assert!(result.is_some(), "block {} missing", h.number);
         }
 
         Ok(())
     }
-
-
 }

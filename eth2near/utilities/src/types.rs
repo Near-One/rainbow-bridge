@@ -1,5 +1,5 @@
 use crate::primitives::{Bytes, U8};
-use ethereum_types::{H256, Address, Bloom, U64, U128};
+use ethereum_types::{Address, Bloom, H256, U128, U64};
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]

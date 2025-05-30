@@ -74,17 +74,17 @@ pub fn init_contract_from_files(
         }
     }
 
-    eth_client_contract.init_contract(
-        config_for_test.network_name.clone(),
-        finalized_execution_header.unwrap(),
+    eth_client_contract.init_contract(contract_wrapper::eth_client_contract::InitContractArgs {
+        ethereum_network: config_for_test.network_name.clone(),
+        finalized_execution_header: finalized_execution_header.unwrap(),
         finalized_beacon_header,
         current_sync_committee,
         next_sync_committee,
-        Some(true),
-        Some(false),
-        None,
-        Some(eth_client_contract.contract_wrapper.get_signer_account_id()),
-    );
+        validate_updates: Some(true),
+        verify_bls_signatures: Some(false),
+        hashes_gc_threshold: None,
+        trusted_signer: Some(eth_client_contract.contract_wrapper.get_signer_account_id()),
+    });
     thread::sleep(time::Duration::from_secs(30));
 }
 
@@ -143,17 +143,17 @@ pub fn init_contract_from_specific_slot(
         .get_block_header_by_number(execution_payload.block_number())
         .unwrap();
 
-    eth_client_contract.init_contract(
-        config_for_test.network_name.clone(),
+    eth_client_contract.init_contract(contract_wrapper::eth_client_contract::InitContractArgs {
+        ethereum_network: config_for_test.network_name.clone(),
         finalized_execution_header,
         finalized_beacon_header,
         current_sync_committee,
         next_sync_committee,
-        Some(true),
-        Some(false),
-        None,
-        Some(eth_client_contract.contract_wrapper.get_signer_account_id()),
-    );
+        validate_updates: Some(true),
+        verify_bls_signatures: Some(false),
+        hashes_gc_threshold: None,
+        trusted_signer: Some(eth_client_contract.contract_wrapper.get_signer_account_id()),
+    });
 
     thread::sleep(time::Duration::from_secs(30));
 }
@@ -272,7 +272,7 @@ pub fn get_relay_with_update_from_file(
 pub fn get_relay_from_slot(slot: u64, config_for_test: &ConfigForTests) -> Eth2NearRelay {
     let config = get_config(config_for_test);
 
-    let (relay_account, contract) = create_contract(&config_for_test);
+    let (relay_account, contract) = create_contract(config_for_test);
     let contract_wrapper = Box::new(SandboxContractWrapper::new(&relay_account, contract));
 
     let mut eth_client_contract = EthClientContract::new(contract_wrapper);

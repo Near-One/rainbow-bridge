@@ -9,7 +9,7 @@ repository.workspace = true
 # in https://github.com/near/NEPs/blob/master/neps/nep-0330.md
 [package.metadata.near.reproducible_build]
 # docker image, descriptor of build environment
-image = "sourcescan/cargo-near:0.13.2-rust-1.84.0"
+image = "sourcescan/cargo-near:0.16.0-rust-1.86.0"
 # tag after colon above serves only descriptive purpose; image is identified by digest
 image_digest = "sha256:b41cb89907f92b114da9e2be4e109bff30ab792c22ddcbd2a4cff8e340cb9acb"
 # list of environment variables names, whose values, if set, will be used as external build parameters

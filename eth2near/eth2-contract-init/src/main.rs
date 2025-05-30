@@ -52,12 +52,7 @@ fn init_log(args: &Arguments, config: &Config) {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Arguments::parse();
-    let config = Config::load_from_toml(
-        args.config
-            .clone()
-            .try_into()
-            .expect("Incorrect config path"),
-    );
+    let config = Config::load_from_toml(args.config.clone().into());
     init_log(&args, &config);
 
     let mut eth_client_contract = EthClientContract::new(get_eth_contract_wrapper(&config));

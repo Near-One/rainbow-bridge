@@ -1,4 +1,5 @@
 [workspace]
+resolver = "2"
 
 members = [
     "contract_wrapper",
@@ -28,7 +29,4 @@ near-jsonrpc-primitives = "0.29.1"
 borsh = { version = "1.5.7", features = ["unstable__schema"] }
 near-sdk = { version = "5.13.0", features = ["legacy", "unit-testing"] }
 
-[patch]
-[patch.crates-io]
-parity-secp256k1 = { git = "https://github.com/paritytech/rust-secp256k1" }
 
