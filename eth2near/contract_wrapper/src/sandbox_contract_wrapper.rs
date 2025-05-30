@@ -71,7 +71,7 @@ impl SandboxContractWrapper {
         };
 
         FinalExecutionOutcomeView {
-            status: status,
+            status,
             transaction: SignedTransactionView {
                 signer_id: "fake_signature_id".parse().unwrap(),
                 public_key: PublicKey::empty(ED25519),
@@ -130,10 +130,7 @@ impl ContractWrapper for SandboxContractWrapper {
         deposit: Option<Vec<Balance>>,
         gas: Option<Gas>,
     ) -> Result<FinalExecutionOutcomeView, Box<dyn Error>> {
-        let deposit = match deposit {
-            Some(deposit) => Some(deposit[0]),
-            None => None::<Balance>,
-        };
+        let deposit = deposit.map(|d| d[0]);
 
         for i in 0..method_name.len() - 1 {
             self.call_change_method(method_name[i].clone(), args[i].clone(), deposit, gas)

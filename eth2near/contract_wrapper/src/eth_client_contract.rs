@@ -9,12 +9,23 @@ use eth_types::eth2::{
 use eth_types::{BlockHeader, H256};
 use near_primitives::types::AccountId;
 use near_primitives::views::FinalExecutionOutcomeView;
-use near_primitives::views::FinalExecutionStatus;
 use serde::Serialize;
 use serde_json::json;
 use std::error::Error;
 use std::option::Option;
 use std::string::String;
+
+pub struct InitContractArgs {
+    pub ethereum_network: EthNetwork,
+    pub finalized_execution_header: BlockHeader,
+    pub finalized_beacon_header: ExtendedBeaconBlockHeader,
+    pub current_sync_committee: SyncCommittee,
+    pub next_sync_committee: SyncCommittee,
+    pub validate_updates: Option<bool>,
+    pub verify_bls_signatures: Option<bool>,
+    pub hashes_gc_threshold: Option<u64>,
+    pub trusted_signer: Option<AccountId>,
+}
 
 /// Implementation for interaction with Ethereum Light Client Contract on NEAR.
 pub struct EthClientContract {
@@ -39,18 +50,7 @@ impl EthClientContract {
     /// * `hashes_gs_threshold` - the maximum number of stored finalized blocks.
     /// * `max_submitted_block_by_account` - the maximum number of unfinalized blocks which one relay can store in the client's storage.
     /// * `trusted_signer` - the account address of the trusted signer which is allowed to submit light client updates.
-    pub fn init_contract(
-        &self,
-        ethereum_network: EthNetwork,
-        finalized_execution_header: BlockHeader,
-        finalized_beacon_header: ExtendedBeaconBlockHeader,
-        current_sync_committee: SyncCommittee,
-        next_sync_committee: SyncCommittee,
-        validate_updates: Option<bool>,
-        verify_bls_signatures: Option<bool>,
-        hashes_gc_threshold: Option<u64>,
-        trusted_signer: Option<AccountId>,
-    ) {
+    pub fn init_contract(&self, args: InitContractArgs) {
         #[derive(BorshSerialize, Serialize)]
         pub struct InitInput {
             pub network: String,
@@ -65,15 +65,15 @@ impl EthClientContract {
         }
 
         let init_input = InitInput {
-            network: ethereum_network.to_string(),
-            finalized_execution_header,
-            finalized_beacon_header,
-            current_sync_committee,
-            next_sync_committee,
-            validate_updates: validate_updates.unwrap_or(true),
-            verify_bls_signatures: verify_bls_signatures.unwrap_or(false),
-            hashes_gc_threshold: hashes_gc_threshold.unwrap_or(51_000),
-            trusted_signer: trusted_signer.map(|account_id| account_id.to_string()),
+            network: args.ethereum_network.to_string(),
+            finalized_execution_header: args.finalized_execution_header,
+            finalized_beacon_header: args.finalized_beacon_header,
+            current_sync_committee: args.current_sync_committee,
+            next_sync_committee: args.next_sync_committee,
+            validate_updates: args.validate_updates.unwrap_or(true),
+            verify_bls_signatures: args.verify_bls_signatures.unwrap_or(false),
+            hashes_gc_threshold: args.hashes_gc_threshold.unwrap_or(51_000),
+            trusted_signer: args.trusted_signer.map(|account_id| account_id.to_string()),
         };
 
         println!(
@@ -146,7 +146,7 @@ impl EthClientContractTrait for EthClientContract {
         &mut self,
         headers: &[BlockHeader],
     ) -> Result<FinalExecutionOutcomeView, Box<dyn std::error::Error>> {
-        if headers.len() == 0 {
+        if headers.is_empty() {
             return Err(Box::new(crate::errors::TryToSubmitZeroHeaderError));
         }
 
@@ -193,7 +193,10 @@ impl EthClientContractTrait for EthClientContract {
 mod tests {
     use crate::eth_client_contract;
     use crate::eth_client_contract::EthClientContract;
+    use crate::eth_client_contract::InitContractArgs;
+
     use crate::eth_client_contract_trait::EthClientContractTrait;
+    use crate::eth_network::EthNetwork;
 
     use crate::sandbox_contract_wrapper::SandboxContractWrapper;
 
@@ -241,6 +244,7 @@ mod tests {
             }
         }
 
+        #[allow(dead_code)]
         pub fn submit_block(&mut self, eth_client: &mut EthClientContract) {
             eth_client
                 .send_headers(&vec![
@@ -256,6 +260,7 @@ mod tests {
             }
         }
 
+        #[allow(dead_code)]
         pub fn submit_update(&mut self, eth_client: &mut EthClientContract) {
             eth_client
                 .send_light_client_update(
@@ -332,17 +337,17 @@ mod tests {
             }
         }
 
-        eth_client_contract.init_contract(
-            eth_client_contract::EthNetwork::Goerli,
-            finalized_execution_header.unwrap(),
+        eth_client_contract.init_contract(InitContractArgs {
+            ethereum_network: EthNetwork::Goerli,
+            finalized_execution_header: finalized_execution_header.unwrap(),
             finalized_beacon_header,
             current_sync_committee,
             next_sync_committee,
-            Some(true),
-            Some(false),
-            None,
-            Option::<AccountId>::Some(trusted_signer.parse().unwrap()),
-        );
+            validate_updates: Some(true),
+            verify_bls_signatures: Some(false),
+            hashes_gc_threshold: None,
+            trusted_signer: Option::<AccountId>::Some(trusted_signer.parse().unwrap()),
+        });
         eth_state.current_light_client_update = 1;
     }
 

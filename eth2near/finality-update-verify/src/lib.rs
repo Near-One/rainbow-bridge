@@ -100,7 +100,7 @@ mod tests {
     use eth_types::eth2::SyncCommittee;
 
     fn get_config() -> ConfigForTests {
-        ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
+        ConfigForTests::load_from_toml("config_for_tests.toml".into())
     }
 
     #[test]

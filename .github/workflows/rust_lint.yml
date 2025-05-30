@@ -1,0 +1,43 @@
+name: Rust Linting
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'eth2near/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'eth2near/**'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./eth2near
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: 1.86.0
+        components: clippy, rustfmt
+        target: wasm32-unknown-unknown
+
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          ./eth2near
+        cache-on-failure: true
+        cache-all-crates: true
+
+    - name: Run linters
+      run: cargo clippy --all-targets --all-features -- -D warnings -D clippy::all
+    - name: Check formatting
+      run: cargo fmt --all -- --check

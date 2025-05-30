@@ -53,7 +53,7 @@ impl ExecutionBlockProof {
                 Self::L1_BEACON_BLOCK_BODY_TREE_EXECUTION_PAYLOAD_INDEX,
                 Self::L1_BEACON_BLOCK_BODY_PROOF_SIZE,
             )
-            .map_err(|err| MerkleTreeError(err))?
+            .map_err(MerkleTreeError)?
             .1;
         let mut block_proof = execution_payload_merkle_tree
             .0
@@ -61,7 +61,7 @@ impl ExecutionBlockProof {
                 Self::L2_EXECUTION_PAYLOAD_TREE_EXECUTION_BLOCK_INDEX,
                 l2_execution_payload_proof_size,
             )
-            .map_err(|err| MerkleTreeError(err))?
+            .map_err(MerkleTreeError)?
             .1;
         block_proof.extend(&l1_execution_payload_proof);
 
@@ -71,7 +71,7 @@ impl ExecutionBlockProof {
             .into();
         Ok(Self {
             block_hash: execution_payload.block_hash().into_root(),
-            proof: block_proof.as_slice().try_into()?,
+            proof: block_proof.as_slice().into(),
         })
     }
 
@@ -161,7 +161,7 @@ mod tests {
     const TIMEOUT_STATE_SECONDS: u64 = 1000;
 
     fn get_test_config() -> ConfigForTests {
-        ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
+        ConfigForTests::load_from_toml("config_for_tests.toml".into())
     }
 
     #[test]

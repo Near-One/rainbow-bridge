@@ -164,7 +164,8 @@ impl ContractWrapper for NearContractWrapper {
             return Err(Box::new(crate::errors::TryToSubmitZeroHeaderError));
         }
 
-        let attached_gas_per_promise_in_batch = gas.unwrap_or(MAX_GAS).as_gas() / num_blocks_in_batch;
+        let attached_gas_per_promise_in_batch =
+            gas.unwrap_or(MAX_GAS).as_gas() / num_blocks_in_batch;
         let mut actions = Vec::new();
 
         for i in 0..method_name.len() {

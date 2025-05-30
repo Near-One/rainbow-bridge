@@ -16,7 +16,6 @@ use eth_rpc_client::hand_made_finality_light_client_update::HandMadeFinalityLigh
 use eth_types::eth2::LightClientUpdate;
 use eth_types::BlockHeader;
 use log::{debug, info, trace, warn};
-use types::Hash256;
 
 use near_primitives::views::FinalExecutionStatus;
 use std::cmp::max;
@@ -288,7 +287,7 @@ impl Eth2NearRelay {
             }
         }
 
-        return true;
+        true
     }
 
     fn wait_for_synchronization(&self) -> Result<(), Box<dyn Error>> {
@@ -370,12 +369,12 @@ impl Eth2NearRelay {
             warn!(target: "relay", "FAIL status on Headers submission. Error: {:?}. Transaction URL: https://explorer.{}.near.org/transactions/{}",
                 error_message, self.near_network_name, execution_outcome.transaction.hash);
 
-            return false;
+            false
         } else {
             info!(target: "relay", "Successful headers submission! Transaction URL: https://explorer.{}.near.org/transactions/{}",
                                   self.near_network_name, execution_outcome.transaction.hash);
 
-            return true;
+            true
         }
     }
 
@@ -453,7 +452,7 @@ impl Eth2NearRelay {
             return true;
         }
 
-        return false;
+        false
     }
 
     fn send_light_client_updates(
@@ -469,13 +468,13 @@ impl Eth2NearRelay {
             return;
         }
 
-        if self.get_light_client_update_by_epoch {
-            if self.send_regular_light_client_update_by_epoch(
+        if self.get_light_client_update_by_epoch
+            && self.send_regular_light_client_update_by_epoch(
                 last_finalized_slot_on_eth,
                 last_finalized_slot_on_near,
-            ) {
-                return;
-            }
+            )
+        {
+            return;
         }
 
         if last_finalized_slot_on_eth
@@ -693,7 +692,7 @@ impl Eth2NearRelay {
 
         info!(target: "relay", "Finalized block number from light client update = {}", finalized_block_number);
         sleep(Duration::from_secs(self.sleep_time_after_submission_secs));
-        return true;
+        true
     }
 }
 
@@ -712,7 +711,7 @@ mod tests {
     use types::Hash256;
 
     fn get_test_config() -> ConfigForTests {
-        ConfigForTests::load_from_toml("config_for_tests.toml".try_into().unwrap())
+        ConfigForTests::load_from_toml("config_for_tests.toml".into())
     }
 
     fn get_finalized_slot(relay: &Eth2NearRelay) -> u64 {
@@ -744,7 +743,7 @@ mod tests {
         let mut relay = get_relay(true, &config_for_test);
 
         let blocks: Vec<BlockHeader> = vec![];
-        if let Ok(_) = relay.eth_client_contract.send_headers(&blocks) {
+        if relay.eth_client_contract.send_headers(&blocks).is_ok() {
             panic!("No error on submit 0 headers");
         }
     }
