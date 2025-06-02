@@ -13,14 +13,6 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Install LFS
-        run: sudo apt-get install git-lfs
-
-      - name: Clone the repository
-        uses: actions/checkout@v4
-        with:
-          lfs: 'true'
-          
       - name: Clone the repository
         uses: actions/checkout@v3
         
