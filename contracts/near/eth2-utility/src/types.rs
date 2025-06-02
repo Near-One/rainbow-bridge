@@ -2,7 +2,6 @@ use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 use eth_types::eth2::*;
 use eth_types::H256;
 use near_sdk::near;
-use near_sdk::serde::Serialize;
 use near_sdk::AccountId;
 
 use crate::consensus::Network;
@@ -36,8 +35,8 @@ pub enum ClientMode {
     SubmitHeader,
 }
 
-#[derive(Serialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(Clone)]
+#[near(serializers=[json])]
 pub struct ContractConfig {
     pub trusted_signer: Option<AccountId>,
     pub validate_updates: bool,
