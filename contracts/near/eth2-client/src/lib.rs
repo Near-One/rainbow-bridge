@@ -18,13 +18,9 @@ use near_sdk::{
 };
 use tree_hash::TreeHash;
 
-#[cfg(feature = "bls")]
 use amcl::bls381::bls381::utils::serialize_uncompressed_g1;
-#[cfg(feature = "bls")]
 use amcl::bls381::ecp::ECP;
-#[cfg(feature = "bls")]
 use amcl::bls381::fp2::FP2;
-#[cfg(feature = "bls")]
 use amcl::bls381::hash_to_curve::hash_to_field_fp2;
 
 mod migrate;
@@ -111,7 +107,7 @@ impl Eth2Client {
             );
 
             require!(
-                (cfg!(feature = "bls") && args.verify_bls_signatures)
+                args.verify_bls_signatures
                     || args.trusted_signer.is_some(),
                 "The client can't be executed in the trustless mode without BLS sigs verification on Mainnet"
             );
@@ -360,26 +356,14 @@ impl Eth2Client {
         self.trusted_signer = trusted_signer;
     }
 
-    pub fn get_trusted_signer(&self) -> Option<AccountId> {
-        self.trusted_signer.clone()
-    }
-
     #[access_control_any(roles(Role::DAO))]
     pub fn update_trusted_blocks_submitter(&mut self, trusted_blocks_submitter: Option<AccountId>) {
         self.trusted_blocks_submitter = trusted_blocks_submitter;
     }
 
-    pub fn get_trusted_blocks_submitter(&self) -> Option<AccountId> {
-        self.trusted_blocks_submitter.clone()
-    }
-
     #[access_control_any(roles(Role::DAO))]
     pub fn update_hashes_gc_threshold(&mut self, hashes_gc_threshold: u64) {
         self.hashes_gc_threshold = hashes_gc_threshold;
-    }
-
-    pub fn get_hashes_gc_threshold(&self) -> u64 {
-        self.hashes_gc_threshold
     }
 
     #[access_control_any(roles(Role::DAO))]
@@ -390,6 +374,17 @@ impl Eth2Client {
     #[access_control_any(roles(Role::DAO))]
     pub fn set_verify_bls_signatures(&mut self, enabled: bool) {
         self.verify_bls_signatures = enabled;
+    }
+
+    pub fn get_config(self) -> ContractConfig {
+        ContractConfig {
+            trusted_signer: self.trusted_signer,
+            validate_updates: self.validate_updates,
+            verify_bls_signatures: self.verify_bls_signatures,
+            hashes_gc_threshold: self.hashes_gc_threshold,
+            network: self.network,
+            trusted_blocks_submitter: self.trusted_blocks_submitter,
+        }
     }
 
     pub fn version(&self) -> String {
@@ -424,7 +419,6 @@ impl Eth2Client {
             )
         );
 
-        #[cfg(feature = "bls")]
         if self.verify_bls_signatures {
             self.verify_bls_signatures(update, sync_committee_bits, finalized_period);
         }
@@ -527,7 +521,6 @@ impl Eth2Client {
         }
     }
 
-    #[cfg(feature = "bls")]
     fn verify_bls_signatures(
         &self,
         update: &LightClientUpdate,
@@ -574,8 +567,9 @@ impl Eth2Client {
         let signature_bytes = update.sync_aggregate.sync_committee_signature.0.to_vec();
 
         let dst: &[u8] = b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_";
-        let msg_fp2 = hash_to_field_fp2(msg_bytes.as_slice(), 2, dst)
-            .expect("hash to field should not fail for given parameters");
+        let msg_fp2 = hash_to_field_fp2(msg_bytes.as_slice(), 2, dst).unwrap_or_else(|_| {
+            env::panic_str("hash to field should not fail for given parameters")
+        });
 
         let mut msg_fp2_0 = [0u8; 96];
         let mut msg_fp2_1 = [0u8; 96];
@@ -688,7 +682,6 @@ impl Eth2Client {
         Some(head_block_number - tail_block_number)
     }
 
-    #[cfg(feature = "bls")]
     fn fp2_to_u8(u: &FP2, out: &mut [u8; 96]) {
         u.getb().to_byte_array(&mut out[0..48], 0);
         u.geta().to_byte_array(&mut out[48..96], 0);

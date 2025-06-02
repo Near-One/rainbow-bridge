@@ -2,7 +2,10 @@ use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 use eth_types::eth2::*;
 use eth_types::H256;
 use near_sdk::near;
+use near_sdk::serde::Serialize;
 use near_sdk::AccountId;
+
+use crate::consensus::Network;
 
 /// Minimal information about a header.
 #[derive(Clone)]
@@ -31,4 +34,15 @@ pub struct InitInput {
 pub enum ClientMode {
     SubmitLightClientUpdate,
     SubmitHeader,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct ContractConfig {
+    pub trusted_signer: Option<AccountId>,
+    pub validate_updates: bool,
+    pub verify_bls_signatures: bool,
+    pub hashes_gc_threshold: u64,
+    pub network: Network,
+    pub trusted_blocks_submitter: Option<AccountId>,
 }
