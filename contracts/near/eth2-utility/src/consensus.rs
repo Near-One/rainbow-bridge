@@ -5,6 +5,7 @@ use bitvec::prelude::BitVec;
 use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 use eth_types::eth2::*;
 use eth_types::H256;
+use near_sdk::near;
 use tree_hash::TreeHash;
 
 pub const EPOCHS_PER_SYNC_COMMITTEE_PERIOD: u64 = 256;
@@ -28,7 +29,8 @@ pub struct GeneralizedIndex {
     pub sync_committee_tree_index: u32,
 }
 
-#[derive(PartialEq, BorshSerialize, BorshDeserialize, BorshSchema)]
+#[derive(PartialEq, BorshSerialize, BorshDeserialize, BorshSchema, Clone, Copy, Debug)]
+#[near(serializers=[json])]
 pub enum Network {
     Mainnet,
     Goerli,

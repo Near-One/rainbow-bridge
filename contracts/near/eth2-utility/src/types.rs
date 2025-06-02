@@ -4,6 +4,8 @@ use eth_types::H256;
 use near_sdk::near;
 use near_sdk::AccountId;
 
+use crate::consensus::Network;
+
 /// Minimal information about a header.
 #[derive(Clone)]
 #[near(serializers=[borsh])]
@@ -31,4 +33,15 @@ pub struct InitInput {
 pub enum ClientMode {
     SubmitLightClientUpdate,
     SubmitHeader,
+}
+
+#[derive(Clone)]
+#[near(serializers=[json])]
+pub struct ContractConfig {
+    pub trusted_signer: Option<AccountId>,
+    pub validate_updates: bool,
+    pub verify_bls_signatures: bool,
+    pub hashes_gc_threshold: u64,
+    pub network: Network,
+    pub trusted_blocks_submitter: Option<AccountId>,
 }
