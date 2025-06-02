@@ -6,7 +6,6 @@ use eth2_utility::consensus::{Network, NetworkConfig};
 use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
 use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
 use eth_rpc_client::light_client_snapshot_with_proof::LightClientSnapshotWithProof;
-use eth_types::eth2::ExtendedBeaconBlockHeader;
 use eth_types::BlockHeader;
 use log::info;
 use std::str::FromStr;
@@ -91,16 +90,11 @@ pub fn init_contract(
         .get_finality_light_client_update()
         .expect("Error on fetching finality light client update");
 
-    let finality_slot = finality_light_client_update
-        .finality_update
-        .header_update
-        .beacon_header
-        .slot;
+    let finality_slot = finality_light_client_update.finalized_header.beacon.slot;
 
     let block_id = format!("{}", finality_slot);
 
-    let finalized_header: ExtendedBeaconBlockHeader =
-        ExtendedBeaconBlockHeader::from(finality_light_client_update.finality_update.header_update);
+    let finalized_header = finality_light_client_update.finalized_header;
     let finalized_body = beacon_rpc_client
         .get_beacon_block_body_for_block_id(&block_id)
         .expect("Error on fetching finalized body");
@@ -113,10 +107,7 @@ pub fn init_contract(
         .get_block_header_by_number(execution_payload.block_number())
         .expect("Error on fetching finalized execution header");
 
-    let next_sync_committee = light_client_update_with_next_sync_committee
-        .sync_committee_update
-        .expect("No sync_committee update in light client update")
-        .next_sync_committee;
+    let next_sync_committee = light_client_update_with_next_sync_committee.next_sync_committee;
 
     let init_block_root = match config.init_block_root.clone() {
         None => beacon_rpc_client

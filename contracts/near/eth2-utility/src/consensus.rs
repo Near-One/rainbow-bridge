@@ -201,9 +201,9 @@ impl NetworkConfig {
         self.compute_proof_size(compute_epoch_at_slot(slot))
     }
 
-    pub fn validate_beacon_block_header_update(&self, header_update: &HeaderUpdate) -> bool {
-        let branch = &header_update.execution_hash_branch;
-        let proof_size = self.compute_proof_size_by_slot(header_update.beacon_header.slot);
+    pub fn validate_beacon_block_header_update(&self, header_update: &FinalizedHeader) -> bool {
+        let branch = &header_update.execution_branch;
+        let proof_size = self.compute_proof_size_by_slot(header_update.beacon.slot);
         if branch.len() != proof_size.execution_proof_size {
             return false;
         }
@@ -212,7 +212,7 @@ impl NetworkConfig {
         let l1_proof =
             &branch[proof_size.l2_execution_payload_proof_size..proof_size.execution_proof_size];
         let execution_payload_hash = merkle_root_from_branch(
-            header_update.execution_block_hash,
+            header_update.execution.block_hash,
             l2_proof,
             proof_size.l2_execution_payload_proof_size,
             proof_size.l2_execution_payload_tree_execution_block_index,
@@ -222,7 +222,7 @@ impl NetworkConfig {
             l1_proof,
             proof_size.beacon_block_body_tree_depth,
             proof_size.l1_beacon_block_body_tree_execution_payload_index,
-            header_update.beacon_header.body_root,
+            header_update.beacon.body_root,
         )
     }
 }

@@ -20,7 +20,7 @@ pub struct ExecutionHeaderInfo {
 pub struct InitInput {
     pub network: String,
     pub finalized_execution_header: eth_types::BlockHeader,
-    pub finalized_beacon_header: ExtendedBeaconBlockHeader,
+    pub finalized_beacon_header: FinalizedHeader,
     pub current_sync_committee: SyncCommittee,
     pub next_sync_committee: SyncCommittee,
     pub validate_updates: bool,

@@ -2,11 +2,9 @@ use crate::contract_wrapper_trait::ContractWrapper;
 use crate::eth_client_contract_trait::EthClientContractTrait;
 use crate::eth_network::EthNetwork;
 use borsh::{BorshDeserialize, BorshSerialize};
-use eth2_utility::types::ClientMode;
-use eth_types::eth2::{
-    ExtendedBeaconBlockHeader, LightClientState, LightClientUpdate, SyncCommittee,
-};
+use eth_types::eth2::{FinalizedHeader, LightClientState, LightClientUpdate, SyncCommittee};
 use eth_types::{BlockHeader, H256};
+use eth2_utility::types::ClientMode;
 use near_primitives::types::AccountId;
 use near_primitives::views::FinalExecutionOutcomeView;
 use near_primitives::views::FinalExecutionStatus;
@@ -19,7 +17,7 @@ use std::string::String;
 pub struct InitContractArgs {
     pub ethereum_network: EthNetwork,
     pub finalized_execution_header: BlockHeader,
-    pub finalized_beacon_header: ExtendedBeaconBlockHeader,
+    pub finalized_beacon_header: FinalizedHeader,
     pub current_sync_committee: SyncCommittee,
     pub next_sync_committee: SyncCommittee,
     pub validate_updates: Option<bool>,
@@ -56,7 +54,7 @@ impl EthClientContract {
         pub struct InitInput {
             pub network: String,
             pub finalized_execution_header: eth_types::BlockHeader,
-            pub finalized_beacon_header: ExtendedBeaconBlockHeader,
+            pub finalized_beacon_header: FinalizedHeader,
             pub current_sync_committee: SyncCommittee,
             pub next_sync_committee: SyncCommittee,
             pub validate_updates: bool,
@@ -201,9 +199,10 @@ mod tests {
 
     use crate::sandbox_contract_wrapper::SandboxContractWrapper;
 
-    use eth2_utility::types::ClientMode;
-    use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::BlockHeader;
+    use eth_types::eth2::FinalizedHeader;
+    use eth_types::eth2::{LightClientUpdate, SyncCommittee};
+    use eth2_utility::types::ClientMode;
     use near_primitives::types::AccountId;
     use near_primitives::views::FinalExecutionStatus;
     use near_sdk::NearToken;
@@ -249,7 +248,7 @@ mod tests {
         pub fn submit_block(&mut self, eth_client: &mut EthClientContract) {
             eth_client
                 .send_headers(&vec![
-                    self.execution_blocks[self.current_execution_block].clone()
+                    self.execution_blocks[self.current_execution_block].clone(),
                 ])
                 .unwrap();
 
@@ -317,18 +316,14 @@ mod tests {
         )
         .unwrap();
 
-        let finalized_beacon_header = ExtendedBeaconBlockHeader::from(
-            eth_state.light_client_updates[0]
-                .clone()
-                .finality_update
-                .header_update,
-        );
+        let finalized_beacon_header =
+            FinalizedHeader::from(eth_state.light_client_updates[0].clone().finalized_header);
 
         let finalized_hash = eth_state.light_client_updates[0]
             .clone()
-            .finality_update
-            .header_update
-            .execution_block_hash;
+            .finalized_header
+            .execution
+            .block_hash;
         let mut finalized_execution_header = None::<BlockHeader>;
         for header in &eth_state.execution_blocks {
             eth_state.current_execution_block += 1;
@@ -387,11 +382,7 @@ mod tests {
             &eth_state.light_client_updates[eth_state.current_light_client_update];
         println!(
             "Light client update slot: {:?}",
-            update_to_submit
-                .finality_update
-                .header_update
-                .beacon_header
-                .slot
+            update_to_submit.finalized_header.beacon.slot
         );
 
         let result = eth_client_contract.send_light_client_update(update_to_submit.clone());
@@ -425,10 +416,7 @@ mod tests {
         );
 
         // STEP 2: Find the execution block that matches the new finalized beacon header
-        let expected_execution_block_hash = update_to_submit
-            .finality_update
-            .header_update
-            .execution_block_hash;
+        let expected_execution_block_hash = update_to_submit.finalized_header.execution.block_hash;
         println!(
             "Looking for execution block with hash: {:?}",
             expected_execution_block_hash

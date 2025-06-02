@@ -12,7 +12,6 @@ use eth2_utility::consensus::{EPOCHS_PER_SYNC_COMMITTEE_PERIOD, SLOTS_PER_EPOCH}
 use eth2_utility::types::ClientMode;
 use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
 use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
-use eth_rpc_client::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
 use eth_types::eth2::LightClientUpdate;
 use eth_types::BlockHeader;
 use log::{debug, info, trace, warn};
@@ -101,10 +100,8 @@ pub struct Eth2NearRelay {
     headers_batch_size: u64,
     ethereum_network: String,
     interval_between_light_client_updates_submission_in_epochs: u64,
-    max_blocks_for_finalization: u64,
     near_network_name: String,
     terminate: bool,
-    next_light_client_update: Option<LightClientUpdate>,
     sleep_time_on_sync_secs: u64,
     sleep_time_after_submission_secs: u64,
     get_light_client_update_by_epoch: bool,
@@ -120,9 +117,6 @@ impl Eth2NearRelay {
             config.state_requests_timeout_seconds,
             Some(config.beacon_rpc_version.clone()),
         );
-        let next_light_client_update =
-            Self::get_light_client_update_from_file(config, &beacon_rpc_client)
-                .expect("Error on parsing light client update");
 
         let eth2near_relay = Eth2NearRelay {
             beacon_rpc_client,
@@ -133,10 +127,8 @@ impl Eth2NearRelay {
             ethereum_network: config.ethereum_network.to_string(),
             interval_between_light_client_updates_submission_in_epochs: config
                 .interval_between_light_client_updates_submission_in_epochs,
-            max_blocks_for_finalization: config.max_blocks_for_finalization,
             near_network_name: config.near_network_id.to_string(),
             terminate: false,
-            next_light_client_update,
             sleep_time_on_sync_secs: config.sleep_time_on_sync_secs,
             sleep_time_after_submission_secs: config.sleep_time_after_submission_secs,
             get_light_client_update_by_epoch: config
@@ -301,32 +293,6 @@ impl Eth2NearRelay {
         Ok(())
     }
 
-    fn get_light_client_update_from_file(
-        config: &Config,
-        beacon_rpc_client: &BeaconRPCClient,
-    ) -> Result<Option<LightClientUpdate>, Box<dyn Error>> {
-        let mut next_light_client_update: Option<LightClientUpdate> = None;
-        if let Some(path_to_attested_state) = config.clone().path_to_attested_state {
-            if config.clone().include_next_sync_committee_to_light_client {
-                next_light_client_update = Some(
-                    HandMadeFinalityLightClientUpdate::get_light_client_update_from_file_with_next_sync_committee(
-                        beacon_rpc_client,
-                        &path_to_attested_state,
-                    ).expect("Error on getting light client update from file"),
-                );
-            } else {
-                next_light_client_update = Some(
-                    HandMadeFinalityLightClientUpdate::get_finality_light_client_update_from_file(
-                        beacon_rpc_client,
-                        &path_to_attested_state,
-                    )
-                    .expect("Error on getting light client update from file"),
-                );
-            }
-        }
-        Ok(next_light_client_update)
-    }
-
     fn set_terminate(&mut self, iter_id: u64, max_iterations: Option<u64>) {
         if let Some(max_iter) = max_iterations {
             if iter_id > max_iter {
@@ -427,10 +393,6 @@ impl Eth2NearRelay {
         true
     }
 
-    fn is_shot_run_mode(&self) -> bool {
-        self.next_light_client_update.is_some()
-    }
-
     fn send_light_client_updates_with_checks(&mut self) -> bool {
         let last_finalized_slot_on_near: u64 = return_val_on_fail!(
             self.get_last_finalized_slot_on_near(),
@@ -462,12 +424,6 @@ impl Eth2NearRelay {
     ) {
         info!(target: "relay", "= Sending light client update =");
 
-        if self.is_shot_run_mode() {
-            info!(target: "relay", "Try sending light client update from file");
-            self.send_light_client_update_from_file();
-            return;
-        }
-
         if self.get_light_client_update_by_epoch
             && self.send_regular_light_client_update_by_epoch(
                 last_finalized_slot_on_eth,
@@ -477,24 +433,10 @@ impl Eth2NearRelay {
             return;
         }
 
-        if last_finalized_slot_on_eth
-            >= last_finalized_slot_on_near + self.max_blocks_for_finalization
-        {
-            info!(target: "relay", "Too big gap between slot of finalized block on NEAR and ETH. Sending hand made light client update");
-            self.send_hand_made_light_client_update(last_finalized_slot_on_near);
-        } else {
-            self.send_regular_light_client_update(
-                last_finalized_slot_on_eth,
-                last_finalized_slot_on_near,
-            );
-        }
-    }
-
-    fn send_light_client_update_from_file(&mut self) {
-        if let Some(light_client_update) = self.next_light_client_update.clone() {
-            self.send_specific_light_client_update(light_client_update);
-            self.terminate = true;
-        }
+        self.send_regular_light_client_update(
+            last_finalized_slot_on_eth,
+            last_finalized_slot_on_near,
+        );
     }
 
     fn send_regular_light_client_update(
@@ -550,8 +492,7 @@ impl Eth2NearRelay {
                 .get_light_client_update_by_epoch(update_epoch);
 
             if let Ok(res) = res {
-                let update_epoch =
-                    res.finality_update.header_update.beacon_header.slot / SLOTS_PER_EPOCH;
+                let update_epoch = res.finalized_header.beacon.slot / SLOTS_PER_EPOCH;
                 let update_period = update_epoch / EPOCHS_PER_SYNC_COMMITTEE_PERIOD;
 
                 if update_period > last_period + 1 {
@@ -575,70 +516,6 @@ impl Eth2NearRelay {
         };
 
         self.send_specific_light_client_update(light_client_update)
-    }
-
-    fn get_attested_slot(
-        &mut self,
-        last_finalized_slot_on_near: u64,
-    ) -> Result<u64, Box<dyn Error>> {
-        const EXPECTED_EPOCHS_BETWEEN_HEAD_AND_FINALIZED_BLOCKS: u64 = 2;
-        let next_finalized_slot = last_finalized_slot_on_near
-            + self.interval_between_light_client_updates_submission_in_epochs * ONE_EPOCH_IN_SLOTS;
-        let attested_slot = next_finalized_slot
-            + EXPECTED_EPOCHS_BETWEEN_HEAD_AND_FINALIZED_BLOCKS * ONE_EPOCH_IN_SLOTS;
-
-        let attested_slot: u64 = self
-            .beacon_rpc_client
-            .get_non_empty_beacon_block_header(attested_slot)?
-            .slot
-            .into();
-        trace!(target: "relay", "Chosen attested slot {}", attested_slot);
-
-        Ok(attested_slot)
-    }
-
-    fn send_hand_made_light_client_update(&mut self, last_finalized_slot_on_near: u64) {
-        let mut attested_slot = return_on_fail!(
-            self.get_attested_slot(last_finalized_slot_on_near),
-            "Error on getting attested slot"
-        );
-
-        let include_next_sync_committee =
-            BeaconRPCClient::get_period_for_slot(last_finalized_slot_on_near)
-                != BeaconRPCClient::get_period_for_slot(attested_slot);
-
-        loop {
-            let light_client_update = return_on_fail!(
-                HandMadeFinalityLightClientUpdate::get_finality_light_client_update(
-                    &self.beacon_rpc_client,
-                    attested_slot,
-                    include_next_sync_committee,
-                ),
-                format!(
-                    "Error on getting hand made light client update for attested slot={}.",
-                    attested_slot
-                )
-            );
-
-            let finality_update_slot = light_client_update
-                .finality_update
-                .header_update
-                .beacon_header
-                .slot;
-
-            if finality_update_slot <= last_finalized_slot_on_near {
-                info!(target: "relay", "Finality update slot for hand made light client update <= last finality update on NEAR. Increment gap for attested slot and skipping light client update.");
-                attested_slot = return_on_fail!(
-                    self.get_attested_slot(last_finalized_slot_on_near + ONE_EPOCH_IN_SLOTS),
-                    "Error on getting attested slot"
-                );
-                continue;
-            }
-
-            trace!(target: "relay", "Hand made light client update: {:?}", light_client_update);
-            self.send_specific_light_client_update(light_client_update);
-            return;
-        }
     }
 
     fn send_specific_light_client_update(
@@ -679,12 +556,7 @@ impl Eth2NearRelay {
         let finalized_block_number = return_val_on_fail!(
             self.beacon_rpc_client
                 .get_block_number_for_slot(types::Slot::new(
-                    light_client_update
-                        .finality_update
-                        .header_update
-                        .beacon_header
-                        .slot
-                        .as_u64()
+                    light_client_update.finalized_header.beacon.slot.as_u64()
                 )),
             "Fail on getting finalized block number",
             false
@@ -703,10 +575,8 @@ mod tests {
     use crate::eth2near_relay::{Eth2NearRelay, ONE_EPOCH_IN_SLOTS};
     use crate::test_utils::{get_relay, get_relay_from_slot, get_relay_with_update_from_file};
     use eth_rpc_client::beacon_rpc_client::BeaconRPCClient;
-    use eth_rpc_client::hand_made_finality_light_client_update::HandMadeFinalityLightClientUpdate;
     use eth_types::eth2::LightClientUpdate;
     use eth_types::BlockHeader;
-    use std::error::Error;
     use tree_hash::TreeHash;
     use types::Hash256;
 
@@ -719,21 +589,6 @@ mod tests {
             .eth_client_contract
             .get_finalized_beacon_block_slot()
             .unwrap()
-    }
-
-    fn get_execution_block_by_slot(
-        relay: &Eth2NearRelay,
-        slot: u64,
-    ) -> Result<BlockHeader, Box<dyn Error>> {
-        match relay
-            .beacon_rpc_client
-            .get_block_number_for_slot(types::Slot::new(slot))
-        {
-            Ok(block_number) => relay
-                .eth1_rpc_client
-                .get_block_header_by_number(block_number),
-            Err(err) => Err(err),
-        }
     }
 
     #[test]
@@ -759,11 +614,7 @@ mod tests {
         )
         .unwrap();
 
-        let finalized_slot_1 = light_client_updates[1]
-            .finality_update
-            .header_update
-            .beacon_header
-            .slot;
+        let finalized_slot_1 = light_client_updates[1].finalized_header.beacon.slot;
 
         let finalized_slot = get_finalized_slot(&relay);
         assert_eq!(finalized_slot, config_for_test.first_slot);
@@ -807,7 +658,6 @@ mod tests {
             .unwrap();
 
         let branch: Vec<Hash256> = light_client_update
-            .finality_update
             .finality_branch
             .iter()
             .map(|h| Hash256::from_slice(h.0.as_bytes()))
@@ -815,17 +665,14 @@ mod tests {
 
         assert!(
             merkle_proof::verify_merkle_proof(
-                light_client_update
-                    .finality_update
-                    .header_update
-                    .beacon_header
-                    .tree_hash_root(),
+                light_client_update.finalized_header.beacon.tree_hash_root(),
                 branch.as_slice(),
                 TREE_FINALITY_DEPTH,
                 TREE_FINALITY_INDEX,
                 Hash256::from_slice(
                     light_client_update
-                        .attested_beacon_header
+                        .attested_header
+                        .beacon
                         .state_root
                         .0
                         .as_bytes()
@@ -835,9 +682,6 @@ mod tests {
         );
 
         let branch: Vec<Hash256> = light_client_update
-            .sync_committee_update
-            .as_ref()
-            .unwrap()
             .next_sync_committee_branch
             .iter()
             .map(|h| Hash256::from_slice(h.0.as_bytes()))
@@ -845,18 +689,14 @@ mod tests {
 
         assert!(
             merkle_proof::verify_merkle_proof(
-                light_client_update
-                    .sync_committee_update
-                    .as_ref()
-                    .unwrap()
-                    .next_sync_committee
-                    .tree_hash_root(),
+                light_client_update.next_sync_committee.tree_hash_root(),
                 branch.as_slice(),
                 TREE_NEXT_SYNC_COMMITTEE_DEPTH,
                 TREE_NEXT_SYNC_COMMITTEE_INDEX,
                 Hash256::from_slice(
                     light_client_update
-                        .attested_beacon_header
+                        .attested_header
+                        .beacon
                         .state_root
                         .0
                         .as_bytes()
@@ -864,41 +704,6 @@ mod tests {
             ),
             "Incorrect proof of inclusion the next sync committee to finality beacon state"
         );
-    }
-
-    #[test]
-    #[ignore]
-    fn test_hand_made_light_client_update() {
-        let config_for_test = get_test_config();
-
-        let mut relay = get_relay(true, &config_for_test);
-
-        let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
-            &std::fs::read_to_string(config_for_test.path_to_light_client_updates)
-                .expect("Unable to read file"),
-        )
-        .unwrap();
-        let finalized_slot_1 = light_client_updates[1]
-            .finality_update
-            .header_update
-            .beacon_header
-            .slot;
-
-        let finalized_slot = get_finalized_slot(&relay);
-        assert_eq!(finalized_slot, config_for_test.first_slot);
-
-        relay.send_hand_made_light_client_update(finalized_slot);
-        loop {
-            let client_mode: ClientMode = relay.eth_client_contract.get_client_mode().unwrap();
-
-            match client_mode {
-                ClientMode::SubmitLightClientUpdate => break,
-                ClientMode::SubmitHeader => relay.submit_headers(),
-            };
-        }
-
-        let finalized_slot = get_finalized_slot(&relay);
-        assert_eq!(finalized_slot, finalized_slot_1);
     }
 
     #[test]
@@ -938,51 +743,11 @@ mod tests {
             .verify_bls_signature_for_finality_update(&light_client_updates[1])
             .unwrap());
 
-        light_client_updates[1].attested_beacon_header =
-            light_client_updates[0].attested_beacon_header.clone();
+        light_client_updates[1].attested_header = light_client_updates[0].attested_header.clone();
 
         assert!(!relay
             .verify_bls_signature_for_finality_update(&light_client_updates[1])
             .unwrap());
-    }
-
-    #[test]
-    #[ignore]
-    fn test_get_attested_slot() {
-        let config_for_test = get_test_config();
-
-        let mut relay = get_relay(true, &config_for_test);
-
-        let light_client_updates: Vec<LightClientUpdate> = serde_json::from_str(
-            &std::fs::read_to_string(config_for_test.path_to_light_client_updates)
-                .expect("Unable to read file"),
-        )
-        .unwrap();
-        let finalized_slot = light_client_updates[2]
-            .finality_update
-            .header_update
-            .beacon_header
-            .slot;
-        let attested_slot = relay.get_attested_slot(finalized_slot).unwrap();
-
-        match HandMadeFinalityLightClientUpdate::get_finality_light_client_update(
-            &relay.beacon_rpc_client,
-            attested_slot,
-            false,
-        ) {
-            Ok(light_client_update) => {
-                let finality_update_slot = light_client_update
-                    .finality_update
-                    .header_update
-                    .beacon_header
-                    .slot;
-
-                assert!(finality_update_slot > finalized_slot);
-            }
-            Err(_) => {
-                panic!("Error on get light client update");
-            }
-        }
     }
 
     #[test]
@@ -1003,23 +768,6 @@ mod tests {
             .get_execution_blocks_between(min_block_number, max_block_number)
             .unwrap();
         relay.submit_execution_blocks(blocks);
-    }
-
-    #[test]
-    fn test_not_invalid_attested_slot() {
-        let config_for_test = get_test_config();
-
-        let mut relay = get_relay(true, &config_for_test);
-        let finalized_slot = config_for_test.first_slot;
-        let possible_attested_slot = finalized_slot
-            + ONE_EPOCH_IN_SLOTS * 2
-            + ONE_EPOCH_IN_SLOTS * relay.interval_between_light_client_updates_submission_in_epochs;
-        if get_execution_block_by_slot(&relay, possible_attested_slot).is_ok() {
-            panic!("possible attested slot has execution block");
-        }
-
-        let attested_slot = relay.get_attested_slot(finalized_slot).unwrap();
-        get_execution_block_by_slot(&relay, attested_slot).unwrap();
     }
 
     #[test]
@@ -1085,7 +833,6 @@ mod tests {
             &config_for_test,
         );
         relay.headers_batch_size = 33;
-        relay.max_blocks_for_finalization = 100;
 
         let blocks = relay
             .get_execution_blocks_between(
@@ -1122,7 +869,6 @@ mod tests {
         let init_slot = config_for_test.finalized_slot_before_new_period - ONE_EPOCH_IN_SLOTS - 1;
         let mut relay = get_relay_from_slot(init_slot, &config_for_test);
         relay.headers_batch_size = 33;
-        relay.max_blocks_for_finalization = 100;
 
         let blocks = relay
             .get_execution_blocks_between(
@@ -1142,45 +888,6 @@ mod tests {
         let new_finality_slot = get_finalized_slot(&relay);
 
         assert_ne!(init_slot, new_finality_slot);
-    }
-
-    #[test]
-    #[ignore]
-    fn test_update_new_period_without_next_sync_committee() {
-        let config_for_test = get_test_config();
-        let mut relay = get_relay_from_slot(
-            config_for_test.finalized_slot_before_new_period,
-            &config_for_test,
-        );
-        relay.headers_batch_size = 33;
-        let blocks = relay
-            .get_execution_blocks_between(
-                config_for_test.finalized_slot_before_new_period + 1,
-                config_for_test.finalized_slot_before_new_period + 100,
-            )
-            .unwrap();
-
-        relay.submit_execution_blocks(blocks);
-
-        let attested_slot = relay
-            .get_attested_slot(config_for_test.finalized_slot_before_new_period)
-            .unwrap();
-        let light_client_update =
-            HandMadeFinalityLightClientUpdate::get_finality_light_client_update(
-                &relay.beacon_rpc_client,
-                attested_slot,
-                false,
-            )
-            .unwrap();
-
-        relay.send_specific_light_client_update(light_client_update);
-
-        let new_finality_slot = get_finalized_slot(&relay);
-
-        assert_eq!(
-            config_for_test.finalized_slot_before_new_period,
-            new_finality_slot
-        );
     }
 
     #[test]

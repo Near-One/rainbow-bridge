@@ -10,13 +10,12 @@ use contract_wrapper::sandbox_contract_wrapper::SandboxContractWrapper;
 use eth2_contract_init::init_contract;
 use eth_rpc_client::beacon_rpc_client::{BeaconRPCClient, BeaconRPCVersion};
 use eth_rpc_client::eth1_rpc_client::Eth1RPCClient;
-use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
+use eth_types::eth2::{ExecutionHeader, FinalizedHeader, LightClientUpdate, SyncCommittee};
 use eth_types::BlockHeader;
 use near_workspaces::{Account, Contract};
 use std::{thread, time};
 use tokio::runtime::Runtime;
-use tree_hash::TreeHash;
-use types::{ExecutionPayload, MainnetEthSpec};
+use types::{ExecutionPayloadHeader, MainnetEthSpec};
 
 pub fn read_json_file_from_data_dir(file_name: &str) -> std::string::String {
     let mut json_file_path = std::env::current_exe().unwrap();
@@ -54,18 +53,13 @@ pub fn init_contract_from_files(
     )
     .unwrap();
 
-    let finalized_beacon_header = ExtendedBeaconBlockHeader::from(
-        light_client_updates[0]
-            .clone()
-            .finality_update
-            .header_update,
-    );
+    let finalized_beacon_header = light_client_updates[0].clone().finalized_header;
 
     let finalized_hash = light_client_updates[0]
         .clone()
-        .finality_update
-        .header_update
-        .execution_block_hash;
+        .finalized_header
+        .execution
+        .block_hash;
     let mut finalized_execution_header = None::<BlockHeader>;
     for header in &execution_blocks {
         if header.hash.unwrap() == finalized_hash {
@@ -131,12 +125,39 @@ pub fn init_contract_from_specific_slot(
         .get_beacon_block_body_for_block_id(&format!("{}", finality_slot))
         .unwrap();
 
-    let execution_payload: ExecutionPayload<MainnetEthSpec> =
-        finalized_body.execution_payload().unwrap().into();
-    let finalized_beacon_header = ExtendedBeaconBlockHeader {
-        header: finality_header.clone(),
-        beacon_block_root: eth_types::H256(finality_header.tree_hash_root().0.into()),
-        execution_block_hash: execution_payload.block_hash().into_root().0.into(),
+    let execution_payload: ExecutionPayloadHeader<MainnetEthSpec> = ExecutionPayloadHeader::from(
+        finalized_body
+            .execution_payload()
+            .unwrap()
+            .execution_payload_ref(),
+    );
+    let finalized_beacon_header = FinalizedHeader {
+        beacon: finality_header.clone(),
+        execution: ExecutionHeader {
+            parent_hash: execution_payload.parent_hash().0.to_vec().into(),
+            fee_recipient: execution_payload.fee_recipient().0.to_vec().into(),
+            state_root: execution_payload.state_root().0.to_vec().into(),
+            receipts_root: execution_payload.receipts_root().0.to_vec().into(),
+            logs_bloom: execution_payload.logs_bloom().to_vec().into(),
+            prev_randao: execution_payload.prev_randao().0.to_vec().into(),
+            block_number: execution_payload.block_number(),
+            gas_limit: execution_payload.gas_limit(),
+            gas_used: execution_payload.gas_used(),
+            timestamp: execution_payload.timestamp(),
+            extra_data: execution_payload.extra_data().to_vec().into(),
+            base_fee_per_gas: execution_payload.base_fee_per_gas().to::<u64>(),
+            block_hash: execution_payload.block_hash().0.to_vec().into(),
+            transactions_root: execution_payload.transactions_root().0.to_vec().into(),
+            withdrawals_root: execution_payload
+                .withdrawals_root()
+                .unwrap()
+                .0
+                .to_vec()
+                .into(),
+            blob_gas_used: execution_payload.blob_gas_used().unwrap(),
+            excess_blob_gas: execution_payload.excess_blob_gas().unwrap(),
+        },
+        execution_branch: vec![],
     };
 
     let finalized_execution_header: BlockHeader = eth1_rpc_client
