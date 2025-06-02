@@ -31,7 +31,7 @@ jobs:
       - name: Build NEAR contracts
         run: |
           cd contracts/near
-          make build
+          make build-eth2-client
         timeout-minutes: 60
 
       - name: Archive built WASM files
