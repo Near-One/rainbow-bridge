@@ -1,0 +1,52 @@
+on:
+  push:
+    tags:
+      - 'rainbow-bridge-v[0-9]+.[0-9]+.[0-9]+*'
+  
+  workflow_dispatch:
+
+name: Update Contracts
+jobs:
+  update-contracts:
+    runs-on: ubuntu-latest
+    name: Update Contracts
+    permissions:
+      contents: write
+    steps:
+      - name: Install LFS
+        run: sudo apt-get install git-lfs
+
+      - name: Clone the repository
+        uses: actions/checkout@v4
+        with:
+          lfs: 'true'
+          
+      - name: Clone the repository
+        uses: actions/checkout@v3
+        
+      - name: Install cargo-near
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/cargo-near/releases/latest/download/cargo-near-installer.sh | sh
+
+      - name: Build NEAR contracts
+        run: |
+          cd contracts/near
+          make build
+        timeout-minutes: 60
+
+      - name: Archive built WASM files
+        env:
+           RAW_TAG: ${{ github.ref_name }}
+        run: |
+          SAFE_TAG="${RAW_TAG//./-}"
+          ZIP_NAME="${SAFE_TAG}.zip"
+          mkdir -p artifacts
+          find ./contracts/near/target/near -name "*.wasm" -exec cp {} artifacts/ \;
+          zip -j "$ZIP_NAME" artifacts/*
+        shell: bash
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: "*.zip"
