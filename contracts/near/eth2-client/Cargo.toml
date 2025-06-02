@@ -28,7 +28,6 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 eth-types =  { path = "../eth-types" }
 eth2-utility =  { path = "../eth2-utility" }
-bls = { git = "https://github.com/aurora-is-near/lighthouse.git", optional = true, tag = "v4.6.0-wasm", default-features = false, features = ["milagro"]}
 ethereum-types.workspace = true
 tree_hash.workspace = true
 near-sdk.workspace = true
@@ -37,6 +36,7 @@ bitvec.workspace = true
 near-plugins.workspace = true
 near-abi = "0.4.3"
 schemars = "0.8.22"
+amcl = { git = "https://github.com/sigp/incubator-milagro-crypto-rust.git", default-features = false, features = ["bls381"]}
 
 [dev-dependencies]
 ethereum_serde_utils.workspace = true
@@ -53,7 +53,7 @@ rstest = "0.24.0"
 
 
 [features]
-default = ["logs", "mainnet"]
-bls = ["dep:bls"]
+default = ["logs", "mainnet", "bls"]
+bls = []
 logs = []
 mainnet = []
