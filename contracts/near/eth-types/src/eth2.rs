@@ -61,6 +61,7 @@ pub struct ExecutionHeader {
     pub gas_used: u64,
     #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::quoted_u64"))]
     pub timestamp: u64,
+    #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::hex_vec"))]
     pub extra_data: Vec<u8>,
     #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::quoted_u64"))]
     pub base_fee_per_gas: u64,
