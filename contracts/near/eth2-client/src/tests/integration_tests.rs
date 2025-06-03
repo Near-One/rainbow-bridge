@@ -3,7 +3,7 @@ mod integration_tests {
     use crate::tests::utils::*;
     use borsh::{BorshDeserialize, BorshSerialize};
     use eth2_utility::types::InitInput;
-    use eth_types::eth2::{ExtendedBeaconBlockHeader, SyncCommittee};
+    use eth_types::eth2::{FinalizedHeader, SyncCommittee};
     use eth_types::{Address, Bloom, H256, H64, U256};
     use near_sdk::{Gas, NearToken};
     use near_workspaces::operations::Function;
@@ -50,7 +50,7 @@ mod integration_tests {
     pub struct InitInputV1 {
         pub network: String,
         pub finalized_execution_header: BlockHeaderV1,
-        pub finalized_beacon_header: ExtendedBeaconBlockHeader,
+        pub finalized_beacon_header: FinalizedHeader,
         pub current_sync_committee: SyncCommittee,
         pub next_sync_committee: SyncCommittee,
         pub validate_updates: bool,
@@ -118,7 +118,7 @@ mod integration_tests {
         let headers = headers[0].as_slice()[1..num_of_blocks_to_submit].to_vec();
 
         let mut update = updates[1].clone();
-        update.finality_update.header_update.execution_block_hash =
+        update.finalized_header.execution.block_hash =
             headers.last().unwrap().calculate_hash();
         let outcome = alice
             .call(contract.id(), "submit_beacon_chain_light_client_update")
@@ -192,7 +192,7 @@ mod integration_tests {
 
         // Submit light client update and finilized submited blocks
         let mut update = updates[1].clone();
-        update.finality_update.header_update.execution_block_hash =
+        update.finalized_header.execution.block_hash =
             headers.last().unwrap().calculate_hash();
         let outcome = alice
             .call(contract.id(), "submit_beacon_chain_light_client_update")
@@ -242,7 +242,7 @@ mod integration_tests {
             [num_of_blocks_to_submit..num_of_blocks_to_submit * 2]
             .to_vec();
         let mut update = updates[2].clone();
-        update.finality_update.header_update.execution_block_hash =
+        update.finalized_header.execution.block_hash =
             headers.last().unwrap().calculate_hash();
 
         // Submit light client update

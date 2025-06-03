@@ -487,8 +487,16 @@ impl Eth2Client {
 
             require!(
                 verify_merkle_proof(
-                    H256(update.next_sync_committee.tree_hash_root().0.into()),
-                    &update.next_sync_committee_branch,
+                    H256(
+                        update
+                            .next_sync_committee
+                            .clone()
+                            .unwrap()
+                            .tree_hash_root()
+                            .0
+                            .into()
+                    ),
+                    &update.next_sync_committee_branch.clone().unwrap(),
                     generalized_index
                         .sync_committee_tree_depth
                         .try_into()
@@ -601,7 +609,8 @@ impl Eth2Client {
         if update_period == finalized_period + 1 {
             self.current_sync_committee
                 .set(&self.next_sync_committee.get().unwrap());
-            self.next_sync_committee.set(&update.next_sync_committee);
+            self.next_sync_committee
+                .set(&update.next_sync_committee.unwrap());
         }
 
         #[cfg(feature = "logs")]

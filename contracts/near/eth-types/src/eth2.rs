@@ -51,7 +51,7 @@ pub struct ExecutionHeader {
     pub fee_recipient: H160,
     pub state_root: H256,
     pub receipts_root: H256,
-    pub logs_bloom: U256,
+    pub logs_bloom: Bloom,
     pub prev_randao: H256,
     #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::quoted_u64"))]
     pub block_number: u64,
@@ -128,8 +128,8 @@ pub struct SyncAggregate {
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct LightClientUpdate {
     pub attested_header: AttestedHeader,
-    pub next_sync_committee: SyncCommittee,
-    pub next_sync_committee_branch: Vec<H256>,
+    pub next_sync_committee: Option<SyncCommittee>,
+    pub next_sync_committee_branch: Option<Vec<H256>>,
     pub finalized_header: FinalizedHeader,
     pub finality_branch: Vec<H256>,
     pub sync_aggregate: SyncAggregate,
