@@ -4,8 +4,9 @@ mod sepolia_integration_tests {
     use crate::tests::utils::get_sepolia_test_data;
     use crate::tests::utils::InitOptions;
     use borsh::{BorshDeserialize, BorshSerialize};
+    use eth2_utility::consensus::Network;
     use eth2_utility::types::InitInput;
-    use eth_types::eth2::{BeaconBlockHeader, SyncCommittee, FinalizedHeader};
+    use eth_types::eth2::{BeaconBlockHeader, FinalizedHeader, SyncCommittee};
     use eth_types::{Address, Bloom, H256, H64, U256};
     use near_sdk::{Gas, NearToken};
     use near_workspaces::operations::Function;
@@ -51,7 +52,7 @@ mod sepolia_integration_tests {
 
     #[derive(Clone, BorshDeserialize, BorshSerialize)]
     struct InitInputV1 {
-        pub network: String,
+        pub network: Network,
         pub finalized_execution_header: BlockHeaderV1,
         pub finalized_beacon_header: FinalizedHeader,
         pub current_sync_committee: SyncCommittee,

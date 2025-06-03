@@ -96,9 +96,6 @@ impl Eth2Client {
     #[init]
     #[private]
     pub fn init(#[serializer(borsh)] args: InitInput) -> Self {
-        let network =
-            Network::from_str(args.network.as_str()).unwrap_or_else(|e| env::panic_str(e.as_str()));
-
         #[cfg(feature = "mainnet")]
         {
             require!(
@@ -134,7 +131,7 @@ impl Eth2Client {
             validate_updates: args.validate_updates,
             verify_bls_signatures: args.verify_bls_signatures,
             hashes_gc_threshold: args.hashes_gc_threshold,
-            network,
+            network: args.network,
             finalized_execution_blocks: LookupMap::new(StorageKey::FinalizedExecutionBlocks),
             finalized_beacon_header: args.finalized_beacon_header.into(),
             finalized_execution_header: LazyOption::new(

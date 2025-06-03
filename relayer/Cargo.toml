@@ -10,6 +10,7 @@ types = { git = "https://github.com/sigp/lighthouse", tag = "v7.0.1" }
 sensitive_url = { git = "https://github.com/sigp/lighthouse", tag = "v7.0.1" }
 
 eth-types = { path = "../contracts/near/eth-types/" }
+eth2-utility = { path = "../contracts/near/eth2-utility/" }
 
 tokio = { version = "1.45.1", features = ["full"] }
 borsh = { version = "1.5.7", features = ["derive"] }
@@ -20,7 +21,7 @@ alloy = { version = "0.12", default-features = false, features = ["providers", "
 url = "2.5.4"
 near-crypto = "0.30.1"
 tracing = "0.1.41"
-near-fetch = "0.7.0"
+near-fetch = { git = "https://github.com/r-near/fetch", branch = "main" }
 near-primitives = "0.30.1"
 
 [dev-dependencies]

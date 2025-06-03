@@ -1,5 +1,9 @@
-use borsh::{BorshDeserialize, BorshSerialize};
-use eth_types::H256;
+use borsh::BorshDeserialize;
+use eth_types::{
+    BlockHeader, H256,
+    eth2::{LightClientState, LightClientUpdate},
+};
+use eth2_utility::types::{ClientMode, InitInput};
 use near_crypto::Signer;
 use near_fetch::Client;
 use near_primitives::types::AccountId;
@@ -29,22 +33,6 @@ pub enum NearContractError {
 
 /// Result type for NEAR contract operations
 pub type Result<T> = std::result::Result<T, NearContractError>;
-
-/// Client mode enum matching the TypeScript implementation
-#[derive(Debug, Clone, Copy, PartialEq, Eq, BorshSerialize, BorshDeserialize)]
-#[repr(u8)]
-pub enum ClientMode {
-    SubmitLightClientUpdate,
-    SubmitHeader,
-}
-
-/// Placeholder for LightClientState - you'll need to define this based on your contract
-#[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
-pub struct LightClientState {
-    // Add your actual fields here
-    // This is just a placeholder
-    pub placeholder: bool,
-}
 
 /// NEAR contract client for Ethereum light client operations
 pub struct NearContract {
@@ -114,76 +102,61 @@ impl NearContract {
         self.call_contract_view("get_unfinalized_tail_block_number")
             .await
     }
-}
 
-/// Builder pattern for easier contract instantiation
-pub struct NearContractBuilder {
-    rpc_url: Option<String>,
-    contract_account_id: Option<AccountId>,
-    signer: Option<Signer>,
-}
+    pub async fn submit_light_client_update(&self, update: LightClientUpdate) -> Result<()> {
+        let result = self
+            .client
+            .call(
+                &self.signer,
+                &self.contract_account_id,
+                "submit_beacon_chain_light_client_update",
+            )
+            .args_borsh(update)
+            .transact()
+            .await
+            .map_err(|e| NearContractError::ContractCallFailed {
+                method: "submit_beacon_chain_light_client_update".to_string(),
+                reason: e.to_string(),
+            })?;
 
-impl NearContractBuilder {
-    pub fn new() -> Self {
-        Self {
-            rpc_url: None,
-            contract_account_id: None,
-            signer: None,
-        }
+        println!("Result: {:#?}", result);
+        Ok(())
     }
 
-    pub fn rpc_url(mut self, url: impl Into<String>) -> Self {
-        self.rpc_url = Some(url.into());
-        self
+    pub async fn submit_execution_header(&self, header: BlockHeader) -> Result<()> {
+        let result = self
+            .client
+            .call(
+                &self.signer,
+                &self.contract_account_id,
+                "submit_execution_header",
+            )
+            .args_borsh(header)
+            .transact()
+            .await
+            .map_err(|e| NearContractError::ContractCallFailed {
+                method: "submit_execution_header".to_string(),
+                reason: e.to_string(),
+            })?;
+
+        println!("Result: {:#?}", result);
+        Ok(())
     }
 
-    pub fn contract_account_id(mut self, account_id: AccountId) -> Self {
-        self.contract_account_id = Some(account_id);
-        self
-    }
+    pub async fn init_contract(&self, init_input: InitInput) -> Result<()> {
+        let result = self
+            .client
+            .call(&self.signer, &self.contract_account_id, "init")
+            .args_borsh(init_input)
+            .transact()
+            .await
+            .map_err(|e| NearContractError::ContractCallFailed {
+                method: "init".to_string(),
+                reason: e.to_string(),
+            })?;
 
-    pub fn signer(mut self, signer: Signer) -> Self {
-        self.signer = Some(signer);
-        self
-    }
-
-    /// Build for testnet with default settings
-    pub fn testnet(mut self) -> Self {
-        self.rpc_url = Some("https://rpc.testnet.near.org".to_string());
-        if self.contract_account_id.is_none() {
-            self.contract_account_id = Some("client-eth2.sepolia.testnet".parse().unwrap());
-        }
-        self
-    }
-
-    /// Build for mainnet with default settings
-    pub fn mainnet(mut self) -> Self {
-        self.rpc_url = Some("https://rpc.mainnet.near.org".to_string());
-        self
-    }
-
-    pub fn build(self) -> Result<NearContract> {
-        let rpc_url = self
-            .rpc_url
-            .ok_or(NearContractError::BuilderFieldMissing { field: "rpc_url" })?;
-        let contract_account_id =
-            self.contract_account_id
-                .ok_or(NearContractError::BuilderFieldMissing {
-                    field: "contract_account_id",
-                })?;
-        let signer = self
-            .signer
-            .ok_or(NearContractError::BuilderFieldMissing { field: "signer" })?;
-
-        let client = Client::new(&rpc_url);
-
-        Ok(NearContract::new(contract_account_id, signer, client))
-    }
-}
-
-impl Default for NearContractBuilder {
-    fn default() -> Self {
-        Self::new()
+        println!("Result: {:#?}", result);
+        Ok(())
     }
 }
 
@@ -199,10 +172,11 @@ mod tests {
             SecretKey::from_random(KeyType::ED25519),
         );
 
-        let near_contract = NearContractBuilder::new()
-            .testnet()
-            .signer(signer.into())
-            .build()?;
+        let near_contract = NearContract::new(
+            "client-eth2.sepolia.testnet".parse()?,
+            signer,
+            Client::new("https://rpc.sepolia.testnet.near.org"),
+        );
 
         // Test finalized beacon block hash
         let hash = near_contract.get_finalized_beacon_block_hash().await?;
@@ -220,63 +194,6 @@ mod tests {
 
         let unfinalized_tail = near_contract.get_unfinalized_tail_block_number().await?;
         println!("Unfinalized tail block number: {:?}", unfinalized_tail);
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_builder_validation() -> Result<()> {
-        // Test missing signer
-        let result = NearContractBuilder::new().testnet().build();
-
-        match result {
-            Err(NearContractError::BuilderFieldMissing { field: "signer" }) => {}
-            _ => panic!("Expected BuilderFieldMissing error for signer"),
-        }
-
-        // Test missing RPC URL
-        let signer = InMemorySigner::from_secret_key(
-            "test.testnet".parse()?,
-            SecretKey::from_random(KeyType::ED25519),
-        );
-
-        let result = NearContractBuilder::new()
-            .contract_account_id("test.testnet".parse()?)
-            .signer(signer.into())
-            .build();
-
-        match result {
-            Err(NearContractError::BuilderFieldMissing { field: "rpc_url" }) => {}
-            _ => panic!("Expected BuilderFieldMissing error for rpc_url"),
-        }
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_builder_pattern() -> Result<()> {
-        let signer = InMemorySigner::from_secret_key(
-            "test.testnet".parse()?,
-            SecretKey::from_random(KeyType::ED25519),
-        );
-
-        // Test custom configuration
-        let _contract = NearContractBuilder::new()
-            .rpc_url("https://custom-rpc.example.com")
-            .contract_account_id("custom-contract.testnet".parse()?)
-            .signer(signer.into())
-            .build()?;
-
-        // Test testnet defaults
-        let signer2 = InMemorySigner::from_secret_key(
-            "test2.testnet".parse()?,
-            SecretKey::from_random(KeyType::ED25519),
-        );
-
-        let _contract2 = NearContractBuilder::new()
-            .testnet()
-            .signer(signer2.into())
-            .build()?;
 
         Ok(())
     }
