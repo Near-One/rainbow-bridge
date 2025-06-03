@@ -144,7 +144,7 @@ pub fn init_contract_from_specific_slot(
             gas_limit: execution_payload.gas_limit(),
             gas_used: execution_payload.gas_used(),
             timestamp: execution_payload.timestamp(),
-            extra_data: execution_payload.extra_data().to_vec().into(),
+            extra_data: eth_types::eth2::ExtraData(execution_payload.extra_data().to_vec()),
             base_fee_per_gas: execution_payload.base_fee_per_gas().to::<u64>(),
             block_hash: execution_payload.block_hash().0.to_vec().into(),
             transactions_root: execution_payload.transactions_root().0.to_vec().into(),

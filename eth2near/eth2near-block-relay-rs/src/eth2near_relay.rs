@@ -683,13 +683,17 @@ mod tests {
 
         let branch: Vec<Hash256> = light_client_update
             .next_sync_committee_branch
+            .unwrap()
             .iter()
             .map(|h| Hash256::from_slice(h.0.as_bytes()))
             .collect();
 
         assert!(
             merkle_proof::verify_merkle_proof(
-                light_client_update.next_sync_committee.tree_hash_root(),
+                light_client_update
+                    .next_sync_committee
+                    .unwrap()
+                    .tree_hash_root(),
                 branch.as_slice(),
                 TREE_NEXT_SYNC_COMMITTEE_DEPTH,
                 TREE_NEXT_SYNC_COMMITTEE_INDEX,

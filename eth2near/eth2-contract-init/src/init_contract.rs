@@ -107,7 +107,9 @@ pub fn init_contract(
         .get_block_header_by_number(execution_payload.block_number())
         .expect("Error on fetching finalized execution header");
 
-    let next_sync_committee = light_client_update_with_next_sync_committee.next_sync_committee;
+    let next_sync_committee = light_client_update_with_next_sync_committee
+        .next_sync_committee
+        .unwrap();
 
     let init_block_root = match config.init_block_root.clone() {
         None => beacon_rpc_client

@@ -756,14 +756,16 @@ mod tests {
         // check sync_committe_update
         let sync_committe_update = light_client_update.next_sync_committee;
         assert_eq!(
-            serde_json::to_string(&sync_committe_update.aggregate_pubkey).unwrap(),
+            serde_json::to_string(&sync_committe_update.as_ref().unwrap().aggregate_pubkey)
+                .unwrap(),
             format!(
                 "{}",
                 v[0]["data"]["next_sync_committee"]["aggregate_pubkey"]
             )
         );
         assert_eq!(
-            serde_json::to_string(&sync_committe_update.aggregate_pubkey).unwrap(),
+            serde_json::to_string(&sync_committe_update.as_ref().unwrap().aggregate_pubkey)
+                .unwrap(),
             format!(
                 "{}",
                 v[0]["data"]["next_sync_committee"]["aggregate_pubkey"]
