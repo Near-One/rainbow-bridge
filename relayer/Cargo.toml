@@ -16,6 +16,15 @@ borsh = { version = "1.5.7", features = ["derive"] }
 serde_json = "1.0.140"
 thiserror = "2.0.12"
 hex = "0.4.3"
-near-api = "0.6.0"
 alloy = { version = "0.12", default-features = false, features = ["providers", "rpc", "rpc-types", "transports", "reqwest"] }
 url = "2.5.4"
+near-crypto = "0.30.1"
+tracing = "0.1.41"
+near-fetch = "0.7.0"
+near-primitives = "0.30.1"
+
+[dev-dependencies]
+near-workspaces = { version = "0.20.1", features = ["unstable"] }
+tracing-subscriber = "0.3.19"
+tracing-test = "0.2.5"
+
