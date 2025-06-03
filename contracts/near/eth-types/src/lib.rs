@@ -154,7 +154,7 @@ pub type Signature = H520;
 
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, BorshSchema)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
-#[serde(rename_all = "camelCase")]
+#[cfg_attr(not(target_arch = "wasm32"), serde(rename_all = "camelCase"))]
 pub struct BlockHeader {
     pub parent_hash: H256,
     pub sha3_uncles: H256,
