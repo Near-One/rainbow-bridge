@@ -13,6 +13,10 @@ pub const MIN_SYNC_COMMITTEE_PARTICIPANTS: u64 = 1;
 pub const SLOTS_PER_EPOCH: u64 = 32;
 pub const DOMAIN_SYNC_COMMITTEE: DomainType = [0x07, 0x00, 0x00, 0x00];
 
+// Generalized indices for execution payload
+pub const EXECUTION_PAYLOAD_GINDEX: u32 = 25; // Pre-Electra
+pub const EXECUTION_PAYLOAD_GINDEX_ELECTRA: u32 = 41; // Electra and later
+
 pub struct ProofSize {
     pub beacon_block_body_tree_depth: usize,
     pub l1_beacon_block_body_tree_execution_payload_index: usize,
@@ -202,26 +206,39 @@ impl NetworkConfig {
     }
 
     pub fn validate_beacon_block_header_update(&self, header_update: &FinalizedHeader) -> bool {
-        let branch = &header_update.execution_branch;
-        let proof_size = self.compute_proof_size_by_slot(header_update.beacon.slot);
-        if branch.len() != proof_size.execution_proof_size {
-            return false;
-        }
+        let epoch = compute_epoch_at_slot(header_update.beacon.slot);
 
-        let l2_proof = &branch[0..proof_size.l2_execution_payload_proof_size];
-        let l1_proof =
-            &branch[proof_size.l2_execution_payload_proof_size..proof_size.execution_proof_size];
-        let execution_payload_hash = merkle_root_from_branch(
-            header_update.execution.block_hash,
-            l2_proof,
-            proof_size.l2_execution_payload_proof_size,
-            proof_size.l2_execution_payload_tree_execution_block_index,
-        );
+        let execution_payload_gindex = if epoch >= self.electra_fork_epoch {
+            EXECUTION_PAYLOAD_GINDEX_ELECTRA
+        } else {
+            EXECUTION_PAYLOAD_GINDEX
+        };
+
+        near_sdk::env::log_str(&format!(
+            "LC Execution Root: {:#?}",
+            get_lc_execution_root(header_update)
+        ));
+        near_sdk::env::log_str(&format!(
+            "Execution Branch: {:#?}",
+            header_update.execution_branch
+        ));
+        near_sdk::env::log_str(&format!("Body Root: {:#?}", header_update.beacon.body_root));
+        near_sdk::env::log_str(&format!(
+            "Execution Payload Gindex: {:#?}",
+            execution_payload_gindex
+        ));
+
+        // Capella and later: verify execution payload against branch
+        // The execution payload is at field index 9 in the BeaconBlockBody
+        // and the beacon block body tree has depth 4 (2^4 = 16 leaves with padding)
+        const EXECUTION_PAYLOAD_FIELD_INDEX: usize = 9;
+        const BEACON_BLOCK_BODY_TREE_DEPTH: usize = 4;
+
         verify_merkle_proof(
-            execution_payload_hash,
-            l1_proof,
-            proof_size.beacon_block_body_tree_depth,
-            proof_size.l1_beacon_block_body_tree_execution_payload_index,
+            get_lc_execution_root(header_update),
+            &header_update.execution_branch,
+            BEACON_BLOCK_BODY_TREE_DEPTH,
+            EXECUTION_PAYLOAD_FIELD_INDEX,
             header_update.beacon.body_root,
         )
     }
@@ -295,6 +312,15 @@ pub fn get_participant_pubkeys(
     result
 }
 
+/// Compute the light client execution root for the given light client header
+///
+/// This follows the spec: it takes the whole header and returns the tree hash root
+/// of the execution payload header portion
+pub fn get_lc_execution_root(header: &FinalizedHeader) -> H256 {
+    // The execution root is the tree hash of the execution payload header
+    H256(header.execution.tree_hash_root().0.into())
+}
+
 /// Verify a proof that `leaf` exists at `index` in a Merkle tree rooted at `root`.
 ///
 /// The `branch` argument is the main component of the proof: it should be a list of internal
@@ -307,6 +333,10 @@ pub fn verify_merkle_proof(
     root: H256,
 ) -> bool {
     if branch.len() == depth {
+        near_sdk::env::log_str(&format!("Branch: {:#?}", branch));
+        near_sdk::env::log_str(&format!("Depth: {:#?}", depth));
+        near_sdk::env::log_str(&format!("Index: {:#?}", index));
+        near_sdk::env::log_str(&format!("Root: {:#?}", root));
         merkle_root_from_branch(leaf, branch, depth, index) == root
     } else {
         false

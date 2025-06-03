@@ -31,25 +31,6 @@ arr_ethereum_types_wrapper_impl_borsh_serde_ssz!(H512, 64);
 arr_ethereum_types_wrapper_impl_borsh_serde_ssz!(H520, 65);
 arr_ethereum_types_wrapper_impl_borsh_serde_ssz!(Bloom, 256);
 
-#[cfg(feature = "eth2")]
-impl TreeHash for H256 {
-    fn tree_hash_type() -> TreeHashType {
-        TreeHashType::Vector
-    }
-
-    fn tree_hash_packed_encoding(&self) -> PackedEncoding {
-        PackedEncoding::from_slice(self.0.as_bytes())
-    }
-
-    fn tree_hash_packing_factor() -> usize {
-        1
-    }
-
-    fn tree_hash_root(&self) -> tree_hash::Hash256 {
-        (*self).0 .0.into()
-    }
-}
-
 macro_rules! uint_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
         #[derive(

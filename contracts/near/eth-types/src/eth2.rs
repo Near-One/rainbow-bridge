@@ -29,6 +29,74 @@ arr_wrapper_impl_tree_hash_and_borsh!(PublicKeyBytes, PUBLIC_KEY_BYTES_LEN);
 arr_wrapper_impl_tree_hash_and_borsh!(SignatureBytes, SIGNATURE_BYTES_LEN);
 arr_wrapper_impl_tree_hash_and_borsh!(SyncCommitteeBits, SYNC_COMMITTEE_BITS_SIZE_IN_BYTES);
 
+#[derive(Debug, Clone, BorshSchema)]
+pub struct ExtraData(pub Vec<u8>);
+
+impl tree_hash::TreeHash for ExtraData {
+    fn tree_hash_type() -> tree_hash::TreeHashType {
+        tree_hash::TreeHashType::List
+    }
+
+    fn tree_hash_packed_encoding(&self) -> tree_hash::PackedEncoding {
+        unreachable!("List should never be packed.")
+    }
+
+    fn tree_hash_packing_factor() -> usize {
+        unreachable!("List should never be packed.")
+    }
+
+    fn tree_hash_root(&self) -> tree_hash::Hash256 {
+        let mut hasher =
+            tree_hash::MerkleHasher::with_leaves(self.0.len().div_ceil(tree_hash::BYTES_PER_CHUNK));
+
+        for item in &self.0 {
+            hasher.write(&item.tree_hash_packed_encoding()).unwrap();
+        }
+
+        let root = hasher.finish().unwrap();
+        tree_hash::mix_in_length(&root, self.0.len())
+    }
+}
+
+// Add Borsh implementations
+impl borsh::BorshSerialize for ExtraData {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        BorshSerialize::serialize(&self.0, writer)
+    }
+}
+
+impl borsh::BorshDeserialize for ExtraData {
+    fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        Ok(ExtraData(Vec::<u8>::deserialize_reader(reader)?))
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl serde::Serialize for ExtraData {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        // Always serialize as hex string
+        let hex_string = format!("0x{}", hex::encode(&self.0));
+        serializer.serialize_str(&hex_string)
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl<'de> serde::Deserialize<'de> for ExtraData {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let hex_string = <std::string::String as Deserialize>::deserialize(deserializer)?;
+        let hex_string = hex_string.strip_prefix("0x").unwrap_or(&hex_string);
+        let bytes = hex::decode(hex_string)
+            .map_err(|e| serde::de::Error::custom(format!("Invalid hex: {}", e)))?;
+        Ok(ExtraData(bytes))
+    }
+}
+
 #[derive(
     Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize, tree_hash_derive::TreeHash,
 )]
@@ -44,7 +112,9 @@ pub struct BeaconBlockHeader {
 }
 
 // New execution header structure for Electra
-#[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
+#[derive(
+    Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize, tree_hash_derive::TreeHash,
+)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct ExecutionHeader {
     pub parent_hash: H256,
@@ -61,8 +131,7 @@ pub struct ExecutionHeader {
     pub gas_used: u64,
     #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::quoted_u64"))]
     pub timestamp: u64,
-    #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::hex_vec"))]
-    pub extra_data: Vec<u8>,
+    pub extra_data: ExtraData,
     #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::quoted_u64"))]
     pub base_fee_per_gas: u64,
     pub block_hash: H256,

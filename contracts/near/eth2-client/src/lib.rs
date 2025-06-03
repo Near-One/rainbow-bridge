@@ -261,6 +261,15 @@ impl Eth2Client {
         );
 
         let block_hash = block_header.calculate_hash();
+        env::log_str(&format!("calculated block_hash: {:#?}", block_hash));
+        env::log_str(&format!(
+            "block_header.parent_hash: {:#?}",
+            block_header.parent_hash
+        ));
+        env::log_str(&format!(
+            "finalized beacon header execution: {:#?}",
+            self.finalized_beacon_header.execution.block_hash,
+        ));
         let expected_block_hash = self
             .unfinalized_tail_execution_header
             .as_ref()
