@@ -261,15 +261,6 @@ impl Eth2Client {
         );
 
         let block_hash = block_header.calculate_hash();
-        env::log_str(&format!("calculated block_hash: {:#?}", block_hash));
-        env::log_str(&format!(
-            "block_header.parent_hash: {:#?}",
-            block_header.parent_hash
-        ));
-        env::log_str(&format!(
-            "finalized beacon header execution: {:#?}",
-            self.finalized_beacon_header.execution.block_hash,
-        ));
         let expected_block_hash = self
             .unfinalized_tail_execution_header
             .as_ref()
@@ -484,7 +475,7 @@ impl Eth2Client {
         );
 
         require!(
-            config.validate_beacon_block_header_update(&update.finalized_header),
+            config.is_valid_light_client_header(&update.finalized_header),
             "Invalid execution block hash proof"
         );
 

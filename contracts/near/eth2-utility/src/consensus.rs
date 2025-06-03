@@ -205,28 +205,17 @@ impl NetworkConfig {
         self.compute_proof_size(compute_epoch_at_slot(slot))
     }
 
-    pub fn validate_beacon_block_header_update(&self, header_update: &FinalizedHeader) -> bool {
-        let epoch = compute_epoch_at_slot(header_update.beacon.slot);
+    pub fn is_valid_light_client_header(&self, header: &FinalizedHeader) -> bool {
+        let epoch = compute_epoch_at_slot(header.beacon.slot);
+        if epoch < self.deneb_fork_epoch {
+            if header.execution.blob_gas_used != 0 || header.execution.excess_blob_gas != 0 {
+                return false;
+            }
+        }
 
-        let execution_payload_gindex = if epoch >= self.electra_fork_epoch {
-            EXECUTION_PAYLOAD_GINDEX_ELECTRA
-        } else {
-            EXECUTION_PAYLOAD_GINDEX
-        };
-
-        near_sdk::env::log_str(&format!(
-            "LC Execution Root: {:#?}",
-            get_lc_execution_root(header_update)
-        ));
-        near_sdk::env::log_str(&format!(
-            "Execution Branch: {:#?}",
-            header_update.execution_branch
-        ));
-        near_sdk::env::log_str(&format!("Body Root: {:#?}", header_update.beacon.body_root));
-        near_sdk::env::log_str(&format!(
-            "Execution Payload Gindex: {:#?}",
-            execution_payload_gindex
-        ));
+        if epoch < self.capella_fork_epoch {
+            panic!("Unsupported fork");
+        }
 
         // Capella and later: verify execution payload against branch
         // The execution payload is at field index 9 in the BeaconBlockBody
@@ -235,11 +224,11 @@ impl NetworkConfig {
         const BEACON_BLOCK_BODY_TREE_DEPTH: usize = 4;
 
         verify_merkle_proof(
-            get_lc_execution_root(header_update),
-            &header_update.execution_branch,
+            get_lc_execution_root(header),
+            &header.execution_branch,
             BEACON_BLOCK_BODY_TREE_DEPTH,
             EXECUTION_PAYLOAD_FIELD_INDEX,
-            header_update.beacon.body_root,
+            header.beacon.body_root,
         )
     }
 }
@@ -333,10 +322,6 @@ pub fn verify_merkle_proof(
     root: H256,
 ) -> bool {
     if branch.len() == depth {
-        near_sdk::env::log_str(&format!("Branch: {:#?}", branch));
-        near_sdk::env::log_str(&format!("Depth: {:#?}", depth));
-        near_sdk::env::log_str(&format!("Index: {:#?}", index));
-        near_sdk::env::log_str(&format!("Root: {:#?}", root));
         merkle_root_from_branch(leaf, branch, depth, index) == root
     } else {
         false
