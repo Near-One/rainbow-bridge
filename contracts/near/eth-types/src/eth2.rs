@@ -1,7 +1,7 @@
 use super::*;
 use borsh::{BorshDeserialize, BorshSerialize};
 use std::io::{Error, Write};
-use tree_hash::MerkleHasher;
+use tree_hash::{MerkleHasher, TreeHash};
 
 #[cfg(not(target_arch = "wasm32"))]
 use {
