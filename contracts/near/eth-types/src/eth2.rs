@@ -166,6 +166,26 @@ pub struct ForkData {
     pub genesis_validators_root: H256,
 }
 
+/// This is used specifically for backwards-compatibility, storing state in the contract
+#[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+pub struct ExtendedBeaconBlockHeader {
+    pub header: BeaconBlockHeader,
+    pub beacon_block_root: H256,
+    pub execution_block_hash: H256,
+}
+
+impl From<FinalizedHeader> for ExtendedBeaconBlockHeader {
+    fn from(finalized_header: FinalizedHeader) -> Self {
+        let beacon = finalized_header.beacon;
+        Self {
+            header: beacon.clone(),
+            beacon_block_root: beacon.tree_hash_root().0.into(),
+            execution_block_hash: finalized_header.execution.block_hash,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Clone, tree_hash_derive::TreeHash)]
 pub struct SigningData {
     pub object_root: H256,
@@ -261,7 +281,7 @@ pub enum LightClientUpdateVariant {
 
 #[derive(Clone, BorshDeserialize, BorshSchema, BorshSerialize, Debug)]
 pub struct LightClientState {
-    pub finalized_beacon_header: FinalizedHeader,
+    pub finalized_beacon_header: ExtendedBeaconBlockHeader,
     pub current_sync_committee: SyncCommittee,
     pub next_sync_committee: SyncCommittee,
 }

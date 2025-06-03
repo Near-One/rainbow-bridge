@@ -81,7 +81,7 @@ pub struct Eth2Client {
     /// Execution block number -> execution block hash
     finalized_execution_blocks: LookupMap<u64, H256>,
     /// Light client state
-    finalized_beacon_header: FinalizedHeader,
+    finalized_beacon_header: ExtendedBeaconBlockHeader,
     finalized_execution_header: LazyOption<ExecutionHeaderInfo>,
     current_sync_committee: LazyOption<SyncCommittee>,
     next_sync_committee: LazyOption<SyncCommittee>,
@@ -135,7 +135,7 @@ impl Eth2Client {
             hashes_gc_threshold: args.hashes_gc_threshold,
             network,
             finalized_execution_blocks: LookupMap::new(StorageKey::FinalizedExecutionBlocks),
-            finalized_beacon_header: args.finalized_beacon_header,
+            finalized_beacon_header: args.finalized_beacon_header.into(),
             finalized_execution_header: LazyOption::new(
                 StorageKey::FinalizedExecutionHeader,
                 Some(&finalized_execution_header_info),
@@ -192,18 +192,18 @@ impl Eth2Client {
     /// Get finalized beacon block root
     #[result_serializer(borsh)]
     pub fn finalized_beacon_block_root(&self) -> H256 {
-        self.finalized_beacon_header.beacon.body_root
+        self.finalized_beacon_header.beacon_block_root
     }
 
     /// Returns finalized beacon block slot
     #[result_serializer(borsh)]
     pub fn finalized_beacon_block_slot(&self) -> u64 {
-        self.finalized_beacon_header.beacon.slot
+        self.finalized_beacon_header.header.slot
     }
 
     /// Returns finalized beacon block header
     #[result_serializer(borsh)]
-    pub fn finalized_beacon_block_header(&self) -> FinalizedHeader {
+    pub fn finalized_beacon_block_header(&self) -> ExtendedBeaconBlockHeader {
         self.finalized_beacon_header.clone()
     }
 
@@ -265,7 +265,7 @@ impl Eth2Client {
             .unfinalized_tail_execution_header
             .as_ref()
             .map(|header| header.parent_hash)
-            .unwrap_or(self.finalized_beacon_header.execution.block_hash);
+            .unwrap_or(self.finalized_beacon_header.execution_block_hash);
         require!(
             block_hash == expected_block_hash,
             format!(
@@ -398,7 +398,7 @@ impl Eth2Client {
 impl Eth2Client {
     fn validate_light_client_update(&self, update: &LightClientUpdate) {
         let finalized_period =
-            compute_sync_committee_period(self.finalized_beacon_header.beacon.slot);
+            compute_sync_committee_period(self.finalized_beacon_header.header.slot);
         self.verify_finality_branch(update, finalized_period);
 
         // Verify sync committee has sufficient participants
@@ -432,7 +432,7 @@ impl Eth2Client {
         let active_header = &update.finalized_header.beacon;
 
         require!(
-            active_header.slot > self.finalized_beacon_header.beacon.slot,
+            active_header.slot > self.finalized_beacon_header.header.slot,
             "The active header slot number should be higher than the finalized slot"
         );
 
@@ -603,7 +603,7 @@ impl Eth2Client {
         // Update finalized header
         let finalized_header_update = update.finalized_header;
         let finalized_period =
-            compute_sync_committee_period(self.finalized_beacon_header.beacon.slot);
+            compute_sync_committee_period(self.finalized_beacon_header.header.slot);
         let update_period = compute_sync_committee_period(finalized_header_update.beacon.slot);
 
         if update_period == finalized_period + 1 {
@@ -617,7 +617,7 @@ impl Eth2Client {
         env::log_str(
             format!(
                 "Current finalized slot: {}, New finalized slot: {}",
-                self.finalized_beacon_header.beacon.slot, finalized_header_update.beacon.slot
+                self.finalized_beacon_header.header.slot, finalized_header_update.beacon.slot
             )
             .as_str(),
         );

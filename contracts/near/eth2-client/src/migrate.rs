@@ -15,7 +15,7 @@ pub struct Eth2ClientV1 {
     submitters: LookupMap<AccountId, u32>,
     max_submitted_blocks_by_account: u32,
     min_storage_balance_for_submitter: u128,
-    finalized_beacon_header: FinalizedHeader,
+    finalized_beacon_header: ExtendedBeaconBlockHeader,
     finalized_execution_header: LazyOption<ExecutionHeaderInfo>,
     current_sync_committee: LazyOption<SyncCommittee>,
     next_sync_committee: LazyOption<SyncCommittee>,
