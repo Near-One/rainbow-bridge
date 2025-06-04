@@ -1,4 +1,4 @@
-use crate::constants::app::DEFAULT_HEADER_BATCH_SIZE;
+use crate::{config::NearConfig, constants::app::DEFAULT_HEADER_BATCH_SIZE};
 use borsh::BorshDeserialize;
 use color_eyre::{Result, eyre::Context};
 use eth_types::{
@@ -6,6 +6,7 @@ use eth_types::{
     eth2::{LightClientState, LightClientUpdate},
 };
 use eth2_utility::types::{ClientMode, InitInput};
+use indicatif::ProgressBar;
 use near_crypto::Signer;
 use near_fetch::ops::Function;
 use near_fetch::{Client, ops::MAX_GAS};
@@ -125,29 +126,61 @@ impl ContractClient {
             return Ok(());
         }
 
-        let batched_headers = headers
+        let batched_headers: Vec<&[BlockHeader]> = headers
             .chunks(DEFAULT_HEADER_BATCH_SIZE)
             .collect::<Vec<_>>();
 
-        for header_batch in batched_headers {
+        let total_batches = batched_headers.len();
+        let total_headers = headers.len();
+
+        // Create progress bar only for multi-batch operations
+        let progress_bar = if total_batches > 1 {
+            let pb = ProgressBar::new(total_batches as u64);
+            pb.set_message(format!(
+                "Submitting {} headers in {} batches",
+                total_headers, total_batches
+            ));
+            Some(pb)
+        } else {
+            None
+        };
+
+        for (batch_index, header_batch) in batched_headers.iter().enumerate() {
             let attached_gas_per_promise_in_batch = MAX_GAS.as_gas() / header_batch.len() as u64;
 
             let mut batch = self.client.batch(&self.signer, &self.contract_account_id);
 
-            for header in header_batch {
+            for header in *header_batch {
                 let function = Function::new("submit_execution_header")
                     .args_borsh(header.clone())
                     .gas(NearGas::from_gas(attached_gas_per_promise_in_batch));
                 batch = batch.call(function);
             }
 
-            let result = batch
+            let _result = batch
                 .retry_exponential(1000, 3)
                 .transact()
                 .await
-                .wrap_err("Failed to submit execution headers batch transaction")?;
+                .wrap_err(format!(
+                    "Failed to submit execution headers batch {} of {}",
+                    batch_index + 1,
+                    total_batches
+                ))?;
 
-            info!("Execution headers submitted successfully");
+            // Update progress bar
+            if let Some(ref pb) = progress_bar {
+                pb.inc(1);
+            }
+        }
+
+        // Finish progress bar
+        if let Some(pb) = progress_bar {
+            pb.finish_with_message(format!(
+                "✅ {} headers submitted in {} batches",
+                total_headers, total_batches
+            ));
+        } else {
+            info!("✅ {} headers submitted successfully", total_headers);
         }
 
         Ok(())
