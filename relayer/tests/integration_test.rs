@@ -133,21 +133,13 @@ mod integration_tests {
         fixture.near_contract.init_contract(init_input).await?;
 
         // Test the view call
-        let result = fixture
+        let hash = fixture
             .near_contract
             .get_finalized_beacon_block_hash()
-            .await;
+            .await
+            .wrap_err("Failed to get finalized beacon block hash")?;
 
-        match result {
-            Ok(hash) => {
-                println!("Finalized beacon block hash: {:?}", hash);
-            }
-            Err(e) => {
-                // If the method isn't implemented yet or returns an error,
-                // we can still verify the call structure works
-                println!("Expected error for unimplemented method: {:?}", e);
-            }
-        }
+        println!("Finalized beacon block hash: {:?}", hash);
 
         Ok(())
     }
@@ -159,21 +151,15 @@ mod integration_tests {
         let init_input = load_sepolia_init_data()?;
         fixture.near_contract.init_contract(init_input).await?;
 
-        let result = fixture
+        let slot = fixture
             .near_contract
             .get_finalized_beacon_block_slot()
-            .await;
+            .await
+            .wrap_err("Failed to get finalized beacon block slot")?;
 
-        match result {
-            Ok(slot) => {
-                println!("Finalized beacon block slot: {}", slot);
-                // Verify it's a reasonable slot number
-                assert!(slot >= 0);
-            }
-            Err(e) => {
-                println!("Expected error for unimplemented method: {:?}", e);
-            }
-        }
+        println!("Finalized beacon block slot: {}", slot);
+        // Verify it's a reasonable slot number
+        assert!(slot > 0, "Slot number should be greater than 0");
 
         Ok(())
     }
@@ -185,17 +171,14 @@ mod integration_tests {
         let init_input = load_sepolia_init_data()?;
         fixture.near_contract.init_contract(init_input).await?;
 
-        let result = fixture.near_contract.get_client_mode().await;
+        let mode = fixture
+            .near_contract
+            .get_client_mode()
+            .await
+            .wrap_err("Failed to get client mode")?;
 
-        match result {
-            Ok(mode) => {
-                println!("Client mode: {:?}", mode);
-                // Add assertions based on your ClientMode enum
-            }
-            Err(e) => {
-                println!("Expected error for unimplemented method: {:?}", e);
-            }
-        }
+        println!("Client mode: {:?}", mode);
+        // Add specific assertions based on your ClientMode enum as needed
 
         Ok(())
     }
@@ -207,17 +190,14 @@ mod integration_tests {
         let init_input = load_sepolia_init_data()?;
         fixture.near_contract.init_contract(init_input).await?;
 
-        let result = fixture.near_contract.get_light_client_state().await;
+        let _state = fixture
+            .near_contract
+            .get_light_client_state()
+            .await
+            .wrap_err("Failed to get light client state")?;
 
-        match result {
-            Ok(state) => {
-                println!("Light client state retrieved successfully");
-                // Add specific assertions based on your LightClientState structure
-            }
-            Err(e) => {
-                println!("Expected error for unimplemented method: {:?}", e);
-            }
-        }
+        println!("Light client state retrieved successfully");
+        // Add specific assertions based on your LightClientState structure as needed
 
         Ok(())
     }
@@ -229,17 +209,14 @@ mod integration_tests {
         let init_input = load_sepolia_init_data()?;
         fixture.near_contract.init_contract(init_input).await?;
 
-        let result = fixture.near_contract.get_last_block_number().await;
+        let block_number = fixture
+            .near_contract
+            .get_last_block_number()
+            .await
+            .wrap_err("Failed to get last block number")?;
 
-        match result {
-            Ok(block_number) => {
-                println!("Last block number: {}", block_number);
-                assert!(block_number >= 0);
-            }
-            Err(e) => {
-                println!("Expected error for unimplemented method: {:?}", e);
-            }
-        }
+        println!("Last block number: {}", block_number);
+        assert!(block_number > 0, "Block number should be greater than 0");
 
         Ok(())
     }
@@ -251,22 +228,19 @@ mod integration_tests {
         let init_input = load_sepolia_init_data()?;
         fixture.near_contract.init_contract(init_input).await?;
 
-        let result = fixture
+        let block_number_opt = fixture
             .near_contract
             .get_unfinalized_tail_block_number()
-            .await;
+            .await
+            .wrap_err("Failed to get unfinalized tail block number")?;
 
-        match result {
-            Ok(block_number_opt) => {
-                println!("Unfinalized tail block number: {:?}", block_number_opt);
-                // This returns an Option<u64>, so None is valid
-                if let Some(block_number) = block_number_opt {
-                    assert!(block_number >= 0);
-                }
-            }
-            Err(e) => {
-                println!("Expected error for unimplemented method: {:?}", e);
-            }
+        println!("Unfinalized tail block number: {:?}", block_number_opt);
+        // This returns an Option<u64>, so None is valid
+        if let Some(block_number) = block_number_opt {
+            assert!(
+                block_number > 0,
+                "Block number should be greater than 0 when present"
+            );
         }
 
         Ok(())
@@ -281,26 +255,48 @@ mod integration_tests {
 
         println!("Testing all view methods sequentially...");
 
-        // Test all view methods in sequence
-        let _hash_result = fixture
+        // Test all view methods in sequence - all should succeed
+        let _hash = fixture
             .near_contract
             .get_finalized_beacon_block_hash()
-            .await;
-        let _slot_result = fixture
+            .await
+            .wrap_err("Failed to get finalized beacon block hash")?;
+
+        let slot = fixture
             .near_contract
             .get_finalized_beacon_block_slot()
-            .await;
-        let _mode_result = fixture.near_contract.get_client_mode().await;
-        let _state_result = fixture.near_contract.get_light_client_state().await;
-        let _block_result = fixture.near_contract.get_last_block_number().await;
-        let _tail_result = fixture
+            .await
+            .wrap_err("Failed to get finalized beacon block slot")?;
+
+        let _mode = fixture
+            .near_contract
+            .get_client_mode()
+            .await
+            .wrap_err("Failed to get client mode")?;
+
+        let _state = fixture
+            .near_contract
+            .get_light_client_state()
+            .await
+            .wrap_err("Failed to get light client state")?;
+
+        let block_number = fixture
+            .near_contract
+            .get_last_block_number()
+            .await
+            .wrap_err("Failed to get last block number")?;
+
+        let _tail_block = fixture
             .near_contract
             .get_unfinalized_tail_block_number()
-            .await;
+            .await
+            .wrap_err("Failed to get unfinalized tail block number")?;
 
-        println!(
-            "All view methods called successfully (errors are expected for unimplemented methods)"
-        );
+        // Basic sanity checks
+        assert!(slot > 0, "Slot should be greater than 0");
+        assert!(block_number > 0, "Block number should be greater than 0");
+
+        println!("All view methods called and validated successfully");
         Ok(())
     }
 
@@ -322,16 +318,19 @@ mod integration_tests {
     }
 
     #[tokio::test]
-    async fn test_error_handling() -> Result<()> {
+    async fn test_error_handling_uninitialized_contract() -> Result<()> {
         let fixture = TestFixture::new().await?;
 
-        // Test calling methods on uninitialized contract to verify error handling
+        // Test calling methods on uninitialized contract should return errors
         let result = fixture
             .near_contract
             .get_finalized_beacon_block_hash()
             .await;
 
-        assert!(result.is_err());
+        assert!(
+            result.is_err(),
+            "Should fail when contract is not initialized"
+        );
 
         Ok(())
     }
