@@ -1,0 +1,57 @@
+[package]
+name = "relayer"
+version = "0.1.0"
+edition = "2024"
+resolver = "2"
+
+[dependencies]
+# Lighthouse ecosystem dependencies
+eth2 = { git = "https://github.com/sigp/lighthouse", tag = "v7.0.1" }
+types = { git = "https://github.com/sigp/lighthouse", tag = "v7.0.1" }
+sensitive_url = { git = "https://github.com/sigp/lighthouse", tag = "v7.0.1" }
+
+# Local path dependencies
+eth-types = { path = "../contracts/near/eth-types/" }
+eth2-utility = { path = "../contracts/near/eth2-utility/" }
+
+# Async runtime
+tokio = { version = "1.45", features = ["full"] }
+
+# Serialization and data handling
+borsh = { version = "1.5", features = ["derive"] }
+serde = { version = "1.0" }
+serde_json = { version = "1.0" }
+toml = { version = "0.8" }
+
+# Blockchain and crypto
+alloy = { version = "0.12", default-features = false, features = ["providers", "rpc", "rpc-types", "transports", "reqwest"] }
+tree_hash = { version = "0.8" }
+tree_hash_derive = { version = "0.8" }
+
+# NEAR ecosystem
+near-crypto = { version = "0.30" }
+near-primitives = { version = "0.30" }
+near-gas = { version = "0.3" }
+near-fetch = { git = "https://github.com/r-near/fetch", branch = "main" }
+
+# CLI and configuration
+clap = { version = "4.5" }
+figment = { version = "0.10", features = ["toml", "env"] }
+
+# Logging and tracing
+tracing = { version = "0.1" }
+tracing-subscriber = { version = "0.3", features = ["json"] }
+tracing-indicatif = { version = "0.3" }
+
+# Progress and UI
+indicatif = { version = "0.17", features = ["improved_unicode"] }
+
+# Error handling and utilities
+thiserror = { version = "2.0" }
+color-eyre = { version = "0.6" }
+hex = { version = "0.4" }
+url = { version = "2.5" }
+
+[dev-dependencies]
+near-workspaces = { version = "0.20", features = ["unstable"] }
+tracing-test = { version = "0.2" }
