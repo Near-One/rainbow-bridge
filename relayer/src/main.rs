@@ -328,10 +328,16 @@ impl EthRelayer {
             // No unfinalized blocks, use the finalized beacon block's execution block
             let finalized_slot = self.near_contract.get_finalized_beacon_block_slot().await?;
 
-            // For simplicity, get the latest block number from execution client
-            // In a full implementation, you'd get the block number corresponding to the finalized slot
-            let latest_block = self.execution_client.get_latest_block_number().await?;
-            Ok(latest_block)
+            // Get the execution block number corresponding to the finalized slot
+            self.beacon_client
+                .get_block_number_for_slot(finalized_slot)
+                .await
+                .wrap_err_with(|| {
+                    format!(
+                        "Failed to get execution block number for finalized beacon slot {}",
+                        finalized_slot
+                    )
+                })
         }
     }
 }
