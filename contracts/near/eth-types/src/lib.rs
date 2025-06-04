@@ -16,7 +16,7 @@ use sha3::{Digest, Keccak256, Keccak512};
 
 use std::io::{Error, Write};
 #[cfg(feature = "eth2")]
-use tree_hash::{PackedEncoding, TreeHash, TreeHashType};
+use tree_hash::PackedEncoding;
 
 #[cfg(feature = "eth2")]
 pub mod eth2;
@@ -30,25 +30,6 @@ arr_ethereum_types_wrapper_impl_borsh_serde_ssz!(H256, 32);
 arr_ethereum_types_wrapper_impl_borsh_serde_ssz!(H512, 64);
 arr_ethereum_types_wrapper_impl_borsh_serde_ssz!(H520, 65);
 arr_ethereum_types_wrapper_impl_borsh_serde_ssz!(Bloom, 256);
-
-#[cfg(feature = "eth2")]
-impl TreeHash for H256 {
-    fn tree_hash_type() -> TreeHashType {
-        TreeHashType::Vector
-    }
-
-    fn tree_hash_packed_encoding(&self) -> PackedEncoding {
-        PackedEncoding::from_slice(self.0.as_bytes())
-    }
-
-    fn tree_hash_packing_factor() -> usize {
-        1
-    }
-
-    fn tree_hash_root(&self) -> tree_hash::Hash256 {
-        (*self).0 .0.into()
-    }
-}
 
 macro_rules! uint_declare_wrapper_and_serde {
     ($name: ident, $len: expr) => {
@@ -131,6 +112,32 @@ macro_rules! uint_declare_wrapper_and_serde {
                 Ok($name(<ethereum_types::$name>::decode(rlp)?))
             }
         }
+
+        impl From<Vec<u8>> for $name {
+            fn from(bytes: Vec<u8>) -> Self {
+                Self(ethereum_types::$name::from_big_endian(&bytes))
+            }
+        }
+
+        impl From<&[u8]> for $name {
+            fn from(bytes: &[u8]) -> Self {
+                Self(ethereum_types::$name::from_big_endian(bytes))
+            }
+        }
+
+        impl $name {
+            /// Create from big-endian bytes
+            pub fn from_bytes(bytes: &[u8]) -> Self {
+                Self(ethereum_types::$name::from_big_endian(bytes))
+            }
+
+            /// Convert to big-endian byte vector
+            pub fn to_bytes(&self) -> Vec<u8> {
+                let mut bytes = vec![0u8; $len * 8];
+                self.0.to_big_endian(&mut bytes);
+                bytes
+            }
+        }
     };
 }
 
@@ -147,14 +154,15 @@ pub type Signature = H520;
 
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, BorshSchema)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[cfg_attr(not(target_arch = "wasm32"), serde(rename_all = "camelCase"))]
 pub struct BlockHeader {
     pub parent_hash: H256,
-    pub uncles_hash: H256,
-    pub author: Address,
+    pub sha3_uncles: H256,
+    pub miner: Address,
     pub state_root: H256,
     pub transactions_root: H256,
     pub receipts_root: H256,
-    pub log_bloom: Bloom,
+    pub logs_bloom: Bloom,
     pub difficulty: U256,
     #[cfg_attr(
         all(feature = "eth2", not(target_arch = "wasm32")),
@@ -256,12 +264,12 @@ impl BlockHeader {
         stream.begin_list(list_size);
 
         stream.append(&self.parent_hash);
-        stream.append(&self.uncles_hash);
-        stream.append(&self.author);
+        stream.append(&self.sha3_uncles);
+        stream.append(&self.miner);
         stream.append(&self.state_root);
         stream.append(&self.transactions_root);
         stream.append(&self.receipts_root);
-        stream.append(&self.log_bloom);
+        stream.append(&self.logs_bloom);
         stream.append(&self.difficulty);
         stream.append(&self.number);
         stream.append(&self.gas_limit);
@@ -319,12 +327,12 @@ impl RlpDecodable for BlockHeader {
     fn decode(serialized: &Rlp) -> Result<Self, RlpDecoderError> {
         let mut block_header = BlockHeader {
             parent_hash: serialized.val_at(0)?,
-            uncles_hash: serialized.val_at(1)?,
-            author: serialized.val_at(2)?,
+            sha3_uncles: serialized.val_at(1)?,
+            miner: serialized.val_at(2)?,
             state_root: serialized.val_at(3)?,
             transactions_root: serialized.val_at(4)?,
             receipts_root: serialized.val_at(5)?,
-            log_bloom: serialized.val_at(6)?,
+            logs_bloom: serialized.val_at(6)?,
             difficulty: serialized.val_at(7)?,
             number: serialized.val_at(8)?,
             gas_limit: serialized.val_at(9)?,
@@ -404,7 +412,7 @@ impl rlp::Encodable for LogEntry {
 pub struct Receipt {
     pub status: bool,
     pub gas_used: U256,
-    pub log_bloom: Bloom,
+    pub logs_bloom: Bloom,
     pub logs: Vec<LogEntry>,
 }
 
@@ -429,7 +437,7 @@ impl rlp::Decodable for Receipt {
 pub struct RlpDeriveReceipt {
     pub status: bool,
     pub gas_used: U256,
-    pub log_bloom: Bloom,
+    pub logs_bloom: Bloom,
     pub logs: Vec<LogEntry>,
 }
 
@@ -438,7 +446,7 @@ impl From<RlpDeriveReceipt> for Receipt {
         Self {
             status: receipt.status,
             gas_used: receipt.gas_used,
-            log_bloom: receipt.log_bloom,
+            logs_bloom: receipt.logs_bloom,
             logs: receipt.logs,
         }
     }

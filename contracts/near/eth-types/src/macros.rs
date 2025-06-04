@@ -263,5 +263,25 @@ macro_rules! arr_ethereum_types_wrapper_impl_borsh_serde_ssz {
                 buf.extend_from_slice(self.0.as_bytes());
             }
         }
+        #[cfg(feature = "eth2")]
+        impl tree_hash::TreeHash for $name {
+            fn tree_hash_type() -> tree_hash::TreeHashType {
+                tree_hash::TreeHashType::Vector
+            }
+
+            fn tree_hash_packed_encoding(&self) -> PackedEncoding {
+                unreachable!("Vector should never be packed.")
+            }
+
+            fn tree_hash_packing_factor() -> usize {
+                unreachable!("Vector should never be packed.")
+            }
+
+            fn tree_hash_root(&self) -> tree_hash::Hash256 {
+                let values_per_chunk = tree_hash::BYTES_PER_CHUNK;
+                let minimum_chunk_count = ($len + values_per_chunk - 1) / values_per_chunk;
+                tree_hash::merkle_root(&(self.0).0, minimum_chunk_count)
+            }
+        }
     };
 }

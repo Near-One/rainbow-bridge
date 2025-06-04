@@ -4,8 +4,9 @@ mod sepolia_integration_tests {
     use crate::tests::utils::get_sepolia_test_data;
     use crate::tests::utils::InitOptions;
     use borsh::{BorshDeserialize, BorshSerialize};
+    use eth2_utility::consensus::Network;
     use eth2_utility::types::InitInput;
-    use eth_types::eth2::{ExtendedBeaconBlockHeader, SyncCommittee};
+    use eth_types::eth2::{BeaconBlockHeader, FinalizedHeader, SyncCommittee};
     use eth_types::{Address, Bloom, H256, H64, U256};
     use near_sdk::{Gas, NearToken};
     use near_workspaces::operations::Function;
@@ -51,9 +52,9 @@ mod sepolia_integration_tests {
 
     #[derive(Clone, BorshDeserialize, BorshSerialize)]
     struct InitInputV1 {
-        pub network: String,
+        pub network: Network,
         pub finalized_execution_header: BlockHeaderV1,
-        pub finalized_beacon_header: ExtendedBeaconBlockHeader,
+        pub finalized_beacon_header: FinalizedHeader,
         pub current_sync_committee: SyncCommittee,
         pub next_sync_committee: SyncCommittee,
         pub validate_updates: bool,
@@ -117,9 +118,8 @@ mod sepolia_integration_tests {
         let slice = &headers[0][1..33];
         let last = slice.last().unwrap().calculate_hash();
 
-        // Patch the update to point at our last block
         let mut update = updates[1].clone();
-        update.finality_update.header_update.execution_block_hash = last;
+        update.finalized_header.execution.block_hash = last;
 
         // Submit the light‐client update
         let outcome = alice

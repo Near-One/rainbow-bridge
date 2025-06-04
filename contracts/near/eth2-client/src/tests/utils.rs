@@ -1,3 +1,6 @@
+use std::str::FromStr;
+
+use eth2_utility::consensus::Network;
 use eth2_utility::types::InitInput;
 use eth_types::eth2::*;
 use eth_types::BlockHeader;
@@ -73,22 +76,17 @@ pub fn get_goerli_test_data(
     });
 
     let init_input = InitInput {
-        network: NETWORK.to_string(),
+        network: Network::from_str(NETWORK).unwrap(),
         finalized_execution_header: HEADERS[0][0].clone(),
-        finalized_beacon_header: UPDATES[0].clone().finality_update.header_update.into(),
+        finalized_beacon_header: UPDATES[0].finalized_header.clone(),
         current_sync_committee: INIT_UPDATE
+            .next_sync_committee
             .clone()
-            .sync_committee_update
-            .as_ref()
-            .unwrap()
-            .next_sync_committee
-            .clone(),
+            .expect("Sync committee not found"),
         next_sync_committee: UPDATES[0]
-            .sync_committee_update
-            .as_ref()
-            .unwrap()
             .next_sync_committee
-            .clone(),
+            .clone()
+            .expect("Sync committee not found"),
         validate_updates: init_options.validate_updates,
         verify_bls_signatures: init_options.verify_bls_signatures,
         hashes_gc_threshold: init_options.hashes_gc_threshold,
@@ -131,22 +129,17 @@ pub fn get_sepolia_test_data(
     });
 
     let init_input = InitInput {
-        network: NETWORK.to_string(),
+        network: Network::from_str(NETWORK).unwrap(),
         finalized_execution_header: HEADERS[0][0].clone(),
-        finalized_beacon_header: UPDATES[0].clone().finality_update.header_update.into(),
+        finalized_beacon_header: UPDATES[0].finalized_header.clone(),
         current_sync_committee: INIT_UPDATE
+            .next_sync_committee
             .clone()
-            .sync_committee_update
-            .as_ref()
-            .unwrap()
-            .next_sync_committee
-            .clone(),
+            .expect("Sync committee not found"),
         next_sync_committee: UPDATES[0]
-            .sync_committee_update
-            .as_ref()
-            .unwrap()
             .next_sync_committee
-            .clone(),
+            .clone()
+            .expect("Sync committee not found"),
         validate_updates: init_options.validate_updates,
         verify_bls_signatures: init_options.verify_bls_signatures,
         hashes_gc_threshold: init_options.hashes_gc_threshold,
