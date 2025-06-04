@@ -1,1 +1,0 @@
-RUST_BACKTRACE=1 cargo test --package relayer --test integration_test -- integration_tests::test_contract_deployment_and_initialization --exact --nocapture --show-output
