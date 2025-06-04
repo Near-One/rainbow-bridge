@@ -1,4 +1,4 @@
-use crate::{config::NearConfig, constants::app::DEFAULT_HEADER_BATCH_SIZE};
+use crate::constants::app::DEFAULT_HEADER_BATCH_SIZE;
 use borsh::BorshDeserialize;
 use color_eyre::{Result, eyre::Context};
 use eth_types::{
@@ -12,7 +12,7 @@ use near_fetch::ops::Function;
 use near_fetch::{Client, ops::MAX_GAS};
 use near_gas::NearGas;
 use near_primitives::types::AccountId;
-use std::{fmt::Write, time::Duration};
+use std::fmt::Write;
 use tracing::info;
 
 /// NEAR contract client for Ethereum light client operations
@@ -109,6 +109,7 @@ impl ContractClient {
                 "submit_beacon_chain_light_client_update",
             )
             .args_borsh(update)
+            .gas(NearGas::from_tgas(100))
             .retry_exponential(1000, 3)
             .transact()
             .await
@@ -162,7 +163,7 @@ impl ContractClient {
                 batch = batch.call(function);
             }
 
-            let _result = batch
+            batch
                 .retry_exponential(1000, 3)
                 .transact()
                 .await

@@ -3,7 +3,6 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use color_eyre::Result;
 use relayer::{config::Config, relay::EthRelayer};
-use tracing::info;
 use tracing_indicatif::IndicatifLayer;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;

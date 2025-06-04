@@ -163,8 +163,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_client_creation_with_batch_size() {
-        let mut config = crate::config::ExecutionConfig::default();
-        config.max_batch_size = 500;
+        let config = crate::config::ExecutionConfig {
+            max_batch_size: 500,
+            ..Default::default()
+        };
 
         let client = ExecutionClient::from_config(&config);
         assert!(client.is_ok());
@@ -173,8 +175,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_large_batch_chunking() {
-        let mut config = crate::config::ExecutionConfig::default();
-        config.max_batch_size = 100;
+        let config = crate::config::ExecutionConfig {
+            max_batch_size: 100,
+            ..Default::default()
+        };
 
         let client = ExecutionClient::from_config(&config).unwrap();
 
@@ -186,12 +190,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_small_vs_large_batch_size() {
-        let mut config_small = crate::config::ExecutionConfig::default();
-        config_small.max_batch_size = 5;
+        let config_small = crate::config::ExecutionConfig {
+            max_batch_size: 5,
+            ..Default::default()
+        };
         let client_small = ExecutionClient::from_config(&config_small).unwrap();
 
-        let mut config_large = crate::config::ExecutionConfig::default();
-        config_large.max_batch_size = 1000;
+        let config_large = crate::config::ExecutionConfig {
+            max_batch_size: 1000,
+            ..Default::default()
+        };
         let client_large = ExecutionClient::from_config(&config_large).unwrap();
 
         let range = 8440252..=8440257; // 6 blocks

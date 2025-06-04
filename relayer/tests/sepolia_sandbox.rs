@@ -29,7 +29,16 @@ async fn test_relayer_mainloop_hybrid() -> Result<()> {
 
     // Use NEAR sandbox (fast, deterministic)
     let fixture: TestFixture = TestFixture::new().await?;
-    fixture.init_with_sepolia_no_validation().await?;
+    fixture.init_with_sepolia().await?;
+
+    // Get the current finalized slot
+    let init_finalized_slot = fixture
+        .near_client
+        .get_finalized_beacon_block_slot()
+        .await?;
+    let init_block_num = fixture.near_client.get_last_block_number().await?;
+    println!("Initial block: {}", init_block_num);
+    println!("Initial finalized slot: {}", init_finalized_slot);
 
     // Use REAL Sepolia clients (real data, real behavior)
     let beacon_client = BeaconClient::new("http://unstable.sepolia.beacon-api.nimbus.team")?;
@@ -37,8 +46,8 @@ async fn test_relayer_mainloop_hybrid() -> Result<()> {
 
     // Create relayer with real Ethereum clients + sandbox NEAR
     let mut config = Config::default();
-    config.relayer.max_iterations = Some(4); // Just a couple iterations
-    config.relayer.headers_batch_size = 32; // Smaller batches for testing
+    config.relayer.max_iterations = Some(3); // Just a couple iterations
+    config.relayer.headers_batch_size = 100;
 
     let relayer = EthRelayer::with_clients(
         beacon_client,               // Real Sepolia beacon
@@ -51,9 +60,15 @@ async fn test_relayer_mainloop_hybrid() -> Result<()> {
     relayer.run().await?;
 
     // Verify it made progress
-    let mode = fixture.near_client.get_client_mode().await?;
+    let finalized_slot = fixture
+        .near_client
+        .get_finalized_beacon_block_slot()
+        .await?;
     let block_num = fixture.near_client.get_last_block_number().await?;
+    println!("Final block: {}", block_num);
+    println!("Finalized slot: {}", finalized_slot);
 
-    println!("Final mode: {:?}, block: {}", mode, block_num);
+    assert!(finalized_slot > init_finalized_slot);
+    assert!(block_num > init_block_num);
     Ok(())
 }
