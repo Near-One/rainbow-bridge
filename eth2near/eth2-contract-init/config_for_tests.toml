@@ -1,4 +1,0 @@
-beacon_endpoint = "http://unstable.sepolia.beacon-api.nimbus.team"
-eth1_endpoint = "https://sepolia.infura.io/v3/ETH1_INFURA_API_KEY"
-network_name = "Sepolia"
-wasm_filepath = "../../contracts/near/res/eth2_client.wasm"
