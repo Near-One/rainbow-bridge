@@ -3,15 +3,15 @@ mod integration_tests {
 
     use color_eyre::Result;
     use color_eyre::eyre::Context;
-    use eth_types::BlockHeader;
     use eth_types::eth2::LightClientUpdate;
+    use eth_types::{BlockHeader, H256};
     use eth2_utility::consensus::Network;
-    use eth2_utility::types::InitInput;
+    use eth2_utility::types::{ClientMode, InitInput};
     use near_crypto::{InMemorySigner, SecretKey};
     use near_workspaces::network::Sandbox;
     use near_workspaces::{Contract, Worker};
     use relayer::near::NearContract;
-
+    use tree_hash::TreeHash;
     /// Simple helper to load Sepolia test data
     fn load_sepolia_init_data() -> Result<InitInput> {
         // Read the initial sync committee (period 925)
@@ -39,8 +39,8 @@ mod integration_tests {
             next_sync_committee: first_update
                 .next_sync_committee
                 .ok_or_else(|| color_eyre::eyre::eyre!("Missing sync committee in first update"))?,
-            validate_updates: false,      // Disable for faster testing
-            verify_bls_signatures: false, // Disable for faster testing
+            validate_updates: true,
+            verify_bls_signatures: true,
             hashes_gc_threshold: 51_000,
             trusted_signer: None,
         };
@@ -122,6 +122,82 @@ mod integration_tests {
             "Contract deployed and initialized successfully at: {}",
             fixture.contract.id()
         );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_full_lifecycle_smoke_test() -> Result<()> {
+        tracing_subscriber::fmt()
+            .with_max_level(tracing::Level::DEBUG)
+            .init();
+
+        let fixture = TestFixture::new().await?;
+        let mut init_input =
+            load_sepolia_init_data().wrap_err("Failed to load Sepolia test data")?;
+        init_input.validate_updates = false;
+        init_input.verify_bls_signatures = false;
+        fixture
+            .near_contract
+            .init_contract(init_input.clone())
+            .await?;
+
+        // Get the finalized beacon block hash
+        let hash = fixture
+            .near_contract
+            .get_finalized_beacon_block_hash()
+            .await
+            .wrap_err("Failed to get finalized beacon block hash")?;
+
+        println!("First finalized slot after init: {:?}", hash);
+
+        assert_eq!(
+            hash,
+            init_input
+                .clone()
+                .finalized_beacon_header
+                .beacon
+                .tree_hash_root()
+                .0
+                .into()
+        );
+
+        let mut first_update: LightClientUpdate = serde_json::from_reader(std::fs::File::open(
+            "./tests/data/light_client_update_period_926.json",
+        )?)?;
+        let headers: Vec<BlockHeader> = serde_json::from_reader(std::fs::File::open(
+            "./tests/data/execution_blocks_8286935_8295112.json",
+        )?)?;
+
+        // pick first 32 blocks from our window
+        let slice = &headers[1..33];
+        let last_block_hash = slice.last().unwrap().calculate_hash();
+        first_update.finalized_header.execution.block_hash = last_block_hash;
+
+        //Reverse the order of slice
+        let reversed: Vec<BlockHeader> = slice.iter().rev().cloned().collect();
+
+        println!("Submitting light client update to enable SubmitHeader mode...");
+        fixture
+            .near_contract
+            .submit_light_client_update(first_update.clone())
+            .await
+            .wrap_err("Failed to submit light client update")?;
+
+        // Check the mode
+        let mode = fixture.near_contract.get_client_mode().await?;
+        assert!(mode == ClientMode::SubmitHeader);
+
+        fixture
+            .near_contract
+            .submit_execution_headers(&reversed)
+            .await
+            .wrap_err("Failed to submit execution headers")?;
+
+        // Verify that each block’s hash is stored
+        for header in slice {
+            let result: Option<H256> = fixture.near_contract.get_block_hash(header.number).await?;
+            assert!(result.is_some(), "block {} missing", header.number);
+        }
         Ok(())
     }
 

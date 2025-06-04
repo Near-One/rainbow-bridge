@@ -6625,6 +6625,7 @@ dependencies = [
  "hex",
  "near-crypto",
  "near-fetch",
+ "near-gas",
  "near-primitives",
  "near-workspaces",
  "sensitive_url",
@@ -6634,6 +6635,8 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tracing-test",
+ "tree_hash",
+ "tree_hash_derive",
  "types",
  "url",
 ]
