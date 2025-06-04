@@ -70,7 +70,7 @@ mod tests {
         }
     }
 
-    //#[cfg(not(feature = "mainnet"))]
+    #[cfg(not(feature = "mainnet"))]
     mod generic_tests {
         use super::*;
         use bitvec::bitarr;
