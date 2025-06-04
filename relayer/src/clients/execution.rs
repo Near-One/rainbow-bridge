@@ -6,7 +6,7 @@ use alloy::{
 };
 use color_eyre::Result;
 use eth_types::BlockHeader;
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::ProgressBar;
 use std::ops::RangeInclusive;
 
 /// ExecutionClient provides methods for interacting with Ethereum execution layer
@@ -172,7 +172,6 @@ mod tests {
         // This should automatically chunk into multiple batches
         let headers = client.fetch_block_range(8440252..=8440352).await.unwrap(); // 101 blocks
 
-        println!("Fetched {} headers with automatic chunking", headers.len());
         assert!(headers.len() == 101); // Some blocks might be missing
     }
 

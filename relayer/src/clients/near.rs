@@ -11,6 +11,7 @@ use near_fetch::ops::Function;
 use near_fetch::{Client, ops::MAX_GAS};
 use near_gas::NearGas;
 use near_primitives::types::AccountId;
+use tracing::info;
 
 /// NEAR contract client for Ethereum light client operations
 #[derive(Clone)]
@@ -113,14 +114,14 @@ impl ContractClient {
             .into_result()
             .wrap_err("Failed to submit light client update")?;
 
-        println!("Light client update submitted successfully");
+        info!("Light client update submitted successfully");
         Ok(())
     }
 
     /// Submit multiple execution headers in a single batch transaction
     pub async fn submit_execution_headers(&self, headers: &[BlockHeader]) -> Result<()> {
         if headers.is_empty() {
-            println!("No headers to submit");
+            info!("No headers to submit");
             return Ok(());
         }
 
@@ -146,7 +147,7 @@ impl ContractClient {
                 .await
                 .wrap_err("Failed to submit execution headers batch transaction")?;
 
-            println!("Execution headers submitted successfully");
+            info!("Execution headers submitted successfully");
         }
 
         Ok(())
@@ -162,7 +163,7 @@ impl ContractClient {
             .into_result()
             .wrap_err("Contract initialization failed")?;
 
-        println!("Contract initialized successfully");
+        info!("Contract initialized successfully");
         Ok(())
     }
 

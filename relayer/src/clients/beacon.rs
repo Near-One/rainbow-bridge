@@ -50,7 +50,6 @@ impl BeaconClient {
         let update = updates.into_iter().next().ok_or_else(|| {
             color_eyre::eyre::eyre!("No light client update found for period {}", period)
         })?;
-        println!("Fork name: {}", update.version.unwrap());
 
         let v = serde_json::to_value(&update.data)
             .wrap_err("Failed to serialize light client update to JSON")?;
