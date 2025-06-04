@@ -8,7 +8,7 @@ mod integration_tests {
     use eth2_utility::types::InitInput;
     use near_crypto::{InMemorySigner, KeyType, SecretKey};
     use near_workspaces::network::Sandbox;
-    use near_workspaces::{Contract, Worker};
+    use near_workspaces::{AccessKey, Contract, Worker};
     use relayer::near::{NearContract, NearContractError};
 
     /// Simple helper to load Sepolia test data
@@ -64,20 +64,10 @@ mod integration_tests {
 
             // Deploy the contract
             let contract = worker.dev_deploy(&wasm).await?;
+            let alice = worker.dev_create_account().await?;
+            let secret_key: SecretKey = alice.secret_key().to_string().parse().unwrap();
 
-            // Generate a random set of credentials. `sk` and `secret_key` are not directly compatible, so we'll regenerate it
-            let (id, sk) = worker.generate_dev_account_credentials();
-
-            // This is how `generate_dev_account_credentials` works
-            let secret_key: near_crypto::SecretKey =
-                SecretKey::from_seed(KeyType::ED25519, id.as_str()).into();
-
-            let alice = worker
-                .create_root_account_subaccount(id.clone(), sk)
-                .await?
-                .into_result();
-
-            let signer = InMemorySigner::from_secret_key(id, secret_key.clone());
+            let signer = InMemorySigner::from_secret_key(alice.id().clone(), secret_key.clone());
 
             // Create the near-fetch client pointing to the sandbox RPC
             let near_fetch_client = near_fetch::Client::new(&worker.rpc_addr());
