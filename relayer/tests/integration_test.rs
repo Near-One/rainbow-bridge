@@ -10,7 +10,7 @@ mod integration_tests {
     use near_crypto::{InMemorySigner, SecretKey};
     use near_workspaces::network::Sandbox;
     use near_workspaces::{Contract, Worker};
-    use relayer::near::NearContract;
+    use relayer::ContractClient;
     use tree_hash::TreeHash;
     /// Simple helper to load Sepolia test data
     fn load_sepolia_init_data() -> Result<InitInput> {
@@ -52,7 +52,7 @@ mod integration_tests {
     struct TestFixture {
         worker: Worker<Sandbox>,
         contract: Contract,
-        near_contract: NearContract,
+        near_contract: ContractClient,
     }
 
     impl TestFixture {
@@ -93,7 +93,8 @@ mod integration_tests {
             let near_fetch_client = near_fetch::Client::new(&worker.rpc_addr());
 
             // Create our NearContract wrapper
-            let near_contract = NearContract::new(contract.id().clone(), signer, near_fetch_client);
+            let near_contract =
+                ContractClient::new(contract.id().clone(), signer, near_fetch_client);
 
             Ok(Self {
                 worker,

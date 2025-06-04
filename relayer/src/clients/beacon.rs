@@ -1,3 +1,4 @@
+use crate::constants::protocol::{EPOCHS_PER_PERIOD, SLOTS_PER_EPOCH};
 use color_eyre::{Result, eyre::Context};
 use eth_types::eth2::LightClientUpdate as BorshLightClientUpdate;
 use eth2::{BeaconNodeHttpClient, Timeouts};
@@ -10,11 +11,11 @@ use types::{
 };
 
 /// Service that uses Lighthouse's HTTP client to interact with beacon node APIs
-pub struct BeaconLightClientService {
+pub struct BeaconClient {
     client: BeaconNodeHttpClient,
 }
 
-impl BeaconLightClientService {
+impl BeaconClient {
     /// Create a new service pointing to a beacon node HTTP API
     pub fn new(beacon_url: &str) -> Result<Self> {
         let url = SensitiveUrl::parse(beacon_url).map_err(|e| {
@@ -191,8 +192,6 @@ impl BeaconLightClientService {
 
     /// Calculate sync committee period for a given slot
     pub fn get_period_for_slot(slot: u64) -> u64 {
-        const SLOTS_PER_EPOCH: u64 = 32;
-        const EPOCHS_PER_PERIOD: u64 = 256;
         slot / (SLOTS_PER_EPOCH * EPOCHS_PER_PERIOD)
     }
 }

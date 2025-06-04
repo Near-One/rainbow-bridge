@@ -7,50 +7,57 @@ use near_primitives::types::AccountId;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+use crate::constants::defaults;
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     /// Ethereum beacon node configuration
+    #[serde(default)]
     pub beacon: BeaconConfig,
 
     /// Ethereum execution layer configuration
+    #[serde(default)]
     pub execution: ExecutionConfig,
 
     /// NEAR blockchain configuration
+    #[serde(default)]
     pub near: NearConfig,
 
     /// Relayer operation configuration
+    #[serde(default)]
     pub relayer: RelayerConfig,
 
     /// Logging configuration
+    #[serde(default)]
     pub logging: LoggingConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BeaconConfig {
     /// Beacon node HTTP API endpoint
-    #[serde(default = "default_beacon_endpoint")]
+    #[serde(default)]
     pub endpoint: String,
 
     /// Timeout for beacon API requests in seconds
-    #[serde(default = "default_beacon_timeout")]
+    #[serde(default)]
     pub timeout_secs: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExecutionConfig {
     /// Ethereum execution RPC endpoint
-    #[serde(default = "default_execution_endpoint")]
+    #[serde(default)]
     pub endpoint: String,
 
     /// Timeout for execution RPC requests in seconds
-    #[serde(default = "default_execution_timeout")]
+    #[serde(default)]
     pub timeout_secs: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NearConfig {
     /// NEAR RPC endpoint
-    #[serde(default = "default_near_endpoint")]
+    #[serde(default)]
     pub endpoint: String,
 
     /// NEAR contract account ID
@@ -63,26 +70,26 @@ pub struct NearConfig {
     pub secret_key_path: PathBuf,
 
     /// Timeout for NEAR RPC requests in seconds
-    #[serde(default = "default_near_timeout")]
+    #[serde(default)]
     pub timeout_secs: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RelayerConfig {
     /// Number of epochs between light client update submissions
-    #[serde(default = "default_update_interval_epochs")]
+    #[serde(default)]
     pub update_interval_epochs: u64,
 
     /// Maximum number of headers to submit in one batch
-    #[serde(default = "default_headers_batch_size")]
+    #[serde(default)]
     pub headers_batch_size: usize,
 
     /// Sleep duration when synced (seconds)
-    #[serde(default = "default_sync_sleep_secs")]
+    #[serde(default)]
     pub sync_sleep_secs: u64,
 
     /// Sleep duration after submission (seconds)
-    #[serde(default = "default_submission_sleep_secs")]
+    #[serde(default)]
     pub submission_sleep_secs: u64,
 
     /// Maximum number of iterations (for testing, None = infinite)
@@ -96,7 +103,7 @@ pub struct RelayerConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoggingConfig {
     /// Log level: trace, debug, info, warn, error
-    #[serde(default = "default_log_level")]
+    #[serde(default)]
     pub level: String,
 
     /// Enable JSON formatted logs
@@ -107,68 +114,11 @@ pub struct LoggingConfig {
     pub file: Option<PathBuf>,
 }
 
-// Default value functions
-fn default_beacon_endpoint() -> String {
-    "http://unstable.sepolia.beacon-api.nimbus.team".to_string()
-}
-
-fn default_execution_endpoint() -> String {
-    "https://ethereum-sepolia-rpc.publicnode.com".to_string()
-}
-
-fn default_near_endpoint() -> String {
-    "https://rpc.testnet.near.org".to_string()
-}
-
-fn default_beacon_timeout() -> u64 {
-    30
-}
-
-fn default_execution_timeout() -> u64 {
-    30
-}
-
-fn default_near_timeout() -> u64 {
-    30
-}
-
-fn default_update_interval_epochs() -> u64 {
-    1
-}
-
-fn default_headers_batch_size() -> usize {
-    32
-}
-
-fn default_sync_sleep_secs() -> u64 {
-    60
-}
-
-fn default_submission_sleep_secs() -> u64 {
-    12
-}
-
-fn default_log_level() -> String {
-    "info".to_string()
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            beacon: BeaconConfig::default(),
-            execution: ExecutionConfig::default(),
-            near: NearConfig::default(),
-            relayer: RelayerConfig::default(),
-            logging: LoggingConfig::default(),
-        }
-    }
-}
-
 impl Default for BeaconConfig {
     fn default() -> Self {
         Self {
-            endpoint: default_beacon_endpoint(),
-            timeout_secs: default_beacon_timeout(),
+            endpoint: defaults::BEACON_ENDPOINT.to_string(),
+            timeout_secs: defaults::TIMEOUT_SECS,
         }
     }
 }
@@ -176,8 +126,8 @@ impl Default for BeaconConfig {
 impl Default for ExecutionConfig {
     fn default() -> Self {
         Self {
-            endpoint: default_execution_endpoint(),
-            timeout_secs: default_execution_timeout(),
+            endpoint: defaults::EXECUTION_ENDPOINT.to_string(),
+            timeout_secs: defaults::TIMEOUT_SECS,
         }
     }
 }
@@ -185,11 +135,11 @@ impl Default for ExecutionConfig {
 impl Default for NearConfig {
     fn default() -> Self {
         Self {
-            endpoint: default_near_endpoint(),
-            contract_account_id: "eth-client.testnet".to_string(),
-            signer_account_id: "relayer.testnet".to_string(),
-            secret_key_path: PathBuf::from("./keys/signer.txt"),
-            timeout_secs: default_near_timeout(),
+            endpoint: defaults::NEAR_ENDPOINT.to_string(),
+            contract_account_id: defaults::CONTRACT_ACCOUNT_ID.to_string(),
+            signer_account_id: defaults::SIGNER_ACCOUNT_ID.to_string(),
+            secret_key_path: PathBuf::from(defaults::SECRET_KEY_PATH),
+            timeout_secs: defaults::TIMEOUT_SECS,
         }
     }
 }
@@ -197,10 +147,10 @@ impl Default for NearConfig {
 impl Default for RelayerConfig {
     fn default() -> Self {
         Self {
-            update_interval_epochs: default_update_interval_epochs(),
-            headers_batch_size: default_headers_batch_size(),
-            sync_sleep_secs: default_sync_sleep_secs(),
-            submission_sleep_secs: default_submission_sleep_secs(),
+            update_interval_epochs: defaults::UPDATE_INTERVAL_EPOCHS,
+            headers_batch_size: defaults::HEADERS_BATCH_SIZE,
+            sync_sleep_secs: defaults::SYNC_SLEEP_SECS,
+            submission_sleep_secs: defaults::SUBMISSION_SLEEP_SECS,
             max_iterations: None,
             dry_run: false,
         }
@@ -210,7 +160,7 @@ impl Default for RelayerConfig {
 impl Default for LoggingConfig {
     fn default() -> Self {
         Self {
-            level: default_log_level(),
+            level: defaults::LOG_LEVEL.to_string(),
             json: false,
             file: None,
         }
@@ -229,7 +179,7 @@ impl Config {
 
         // Add config file if provided
         if let Some(path) = config_file {
-            figment = figment.merge(Toml::file(&path))
+            figment = figment.merge(Toml::file(&path));
         }
 
         // Add environment variables with RELAYER_ prefix
@@ -343,12 +293,12 @@ mod tests {
     #[test]
     fn test_default_config() {
         let config = Config::default();
+        assert_eq!(config.beacon.endpoint, defaults::BEACON_ENDPOINT);
         assert_eq!(
-            config.beacon.endpoint,
-            "http://unstable.sepolia.beacon-api.nimbus.team"
+            config.relayer.headers_batch_size,
+            defaults::HEADERS_BATCH_SIZE
         );
-        assert_eq!(config.relayer.headers_batch_size, 32);
-        assert_eq!(config.logging.level, "info");
+        assert_eq!(config.logging.level, defaults::LOG_LEVEL);
     }
 
     #[test]

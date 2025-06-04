@@ -4,25 +4,9 @@ use alloy::{
     providers::{Provider, RootProvider},
     rpc::{client::RpcClient, types::Block},
 };
+use color_eyre::Result;
 use eth_types::BlockHeader;
 use std::ops::RangeInclusive;
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum ExecutionClientError {
-    #[error("Alloy provider error: {0}")]
-    Provider(#[from] alloy::transports::RpcError<alloy::transports::TransportErrorKind>),
-    #[error("URL parse error: {0}")]
-    UrlParse(#[from] url::ParseError),
-    #[error("Invalid block range: start block {start} must be <= end block {end}")]
-    InvalidRange { start: u64, end: u64 },
-    #[error("Tokio join error: {0}")]
-    TokioJoin(#[from] tokio::task::JoinError),
-    #[error("JSON serialization error: {0}")]
-    JsonSerde(#[from] serde_json::Error),
-}
-
-type Result<T> = std::result::Result<T, ExecutionClientError>;
 
 /// ExecutionClient provides methods for interacting with Ethereum execution layer
 pub struct ExecutionClient {
@@ -63,10 +47,11 @@ impl ExecutionClient {
         let end_block = *range.end();
 
         if start_block > end_block {
-            return Err(ExecutionClientError::InvalidRange {
-                start: start_block,
-                end: end_block,
-            });
+            return Err(color_eyre::eyre::eyre!(
+                "Invalid block range: start block {} must be <= end block {}",
+                start_block,
+                end_block
+            ));
         }
 
         // Use batch requests for all range
@@ -133,15 +118,11 @@ mod tests {
     #[tokio::test]
     async fn test_invalid_range() {
         let client = ExecutionClient::sepolia().unwrap();
+
+        #[allow(clippy::reversed_empty_ranges)]
         let result = client.fetch_block_range(100..=50).await;
+
         assert!(result.is_err());
-        match result.unwrap_err() {
-            ExecutionClientError::InvalidRange { start, end } => {
-                assert_eq!(start, 100);
-                assert_eq!(end, 50);
-            }
-            _ => panic!("Expected InvalidRange error"),
-        }
     }
 
     #[tokio::test]

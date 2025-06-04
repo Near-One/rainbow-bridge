@@ -1,3 +1,4 @@
+use crate::constants::app::DEFAULT_HEADER_BATCH_SIZE;
 use borsh::BorshDeserialize;
 use color_eyre::{Result, eyre::Context};
 use eth_types::{
@@ -10,14 +11,15 @@ use near_fetch::ops::Function;
 use near_fetch::{Client, ops::MAX_GAS};
 use near_gas::NearGas;
 use near_primitives::types::AccountId;
+
 /// NEAR contract client for Ethereum light client operations
-pub struct NearContract {
+pub struct ContractClient {
     contract_account_id: AccountId,
     signer: Signer,
     client: Client,
 }
 
-impl NearContract {
+impl ContractClient {
     /// Create a new NEAR contract client instance
     pub fn new(contract_account_id: AccountId, signer: Signer, client: Client) -> Self {
         Self {
@@ -121,11 +123,9 @@ impl NearContract {
             return Ok(());
         }
 
-        // TODO: Read batch size from config
-        let batch_size = 32;
-        // TODO" fix this ^
-
-        let batched_headers = headers.chunks(batch_size).collect::<Vec<_>>();
+        let batched_headers = headers
+            .chunks(DEFAULT_HEADER_BATCH_SIZE)
+            .collect::<Vec<_>>();
 
         for header_batch in batched_headers {
             let attached_gas_per_promise_in_batch = MAX_GAS.as_gas() / header_batch.len() as u64;
