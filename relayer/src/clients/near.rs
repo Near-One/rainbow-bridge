@@ -13,6 +13,7 @@ use near_gas::NearGas;
 use near_primitives::types::AccountId;
 
 /// NEAR contract client for Ethereum light client operations
+#[derive(Clone)]
 pub struct ContractClient {
     contract_account_id: AccountId,
     signer: Signer,
@@ -146,7 +147,6 @@ impl ContractClient {
                 .wrap_err("Failed to submit execution headers batch transaction")?;
 
             println!("Execution headers submitted successfully");
-            println!("Result: {:#?}", result);
         }
 
         Ok(())

@@ -52,6 +52,10 @@ pub struct ExecutionConfig {
     /// Timeout for execution RPC requests in seconds
     #[serde(default)]
     pub timeout_secs: u64,
+
+    /// Maximum number of blocks to fetch in one batch
+    #[serde(default)]
+    pub max_batch_size: usize,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -128,6 +132,7 @@ impl Default for ExecutionConfig {
         Self {
             endpoint: defaults::EXECUTION_ENDPOINT.to_string(),
             timeout_secs: defaults::TIMEOUT_SECS,
+            max_batch_size: defaults::EXECUTION_BATCH_SIZE,
         }
     }
 }

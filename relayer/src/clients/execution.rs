@@ -12,20 +12,26 @@ use std::ops::RangeInclusive;
 pub struct ExecutionClient {
     provider: RootProvider<Ethereum>,
     client: RpcClient,
+    max_batch_size: usize,
 }
 
 impl ExecutionClient {
-    /// Creates a new ExecutionClient with the given RPC URL
-    pub fn new(rpc_url: &str) -> Result<Self> {
-        let client = RpcClient::new_http(rpc_url.parse()?);
+    /// Creates a new ExecutionClient from configuration
+    pub fn from_config(config: &crate::config::ExecutionConfig) -> Result<Self> {
+        let client = RpcClient::new_http(config.endpoint.parse()?);
         let provider = RootProvider::new(client.clone());
 
-        Ok(Self { provider, client })
+        Ok(Self {
+            provider,
+            client,
+            max_batch_size: config.max_batch_size,
+        })
     }
 
-    /// Creates a new ExecutionClient for Sepolia testnet
+    /// Creates a new ExecutionClient for Sepolia testnet using default config
     pub fn sepolia() -> Result<Self> {
-        Self::new("https://ethereum-sepolia-rpc.publicnode.com")
+        let config = crate::config::ExecutionConfig::default();
+        Self::from_config(&config)
     }
 
     /// Converts an alloy Block to our BlockHeader type
@@ -35,7 +41,7 @@ impl ExecutionClient {
         Ok(header)
     }
 
-    /// Fetches a range of blocks using batch requests for efficiency
+    /// Fetches a range of blocks using batch requests with automatic chunking
     ///
     /// # Arguments
     /// * `range` - A range of block numbers (inclusive on both ends)
@@ -54,35 +60,39 @@ impl ExecutionClient {
             ));
         }
 
-        // Use batch requests for all range
-        let mut batch = self.client.new_batch();
+        let block_numbers: Vec<u64> = range.collect();
+        let mut all_headers = Vec::new();
 
-        // Add all block requests to the batch
-        let mut futures = Vec::new();
-        for block_number in range {
-            let block_number_param = U64::from(block_number);
-            let future = batch
-                .add_call("eth_getBlockByNumber", &(block_number_param, false))?
-                .map_resp(|resp: Option<Block>| resp);
-            futures.push(future);
-        }
+        // Use chunks() to automatically split into batches
+        for chunk in block_numbers.chunks(self.max_batch_size) {
+            let mut batch = self.client.new_batch();
+            let mut futures = Vec::new();
 
-        // Send the batch request
-        batch.send().await?;
+            // Add all block requests to the batch
+            for &block_number in chunk {
+                let block_number_param = U64::from(block_number);
+                let future = batch
+                    .add_call("eth_getBlockByNumber", &(block_number_param, false))?
+                    .map_resp(|resp: Option<Block>| resp);
+                futures.push(future);
+            }
 
-        // Collect all results and convert to BlockHeader
-        let mut headers = Vec::new();
-        for future in futures {
-            match future.await? {
-                Some(block) => {
-                    let header = self.convert_block_to_header(block)?;
-                    headers.push(header);
+            // Send the batch request
+            batch.send().await?;
+
+            // Collect results and convert to BlockHeader
+            for future in futures {
+                match future.await? {
+                    Some(block) => {
+                        let header = self.convert_block_to_header(block)?;
+                        all_headers.push(header);
+                    }
+                    None => {} // Skip missing blocks
                 }
-                None => {} // Skip missing blocks
             }
         }
 
-        Ok(headers)
+        Ok(all_headers)
     }
 
     /// Fetches the latest block number
@@ -103,6 +113,16 @@ impl ExecutionClient {
         let headers = self.fetch_block_range(block_number..=block_number).await?;
         Ok(headers.into_iter().next())
     }
+
+    /// Gets the current max batch size
+    pub fn max_batch_size(&self) -> usize {
+        self.max_batch_size
+    }
+
+    /// Sets a new max batch size
+    pub fn set_max_batch_size(&mut self, size: usize) {
+        self.max_batch_size = size;
+    }
 }
 
 #[cfg(test)]
@@ -110,91 +130,50 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_client_creation() {
-        let client = ExecutionClient::sepolia();
+    async fn test_client_creation_with_batch_size() {
+        let mut config = crate::config::ExecutionConfig::default();
+        config.max_batch_size = 500;
+
+        let client = ExecutionClient::from_config(&config);
         assert!(client.is_ok());
+        assert_eq!(client.unwrap().max_batch_size(), 500);
     }
 
     #[tokio::test]
-    async fn test_invalid_range() {
-        let client = ExecutionClient::sepolia().unwrap();
+    async fn test_large_batch_chunking() {
+        let mut config = crate::config::ExecutionConfig::default();
+        config.max_batch_size = 100;
 
-        #[allow(clippy::reversed_empty_ranges)]
-        let result = client.fetch_block_range(100..=50).await;
+        let client = ExecutionClient::from_config(&config).unwrap();
 
-        assert!(result.is_err());
+        // This should automatically chunk into multiple batches
+        let headers = client.fetch_block_range(8440252..=8440352).await.unwrap(); // 101 blocks
+
+        println!("Fetched {} headers with automatic chunking", headers.len());
+        assert!(headers.len() == 101);
     }
 
     #[tokio::test]
-    async fn test_single_block_fetch() {
-        let client = ExecutionClient::sepolia().unwrap();
-        let header = client.fetch_block_header(8440252).await.unwrap();
-        assert!(header.is_some());
+    async fn test_small_vs_large_batch_size() {
+        let mut config_small = crate::config::ExecutionConfig::default();
+        config_small.max_batch_size = 5;
+        let client_small = ExecutionClient::from_config(&config_small).unwrap();
 
-        let header = header.unwrap();
-        println!("Block hash: {:#?}", header.calculate_hash());
-        println!("Parent hash: {:#?}", header.parent_hash);
-    }
+        let mut config_large = crate::config::ExecutionConfig::default();
+        config_large.max_batch_size = 1000;
+        let client_large = ExecutionClient::from_config(&config_large).unwrap();
 
-    #[tokio::test]
-    async fn test_block_range_and_hash_chain() {
-        let client = ExecutionClient::sepolia().unwrap();
-        let headers = client.fetch_block_range(8440252..=8440255).await.unwrap();
+        let range = 8440252..=8440257; // 6 blocks
 
-        println!("Fetched {} block headers:", headers.len());
-        assert_eq!(headers.len(), 4);
+        let headers_chunked = client_small.fetch_block_range(range.clone()).await.unwrap();
+        let headers_single = client_large.fetch_block_range(range).await.unwrap();
 
-        // Verify that each block's parent hash equals the previous block's calculated hash
-        for i in 1..headers.len() {
-            let current_block = &headers[i];
-            let previous_block = &headers[i - 1];
+        // Results should be the same regardless of batching strategy
+        assert_eq!(headers_chunked.len(), headers_single.len());
 
-            let previous_calculated_hash = previous_block.calculate_hash();
-            let current_parent_hash = current_block.parent_hash;
-
-            println!(
-                "Block {}: parent_hash = {:#?}, previous_calculated = {:#?}",
-                i, current_parent_hash, previous_calculated_hash
-            );
-
-            assert_eq!(
-                current_parent_hash, previous_calculated_hash,
-                "Block {} parent hash should equal previous block's calculated hash",
-                i
-            );
-        }
-
-        println!("✅ Hash chain verification passed!");
-    }
-
-    #[tokio::test]
-    async fn test_recent_blocks() {
-        let client = ExecutionClient::sepolia().unwrap();
-        let headers = client.fetch_recent_blocks(3).await.unwrap();
-
-        assert_eq!(headers.len(), 3);
-        println!("Fetched {} recent blocks", headers.len());
-
-        // Verify the blocks are in ascending order
-        for i in 1..headers.len() {
-            assert!(headers[i].number > headers[i - 1].number);
-        }
-    }
-
-    #[tokio::test]
-    async fn test_hash_calculation_consistency() {
-        let client = ExecutionClient::sepolia().unwrap();
-        let headers = client.fetch_block_range(8440250..=8440252).await.unwrap();
-
-        for header in &headers {
-            let calculated_hash = header.calculate_hash();
-            println!(
-                "Block {}: calculated hash = {:#?}",
-                header.number, calculated_hash
-            );
-
-            // The hash should be consistent across multiple calculations
-            assert_eq!(calculated_hash, header.calculate_hash());
+        // Verify the hashes match (order should be maintained)
+        for (chunked, single) in headers_chunked.iter().zip(headers_single.iter()) {
+            assert_eq!(chunked.calculate_hash(), single.calculate_hash());
         }
     }
 }

@@ -27,7 +27,7 @@ pub struct EthRelayer {
 impl EthRelayer {
     pub async fn new(config: Config) -> Result<Self> {
         let beacon_client = BeaconClient::new(&config.beacon.endpoint)?;
-        let execution_client = ExecutionClient::new(&config.execution.endpoint)?;
+        let execution_client = ExecutionClient::from_config(&config.execution)?;
         let near_client = Self::create_near_client(&config).await?;
 
         Ok(Self {
@@ -36,6 +36,21 @@ impl EthRelayer {
             near_client,
             config,
         })
+    }
+
+    /// Allow injecting clients for tests
+    pub fn with_clients(
+        beacon_client: BeaconClient,
+        execution_client: ExecutionClient,
+        near_client: ContractClient,
+        config: Config,
+    ) -> Self {
+        Self {
+            beacon_client,
+            execution_client,
+            near_client,
+            config,
+        }
     }
 
     async fn create_near_client(config: &Config) -> Result<ContractClient> {
@@ -158,22 +173,22 @@ impl EthRelayer {
         }
 
         let start_block = last_block + 1;
-        let end_block =
-            (start_block + self.config.relayer.headers_batch_size as u64 - 1).min(max_block);
         info!(
-            "Fetching execution headers for blocks {} to {}",
-            start_block, end_block
+            "Fetching {} execution headers for blocks {} to {}",
+            max_block - last_block,
+            start_block,
+            max_block
         );
 
         let mut headers = self
             .execution_client
-            .fetch_block_range(start_block..=end_block)
+            .fetch_block_range(start_block..=max_block)
             .await?;
 
         if headers.is_empty() {
             warn!(
                 "No headers fetched for range {}..={}",
-                start_block, end_block
+                start_block, max_block
             );
             return Ok(RelayResult::Skipped);
         }
