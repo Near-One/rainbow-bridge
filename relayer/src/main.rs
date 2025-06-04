@@ -3,7 +3,10 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 use color_eyre::Result;
 use relayer::{config::Config, relay::EthRelayer};
-use tracing::level_filters::LevelFilter;
+use tracing_indicatif::IndicatifLayer;
+use tracing_subscriber::EnvFilter;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 
 #[derive(Parser)]
 #[command(
@@ -27,24 +30,30 @@ enum Commands {
     ValidateConfig,
     Run,
 }
-fn setup_logging(level: &str, json: bool) -> Result<()> {
-    let level = match level {
-        "trace" => LevelFilter::TRACE,
-        "debug" => LevelFilter::DEBUG,
-        "info" => LevelFilter::INFO,
-        "warn" => LevelFilter::WARN,
-        "error" => LevelFilter::ERROR,
-        _ => return Err(color_eyre::eyre::eyre!("Invalid log level: {}", level)),
-    };
 
-    let subscriber = tracing_subscriber::fmt()
-        .with_max_level(level)
+fn setup_logging(level: &str, json: bool) -> Result<()> {
+    // Create an environment filter with the specified level
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(level));
+
+    // Create the indicatif layer for progress bars
+    let indicatif_layer = IndicatifLayer::new();
+
+    // Create fmt layer with indicatif writer to prevent progress bar interference
+    let fmt_layer = tracing_subscriber::fmt::layer()
+        .with_writer(indicatif_layer.get_stderr_writer())
         .with_target(false);
+
+    // Build and initialize the subscriber
+    let registry = tracing_subscriber::registry()
+        .with(env_filter)
+        .with(indicatif_layer);
+
     if json {
-        subscriber.json().init()
+        registry.with(fmt_layer.json()).init();
     } else {
-        subscriber.init()
+        registry.with(fmt_layer).init();
     }
+
     Ok(())
 }
 

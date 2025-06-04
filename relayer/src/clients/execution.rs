@@ -6,6 +6,7 @@ use alloy::{
 };
 use color_eyre::Result;
 use eth_types::BlockHeader;
+use indicatif::{ProgressBar, ProgressStyle};
 use std::ops::RangeInclusive;
 
 /// ExecutionClient provides methods for interacting with Ethereum execution layer
@@ -61,10 +62,22 @@ impl ExecutionClient {
         }
 
         let block_numbers: Vec<u64> = range.collect();
+        let total_blocks = block_numbers.len();
+        let chunks: Vec<_> = block_numbers.chunks(self.max_batch_size).collect();
+        let total_chunks = chunks.len();
+
+        // Create progress bar only for multi-chunk operations
+        let progress_bar = if total_chunks > 1 {
+            let pb = ProgressBar::new(total_chunks as u64);
+            pb.set_message(format!("Fetching {} blocks", total_blocks));
+            Some(pb)
+        } else {
+            None
+        };
+
         let mut all_headers = Vec::new();
 
-        // Use chunks() to automatically split into batches
-        for chunk in block_numbers.chunks(self.max_batch_size) {
+        for chunk in chunks {
             let mut batch = self.client.new_batch();
             let mut futures = Vec::new();
 
@@ -90,6 +103,16 @@ impl ExecutionClient {
                     None => {} // Skip missing blocks
                 }
             }
+
+            // Update progress bar
+            if let Some(ref pb) = progress_bar {
+                pb.inc(1);
+            }
+        }
+
+        // Finish progress bar
+        if let Some(pb) = progress_bar {
+            pb.finish_with_message(format!("✅ {} blocks fetched", all_headers.len()));
         }
 
         Ok(all_headers)
@@ -150,7 +173,7 @@ mod tests {
         let headers = client.fetch_block_range(8440252..=8440352).await.unwrap(); // 101 blocks
 
         println!("Fetched {} headers with automatic chunking", headers.len());
-        assert!(headers.len() == 101);
+        assert!(headers.len() == 101); // Some blocks might be missing
     }
 
     #[tokio::test]

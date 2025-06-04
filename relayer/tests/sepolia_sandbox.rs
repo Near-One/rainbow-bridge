@@ -2,16 +2,28 @@ mod common;
 use color_eyre::Result;
 use common::TestFixture;
 use relayer::{BeaconClient, Config, EthRelayer, ExecutionClient};
+use tracing_indicatif::IndicatifLayer;
 use tracing_subscriber::EnvFilter;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 
 #[tokio::test]
 async fn test_relayer_mainloop_hybrid() -> Result<()> {
     // Only show debug+ logs from your "relayer" crate, info+ from everything else
     let filter = EnvFilter::new("info,relayer=debug");
 
-    tracing_subscriber::fmt()
-        .with_env_filter(filter)
-        .with_test_writer()
+    // Create the indicatif layer for progress bars
+    let indicatif_layer = IndicatifLayer::new();
+
+    // Set up tracing with both fmt and indicatif layers
+    tracing_subscriber::registry()
+        .with(filter)
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_writer(indicatif_layer.get_stderr_writer())
+                .with_test_writer(),
+        )
+        .with(indicatif_layer)
         .try_init()
         .ok();
 
