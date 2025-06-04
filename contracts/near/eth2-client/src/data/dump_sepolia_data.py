@@ -314,7 +314,7 @@ def dump_light_client_updates(periods: List[int]):
                 print(f"⚠️ No updates for period {p}, skipping.")
                 continue
 
-            formatted = convert_to_old_format(upd)
+            formatted = upd
             path = OUT_DIR / f"light_client_update_period_{p}.json"
             with path.open("w") as f:
                 json.dump(formatted, f, indent=2)
@@ -337,7 +337,8 @@ def get_block_number_for_period(period: int) -> int:
 
 
 def main():
-    periods = get_recent_light_client_updates(count=4)
+    periods = [925, 926, 927, 928]
+    dump_light_client_updates(periods)
     print(f"🎉 Updates fetched for periods: {periods}")
 
     rev = list(reversed(periods))

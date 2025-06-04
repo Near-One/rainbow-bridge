@@ -4,6 +4,8 @@ use eth_types::H256;
 use near_sdk::near;
 use near_sdk::AccountId;
 
+use crate::consensus::Network;
+
 /// Minimal information about a header.
 #[derive(Clone)]
 #[near(serializers=[borsh])]
@@ -16,9 +18,9 @@ pub struct ExecutionHeaderInfo {
 #[derive(Clone)]
 #[near(serializers=[borsh])]
 pub struct InitInput {
-    pub network: String,
+    pub network: Network,
     pub finalized_execution_header: eth_types::BlockHeader,
-    pub finalized_beacon_header: ExtendedBeaconBlockHeader,
+    pub finalized_beacon_header: FinalizedHeader,
     pub current_sync_committee: SyncCommittee,
     pub next_sync_committee: SyncCommittee,
     pub validate_updates: bool,
@@ -31,4 +33,15 @@ pub struct InitInput {
 pub enum ClientMode {
     SubmitLightClientUpdate,
     SubmitHeader,
+}
+
+#[derive(Clone)]
+#[near(serializers=[json])]
+pub struct ContractConfig {
+    pub trusted_signer: Option<AccountId>,
+    pub validate_updates: bool,
+    pub verify_bls_signatures: bool,
+    pub hashes_gc_threshold: u64,
+    pub network: Network,
+    pub trusted_blocks_submitter: Option<AccountId>,
 }
