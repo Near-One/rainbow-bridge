@@ -70,7 +70,7 @@ mod tests {
         }
     }
 
-    #[cfg(not(feature = "mainnet"))]
+    //#[cfg(not(feature = "mainnet"))]
     mod generic_tests {
         use super::*;
         use bitvec::bitarr;
@@ -244,7 +244,7 @@ mod tests {
             } = get_test_context(None);
             set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
-            update.finalized_header.execution_branch[5] = H256::from(
+            update.finality_branch[3] = H256::from(
                 hex::decode("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
                     .unwrap(),
             );
@@ -261,7 +261,7 @@ mod tests {
             } = get_test_context(None);
             set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
-            update.finalized_header.execution_branch = vec![];
+            update.finality_branch = vec![];
             contract.submit_beacon_chain_light_client_update(update);
         }
 
@@ -275,7 +275,7 @@ mod tests {
             } = get_test_context(None);
             set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
-            update.finalized_header.execution_branch[5] = H256::from(
+            update.finalized_header.execution_branch[3] = H256::from(
                 hex::decode("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
                     .unwrap(),
             );
@@ -400,8 +400,8 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "== ClientMode::SubmitHeader")]
-        pub fn test_panic_on_submit_headers_in_worng_mode() {
+        #[should_panic(expected = "Client is not in SubmitHeader mode")]
+        pub fn test_panic_on_submit_headers_in_wrong_mode() {
             let submitter = accounts(0);
             let TestContext {
                 mut contract,
