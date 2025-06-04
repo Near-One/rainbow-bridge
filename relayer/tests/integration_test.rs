@@ -12,11 +12,6 @@ mod integration_tests {
     use near_workspaces::{Contract, Worker};
     use relayer::near::NearContract;
 
-    /// Initialize color-eyre for better error reporting in tests
-    fn setup_error_handling() -> Result<()> {
-        color_eyre::install()
-    }
-
     /// Simple helper to load Sepolia test data
     fn load_sepolia_init_data() -> Result<InitInput> {
         // Read the initial sync committee (period 925)
@@ -62,7 +57,8 @@ mod integration_tests {
 
     impl TestFixture {
         async fn new() -> Result<Self> {
-            setup_error_handling()?;
+            // Install color-eyre, ignoring error if already installed
+            let _ = color_eyre::install();
 
             // Compile the eth2-client
             let wasm = near_workspaces::compile_project("../contracts/near/eth2-client")
@@ -335,13 +331,7 @@ mod integration_tests {
             .get_finalized_beacon_block_hash()
             .await;
 
-        // We expect this to either succeed or fail gracefully
-        match result {
-            Ok(_) => println!("Method succeeded on uninitialized contract"),
-            Err(e) => {
-                println!("Method failed as expected: {:?}", e);
-            }
-        }
+        assert!(result.is_err());
 
         Ok(())
     }
