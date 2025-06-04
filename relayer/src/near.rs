@@ -1,4 +1,5 @@
 use borsh::BorshDeserialize;
+use color_eyre::{Result, eyre::Context};
 use eth_types::{
     BlockHeader, H256,
     eth2::{LightClientState, LightClientUpdate},
@@ -7,32 +8,6 @@ use eth2_utility::types::{ClientMode, InitInput};
 use near_crypto::Signer;
 use near_fetch::Client;
 use near_primitives::types::AccountId;
-use thiserror::Error;
-
-/// Errors that can occur when interacting with the NEAR contract
-#[derive(Error, Debug)]
-pub enum NearContractError {
-    #[error("NEAR client error: {0}")]
-    NearClient(#[from] near_fetch::Error),
-
-    #[error("Borsh deserialization error: {0}")]
-    BorshDeserialization(#[from] borsh::io::Error),
-
-    #[error("Account ID parse error: {0}")]
-    AccountIdParse(#[from] near_primitives::account::id::ParseAccountError),
-
-    #[error("Secret key parse error: {0}")]
-    SecretKeyParse(#[from] near_crypto::ParseKeyError),
-
-    #[error("Builder error: {field} not set")]
-    BuilderFieldMissing { field: &'static str },
-
-    #[error("Contract call failed for method '{method}': {reason}")]
-    ContractCallFailed { method: String, reason: String },
-}
-
-/// Result type for NEAR contract operations
-pub type Result<T> = std::result::Result<T, NearContractError>;
 
 /// NEAR contract client for Ethereum light client operations
 pub struct NearContract {
@@ -60,15 +35,9 @@ impl NearContract {
             .client
             .view(&self.contract_account_id, method_name)
             .await
-            .map_err(|e| NearContractError::ContractCallFailed {
-                method: method_name.to_string(),
-                reason: e.to_string(),
-            })?
+            .wrap_err_with(|| format!("Failed to call view method '{}'", method_name))?
             .borsh::<T>()
-            .map_err(|e| NearContractError::ContractCallFailed {
-                method: method_name.to_string(),
-                reason: format!("Borsh deserialization failed: {}", e),
-            })?;
+            .wrap_err_with(|| format!("Failed to deserialize result from '{}'", method_name))?;
         Ok(result)
     }
 
@@ -114,12 +83,13 @@ impl NearContract {
             .args_borsh(update)
             .transact()
             .await
-            .map_err(|e| NearContractError::ContractCallFailed {
-                method: "submit_beacon_chain_light_client_update".to_string(),
-                reason: e.to_string(),
-            })?;
+            .wrap_err("Failed to submit light client update transaction")?;
 
-        println!("Result: {:#?}", result);
+        result
+            .into_result()
+            .wrap_err("Light client update transaction failed")?;
+
+        println!("Light client update submitted successfully");
         Ok(())
     }
 
@@ -134,73 +104,30 @@ impl NearContract {
             .args_borsh(header)
             .transact()
             .await
-            .map_err(|e| NearContractError::ContractCallFailed {
-                method: "submit_execution_header".to_string(),
-                reason: e.to_string(),
-            })?;
+            .wrap_err("Failed to submit execution header transaction")?;
 
-        println!("Result: {:#?}", result);
+        result
+            .into_result()
+            .wrap_err("Execution header submission failed")?;
+
+        println!("Execution header submitted successfully");
         Ok(())
     }
 
     pub async fn init_contract(&self, init_input: InitInput) -> Result<()> {
-        let result = self
-            .client
+        self.client
             .call(&self.signer, &self.contract_account_id, "init")
             .args_borsh(init_input)
             .transact()
             .await
-            .map_err(|e| NearContractError::ContractCallFailed {
-                method: "init".to_string(),
-                reason: e.to_string(),
-            })?;
+            .wrap_err("Failed to send contract initialization transaction")?
+            .into_result()
+            .wrap_err("Contract initialization failed")?;
 
-        println!("Result: {:#?}", result);
+        println!("Contract initialized successfully");
         Ok(())
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use near_crypto::{InMemorySigner, KeyType, SecretKey};
-
-    #[tokio::test]
-    async fn test_integration_testnet() -> Result<()> {
-        let signer = InMemorySigner::from_secret_key(
-            "client-eth2.sepolia.testnet".parse()?,
-            SecretKey::from_random(KeyType::ED25519),
-        );
-
-        let near_contract = NearContract::new(
-            "client-eth2.sepolia.testnet".parse()?,
-            signer,
-            Client::new("https://rpc.sepolia.testnet.near.org"),
-        );
-
-        // Test finalized beacon block hash
-        let hash = near_contract.get_finalized_beacon_block_hash().await?;
-        println!("Finalized beacon block hash: {:#?}", hash);
-
-        // Test other methods
-        let slot = near_contract.get_finalized_beacon_block_slot().await?;
-        println!("Finalized beacon block slot: {}", slot);
-
-        let client_mode = near_contract.get_client_mode().await?;
-        println!("Client mode: {:?}", client_mode);
-
-        let last_block = near_contract.get_last_block_number().await?;
-        println!("Last block number: {}", last_block);
-
-        let unfinalized_tail = near_contract.get_unfinalized_tail_block_number().await?;
-        println!("Unfinalized tail block number: {:?}", unfinalized_tail);
-
-        Ok(())
-    }
-}
-
-// Additional utility functions
-impl NearContract {
     /// Get contract account ID
     pub fn contract_account_id(&self) -> &AccountId {
         &self.contract_account_id

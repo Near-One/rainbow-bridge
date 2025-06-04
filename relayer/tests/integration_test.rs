@@ -1,18 +1,24 @@
 #[cfg(test)]
 mod integration_tests {
-    use std::str::FromStr;
 
+    use color_eyre::Result;
+    use color_eyre::eyre::Context;
     use eth_types::BlockHeader;
     use eth_types::eth2::LightClientUpdate;
     use eth2_utility::consensus::Network;
     use eth2_utility::types::InitInput;
-    use near_crypto::{InMemorySigner, KeyType, SecretKey};
+    use near_crypto::{InMemorySigner, SecretKey};
     use near_workspaces::network::Sandbox;
-    use near_workspaces::{AccessKey, Contract, Worker};
-    use relayer::near::{NearContract, NearContractError};
+    use near_workspaces::{Contract, Worker};
+    use relayer::near::NearContract;
+
+    /// Initialize color-eyre for better error reporting in tests
+    fn setup_error_handling() -> Result<()> {
+        color_eyre::install()
+    }
 
     /// Simple helper to load Sepolia test data
-    fn load_sepolia_init_data() -> anyhow::Result<InitInput> {
+    fn load_sepolia_init_data() -> Result<InitInput> {
         // Read the initial sync committee (period 925)
         let init_update: LightClientUpdate = serde_json::from_reader(std::fs::File::open(
             "./tests/data/light_client_update_period_925.json",
@@ -29,15 +35,15 @@ mod integration_tests {
         )?)?;
 
         let init_input = InitInput {
-            network: Network::from_str("sepolia").unwrap(),
+            network: Network::Sepolia,
             finalized_execution_header: headers[0].clone(),
             finalized_beacon_header: first_update.finalized_header.clone(),
             current_sync_committee: init_update
                 .next_sync_committee
-                .ok_or_else(|| anyhow::anyhow!("Missing sync committee in init update"))?,
+                .ok_or_else(|| color_eyre::eyre::eyre!("Missing sync committee in init update"))?,
             next_sync_committee: first_update
                 .next_sync_committee
-                .ok_or_else(|| anyhow::anyhow!("Missing sync committee in first update"))?,
+                .ok_or_else(|| color_eyre::eyre::eyre!("Missing sync committee in first update"))?,
             validate_updates: false,      // Disable for faster testing
             verify_bls_signatures: false, // Disable for faster testing
             hashes_gc_threshold: 51_000,
@@ -55,17 +61,35 @@ mod integration_tests {
     }
 
     impl TestFixture {
-        async fn new() -> anyhow::Result<Self> {
+        async fn new() -> Result<Self> {
+            setup_error_handling()?;
+
             // Compile the eth2-client
-            let wasm = near_workspaces::compile_project("../contracts/near/eth2-client").await?;
+            let wasm = near_workspaces::compile_project("../contracts/near/eth2-client")
+                .await
+                .wrap_err("Failed to compile eth2-client contract")?;
 
             // Create sandbox environment
-            let worker = near_workspaces::sandbox().await?;
+            let worker = near_workspaces::sandbox()
+                .await
+                .wrap_err("Failed to create sandbox environment")?;
 
             // Deploy the contract
-            let contract = worker.dev_deploy(&wasm).await?;
-            let alice = worker.dev_create_account().await?;
-            let secret_key: SecretKey = alice.secret_key().to_string().parse().unwrap();
+            let contract = worker
+                .dev_deploy(&wasm)
+                .await
+                .wrap_err("Failed to deploy contract")?;
+
+            let alice = worker
+                .dev_create_account()
+                .await
+                .wrap_err("Failed to create test account")?;
+
+            let secret_key: SecretKey = alice
+                .secret_key()
+                .to_string()
+                .parse()
+                .wrap_err("Failed to parse secret key")?;
 
             let signer = InMemorySigner::from_secret_key(alice.id().clone(), secret_key.clone());
 
@@ -84,14 +108,19 @@ mod integration_tests {
     }
 
     #[tokio::test]
-    async fn test_contract_deployment_and_initialization() -> anyhow::Result<()> {
+    async fn test_contract_deployment_and_initialization() -> Result<()> {
         let fixture = TestFixture::new().await?;
 
         // Verify the contract was deployed successfully
         assert!(fixture.contract.id().as_str().contains("dev-"));
 
-        let init_input = load_sepolia_init_data()?;
-        fixture.near_contract.init_contract(init_input).await?;
+        let init_input = load_sepolia_init_data().wrap_err("Failed to load Sepolia test data")?;
+
+        fixture
+            .near_contract
+            .init_contract(init_input)
+            .await
+            .wrap_err("Failed to initialize contract")?;
 
         println!(
             "Contract deployed and initialized successfully at: {}",
@@ -101,7 +130,7 @@ mod integration_tests {
     }
 
     #[tokio::test]
-    async fn test_get_finalized_beacon_block_hash() -> anyhow::Result<()> {
+    async fn test_get_finalized_beacon_block_hash() -> Result<()> {
         let fixture = TestFixture::new().await?;
 
         let init_input = load_sepolia_init_data()?;
@@ -128,7 +157,7 @@ mod integration_tests {
     }
 
     #[tokio::test]
-    async fn test_get_finalized_beacon_block_slot() -> anyhow::Result<()> {
+    async fn test_get_finalized_beacon_block_slot() -> Result<()> {
         let fixture = TestFixture::new().await?;
 
         let init_input = load_sepolia_init_data()?;
@@ -154,7 +183,7 @@ mod integration_tests {
     }
 
     #[tokio::test]
-    async fn test_get_client_mode() -> anyhow::Result<()> {
+    async fn test_get_client_mode() -> Result<()> {
         let fixture = TestFixture::new().await?;
 
         let init_input = load_sepolia_init_data()?;
@@ -176,7 +205,7 @@ mod integration_tests {
     }
 
     #[tokio::test]
-    async fn test_get_light_client_state() -> anyhow::Result<()> {
+    async fn test_get_light_client_state() -> Result<()> {
         let fixture = TestFixture::new().await?;
 
         let init_input = load_sepolia_init_data()?;
@@ -198,7 +227,7 @@ mod integration_tests {
     }
 
     #[tokio::test]
-    async fn test_get_last_block_number() -> anyhow::Result<()> {
+    async fn test_get_last_block_number() -> Result<()> {
         let fixture = TestFixture::new().await?;
 
         let init_input = load_sepolia_init_data()?;
@@ -220,7 +249,7 @@ mod integration_tests {
     }
 
     #[tokio::test]
-    async fn test_get_unfinalized_tail_block_number() -> anyhow::Result<()> {
+    async fn test_get_unfinalized_tail_block_number() -> Result<()> {
         let fixture = TestFixture::new().await?;
 
         let init_input = load_sepolia_init_data()?;
@@ -248,7 +277,7 @@ mod integration_tests {
     }
 
     #[tokio::test]
-    async fn test_all_view_methods_sequentially() -> anyhow::Result<()> {
+    async fn test_all_view_methods_sequentially() -> Result<()> {
         let fixture = TestFixture::new().await?;
 
         let init_input = load_sepolia_init_data()?;
@@ -280,7 +309,7 @@ mod integration_tests {
     }
 
     #[tokio::test]
-    async fn test_contract_account_id_and_client_getters() -> anyhow::Result<()> {
+    async fn test_contract_account_id_and_client_getters() -> Result<()> {
         let fixture = TestFixture::new().await?;
 
         // Test the getter methods
@@ -297,7 +326,7 @@ mod integration_tests {
     }
 
     #[tokio::test]
-    async fn test_error_handling() -> anyhow::Result<()> {
+    async fn test_error_handling() -> Result<()> {
         let fixture = TestFixture::new().await?;
 
         // Test calling methods on uninitialized contract to verify error handling
@@ -311,14 +340,6 @@ mod integration_tests {
             Ok(_) => println!("Method succeeded on uninitialized contract"),
             Err(e) => {
                 println!("Method failed as expected: {:?}", e);
-                // Verify the error is properly typed
-                match e {
-                    NearContractError::ContractCallFailed { method, reason } => {
-                        assert_eq!(method, "finalized_beacon_block_root");
-                        assert!(!reason.is_empty());
-                    }
-                    _ => {} // Other error types are also valid
-                }
             }
         }
 
