@@ -6,8 +6,8 @@ use alloy::{
 };
 use color_eyre::Result;
 use eth_types::BlockHeader;
-use indicatif::ProgressBar;
-use std::ops::RangeInclusive;
+use indicatif::{ProgressBar, ProgressState, ProgressStyle};
+use std::{fmt::Write, ops::RangeInclusive};
 
 /// ExecutionClient provides methods for interacting with Ethereum execution layer
 pub struct ExecutionClient {
@@ -66,10 +66,19 @@ impl ExecutionClient {
         let chunks: Vec<_> = block_numbers.chunks(self.max_batch_size).collect();
         let total_chunks = chunks.len();
 
-        // Create progress bar only for multi-chunk operations
+        // Create enhanced progress bar only for multi-chunk operations
         let progress_bar = if total_chunks > 1 {
-            let pb = ProgressBar::new(total_chunks as u64);
-            pb.set_message(format!("Fetching {} blocks", total_blocks));
+            let pb = ProgressBar::new(total_blocks as u64);
+            pb.set_style(
+                ProgressStyle::with_template(
+                    "Fetching blocks {wide_bar:.cyan/blue} {pos}/{len} ({per_sec}, ETA {eta})",
+                )
+                .unwrap()
+                .with_key("per_sec", |state: &ProgressState, w: &mut dyn Write| {
+                    write!(w, "{:.1} blocks/s", state.per_sec()).unwrap()
+                })
+                .progress_chars("█▉▊▋▌▍▎▏  "),
+            );
             Some(pb)
         } else {
             None
@@ -106,7 +115,7 @@ impl ExecutionClient {
 
             // Update progress bar
             if let Some(ref pb) = progress_bar {
-                pb.inc(1);
+                pb.set_position(all_headers.len() as u64);
             }
         }
 

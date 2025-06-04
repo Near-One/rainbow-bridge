@@ -6,12 +6,13 @@ use eth_types::{
     eth2::{LightClientState, LightClientUpdate},
 };
 use eth2_utility::types::{ClientMode, InitInput};
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use near_crypto::Signer;
 use near_fetch::ops::Function;
 use near_fetch::{Client, ops::MAX_GAS};
 use near_gas::NearGas;
 use near_primitives::types::AccountId;
+use std::{fmt::Write, time::Duration};
 use tracing::info;
 
 /// NEAR contract client for Ethereum light client operations
@@ -133,13 +134,17 @@ impl ContractClient {
         let total_batches = batched_headers.len();
         let total_headers = headers.len();
 
-        // Create progress bar only for multi-batch operations
+        // Create enhanced progress bar only for multi-batch operations
         let progress_bar = if total_batches > 1 {
-            let pb = ProgressBar::new(total_batches as u64);
-            pb.set_message(format!(
-                "Submitting {} headers in {} batches",
-                total_headers, total_batches
-            ));
+            let pb = ProgressBar::new(total_headers as u64);
+            pb.set_style(
+                ProgressStyle::with_template(
+                    "Submitting headers {wide_bar:.green/yellow} {pos}/{len} ({per_sec}, ETA {eta})",
+                )
+                .unwrap()
+                .with_key("per_sec", |state: &ProgressState, w:&mut dyn Write| write!(w, "{:.1} headers/s", state.per_sec()).unwrap())
+                .progress_chars("█▉▊▋▌▍▎▏  "),
+            );
             Some(pb)
         } else {
             None
@@ -169,11 +174,11 @@ impl ContractClient {
 
             // Update progress bar
             if let Some(ref pb) = progress_bar {
-                pb.inc(1);
+                pb.inc(header_batch.len() as u64);
             }
         }
 
-        // Finish progress bar
+        // Finish progress bar with summary
         if let Some(pb) = progress_bar {
             pb.finish_with_message(format!(
                 "✅ {} headers submitted in {} batches",
