@@ -36,9 +36,12 @@ impl NearContract {
             .client
             .view(&self.contract_account_id, method_name)
             .await
-            .wrap_err_with(|| format!("Failed to call view method '{}'", method_name))?
+            .wrap_err(format!("Failed to call view method '{}'", method_name))?
             .borsh::<T>()
-            .wrap_err_with(|| format!("Failed to deserialize result from '{}'", method_name))?;
+            .wrap_err(format!(
+                "Failed to deserialize result from '{}'",
+                method_name
+            ))?;
         Ok(result)
     }
 
@@ -80,19 +83,15 @@ impl NearContract {
             .view(&self.contract_account_id, "block_hash_safe")
             .args_borsh(block_number)
             .await
-            .wrap_err_with(|| {
-                format!(
-                    "Failed to call view method 'block_hash_safe' with block number {}",
-                    block_number
-                )
-            })?
+            .wrap_err(format!(
+                "Failed to call view method 'block_hash_safe' with block number {}",
+                block_number
+            ))?
             .borsh::<Option<H256>>()
-            .wrap_err_with(|| {
-                format!(
-                    "Failed to get block hash result for block number {}",
-                    block_number
-                )
-            })?;
+            .wrap_err(format!(
+                "Failed to get block hash result for block number {}",
+                block_number
+            ))?;
         Ok(result)
     }
 
