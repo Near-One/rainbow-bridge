@@ -201,6 +201,7 @@ mod tests {
 
     use eth_types::BlockHeader;
     use eth_types::eth2::FinalizedHeader;
+    use eth_types::eth2::{ExtendedBeaconBlockHeader, LightClientUpdate, SyncCommittee};
     use eth_types::eth2::{LightClientUpdate, SyncCommittee};
     use eth2_utility::types::ClientMode;
     use near_primitives::types::AccountId;
