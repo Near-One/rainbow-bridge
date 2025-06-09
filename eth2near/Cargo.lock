@@ -88,6 +88,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "alloy-primitives"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a326d47106039f38b811057215a92139f46eef7983a4b77b10930a0ea5685b1e"
+dependencies = [
+ "alloy-rlp",
+ "bytes",
+ "cfg-if 1.0.0",
+ "const-hex",
+ "derive_more 2.0.1",
+ "foldhash",
+ "hashbrown 0.15.3",
+ "indexmap 2.9.0",
+ "itoa",
+ "k256",
+ "keccak-asm",
+ "paste",
+ "proptest",
+ "rand 0.9.1",
+ "ruint",
+ "rustc-hash",
+ "serde",
+ "sha3",
+ "tiny-keccak",
+]
+
+[[package]]
 name = "alloy-rlp"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -546,11 +573,11 @@ name = "bls"
 version = "0.2.0"
 source = "git+https://github.com/Near-One/lighthouse?branch=v7.0.0-beta.2-pub-block-tree#d81d51f7f998a1b804cde940a90aac2e9e45dc6d"
 dependencies = [
- "alloy-primitives",
+ "alloy-primitives 0.8.25",
  "arbitrary",
  "blst",
  "ethereum_hashing",
- "ethereum_serde_utils",
+ "ethereum_serde_utils 0.7.0",
  "ethereum_ssz",
  "fixed_bytes",
  "hex",
@@ -1378,7 +1405,7 @@ dependencies = [
  "borsh",
  "derive_more 0.99.20",
  "ethereum-types",
- "ethereum_serde_utils",
+ "ethereum_serde_utils 0.8.0",
  "ethereum_ssz",
  "ethereum_ssz_derive",
  "hex",
@@ -1573,7 +1600,20 @@ version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "70cbccfccf81d67bff0ab36e591fa536c8a935b078a7b0e58c1d00d418332fc9"
 dependencies = [
- "alloy-primitives",
+ "alloy-primitives 0.8.25",
+ "hex",
+ "serde",
+ "serde_derive",
+ "serde_json",
+]
+
+[[package]]
+name = "ethereum_serde_utils"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3dc1355dbb41fbbd34ec28d4fb2a57d9a70c67ac3c19f6a5ca4d4a176b9e997a"
+dependencies = [
+ "alloy-primitives 1.2.0",
  "hex",
  "serde",
  "serde_derive",
@@ -1586,7 +1626,7 @@ version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e999563461faea0ab9bc0024e5e66adcee35881f3d5062f52f31a4070fe1522"
 dependencies = [
- "alloy-primitives",
+ "alloy-primitives 0.8.25",
  "itertools 0.13.0",
  "smallvec",
 ]
@@ -1729,7 +1769,7 @@ name = "fixed_bytes"
 version = "0.1.0"
 source = "git+https://github.com/Near-One/lighthouse?branch=v7.0.0-beta.2-pub-block-tree#d81d51f7f998a1b804cde940a90aac2e9e45dc6d"
 dependencies = [
- "alloy-primitives",
+ "alloy-primitives 0.8.25",
  "safe_arith",
 ]
 
@@ -2599,7 +2639,7 @@ dependencies = [
  "c-kzg",
  "derivative",
  "ethereum_hashing",
- "ethereum_serde_utils",
+ "ethereum_serde_utils 0.7.0",
  "ethereum_ssz",
  "ethereum_ssz_derive",
  "hex",
@@ -2731,7 +2771,7 @@ name = "merkle_proof"
 version = "0.2.0"
 source = "git+https://github.com/Near-One/lighthouse?branch=v7.0.0-beta.2-pub-block-tree#d81d51f7f998a1b804cde940a90aac2e9e45dc6d"
 dependencies = [
- "alloy-primitives",
+ "alloy-primitives 0.8.25",
  "ethereum_hashing",
  "fixed_bytes",
  "safe_arith",
@@ -2766,7 +2806,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f68e33f98199224d1073f7c1468ea6abfea30736306fb79c7181a881e97ea32f"
 dependencies = [
- "alloy-primitives",
+ "alloy-primitives 0.8.25",
  "arbitrary",
  "derivative",
  "ethereum_hashing",
@@ -3703,6 +3743,7 @@ checksum = "9fbfd9d094a40bf3ae768db9361049ace4c0e04a4fd6b359518bd7b73a73dd97"
 dependencies = [
  "rand_chacha 0.9.0",
  "rand_core 0.9.3",
+ "serde",
 ]
 
 [[package]]
@@ -3742,6 +3783,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38"
 dependencies = [
  "getrandom 0.3.3",
+ "serde",
 ]
 
 [[package]]
@@ -4473,7 +4515,7 @@ checksum = "35e0719d2b86ac738a55ae71a8429f52aa2741da988f1fd0975b4cc610fd1e08"
 dependencies = [
  "arbitrary",
  "derivative",
- "ethereum_serde_utils",
+ "ethereum_serde_utils 0.7.0",
  "ethereum_ssz",
  "itertools 0.13.0",
  "serde",
@@ -4573,7 +4615,7 @@ name = "swap_or_not_shuffle"
 version = "0.2.0"
 source = "git+https://github.com/Near-One/lighthouse?branch=v7.0.0-beta.2-pub-block-tree#d81d51f7f998a1b804cde940a90aac2e9e45dc6d"
 dependencies = [
- "alloy-primitives",
+ "alloy-primitives 0.8.25",
  "ethereum_hashing",
  "fixed_bytes",
 ]
@@ -4963,7 +5005,7 @@ version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "373495c23db675a5192de8b610395e1bec324d596f9e6111192ce903dc11403a"
 dependencies = [
- "alloy-primitives",
+ "alloy-primitives 0.8.25",
  "ethereum_hashing",
  "smallvec",
 ]
@@ -5026,7 +5068,7 @@ name = "types"
 version = "0.2.1"
 source = "git+https://github.com/Near-One/lighthouse?branch=v7.0.0-beta.2-pub-block-tree#d81d51f7f998a1b804cde940a90aac2e9e45dc6d"
 dependencies = [
- "alloy-primitives",
+ "alloy-primitives 0.8.25",
  "alloy-rlp",
  "arbitrary",
  "bls",
@@ -5035,7 +5077,7 @@ dependencies = [
  "derivative",
  "eth2_interop_keypairs",
  "ethereum_hashing",
- "ethereum_serde_utils",
+ "ethereum_serde_utils 0.7.0",
  "ethereum_ssz",
  "ethereum_ssz_derive",
  "fixed_bytes",

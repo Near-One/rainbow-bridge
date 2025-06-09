@@ -3,7 +3,6 @@ use near_plugins::{
     Upgradable,
 };
 use near_sdk::serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;

@@ -1,3 +1,5 @@
+
+
 use super::*;
 use borsh::{BorshDeserialize, BorshSerialize};
 use std::io::{Error, Write};
@@ -111,12 +113,11 @@ pub struct BeaconBlockHeader {
     pub body_root: H256,
 }
 
-// New execution header structure for Electra
-#[derive(
-    Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize, tree_hash_derive::TreeHash,
-)]
+// Execution header structure supporting multiple forks
+#[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct ExecutionHeader {
+    // Core fields present since The Merge
     pub parent_hash: H256,
     pub fee_recipient: H160,
     pub state_root: H256,
@@ -136,11 +137,15 @@ pub struct ExecutionHeader {
     pub base_fee_per_gas: u64,
     pub block_hash: H256,
     pub transactions_root: H256,
-    pub withdrawals_root: H256,
-    #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::quoted_u64"))]
-    pub blob_gas_used: u64,
-    #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::quoted_u64"))]
-    pub excess_blob_gas: u64,
+
+    // Optional field introduced in Shanghai/Capella fork
+    pub withdrawals_root: Option<H256>,
+
+    // Optional fields introduced in Cancun/Deneb fork (EIP-4844 blob transactions)
+    #[cfg_attr(not(target_arch = "wasm32"), serde(with = "optional_quoted_u64"))]
+    pub blob_gas_used: Option<u64>,
+    #[cfg_attr(not(target_arch = "wasm32"), serde(with = "optional_quoted_u64"))]
+    pub excess_blob_gas: Option<u64>,
 }
 
 // New combined header structure
@@ -284,4 +289,30 @@ pub struct LightClientState {
     pub finalized_beacon_header: ExtendedBeaconBlockHeader,
     pub current_sync_committee: SyncCommittee,
     pub next_sync_committee: SyncCommittee,
+}
+
+/// Serde module for handling `Option<u64>` with quotes
+pub mod optional_quoted_u64 {
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(value: &Option<u64>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match value {
+            Some(v) => serializer.serialize_some(&format!("{}", v)),
+            None => serializer.serialize_none(),
+        }
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let opt: Option<String> = Option::deserialize(deserializer)?;
+        match opt {
+            Some(s) => s.parse::<u64>().map(Some).map_err(serde::de::Error::custom),
+            None => Ok(None),
+        }
+    }
 }

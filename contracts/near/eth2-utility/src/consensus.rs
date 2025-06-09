@@ -205,10 +205,68 @@ impl NetworkConfig {
         self.compute_proof_size(compute_epoch_at_slot(slot))
     }
 
+    // Fork-aware execution root computation - manual tree hashing per fork
+    pub fn get_lc_execution_root(&self, header: &FinalizedHeader) -> H256 {
+        use tree_hash::{MerkleHasher, TreeHash};
+
+        let epoch = compute_epoch_at_slot(header.beacon.slot);
+        let execution = &header.execution;
+
+        let mut leaves: Vec<tree_hash::Hash256> = vec![
+            execution.parent_hash.tree_hash_root(),
+            execution.fee_recipient.tree_hash_root(),
+            execution.state_root.tree_hash_root(),
+            execution.receipts_root.tree_hash_root(),
+            execution.logs_bloom.tree_hash_root(),
+            execution.prev_randao.tree_hash_root(),
+            execution.block_number.tree_hash_root(),
+            execution.gas_limit.tree_hash_root(),
+            execution.gas_used.tree_hash_root(),
+            execution.timestamp.tree_hash_root(),
+            execution.extra_data.tree_hash_root(),
+            execution.base_fee_per_gas.tree_hash_root(),
+            execution.block_hash.tree_hash_root(),
+            execution.transactions_root.tree_hash_root(),
+        ];
+
+        // Add withdrawals for Capella+
+        if epoch >= self.capella_fork_epoch {
+            leaves.push(
+                execution
+                    .withdrawals_root
+                    .unwrap_or_default()
+                    .tree_hash_root(),
+            );
+        }
+
+        // Add blob fields for Deneb+
+        if epoch >= self.deneb_fork_epoch {
+            leaves.push(execution.blob_gas_used.unwrap_or_default().tree_hash_root());
+            leaves.push(
+                execution
+                    .excess_blob_gas
+                    .unwrap_or_default()
+                    .tree_hash_root(),
+            );
+        }
+
+        // Create hasher with correct number of leaves
+        let mut hasher = MerkleHasher::with_leaves(leaves.len());
+
+        // Write all leaves to hasher
+        for leaf in leaves {
+            hasher.write(leaf.as_slice()).unwrap();
+        }
+
+        H256(hasher.finish().unwrap().0.into())
+    }
+
     pub fn is_valid_light_client_header(&self, header: &FinalizedHeader) -> bool {
         let epoch = compute_epoch_at_slot(header.beacon.slot);
         if epoch < self.deneb_fork_epoch {
-            if header.execution.blob_gas_used != 0 || header.execution.excess_blob_gas != 0 {
+            if header.execution.blob_gas_used.is_some()
+                || header.execution.excess_blob_gas.is_some()
+            {
                 return false;
             }
         }
@@ -224,7 +282,7 @@ impl NetworkConfig {
         const BEACON_BLOCK_BODY_TREE_DEPTH: usize = 4;
 
         verify_merkle_proof(
-            get_lc_execution_root(header),
+            self.get_lc_execution_root(header),
             &header.execution_branch,
             BEACON_BLOCK_BODY_TREE_DEPTH,
             EXECUTION_PAYLOAD_FIELD_INDEX,
@@ -299,15 +357,6 @@ pub fn get_participant_pubkeys(
         }
     }
     result
-}
-
-/// Compute the light client execution root for the given light client header
-///
-/// This follows the spec: it takes the whole header and returns the tree hash root
-/// of the execution payload header portion
-pub fn get_lc_execution_root(header: &FinalizedHeader) -> H256 {
-    // The execution root is the tree hash of the execution payload header
-    H256(header.execution.tree_hash_root().0.into())
 }
 
 /// Verify a proof that `leaf` exists at `index` in a Merkle tree rooted at `root`.
