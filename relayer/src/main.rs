@@ -29,6 +29,7 @@ enum Commands {
     },
     ValidateConfig,
     Run,
+    RunJob,
 }
 
 fn setup_logging(level: &str, json: bool) -> Result<()> {
@@ -76,6 +77,14 @@ async fn handle_command(command: Commands, config_path: Option<PathBuf>) -> Resu
             config.print_summary();
 
             EthRelayer::new(config).await?.run().await?;
+        }
+        Commands::RunJob => {
+            let config = Config::load(config_path)?;
+            config.validate()?;
+            setup_logging(&config.logging.level, config.logging.json)?;
+            config.print_summary();
+
+            EthRelayer::new(config).await?.run_job().await?;
         }
     }
     Ok(())

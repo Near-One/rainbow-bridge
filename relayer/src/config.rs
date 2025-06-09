@@ -70,8 +70,8 @@ pub struct NearConfig {
     /// NEAR signer account ID
     pub signer_account_id: String,
 
-    /// Path to NEAR signer secret key file
-    pub secret_key_path: PathBuf,
+    /// NEAR signer secret key
+    pub secret_key: String,
 
     /// Timeout for NEAR RPC requests in seconds
     #[serde(default)]
@@ -143,7 +143,7 @@ impl Default for NearConfig {
             endpoint: defaults::NEAR_ENDPOINT.to_string(),
             contract_account_id: defaults::CONTRACT_ACCOUNT_ID.to_string(),
             signer_account_id: defaults::SIGNER_ACCOUNT_ID.to_string(),
-            secret_key_path: PathBuf::from(defaults::SECRET_KEY_PATH),
+            secret_key: String::new(),
             timeout_secs: defaults::TIMEOUT_SECS,
         }
     }
@@ -188,7 +188,7 @@ impl Config {
         }
 
         // Add environment variables with RELAYER_ prefix
-        figment = figment.merge(Env::prefixed("RELAYER_").split("_"));
+        figment = figment.merge(Env::prefixed("RELAYER_").split("__"));
 
         figment
             .extract()
@@ -222,12 +222,9 @@ impl Config {
         self.parse_near_accounts()
             .wrap_err("Failed to validate NEAR account IDs")?;
 
-        // Validate secret key file exists
-        if !self.near.secret_key_path.exists() {
-            return Err(color_eyre::eyre::eyre!(
-                "Secret key file does not exist: {}",
-                self.near.secret_key_path.display()
-            ));
+        // Validate secret key is provided
+        if self.near.secret_key.is_empty() {
+            return Err(color_eyre::eyre::eyre!("secret_key must be provided"));
         }
 
         // Validate log level
@@ -265,7 +262,7 @@ impl Config {
         tracing::info!("  NEAR endpoint: {}", self.near.endpoint);
         tracing::info!("  Contract account: {}", self.near.contract_account_id);
         tracing::info!("  Signer account: {}", self.near.signer_account_id);
-        tracing::info!("  Secret key path: {}", self.near.secret_key_path.display());
+        tracing::info!("  Secret key: <provided>");
         tracing::info!(
             "  Update interval: {} epochs",
             self.relayer.update_interval_epochs

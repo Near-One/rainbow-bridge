@@ -10,7 +10,7 @@ timeout_secs = 30
 endpoint = "https://rpc.testnet.near.org"
 contract_account_id = "eth-client.testnet"
 signer_account_id = "relayer.testnet"
-secret_key_path = "./keys/signer.txt"
+secret_key = "ed25519:YOUR_PRIVATE_KEY_HERE"
 timeout_secs = 30
 
 [relayer]

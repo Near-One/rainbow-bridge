@@ -54,9 +54,7 @@ impl EthRelayer {
     }
 
     async fn create_near_client(config: &Config) -> Result<ContractClient> {
-        let secret_key: SecretKey = std::fs::read_to_string(&config.near.secret_key_path)?
-            .trim()
-            .parse()?;
+        let secret_key: SecretKey = config.near.secret_key.trim().parse()?;
         let (contract_account_id, signer_account_id) = config.parse_near_accounts()?;
         let signer = InMemorySigner::from_secret_key(signer_account_id, secret_key);
         let client = near_fetch::Client::new(&config.near.endpoint);
@@ -98,6 +96,26 @@ impl EthRelayer {
 
             sleep(Duration::from_secs(sleep_secs)).await;
         }
+        Ok(())
+    }
+
+    pub async fn run_job(&self) -> Result<()> {
+        info!("🚀 Starting ETH to NEAR relayer job (single execution)");
+
+        let result = self.run_iteration().await;
+        match &result {
+            RelayResult::Submitted => {
+                info!("✅ Job completed successfully");
+            }
+            RelayResult::Skipped => {
+                info!("⏭️ Job completed, no work to do");
+            }
+            RelayResult::Failed(e) => {
+                error!("❌ Job failed: {}", e);
+                return Err(color_eyre::eyre::eyre!("Job execution failed: {}", e));
+            }
+        }
+
         Ok(())
     }
 
