@@ -177,13 +177,22 @@ impl Config {
     ///
     /// Priority (highest to lowest):
     /// 1. Environment variables (prefixed with RELAYER_)
-    /// 2. Config file (if provided)
+    /// 2. Config file (if provided, or relayer.toml if it exists)
     /// 3. Default values
     pub fn load(config_file: Option<PathBuf>) -> Result<Self> {
         let mut figment = Figment::from(Serialized::defaults(Config::default()));
 
-        // Add config file if provided
-        if let Some(path) = config_file {
+        // Add config file if provided, or check for default relayer.toml
+        let config_path = config_file.or_else(|| {
+            let default_path = PathBuf::from("relayer.toml");
+            if default_path.exists() {
+                Some(default_path)
+            } else {
+                None
+            }
+        });
+
+        if let Some(path) = config_path {
             figment = figment.merge(Toml::file(&path));
         }
 

@@ -34,7 +34,7 @@ cargo run -- generate-config
 # Validate configuration
 cargo run -- validate-config
 
-# Run continuously
+# Run continuously (automatically uses relayer.toml if present)
 cargo run -- run
 
 # Run single job (for Cloud Run Jobs)
@@ -45,7 +45,7 @@ cargo run -- run-job
 
 Configuration sources (in priority order):
 1. Environment variables (prefixed with `RELAYER_`)
-2. Config file (`relayer.toml` by default)  
+2. Config file (automatically uses `relayer.toml` if present, or specify with `--config`)  
 3. Default values
 
 ### Key Settings
