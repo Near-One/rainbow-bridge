@@ -59,7 +59,7 @@ impl EthRelayer {
         let signer = InMemorySigner::from_secret_key(signer_account_id, secret_key);
         let client = near_fetch::Client::new(&config.near.endpoint);
 
-        Ok(ContractClient::new(contract_account_id, signer, client))
+        Ok(ContractClient::new(contract_account_id, signer, client, config.relayer.clone()))
     }
 
     pub async fn run(&self) -> Result<()> {

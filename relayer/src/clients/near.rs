@@ -1,4 +1,3 @@
-use crate::constants::app::DEFAULT_HEADER_BATCH_SIZE;
 use borsh::BorshDeserialize;
 use color_eyre::{Result, eyre::Context};
 use eth_types::{
@@ -15,21 +14,25 @@ use near_primitives::types::AccountId;
 use std::fmt::Write;
 use tracing::info;
 
+use crate::config::RelayerConfig;
+
 /// NEAR contract client for Ethereum light client operations
 #[derive(Clone)]
 pub struct ContractClient {
     contract_account_id: AccountId,
     signer: Signer,
     client: Client,
+    relayer_config: RelayerConfig,
 }
 
 impl ContractClient {
     /// Create a new NEAR contract client instance
-    pub fn new(contract_account_id: AccountId, signer: Signer, client: Client) -> Self {
+    pub fn new(contract_account_id: AccountId, signer: Signer, client: Client, relayer_config: RelayerConfig) -> Self {
         Self {
             contract_account_id,
             signer,
             client,
+            relayer_config,
         }
     }
 
@@ -129,7 +132,7 @@ impl ContractClient {
         }
 
         let batched_headers: Vec<&[BlockHeader]> = headers
-            .chunks(DEFAULT_HEADER_BATCH_SIZE)
+            .chunks(self.relayer_config.headers_batch_size)
             .collect::<Vec<_>>();
 
         let total_batches = batched_headers.len();

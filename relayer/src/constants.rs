@@ -38,8 +38,3 @@ pub mod defaults {
     pub const HASHES_GC_THRESHOLD: u64 = 51_000;
 }
 
-/// Utility constants used throughout the application
-pub mod app {
-    /// Default batch size for processing headers in NEAR contract
-    pub const DEFAULT_HEADER_BATCH_SIZE: usize = super::defaults::HEADERS_BATCH_SIZE;
-}
