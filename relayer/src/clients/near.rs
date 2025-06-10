@@ -27,7 +27,12 @@ pub struct ContractClient {
 
 impl ContractClient {
     /// Create a new NEAR contract client instance
-    pub fn new(contract_account_id: AccountId, signer: Signer, client: Client, relayer_config: RelayerConfig) -> Self {
+    pub fn new(
+        contract_account_id: AccountId,
+        signer: Signer,
+        client: Client,
+        relayer_config: RelayerConfig,
+    ) -> Self {
         Self {
             contract_account_id,
             signer,
@@ -166,9 +171,9 @@ impl ContractClient {
                 batch = batch.call(function);
             }
 
-            batch
+            let _ = batch
                 .retry_exponential(1000, 3)
-                .transact()
+                .transact_async()
                 .await
                 .wrap_err(format!(
                     "Failed to submit execution headers batch {} of {}",
