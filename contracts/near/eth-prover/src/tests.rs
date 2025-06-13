@@ -30,7 +30,7 @@ mod tests {
 
     // TESTS
 
-    use near_sdk::{testing_env, VMContext, NearToken};
+    use near_sdk::{testing_env, NearToken, VMContext};
 
     fn get_context(input: Vec<u8>) -> VMContext {
         VMContext {
