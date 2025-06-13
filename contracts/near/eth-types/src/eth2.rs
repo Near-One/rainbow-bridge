@@ -232,57 +232,10 @@ pub struct LightClientUpdate {
     pub signature_slot: Slot,
 }
 
-// Version enum for different Ethereum fork versions
-#[derive(Debug, Clone, Copy, PartialEq, Eq, BorshDeserialize, BorshSchema, BorshSerialize)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
-#[cfg_attr(not(target_arch = "wasm32"), serde(rename_all = "lowercase"))]
-pub enum LightClientVersion {
-    Altair,
-    Bellatrix,
-    Capella,
-    Deneb,
-    Electra,
-}
-
-impl LightClientVersion {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            LightClientVersion::Altair => "altair",
-            LightClientVersion::Bellatrix => "bellatrix",
-            LightClientVersion::Capella => "capella",
-            LightClientVersion::Deneb => "deneb",
-            LightClientVersion::Electra => "electra",
-        }
-    }
-}
-
-impl std::fmt::Display for LightClientVersion {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.as_str())
-    }
-}
-
-// Top-level wrapper with version (optional, for when you need versioning)
-#[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
-pub struct VersionedLightClientUpdate {
-    pub version: LightClientVersion,
-    pub data: LightClientUpdate,
-}
-
 // For arrays of light client updates
 #[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct LightClientUpdates(pub Vec<LightClientUpdate>);
-
-// Alternative: Version-specific data if structures differ significantly between versions
-#[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
-pub enum LightClientUpdateVariant {
-    Electra(LightClientUpdate),
-    // Future versions can be added here with different data structures
-    // Deneb(DenebLightClientUpdate),
-}
 
 #[derive(Clone, BorshDeserialize, BorshSchema, BorshSerialize, Debug)]
 pub struct LightClientState {
