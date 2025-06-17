@@ -28,6 +28,7 @@ pub mod defaults {
     // Relayer operation settings
     pub const UPDATE_INTERVAL_EPOCHS: u64 = 1;
     pub const HEADERS_BATCH_SIZE: usize = 100;
+    pub const MAX_HEADERS_PER_PERIOD: usize = 1000;
     pub const SYNC_SLEEP_SECS: u64 = 60;
     pub const SUBMISSION_SLEEP_SECS: u64 = 12;
 

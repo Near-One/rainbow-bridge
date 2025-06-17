@@ -17,6 +17,7 @@ timeout_secs = 30
 [relayer]
 update_interval_epochs = 1
 headers_batch_size = 100
+max_headers_per_period = 1000
 sync_sleep_secs = 60
 submission_sleep_secs = 12
 dry_run = false

@@ -191,22 +191,28 @@ impl EthRelayer {
         }
 
         let start_block = last_block + 1;
+        let capped_max_block = std::cmp::min(
+            max_block,
+            start_block + self.config.relayer.max_headers_per_period as u64 - 1,
+        );
+        
         info!(
-            "Fetching {} execution headers for blocks {} to {}",
-            max_block - last_block,
+            "Fetching {} execution headers for blocks {} to {} (capped from {})",
+            capped_max_block - last_block,
             start_block,
+            capped_max_block,
             max_block
         );
 
         let mut headers = self
             .execution_client
-            .fetch_block_range(start_block..=max_block)
+            .fetch_block_range(start_block..=capped_max_block)
             .await?;
 
         if headers.is_empty() {
             warn!(
                 "No headers fetched for range {}..={}",
-                start_block, max_block
+                start_block, capped_max_block
             );
             return Ok(RelayResult::Skipped);
         }
