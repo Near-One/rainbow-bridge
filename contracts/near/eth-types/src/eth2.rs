@@ -135,7 +135,7 @@ pub struct ExecutionPayloadHeader {
     pub timestamp: u64,
     pub extra_data: ExtraData,
     #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::quoted_u64"))]
-    pub base_fee_per_gas: u64,
+    pub base_fee_per_gas: U256,
     pub block_hash: H256,
     pub transactions_root: H256,
 
