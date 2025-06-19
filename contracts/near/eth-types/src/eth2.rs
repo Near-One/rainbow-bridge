@@ -219,6 +219,7 @@ pub struct SyncAggregate {
 }
 
 // Updated light client update structure for Electra
+// Spec: https://github.com/ethereum/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md#lightclientupdate
 #[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct LightClientUpdate {
