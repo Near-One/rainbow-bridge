@@ -26,7 +26,7 @@ async fn test_full_lifecycle_smoke_test() -> Result<()> {
         hash,
         init_input
             .finalized_beacon_header
-            .beacon
+            .header
             .tree_hash_root()
             .0
             .into()

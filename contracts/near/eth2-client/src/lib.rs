@@ -112,7 +112,7 @@ impl Eth2Client {
         let finalized_execution_header_hash = args.finalized_execution_header.calculate_hash();
 
         require!(
-            finalized_execution_header_hash == args.finalized_beacon_header.execution.block_hash,
+            finalized_execution_header_hash == args.finalized_beacon_header.execution_block_hash,
             "Invalid execution block"
         );
 

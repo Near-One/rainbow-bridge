@@ -24,7 +24,7 @@ async fn test_get_finalized_beacon_block_hash() -> Result<()> {
         hash,
         init_input
             .finalized_beacon_header
-            .beacon
+            .header
             .tree_hash_root()
             .0
             .into()

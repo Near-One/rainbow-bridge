@@ -78,7 +78,7 @@ pub fn get_goerli_test_data(
     let init_input = InitInput {
         network: Network::from_str(NETWORK).unwrap(),
         finalized_execution_header: HEADERS[0][0].clone(),
-        finalized_beacon_header: UPDATES[0].finalized_header.clone(),
+        finalized_beacon_header: UPDATES[0].finalized_header.clone().into(),
         current_sync_committee: INIT_UPDATE
             .next_sync_committee
             .clone()
@@ -131,7 +131,7 @@ pub fn get_sepolia_test_data(
     let init_input = InitInput {
         network: Network::from_str(NETWORK).unwrap(),
         finalized_execution_header: HEADERS[0][0].clone(),
-        finalized_beacon_header: UPDATES[0].finalized_header.clone(),
+        finalized_beacon_header: UPDATES[0].finalized_header.clone().into(),
         current_sync_committee: INIT_UPDATE
             .next_sync_committee
             .clone()
