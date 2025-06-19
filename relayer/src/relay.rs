@@ -55,11 +55,11 @@ impl EthRelayer {
 
     async fn create_near_client(config: &Config) -> Result<ContractClient> {
         let secret_key: SecretKey = config.near.secret_key.trim().parse()?;
-        let (contract_account_id, signer_account_id) = config.parse_near_accounts()?;
+        let (eth_light_client_account_id, signer_account_id) = config.parse_near_accounts()?;
         let signer = InMemorySigner::from_secret_key(signer_account_id, secret_key);
         let client = near_fetch::Client::new(&config.near.endpoint);
 
-        Ok(ContractClient::new(contract_account_id, signer, client, config.relayer.clone()))
+        Ok(ContractClient::new(eth_light_client_account_id, signer, client, config.relayer.clone()))
     }
 
     pub async fn run(&self) -> Result<()> {

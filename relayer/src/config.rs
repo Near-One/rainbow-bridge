@@ -65,7 +65,7 @@ pub struct NearConfig {
     pub endpoint: String,
 
     /// NEAR contract account ID
-    pub contract_account_id: String,
+    pub eth_light_client_account_id: String,
 
     /// NEAR signer account ID
     pub signer_account_id: String,
@@ -145,7 +145,7 @@ impl Default for NearConfig {
     fn default() -> Self {
         Self {
             endpoint: defaults::NEAR_ENDPOINT.to_string(),
-            contract_account_id: defaults::CONTRACT_ACCOUNT_ID.to_string(),
+            eth_light_client_account_id: defaults::ETH_LIGHT_CLIENT_ACCOUNT_ID.to_string(),
             signer_account_id: defaults::SIGNER_ACCOUNT_ID.to_string(),
             secret_key: String::new(),
             timeout_secs: defaults::TIMEOUT_SECS,
@@ -211,11 +211,11 @@ impl Config {
 
     /// Parse NEAR account IDs with validation
     pub fn parse_near_accounts(&self) -> Result<(AccountId, AccountId)> {
-        let contract_account_id: AccountId =
-            self.near.contract_account_id.parse().with_context(|| {
+        let eth_light_client_account_id: AccountId =
+            self.near.eth_light_client_account_id.parse().with_context(|| {
                 format!(
                     "Invalid contract account ID '{}'",
-                    self.near.contract_account_id
+                    self.near.eth_light_client_account_id
                 )
             })?;
 
@@ -227,7 +227,7 @@ impl Config {
                 )
             })?;
 
-        Ok((contract_account_id, signer_account_id))
+        Ok((eth_light_client_account_id, signer_account_id))
     }
 
     /// Validate configuration
@@ -280,7 +280,7 @@ impl Config {
         tracing::info!("  Beacon endpoint: {}", self.beacon.endpoint);
         tracing::info!("  Execution endpoint: {}", self.execution.endpoint);
         tracing::info!("  NEAR endpoint: {}", self.near.endpoint);
-        tracing::info!("  Contract account: {}", self.near.contract_account_id);
+        tracing::info!("  Contract account: {}", self.near.eth_light_client_account_id);
         tracing::info!("  Signer account: {}", self.near.signer_account_id);
         tracing::info!("  Secret key: <provided>");
         tracing::info!(

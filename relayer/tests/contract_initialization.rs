@@ -49,11 +49,11 @@ async fn test_contract_initialization_without_validation() -> Result<()> {
 }
 
 #[tokio::test]
-async fn test_contract_account_id_and_client_getters() -> Result<()> {
+async fn test_eth_light_client_account_id_and_client_getters() -> Result<()> {
     let fixture = TestFixture::new().await?;
 
     // Test the getter methods
-    let account_id = fixture.near_client.contract_account_id();
+    let account_id = fixture.near_client.eth_light_client_account_id();
     let client = fixture.near_client.client();
 
     assert_eq!(account_id, fixture.contract.id());

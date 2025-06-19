@@ -19,7 +19,7 @@ use crate::config::RelayerConfig;
 /// NEAR contract client for Ethereum light client operations
 #[derive(Clone)]
 pub struct ContractClient {
-    contract_account_id: AccountId,
+    eth_light_client_account_id: AccountId,
     signer: Signer,
     client: Client,
     relayer_config: RelayerConfig,
@@ -28,13 +28,13 @@ pub struct ContractClient {
 impl ContractClient {
     /// Create a new NEAR contract client instance
     pub fn new(
-        contract_account_id: AccountId,
+        eth_light_client_account_id: AccountId,
         signer: Signer,
         client: Client,
         relayer_config: RelayerConfig,
     ) -> Self {
         Self {
-            contract_account_id,
+            eth_light_client_account_id,
             signer,
             client,
             relayer_config,
@@ -48,7 +48,7 @@ impl ContractClient {
     {
         let result = self
             .client
-            .view(&self.contract_account_id, method_name)
+            .view(&self.eth_light_client_account_id, method_name)
             .await
             .wrap_err(format!("Failed to call view method '{}'", method_name))?
             .borsh::<T>()
@@ -94,7 +94,7 @@ impl ContractClient {
     pub async fn get_block_hash(&self, block_number: u64) -> Result<Option<H256>> {
         let result = self
             .client
-            .view(&self.contract_account_id, "block_hash_safe")
+            .view(&self.eth_light_client_account_id, "block_hash_safe")
             .args_borsh(block_number)
             .await
             .wrap_err(format!(
@@ -113,7 +113,7 @@ impl ContractClient {
         self.client
             .call(
                 &self.signer,
-                &self.contract_account_id,
+                &self.eth_light_client_account_id,
                 "submit_beacon_chain_light_client_update",
             )
             .args_borsh(update)
@@ -162,7 +162,7 @@ impl ContractClient {
         for (batch_index, header_batch) in batched_headers.iter().enumerate() {
             let attached_gas_per_promise_in_batch = MAX_GAS.as_gas() / header_batch.len() as u64;
 
-            let mut batch = self.client.batch(&self.signer, &self.contract_account_id);
+            let mut batch = self.client.batch(&self.signer, &self.eth_light_client_account_id);
 
             for header in *header_batch {
                 let function = Function::new("submit_execution_header")
@@ -202,7 +202,7 @@ impl ContractClient {
 
     pub async fn init_contract(&self, init_input: InitInput) -> Result<()> {
         self.client
-            .call(&self.signer, &self.contract_account_id, "init")
+            .call(&self.signer, &self.eth_light_client_account_id, "init")
             .args_borsh(init_input)
             .transact()
             .await
@@ -215,8 +215,8 @@ impl ContractClient {
     }
 
     /// Get contract account ID
-    pub fn contract_account_id(&self) -> &AccountId {
-        &self.contract_account_id
+    pub fn eth_light_client_account_id(&self) -> &AccountId {
+        &self.eth_light_client_account_id
     }
 
     /// Get a reference to the underlying client

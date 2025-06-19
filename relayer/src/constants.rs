@@ -15,7 +15,7 @@ pub mod defaults {
     pub const NEAR_ENDPOINT: &str = "https://rpc.testnet.near.org";
 
     // Default account IDs (for example config only)
-    pub const CONTRACT_ACCOUNT_ID: &str = "eth-client.testnet";
+    pub const ETH_LIGHT_CLIENT_ACCOUNT_ID: &str = "client-eth2.sepolia.testnet";
     pub const SIGNER_ACCOUNT_ID: &str = "relayer.testnet";
     pub const SECRET_KEY_PATH: &str = "./keys/signer.txt";
 
