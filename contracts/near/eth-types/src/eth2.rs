@@ -134,6 +134,7 @@ pub struct ExecutionPayloadHeader {
     #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::quoted_u64"))]
     pub timestamp: u64,
     pub extra_data: ExtraData,
+    #[cfg_attr(not(target_arch = "wasm32"), serde(with = "quoted_u256"))]
     pub base_fee_per_gas: U256,
     pub block_hash: H256,
     pub transactions_root: H256,
@@ -260,5 +261,29 @@ pub mod optional_quoted_u64 {
             Some(s) => s.parse::<u64>().map(Some).map_err(serde::de::Error::custom),
             None => Ok(None),
         }
+    }
+}
+
+/// Serde module for handling `U256` with quotes
+pub mod quoted_u256 {
+    use crate::U256;
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(value: &U256, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&format!("{}", value))
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<U256, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = String::deserialize(deserializer)?;
+        // Parse as decimal (base 10)
+        ethereum_types::U256::from_dec_str(&s)
+            .map(U256)
+            .map_err(|e| serde::de::Error::custom(format!("failed to parse U256 from decimal: {}", e)))
     }
 }

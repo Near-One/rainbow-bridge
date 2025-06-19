@@ -24,9 +24,6 @@ pub struct ProofSize {
     pub l1_beacon_block_body_proof_size: usize,
     pub l2_execution_payload_proof_size: usize,
     pub execution_proof_size: usize,
-    // Add execution payload validation parameters
-    pub execution_payload_field_index: usize,
-    pub beacon_block_body_validation_tree_depth: usize,
 }
 
 #[derive(Debug)]
@@ -37,6 +34,8 @@ pub struct GeneralizedIndex {
     pub current_sync_committee_tree_index: u32,
     pub sync_committee_tree_depth: u32,
     pub sync_committee_tree_index: u32,
+    pub execution_payload_tree_depth: u32,
+    pub execution_payload_tree_index: u32,
 }
 
 #[derive(PartialEq, BorshSerialize, BorshDeserialize, BorshSchema, Clone, Copy, Debug)]
@@ -147,19 +146,6 @@ impl NetworkConfig {
     }
 
     pub fn compute_proof_size(&self, epoch: Epoch) -> ProofSize {
-        if epoch >= self.electra_fork_epoch {
-            return ProofSize {
-                beacon_block_body_tree_depth: 5, // Electra increases tree depth
-                l1_beacon_block_body_tree_execution_payload_index: 9,
-                l2_execution_payload_tree_execution_block_index: 12,
-                l1_beacon_block_body_proof_size: 5,
-                l2_execution_payload_proof_size: 5,
-                execution_proof_size: 10,
-                execution_payload_field_index: 9, // May change in future forks
-                beacon_block_body_validation_tree_depth: 5,
-            };
-        }
-
         if epoch >= self.deneb_fork_epoch {
             return ProofSize {
                 beacon_block_body_tree_depth: 4,
@@ -168,8 +154,6 @@ impl NetworkConfig {
                 l1_beacon_block_body_proof_size: 4,
                 l2_execution_payload_proof_size: 5,
                 execution_proof_size: 9,
-                execution_payload_field_index: 9,
-                beacon_block_body_validation_tree_depth: 4,
             };
         }
 
@@ -180,8 +164,6 @@ impl NetworkConfig {
             l1_beacon_block_body_proof_size: 4,
             l2_execution_payload_proof_size: 4,
             execution_proof_size: 8,
-            execution_payload_field_index: 9,
-            beacon_block_body_validation_tree_depth: 4,
         }
     }
 
@@ -196,6 +178,9 @@ impl NetworkConfig {
         pub const CURRENT_SYNC_COMMITTEE_INDEX_ELECTRA: u32 = 86;
         pub const NEXT_SYNC_COMMITTEE_INDEX_ELECTRA: u32 = 87;
 
+        // Spec: https://github.com/ethereum/consensus-specs/blob/dev/specs/capella/light-client/sync-protocol.md
+        pub const EXECUTION_PAYLOAD_GINDEX_ELECTRA: u32 = 25; 
+
         let epoch = compute_epoch_at_slot(slot);
 
         if epoch >= self.electra_fork_epoch {
@@ -208,6 +193,8 @@ impl NetworkConfig {
                 ),
                 sync_committee_tree_depth: floorlog2(NEXT_SYNC_COMMITTEE_INDEX_ELECTRA),
                 sync_committee_tree_index: get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX_ELECTRA),
+                execution_payload_tree_depth: floorlog2(EXECUTION_PAYLOAD_GINDEX_ELECTRA),
+                execution_payload_tree_index: get_subtree_index(EXECUTION_PAYLOAD_GINDEX_ELECTRA),
             }
         } else {
             GeneralizedIndex {
@@ -217,6 +204,8 @@ impl NetworkConfig {
                 current_sync_committee_tree_index: get_subtree_index(CURRENT_SYNC_COMMITTEE_INDEX),
                 sync_committee_tree_depth: floorlog2(NEXT_SYNC_COMMITTEE_INDEX),
                 sync_committee_tree_index: get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX),
+                execution_payload_tree_depth: floorlog2(EXECUTION_PAYLOAD_GINDEX),
+                execution_payload_tree_index: get_subtree_index(EXECUTION_PAYLOAD_GINDEX),
             }
         }
     }
@@ -296,13 +285,13 @@ impl NetworkConfig {
         }
 
         // Use fork-aware proof parameters
-        let proof_size = self.compute_proof_size(epoch);
+        let generalized_index = self.get_generalized_index_constants(epoch);
         
         verify_merkle_proof(
             self.get_lc_execution_root(header),
             &header.execution_branch,
-            proof_size.beacon_block_body_validation_tree_depth,
-            proof_size.execution_payload_field_index,
+            generalized_index.execution_payload_tree_depth.try_into().unwrap(),
+            generalized_index.execution_payload_tree_index.try_into().unwrap(),
             header.beacon.body_root,
         )
     }
