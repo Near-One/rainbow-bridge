@@ -1,2 +1,3 @@
 [toolchain]
 channel = "1.84.0"
+targets = ["wasm32-unknown-unknown"]
