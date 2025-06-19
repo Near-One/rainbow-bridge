@@ -114,9 +114,10 @@ pub struct BeaconBlockHeader {
 }
 
 // Execution header structure supporting multiple forks
+// Spec: https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/beacon-chain.md#executionpayloadheader
 #[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
-pub struct ExecutionHeader {
+pub struct ExecutionPayloadHeader {
     // Core fields present since The Merge
     pub parent_hash: H256,
     pub fee_recipient: H160,
@@ -153,7 +154,7 @@ pub struct ExecutionHeader {
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct AttestedHeader {
     pub beacon: BeaconBlockHeader,
-    pub execution: ExecutionHeader,
+    pub execution: ExecutionPayloadHeader,
     pub execution_branch: Vec<H256>,
 }
 
@@ -161,7 +162,7 @@ pub struct AttestedHeader {
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct FinalizedHeader {
     pub beacon: BeaconBlockHeader,
-    pub execution: ExecutionHeader,
+    pub execution: ExecutionPayloadHeader,
     pub execution_branch: Vec<H256>,
 }
 
