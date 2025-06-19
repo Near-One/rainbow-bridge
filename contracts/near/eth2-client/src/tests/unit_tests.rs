@@ -459,6 +459,86 @@ mod tests {
             update.next_sync_committee = None;
             contract.submit_beacon_chain_light_client_update(update);
         }
+
+        #[test]
+        #[should_panic(expected = "BLS12381InvalidInput")]
+        pub fn test_panic_on_invalid_bls_signature() {
+            let TestContext {
+                mut contract,
+                headers: _,
+                updates,
+            } = get_test_context(None);
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
+            let mut update = updates[1].clone();
+            
+            // Corrupt the BLS signature by modifying the last byte
+            let mut signature_bytes = update.sync_aggregate.sync_committee_signature.0.to_vec();
+            let last_idx = signature_bytes.len() - 1;
+            signature_bytes[last_idx] = signature_bytes[last_idx].wrapping_add(1);
+            update.sync_aggregate.sync_committee_signature = signature_bytes.into();
+            
+            contract.submit_beacon_chain_light_client_update(update);
+        }
+
+        #[test]
+        #[should_panic(expected = "Failed to verify the bls signature")]
+        pub fn test_panic_on_mismatched_sync_committee_bits() {
+            let TestContext {
+                mut contract,
+                headers: _,
+                updates,
+            } = get_test_context(None);
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
+            let mut update = updates[1].clone();
+            
+            // Create a sync committee bits pattern that doesn't match the signature
+            // but still meets the minimum participation threshold
+            let mut sync_committee_bits = bitarr![u8, Lsb0; 0; 512];
+            // Set exactly 342 bits (minimum required) but in different positions
+            // than the original signature was created for
+            for i in 0..342 {
+                sync_committee_bits.set(i, true);
+            }
+            update.sync_aggregate.sync_committee_bits = sync_committee_bits.as_raw_mut_slice().to_vec().into();
+            
+            contract.submit_beacon_chain_light_client_update(update);
+        }
+
+        #[test]
+        #[should_panic(expected = "BLS12381InvalidInput")]
+        pub fn test_panic_on_zero_bls_signature() {
+            let TestContext {
+                mut contract,
+                headers: _,
+                updates,
+            } = get_test_context(None);
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
+            let mut update = updates[1].clone();
+            
+            // Set signature to all zeros
+            let signature_bytes = vec![0u8; 96];
+            update.sync_aggregate.sync_committee_signature = signature_bytes.into();
+            
+            contract.submit_beacon_chain_light_client_update(update);
+        }
+
+        #[test]
+        #[should_panic(expected = "Failed to verify the bls signature")]
+        pub fn test_panic_on_wrong_attested_header() {
+            let TestContext {
+                mut contract,
+                headers: _,
+                updates,
+            } = get_test_context(None);
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
+            let mut update = updates[1].clone();
+            
+            // Modify the attested header to make signature verification fail
+            // but keep the signature and bits valid (so it passes format checks)
+            update.attested_beacon_header.slot = update.attested_beacon_header.slot + 1;
+            
+            contract.submit_beacon_chain_light_client_update(update);
+        }
     }
 
     #[cfg(feature = "mainnet")]
