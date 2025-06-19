@@ -337,8 +337,8 @@ def get_block_number_for_period(period: int) -> int:
 
 
 def main():
-    periods = [925, 926, 927, 928]
-    dump_light_client_updates(periods)
+    # Fetch the 4 most recent light client updates
+    periods = get_recent_light_client_updates(4)
     print(f"🎉 Updates fetched for periods: {periods}")
 
     rev = list(reversed(periods))
