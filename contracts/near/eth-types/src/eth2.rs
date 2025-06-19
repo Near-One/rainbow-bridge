@@ -134,7 +134,6 @@ pub struct ExecutionPayloadHeader {
     #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::quoted_u64"))]
     pub timestamp: u64,
     pub extra_data: ExtraData,
-    #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::quoted_u64"))]
     pub base_fee_per_gas: U256,
     pub block_hash: H256,
     pub transactions_root: H256,
@@ -152,15 +151,7 @@ pub struct ExecutionPayloadHeader {
 // New combined header structure
 #[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
-pub struct AttestedHeader {
-    pub beacon: BeaconBlockHeader,
-    pub execution: ExecutionPayloadHeader,
-    pub execution_branch: Vec<H256>,
-}
-
-#[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
-pub struct FinalizedHeader {
+pub struct LightClientHeader {
     pub beacon: BeaconBlockHeader,
     pub execution: ExecutionPayloadHeader,
     pub execution_branch: Vec<H256>,
@@ -181,8 +172,8 @@ pub struct ExtendedBeaconBlockHeader {
     pub execution_block_hash: H256,
 }
 
-impl From<FinalizedHeader> for ExtendedBeaconBlockHeader {
-    fn from(finalized_header: FinalizedHeader) -> Self {
+impl From<LightClientHeader> for ExtendedBeaconBlockHeader {
+    fn from(finalized_header: LightClientHeader) -> Self {
         let beacon = finalized_header.beacon;
         Self {
             header: beacon.clone(),
@@ -224,10 +215,10 @@ pub struct SyncAggregate {
 #[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct LightClientUpdate {
-    pub attested_header: AttestedHeader,
+    pub attested_header: LightClientHeader,
     pub next_sync_committee: Option<SyncCommittee>,
     pub next_sync_committee_branch: Option<Vec<H256>>,
-    pub finalized_header: FinalizedHeader,
+    pub finalized_header: LightClientHeader,
     pub finality_branch: Vec<H256>,
     pub sync_aggregate: SyncAggregate,
     #[cfg_attr(not(target_arch = "wasm32"), serde(with = "serde_utils::quoted_u64"))]

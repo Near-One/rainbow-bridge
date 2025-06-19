@@ -206,7 +206,7 @@ impl NetworkConfig {
     }
 
     // Fork-aware execution root computation - manual tree hashing per fork
-    pub fn get_lc_execution_root(&self, header: &FinalizedHeader) -> H256 {
+    pub fn get_lc_execution_root(&self, header: &LightClientHeader) -> H256 {
         use tree_hash::{MerkleHasher, TreeHash};
 
         let epoch = compute_epoch_at_slot(header.beacon.slot);
@@ -261,7 +261,7 @@ impl NetworkConfig {
         H256(hasher.finish().unwrap().0.into())
     }
 
-    pub fn is_valid_light_client_header(&self, header: &FinalizedHeader) -> bool {
+    pub fn is_valid_light_client_header(&self, header: &LightClientHeader) -> bool {
         let epoch = compute_epoch_at_slot(header.beacon.slot);
         if epoch < self.deneb_fork_epoch {
             if header.execution.blob_gas_used.is_some()
