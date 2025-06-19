@@ -6,7 +6,7 @@ mod integration_tests {
     use borsh::{BorshDeserialize, BorshSerialize};
     use eth2_utility::consensus::Network;
     use eth2_utility::types::InitInput;
-    use eth_types::eth2::{BeaconBlockHeader, FinalizedHeader, SyncCommittee};
+    use eth_types::eth2::{BeaconBlockHeader, ExtendedBeaconBlockHeader, SyncCommittee};
     use eth_types::{Address, Bloom, H256, H64, U256};
     use near_sdk::{Gas, NearToken};
     use near_workspaces::operations::Function;
@@ -54,7 +54,7 @@ mod integration_tests {
     struct InitInputV1 {
         pub network: Network,
         pub finalized_execution_header: BlockHeaderV1,
-        pub finalized_beacon_header: FinalizedHeader,
+        pub finalized_beacon_header: ExtendedBeaconBlockHeader,
         pub current_sync_committee: SyncCommittee,
         pub next_sync_committee: SyncCommittee,
         pub validate_updates: bool,

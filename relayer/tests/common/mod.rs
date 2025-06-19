@@ -103,7 +103,7 @@ pub fn load_sepolia_init_data() -> Result<InitInput> {
     let init_input = InitInput {
         network: Network::Sepolia,
         finalized_execution_header: headers[0].clone(),
-        finalized_beacon_header: first_update.finalized_header.clone(),
+        finalized_beacon_header: first_update.finalized_header.clone().into(),
         current_sync_committee: init_update
             .next_sync_committee
             .ok_or_else(|| color_eyre::eyre::eyre!("Missing sync committee in init update"))?,
