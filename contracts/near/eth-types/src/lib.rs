@@ -138,6 +138,29 @@ macro_rules! uint_declare_wrapper_and_serde {
                 bytes
             }
         }
+
+        impl tree_hash::TreeHash for $name {
+            fn tree_hash_type() -> tree_hash::TreeHashType {
+                tree_hash::TreeHashType::Vector
+            }
+
+            fn tree_hash_packed_encoding(&self) -> PackedEncoding {
+                unreachable!("Vector should never be packed.")
+            }
+
+            fn tree_hash_packing_factor() -> usize {
+                unreachable!("Vector should never be packed.")
+            }
+
+            fn tree_hash_root(&self) -> tree_hash::Hash256 {
+                let values_per_chunk = tree_hash::BYTES_PER_CHUNK;
+                let minimum_chunk_count = ($len + values_per_chunk - 1) / values_per_chunk;
+                let mut bytes = vec![0u8; $len * 8];
+                self.0.to_big_endian(&mut bytes);
+                tree_hash::merkle_root(&bytes, minimum_chunk_count)
+            }
+        }
+
     };
 }
 
