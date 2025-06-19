@@ -24,6 +24,9 @@ pub struct ProofSize {
     pub l1_beacon_block_body_proof_size: usize,
     pub l2_execution_payload_proof_size: usize,
     pub execution_proof_size: usize,
+    // Add execution payload validation parameters
+    pub execution_payload_field_index: usize,
+    pub beacon_block_body_validation_tree_depth: usize,
 }
 
 #[derive(Debug)]
@@ -144,6 +147,19 @@ impl NetworkConfig {
     }
 
     pub fn compute_proof_size(&self, epoch: Epoch) -> ProofSize {
+        if epoch >= self.electra_fork_epoch {
+            return ProofSize {
+                beacon_block_body_tree_depth: 5, // Electra increases tree depth
+                l1_beacon_block_body_tree_execution_payload_index: 9,
+                l2_execution_payload_tree_execution_block_index: 12,
+                l1_beacon_block_body_proof_size: 5,
+                l2_execution_payload_proof_size: 5,
+                execution_proof_size: 10,
+                execution_payload_field_index: 9, // May change in future forks
+                beacon_block_body_validation_tree_depth: 5,
+            };
+        }
+
         if epoch >= self.deneb_fork_epoch {
             return ProofSize {
                 beacon_block_body_tree_depth: 4,
@@ -152,6 +168,8 @@ impl NetworkConfig {
                 l1_beacon_block_body_proof_size: 4,
                 l2_execution_payload_proof_size: 5,
                 execution_proof_size: 9,
+                execution_payload_field_index: 9,
+                beacon_block_body_validation_tree_depth: 4,
             };
         }
 
@@ -162,6 +180,8 @@ impl NetworkConfig {
             l1_beacon_block_body_proof_size: 4,
             l2_execution_payload_proof_size: 4,
             execution_proof_size: 8,
+            execution_payload_field_index: 9,
+            beacon_block_body_validation_tree_depth: 4,
         }
     }
 
@@ -275,17 +295,14 @@ impl NetworkConfig {
             panic!("Unsupported fork");
         }
 
-        // Capella and later: verify execution payload against branch
-        // The execution payload is at field index 9 in the BeaconBlockBody
-        // and the beacon block body tree has depth 4 (2^4 = 16 leaves with padding)
-        const EXECUTION_PAYLOAD_FIELD_INDEX: usize = 9;
-        const BEACON_BLOCK_BODY_TREE_DEPTH: usize = 4;
-
+        // Use fork-aware proof parameters
+        let proof_size = self.compute_proof_size(epoch);
+        
         verify_merkle_proof(
             self.get_lc_execution_root(header),
             &header.execution_branch,
-            BEACON_BLOCK_BODY_TREE_DEPTH,
-            EXECUTION_PAYLOAD_FIELD_INDEX,
+            proof_size.beacon_block_body_validation_tree_depth,
+            proof_size.execution_payload_field_index,
             header.beacon.body_root,
         )
     }
