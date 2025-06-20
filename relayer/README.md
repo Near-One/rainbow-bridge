@@ -61,7 +61,7 @@ max_batch_size = 1000
 
 [near]
 endpoint = "https://rpc.mainnet.near.org"
-contract_account_id = "eth-client.near"
+eth_light_client_account_id = "eth-client.near"
 signer_account_id = "relayer.near"
 secret_key = "ed25519:..."
 
@@ -76,7 +76,7 @@ dry_run = false
 Use double underscores for nested sections:
 
 ```bash
-export RELAYER_NEAR__CONTRACT_ACCOUNT_ID="eth-client.near"
+export RELAYER_NEAR__ETH_LIGHT_CLIENT_ACCOUNT_ID="eth-client.near"
 export RELAYER_NEAR__SECRET_KEY="ed25519:..."
 export RELAYER_RELAYER__DRY_RUN=false
 ```
