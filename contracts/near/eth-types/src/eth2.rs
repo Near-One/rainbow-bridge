@@ -1,5 +1,3 @@
-
-
 use super::*;
 use borsh::{BorshDeserialize, BorshSerialize};
 use std::io::{Error, Write};
@@ -48,14 +46,27 @@ impl tree_hash::TreeHash for ExtraData {
     }
 
     fn tree_hash_root(&self) -> tree_hash::Hash256 {
-        let mut hasher =
-            tree_hash::MerkleHasher::with_leaves(self.0.len().div_ceil(tree_hash::BYTES_PER_CHUNK));
+        // Replicate the logic from VariableList<u8, U32>
+        // ExtraData has a maximum length of 32 bytes (U32)
+        const MAX_LEN: usize = 32;
+
+        // For u8 (basic type), calculate number of leaves based on packing factor
+        // u8 has a packing factor of 32 (32 bytes fit in one 32-byte chunk)
+        let packing_factor = <u8 as tree_hash::TreeHash>::tree_hash_packing_factor();
+        let num_leaves = (MAX_LEN + packing_factor - 1) / packing_factor;
+
+        let mut hasher = tree_hash::MerkleHasher::with_leaves(num_leaves);
 
         for item in &self.0 {
-            hasher.write(&item.tree_hash_packed_encoding()).unwrap();
+            hasher
+                .write(&item.tree_hash_packed_encoding())
+                .expect("ExtraData should not contain more elements than max");
         }
 
-        let root = hasher.finish().unwrap();
+        let root = hasher
+            .finish()
+            .expect("ExtraData should not have a remaining buffer");
+
         tree_hash::mix_in_length(&root, self.0.len())
     }
 }
@@ -284,6 +295,8 @@ pub mod quoted_u256 {
         // Parse as decimal (base 10)
         ethereum_types::U256::from_dec_str(&s)
             .map(U256)
-            .map_err(|e| serde::de::Error::custom(format!("failed to parse U256 from decimal: {}", e)))
+            .map_err(|e| {
+                serde::de::Error::custom(format!("failed to parse U256 from decimal: {}", e))
+            })
     }
 }
