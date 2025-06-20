@@ -83,54 +83,6 @@ impl BeaconClient {
         Ok(custom_update)
     }
 
-    /// Fetch optimistic update
-    pub async fn fetch_optimistic_update(&self) -> Result<BorshLightClientUpdate> {
-        let optimistic_update: Option<
-            ForkVersionedResponse<LightClientOptimisticUpdate<MainnetEthSpec>>,
-        > = self
-            .client
-            .get_beacon_light_client_optimistic_update()
-            .await
-            .map_err(|e| {
-                color_eyre::eyre::eyre!("Failed to fetch light client optimistic update: {:?}", e)
-            })?;
-
-        let optimistic_data = optimistic_update
-            .ok_or_else(|| color_eyre::eyre::eyre!("No optimistic update available"))?
-            .data;
-
-        let json_str = serde_json::to_string(&optimistic_data)
-            .wrap_err("Failed to serialize optimistic update to JSON")?;
-        let custom_update: BorshLightClientUpdate = serde_json::from_str(&json_str)
-            .wrap_err("Failed to deserialize optimistic update from JSON")?;
-
-        Ok(custom_update)
-    }
-
-    /// Fetch light client bootstrap for a block root
-    pub async fn fetch_bootstrap(
-        &self,
-        block_root: Hash256,
-    ) -> Result<types::LightClientBootstrap<MainnetEthSpec>> {
-        let bootstrap = self
-            .client
-            .get_light_client_bootstrap(block_root)
-            .await
-            .map_err(|e| {
-                color_eyre::eyre::eyre!(
-                    "Failed to fetch light client bootstrap for block root {}: {:?}",
-                    block_root,
-                    e
-                )
-            })?;
-
-        bootstrap
-            .ok_or_else(|| {
-                color_eyre::eyre::eyre!("No bootstrap data available for block root {}", block_root)
-            })
-            .map(|response| response.data)
-    }
-
     /// Get the last finalized slot
     pub async fn get_last_finalized_slot(&self) -> Result<u64> {
         let finality_checkpoints = self
