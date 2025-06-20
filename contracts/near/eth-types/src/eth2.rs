@@ -300,3 +300,130 @@ pub mod quoted_u256 {
             })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ssz_types::{typenum::U32, VariableList};
+    use tree_hash::TreeHash;
+
+    #[test]
+    fn test_extra_data_tree_hash_matches_variable_list() {
+        // Test cases with different lengths
+        let test_cases = vec![
+            vec![],                         // Empty
+            vec![0x42],                     // Single byte
+            vec![0x01, 0x02, 0x03, 0x04],   // Few bytes
+            vec![0xff; 16],                 // Half capacity
+            vec![0xaa; 32],                 // Full capacity
+            (0u8..32).collect::<Vec<u8>>(), // Sequential bytes 0-31
+        ];
+
+        for test_data in test_cases {
+            // Create ExtraData
+            let extra_data = ExtraData(test_data.clone());
+
+            // Create equivalent VariableList<u8, U32>
+            let variable_list: VariableList<u8, U32> = VariableList::from(test_data.clone());
+
+            // Compare tree hashes
+            let extra_data_hash = extra_data.tree_hash_root();
+            let variable_list_hash = variable_list.tree_hash_root();
+
+            assert_eq!(
+                extra_data_hash, variable_list_hash,
+                "Tree hashes should match for data: {:?}",
+                test_data
+            );
+
+            println!(
+                "✓ Length {}: ExtraData and VariableList<u8, U32> produce same hash: 0x{}",
+                test_data.len(),
+                hex::encode(extra_data_hash)
+            );
+        }
+    }
+
+    #[test]
+    fn test_extra_data_tree_hash_specific_values() {
+        // Test some specific known patterns
+        let test_cases = vec![
+            (vec![0x00], "single zero byte"),
+            (vec![0xff], "single max byte"),
+            (
+                vec![0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef],
+                "8 bytes hex pattern",
+            ),
+            (b"hello".to_vec(), "ascii text"),
+        ];
+
+        for (data, description) in test_cases {
+            let extra_data = ExtraData(data.clone());
+            let variable_list: VariableList<u8, U32> = VariableList::from(data.clone());
+
+            assert_eq!(
+                extra_data.tree_hash_root(),
+                variable_list.tree_hash_root(),
+                "Failed for test case: {}",
+                description
+            );
+        }
+    }
+
+    #[test]
+    fn test_extra_data_tree_hash_properties() {
+        // Test that different lengths produce different hashes
+        let data1 = ExtraData(vec![0x42]);
+        let data2 = ExtraData(vec![0x42, 0x42]);
+
+        assert_ne!(
+            data1.tree_hash_root(),
+            data2.tree_hash_root(),
+            "Different lengths should produce different hashes"
+        );
+
+        // Test that different content produces different hashes
+        let data3 = ExtraData(vec![0x01, 0x02, 0x03]);
+        let data4 = ExtraData(vec![0x03, 0x02, 0x01]);
+
+        assert_ne!(
+            data3.tree_hash_root(),
+            data4.tree_hash_root(),
+            "Different content should produce different hashes"
+        );
+    }
+
+    #[test]
+    fn test_extra_data_empty_vs_zero_bytes() {
+        // Empty data vs data with zero bytes should be different
+        let empty = ExtraData(vec![]);
+        let one_zero = ExtraData(vec![0x00]);
+        let two_zeros = ExtraData(vec![0x00, 0x00]);
+
+        let empty_hash = empty.tree_hash_root();
+        let one_zero_hash = one_zero.tree_hash_root();
+        let two_zeros_hash = two_zeros.tree_hash_root();
+
+        assert_ne!(
+            empty_hash, one_zero_hash,
+            "Empty vs one zero byte should differ"
+        );
+        assert_ne!(
+            empty_hash, two_zeros_hash,
+            "Empty vs two zero bytes should differ"
+        );
+        assert_ne!(
+            one_zero_hash, two_zeros_hash,
+            "One vs two zero bytes should differ"
+        );
+
+        // Verify against VariableList
+        let empty_vl: VariableList<u8, U32> = VariableList::from(vec![]);
+        let one_zero_vl: VariableList<u8, U32> = VariableList::from(vec![0x00]);
+        let two_zeros_vl: VariableList<u8, U32> = VariableList::from(vec![0x00, 0x00]);
+
+        assert_eq!(empty_hash, empty_vl.tree_hash_root());
+        assert_eq!(one_zero_hash, one_zero_vl.tree_hash_root());
+        assert_eq!(two_zeros_hash, two_zeros_vl.tree_hash_root());
+    }
+}
