@@ -1,0 +1,27 @@
+[beacon]
+endpoint = "http://unstable.sepolia.beacon-api.nimbus.team"
+timeout_secs = 30
+
+[execution]
+endpoint = "https://ethereum-sepolia-rpc.publicnode.com"
+timeout_secs = 30
+max_batch_size = 1000
+
+[near]
+endpoint = "https://rpc.testnet.near.org"
+eth_light_client_account_id = "client-eth2.sepolia.testnet"
+signer_account_id = "relayer.testnet"
+secret_key = "ed25519:YOUR_PRIVATE_KEY_HERE"
+timeout_secs = 30
+
+[relayer]
+update_interval_epochs = 1
+headers_batch_size = 100
+max_headers_per_period = 1000
+sync_sleep_secs = 60
+submission_sleep_secs = 12
+dry_run = false
+
+[logging]
+level = "info"
+json = false
