@@ -211,8 +211,11 @@ impl Config {
 
     /// Parse NEAR account IDs with validation
     pub fn parse_near_accounts(&self) -> Result<(AccountId, AccountId)> {
-        let eth_light_client_account_id: AccountId =
-            self.near.eth_light_client_account_id.parse().with_context(|| {
+        let eth_light_client_account_id: AccountId = self
+            .near
+            .eth_light_client_account_id
+            .parse()
+            .with_context(|| {
                 format!(
                     "Invalid contract account ID '{}'",
                     self.near.eth_light_client_account_id
@@ -280,7 +283,10 @@ impl Config {
         tracing::info!("  Beacon endpoint: {}", self.beacon.endpoint);
         tracing::info!("  Execution endpoint: {}", self.execution.endpoint);
         tracing::info!("  NEAR endpoint: {}", self.near.endpoint);
-        tracing::info!("  Contract account: {}", self.near.eth_light_client_account_id);
+        tracing::info!(
+            "  Contract account: {}",
+            self.near.eth_light_client_account_id
+        );
         tracing::info!("  Signer account: {}", self.near.signer_account_id);
         tracing::info!("  Secret key: <provided>");
         tracing::info!(
@@ -288,7 +294,10 @@ impl Config {
             self.relayer.update_interval_epochs
         );
         tracing::info!("  Batch size: {} headers", self.relayer.headers_batch_size);
-        tracing::info!("  Max headers per period: {}", self.relayer.max_headers_per_period);
+        tracing::info!(
+            "  Max headers per period: {}",
+            self.relayer.max_headers_per_period
+        );
         tracing::info!("  Sync sleep: {}s", self.relayer.sync_sleep_secs);
         tracing::info!(
             "  Submission sleep: {}s",

@@ -38,4 +38,3 @@ pub mod defaults {
     // NEAR contract settings
     pub const HASHES_GC_THRESHOLD: u64 = 51_000;
 }
-

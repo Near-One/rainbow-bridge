@@ -57,7 +57,12 @@ impl TestFixture {
 
         // Create our NearContract wrapper with default config for tests
         let relayer_config = RelayerConfig::default();
-        let near_client = ContractClient::new(contract.id().clone(), signer, near_fetch_client, relayer_config);
+        let near_client = ContractClient::new(
+            contract.id().clone(),
+            signer,
+            near_fetch_client,
+            relayer_config,
+        );
 
         Ok(Self {
             worker,

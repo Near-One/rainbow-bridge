@@ -5,9 +5,8 @@ use eth2::{BeaconNodeHttpClient, Timeouts};
 use sensitive_url::SensitiveUrl;
 use std::time::Duration;
 use types::{
-    ExecPayload, ForkVersionedResponse, FullPayloadRef, Hash256, LightClientFinalityUpdate,
-    LightClientOptimisticUpdate, LightClientUpdate as LighthouseLightClientUpdate, MainnetEthSpec,
-    Slot,
+    ExecPayload, ForkVersionedResponse, FullPayloadRef, LightClientFinalityUpdate,
+    LightClientUpdate as LighthouseLightClientUpdate, MainnetEthSpec, Slot,
 };
 
 /// Service that uses Lighthouse's HTTP client to interact with beacon node APIs

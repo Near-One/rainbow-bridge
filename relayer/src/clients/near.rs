@@ -162,7 +162,9 @@ impl ContractClient {
         for (batch_index, header_batch) in batched_headers.iter().enumerate() {
             let attached_gas_per_promise_in_batch = MAX_GAS.as_gas() / header_batch.len() as u64;
 
-            let mut batch = self.client.batch(&self.signer, &self.eth_light_client_account_id);
+            let mut batch = self
+                .client
+                .batch(&self.signer, &self.eth_light_client_account_id);
 
             for header in *header_batch {
                 let function = Function::new("submit_execution_header")
