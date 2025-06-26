@@ -13,15 +13,6 @@ pub const MIN_SYNC_COMMITTEE_PARTICIPANTS: u64 = 1;
 pub const SLOTS_PER_EPOCH: u64 = 32;
 pub const DOMAIN_SYNC_COMMITTEE: DomainType = [0x07, 0x00, 0x00, 0x00];
 
-pub struct ProofSize {
-    pub beacon_block_body_tree_depth: usize,
-    pub l1_beacon_block_body_tree_execution_payload_index: usize,
-    pub l2_execution_payload_tree_execution_block_index: usize,
-    pub l1_beacon_block_body_proof_size: usize,
-    pub l2_execution_payload_proof_size: usize,
-    pub execution_proof_size: usize,
-}
-
 #[derive(Debug)]
 pub struct GeneralizedIndex {
     pub finality_tree_depth: u32,
@@ -141,28 +132,6 @@ impl NetworkConfig {
         self.compute_fork_version(compute_epoch_at_slot(slot))
     }
 
-    pub fn compute_proof_size(&self, epoch: Epoch) -> ProofSize {
-        if epoch >= self.deneb_fork_epoch {
-            return ProofSize {
-                beacon_block_body_tree_depth: 4,
-                l1_beacon_block_body_tree_execution_payload_index: 9,
-                l2_execution_payload_tree_execution_block_index: 12,
-                l1_beacon_block_body_proof_size: 4,
-                l2_execution_payload_proof_size: 5,
-                execution_proof_size: 9,
-            };
-        }
-
-        ProofSize {
-            beacon_block_body_tree_depth: 4,
-            l1_beacon_block_body_tree_execution_payload_index: 9,
-            l2_execution_payload_tree_execution_block_index: 12,
-            l1_beacon_block_body_proof_size: 4,
-            l2_execution_payload_proof_size: 4,
-            execution_proof_size: 8,
-        }
-    }
-
     pub const fn get_generalized_index_constants(&self, slot: Slot) -> GeneralizedIndex {
         // Altair
         pub const FINALIZED_ROOT_INDEX: u32 = 105;
@@ -205,10 +174,6 @@ impl NetworkConfig {
                 execution_payload_tree_index: get_subtree_index(EXECUTION_PAYLOAD_GINDEX),
             }
         }
-    }
-
-    pub fn compute_proof_size_by_slot(&self, slot: Slot) -> ProofSize {
-        self.compute_proof_size(compute_epoch_at_slot(slot))
     }
 
     // Fork-aware execution root computation - manual tree hashing per fork
