@@ -59,7 +59,12 @@ impl EthRelayer {
         let signer = InMemorySigner::from_secret_key(signer_account_id, secret_key);
         let client = near_fetch::Client::new(&config.near.endpoint);
 
-        Ok(ContractClient::new(eth_light_client_account_id, signer, client, config.relayer.clone()))
+        Ok(ContractClient::new(
+            eth_light_client_account_id,
+            signer,
+            client,
+            config.relayer.clone(),
+        ))
     }
 
     pub async fn run(&self) -> Result<()> {
@@ -179,40 +184,39 @@ impl EthRelayer {
             return Ok(RelayResult::Submitted);
         }
 
-        let last_block = self.near_client.get_last_block_number().await?;
-        let max_block = self.get_max_block().await?;
+        let finalized_block = self.near_client.get_last_block_number().await?;
+        let high_block = self.get_max_block().await?;
+        let low_block = finalized_block + 1;
 
-        if max_block <= last_block {
+        if high_block < low_block {
             debug!(
-                "No new blocks to submit (last: {}, max: {})",
-                last_block, max_block
+                "No blocks to submit (finalized: {}, high: {})",
+                finalized_block, high_block
             );
             return Ok(RelayResult::Skipped);
         }
 
-        let start_block = last_block + 1;
-        let capped_max_block = std::cmp::min(
-            max_block,
-            start_block + self.config.relayer.max_headers_per_period as u64 - 1,
-        );
-        
+        let fetch_end = high_block;
+        let fetch_start = high_block
+            .saturating_sub(self.config.relayer.max_headers_per_period as u64 - 1)
+            .max(low_block);
+
         info!(
-            "Fetching {} execution headers for blocks {} to {} (capped from {})",
-            capped_max_block - last_block,
-            start_block,
-            capped_max_block,
-            max_block
+            "Fetching {} execution headers for blocks {} to {}",
+            fetch_end - fetch_start + 1,
+            fetch_start,
+            fetch_end
         );
 
         let mut headers = self
             .execution_client
-            .fetch_block_range(start_block..=capped_max_block)
+            .fetch_block_range(fetch_start..=fetch_end)
             .await?;
 
         if headers.is_empty() {
             warn!(
                 "No headers fetched for range {}..={}",
-                start_block, capped_max_block
+                fetch_start, fetch_end
             );
             return Ok(RelayResult::Skipped);
         }

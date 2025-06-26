@@ -46,8 +46,9 @@ async fn test_relayer_mainloop_hybrid() -> Result<()> {
 
     // Create relayer with real Ethereum clients + sandbox NEAR
     let mut config = Config::default();
-    config.relayer.max_iterations = Some(3); // Just a couple iterations
+    config.relayer.max_iterations = Some(5);
     config.relayer.headers_batch_size = 100;
+    config.relayer.max_headers_per_period = 3000; // Test a large batch size for integration only
 
     let relayer = EthRelayer::with_clients(
         beacon_client,               // Real Sepolia beacon
