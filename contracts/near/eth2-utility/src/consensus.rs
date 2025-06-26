@@ -13,20 +13,16 @@ pub const MIN_SYNC_COMMITTEE_PARTICIPANTS: u64 = 1;
 pub const SLOTS_PER_EPOCH: u64 = 32;
 pub const DOMAIN_SYNC_COMMITTEE: DomainType = [0x07, 0x00, 0x00, 0x00];
 
-pub struct ProofSize {
-    pub beacon_block_body_tree_depth: usize,
-    pub l1_beacon_block_body_tree_execution_payload_index: usize,
-    pub l2_execution_payload_tree_execution_block_index: usize,
-    pub l1_beacon_block_body_proof_size: usize,
-    pub l2_execution_payload_proof_size: usize,
-    pub execution_proof_size: usize,
-}
-
+#[derive(Debug)]
 pub struct GeneralizedIndex {
     pub finality_tree_depth: u32,
     pub finality_tree_index: u32,
+    pub current_sync_committee_tree_depth: u32,
+    pub current_sync_committee_tree_index: u32,
     pub sync_committee_tree_depth: u32,
     pub sync_committee_tree_index: u32,
+    pub execution_payload_tree_depth: u32,
+    pub execution_payload_tree_index: u32,
 }
 
 #[derive(PartialEq, BorshSerialize, BorshDeserialize, BorshSchema, Clone, Copy, Debug)]
@@ -136,33 +132,20 @@ impl NetworkConfig {
         self.compute_fork_version(compute_epoch_at_slot(slot))
     }
 
-    pub fn compute_proof_size(&self, epoch: Epoch) -> ProofSize {
-        if epoch >= self.deneb_fork_epoch {
-            return ProofSize {
-                beacon_block_body_tree_depth: 4,
-                l1_beacon_block_body_tree_execution_payload_index: 9,
-                l2_execution_payload_tree_execution_block_index: 12,
-                l1_beacon_block_body_proof_size: 4,
-                l2_execution_payload_proof_size: 5,
-                execution_proof_size: 9,
-            };
-        }
-
-        ProofSize {
-            beacon_block_body_tree_depth: 4,
-            l1_beacon_block_body_tree_execution_payload_index: 9,
-            l2_execution_payload_tree_execution_block_index: 12,
-            l1_beacon_block_body_proof_size: 4,
-            l2_execution_payload_proof_size: 4,
-            execution_proof_size: 8,
-        }
-    }
-
     pub const fn get_generalized_index_constants(&self, slot: Slot) -> GeneralizedIndex {
+        // Altair
         pub const FINALIZED_ROOT_INDEX: u32 = 105;
+        pub const CURRENT_SYNC_COMMITTEE_INDEX: u32 = 55;
         pub const NEXT_SYNC_COMMITTEE_INDEX: u32 = 55;
+
+        // Electra
         pub const FINALIZED_ROOT_INDEX_ELECTRA: u32 = 169;
+        pub const CURRENT_SYNC_COMMITTEE_INDEX_ELECTRA: u32 = 86;
         pub const NEXT_SYNC_COMMITTEE_INDEX_ELECTRA: u32 = 87;
+
+        // Spec: https://github.com/ethereum/consensus-specs/blob/dev/specs/capella/light-client/sync-protocol.md
+        pub const EXECUTION_PAYLOAD_GINDEX: u32 = 25;
+        pub const EXECUTION_PAYLOAD_GINDEX_ELECTRA: u32 = 25;
 
         let epoch = compute_epoch_at_slot(slot);
 
@@ -170,45 +153,114 @@ impl NetworkConfig {
             GeneralizedIndex {
                 finality_tree_depth: floorlog2(FINALIZED_ROOT_INDEX_ELECTRA),
                 finality_tree_index: get_subtree_index(FINALIZED_ROOT_INDEX_ELECTRA),
+                current_sync_committee_tree_depth: floorlog2(CURRENT_SYNC_COMMITTEE_INDEX_ELECTRA),
+                current_sync_committee_tree_index: get_subtree_index(
+                    CURRENT_SYNC_COMMITTEE_INDEX_ELECTRA,
+                ),
                 sync_committee_tree_depth: floorlog2(NEXT_SYNC_COMMITTEE_INDEX_ELECTRA),
                 sync_committee_tree_index: get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX_ELECTRA),
+                execution_payload_tree_depth: floorlog2(EXECUTION_PAYLOAD_GINDEX_ELECTRA),
+                execution_payload_tree_index: get_subtree_index(EXECUTION_PAYLOAD_GINDEX_ELECTRA),
             }
         } else {
             GeneralizedIndex {
                 finality_tree_depth: floorlog2(FINALIZED_ROOT_INDEX),
                 finality_tree_index: get_subtree_index(FINALIZED_ROOT_INDEX),
+                current_sync_committee_tree_depth: floorlog2(CURRENT_SYNC_COMMITTEE_INDEX),
+                current_sync_committee_tree_index: get_subtree_index(CURRENT_SYNC_COMMITTEE_INDEX),
                 sync_committee_tree_depth: floorlog2(NEXT_SYNC_COMMITTEE_INDEX),
                 sync_committee_tree_index: get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX),
+                execution_payload_tree_depth: floorlog2(EXECUTION_PAYLOAD_GINDEX),
+                execution_payload_tree_index: get_subtree_index(EXECUTION_PAYLOAD_GINDEX),
             }
         }
     }
 
-    pub fn compute_proof_size_by_slot(&self, slot: Slot) -> ProofSize {
-        self.compute_proof_size(compute_epoch_at_slot(slot))
-    }
+    // Fork-aware execution root computation - manual tree hashing per fork
+    pub fn get_lc_execution_root(&self, header: &LightClientHeader) -> H256 {
+        use tree_hash::{MerkleHasher, TreeHash};
 
-    pub fn validate_beacon_block_header_update(&self, header_update: &HeaderUpdate) -> bool {
-        let branch = &header_update.execution_hash_branch;
-        let proof_size = self.compute_proof_size_by_slot(header_update.beacon_header.slot);
-        if branch.len() != proof_size.execution_proof_size {
-            return false;
+        let epoch = compute_epoch_at_slot(header.beacon.slot);
+        let execution = &header.execution;
+
+        let mut leaves: Vec<tree_hash::Hash256> = vec![
+            execution.parent_hash.tree_hash_root(),
+            execution.fee_recipient.tree_hash_root(),
+            execution.state_root.tree_hash_root(),
+            execution.receipts_root.tree_hash_root(),
+            execution.logs_bloom.tree_hash_root(),
+            execution.prev_randao.tree_hash_root(),
+            execution.block_number.tree_hash_root(),
+            execution.gas_limit.tree_hash_root(),
+            execution.gas_used.tree_hash_root(),
+            execution.timestamp.tree_hash_root(),
+            execution.extra_data.tree_hash_root(),
+            execution.base_fee_per_gas.tree_hash_root(),
+            execution.block_hash.tree_hash_root(),
+            execution.transactions_root.tree_hash_root(),
+        ];
+
+        // Add withdrawals for Capella+
+        if epoch >= self.capella_fork_epoch {
+            leaves.push(
+                execution
+                    .withdrawals_root
+                    .unwrap_or_default()
+                    .tree_hash_root(),
+            );
         }
 
-        let l2_proof = &branch[0..proof_size.l2_execution_payload_proof_size];
-        let l1_proof =
-            &branch[proof_size.l2_execution_payload_proof_size..proof_size.execution_proof_size];
-        let execution_payload_hash = merkle_root_from_branch(
-            header_update.execution_block_hash,
-            l2_proof,
-            proof_size.l2_execution_payload_proof_size,
-            proof_size.l2_execution_payload_tree_execution_block_index,
-        );
+        // Add blob fields for Deneb+
+        if epoch >= self.deneb_fork_epoch {
+            leaves.push(execution.blob_gas_used.unwrap_or_default().tree_hash_root());
+            leaves.push(
+                execution
+                    .excess_blob_gas
+                    .unwrap_or_default()
+                    .tree_hash_root(),
+            );
+        }
+
+        // Create hasher with correct number of leaves
+        let mut hasher = MerkleHasher::with_leaves(leaves.len());
+
+        // Write all leaves to hasher
+        for leaf in leaves {
+            hasher.write(leaf.as_slice()).unwrap();
+        }
+
+        H256(hasher.finish().unwrap().0.into())
+    }
+
+    pub fn is_valid_light_client_header(&self, header: &LightClientHeader) -> bool {
+        let epoch = compute_epoch_at_slot(header.beacon.slot);
+        if epoch < self.deneb_fork_epoch {
+            if header.execution.blob_gas_used.is_some()
+                || header.execution.excess_blob_gas.is_some()
+            {
+                return false;
+            }
+        }
+
+        if epoch < self.capella_fork_epoch {
+            panic!("Unsupported fork");
+        }
+
+        // Use fork-aware proof parameters
+        let generalized_index = self.get_generalized_index_constants(epoch);
+
         verify_merkle_proof(
-            execution_payload_hash,
-            l1_proof,
-            proof_size.beacon_block_body_tree_depth,
-            proof_size.l1_beacon_block_body_tree_execution_payload_index,
-            header_update.beacon_header.body_root,
+            self.get_lc_execution_root(header),
+            &header.execution_branch,
+            generalized_index
+                .execution_payload_tree_depth
+                .try_into()
+                .unwrap(),
+            generalized_index
+                .execution_payload_tree_index
+                .try_into()
+                .unwrap(),
+            header.beacon.body_root,
         )
     }
 }

@@ -1,3 +1,6 @@
+use std::str::FromStr;
+
+use eth2_utility::consensus::Network;
 use eth2_utility::types::InitInput;
 use eth_types::eth2::*;
 use eth_types::BlockHeader;
@@ -73,22 +76,70 @@ pub fn get_goerli_test_data(
     });
 
     let init_input = InitInput {
-        network: NETWORK.to_string(),
+        network: Network::from_str(NETWORK).unwrap(),
         finalized_execution_header: HEADERS[0][0].clone(),
-        finalized_beacon_header: UPDATES[0].clone().finality_update.header_update.into(),
+        finalized_beacon_header: UPDATES[0].finalized_header.clone().into(),
         current_sync_committee: INIT_UPDATE
+            .next_sync_committee
             .clone()
-            .sync_committee_update
-            .as_ref()
-            .unwrap()
-            .next_sync_committee
-            .clone(),
+            .expect("Sync committee not found"),
         next_sync_committee: UPDATES[0]
-            .sync_committee_update
-            .as_ref()
-            .unwrap()
             .next_sync_committee
-            .clone(),
+            .clone()
+            .expect("Sync committee not found"),
+        validate_updates: init_options.validate_updates,
+        verify_bls_signatures: init_options.verify_bls_signatures,
+        hashes_gc_threshold: init_options.hashes_gc_threshold,
+        trusted_signer: init_options.trusted_signer,
+    };
+
+    (&HEADERS, &UPDATES, init_input)
+}
+
+pub fn get_sepolia_test_data(
+    init_options: Option<InitOptions>,
+) -> (
+    &'static Vec<Vec<BlockHeader>>,
+    &'static Vec<LightClientUpdate>,
+    InitInput,
+) {
+    const NETWORK: &str = "sepolia";
+    lazy_static! {
+        static ref INIT_UPDATE: LightClientUpdate =
+            read_client_updates(NETWORK.to_string(), 925, 925)[0].clone();
+        static ref UPDATES: Vec<LightClientUpdate> =
+            read_client_updates(NETWORK.to_string(), 926, 928);
+        static ref HEADERS: Vec<Vec<BlockHeader>> = vec![
+            read_headers(format!(
+                "./src/data/{}/execution_blocks_{}_{}.json",
+                NETWORK, 8286935, 8295112
+            )),
+            read_headers(format!(
+                "./src/data/{}/execution_blocks_{}_{}.json",
+                NETWORK, 8295113, 8303246
+            ))
+        ];
+    };
+
+    let init_options = init_options.unwrap_or(InitOptions {
+        validate_updates: true,
+        verify_bls_signatures: true,
+        hashes_gc_threshold: 51000,
+        trusted_signer: None,
+    });
+
+    let init_input = InitInput {
+        network: Network::from_str(NETWORK).unwrap(),
+        finalized_execution_header: HEADERS[0][0].clone(),
+        finalized_beacon_header: UPDATES[0].finalized_header.clone().into(),
+        current_sync_committee: INIT_UPDATE
+            .next_sync_committee
+            .clone()
+            .expect("Sync committee not found"),
+        next_sync_committee: UPDATES[0]
+            .next_sync_committee
+            .clone()
+            .expect("Sync committee not found"),
         validate_updates: init_options.validate_updates,
         verify_bls_signatures: init_options.verify_bls_signatures,
         hashes_gc_threshold: init_options.hashes_gc_threshold,
@@ -105,5 +156,5 @@ pub fn get_test_data(
     &'static Vec<LightClientUpdate>,
     InitInput,
 ) {
-    get_goerli_test_data(init_options)
+    get_sepolia_test_data(init_options)
 }
