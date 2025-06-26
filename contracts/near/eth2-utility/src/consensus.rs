@@ -13,10 +13,6 @@ pub const MIN_SYNC_COMMITTEE_PARTICIPANTS: u64 = 1;
 pub const SLOTS_PER_EPOCH: u64 = 32;
 pub const DOMAIN_SYNC_COMMITTEE: DomainType = [0x07, 0x00, 0x00, 0x00];
 
-// Generalized indices for execution payload
-pub const EXECUTION_PAYLOAD_GINDEX: u32 = 25; // Pre-Electra
-pub const EXECUTION_PAYLOAD_GINDEX_ELECTRA: u32 = 41; // Electra and later
-
 pub struct ProofSize {
     pub beacon_block_body_tree_depth: usize,
     pub l1_beacon_block_body_tree_execution_payload_index: usize,
@@ -179,7 +175,8 @@ impl NetworkConfig {
         pub const NEXT_SYNC_COMMITTEE_INDEX_ELECTRA: u32 = 87;
 
         // Spec: https://github.com/ethereum/consensus-specs/blob/dev/specs/capella/light-client/sync-protocol.md
-        pub const EXECUTION_PAYLOAD_GINDEX_ELECTRA: u32 = 25; 
+        pub const EXECUTION_PAYLOAD_GINDEX: u32 = 25;
+        pub const EXECUTION_PAYLOAD_GINDEX_ELECTRA: u32 = 25;
 
         let epoch = compute_epoch_at_slot(slot);
 
@@ -286,12 +283,18 @@ impl NetworkConfig {
 
         // Use fork-aware proof parameters
         let generalized_index = self.get_generalized_index_constants(epoch);
-        
+
         verify_merkle_proof(
             self.get_lc_execution_root(header),
             &header.execution_branch,
-            generalized_index.execution_payload_tree_depth.try_into().unwrap(),
-            generalized_index.execution_payload_tree_index.try_into().unwrap(),
+            generalized_index
+                .execution_payload_tree_depth
+                .try_into()
+                .unwrap(),
+            generalized_index
+                .execution_payload_tree_index
+                .try_into()
+                .unwrap(),
             header.beacon.body_root,
         )
     }
