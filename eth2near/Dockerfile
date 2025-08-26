@@ -7,13 +7,14 @@ WORKDIR /app
 COPY contracts/ ./contracts/
 COPY eth2near/ ./eth2near/
 
-# Build the project with cache mounts
+# Build the project and copy binaries out of cache mount
 WORKDIR /app/eth2near
-ENV CARGO_NET_GIT_FETCH_WITH_CLI=true
 RUN --mount=type=cache,target=/app/eth2near/target \
     --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/cargo/git,id=git-cache-v2 \
-    cargo build --release
+    --mount=type=cache,target=/usr/local/cargo/git \
+    cargo build --release && \
+    cp target/release/eth2-contract-init /tmp/ && \
+    cp target/release/eth2_to_near_relay /tmp/
 
 # === RUNTIME STAGE ===
 FROM debian:bookworm-slim AS runtime
@@ -26,9 +27,9 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy built binaries from builder stage
-COPY --from=builder /app/eth2near/target/release/eth2-contract-init /usr/local/bin/
-COPY --from=builder /app/eth2near/target/release/eth2_to_near_relay /usr/local/bin/
+# Copy built binaries from temp location
+COPY --from=builder /tmp/eth2-contract-init /usr/local/bin/
+COPY --from=builder /tmp/eth2_to_near_relay /usr/local/bin/
 
 # Create non-root user for security
 RUN useradd -m -u 1001 appuser
