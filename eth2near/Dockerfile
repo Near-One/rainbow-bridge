@@ -11,7 +11,7 @@ COPY eth2near/ ./eth2near/
 WORKDIR /app/eth2near
 RUN --mount=type=cache,target=/app/eth2near/target \
     --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/usr/local/cargo/git,id=git-cache-v2 \
     cargo build --release
 
 # === RUNTIME STAGE ===
