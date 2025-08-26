@@ -24,12 +24,11 @@ RUN apt-get update && apt-get install -y \
     libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
-
 COPY --from=builder /tmp/eth2-contract-init /usr/local/bin/
 COPY --from=builder /tmp/eth2_to_near_relay /usr/local/bin/
 
 RUN useradd -m -u 1001 appuser
 USER appuser
+WORKDIR /app
 
 CMD ["eth2_to_near_relay"]
