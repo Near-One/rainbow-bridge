@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM lukemathwalker/cargo-chef:latest-rust-1.84-slim-bookworm AS chef
+FROM lukemathwalker/cargo-chef:latest-rust-1.84-bookworm AS chef
 RUN cargo install --locked sccache
 ENV RUSTC_WRAPPER=sccache
 ENV SCCACHE_CACHE_SIZE=2G
