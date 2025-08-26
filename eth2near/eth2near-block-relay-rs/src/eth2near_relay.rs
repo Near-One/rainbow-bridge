@@ -35,7 +35,7 @@ macro_rules! skip_fail {
             Ok(val) => val,
             Err(e) => {
                 warn!(target: "relay", "{}. Error: {}", $msg, e);
-                trace!(target: "relay", "Sleep {} secs before next loop!", $sleep_time);
+                trace!(target: "relay", "Sleep {} secs before next loop.", $sleep_time);
                 thread::sleep(Duration::from_secs($sleep_time));
                 continue;
             }
