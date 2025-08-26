@@ -1,14 +1,36 @@
 # syntax=docker/dockerfile:1
-FROM rust:1.84.0-bookworm AS builder
-
+FROM rust:1.84.0-bookworm AS chef
+# Install cargo-chef for dependency caching
+RUN cargo install cargo-chef
 WORKDIR /app
 
-# Copy the entire project
+FROM chef AS planner
+# Copy entire workspace for analysis (small stage, runs quickly)
 COPY contracts/ ./contracts/
 COPY eth2near/ ./eth2near/
-
-# Build the project and copy binaries out of cache mount
 WORKDIR /app/eth2near
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+WORKDIR /app
+
+# Copy the recipe from planner stage
+COPY --from=planner /app/eth2near/recipe.json ./eth2near/recipe.json
+
+# Copy contracts (needed for dependencies)
+COPY contracts/ ./contracts/
+
+# Cook dependencies - this layer is cached unless Cargo.lock changes
+WORKDIR /app/eth2near
+RUN --mount=type=cache,target=/app/eth2near/target \
+    --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    cargo chef cook --release --recipe-path recipe.json
+
+# Copy source code and build the actual project
+COPY eth2near/ ./
+
+# Build the final binaries - only rebuilds when source changes
 RUN --mount=type=cache,target=/app/eth2near/target \
     --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
