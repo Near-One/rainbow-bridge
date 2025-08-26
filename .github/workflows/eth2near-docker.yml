@@ -24,7 +24,7 @@ env:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04-8core
     permissions:
       contents: read
       id-token: write
