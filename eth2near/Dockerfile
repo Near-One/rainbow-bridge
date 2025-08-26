@@ -9,6 +9,7 @@ COPY eth2near/ ./eth2near/
 
 # Build the project with cache mounts
 WORKDIR /app/eth2near
+ENV CARGO_NET_GIT_FETCH_WITH_CLI=true
 RUN --mount=type=cache,target=/app/eth2near/target \
     --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git,id=git-cache-v2 \
