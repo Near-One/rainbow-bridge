@@ -121,7 +121,7 @@ impl Eth2NearRelay {
         );
         let next_light_client_update =
             Self::get_light_client_update_from_file(config, &beacon_rpc_client)
-                .expect("Error on parsing light client update");
+                .expect("Error on parsing light client update!!");
 
         let eth2near_relay = Eth2NearRelay {
             beacon_rpc_client,
