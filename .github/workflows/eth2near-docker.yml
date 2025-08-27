@@ -24,7 +24,7 @@ env:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-22.04-8core
+    runs-on: warp-ubuntu-latest-x64-8x
     permissions:
       contents: read
       id-token: write
