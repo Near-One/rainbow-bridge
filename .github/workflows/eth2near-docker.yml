@@ -1,0 +1,71 @@
+name: Build and Push eth2near Docker Image
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - 'eth2near/**'
+      - 'contracts/near/**'
+      - '.github/workflows/eth2near-docker.yml'
+  release:
+    types: [published]
+  workflow_dispatch:
+
+env:
+  REGISTRY: europe-west4-docker.pkg.dev
+  PROJECT_ID: bridge-misc
+  REPOSITORY: omni-bridge-docker-images
+
+jobs:
+  build-and-push:
+    runs-on: warp-ubuntu-latest-x64-8x
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker to use gcloud as credential helper
+        run: gcloud auth configure-docker ${{ env.REGISTRY }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/eth2near
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix={{branch}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./eth2near/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Output image digest
+        run: echo "Image pushed with digest ${{ steps.build.outputs.digest }}"
