@@ -49,6 +49,7 @@ jobs:
       - name: Clone the repository
         uses: actions/checkout@v4
         with:
+          submodules: 'true'
           lfs: 'true'
 
       - name: Execute
