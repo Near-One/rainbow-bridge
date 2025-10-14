@@ -59,6 +59,8 @@ pub struct NetworkConfig {
     pub deneb_fork_epoch: u64,
     pub electra_fork_version: ForkVersion,
     pub electra_fork_epoch: u64,
+    pub fulu_fork_version: ForkVersion,
+    pub fulu_fork_epoch: u64,
 }
 
 impl NetworkConfig {
@@ -78,6 +80,8 @@ impl NetworkConfig {
                 deneb_fork_epoch: 269568,
                 electra_fork_version: [0x05, 0x00, 0x00, 0x00],
                 electra_fork_epoch: 364032,
+                fulu_fork_version: [0x06, 0x00, 0x00, 0x00],
+                fulu_fork_epoch: u64::MAX, // Not supported yet
             },
             Network::Goerli => Self {
                 genesis_validators_root: [
@@ -93,6 +97,8 @@ impl NetworkConfig {
                 deneb_fork_epoch: 231680,
                 electra_fork_version: [0x00, 0x00, 0x00, 0x00], // Not supported
                 electra_fork_epoch: u64::MAX,                   // Not supported
+                fulu_fork_version: [0x00, 0x00, 0x00, 0x00],    // Not supported
+                fulu_fork_epoch: u64::MAX,                      // Not supported
             },
             Network::Sepolia => Self {
                 genesis_validators_root: [
@@ -108,11 +114,17 @@ impl NetworkConfig {
                 deneb_fork_epoch: 132608,
                 electra_fork_version: [0x90, 0x00, 0x00, 0x74],
                 electra_fork_epoch: 222464,
+                fulu_fork_version: [0x90, 0x00, 0x00, 0x75],
+                fulu_fork_epoch: 272640,
             },
         }
     }
 
     pub fn compute_fork_version(&self, epoch: Epoch) -> Option<ForkVersion> {
+        if epoch >= self.fulu_fork_epoch {
+            return Some(self.fulu_fork_version);
+        }
+
         if epoch >= self.electra_fork_epoch {
             return Some(self.electra_fork_version);
         }
