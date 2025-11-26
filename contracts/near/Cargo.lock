@@ -1369,7 +1369,7 @@ dependencies = [
 
 [[package]]
 name = "eth2-client"
-version = "0.6.1"
+version = "0.6.2"
 dependencies = [
  "amcl",
  "anyhow",
