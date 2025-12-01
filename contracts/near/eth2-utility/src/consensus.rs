@@ -81,7 +81,7 @@ impl NetworkConfig {
                 electra_fork_version: [0x05, 0x00, 0x00, 0x00],
                 electra_fork_epoch: 364032,
                 fulu_fork_version: [0x06, 0x00, 0x00, 0x00],
-                fulu_fork_epoch: u64::MAX, // Not supported yet
+                fulu_fork_epoch: 411392,
             },
             Network::Goerli => Self {
                 genesis_validators_root: [
