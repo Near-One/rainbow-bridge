@@ -1,5 +1,5 @@
 use borsh::BorshDeserialize;
-use color_eyre::{Result, eyre::Context};
+use color_eyre::{Result, eyre, eyre::Context};
 use eth_types::{
     BlockHeader, H256,
     eth2::{LightClientState, LightClientUpdate},
@@ -11,6 +11,7 @@ use near_fetch::ops::Function;
 use near_fetch::{Client, ops::MAX_GAS};
 use near_gas::NearGas;
 use near_primitives::types::AccountId;
+use near_primitives::views::FinalExecutionStatus;
 use std::fmt::Write;
 use tracing::info;
 
@@ -173,15 +174,22 @@ impl ContractClient {
                 batch = batch.call(function);
             }
 
-            let _ = batch
+            let status = batch
                 .retry_exponential(1000, 3)
-                .transact_async()
+                .transact()
                 .await
                 .wrap_err(format!(
                     "Failed to submit execution headers batch {} of {}",
                     batch_index + 1,
                     total_batches
-                ))?;
+                ))?
+                .status;
+
+            if let FinalExecutionStatus::Failure(err) = status {
+                return Err(eyre::Report::msg(
+                    format!("Fail on batch submission: {err}").to_string(),
+                ));
+            }
 
             // Update progress bar
             if let Some(ref pb) = progress_bar {

@@ -60,6 +60,9 @@ async fn test_full_lifecycle_smoke_test() -> Result<()> {
         .submit_execution_headers(&reversed)
         .await?;
 
+    let mode = fixture.near_client.get_client_mode().await?;
+    assert_eq!(mode, ClientMode::SubmitLightClientUpdate);
+
     // Verify that each block's hash is stored
     for header in slice {
         let result: Option<H256> = fixture.near_client.get_block_hash(header.number).await?;
