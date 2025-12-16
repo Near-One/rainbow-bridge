@@ -1396,7 +1396,7 @@ dependencies = [
 
 [[package]]
 name = "eth2-client"
-version = "0.6.0"
+version = "0.6.2"
 dependencies = [
  "amcl",
  "anyhow",
@@ -1424,7 +1424,7 @@ dependencies = [
 
 [[package]]
 name = "eth2-utility"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "bitvec",
  "borsh",
