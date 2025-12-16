@@ -8,7 +8,7 @@ use eth2_utility::consensus::Network;
 use eth2_utility::types::InitInput;
 use near_crypto::{InMemorySigner, SecretKey};
 use near_workspaces::network::Sandbox;
-use near_workspaces::{cargo_near_build, Contract, Worker};
+use near_workspaces::{Contract, Worker, cargo_near_build};
 use relayer::{ContractClient, config::RelayerConfig};
 
 /// Test fixture that sets up the sandbox environment and deploys the contract
@@ -148,13 +148,15 @@ pub fn load_test_light_client_updates() -> Result<(LightClientUpdate, LightClien
 // near_workspaces::compile_project
 pub async fn compile_eth2_client_testnet() -> crate::Result<Vec<u8>> {
     let project_path = "../contracts/near/eth2-client";
-    let project_path = std::fs::canonicalize(project_path).wrap_err("Failed to parse eth2-client path")?;
+    let project_path =
+        std::fs::canonicalize(project_path).wrap_err("Failed to parse eth2-client path")?;
 
     // `no_abi` has become flipped true -> false
     let cargo_opts = cargo_near_build::BuildOpts {
         no_locked: true,
         manifest_path: Some(
-            cargo_near_build::camino::Utf8PathBuf::from_path_buf(project_path.join("Cargo.toml")).unwrap(),
+            cargo_near_build::camino::Utf8PathBuf::from_path_buf(project_path.join("Cargo.toml"))
+                .unwrap(),
         ),
         no_default_features: true,
         features: Some("logs".to_string()),
@@ -165,9 +167,9 @@ pub async fn compile_eth2_client_testnet() -> crate::Result<Vec<u8>> {
         cargo_near_build::build_with_cli(cargo_opts).wrap_err("Fail on build with cli")?;
 
     let file = compile_artifact
-        .canonicalize().wrap_err("Fail to canonicalize build artifact")?;
+        .canonicalize()
+        .wrap_err("Fail to canonicalize build artifact")?;
     tokio::fs::read(file)
         .await
         .wrap_err("Fail to read build artifact")
 }
-
