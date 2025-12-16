@@ -156,7 +156,7 @@ pub async fn compile_eth2_client_testnet() -> crate::Result<Vec<u8>> {
         no_locked: true,
         manifest_path: Some(
             cargo_near_build::camino::Utf8PathBuf::from_path_buf(project_path.join("Cargo.toml"))
-                .unwrap(),
+                .map_err(|e| color_eyre::Report::msg(format!("{e:?}")))?,
         ),
         no_default_features: true,
         features: Some("logs".to_string()),
