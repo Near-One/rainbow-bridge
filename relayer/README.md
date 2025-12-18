@@ -56,7 +56,7 @@ endpoint = "http://beacon-node.example.com"
 
 [execution]
 endpoint = "https://eth-rpc.example.com"
-max_batch_size = 1000
+max_batch_size = 500
 
 [near]
 endpoint = "https://rpc.mainnet.near.org"
