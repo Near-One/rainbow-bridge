@@ -53,7 +53,6 @@ Configuration sources (in priority order):
 ```toml
 [beacon]
 endpoint = "http://beacon-node.example.com"
-timeout_secs = 30
 
 [execution]
 endpoint = "https://eth-rpc.example.com"

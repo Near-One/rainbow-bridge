@@ -37,10 +37,6 @@ pub struct BeaconConfig {
     /// Beacon node HTTP API endpoint
     #[serde(default)]
     pub endpoint: String,
-
-    /// Timeout for beacon API requests in seconds
-    #[serde(default)]
-    pub timeout_secs: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,10 +44,6 @@ pub struct ExecutionConfig {
     /// Ethereum execution RPC endpoint
     #[serde(default)]
     pub endpoint: String,
-
-    /// Timeout for execution RPC requests in seconds
-    #[serde(default)]
-    pub timeout_secs: u64,
 
     /// Maximum number of blocks to fetch in one batch
     #[serde(default)]
@@ -130,7 +122,6 @@ impl Default for BeaconConfig {
     fn default() -> Self {
         Self {
             endpoint: defaults::BEACON_ENDPOINT.to_string(),
-            timeout_secs: defaults::TIMEOUT_SECS,
         }
     }
 }
@@ -139,7 +130,6 @@ impl Default for ExecutionConfig {
     fn default() -> Self {
         Self {
             endpoint: defaults::EXECUTION_ENDPOINT.to_string(),
-            timeout_secs: defaults::TIMEOUT_SECS,
             max_batch_size: defaults::EXECUTION_BATCH_SIZE,
         }
     }

@@ -1,10 +1,8 @@
 [beacon]
 endpoint = "http://unstable.sepolia.beacon-api.nimbus.team"
-timeout_secs = 30
 
 [execution]
 endpoint = "https://ethereum-sepolia-rpc.publicnode.com"
-timeout_secs = 30
 max_batch_size = 1000
 
 [near]
