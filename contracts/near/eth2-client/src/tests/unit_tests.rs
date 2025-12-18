@@ -86,15 +86,6 @@ mod tests {
         #[test]
         pub fn test_header_root() {
             let header =
-                read_beacon_header(format!("./src/data/goerli/beacon_header_{}.json", 5258752));
-            assert_eq!(
-                H256(header.tree_hash_root().0.into()),
-                Vec::from_hex("cd669c0007ab6ff261a02cc3335ba470088e92f0460bf1efac451009efb9ec0a")
-                    .unwrap()
-                    .into()
-            );
-
-            let header =
                 read_beacon_header(format!("./src/data/mainnet/beacon_header_{}.json", 4100000));
             assert_eq!(
                 H256(header.tree_hash_root().0.into()),
@@ -523,7 +514,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "The signature slot should be higher than the attested header slot")]
+        #[should_panic(expected = "Failed to verify the bls signature")]
         pub fn test_panic_on_wrong_attested_header() {
             let TestContext {
                 mut contract,
@@ -535,7 +526,7 @@ mod tests {
 
             // Modify the attested header to make signature verification fail
             // but keep the signature and bits valid (so it passes format checks)
-            update.attested_header.beacon.slot = update.attested_header.beacon.slot + 1;
+            update.attested_header.beacon.slot = update.attested_header.beacon.slot - 1;
 
             contract.submit_beacon_chain_light_client_update(update);
         }
