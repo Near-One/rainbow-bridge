@@ -1,12 +1,11 @@
 #[cfg(test)]
 mod integration_tests {
-    use super::*;
     use crate::tests::utils::get_sepolia_test_data;
     use crate::tests::utils::InitOptions;
     use borsh::{BorshDeserialize, BorshSerialize};
     use eth2_utility::consensus::Network;
     use eth2_utility::types::InitInput;
-    use eth_types::eth2::{BeaconBlockHeader, ExtendedBeaconBlockHeader, SyncCommittee};
+    use eth_types::eth2::{ExtendedBeaconBlockHeader, SyncCommittee};
     use eth_types::{Address, Bloom, H256, H64, U256};
     use near_sdk::{Gas, NearToken};
     use near_workspaces::operations::Function;
@@ -14,7 +13,6 @@ mod integration_tests {
     use serde::{Deserialize, Serialize};
 
     const WASM_FILEPATH: &str = "../target/near/eth2_client/eth2_client.wasm";
-    const WASM_V_0_1_0_FILEPATH: &str = "src/data/eth2_client_v0.1.0_testnet.wasm";
 
     #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
     struct BlockHeaderV1 {

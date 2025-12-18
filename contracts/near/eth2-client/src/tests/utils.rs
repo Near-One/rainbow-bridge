@@ -43,59 +43,6 @@ pub struct InitOptions {
     pub trusted_signer: Option<AccountId>,
 }
 
-pub fn get_goerli_test_data(
-    init_options: Option<InitOptions>,
-) -> (
-    &'static Vec<Vec<BlockHeader>>,
-    &'static Vec<LightClientUpdate>,
-    InitInput,
-) {
-    const NETWORK: &str = "goerli";
-    lazy_static! {
-        static ref INIT_UPDATE: LightClientUpdate =
-            read_client_updates(NETWORK.to_string(), 632, 632)[0].clone();
-        static ref UPDATES: Vec<LightClientUpdate> =
-            read_client_updates(NETWORK.to_string(), 633, 635);
-        static ref HEADERS: Vec<Vec<BlockHeader>> = vec![
-            read_headers(format!(
-                "./src/data/{}/execution_blocks_{}_{}.json",
-                NETWORK, 8652100, 8661554
-            )),
-            read_headers(format!(
-                "./src/data/{}/execution_blocks_{}_{}.json",
-                NETWORK, 8661554, 8663908
-            ))
-        ];
-    };
-
-    let init_options = init_options.unwrap_or(InitOptions {
-        validate_updates: true,
-        verify_bls_signatures: true,
-        hashes_gc_threshold: 51000,
-        trusted_signer: None,
-    });
-
-    let init_input = InitInput {
-        network: Network::from_str(NETWORK).unwrap(),
-        finalized_execution_header: HEADERS[0][0].clone(),
-        finalized_beacon_header: UPDATES[0].finalized_header.clone().into(),
-        current_sync_committee: INIT_UPDATE
-            .next_sync_committee
-            .clone()
-            .expect("Sync committee not found"),
-        next_sync_committee: UPDATES[0]
-            .next_sync_committee
-            .clone()
-            .expect("Sync committee not found"),
-        validate_updates: init_options.validate_updates,
-        verify_bls_signatures: init_options.verify_bls_signatures,
-        hashes_gc_threshold: init_options.hashes_gc_threshold,
-        trusted_signer: init_options.trusted_signer,
-    };
-
-    (&HEADERS, &UPDATES, init_input)
-}
-
 pub fn get_sepolia_test_data(
     init_options: Option<InitOptions>,
 ) -> (
