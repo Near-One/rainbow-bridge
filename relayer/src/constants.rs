@@ -9,14 +9,26 @@ pub mod protocol {
 
 /// Default configuration values for the relayer application
 pub mod defaults {
-    // Network endpoints
-    pub const BEACON_ENDPOINT: &str = "http://unstable.sepolia.beacon-api.nimbus.team";
-    pub const EXECUTION_ENDPOINT: &str = "https://ethereum-sepolia-rpc.publicnode.com";
-    pub const NEAR_ENDPOINT: &str = "https://rpc.testnet.near.org";
+    // Testnet network endpoints (Sepolia + NEAR testnet)
+    pub const TESTNET_BEACON_ENDPOINT: &str = "http://unstable.sepolia.beacon-api.nimbus.team";
+    pub const TESTNET_EXECUTION_ENDPOINT: &str = "https://ethereum-sepolia-rpc.publicnode.com";
+    pub const TESTNET_NEAR_ENDPOINT: &str = "https://rpc.testnet.near.org";
+    pub const TESTNET_ETH_LIGHT_CLIENT_ACCOUNT_ID: &str = "client-eth2.sepolia.testnet";
+    pub const TESTNET_SIGNER_ACCOUNT_ID: &str = "relayer.testnet";
 
-    // Default account IDs (for example config only)
-    pub const ETH_LIGHT_CLIENT_ACCOUNT_ID: &str = "client-eth2.sepolia.testnet";
-    pub const SIGNER_ACCOUNT_ID: &str = "relayer.testnet";
+    // Mainnet network endpoints (Ethereum mainnet + NEAR mainnet)
+    pub const MAINNET_BEACON_ENDPOINT: &str = "http://localhost:5052";
+    pub const MAINNET_EXECUTION_ENDPOINT: &str = "https://eth.llamarpc.com";
+    pub const MAINNET_NEAR_ENDPOINT: &str = "https://rpc.mainnet.near.org";
+    pub const MAINNET_ETH_LIGHT_CLIENT_ACCOUNT_ID: &str = "client-eth2.near";
+    pub const MAINNET_SIGNER_ACCOUNT_ID: &str = "relayer.near";
+
+    // Legacy aliases (default to testnet)
+    pub const BEACON_ENDPOINT: &str = TESTNET_BEACON_ENDPOINT;
+    pub const EXECUTION_ENDPOINT: &str = TESTNET_EXECUTION_ENDPOINT;
+    pub const NEAR_ENDPOINT: &str = TESTNET_NEAR_ENDPOINT;
+    pub const ETH_LIGHT_CLIENT_ACCOUNT_ID: &str = TESTNET_ETH_LIGHT_CLIENT_ACCOUNT_ID;
+    pub const SIGNER_ACCOUNT_ID: &str = TESTNET_SIGNER_ACCOUNT_ID;
     pub const SECRET_KEY_PATH: &str = "./keys/signer.txt";
 
     // Timeout configurations (in seconds)

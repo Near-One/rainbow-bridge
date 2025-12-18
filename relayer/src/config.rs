@@ -6,8 +6,29 @@ use figment::{
 use near_primitives::types::AccountId;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use crate::constants::defaults;
+
+/// Target network for configuration
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum Network {
+    #[default]
+    Testnet,
+    Mainnet,
+}
+
+impl FromStr for Network {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "testnet" | "sepolia" => Ok(Network::Testnet),
+            "mainnet" => Ok(Network::Mainnet),
+            _ => Err(format!("Unknown network: {}. Use 'testnet' or 'mainnet'", s)),
+        }
+    }
+}
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -308,8 +329,39 @@ impl Config {
 
     /// Generate example config file content
     pub fn example_toml() -> Result<String> {
-        toml::to_string_pretty(&Config::default())
-            .wrap_err("Failed to serialize default configuration to TOML")
+        Self::example_toml_for_network(Network::default())
+    }
+
+    /// Generate example config file content for a specific network
+    pub fn example_toml_for_network(network: Network) -> Result<String> {
+        toml::to_string_pretty(&Config::for_network(network))
+            .wrap_err("Failed to serialize configuration to TOML")
+    }
+
+    /// Create a config with defaults for the specified network
+    pub fn for_network(network: Network) -> Self {
+        match network {
+            Network::Testnet => Config::default(),
+            Network::Mainnet => Config {
+                beacon: BeaconConfig {
+                    endpoint: defaults::MAINNET_BEACON_ENDPOINT.to_string(),
+                },
+                execution: ExecutionConfig {
+                    endpoint: defaults::MAINNET_EXECUTION_ENDPOINT.to_string(),
+                    max_batch_size: defaults::EXECUTION_BATCH_SIZE,
+                },
+                near: NearConfig {
+                    endpoint: defaults::MAINNET_NEAR_ENDPOINT.to_string(),
+                    eth_light_client_account_id: defaults::MAINNET_ETH_LIGHT_CLIENT_ACCOUNT_ID
+                        .to_string(),
+                    signer_account_id: defaults::MAINNET_SIGNER_ACCOUNT_ID.to_string(),
+                    secret_key: String::new(),
+                    timeout_secs: defaults::TIMEOUT_SECS,
+                },
+                relayer: RelayerConfig::default(),
+                logging: LoggingConfig::default(),
+            },
+        }
     }
 }
 

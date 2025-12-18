@@ -1,12 +1,34 @@
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use color_eyre::Result;
-use relayer::{config::Config, relay::EthRelayer};
+use relayer::{
+    config::{Config, Network},
+    relay::EthRelayer,
+};
 use tracing_indicatif::IndicatifLayer;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+
+/// Network selection for config generation
+#[derive(Debug, Clone, Copy, Default, ValueEnum)]
+enum NetworkArg {
+    /// Sepolia testnet + NEAR testnet
+    #[default]
+    Testnet,
+    /// Ethereum mainnet + NEAR mainnet
+    Mainnet,
+}
+
+impl From<NetworkArg> for Network {
+    fn from(arg: NetworkArg) -> Self {
+        match arg {
+            NetworkArg::Testnet => Network::Testnet,
+            NetworkArg::Mainnet => Network::Mainnet,
+        }
+    }
+}
 
 #[derive(Parser)]
 #[command(
@@ -23,12 +45,20 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Generate an example configuration file
     GenerateConfig {
+        /// Output file path
         #[arg(short, long, default_value = "relayer.toml")]
         output: PathBuf,
+        /// Target network for default values
+        #[arg(short, long, default_value = "testnet")]
+        network: NetworkArg,
     },
+    /// Validate the configuration file
     ValidateConfig,
+    /// Run the relayer continuously
     Run,
+    /// Run a single relay job and exit
     RunJob,
 }
 
@@ -60,9 +90,14 @@ fn setup_logging(level: &str, json: bool) -> Result<()> {
 
 async fn handle_command(command: Commands, config_path: Option<PathBuf>) -> Result<()> {
     match command {
-        Commands::GenerateConfig { output } => {
-            std::fs::write(&output, Config::example_toml()?)?;
-            println!("📝 Example configuration written to {}", output.display());
+        Commands::GenerateConfig { output, network } => {
+            let network: Network = network.into();
+            std::fs::write(&output, Config::example_toml_for_network(network)?)?;
+            println!(
+                "Example {:?} configuration written to {}",
+                network,
+                output.display()
+            );
         }
         Commands::ValidateConfig => {
             let config = Config::load(config_path)?;
