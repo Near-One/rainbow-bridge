@@ -15,8 +15,7 @@ jobs:
           - job-name: build rust contracts
             cmd: |
               cd contracts/near
-              rustup target add wasm32-unknown-unknown
-              make build
+              make build-eth2-client
             timeout-minutes: 40
 
           - job-name: test eth2-client
