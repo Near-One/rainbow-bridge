@@ -199,7 +199,7 @@ impl EthRelayer {
 
         let fetch_end = high_block;
         let fetch_start = high_block
-            .saturating_sub(self.config.relayer.max_headers_per_period as u64 - 1)
+            .saturating_sub(self.config.relayer.max_headers_per_loop as u64 - 1)
             .max(low_block);
 
         info!(

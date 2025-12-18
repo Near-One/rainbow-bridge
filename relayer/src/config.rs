@@ -82,7 +82,7 @@ pub struct RelayerConfig {
 
     /// Maximum number of headers to process in one period (to limit the 8192 headers case)
     #[serde(default)]
-    pub max_headers_per_period: usize,
+    pub max_headers_per_loop: usize,
 
     /// Sleep duration when synced (seconds)
     #[serde(default)]
@@ -152,7 +152,7 @@ impl Default for RelayerConfig {
         Self {
             update_interval_epochs: defaults::UPDATE_INTERVAL_EPOCHS,
             headers_batch_size: defaults::HEADERS_BATCH_SIZE,
-            max_headers_per_period: defaults::MAX_HEADERS_PER_PERIOD,
+            max_headers_per_loop: defaults::MAX_HEADERS_PER_PERIOD,
             sync_sleep_secs: defaults::SYNC_SLEEP_SECS,
             submission_sleep_secs: defaults::SUBMISSION_SLEEP_SECS,
             max_iterations: None,
@@ -263,9 +263,9 @@ impl Config {
             ));
         }
 
-        if self.relayer.max_headers_per_period == 0 {
+        if self.relayer.max_headers_per_loop == 0 {
             return Err(color_eyre::eyre::eyre!(
-                "max_headers_per_period must be greater than 0"
+                "max_headers_per_loop must be greater than 0"
             ));
         }
 
@@ -291,7 +291,7 @@ impl Config {
         tracing::info!("  Batch size: {} headers", self.relayer.headers_batch_size);
         tracing::info!(
             "  Max headers per period: {}",
-            self.relayer.max_headers_per_period
+            self.relayer.max_headers_per_loop
         );
         tracing::info!("  Sync sleep: {}s", self.relayer.sync_sleep_secs);
         tracing::info!(

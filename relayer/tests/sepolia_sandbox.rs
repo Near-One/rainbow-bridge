@@ -48,7 +48,7 @@ async fn test_relayer_mainloop_hybrid() -> Result<()> {
     let mut config = Config::default();
     config.relayer.max_iterations = Some(5);
     config.relayer.headers_batch_size = 100;
-    config.relayer.max_headers_per_period = 3000; // Test a large batch size for integration only
+    config.relayer.max_headers_per_loop = 3000; // Test a large batch size for integration only
 
     let relayer = EthRelayer::with_clients(
         beacon_client,               // Real Sepolia beacon
