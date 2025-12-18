@@ -173,7 +173,7 @@ impl Default for RelayerConfig {
         Self {
             update_interval_epochs: defaults::UPDATE_INTERVAL_EPOCHS,
             headers_batch_size: defaults::HEADERS_BATCH_SIZE,
-            max_headers_per_loop: defaults::MAX_HEADERS_PER_PERIOD,
+            max_headers_per_loop: defaults::MAX_HEADERS_PER_LOOP,
             sync_sleep_secs: defaults::SYNC_SLEEP_SECS,
             submission_sleep_secs: defaults::SUBMISSION_SLEEP_SECS,
             max_iterations: None,

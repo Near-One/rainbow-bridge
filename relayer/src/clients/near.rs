@@ -14,7 +14,7 @@ use near_primitives::types::AccountId;
 use near_primitives::views::FinalExecutionStatus;
 use std::fmt::Write;
 use tokio::time::{Duration, timeout};
-use tracing::{debug, error, info};
+use tracing::{error, info};
 
 use crate::config::RelayerConfig;
 
