@@ -23,7 +23,7 @@ pub mod defaults {
     pub const TIMEOUT_SECS: u64 = 30;
 
     // Execution client settings
-    pub const EXECUTION_BATCH_SIZE: usize = 1000;
+    pub const EXECUTION_BATCH_SIZE: usize = 500;
 
     // Relayer operation settings
     pub const UPDATE_INTERVAL_EPOCHS: u64 = 1;

@@ -7,12 +7,13 @@ use eth_types::{
 use eth2_utility::types::{ClientMode, InitInput};
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use near_crypto::Signer;
-use near_fetch::ops::Function;
+use near_fetch::ops::{Function, Transaction};
 use near_fetch::{Client, ops::MAX_GAS};
 use near_gas::NearGas;
 use near_primitives::types::AccountId;
 use near_primitives::views::FinalExecutionStatus;
 use std::fmt::Write;
+use tokio::time::{Duration, timeout};
 use tracing::info;
 
 use crate::config::RelayerConfig;
@@ -24,6 +25,7 @@ pub struct ContractClient {
     signer: Signer,
     client: Client,
     relayer_config: RelayerConfig,
+    timeout_secs: u64,
 }
 
 impl ContractClient {
@@ -33,12 +35,14 @@ impl ContractClient {
         signer: Signer,
         client: Client,
         relayer_config: RelayerConfig,
+        timeout_secs: u64,
     ) -> Self {
         Self {
             eth_light_client_account_id,
             signer,
             client,
             relayer_config,
+            timeout_secs,
         }
     }
 
@@ -47,16 +51,18 @@ impl ContractClient {
     where
         T: BorshDeserialize,
     {
-        let result = self
-            .client
-            .view(&self.eth_light_client_account_id, method_name)
-            .await
-            .wrap_err(format!("Failed to call view method '{}'", method_name))?
-            .borsh::<T>()
-            .wrap_err(format!(
-                "Failed to deserialize result from '{}'",
-                method_name
-            ))?;
+        let response = timeout(
+            Duration::from_secs(self.timeout_secs),
+            self.client
+                .view(&self.eth_light_client_account_id, method_name),
+        )
+        .await
+        .wrap_err("Near view time out")?
+        .wrap_err(format!("Failed to call view method '{}'", method_name))?;
+        let result = response.borsh::<T>().wrap_err(format!(
+            "Failed to deserialize result from '{}'",
+            method_name
+        ))?;
         Ok(result)
     }
 
@@ -93,38 +99,45 @@ impl ContractClient {
 
     /// Get block hash safely by block number
     pub async fn get_block_hash(&self, block_number: u64) -> Result<Option<H256>> {
-        let result = self
-            .client
-            .view(&self.eth_light_client_account_id, "block_hash_safe")
-            .args_borsh(block_number)
-            .await
-            .wrap_err(format!(
-                "Failed to call view method 'block_hash_safe' with block number {}",
-                block_number
-            ))?
-            .borsh::<Option<H256>>()
-            .wrap_err(format!(
-                "Failed to get block hash result for block number {}",
-                block_number
-            ))?;
+        let response = timeout(
+            Duration::from_secs(self.timeout_secs),
+            self.client
+                .view(&self.eth_light_client_account_id, "block_hash_safe")
+                .args_borsh(block_number),
+        )
+        .await
+        .wrap_err("Near view time out")?
+        .wrap_err(format!(
+            "Failed to call view method 'block_hash_safe' with block number {}",
+            block_number
+        ))?;
+
+        let result = response.borsh::<Option<H256>>().wrap_err(format!(
+            "Failed to get block hash result for block number {}",
+            block_number
+        ))?;
         Ok(result)
     }
 
     pub async fn submit_light_client_update(&self, update: LightClientUpdate) -> Result<()> {
-        self.client
-            .call(
-                &self.signer,
-                &self.eth_light_client_account_id,
-                "submit_beacon_chain_light_client_update",
-            )
-            .args_borsh(update)
-            .gas(NearGas::from_tgas(100))
-            .retry_exponential(1000, 3)
-            .transact()
-            .await
-            .wrap_err("Failed to send light client update transaction")?
-            .into_result()
-            .wrap_err("Failed to submit light client update")?;
+        timeout(
+            Duration::from_secs(self.timeout_secs),
+            self.client
+                .call(
+                    &self.signer,
+                    &self.eth_light_client_account_id,
+                    "submit_beacon_chain_light_client_update",
+                )
+                .args_borsh(update)
+                .gas(NearGas::from_tgas(100))
+                .retry_exponential(1000, 3)
+                .transact(),
+        )
+        .await
+        .wrap_err("Near call time out")?
+        .wrap_err("Failed to send light client update transaction")?
+        .into_result()
+        .wrap_err("Failed to submit light client update")?;
 
         info!("Light client update submitted successfully");
         Ok(())
@@ -174,21 +187,11 @@ impl ContractClient {
                 batch = batch.call(function);
             }
 
-            let status = batch
-                .retry_exponential(1000, 3)
-                .transact()
-                .await
-                .wrap_err(format!(
-                    "Failed to submit execution headers batch {} of {}",
-                    batch_index + 1,
-                    total_batches
-                ))?
-                .status;
-
-            if let FinalExecutionStatus::Failure(err) = status {
-                return Err(eyre::Report::msg(
-                    format!("Fail on batch submission: {err}").to_string(),
-                ));
+            if self.relayer_config.fast_mode {
+                self.submit_batch_async(batch, batch_index, total_batches)
+                    .await?;
+            } else {
+                self.submit_batch(batch, batch_index, total_batches).await?;
             }
 
             // Update progress bar
@@ -205,6 +208,54 @@ impl ContractClient {
             ));
         } else {
             info!("✅ {} headers submitted successfully", total_headers);
+        }
+
+        Ok(())
+    }
+
+    pub async fn submit_batch_async(
+        &self,
+        batch: Transaction<'_>,
+        batch_index: usize,
+        total_batches: usize,
+    ) -> Result<()> {
+        let _ = timeout(
+            Duration::from_secs(self.timeout_secs),
+            batch.retry_exponential(1000, 3).transact_async(),
+        )
+        .await
+        .wrap_err("Near call time out")
+        .wrap_err(format!(
+            "Failed to submit execution headers batch {} of {}",
+            batch_index + 1,
+            total_batches
+        ))?;
+
+        Ok(())
+    }
+    pub async fn submit_batch(
+        &self,
+        batch: Transaction<'_>,
+        batch_index: usize,
+        total_batches: usize,
+    ) -> Result<()> {
+        let status = timeout(
+            Duration::from_secs(self.timeout_secs),
+            batch.retry_exponential(1000, 3).transact(),
+        )
+        .await
+        .wrap_err("Near call time out")?
+        .wrap_err(format!(
+            "Failed to submit execution headers batch {} of {}",
+            batch_index + 1,
+            total_batches
+        ))?
+        .status;
+
+        if let FinalExecutionStatus::Failure(err) = status {
+            return Err(eyre::Report::msg(
+                format!("Fail on batch submission: {err}").to_string(),
+            ));
         }
 
         Ok(())

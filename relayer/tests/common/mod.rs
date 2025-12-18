@@ -9,6 +9,7 @@ use eth2_utility::types::InitInput;
 use near_crypto::{InMemorySigner, SecretKey};
 use near_workspaces::network::Sandbox;
 use near_workspaces::{Contract, Worker, cargo_near_build};
+use relayer::config::NearConfig;
 use relayer::{ContractClient, config::RelayerConfig};
 
 /// Test fixture that sets up the sandbox environment and deploys the contract
@@ -57,11 +58,13 @@ impl TestFixture {
 
         // Create our NearContract wrapper with default config for tests
         let relayer_config = RelayerConfig::default();
+        let near_config = NearConfig::default();
         let near_client = ContractClient::new(
             contract.id().clone(),
             signer,
             near_fetch_client,
             relayer_config,
+            near_config.timeout_secs,
         );
 
         Ok(Self {

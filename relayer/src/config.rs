@@ -106,6 +106,10 @@ pub struct RelayerConfig {
     /// Enable dry run mode (don't actually submit transactions)
     #[serde(default)]
     pub dry_run: bool,
+
+    /// Fast mode: send headers asynchronously without waiting for the result
+    #[serde(default)]
+    pub fast_mode: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -163,6 +167,7 @@ impl Default for RelayerConfig {
             submission_sleep_secs: defaults::SUBMISSION_SLEEP_SECS,
             max_iterations: None,
             dry_run: false,
+            fast_mode: false,
         }
     }
 }

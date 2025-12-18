@@ -64,6 +64,7 @@ impl EthRelayer {
             signer,
             client,
             config.relayer.clone(),
+            config.near.timeout_secs,
         ))
     }
 
