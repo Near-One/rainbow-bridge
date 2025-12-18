@@ -14,7 +14,7 @@ use near_primitives::types::AccountId;
 use near_primitives::views::FinalExecutionStatus;
 use std::fmt::Write;
 use tokio::time::{Duration, timeout};
-use tracing::info;
+use tracing::{debug, error, info};
 
 use crate::config::RelayerConfig;
 
@@ -57,9 +57,20 @@ impl ContractClient {
                 .view(&self.eth_light_client_account_id, method_name),
         )
         .await
-        .wrap_err("Near view time out")?
+        .map_err(|e| {
+            error!("NEAR view call '{}' timed out: {:#}", method_name, e);
+            e
+        })
+        .wrap_err("NEAR view timed out")?
+        .map_err(|e| {
+            error!("NEAR view call '{}' failed: {:#}", method_name, e);
+            e
+        })
         .wrap_err(format!("Failed to call view method '{}'", method_name))?;
-        let result = response.borsh::<T>().wrap_err(format!(
+        let result = response.borsh::<T>().map_err(|e| {
+            error!("Failed to deserialize response from '{}': {:#}", method_name, e);
+            e
+        }).wrap_err(format!(
             "Failed to deserialize result from '{}'",
             method_name
         ))?;
@@ -106,13 +117,24 @@ impl ContractClient {
                 .args_borsh(block_number),
         )
         .await
-        .wrap_err("Near view time out")?
+        .map_err(|e| {
+            error!("NEAR view call 'block_hash_safe' for block {} timed out: {:#}", block_number, e);
+            e
+        })
+        .wrap_err("NEAR view timed out")?
+        .map_err(|e| {
+            error!("NEAR view call 'block_hash_safe' for block {} failed: {:#}", block_number, e);
+            e
+        })
         .wrap_err(format!(
             "Failed to call view method 'block_hash_safe' with block number {}",
             block_number
         ))?;
 
-        let result = response.borsh::<Option<H256>>().wrap_err(format!(
+        let result = response.borsh::<Option<H256>>().map_err(|e| {
+            error!("Failed to deserialize block hash for block {}: {:#}", block_number, e);
+            e
+        }).wrap_err(format!(
             "Failed to get block hash result for block number {}",
             block_number
         ))?;
@@ -134,9 +156,21 @@ impl ContractClient {
                 .transact(),
         )
         .await
-        .wrap_err("Near call time out")?
+        .map_err(|e| {
+            error!("Light client update submission timed out: {:#}", e);
+            e
+        })
+        .wrap_err("NEAR call timed out")?
+        .map_err(|e| {
+            error!("Light client update transaction failed: {:#}", e);
+            e
+        })
         .wrap_err("Failed to send light client update transaction")?
         .into_result()
+        .map_err(|e| {
+            error!("Light client update rejected by contract: {:#}", e);
+            e
+        })
         .wrap_err("Failed to submit light client update")?;
 
         info!("Light client update submitted successfully");
@@ -224,7 +258,10 @@ impl ContractClient {
             batch.retry_exponential(1000, 3).transact_async(),
         )
         .await
-        .wrap_err("Near call time out")
+        .map_err(|e| {
+            error!("Batch {}/{} submission timed out: {:#}", batch_index + 1, total_batches, e);
+            e
+        })
         .wrap_err(format!(
             "Failed to submit execution headers batch {} of {}",
             batch_index + 1,
@@ -233,6 +270,7 @@ impl ContractClient {
 
         Ok(())
     }
+
     pub async fn submit_batch(
         &self,
         batch: Transaction<'_>,
@@ -244,7 +282,15 @@ impl ContractClient {
             batch.retry_exponential(1000, 3).transact(),
         )
         .await
-        .wrap_err("Near call time out")?
+        .map_err(|e| {
+            error!("Batch {}/{} submission timed out: {:#}", batch_index + 1, total_batches, e);
+            e
+        })
+        .wrap_err("NEAR call timed out")?
+        .map_err(|e| {
+            error!("Batch {}/{} transaction failed: {:#}", batch_index + 1, total_batches, e);
+            e
+        })
         .wrap_err(format!(
             "Failed to submit execution headers batch {} of {}",
             batch_index + 1,
@@ -253,9 +299,13 @@ impl ContractClient {
         .status;
 
         if let FinalExecutionStatus::Failure(err) = status {
-            return Err(eyre::Report::msg(
-                format!("Fail on batch submission: {err}").to_string(),
-            ));
+            error!("Batch {}/{} rejected by contract: {}", batch_index + 1, total_batches, err);
+            return Err(eyre::Report::msg(format!(
+                "Batch {}/{} submission failed: {}",
+                batch_index + 1,
+                total_batches,
+                err
+            )));
         }
 
         Ok(())
@@ -267,8 +317,16 @@ impl ContractClient {
             .args_borsh(init_input)
             .transact()
             .await
+            .map_err(|e| {
+                error!("Contract initialization transaction failed: {:#}", e);
+                e
+            })
             .wrap_err("Failed to send contract initialization transaction")?
             .into_result()
+            .map_err(|e| {
+                error!("Contract initialization rejected: {:#}", e);
+                e
+            })
             .wrap_err("Contract initialization failed")?;
 
         info!("Contract initialized successfully");
