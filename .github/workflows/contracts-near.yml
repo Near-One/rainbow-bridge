@@ -27,6 +27,7 @@ jobs:
           - job-name: test relayer
             cmd: |
               cd relayer
+              rustup target add wasm32-unknown-unknown
               cargo test
             timeout-minutes: 20
 
