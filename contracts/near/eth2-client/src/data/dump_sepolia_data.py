@@ -331,7 +331,7 @@ def load_update(period: int) -> dict:
 
 def get_block_number_for_period(period: int) -> int:
     upd = load_update(period)
-    block_hash = upd["finality_update"]["header_update"]["execution_block_hash"]
+    block_hash = upd["finalized_header"]["execution"]["block_hash"]
     block = w3.eth.get_block(block_hash, full_transactions=False)
     return block["number"]
 
