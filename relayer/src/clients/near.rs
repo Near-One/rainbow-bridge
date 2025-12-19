@@ -67,13 +67,19 @@ impl ContractClient {
             e
         })
         .wrap_err(format!("Failed to call view method '{}'", method_name))?;
-        let result = response.borsh::<T>().map_err(|e| {
-            error!("Failed to deserialize response from '{}': {:#}", method_name, e);
-            e
-        }).wrap_err(format!(
-            "Failed to deserialize result from '{}'",
-            method_name
-        ))?;
+        let result = response
+            .borsh::<T>()
+            .map_err(|e| {
+                error!(
+                    "Failed to deserialize response from '{}': {:#}",
+                    method_name, e
+                );
+                e
+            })
+            .wrap_err(format!(
+                "Failed to deserialize result from '{}'",
+                method_name
+            ))?;
         Ok(result)
     }
 
@@ -118,12 +124,18 @@ impl ContractClient {
         )
         .await
         .map_err(|e| {
-            error!("NEAR view call 'block_hash_safe' for block {} timed out: {:#}", block_number, e);
+            error!(
+                "NEAR view call 'block_hash_safe' for block {} timed out: {:#}",
+                block_number, e
+            );
             e
         })
         .wrap_err("NEAR view timed out")?
         .map_err(|e| {
-            error!("NEAR view call 'block_hash_safe' for block {} failed: {:#}", block_number, e);
+            error!(
+                "NEAR view call 'block_hash_safe' for block {} failed: {:#}",
+                block_number, e
+            );
             e
         })
         .wrap_err(format!(
@@ -131,13 +143,19 @@ impl ContractClient {
             block_number
         ))?;
 
-        let result = response.borsh::<Option<H256>>().map_err(|e| {
-            error!("Failed to deserialize block hash for block {}: {:#}", block_number, e);
-            e
-        }).wrap_err(format!(
-            "Failed to get block hash result for block number {}",
-            block_number
-        ))?;
+        let result = response
+            .borsh::<Option<H256>>()
+            .map_err(|e| {
+                error!(
+                    "Failed to deserialize block hash for block {}: {:#}",
+                    block_number, e
+                );
+                e
+            })
+            .wrap_err(format!(
+                "Failed to get block hash result for block number {}",
+                block_number
+            ))?;
         Ok(result)
     }
 
@@ -259,7 +277,12 @@ impl ContractClient {
         )
         .await
         .map_err(|e| {
-            error!("Batch {}/{} submission timed out: {:#}", batch_index + 1, total_batches, e);
+            error!(
+                "Batch {}/{} submission timed out: {:#}",
+                batch_index + 1,
+                total_batches,
+                e
+            );
             e
         })
         .wrap_err(format!(
@@ -283,12 +306,22 @@ impl ContractClient {
         )
         .await
         .map_err(|e| {
-            error!("Batch {}/{} submission timed out: {:#}", batch_index + 1, total_batches, e);
+            error!(
+                "Batch {}/{} submission timed out: {:#}",
+                batch_index + 1,
+                total_batches,
+                e
+            );
             e
         })
         .wrap_err("NEAR call timed out")?
         .map_err(|e| {
-            error!("Batch {}/{} transaction failed: {:#}", batch_index + 1, total_batches, e);
+            error!(
+                "Batch {}/{} transaction failed: {:#}",
+                batch_index + 1,
+                total_batches,
+                e
+            );
             e
         })
         .wrap_err(format!(
@@ -299,7 +332,12 @@ impl ContractClient {
         .status;
 
         if let FinalExecutionStatus::Failure(err) = status {
-            error!("Batch {}/{} rejected by contract: {}", batch_index + 1, total_batches, err);
+            error!(
+                "Batch {}/{} rejected by contract: {}",
+                batch_index + 1,
+                total_batches,
+                err
+            );
             return Err(eyre::Report::msg(format!(
                 "Batch {}/{} submission failed: {}",
                 batch_index + 1,

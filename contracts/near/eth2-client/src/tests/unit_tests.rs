@@ -490,7 +490,8 @@ mod tests {
             for i in 0..342 {
                 sync_committee_bits.set(i, true);
             }
-            update.sync_aggregate.sync_committee_bits = sync_committee_bits.as_raw_mut_slice().to_vec().into();
+            update.sync_aggregate.sync_committee_bits =
+                sync_committee_bits.as_raw_mut_slice().to_vec().into();
 
             contract.submit_beacon_chain_light_client_update(update);
         }

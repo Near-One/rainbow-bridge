@@ -60,6 +60,8 @@ enum Commands {
     Run,
     /// Run a single relay job and exit
     RunJob,
+    /// Init Eth Light Client contract
+    Init,
 }
 
 fn setup_logging(level: &str, json: bool) -> Result<()> {
@@ -120,6 +122,14 @@ async fn handle_command(command: Commands, config_path: Option<PathBuf>) -> Resu
             config.print_summary();
 
             EthRelayer::new(config).await?.run_job().await?;
+        }
+        Commands::Init => {
+            let config = Config::load(config_path)?;
+            config.validate()?;
+            setup_logging(&config.logging.level, config.logging.json)?;
+            config.print_summary();
+
+            EthRelayer::new(config).await?.init_eth_client().await?;
         }
     }
     Ok(())

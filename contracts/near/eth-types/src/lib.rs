@@ -160,8 +160,6 @@ macro_rules! uint_declare_wrapper_and_serde {
                 tree_hash::Hash256::from(bytes)
             }
         }
-
-
     };
 }
 

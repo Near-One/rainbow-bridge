@@ -1,9 +1,12 @@
+use std::str::FromStr;
 use std::time::Duration;
 
 use crate::constants::protocol::SLOTS_PER_EPOCH;
 use crate::{BeaconClient, ContractClient, ExecutionClient};
 use color_eyre::Result;
-use eth2_utility::types::ClientMode;
+use eth_types::BlockHeader;
+use eth_types::eth2::LightClientUpdate;
+use eth2_utility::types::{ClientMode, InitInput};
 use near_crypto::{InMemorySigner, SecretKey};
 use tokio::time::sleep;
 use tracing::{debug, error, info, warn};
@@ -123,6 +126,37 @@ impl EthRelayer {
         }
 
         Ok(())
+    }
+
+    pub async fn init_eth_client(&self) -> Result<()> {
+        let init_update: LightClientUpdate =
+            serde_json::from_reader(std::fs::File::open(&self.config.init.init_update)?)?;
+        let first_update: LightClientUpdate =
+            serde_json::from_reader(std::fs::File::open(&self.config.init.first_update)?)?;
+        let headers: Vec<BlockHeader> =
+            serde_json::from_reader(std::fs::File::open(&self.config.init.headers)?)?;
+
+        let init_input = InitInput {
+            network: eth2_utility::consensus::Network::from_str(&self.config.init.network)
+                .map_err(|err| color_eyre::eyre::eyre!("Incorrect network name: {err:?}"))?,
+            finalized_execution_header: headers[0].clone(),
+            finalized_beacon_header: first_update.finalized_header.clone().into(),
+            current_sync_committee: init_update
+                .next_sync_committee
+                .ok_or_else(|| color_eyre::eyre::eyre!("Missing sync committee in init update"))?,
+            next_sync_committee: first_update
+                .next_sync_committee
+                .ok_or_else(|| color_eyre::eyre::eyre!("Missing sync committee in first update"))?,
+            validate_updates: true,
+            verify_bls_signatures: true,
+            hashes_gc_threshold: self.config.init.hashes_gc_threshold,
+            trusted_signer: None,
+        };
+
+        self.near_client
+            .init_contract(init_input)
+            .await
+            .map_err(Into::into)
     }
 
     async fn run_iteration(&self) -> RelayResult {

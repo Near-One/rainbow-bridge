@@ -67,29 +67,29 @@ def fetch_execution_block(number: int) -> BlockData:
 
 def normalize_block(raw: BlockData) -> dict:
     return {
-        "parent_hash": raw.get("parentHash"),
-        "uncles_hash": raw.get("sha3Uncles"),
-        "author": raw.get("miner"),
-        "state_root": raw.get("stateRoot"),
-        "transactions_root": raw.get("transactionsRoot"),
-        "receipts_root": raw.get("receiptsRoot"),
-        "log_bloom": raw.get("logsBloom"),
+        "parentHash": raw.get("parentHash"),
+        "sha3Uncles": raw.get("sha3Uncles"),
+        "miner": raw.get("miner"),
+        "stateRoot": raw.get("stateRoot"),
+        "transactionsRoot": raw.get("transactionsRoot"),
+        "receiptsRoot": raw.get("receiptsRoot"),
+        "logsBloom": raw.get("logsBloom"),
         "difficulty": hex(raw.get("difficulty", 0)),
         "number": hex(raw.get("number", 0)),
-        "gas_limit": hex(raw.get("gasLimit", 0)),
-        "gas_used": hex(raw.get("gasUsed", 0)),
+        "gasLimit": hex(raw.get("gasLimit", 0)),
+        "gasUsed": hex(raw.get("gasUsed", 0)),
         "timestamp": hex(raw.get("timestamp", 0)),
-        "extra_data": raw.get("extraData"),
-        "mix_hash": raw.get("mixHash"),
+        "extraData": raw.get("extraData"),
+        "mixHash": raw.get("mixHash"),
         "nonce": raw.get("nonce"),
-        "base_fee_per_gas": hex(raw.get("baseFeePerGas", 0))
+        "baseFeePerGas": hex(raw.get("baseFeePerGas", 0))
         if raw.get("baseFeePerGas") is not None
         else None,  # Convert to hex
-        "withdrawals_root": raw.get("withdrawalsRoot"),
-        "blob_gas_used": hex(raw.get("blobGasUsed", 0)),
-        "excess_blob_gas": hex(raw.get("excessBlobGas", 0)),
-        "parent_beacon_block_root": raw.get("parentBeaconBlockRoot"),
-        "requests_hash": raw.get("requestsHash"),
+        "withdrawalsRoot": raw.get("withdrawalsRoot"),
+        "blobGasUsed": hex(raw.get("blobGasUsed", 0)),
+        "excessBlobGas": hex(raw.get("excessBlobGas", 0)),
+        "parentBeaconBlockRoot": raw.get("parentBeaconBlockRoot"),
+        "requestsHash": raw.get("requestsHash"),
     }
 
 

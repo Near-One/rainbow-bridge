@@ -25,7 +25,10 @@ impl FromStr for Network {
         match s.to_lowercase().as_str() {
             "testnet" | "sepolia" => Ok(Network::Testnet),
             "mainnet" => Ok(Network::Mainnet),
-            _ => Err(format!("Unknown network: {}. Use 'testnet' or 'mainnet'", s)),
+            _ => Err(format!(
+                "Unknown network: {}. Use 'testnet' or 'mainnet'",
+                s
+            )),
         }
     }
 }
@@ -47,6 +50,10 @@ pub struct Config {
     /// Relayer operation configuration
     #[serde(default)]
     pub relayer: RelayerConfig,
+
+    /// Config for EthLightClient contract initialization
+    #[serde(default)]
+    pub init: InitConfig,
 
     /// Logging configuration
     #[serde(default)]
@@ -126,6 +133,28 @@ pub struct RelayerConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InitConfig {
+    #[serde(default)]
+    pub network: String,
+
+    /// Path to the file with init Light Client Update
+    #[serde(default)]
+    pub init_update: String,
+
+    /// Path to the file with the first (next after init) Light Client Update
+    #[serde(default)]
+    pub first_update: String,
+
+    /// Path to the file with headers
+    #[serde(default)]
+    pub headers: String,
+
+    /// Hashes threshold for Garbage Collection
+    #[serde(default)]
+    pub hashes_gc_threshold: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoggingConfig {
     /// Log level: trace, debug, info, warn, error
     #[serde(default)]
@@ -179,6 +208,18 @@ impl Default for RelayerConfig {
             max_iterations: None,
             dry_run: false,
             fast_mode: false,
+        }
+    }
+}
+
+impl Default for InitConfig {
+    fn default() -> Self {
+        Self {
+            network: "sepolia".to_string(),
+            init_update: "".to_string(),
+            first_update: "".to_string(),
+            headers: "".to_string(),
+            hashes_gc_threshold: 51000,
         }
     }
 }
@@ -359,6 +400,13 @@ impl Config {
                     timeout_secs: defaults::TIMEOUT_SECS,
                 },
                 relayer: RelayerConfig::default(),
+                init: InitConfig {
+                    network: "mainnet".to_string(),
+                    init_update: "".to_string(),
+                    first_update: "".to_string(),
+                    headers: "".to_string(),
+                    hashes_gc_threshold: 51000,
+                },
                 logging: LoggingConfig::default(),
             },
         }
@@ -393,6 +441,7 @@ mod tests {
         assert!(toml.contains("[beacon]"));
         assert!(toml.contains("[near]"));
         assert!(toml.contains("[relayer]"));
+        assert!(toml.contains("[init]"));
         assert!(toml.contains("[logging]"));
     }
 }
