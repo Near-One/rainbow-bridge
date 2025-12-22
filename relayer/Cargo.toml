@@ -1,6 +1,6 @@
 [package]
 name = "relayer"
-version = "0.7.0"
+version = "0.1.0"
 edition = "2024"
 resolver = "2"
 
@@ -24,13 +24,7 @@ serde_json = { version = "1.0" }
 toml = { version = "0.8" }
 
 # Blockchain and crypto
-alloy = { version = "0.12", default-features = false, features = [
-    "providers",
-    "rpc",
-    "rpc-types",
-    "transports",
-    "reqwest",
-] }
+alloy = { version = "0.12", default-features = false, features = ["providers", "rpc", "rpc-types", "transports", "reqwest"] }
 tree_hash = { version = "0.8" }
 tree_hash_derive = { version = "0.8" }
 
