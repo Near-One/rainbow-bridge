@@ -18,7 +18,7 @@ pub struct ExecutionHeaderInfo {
 #[derive(Clone)]
 #[near(serializers=[borsh])]
 pub struct InitInput {
-    pub network: String,
+    pub network: Network,
     pub finalized_execution_header: eth_types::BlockHeader,
     pub finalized_beacon_header: ExtendedBeaconBlockHeader,
     pub current_sync_committee: SyncCommittee,
@@ -29,7 +29,7 @@ pub struct InitInput {
     pub trusted_signer: Option<AccountId>,
 }
 
-#[derive(Clone, BorshDeserialize, BorshSerialize, PartialEq, BorshSchema)]
+#[derive(Clone, BorshDeserialize, BorshSerialize, PartialEq, BorshSchema, Debug)]
 pub enum ClientMode {
     SubmitLightClientUpdate,
     SubmitHeader,

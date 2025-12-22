@@ -1,0 +1,12 @@
+**/target/
+.git/
+.gitignore
+relayer/target/
+contracts/near/target/
+relayer/*.md
+relayer/tests/
+relayer/.env*
+relayer/relayer.toml
+relayer/keys/
+relayer/libpod/
+*.log

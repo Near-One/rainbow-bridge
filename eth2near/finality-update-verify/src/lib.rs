@@ -64,7 +64,7 @@ pub fn is_correct_finality_update(
     );
 
     let attested_beacon_header_root = tree_hash::TreeHash::tree_hash_root(
-        &to_lighthouse_beacon_block_header(&light_client_update.attested_beacon_header),
+        &to_lighthouse_beacon_block_header(&light_client_update.attested_header),
     );
     let signing_root = compute_signing_root(
         tree_hash_h256_to_eth_type_h256(attested_beacon_header_root),

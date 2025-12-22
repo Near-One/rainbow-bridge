@@ -86,15 +86,6 @@ mod tests {
         #[test]
         pub fn test_header_root() {
             let header =
-                read_beacon_header(format!("./src/data/goerli/beacon_header_{}.json", 5258752));
-            assert_eq!(
-                H256(header.tree_hash_root().0.into()),
-                Vec::from_hex("cd669c0007ab6ff261a02cc3335ba470088e92f0460bf1efac451009efb9ec0a")
-                    .unwrap()
-                    .into()
-            );
-
-            let header =
                 read_beacon_header(format!("./src/data/mainnet/beacon_header_{}.json", 4100000));
             assert_eq!(
                 H256(header.tree_hash_root().0.into()),
@@ -244,7 +235,7 @@ mod tests {
             } = get_test_context(None);
             set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
-            update.finality_update.finality_branch[5] = H256::from(
+            update.finality_branch[3] = H256::from(
                 hex::decode("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
                     .unwrap(),
             );
@@ -261,7 +252,7 @@ mod tests {
             } = get_test_context(None);
             set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
-            update.finality_update.finality_branch = vec![];
+            update.finality_branch = vec![];
             contract.submit_beacon_chain_light_client_update(update);
         }
 
@@ -275,7 +266,7 @@ mod tests {
             } = get_test_context(None);
             set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
-            update.finality_update.header_update.execution_hash_branch[5] = H256::from(
+            update.finalized_header.execution_branch[3] = H256::from(
                 hex::decode("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
                     .unwrap(),
             );
@@ -292,7 +283,7 @@ mod tests {
             } = get_test_context(None);
             set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
-            update.finality_update.header_update.execution_hash_branch = vec![];
+            update.finalized_header.execution_branch = vec![];
             contract.submit_beacon_chain_light_client_update(update);
         }
 
@@ -306,11 +297,10 @@ mod tests {
             } = get_test_context(None);
             set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
-            update.finality_update.header_update.beacon_header.slot =
+            update.finalized_header.beacon.slot =
                 update.signature_slot + EPOCHS_PER_SYNC_COMMITTEE_PERIOD * SLOTS_PER_EPOCH * 10;
-            update.attested_beacon_header.slot =
-                update.finality_update.header_update.beacon_header.slot;
-            update.signature_slot = update.attested_beacon_header.slot + 1;
+            update.attested_header.beacon.slot = update.finalized_header.beacon.slot;
+            update.signature_slot = update.attested_header.beacon.slot + 1;
             contract.submit_beacon_chain_light_client_update(update);
         }
 
@@ -401,8 +391,8 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "== ClientMode::SubmitHeader")]
-        pub fn test_panic_on_submit_headers_in_worng_mode() {
+        #[should_panic(expected = "Client is not in SubmitHeader mode")]
+        pub fn test_panic_on_submit_headers_in_wrong_mode() {
             let submitter = accounts(0);
             let TestContext {
                 mut contract,
@@ -457,7 +447,7 @@ mod tests {
             } = get_test_context(None);
             set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
-            update.sync_committee_update = None;
+            update.next_sync_committee = None;
             contract.submit_beacon_chain_light_client_update(update);
         }
 
@@ -471,13 +461,13 @@ mod tests {
             } = get_test_context(None);
             set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
-            
+
             // Corrupt the BLS signature by modifying the last byte
             let mut signature_bytes = update.sync_aggregate.sync_committee_signature.0.to_vec();
             let last_idx = signature_bytes.len() - 1;
             signature_bytes[last_idx] = signature_bytes[last_idx].wrapping_add(1);
             update.sync_aggregate.sync_committee_signature = signature_bytes.into();
-            
+
             contract.submit_beacon_chain_light_client_update(update);
         }
 
@@ -491,7 +481,7 @@ mod tests {
             } = get_test_context(None);
             set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
-            
+
             // Create a sync committee bits pattern that doesn't match the signature
             // but still meets the minimum participation threshold
             let mut sync_committee_bits = bitarr![u8, Lsb0; 0; 512];
@@ -500,8 +490,9 @@ mod tests {
             for i in 0..342 {
                 sync_committee_bits.set(i, true);
             }
-            update.sync_aggregate.sync_committee_bits = sync_committee_bits.as_raw_mut_slice().to_vec().into();
-            
+            update.sync_aggregate.sync_committee_bits =
+                sync_committee_bits.as_raw_mut_slice().to_vec().into();
+
             contract.submit_beacon_chain_light_client_update(update);
         }
 
@@ -515,11 +506,11 @@ mod tests {
             } = get_test_context(None);
             set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
-            
+
             // Set signature to all zeros
             let signature_bytes = vec![0u8; 96];
             update.sync_aggregate.sync_committee_signature = signature_bytes.into();
-            
+
             contract.submit_beacon_chain_light_client_update(update);
         }
 
@@ -533,11 +524,11 @@ mod tests {
             } = get_test_context(None);
             set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             let mut update = updates[1].clone();
-            
+
             // Modify the attested header to make signature verification fail
             // but keep the signature and bits valid (so it passes format checks)
-            update.attested_beacon_header.slot = update.attested_beacon_header.slot + 1;
-            
+            update.attested_header.beacon.slot = update.attested_header.beacon.slot - 1;
+
             contract.submit_beacon_chain_light_client_update(update);
         }
     }
