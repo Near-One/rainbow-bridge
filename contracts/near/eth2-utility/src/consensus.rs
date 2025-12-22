@@ -157,7 +157,6 @@ impl NetworkConfig {
 
         // Spec: https://github.com/ethereum/consensus-specs/blob/dev/specs/capella/light-client/sync-protocol.md
         pub const EXECUTION_PAYLOAD_GINDEX: u32 = 25;
-        pub const EXECUTION_PAYLOAD_GINDEX_ELECTRA: u32 = 25;
 
         let epoch = compute_epoch_at_slot(slot);
 
@@ -171,8 +170,8 @@ impl NetworkConfig {
                 ),
                 sync_committee_tree_depth: floorlog2(NEXT_SYNC_COMMITTEE_INDEX_ELECTRA),
                 sync_committee_tree_index: get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX_ELECTRA),
-                execution_payload_tree_depth: floorlog2(EXECUTION_PAYLOAD_GINDEX_ELECTRA),
-                execution_payload_tree_index: get_subtree_index(EXECUTION_PAYLOAD_GINDEX_ELECTRA),
+                execution_payload_tree_depth: floorlog2(EXECUTION_PAYLOAD_GINDEX),
+                execution_payload_tree_index: get_subtree_index(EXECUTION_PAYLOAD_GINDEX),
             }
         } else {
             GeneralizedIndex {
