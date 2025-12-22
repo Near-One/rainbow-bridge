@@ -2,9 +2,6 @@ name: Build and Push Relayer Docker Image
 
 on:
   push:
-    branches:
-      - master
-      - main
     paths:
       - 'relayer/**'
       - 'contracts/near/**'
