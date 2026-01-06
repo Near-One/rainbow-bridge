@@ -5,7 +5,7 @@ use eth2::{BeaconNodeHttpClient, Timeouts};
 use sensitive_url::SensitiveUrl;
 use std::time::Duration;
 use types::{
-    ExecPayload, ForkVersionedResponse, FullPayloadRef, LightClientFinalityUpdate,
+    BeaconResponse, ExecPayload, FullPayloadRef, LightClientFinalityUpdate,
     LightClientUpdate as LighthouseLightClientUpdate, MainnetEthSpec, Slot,
 };
 
@@ -31,7 +31,7 @@ impl BeaconClient {
 
     /// Fetch light client update for a specific period using Lighthouse's client
     pub async fn fetch_period_update(&self, period: u64) -> Result<BorshLightClientUpdate> {
-        let updates: Vec<ForkVersionedResponse<LighthouseLightClientUpdate<MainnetEthSpec>>> = self
+        let updates: Vec<BeaconResponse<LighthouseLightClientUpdate<MainnetEthSpec>>> = self
             .client
             .get_beacon_light_client_updates(period, 1)
             .await
@@ -50,7 +50,7 @@ impl BeaconClient {
             color_eyre::eyre::eyre!("No light client update found for period {}", period)
         })?;
 
-        let v = serde_json::to_value(&update.data)
+        let v = serde_json::to_value(update.data())
             .wrap_err("Failed to serialize light client update to JSON")?;
         let custom_update: BorshLightClientUpdate = serde_json::from_value(v)
             .wrap_err("Failed to deserialize light client update from JSON")?;
@@ -60,19 +60,18 @@ impl BeaconClient {
 
     /// Fetch latest finality update
     pub async fn fetch_finality_update(&self) -> Result<BorshLightClientUpdate> {
-        let finality_update: Option<
-            ForkVersionedResponse<LightClientFinalityUpdate<MainnetEthSpec>>,
-        > = self
-            .client
-            .get_beacon_light_client_finality_update()
-            .await
-            .map_err(|e| {
-                color_eyre::eyre::eyre!("Failed to fetch light client finality update: {:?}", e)
-            })?;
+        let finality_update: Option<BeaconResponse<LightClientFinalityUpdate<MainnetEthSpec>>> =
+            self.client
+                .get_beacon_light_client_finality_update()
+                .await
+                .map_err(|e| {
+                    color_eyre::eyre::eyre!("Failed to fetch light client finality update: {:?}", e)
+                })?;
 
         let finality_data = finality_update
             .ok_or_else(|| color_eyre::eyre::eyre!("No finality update available"))?
-            .data;
+            .data()
+            .clone();
 
         let json_str = serde_json::to_string(&finality_data)
             .wrap_err("Failed to serialize finality update to JSON")?;
@@ -125,7 +124,7 @@ impl BeaconClient {
 
         // Extract execution block number from the execution payload
         let execution_payload: FullPayloadRef<'_, MainnetEthSpec> = block
-            .data
+            .data()
             .message()
             .body()
             .execution_payload()

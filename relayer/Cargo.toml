@@ -6,9 +6,9 @@ resolver = "2"
 
 [dependencies]
 # Lighthouse ecosystem dependencies
-eth2 = { git = "https://github.com/sigp/lighthouse", tag = "v7.0.1" }
-types = { git = "https://github.com/sigp/lighthouse", tag = "v7.0.1" }
-sensitive_url = { git = "https://github.com/sigp/lighthouse", tag = "v7.0.1" }
+eth2 = { git = "https://github.com/sigp/lighthouse", tag = "v7.1.0" }
+types = { git = "https://github.com/sigp/lighthouse", tag = "v7.1.0" }
+sensitive_url = { git = "https://github.com/sigp/lighthouse", tag = "v7.1.0" }
 
 # Local path dependencies
 eth-types = { path = "../contracts/near/eth-types/" }
@@ -41,12 +41,12 @@ near-gas = { version = "0.3" }
 near-fetch = { git = "https://github.com/r-near/fetch", branch = "main" }
 
 # CLI and configuration
-clap = { version = "4.5" }
+clap = { version = "4.5", features = ["derive"] }
 figment = { version = "0.10", features = ["toml", "env"] }
 
 # Logging and tracing
 tracing = { version = "0.1" }
-tracing-subscriber = { version = "0.3", features = ["json"] }
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
 tracing-indicatif = { version = "0.3" }
 
 # Progress and UI
