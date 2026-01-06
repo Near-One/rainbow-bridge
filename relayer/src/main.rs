@@ -7,9 +7,8 @@ use relayer::{
     relay::EthRelayer,
 };
 use tracing_indicatif::IndicatifLayer;
-use tracing_subscriber::EnvFilter;
-use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::{EnvFilter, layer::SubscriberExt};
 
 /// Network selection for config generation
 #[derive(Debug, Clone, Copy, Default, ValueEnum)]
