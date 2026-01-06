@@ -69,11 +69,11 @@ impl BeaconClient {
                 })?;
 
         let finality_data = finality_update
+            .as_ref()
             .ok_or_else(|| color_eyre::eyre::eyre!("No finality update available"))?
-            .data()
-            .clone();
+            .data();
 
-        let json_str = serde_json::to_string(&finality_data)
+        let json_str = serde_json::to_string(finality_data)
             .wrap_err("Failed to serialize finality update to JSON")?;
         let custom_update: BorshLightClientUpdate = serde_json::from_str(&json_str)
             .wrap_err("Failed to deserialize finality update from JSON")?;
