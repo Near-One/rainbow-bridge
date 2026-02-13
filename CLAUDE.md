@@ -20,7 +20,14 @@ The eth2 light client lives in `contracts/near/eth2-client/`. Supporting crates:
 All contract commands run from `contracts/near/`:
 
 ```bash
-# Build (requires cargo-near and wasm32-unknown-unknown target)
+# Local build (fast, for development — requires wasm32-unknown-unknown target)
+cd contracts/near && cargo build -p eth2-client
+
+# Local WASM build (needed before integration tests)
+rustup target add wasm32-unknown-unknown
+cargo near build non-reproducible-wasm --no-abi --no-default-features --features logs
+
+# Reproducible WASM build (slow, Docker-based — for releases)
 cargo near build reproducible-wasm --manifest-path contracts/near/eth2-client/Cargo.toml
 
 # Test (the canonical CI sequence — builds test WASM first, then runs tests twice: with and without default features)
@@ -49,46 +56,50 @@ cd contracts/near && cargo fmt --check
 
 ## Contract State Machine
 
-The eth2-client alternates between two modes:
+The eth2-client alternates between two modes (`ClientMode` enum):
 
 ```
-SubmitLightClientUpdate → submit_beacon_chain_light_client_update()
-    validates sync committee signatures, merkle proofs, period transitions
-    updates finalized beacon header + sync committees
-    → transitions to SubmitHeader
-
-SubmitHeader → submit_execution_header() (called repeatedly)
-    accepts execution blocks in reverse order (newest→oldest)
-    stores block_number→block_hash in LookupMap
-    GCs old blocks beyond hashes_gc_threshold
-    when chain is closed (reaches previous finalized block + 1)
-    → transitions back to SubmitLightClientUpdate
+  ┌───────────────────────────────────────────────────────────┐
+  │                                                           │
+  ▼                                                           │
+SubmitLightClientUpdate                                       │
+  │  submit_beacon_chain_light_client_update(update)          │
+  │    1. verify_finality_branch: merkle proof that           │
+  │       update.finalized_header is in attested_header       │
+  │    2. check ≥2/3 sync committee participation             │
+  │    3. verify_bls_signatures (aggregate BLS via            │
+  │       NEAR host fns: bls12381_p1_sum, pairing_check)      │
+  │    4. commit: if period advanced (P→P+1), rotate          │
+  │       current_sync_committee ← next, next ← from update   │
+  │    5. set finalized_beacon_header, switch mode            │
+  │                                                           │
+  ▼                                                           │
+SubmitHeader                                                  │
+  │  submit_execution_header(block_header) ×N                 │
+  │    — called once per block, newest→oldest                 │
+  │    — first call: block whose hash matches                 │
+  │      finalized_beacon_header.execution_block_hash         │
+  │    — each subsequent: parent of the previous              │
+  │    — inserts block_number→block_hash in LookupMap         │
+  │    — GCs blocks beyond hashes_gc_threshold                │
+  │    — last call: block_number == old_finalized + 1,        │
+  │      verifies parent_hash links to old finalized hash ────┘
+  │      (chain is "closed"), updates finalized_execution_header
 ```
 
-Light client updates can advance by at most 1 sync committee period (8192 slots ≈ 27 hours). This bounds GC to at most one period's worth of removals per cycle.
+**Period constraint**: light client updates can advance by at most 1 sync committee period (`update_period == finalized_period || finalized_period + 1`). This bounds the execution block gap (and thus GC work) to at most one period's worth of blocks per cycle.
+
+**GC**: `gc_finalized_execution_blocks` removes old entries from `finalized_execution_blocks` LookupMap. Bounded to `MAX_GC_BLOCKS_PER_CALL` (= one period = 8192) removals per call. In steady state this removes exactly 1 block per `submit_execution_header` call.
 
 ## Key Protocol Constants
 
-From `eth2-utility/src/consensus.rs`:
+Defined in `eth2-utility/src/consensus.rs`, per the [Ethereum Consensus Spec](https://github.com/ethereum/consensus-specs/blob/dev/specs/altair/light-client/sync-protocol.md):
+
 - `SLOTS_PER_EPOCH = 32` (~6.4 min)
 - `EPOCHS_PER_SYNC_COMMITTEE_PERIOD = 256`
-- One sync committee period = 8192 slots ≈ 27 hours
+- One sync committee period = 32 × 256 = 8192 slots ≈ 27 hours
+- `MIN_SYNC_COMMITTEE_PARTICIPANTS = 1` (contract enforces ≥2/3 of 512)
 - `hashes_gc_threshold` is typically 51000 (~7 days of blocks)
-
-## Storage Keys
-
-```rust
-StorageKey::FinalizedExecutionBlocks  // LookupMap<u64, H256> — block number → hash
-StorageKey::FinalizedExecutionHeader  // LazyOption<ExecutionHeaderInfo>
-StorageKey::CurrentSyncCommittee      // LazyOption<SyncCommittee>
-StorageKey::NextSyncCommittee         // LazyOption<SyncCommittee>
-```
-
-`__DeprecatedUnfinalizedHeaders` and `__DeprecatedSubmitters` are leftover from V1 migration — do not reuse.
-
-## Access Control
-
-Uses `near-plugins` for roles: `DAO`, `PauseManager`, `UpgradableCodeStager/Deployer`, `UnrestrictedSubmitLightClientUpdate`, `UnrestrictedSubmitExecutionHeader`. Admin methods (`update_trusted_signer`, `update_hashes_gc_threshold`, etc.) require `Role::DAO`.
 
 ## Test Data
 
@@ -96,10 +107,6 @@ Test data lives in `contracts/near/eth2-client/src/data/` (LFS-tracked JSON file
 ```bash
 cd contracts/near/eth2-client/src/data && uv run dump_sepolia_data.py
 ```
-
-## Migration Pattern
-
-`migrate.rs` defines the previous struct version (e.g., `Eth2ClientV1`) and a `migrate()` function that reads old state and constructs the new `Eth2Client`. When adding fields to `Eth2Client`, create a new versioned struct matching the *current* on-chain layout and set defaults for new fields in `migrate()`.
 
 ## New Relayer (`relayer/`)
 
