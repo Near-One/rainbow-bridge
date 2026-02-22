@@ -15,21 +15,11 @@ The eth2 light client lives in `contracts/near/eth2-client/`. Supporting crates:
 - `eth2-utility` — Consensus logic: network configs, fork handling, merkle proof verification, sync committee period computation
 - `eth2_hashing` — WASM-compatible Keccak256 (patched ethereum_hashing for NEAR SDK)
 
-## Build, Test, Lint
+## Test, Lint
 
 All contract commands run from `contracts/near/`:
 
 ```bash
-# Local build (fast, for development — requires wasm32-unknown-unknown target)
-cd contracts/near && cargo build -p eth2-client
-
-# Local WASM build (needed before integration tests)
-rustup target add wasm32-unknown-unknown
-cargo near build non-reproducible-wasm --no-abi --no-default-features --features logs
-
-# Reproducible WASM build (slow, Docker-based — for releases)
-cargo near build reproducible-wasm --manifest-path contracts/near/eth2-client/Cargo.toml
-
 # Test (the canonical CI sequence — builds test WASM first, then runs tests twice: with and without default features)
 cd contracts/near/eth2-client && ./test.sh
 
