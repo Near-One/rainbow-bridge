@@ -26,9 +26,6 @@ cd contracts/near/eth2-client && ./test.sh
 # Run all tests
 cd contracts/near && cargo test -p eth2-client
 
-# Run a single test
-cd contracts/near && cargo test -p eth2-client test_gc_headers -- --nocapture
-
 # Unit tests only (no mainnet feature, allows validate_updates=false)
 cd contracts/near && cargo test -p eth2-client --no-default-features -- --nocapture
 
