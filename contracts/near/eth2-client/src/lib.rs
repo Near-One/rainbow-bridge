@@ -15,6 +15,7 @@ use near_sdk::collections::{LazyOption, LookupMap};
 use near_sdk::{
     env, near, require, AccountId, BorshStorageKey, PanicOnDefault, Promise, PublicKey,
 };
+use omni_utils::macros::trusted_relayer;
 use tree_hash::TreeHash;
 
 use amcl::bls381::bls381::utils::serialize_uncompressed_g1;
@@ -45,6 +46,7 @@ pub enum Role {
     UnrestrictedSubmitLightClientUpdate,
     UnrestrictedSubmitExecutionHeader,
     DAO,
+    RelayerManager,
 }
 
 #[near(contract_state)]
@@ -90,6 +92,10 @@ pub struct Eth2Client {
     trusted_blocks_submitter: Option<AccountId>,
 }
 
+#[trusted_relayer(
+    bypass_roles(Role::DAO, Role::UnrestrictedSubmitLightClientUpdate),
+    manager_roles(Role::DAO, Role::RelayerManager)
+)]
 #[near]
 impl Eth2Client {
     #[init]
@@ -227,6 +233,7 @@ impl Eth2Client {
             .map(|header| header.block_number)
     }
 
+    #[trusted_relayer]
     #[pause(except(roles(Role::UnrestrictedSubmitLightClientUpdate, Role::DAO)))]
     pub fn submit_beacon_chain_light_client_update(
         &mut self,
@@ -242,6 +249,7 @@ impl Eth2Client {
     }
 
     #[result_serializer(borsh)]
+    #[trusted_relayer]
     #[pause(except(roles(Role::UnrestrictedSubmitExecutionHeader, Role::DAO)))]
     pub fn submit_execution_header(&mut self, #[serializer(borsh)] block_header: BlockHeader) {
         if let Some(trusted_blocks_submitter) = &self.trusted_blocks_submitter {

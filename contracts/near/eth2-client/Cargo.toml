@@ -40,6 +40,7 @@ near-sdk.workspace = true
 borsh.workspace = true
 bitvec.workspace = true
 near-plugins.workspace = true
+omni-utils.workspace = true
 near-abi = "0.4.3"
 schemars = "0.8.22"
 amcl = { git = "https://github.com/sigp/incubator-milagro-crypto-rust.git", default-features = false, features = [
