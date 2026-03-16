@@ -3,6 +3,7 @@ authors = ["Near One <info@nearone.org>"]
 repository = "https://github.com/Near-One/rainbow-bridge"
 
 [workspace]
+resolver = "2"
 members = [
     "eth2-client",
     "eth-prover",
