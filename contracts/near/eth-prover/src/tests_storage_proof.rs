@@ -90,7 +90,7 @@ mod tests_storage_proof {
                 .parse()
                 .unwrap(),
             predecessor_account_id: "carol.near".parse().unwrap(),
-            input,
+            input: input.into(),
             block_index: 0,
             block_timestamp: 0,
             epoch_height: 0,

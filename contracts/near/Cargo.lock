@@ -1411,6 +1411,7 @@ dependencies = [
  "lazy_static",
  "near-abi",
  "near-plugins",
+ "near-primitives-core 0.34.7",
  "near-sdk",
  "near-units",
  "near-workspaces",

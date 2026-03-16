@@ -5,7 +5,7 @@ mod tests {
     use eth_types::eth2::LightClientUpdate;
     use eth_types::BlockHeader;
     use near_sdk::test_utils::VMContextBuilder;
-    use near_sdk::{test_vm_config, testing_env, AccountId, Gas};
+    use near_sdk::{test_vm_config, testing_env, AccountId};
 
     macro_rules! inner_set_env {
         ($builder:ident) => {
@@ -28,8 +28,8 @@ mod tests {
             let mut vm_config = test_vm_config();
             vm_config.limit_config.max_number_logs = u64::MAX;
             vm_config.limit_config.max_total_log_length = u64::MAX;
-            vm_config.limit_config.max_total_prepaid_gas = Gas::from_gas(u64::MAX);
-            vm_config.limit_config.max_gas_burnt = Gas::from_gas(u64::MAX);
+            vm_config.limit_config.max_total_prepaid_gas = near_primitives_core::gas::Gas::MAX;
+            vm_config.limit_config.max_gas_burnt = near_primitives_core::gas::Gas::MAX;
             testing_env!(builder.build(), vm_config);
         };
     }
