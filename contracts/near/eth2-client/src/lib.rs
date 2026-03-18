@@ -138,7 +138,7 @@ impl Eth2Client {
             hashes_gc_threshold: args.hashes_gc_threshold,
             network: args.network,
             finalized_execution_blocks: LookupMap::new(StorageKey::FinalizedExecutionBlocks),
-            finalized_beacon_header: args.finalized_beacon_header.into(),
+            finalized_beacon_header: args.finalized_beacon_header,
             finalized_execution_header: LazyOption::new(
                 StorageKey::FinalizedExecutionHeader,
                 Some(&finalized_execution_header_info),
@@ -295,8 +295,7 @@ impl Eth2Client {
         {
             let header_number_to_remove = (finalized_execution_header.block_number
                 + diff_between_unfinalized_head_and_tail)
-                .checked_sub(self.hashes_gc_threshold)
-                .unwrap_or(0);
+                .saturating_sub(self.hashes_gc_threshold);
 
             require!(
                 header_number_to_remove < finalized_execution_header.block_number,
@@ -569,8 +568,8 @@ impl Eth2Client {
         Self::fp2_to_u8(&msg_fp2[0], &mut msg_fp2_0);
         Self::fp2_to_u8(&msg_fp2[1], &mut msg_fp2_1);
 
-        let mut msg_g2_0 = env::bls12381_map_fp2_to_g2(&msg_fp2_0);
-        let mut msg_g2_1 = env::bls12381_map_fp2_to_g2(&msg_fp2_1);
+        let mut msg_g2_0 = env::bls12381_map_fp2_to_g2(msg_fp2_0);
+        let mut msg_g2_1 = env::bls12381_map_fp2_to_g2(msg_fp2_1);
         let mut msg_g2_concat = vec![0u8; 1];
         msg_g2_concat.append(&mut msg_g2_0);
         msg_g2_concat.push(0);
