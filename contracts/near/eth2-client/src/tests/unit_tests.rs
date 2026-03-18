@@ -4,6 +4,7 @@ mod tests {
     use crate::Eth2Client;
     use eth_types::eth2::LightClientUpdate;
     use eth_types::BlockHeader;
+    use near_plugins::AccessControllable;
     use near_sdk::test_utils::VMContextBuilder;
     use near_sdk::{test_vm_config, testing_env, AccountId};
 
@@ -50,8 +51,19 @@ mod tests {
             current_account_id: eth2_client_account(),
             predecessor_account_id: eth2_client_account(),
         );
-        let contract = Eth2Client::init(init_input);
+        let mut contract = Eth2Client::init(init_input);
         assert_eq!(contract.last_block_number(), headers[0][0].number);
+
+        // Grant the UnrestrictedSubmitLightClientUpdate role to accounts(0) (the common
+        // test submitter) so it passes the trusted_relayer guard injected by the
+        // #[trusted_relayer] macro. The super admin (eth2_client_account) was set during init().
+        // Note: only accounts(0) gets the role. Other accounts (e.g. accounts(1)) intentionally
+        // do NOT get it, so tests like test_panic_on_submit_update_paused still work correctly.
+        use near_sdk::test_utils::accounts;
+        contract.acl_grant_role(
+            crate::Role::UnrestrictedSubmitLightClientUpdate.into(),
+            accounts(0),
+        );
 
         TestContext {
             contract,
