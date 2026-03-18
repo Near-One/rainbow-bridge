@@ -94,7 +94,8 @@ pub struct Eth2Client {
 
 #[trusted_relayer(
     bypass_roles(Role::DAO, Role::UnrestrictedSubmitLightClientUpdate),
-    manager_roles(Role::DAO, Role::RelayerManager)
+    manager_roles(Role::DAO, Role::RelayerManager),
+    config_roles(Role::DAO)
 )]
 #[near]
 impl Eth2Client {
