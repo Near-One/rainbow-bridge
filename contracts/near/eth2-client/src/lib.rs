@@ -234,7 +234,7 @@ impl Eth2Client {
     }
 
     #[trusted_relayer(bypass_roles(Role::DAO, Role::UnrestrictedSubmitLightClientUpdate))]
-    #[pause(except(roles(Role::UnrestrictedSubmitLightClientUpdate, Role::DAO)))]
+    #[pause(except(roles(Role::DAO)))]
     pub fn submit_beacon_chain_light_client_update(
         &mut self,
         #[serializer(borsh)] update: LightClientUpdate,
@@ -250,7 +250,7 @@ impl Eth2Client {
 
     #[result_serializer(borsh)]
     #[trusted_relayer(bypass_roles(Role::DAO, Role::UnrestrictedSubmitExecutionHeader))]
-    #[pause(except(roles(Role::UnrestrictedSubmitExecutionHeader, Role::DAO)))]
+    #[pause(except(roles(Role::DAO)))]
     pub fn submit_execution_header(&mut self, #[serializer(borsh)] block_header: BlockHeader) {
         if let Some(trusted_blocks_submitter) = &self.trusted_blocks_submitter {
             require!(
