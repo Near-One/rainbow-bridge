@@ -64,6 +64,10 @@ mod tests {
             crate::Role::UnrestrictedSubmitLightClientUpdate.into(),
             accounts(0),
         );
+        contract.acl_grant_role(
+            crate::Role::UnrestrictedSubmitExecutionHeader.into(),
+            accounts(0),
+        );
 
         TestContext {
             contract,

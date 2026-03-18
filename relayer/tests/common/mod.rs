@@ -123,8 +123,8 @@ impl TestFixture {
         Ok(init_input)
     }
 
-    /// Grant the relayer's signer the UnrestrictedSubmitLightClientUpdate role
-    /// so it passes the trusted_relayer guard on submit methods.
+    /// Grant the relayer's signer the bypass roles so it passes the
+    /// trusted_relayer guard on submit methods.
     /// Must be called after init, since init resets ACL state via acl_init_super_admin.
     async fn grant_relayer_role(&self) -> Result<()> {
         self.contract
@@ -137,6 +137,16 @@ impl TestFixture {
             .await?
             .into_result()
             .wrap_err("Failed to grant UnrestrictedSubmitLightClientUpdate role")?;
+        self.contract
+            .call("acl_grant_role")
+            .args_json(serde_json::json!({
+                "role": "UnrestrictedSubmitExecutionHeader",
+                "account_id": self.relayer_account_id.to_string(),
+            }))
+            .transact()
+            .await?
+            .into_result()
+            .wrap_err("Failed to grant UnrestrictedSubmitExecutionHeader role")?;
         Ok(())
     }
 }

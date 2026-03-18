@@ -99,13 +99,21 @@ mod integration_tests {
             .transact()
             .await?;
 
-        // Grant alice the UnrestrictedSubmitLightClientUpdate role so she passes
-        // the trusted_relayer guard on submit methods. The contract is super admin
-        // (set during init), so it can grant roles.
+        // Grant alice the bypass roles so she passes the trusted_relayer guard
+        // on submit methods. The contract is super admin (set during init), so
+        // it can grant roles.
         let _ = contract
             .call("acl_grant_role")
             .args_json(serde_json::json!({
                 "role": "UnrestrictedSubmitLightClientUpdate",
+                "account_id": alice.id().to_string(),
+            }))
+            .transact()
+            .await?;
+        let _ = contract
+            .call("acl_grant_role")
+            .args_json(serde_json::json!({
+                "role": "UnrestrictedSubmitExecutionHeader",
                 "account_id": alice.id().to_string(),
             }))
             .transact()
