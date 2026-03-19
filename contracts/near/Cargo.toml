@@ -35,7 +35,7 @@ derive_more = "^0.99.2"
 hex = "0.4.2"
 bitvec = "1.0.0"
 near-plugins = { git = "https://github.com/aurora-is-near/near-plugins", tag = "v0.4.1" }
-omni-utils = { git = "https://github.com/near-one/omni-utils", rev = "068950734e6520e311adaaa6c3bd71a42d80e0df" }
+omni-utils = { git = "https://github.com/near-one/omni-utils", rev = "077d09daf7a7b32ad237f0530033c7db804f2c67" }
 
 [patch]
 [patch.crates-io]
