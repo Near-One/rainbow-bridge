@@ -242,6 +242,42 @@ mod tests {
         }
 
         #[test]
+        #[should_panic(expected = "Relayer is not active")]
+        pub fn test_panic_on_submit_light_client_update_without_trusted_relayer_role() {
+            // accounts(1) does NOT have the UnrestrictedSubmitLightClientUpdate
+            // bypass role, so the trusted_relayer guard must reject the call.
+            let unauthorized = accounts(1);
+            let TestContext {
+                mut contract,
+                headers: _,
+                updates,
+            } = get_test_context(None);
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: unauthorized);
+            contract.submit_beacon_chain_light_client_update(updates[1].clone());
+        }
+
+        #[test]
+        #[should_panic(expected = "Relayer is not active")]
+        pub fn test_panic_on_submit_execution_header_without_trusted_relayer_role() {
+            // First, advance the contract into SubmitHeader mode via an authorized
+            // submitter (accounts(0) which has bypass roles), then attempt to call
+            // submit_execution_header from an unauthorized account (accounts(1)).
+            let submitter = accounts(0);
+            let unauthorized = accounts(1);
+            let TestContext {
+                mut contract,
+                headers,
+                updates,
+            } = get_test_context(None);
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: submitter);
+            contract.submit_beacon_chain_light_client_update(updates[1].clone());
+
+            // Now switch to the unauthorized caller
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: unauthorized);
+            contract.submit_execution_header(headers[0].last().unwrap().clone());
+        }
+
+        #[test]
         #[should_panic(expected = "Invalid finality proof")]
         pub fn test_panic_on_invalid_finality_proof() {
             let TestContext {
