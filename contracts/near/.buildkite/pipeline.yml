@@ -1,7 +1,9 @@
 steps:
   - command: |
       source ~/.cargo/env
-      rustup default stable
+      rustup install 1.86.0
+      rustup default 1.86.0
+      rustup target add wasm32-unknown-unknown
       ci/test_verify_eth_headers.sh
 
     label: "verify eth headers"
@@ -10,7 +12,9 @@ steps:
 
   - command: |
       source ~/.cargo/env
-      rustup default stable
+      rustup install 1.86.0
+      rustup default 1.86.0
+      rustup target add wasm32-unknown-unknown
       ci/test_verify_eth_proofs.sh
 
     label: "verify eth proofs"
@@ -19,7 +23,9 @@ steps:
 
   - command: |
       source ~/.cargo/env
-      rustup default stable
+      rustup install 1.86.0
+      rustup default 1.86.0
+      rustup target add wasm32-unknown-unknown
       eth-client/test.sh
 
     label: "eth-client tests"
@@ -28,7 +34,9 @@ steps:
 
   - command: |
       source ~/.cargo/env
-      rustup default stable
+      rustup install 1.86.0
+      rustup default 1.86.0
+      rustup target add wasm32-unknown-unknown
       eth-prover/test.sh
 
     label: "eth-prover tests"
@@ -36,6 +44,10 @@ steps:
       - "queue=medium"
 
   - command: |
+      source ~/.cargo/env
+      rustup install 1.86.0
+      rustup default 1.86.0
+      rustup target add wasm32-unknown-unknown
       ./build_all.sh
       changed_files=$$(git status --porcelain --untracked-files=no | wc -l)
       if [ $$changed_files -gt 0 ]; then
@@ -49,6 +61,9 @@ steps:
 
   - command: |
       source ~/.cargo/env
+      rustup install 1.86.0
+      rustup default 1.86.0
+      rustup target add wasm32-unknown-unknown
       cargo test
 
     label: "rust contracts test"

@@ -4,6 +4,7 @@ mod tests {
     use crate::Eth2Client;
     use eth_types::eth2::LightClientUpdate;
     use eth_types::BlockHeader;
+    use near_plugins::AccessControllable;
     use near_sdk::test_utils::VMContextBuilder;
     use near_sdk::{test_vm_config, testing_env, AccountId};
 
@@ -28,8 +29,8 @@ mod tests {
             let mut vm_config = test_vm_config();
             vm_config.limit_config.max_number_logs = u64::MAX;
             vm_config.limit_config.max_total_log_length = u64::MAX;
-            vm_config.limit_config.max_total_prepaid_gas = u64::MAX;
-            vm_config.limit_config.max_gas_burnt = u64::MAX;
+            vm_config.limit_config.max_total_prepaid_gas = near_primitives_core::gas::Gas::MAX;
+            vm_config.limit_config.max_gas_burnt = near_primitives_core::gas::Gas::MAX;
             testing_env!(builder.build(), vm_config);
         };
     }
@@ -50,8 +51,23 @@ mod tests {
             current_account_id: eth2_client_account(),
             predecessor_account_id: eth2_client_account(),
         );
-        let contract = Eth2Client::init(init_input);
+        let mut contract = Eth2Client::init(init_input);
         assert_eq!(contract.last_block_number(), headers[0][0].number);
+
+        // Grant the UnrestrictedSubmitLightClientUpdate role to accounts(0) (the common
+        // test submitter) so it passes the trusted_relayer guard injected by the
+        // #[trusted_relayer] macro. The super admin (eth2_client_account) was set during init().
+        // Note: only accounts(0) gets the role. Other accounts (e.g. accounts(1)) intentionally
+        // do NOT get it, so tests like test_panic_on_submit_update_paused still work correctly.
+        use near_sdk::test_utils::accounts;
+        contract.acl_grant_role(
+            crate::Role::UnrestrictedSubmitLightClientUpdate.into(),
+            accounts(0),
+        );
+        contract.acl_grant_role(
+            crate::Role::UnrestrictedSubmitExecutionHeader.into(),
+            accounts(0),
+        );
 
         TestContext {
             contract,
@@ -223,6 +239,42 @@ mod tests {
             }));
             set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
             contract.submit_beacon_chain_light_client_update(updates[1].clone());
+        }
+
+        #[test]
+        #[should_panic(expected = "Relayer is not active")]
+        pub fn test_panic_on_submit_light_client_update_without_trusted_relayer_role() {
+            // accounts(1) does NOT have the UnrestrictedSubmitLightClientUpdate
+            // bypass role, so the trusted_relayer guard must reject the call.
+            let unauthorized = accounts(1);
+            let TestContext {
+                mut contract,
+                headers: _,
+                updates,
+            } = get_test_context(None);
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: unauthorized);
+            contract.submit_beacon_chain_light_client_update(updates[1].clone());
+        }
+
+        #[test]
+        #[should_panic(expected = "Relayer is not active")]
+        pub fn test_panic_on_submit_execution_header_without_trusted_relayer_role() {
+            // First, advance the contract into SubmitHeader mode via an authorized
+            // submitter (accounts(0) which has bypass roles), then attempt to call
+            // submit_execution_header from an unauthorized account (accounts(1)).
+            let submitter = accounts(0);
+            let unauthorized = accounts(1);
+            let TestContext {
+                mut contract,
+                headers,
+                updates,
+            } = get_test_context(None);
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: submitter);
+            contract.submit_beacon_chain_light_client_update(updates[1].clone());
+
+            // Now switch to the unauthorized caller
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: unauthorized);
+            contract.submit_execution_header(headers[0].last().unwrap().clone());
         }
 
         #[test]

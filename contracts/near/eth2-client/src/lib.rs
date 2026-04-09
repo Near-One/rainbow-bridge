@@ -15,6 +15,7 @@ use near_sdk::collections::{LazyOption, LookupMap};
 use near_sdk::{
     env, near, require, AccountId, BorshStorageKey, PanicOnDefault, Promise, PublicKey,
 };
+use omni_utils::macros::trusted_relayer;
 use tree_hash::TreeHash;
 
 use amcl::bls381::bls381::utils::serialize_uncompressed_g1;
@@ -45,6 +46,7 @@ pub enum Role {
     UnrestrictedSubmitLightClientUpdate,
     UnrestrictedSubmitExecutionHeader,
     DAO,
+    RelayerManager,
 }
 
 #[near(contract_state)]
@@ -90,6 +92,10 @@ pub struct Eth2Client {
     trusted_blocks_submitter: Option<AccountId>,
 }
 
+#[trusted_relayer(
+    manager_roles(Role::DAO, Role::RelayerManager),
+    config_roles(Role::DAO)
+)]
 #[near]
 impl Eth2Client {
     #[init]
@@ -131,7 +137,7 @@ impl Eth2Client {
             hashes_gc_threshold: args.hashes_gc_threshold,
             network: args.network,
             finalized_execution_blocks: LookupMap::new(StorageKey::FinalizedExecutionBlocks),
-            finalized_beacon_header: args.finalized_beacon_header.into(),
+            finalized_beacon_header: args.finalized_beacon_header,
             finalized_execution_header: LazyOption::new(
                 StorageKey::FinalizedExecutionHeader,
                 Some(&finalized_execution_header_info),
@@ -227,7 +233,8 @@ impl Eth2Client {
             .map(|header| header.block_number)
     }
 
-    #[pause(except(roles(Role::UnrestrictedSubmitLightClientUpdate, Role::DAO)))]
+    #[trusted_relayer(bypass_roles(Role::DAO, Role::UnrestrictedSubmitLightClientUpdate))]
+    #[pause(except(roles(Role::DAO)))]
     pub fn submit_beacon_chain_light_client_update(
         &mut self,
         #[serializer(borsh)] update: LightClientUpdate,
@@ -242,7 +249,8 @@ impl Eth2Client {
     }
 
     #[result_serializer(borsh)]
-    #[pause(except(roles(Role::UnrestrictedSubmitExecutionHeader, Role::DAO)))]
+    #[trusted_relayer(bypass_roles(Role::DAO, Role::UnrestrictedSubmitExecutionHeader))]
+    #[pause(except(roles(Role::DAO)))]
     pub fn submit_execution_header(&mut self, #[serializer(borsh)] block_header: BlockHeader) {
         if let Some(trusted_blocks_submitter) = &self.trusted_blocks_submitter {
             require!(
@@ -286,8 +294,7 @@ impl Eth2Client {
         {
             let header_number_to_remove = (finalized_execution_header.block_number
                 + diff_between_unfinalized_head_and_tail)
-                .checked_sub(self.hashes_gc_threshold)
-                .unwrap_or(0);
+                .saturating_sub(self.hashes_gc_threshold);
 
             require!(
                 header_number_to_remove < finalized_execution_header.block_number,
@@ -560,8 +567,8 @@ impl Eth2Client {
         Self::fp2_to_u8(&msg_fp2[0], &mut msg_fp2_0);
         Self::fp2_to_u8(&msg_fp2[1], &mut msg_fp2_1);
 
-        let mut msg_g2_0 = env::bls12381_map_fp2_to_g2(&msg_fp2_0);
-        let mut msg_g2_1 = env::bls12381_map_fp2_to_g2(&msg_fp2_1);
+        let mut msg_g2_0 = env::bls12381_map_fp2_to_g2(msg_fp2_0);
+        let mut msg_g2_1 = env::bls12381_map_fp2_to_g2(msg_fp2_1);
         let mut msg_g2_concat = vec![0u8; 1];
         msg_g2_concat.append(&mut msg_g2_0);
         msg_g2_concat.push(0);

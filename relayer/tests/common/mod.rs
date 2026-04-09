@@ -17,6 +17,8 @@ pub struct TestFixture {
     pub worker: Worker<Sandbox>,
     pub contract: Contract,
     pub near_client: ContractClient,
+    pub near_client_with_contract_signer: ContractClient,
+    relayer_account_id: near_workspaces::AccountId,
 }
 
 impl TestFixture {
@@ -34,24 +36,39 @@ impl TestFixture {
             .await
             .wrap_err("Failed to create sandbox environment")?;
 
+        let (contract_id, contract_secret_key) = worker.generate_dev_account_credentials();
+
         // Deploy the contract
         let contract = worker
-            .dev_deploy(&wasm)
-            .await
-            .wrap_err("Failed to deploy contract")?;
+            .create_root_account_subaccount_and_deploy(
+                contract_id.clone(),
+                contract_secret_key.clone(),
+                &wasm,
+            )
+            .await?
+            .into_result()?;
+
+        let contract_signer = InMemorySigner::from_secret_key(
+            contract.id().clone(),
+            contract_secret_key
+                .to_string()
+                .parse()
+                .wrap_err("Failed to parse secret key")?,
+        );
 
         let alice = worker
             .dev_create_account()
             .await
             .wrap_err("Failed to create test account")?;
 
-        let secret_key: SecretKey = alice
+        let alice_secret_key: SecretKey = alice
             .secret_key()
             .to_string()
             .parse()
             .wrap_err("Failed to parse secret key")?;
 
-        let signer = InMemorySigner::from_secret_key(alice.id().clone(), secret_key.clone());
+        let alice_signer =
+            InMemorySigner::from_secret_key(alice.id().clone(), alice_secret_key.clone());
 
         // Create the near-fetch client pointing to the sandbox RPC
         let near_fetch_client = near_fetch::Client::new(&worker.rpc_addr());
@@ -61,7 +78,15 @@ impl TestFixture {
         let near_config = NearConfig::default();
         let near_client = ContractClient::new(
             contract.id().clone(),
-            signer,
+            alice_signer,
+            near_fetch_client.clone(),
+            relayer_config.clone(),
+            near_config.timeout_secs,
+        );
+
+        let near_client_with_contract_signer = ContractClient::new(
+            contract.id().clone(),
+            contract_signer,
             near_fetch_client,
             relayer_config,
             near_config.timeout_secs,
@@ -71,13 +96,18 @@ impl TestFixture {
             worker,
             contract,
             near_client,
+            near_client_with_contract_signer,
+            relayer_account_id: alice.id().clone(),
         })
     }
 
     /// Initialize the contract with Sepolia test data
     pub async fn init_with_sepolia(&self) -> Result<InitInput> {
         let init_input = load_sepolia_init_data()?;
-        self.near_client.init_contract(init_input.clone()).await?;
+        self.near_client_with_contract_signer
+            .init_contract(init_input.clone())
+            .await?;
+        self.grant_relayer_role().await?;
         Ok(init_input)
     }
 
@@ -86,8 +116,38 @@ impl TestFixture {
         let mut init_input = load_sepolia_init_data()?;
         init_input.validate_updates = false;
         init_input.verify_bls_signatures = false;
-        self.near_client.init_contract(init_input.clone()).await?;
+        self.near_client_with_contract_signer
+            .init_contract(init_input.clone())
+            .await?;
+        self.grant_relayer_role().await?;
         Ok(init_input)
+    }
+
+    /// Grant the relayer's signer the bypass roles so it passes the
+    /// trusted_relayer guard on submit methods.
+    /// Must be called after init, since init resets ACL state via acl_init_super_admin.
+    async fn grant_relayer_role(&self) -> Result<()> {
+        self.contract
+            .call("acl_grant_role")
+            .args_json(serde_json::json!({
+                "role": "UnrestrictedSubmitLightClientUpdate",
+                "account_id": self.relayer_account_id.to_string(),
+            }))
+            .transact()
+            .await?
+            .into_result()
+            .wrap_err("Failed to grant UnrestrictedSubmitLightClientUpdate role")?;
+        self.contract
+            .call("acl_grant_role")
+            .args_json(serde_json::json!({
+                "role": "UnrestrictedSubmitExecutionHeader",
+                "account_id": self.relayer_account_id.to_string(),
+            }))
+            .transact()
+            .await?
+            .into_result()
+            .wrap_err("Failed to grant UnrestrictedSubmitExecutionHeader role")?;
+        Ok(())
     }
 }
 
