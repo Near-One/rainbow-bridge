@@ -39,7 +39,12 @@ async fn test_full_lifecycle_smoke_test() -> Result<()> {
     // Pick first 32 blocks from our window
     let slice = &headers[1..33];
     let last_block_hash = slice.last().unwrap().calculate_hash();
-    first_update.finalized_header.execution.block_hash = last_block_hash;
+    first_update
+        .finalized_header
+        .execution
+        .as_mut()
+        .unwrap()
+        .block_hash = last_block_hash;
 
     // Reverse the order of slice for submission
     let reversed: Vec<_> = slice.iter().rev().cloned().collect();
@@ -121,7 +126,12 @@ async fn test_execution_headers_submission() -> Result<()> {
     let mut modified_update = first_update;
     let test_slice = &headers[1..5]; // Use just a few headers for this test
     let last_block_hash = test_slice.last().unwrap().calculate_hash();
-    modified_update.finalized_header.execution.block_hash = last_block_hash;
+    modified_update
+        .finalized_header
+        .execution
+        .as_mut()
+        .unwrap()
+        .block_hash = last_block_hash;
 
     fixture
         .near_client

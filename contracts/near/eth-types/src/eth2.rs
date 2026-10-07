@@ -160,13 +160,38 @@ pub struct ExecutionPayloadHeader {
     pub excess_blob_gas: Option<u64>,
 }
 
-// New combined header structure
+// Light client header supporting both pre-Gloas and Gloas formats
+// Spec: https://github.com/ethereum/consensus-specs/blob/dev/specs/gloas/light-client/sync-protocol.md#modified-lightclientheader
 #[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
 pub struct LightClientHeader {
     pub beacon: BeaconBlockHeader,
-    pub execution: ExecutionPayloadHeader,
+    // Pre-Gloas format (Capella..Fulu)
+    #[cfg_attr(
+        not(target_arch = "wasm32"),
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
+    pub execution: Option<ExecutionPayloadHeader>,
+    // Gloas format (EIP-7732): `parent_block_hash` of the payload bid, i.e. the hash of
+    // the latest revealed execution block this beacon block builds on, not the payload
+    // of the same slot
+    #[cfg_attr(
+        not(target_arch = "wasm32"),
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
+    pub execution_block_hash: Option<H256>,
     pub execution_branch: Vec<H256>,
+}
+
+impl LightClientHeader {
+    /// Returns the execution block hash regardless of the header format.
+    pub fn execution_block_hash(&self) -> Option<H256> {
+        self.execution_block_hash.or_else(|| {
+            self.execution
+                .as_ref()
+                .map(|execution| execution.block_hash)
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, tree_hash_derive::TreeHash)]
@@ -186,11 +211,14 @@ pub struct ExtendedBeaconBlockHeader {
 
 impl From<LightClientHeader> for ExtendedBeaconBlockHeader {
     fn from(finalized_header: LightClientHeader) -> Self {
+        let execution_block_hash = finalized_header
+            .execution_block_hash()
+            .expect("LightClientHeader has no execution block hash");
         let beacon = finalized_header.beacon;
         Self {
             header: beacon.clone(),
             beacon_block_root: beacon.tree_hash_root().0.into(),
-            execution_block_hash: finalized_header.execution.block_hash,
+            execution_block_hash,
         }
     }
 }
@@ -298,5 +326,78 @@ pub mod quoted_u256 {
             .map_err(|e| {
                 serde::de::Error::custom(format!("failed to parse U256 from decimal: {}", e))
             })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn load_pre_gloas_update() -> LightClientUpdate {
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../eth2-client/src/data/sepolia/light_client_update_period_925.json"
+        );
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+    }
+
+    fn to_gloas_format(header: &LightClientHeader) -> LightClientHeader {
+        LightClientHeader {
+            beacon: header.beacon.clone(),
+            execution: None,
+            execution_block_hash: header.execution_block_hash(),
+            execution_branch: header.execution_branch.clone(),
+        }
+    }
+
+    #[test]
+    fn test_pre_gloas_light_client_header() {
+        let header = load_pre_gloas_update().finalized_header;
+        let execution = header.execution.as_ref().unwrap();
+
+        assert!(header.execution_block_hash.is_none());
+        assert_eq!(header.execution_block_hash(), Some(execution.block_hash));
+
+        let json = serde_json::to_value(&header).unwrap();
+        assert!(json.get("execution_block_hash").is_none());
+    }
+
+    #[test]
+    fn test_gloas_light_client_header_serde() {
+        let pre_gloas = load_pre_gloas_update().finalized_header;
+        let block_hash = pre_gloas.execution.as_ref().unwrap().block_hash;
+        let header = to_gloas_format(&pre_gloas);
+
+        let json = serde_json::to_value(&header).unwrap();
+        assert!(json.get("execution").is_none());
+
+        let parsed: LightClientHeader = serde_json::from_value(json).unwrap();
+        assert!(parsed.execution.is_none());
+        assert_eq!(parsed.execution_block_hash(), Some(block_hash));
+
+        let extended: ExtendedBeaconBlockHeader = parsed.into();
+        assert_eq!(extended.execution_block_hash, block_hash);
+    }
+
+    #[test]
+    fn test_light_client_update_borsh_roundtrip() {
+        let mut update = load_pre_gloas_update();
+        let block_hash = update.finalized_header.execution_block_hash();
+
+        let decoded = LightClientUpdate::try_from_slice(&borsh::to_vec(&update).unwrap()).unwrap();
+        assert_eq!(decoded.finalized_header.execution_block_hash(), block_hash);
+
+        update.finalized_header = to_gloas_format(&update.finalized_header);
+        let decoded = LightClientUpdate::try_from_slice(&borsh::to_vec(&update).unwrap()).unwrap();
+        assert!(decoded.finalized_header.execution.is_none());
+        assert_eq!(decoded.finalized_header.execution_block_hash(), block_hash);
+    }
+
+    #[test]
+    #[should_panic(expected = "LightClientHeader has no execution block hash")]
+    fn test_light_client_header_without_execution_block_hash() {
+        let mut header = load_pre_gloas_update().finalized_header;
+        header.execution = None;
+        let _: ExtendedBeaconBlockHeader = header.into();
     }
 }

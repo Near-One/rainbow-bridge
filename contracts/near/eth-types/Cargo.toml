@@ -26,6 +26,9 @@ hex.workspace = true
 serde-big-array = "0.4.1"
 sha3 = "0.10.0"
 
+[dev-dependencies]
+serde_json = "1.0"
+
 [features]
 default = ["eth2"]
 eth2 = ["dep:ethereum_ssz", "dep:ethereum_ssz_derive", "dep:tree_hash", "dep:tree_hash_derive", "dep:ethereum_serde_utils"]

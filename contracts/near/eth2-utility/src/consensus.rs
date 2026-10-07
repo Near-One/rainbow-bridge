@@ -192,7 +192,11 @@ impl NetworkConfig {
         use tree_hash::{MerkleHasher, TreeHash};
 
         let epoch = compute_epoch_at_slot(header.beacon.slot);
-        let execution = &header.execution;
+        // TODO(gloas): support headers in Gloas format (`execution_block_hash` only)
+        let execution = header
+            .execution
+            .as_ref()
+            .expect("Pre-Gloas light client header must contain execution payload header");
 
         let mut leaves: Vec<tree_hash::Hash256> = vec![
             execution.parent_hash.tree_hash_root(),
@@ -245,10 +249,12 @@ impl NetworkConfig {
 
     pub fn is_valid_light_client_header(&self, header: &LightClientHeader) -> bool {
         let epoch = compute_epoch_at_slot(header.beacon.slot);
+        // TODO(gloas): validate headers in Gloas format (`execution_block_hash` only)
+        let Some(execution) = &header.execution else {
+            return false;
+        };
         if epoch < self.deneb_fork_epoch {
-            if header.execution.blob_gas_used.is_some()
-                || header.execution.excess_blob_gas.is_some()
-            {
+            if execution.blob_gas_used.is_some() || execution.excess_blob_gas.is_some() {
                 return false;
             }
         }

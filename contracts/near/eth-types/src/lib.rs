@@ -227,6 +227,17 @@ pub struct BlockHeader {
     pub parent_beacon_block_root: Option<H256>,
     #[cfg_attr(all(feature = "eth2", not(target_arch = "wasm32")), serde(default))]
     pub requests_hash: Option<H256>,
+    // Optional fields introduced in Amsterdam fork
+    // EIP-7928: Block-Level Access Lists
+    #[cfg_attr(all(feature = "eth2", not(target_arch = "wasm32")), serde(default))]
+    pub block_access_list_hash: Option<H256>,
+    // EIP-7843: SLOTNUM opcode
+    #[cfg_attr(
+        all(feature = "eth2", not(target_arch = "wasm32")),
+        serde(with = "u64_hex_be_option"),
+        serde(default)
+    )]
+    pub slot_number: Option<u64>,
 
     pub hash: Option<H256>,
     pub partial_hash: Option<H256>,
@@ -282,6 +293,12 @@ impl BlockHeader {
         if self.requests_hash.is_some() {
             list_size += 1;
         }
+        if self.block_access_list_hash.is_some() {
+            list_size += 1;
+        }
+        if self.slot_number.is_some() {
+            list_size += 1;
+        }
 
         stream.begin_list(list_size);
 
@@ -327,6 +344,14 @@ impl BlockHeader {
         if let Some(requests_hash) = &self.requests_hash {
             stream.append(requests_hash);
         }
+
+        if let Some(block_access_list_hash) = &self.block_access_list_hash {
+            stream.append(block_access_list_hash);
+        }
+
+        if let Some(slot_number) = &self.slot_number {
+            stream.append(slot_number);
+        }
     }
 
     pub fn calculate_hash(&self) -> H256 {
@@ -369,6 +394,8 @@ impl RlpDecodable for BlockHeader {
             excess_blob_gas: serialized.val_at(18).ok(),
             parent_beacon_block_root: serialized.val_at(19).ok(),
             requests_hash: serialized.val_at(20).ok(),
+            block_access_list_hash: serialized.val_at(21).ok(),
+            slot_number: serialized.val_at(22).ok(),
             hash: None,
             partial_hash: None,
         };
@@ -499,5 +526,109 @@ pub fn near_keccak512(data: &[u8]) -> [u8; 64] {
     #[cfg(not(target_arch = "wasm32"))]
     {
         Keccak512::digest(data).try_into().unwrap()
+    }
+}
+
+#[cfg(all(test, feature = "eth2"))]
+mod tests {
+    use super::*;
+
+    // Sepolia block 11863284 (Amsterdam)
+    const AMSTERDAM_BLOCK: &str = r#"{
+        "hash": "0x5bacafa052d4e775218db0ad3622b8c6c860f217707ed61cd377703954a178bc",
+        "parentHash": "0xca4669bf950092c8a99e17b1b753d4f51e3b462281124540fb6264aed7c0e49b",
+        "sha3Uncles": "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        "miner": "0xa214fd87626b00349f457154382c6ec6a2659d1c",
+        "stateRoot": "0x05a66d79359586093a08c4f7a4b4ca572f190dbc73e63d7a3d4eac1ea99a5d4e",
+        "transactionsRoot": "0x8c09bc47a79998859fecd7068c10231670cae0428df79cd60e1b1434fb0be42b",
+        "receiptsRoot": "0x357abc171b1b5fee8b6fcef541a9dea10057d8e825bdc8cc0ca9936b7c62df00",
+        "logsBloom": "0x1c310151920d843a5fcb150cdc149c400904815b3170866b8b9028546222054e78d84c049b20f39b12e22daa680040392e119964a6aa4f031f319062fa7e324f7504f9e10e62e114a78010ded23180b16631c2faf1642c51a0e98cfac8a324091f104976beb0a81b360942f880380c4c6a8102c03fef0c6511c65ed3c60a2058a0863ad109506b4c11eb85943c16ed1581c0adc5201b912b310692ff84da0a810a0a41825ab82e511a941142f46ac40e264235012d8c8065a128328486b14b91ec3d89ce850103d840698d242882010272fe9082950c013c052991120024fbcba370074f4620e8aed822bb01e040b48c39a214088da4035b9fbb8f228391ca18",
+        "difficulty": "0x0",
+        "number": "0xb504f4",
+        "gasLimit": "0xbebc200",
+        "gasUsed": "0x4435a24",
+        "timestamp": "0x6ac648d4",
+        "extraData": "0x",
+        "mixHash": "0x85619a4ba9e269a43022080d2792b09ebc1e265eeb2b64df22108aebc62c33ab",
+        "nonce": "0x0000000000000000",
+        "baseFeePerGas": "0x25",
+        "withdrawalsRoot": "0x2b322cdf5d2600ea4999d8a7942a90e11af054091d73d805e61eff536e1ef68d",
+        "blobGasUsed": "0x180000",
+        "excessBlobGas": "0xc8a9a6",
+        "parentBeaconBlockRoot": "0xcc8356e6db134a5d3a40e80bacfa9889c147e179f82dbc0140ed873ce6765e14",
+        "requestsHash": "0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "blockAccessListHash": "0xe9341ade1c03edb03793d6ecb8b6bb36b1e4bad6617e594e643dde12c14cf3fc",
+        "slotNumber": "0xac7b9f"
+    }"#;
+
+    // Sepolia block 11799104 (Prague, before Amsterdam)
+    const PRAGUE_BLOCK: &str = r#"{
+        "hash": "0xc8b2599c9fa9927887dbc3687f08a0236e6b94f0832285418d0a656fc8bb5239",
+        "parentHash": "0x2dab7b273381421669c8f274d10080afe0dfafa28d22d4fef0a061da96dc3a2e",
+        "sha3Uncles": "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        "miner": "0x0000006916a87b82333f4245046623b23794c65c",
+        "stateRoot": "0x9c26c3c98a6ae221fc97dcbc3971d3398e7ecb3e3bc1083e2952c6f9ac4bf1b0",
+        "transactionsRoot": "0x197293b65d28aa2024093b62d36984f6a3d43441dea883e90d028d6bb6ee0ecf",
+        "receiptsRoot": "0x02c3a2f1b3fc5200c1b407f40374bb1be8d1c5c3944071523f23185a6322efa4",
+        "logsBloom": "0xceb21564501979740b01b158fc7616485b84974de1a5f81e53f082b462378dfbeddc5d2ad0aa7f14d02eaf1f3829ff308253c4a7f6fa3d41924a9a0d6fbd2726d3471dc1d6811718669014dfc6381f6c07d362acb1e5c556a06b37acb8e0b5c17fb21bb2beb92912c004cda37d1e4de7fdf216da267e65383c30dd70c42f3251e9c67847b6deca5951c88d1ba6a2401145ec4fc9307cd4bb59f7346644b66a414ab240221b14410e9944c7700c28edaeaf475da80a8d9c19a1e00ac02e3809abd6ec41e20f1af4c99f17f42448129928deb2b2caaf3e487b7859576f61276eddf1da6d1a46b4e2b32a1a14e26f3fc98f6387831c89a8156acbabba769fd96a2b",
+        "difficulty": "0x0",
+        "number": "0xb40e40",
+        "gasLimit": "0x3938700",
+        "gasUsed": "0x143de1d",
+        "timestamp": "0x6aba4b44",
+        "extraData": "0xd883011008846765746888676f312e32342e30856c696e7578",
+        "mixHash": "0xe5f776a0c6749f6e9ed1c7748b708bf11f77852974f6444180d4045ff80b8abc",
+        "nonce": "0x0000000000000000",
+        "baseFeePerGas": "0x411c308f",
+        "withdrawalsRoot": "0x00ada0ab236a3c94083ec9cc6b0ad43d6fd63319896014a26bedd7ec40034076",
+        "blobGasUsed": "0x1e0000",
+        "excessBlobGas": "0xc81fb69",
+        "parentBeaconBlockRoot": "0x539f965d9bfbfcbbb04a4b52c8ed95af4858a55f7b36a9cdf7b7ed752b987810",
+        "requestsHash": "0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }"#;
+
+    fn parse_block(json: &str) -> (BlockHeader, H256) {
+        let value: serde_json::Value = serde_json::from_str(json).unwrap();
+        let expected_hash: H256 = serde_json::from_value(value["hash"].clone()).unwrap();
+        let header: BlockHeader = serde_json::from_value(value).unwrap();
+        (header, expected_hash)
+    }
+
+    fn assert_rlp_roundtrip(header: &BlockHeader, expected_hash: H256) {
+        let encoded = rlp::encode(header);
+        let decoded: BlockHeader = rlp::decode(&encoded).unwrap();
+        assert_eq!(decoded.hash, Some(expected_hash));
+        assert_eq!(decoded.requests_hash, header.requests_hash);
+        assert_eq!(
+            decoded.block_access_list_hash,
+            header.block_access_list_hash
+        );
+        assert_eq!(decoded.slot_number, header.slot_number);
+    }
+
+    #[test]
+    fn test_amsterdam_block_header_hash() {
+        let (header, expected_hash) = parse_block(AMSTERDAM_BLOCK);
+        assert!(header.block_access_list_hash.is_some());
+        assert_eq!(header.slot_number, Some(0xac7b9f));
+        assert_eq!(header.calculate_hash(), expected_hash);
+        assert_rlp_roundtrip(&header, expected_hash);
+    }
+
+    #[test]
+    fn test_prague_block_header_hash() {
+        let (header, expected_hash) = parse_block(PRAGUE_BLOCK);
+        assert!(header.requests_hash.is_some());
+        assert!(header.block_access_list_hash.is_none());
+        assert!(header.slot_number.is_none());
+        assert_eq!(header.calculate_hash(), expected_hash);
+        assert_rlp_roundtrip(&header, expected_hash);
+    }
+
+    #[test]
+    fn test_amsterdam_block_header_borsh_roundtrip() {
+        let (header, expected_hash) = parse_block(AMSTERDAM_BLOCK);
+        let decoded = BlockHeader::try_from_slice(&borsh::to_vec(&header).unwrap()).unwrap();
+        assert_eq!(decoded.calculate_hash(), expected_hash);
     }
 }
