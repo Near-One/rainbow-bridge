@@ -221,16 +221,12 @@ impl NetworkConfig {
         }
     }
 
-    // Fork-aware execution root computation - manual tree hashing per fork
-    pub fn get_lc_execution_root(&self, header: &LightClientHeader) -> H256 {
+    // Fork-aware execution root computation - manual tree hashing per fork.
+    // Only applies to pre-Gloas headers, which carry the full `ExecutionPayloadHeader`.
+    pub fn get_lc_execution_root(&self, slot: Slot, execution: &ExecutionPayloadHeader) -> H256 {
         use tree_hash::{MerkleHasher, TreeHash};
 
-        let epoch = compute_epoch_at_slot(header.beacon.slot);
-        // TODO(gloas): support headers in Gloas format (`execution_block_hash` only)
-        let execution = header
-            .execution
-            .as_ref()
-            .expect("Pre-Gloas light client header must contain execution payload header");
+        let epoch = compute_epoch_at_slot(slot);
 
         let mut leaves: Vec<tree_hash::Hash256> = vec![
             execution.parent_hash.tree_hash_root(),
@@ -283,25 +279,35 @@ impl NetworkConfig {
 
     pub fn is_valid_light_client_header(&self, header: &LightClientHeader) -> bool {
         let epoch = compute_epoch_at_slot(header.beacon.slot);
-        // TODO(gloas): validate headers in Gloas format (`execution_block_hash` only)
-        let Some(execution) = &header.execution else {
-            return false;
-        };
-        if epoch < self.deneb_fork_epoch {
-            if execution.blob_gas_used.is_some() || execution.excess_blob_gas.is_some() {
-                return false;
-            }
-        }
 
         if epoch < self.capella_fork_epoch {
             panic!("Unsupported fork");
         }
 
+        // Exactly one of the formats must be used, otherwise the block hash returned by
+        // `LightClientHeader::execution_block_hash` could bypass the proof verification.
+        // Pre-Gloas headers in Gloas format (produced by `upgrade_lc_header_to_gloas` around
+        // the fork) are not supported: the relayer waits until the finalized header is in Gloas.
+        let leaf = match (&header.execution, header.execution_block_hash) {
+            (Some(execution), None) if epoch < self.gloas_fork_epoch => {
+                if epoch < self.deneb_fork_epoch
+                    && (execution.blob_gas_used.is_some() || execution.excess_blob_gas.is_some())
+                {
+                    return false;
+                }
+                self.get_lc_execution_root(header.beacon.slot, execution)
+            }
+            (None, Some(execution_block_hash)) if epoch >= self.gloas_fork_epoch => {
+                execution_block_hash
+            }
+            _ => return false,
+        };
+
         // Use fork-aware proof parameters
-        let generalized_index = self.get_generalized_index_constants(epoch);
+        let generalized_index = self.get_generalized_index_constants(header.beacon.slot);
 
         verify_merkle_proof(
-            self.get_lc_execution_root(header),
+            leaf,
             &header.execution_branch,
             generalized_index
                 .execution_payload_tree_depth
@@ -508,15 +514,40 @@ mod tests {
             attested.beacon.state_root,
         ));
 
-        for header in [attested, finalized] {
-            assert!(verify_merkle_proof(
-                header.execution_block_hash.unwrap(),
-                &header.execution_branch,
-                gindex.execution_payload_tree_depth as usize,
-                gindex.execution_payload_tree_index as usize,
-                header.beacon.body_root,
-            ));
-        }
+        assert!(config.is_valid_light_client_header(attested));
+        assert!(config.is_valid_light_client_header(finalized));
+
+        let mut tampered = finalized.clone();
+        tampered.execution_block_hash = Some(attested.execution_block_hash.unwrap());
+        assert!(!config.is_valid_light_client_header(&tampered));
+    }
+
+    #[test]
+    fn test_header_with_both_formats_is_rejected() {
+        let config = NetworkConfig::new(&Network::Sepolia);
+        let mut header = load_sepolia_update(925).finalized_header;
+        header.execution_block_hash = Some(H256::default());
+        assert!(!config.is_valid_light_client_header(&header));
+
+        header.execution_block_hash = None;
+        header.execution = None;
+        assert!(!config.is_valid_light_client_header(&header));
+    }
+
+    #[test]
+    fn test_gloas_format_at_pre_gloas_slot_is_rejected() {
+        let config = NetworkConfig::new(&Network::Sepolia);
+        let mut header = load_sepolia_update(1379).finalized_header;
+        header.beacon.slot = config.gloas_fork_epoch * SLOTS_PER_EPOCH - 1;
+        assert!(!config.is_valid_light_client_header(&header));
+    }
+
+    #[test]
+    fn test_pre_gloas_format_at_gloas_slot_is_rejected() {
+        let config = NetworkConfig::new(&Network::Sepolia);
+        let mut header = load_sepolia_update(925).finalized_header;
+        header.beacon.slot = config.gloas_fork_epoch * SLOTS_PER_EPOCH;
+        assert!(!config.is_valid_light_client_header(&header));
     }
 
     #[test]
