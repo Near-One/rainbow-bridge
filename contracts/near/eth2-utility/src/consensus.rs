@@ -57,6 +57,8 @@ pub struct NetworkConfig {
     pub electra_fork_epoch: u64,
     pub fulu_fork_version: ForkVersion,
     pub fulu_fork_epoch: u64,
+    pub gloas_fork_version: ForkVersion,
+    pub gloas_fork_epoch: u64,
 }
 
 impl NetworkConfig {
@@ -78,6 +80,8 @@ impl NetworkConfig {
                 electra_fork_epoch: 364032,
                 fulu_fork_version: [0x06, 0x00, 0x00, 0x00],
                 fulu_fork_epoch: 411392,
+                gloas_fork_version: [0x07, 0x00, 0x00, 0x00],
+                gloas_fork_epoch: u64::MAX, // TODO(gloas): set once the mainnet epoch is announced
             },
             Network::Goerli => Self {
                 genesis_validators_root: [
@@ -95,6 +99,8 @@ impl NetworkConfig {
                 electra_fork_epoch: u64::MAX,                   // Not supported
                 fulu_fork_version: [0x00, 0x00, 0x00, 0x00],    // Not supported
                 fulu_fork_epoch: u64::MAX,                      // Not supported
+                gloas_fork_version: [0x00, 0x00, 0x00, 0x00],   // Not supported
+                gloas_fork_epoch: u64::MAX,                     // Not supported
             },
             Network::Sepolia => Self {
                 genesis_validators_root: [
@@ -112,11 +118,17 @@ impl NetworkConfig {
                 electra_fork_epoch: 222464,
                 fulu_fork_version: [0x90, 0x00, 0x00, 0x75],
                 fulu_fork_epoch: 272640,
+                gloas_fork_version: [0x90, 0x00, 0x00, 0x76],
+                gloas_fork_epoch: 353024,
             },
         }
     }
 
     pub fn compute_fork_version(&self, epoch: Epoch) -> Option<ForkVersion> {
+        if epoch >= self.gloas_fork_epoch {
+            return Some(self.gloas_fork_version);
+        }
+
         if epoch >= self.fulu_fork_epoch {
             return Some(self.fulu_fork_version);
         }
@@ -387,4 +399,29 @@ pub fn merkle_root_from_branch(leaf: H256, branch: &[H256], depth: usize, index:
     }
 
     H256(ethereum_types::H256::from_slice(&merkle_root))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_compute_fork_version_gloas() {
+        let sepolia = NetworkConfig::new(&Network::Sepolia);
+        assert_eq!(
+            sepolia.compute_fork_version(353023),
+            Some(sepolia.fulu_fork_version)
+        );
+        assert_eq!(
+            sepolia.compute_fork_version(353024),
+            Some([0x90, 0x00, 0x00, 0x76])
+        );
+
+        // Mainnet Gloas epoch is not announced yet
+        let mainnet = NetworkConfig::new(&Network::Mainnet);
+        assert_eq!(
+            mainnet.compute_fork_version(u64::MAX - 1),
+            Some(mainnet.fulu_fork_version)
+        );
+    }
 }
