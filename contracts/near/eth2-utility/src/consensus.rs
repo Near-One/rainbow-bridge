@@ -170,9 +170,31 @@ impl NetworkConfig {
         // Spec: https://github.com/ethereum/consensus-specs/blob/dev/specs/capella/light-client/sync-protocol.md
         pub const EXECUTION_PAYLOAD_GINDEX: u32 = 25;
 
+        // Gloas
+        // Spec: https://github.com/ethereum/consensus-specs/blob/dev/specs/gloas/light-client/sync-protocol.md
+        pub const FINALIZED_ROOT_INDEX_GLOAS: u32 = 735;
+        pub const CURRENT_SYNC_COMMITTEE_INDEX_GLOAS: u32 = 2945;
+        pub const NEXT_SYNC_COMMITTEE_INDEX_GLOAS: u32 = 2946;
+        // `signed_execution_payload_bid.message.parent_block_hash` in `BeaconBlockBody`
+        pub const EXECUTION_BLOCK_HASH_GINDEX_GLOAS: u32 = 2856;
+
         let epoch = compute_epoch_at_slot(slot);
 
-        if epoch >= self.electra_fork_epoch {
+        if epoch >= self.gloas_fork_epoch {
+            GeneralizedIndex {
+                finality_tree_depth: floorlog2(FINALIZED_ROOT_INDEX_GLOAS),
+                finality_tree_index: get_subtree_index(FINALIZED_ROOT_INDEX_GLOAS),
+                current_sync_committee_tree_depth: floorlog2(CURRENT_SYNC_COMMITTEE_INDEX_GLOAS),
+                current_sync_committee_tree_index: get_subtree_index(
+                    CURRENT_SYNC_COMMITTEE_INDEX_GLOAS,
+                ),
+                sync_committee_tree_depth: floorlog2(NEXT_SYNC_COMMITTEE_INDEX_GLOAS),
+                sync_committee_tree_index: get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX_GLOAS),
+                // In Gloas the execution branch proves the execution block hash itself
+                execution_payload_tree_depth: floorlog2(EXECUTION_BLOCK_HASH_GINDEX_GLOAS),
+                execution_payload_tree_index: get_subtree_index(EXECUTION_BLOCK_HASH_GINDEX_GLOAS),
+            }
+        } else if epoch >= self.electra_fork_epoch {
             GeneralizedIndex {
                 finality_tree_depth: floorlog2(FINALIZED_ROOT_INDEX_ELECTRA),
                 finality_tree_index: get_subtree_index(FINALIZED_ROOT_INDEX_ELECTRA),
@@ -404,6 +426,98 @@ pub fn merkle_root_from_branch(leaf: H256, branch: &[H256], depth: usize, index:
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn load_sepolia_update(period: u64) -> LightClientUpdate {
+        let path = format!(
+            "{}/../eth2-client/src/data/sepolia/light_client_update_period_{}.json",
+            env!("CARGO_MANIFEST_DIR"),
+            period
+        );
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn test_gloas_generalized_indices() {
+        let config = NetworkConfig::new(&Network::Sepolia);
+        let gloas_slot = config.gloas_fork_epoch * SLOTS_PER_EPOCH;
+
+        let gloas = config.get_generalized_index_constants(gloas_slot);
+        assert_eq!(
+            (gloas.finality_tree_depth, gloas.finality_tree_index),
+            (9, 223)
+        );
+        assert_eq!(
+            (
+                gloas.current_sync_committee_tree_depth,
+                gloas.current_sync_committee_tree_index
+            ),
+            (11, 897)
+        );
+        assert_eq!(
+            (
+                gloas.sync_committee_tree_depth,
+                gloas.sync_committee_tree_index
+            ),
+            (11, 898)
+        );
+        assert_eq!(
+            (
+                gloas.execution_payload_tree_depth,
+                gloas.execution_payload_tree_index
+            ),
+            (11, 808)
+        );
+
+        // The last pre-Gloas slot still uses the Electra indices
+        let electra = config.get_generalized_index_constants(gloas_slot - 1);
+        assert_eq!(
+            (electra.finality_tree_depth, electra.finality_tree_index),
+            (7, 41)
+        );
+    }
+
+    // Real Sepolia update produced after the Gloas fork
+    #[test]
+    fn test_gloas_merkle_proofs() {
+        let config = NetworkConfig::new(&Network::Sepolia);
+        let update = load_sepolia_update(1379);
+        let attested = &update.attested_header;
+        let finalized = &update.finalized_header;
+        let gindex = config.get_generalized_index_constants(attested.beacon.slot);
+
+        assert!(verify_merkle_proof(
+            H256(finalized.beacon.tree_hash_root().0.into()),
+            &update.finality_branch,
+            gindex.finality_tree_depth as usize,
+            gindex.finality_tree_index as usize,
+            attested.beacon.state_root,
+        ));
+
+        assert!(verify_merkle_proof(
+            H256(
+                update
+                    .next_sync_committee
+                    .unwrap()
+                    .tree_hash_root()
+                    .0
+                    .into()
+            ),
+            &update.next_sync_committee_branch.unwrap(),
+            gindex.sync_committee_tree_depth as usize,
+            gindex.sync_committee_tree_index as usize,
+            attested.beacon.state_root,
+        ));
+
+        for header in [attested, finalized] {
+            assert!(verify_merkle_proof(
+                header.execution_block_hash.unwrap(),
+                &header.execution_branch,
+                gindex.execution_payload_tree_depth as usize,
+                gindex.execution_payload_tree_index as usize,
+                header.beacon.body_root,
+            ));
+        }
+    }
 
     #[test]
     fn test_compute_fork_version_gloas() {
