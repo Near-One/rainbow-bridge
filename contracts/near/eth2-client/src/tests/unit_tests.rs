@@ -585,6 +585,45 @@ mod tests {
         }
     }
 
+    mod gloas_tests {
+        use super::*;
+        use eth2_utility::types::ClientMode;
+        use near_sdk::test_utils::accounts;
+        use near_sdk::Gas;
+        use tree_hash::TreeHash;
+
+        #[test]
+        pub fn test_submit_first_gloas_period_update() {
+            let (update, init_input) = get_sepolia_gloas_test_data();
+            set_env!(
+                current_account_id: eth2_client_account(),
+                predecessor_account_id: eth2_client_account(),
+            );
+            let mut contract = Eth2Client::init(init_input);
+            contract.acl_grant_role(
+                crate::Role::UnrestrictedSubmitLightClientUpdate.into(),
+                accounts(0),
+            );
+
+            set_env!(prepaid_gas: Gas::from_tgas(1_000_000), predecessor_account_id: accounts(0));
+            contract.submit_beacon_chain_light_client_update(update.clone());
+
+            let finalized = contract.finalized_beacon_block_header();
+            assert_eq!(finalized.header.slot, update.finalized_header.beacon.slot);
+            assert_eq!(
+                Some(finalized.execution_block_hash),
+                update.finalized_header.execution_block_hash
+            );
+            assert_eq!(contract.get_client_mode(), ClientMode::SubmitHeader);
+
+            let state = contract.get_light_client_state();
+            assert_eq!(
+                state.next_sync_committee.tree_hash_root(),
+                update.next_sync_committee.unwrap().tree_hash_root()
+            );
+        }
+    }
+
     #[cfg(feature = "mainnet")]
     mod mainnet_tests {
         use super::*;
