@@ -2,12 +2,14 @@ use borsh::BorshDeserialize;
 use color_eyre::{Result, eyre, eyre::Context};
 use eth_types::{
     BlockHeader, H256,
-    eth2::{LightClientState, LightClientUpdate},
+    eth2::{ExtendedBeaconBlockHeader, LightClientState, LightClientUpdate},
 };
-use eth2_utility::types::{ClientMode, InitInput};
+use eth2_utility::consensus::Network;
+use eth2_utility::types::{ClientMode, ContractConfig, InitInput};
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use near_crypto::Signer;
 use near_fetch::ops::{Function, Transaction};
+use near_fetch::query::ViewResult;
 use near_fetch::{Client, ops::MAX_GAS};
 use near_gas::NearGas;
 use near_primitives::types::AccountId;
@@ -47,11 +49,8 @@ impl ContractClient {
     }
 
     /// Helper method for contract view calls with proper error handling
-    async fn call_contract_view<T>(&self, method_name: &str) -> Result<T>
-    where
-        T: BorshDeserialize,
-    {
-        let response = timeout(
+    async fn view_contract(&self, method_name: &str) -> Result<ViewResult> {
+        timeout(
             Duration::from_secs(self.timeout_secs),
             self.client
                 .view(&self.eth_light_client_account_id, method_name),
@@ -66,8 +65,17 @@ impl ContractClient {
             error!("NEAR view call '{}' failed: {:#}", method_name, e);
             e
         })
-        .wrap_err(format!("Failed to call view method '{}'", method_name))?;
-        let result = response
+        .wrap_err(format!("Failed to call view method '{}'", method_name))
+    }
+
+    /// Calls a contract view method returning a Borsh-serialized result
+    async fn call_contract_view<T>(&self, method_name: &str) -> Result<T>
+    where
+        T: BorshDeserialize,
+    {
+        let result = self
+            .view_contract(method_name)
+            .await?
             .borsh::<T>()
             .map_err(|e| {
                 error!(
@@ -86,6 +94,22 @@ impl ContractClient {
     /// Get the finalized beacon block hash
     pub async fn get_finalized_beacon_block_hash(&self) -> Result<H256> {
         self.call_contract_view("finalized_beacon_block_root").await
+    }
+
+    /// Get the finalized beacon block header with its execution block hash
+    pub async fn get_finalized_beacon_block_header(&self) -> Result<ExtendedBeaconBlockHeader> {
+        self.call_contract_view("finalized_beacon_block_header")
+            .await
+    }
+
+    /// Get the network the contract is initialized for
+    pub async fn get_network(&self) -> Result<Network> {
+        let config: ContractConfig = self
+            .view_contract("get_config")
+            .await?
+            .json()
+            .wrap_err("Failed to deserialize result from 'get_config'")?;
+        Ok(config.network)
     }
 
     /// Get the finalized beacon block slot
