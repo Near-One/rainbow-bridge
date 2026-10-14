@@ -150,13 +150,14 @@ async fn test_fetch_gloas_finality_update_and_execution_header() -> Result<()> {
 
     let update = beacon_client.fetch_finality_update().await?;
     let finalized = &update.finalized_header;
-    assert!(
-        finalized.execution.is_none(),
-        "expected Gloas header format"
+    assert_eq!(
+        finalized.execution_branch.len(),
+        11,
+        "expected Gloas branch"
     );
     assert!(NetworkConfig::new(&Network::Sepolia).is_valid_light_client_header(finalized));
 
-    let block_hash = finalized.execution_block_hash.unwrap();
+    let block_hash = finalized.execution_block_hash;
     let header = execution_client
         .fetch_block_header_by_hash(block_hash)
         .await?

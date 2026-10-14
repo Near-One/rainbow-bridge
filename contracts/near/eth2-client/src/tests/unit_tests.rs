@@ -611,7 +611,7 @@ mod tests {
             let finalized = contract.finalized_beacon_block_header();
             assert_eq!(finalized.header.slot, update.finalized_header.beacon.slot);
             assert_eq!(
-                Some(finalized.execution_block_hash),
+                finalized.execution_block_hash,
                 update.finalized_header.execution_block_hash
             );
             assert_eq!(contract.get_client_mode(), ClientMode::SubmitHeader);
