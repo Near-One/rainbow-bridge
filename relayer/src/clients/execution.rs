@@ -1,11 +1,11 @@
 use alloy::{
     network::Ethereum,
-    primitives::U64,
+    primitives::{B256, U64},
     providers::{Provider, RootProvider},
-    rpc::{client::RpcClient, types::Block},
+    rpc::client::RpcClient,
 };
 use color_eyre::Result;
-use eth_types::BlockHeader;
+use eth_types::{BlockHeader, H256};
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use std::{fmt::Write, ops::RangeInclusive};
 
@@ -35,10 +35,12 @@ impl ExecutionClient {
         Self::from_config(&config)
     }
 
-    /// Converts an alloy Block to our BlockHeader type
-    fn convert_block_to_header(&self, block: Block) -> Result<BlockHeader> {
-        let v = serde_json::to_value(&block.header.inner)?;
-        let header: BlockHeader = serde_json::from_value(v)?;
+    /// Converts a raw RPC block to our BlockHeader type.
+    ///
+    /// The raw JSON is used instead of alloy's `Block`, which drops header fields it doesn't
+    /// know about (e.g. Amsterdam `blockAccessListHash` and `slotNumber`), breaking the hash.
+    fn convert_block_to_header(&self, block: serde_json::Value) -> Result<BlockHeader> {
+        let header: BlockHeader = serde_json::from_value(block)?;
         Ok(header)
     }
 
@@ -95,7 +97,7 @@ impl ExecutionClient {
                 let block_number_param = U64::from(block_number);
                 let future = batch
                     .add_call("eth_getBlockByNumber", &(block_number_param, false))?
-                    .map_resp(|resp: Option<Block>| resp);
+                    .map_resp(|resp: Option<serde_json::Value>| resp);
                 futures.push(future);
             }
 
@@ -144,6 +146,24 @@ impl ExecutionClient {
     pub async fn fetch_block_header(&self, block_number: u64) -> Result<Option<BlockHeader>> {
         let headers = self.fetch_block_range(block_number..=block_number).await?;
         Ok(headers.into_iter().next())
+    }
+
+    /// Fetches a single block header by hash
+    pub async fn fetch_block_header_by_hash(
+        &self,
+        block_hash: H256,
+    ) -> Result<Option<BlockHeader>> {
+        let block: Option<serde_json::Value> = self
+            .client
+            .request(
+                "eth_getBlockByHash",
+                (B256::from_slice(block_hash.0.as_bytes()), false),
+            )
+            .await?;
+
+        block
+            .map(|block| self.convert_block_to_header(block))
+            .transpose()
     }
 
     /// Gets the current max batch size

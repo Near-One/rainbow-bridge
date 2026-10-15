@@ -6,6 +6,7 @@ use crate::{BeaconClient, ContractClient, ExecutionClient};
 use color_eyre::Result;
 use eth_types::BlockHeader;
 use eth_types::eth2::LightClientUpdate;
+use eth2_utility::consensus::NetworkConfig;
 use eth2_utility::types::{ClientMode, InitInput};
 use near_crypto::{InMemorySigner, SecretKey};
 use tokio::time::sleep;
@@ -208,6 +209,19 @@ impl EthRelayer {
         }
 
         let update = self.fetch_update_for_slots(near_slot, eth_slot).await?;
+
+        // Pre-check the finalized header with the same logic as the contract. Around a fork the
+        // finalized header may not be supported yet (e.g. pre-Gloas header in Gloas format),
+        // so wait until the finalized header moves to the new fork instead of wasting gas.
+        let network = self.near_client.get_network().await?;
+        if !NetworkConfig::new(&network).is_valid_light_client_header(&update.finalized_header) {
+            warn!(
+                "⏳ Finalized header at slot {} is not accepted by the contract yet, waiting",
+                update.finalized_header.beacon.slot
+            );
+            return Ok(RelayResult::Skipped);
+        }
+
         self.near_client.submit_light_client_update(update).await?;
 
         Ok(RelayResult::Submitted)
@@ -290,8 +304,24 @@ impl EthRelayer {
         match self.near_client.get_unfinalized_tail_block_number().await? {
             Some(tail) => Ok(tail - 1),
             None => {
-                let slot = self.near_client.get_finalized_beacon_block_slot().await?;
-                self.beacon_client.get_block_number_for_slot(slot).await
+                // Since Gloas (ePBS) the execution payload is no longer part of the beacon block,
+                // so the block is looked up by the finalized execution block hash instead
+                let block_hash = self
+                    .near_client
+                    .get_finalized_beacon_block_header()
+                    .await?
+                    .execution_block_hash;
+                let header = self
+                    .execution_client
+                    .fetch_block_header_by_hash(block_hash)
+                    .await?
+                    .ok_or_else(|| {
+                        color_eyre::eyre::eyre!(
+                            "Finalized execution block {:?} not found",
+                            block_hash
+                        )
+                    })?;
+                Ok(header.number)
             }
         }
     }

@@ -139,3 +139,32 @@ async fn test_relayer_run_job_single_execution() -> Result<()> {
     println!("run_job completed successfully");
     Ok(())
 }
+
+/// Live check of the Gloas/Amsterdam data path against real Sepolia endpoints
+#[tokio::test]
+async fn test_fetch_gloas_finality_update_and_execution_header() -> Result<()> {
+    use eth2_utility::consensus::{Network, NetworkConfig};
+
+    let beacon_client = BeaconClient::new("http://unstable.sepolia.beacon-api.nimbus.team")?;
+    let execution_client = ExecutionClient::sepolia()?;
+
+    let update = beacon_client.fetch_finality_update().await?;
+    let finalized = &update.finalized_header;
+    assert_eq!(
+        finalized.execution_branch.len(),
+        11,
+        "expected Gloas branch"
+    );
+    assert!(NetworkConfig::new(&Network::Sepolia).is_valid_light_client_header(finalized));
+
+    let block_hash = finalized.execution_block_hash;
+    let header = execution_client
+        .fetch_block_header_by_hash(block_hash)
+        .await?
+        .expect("finalized execution block not found");
+    assert!(header.block_access_list_hash.is_some());
+    assert!(header.slot_number.is_some());
+    assert_eq!(header.calculate_hash(), block_hash);
+
+    Ok(())
+}

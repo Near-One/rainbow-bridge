@@ -138,7 +138,7 @@ mod integration_tests {
         let last = slice.last().unwrap().calculate_hash();
 
         let mut update = updates[1].clone();
-        update.finalized_header.execution.block_hash = last;
+        update.finalized_header.execution_block_hash = last;
 
         // Submit the light‐client update
         let outcome = alice

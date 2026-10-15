@@ -21,8 +21,8 @@ pub struct GeneralizedIndex {
     pub current_sync_committee_tree_index: u32,
     pub sync_committee_tree_depth: u32,
     pub sync_committee_tree_index: u32,
-    pub execution_payload_tree_depth: u32,
-    pub execution_payload_tree_index: u32,
+    pub execution_block_hash_tree_depth: u32,
+    pub execution_block_hash_tree_index: u32,
 }
 
 #[derive(PartialEq, BorshSerialize, BorshDeserialize, BorshSchema, Clone, Copy, Debug)]
@@ -57,6 +57,8 @@ pub struct NetworkConfig {
     pub electra_fork_epoch: u64,
     pub fulu_fork_version: ForkVersion,
     pub fulu_fork_epoch: u64,
+    pub gloas_fork_version: ForkVersion,
+    pub gloas_fork_epoch: u64,
 }
 
 impl NetworkConfig {
@@ -78,6 +80,8 @@ impl NetworkConfig {
                 electra_fork_epoch: 364032,
                 fulu_fork_version: [0x06, 0x00, 0x00, 0x00],
                 fulu_fork_epoch: 411392,
+                gloas_fork_version: [0x07, 0x00, 0x00, 0x00],
+                gloas_fork_epoch: u64::MAX, // TODO(gloas): set once the mainnet epoch is announced
             },
             Network::Goerli => Self {
                 genesis_validators_root: [
@@ -95,6 +99,8 @@ impl NetworkConfig {
                 electra_fork_epoch: u64::MAX,                   // Not supported
                 fulu_fork_version: [0x00, 0x00, 0x00, 0x00],    // Not supported
                 fulu_fork_epoch: u64::MAX,                      // Not supported
+                gloas_fork_version: [0x00, 0x00, 0x00, 0x00],   // Not supported
+                gloas_fork_epoch: u64::MAX,                     // Not supported
             },
             Network::Sepolia => Self {
                 genesis_validators_root: [
@@ -112,11 +118,17 @@ impl NetworkConfig {
                 electra_fork_epoch: 222464,
                 fulu_fork_version: [0x90, 0x00, 0x00, 0x75],
                 fulu_fork_epoch: 272640,
+                gloas_fork_version: [0x90, 0x00, 0x00, 0x76],
+                gloas_fork_epoch: 353024,
             },
         }
     }
 
     pub fn compute_fork_version(&self, epoch: Epoch) -> Option<ForkVersion> {
+        if epoch >= self.gloas_fork_epoch {
+            return Some(self.gloas_fork_version);
+        }
+
         if epoch >= self.fulu_fork_epoch {
             return Some(self.fulu_fork_version);
         }
@@ -155,12 +167,42 @@ impl NetworkConfig {
         pub const CURRENT_SYNC_COMMITTEE_INDEX_ELECTRA: u32 = 86;
         pub const NEXT_SYNC_COMMITTEE_INDEX_ELECTRA: u32 = 87;
 
-        // Spec: https://github.com/ethereum/consensus-specs/blob/dev/specs/capella/light-client/sync-protocol.md
-        pub const EXECUTION_PAYLOAD_GINDEX: u32 = 25;
+        // Gloas
+        // Spec: https://github.com/ethereum/consensus-specs/blob/dev/specs/gloas/light-client/sync-protocol.md
+        pub const FINALIZED_ROOT_INDEX_GLOAS: u32 = 735;
+        pub const CURRENT_SYNC_COMMITTEE_INDEX_GLOAS: u32 = 2945;
+        pub const NEXT_SYNC_COMMITTEE_INDEX_GLOAS: u32 = 2946;
+
+        // Execution block hash within `BeaconBlockBody`: through the execution payload header
+        // before Gloas, `signed_execution_payload_bid.message.parent_block_hash` since Gloas
+        pub const EXECUTION_BLOCK_HASH_GINDEX: u32 = 412;
+        pub const EXECUTION_BLOCK_HASH_GINDEX_DENEB: u32 = 812;
+        pub const EXECUTION_BLOCK_HASH_GINDEX_GLOAS: u32 = 2856;
 
         let epoch = compute_epoch_at_slot(slot);
 
-        if epoch >= self.electra_fork_epoch {
+        let execution_block_hash_gindex = if epoch >= self.gloas_fork_epoch {
+            EXECUTION_BLOCK_HASH_GINDEX_GLOAS
+        } else if epoch >= self.deneb_fork_epoch {
+            EXECUTION_BLOCK_HASH_GINDEX_DENEB
+        } else {
+            EXECUTION_BLOCK_HASH_GINDEX
+        };
+
+        if epoch >= self.gloas_fork_epoch {
+            GeneralizedIndex {
+                finality_tree_depth: floorlog2(FINALIZED_ROOT_INDEX_GLOAS),
+                finality_tree_index: get_subtree_index(FINALIZED_ROOT_INDEX_GLOAS),
+                current_sync_committee_tree_depth: floorlog2(CURRENT_SYNC_COMMITTEE_INDEX_GLOAS),
+                current_sync_committee_tree_index: get_subtree_index(
+                    CURRENT_SYNC_COMMITTEE_INDEX_GLOAS,
+                ),
+                sync_committee_tree_depth: floorlog2(NEXT_SYNC_COMMITTEE_INDEX_GLOAS),
+                sync_committee_tree_index: get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX_GLOAS),
+                execution_block_hash_tree_depth: floorlog2(execution_block_hash_gindex),
+                execution_block_hash_tree_index: get_subtree_index(execution_block_hash_gindex),
+            }
+        } else if epoch >= self.electra_fork_epoch {
             GeneralizedIndex {
                 finality_tree_depth: floorlog2(FINALIZED_ROOT_INDEX_ELECTRA),
                 finality_tree_index: get_subtree_index(FINALIZED_ROOT_INDEX_ELECTRA),
@@ -170,8 +212,8 @@ impl NetworkConfig {
                 ),
                 sync_committee_tree_depth: floorlog2(NEXT_SYNC_COMMITTEE_INDEX_ELECTRA),
                 sync_committee_tree_index: get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX_ELECTRA),
-                execution_payload_tree_depth: floorlog2(EXECUTION_PAYLOAD_GINDEX),
-                execution_payload_tree_index: get_subtree_index(EXECUTION_PAYLOAD_GINDEX),
+                execution_block_hash_tree_depth: floorlog2(execution_block_hash_gindex),
+                execution_block_hash_tree_index: get_subtree_index(execution_block_hash_gindex),
             }
         } else {
             GeneralizedIndex {
@@ -181,94 +223,33 @@ impl NetworkConfig {
                 current_sync_committee_tree_index: get_subtree_index(CURRENT_SYNC_COMMITTEE_INDEX),
                 sync_committee_tree_depth: floorlog2(NEXT_SYNC_COMMITTEE_INDEX),
                 sync_committee_tree_index: get_subtree_index(NEXT_SYNC_COMMITTEE_INDEX),
-                execution_payload_tree_depth: floorlog2(EXECUTION_PAYLOAD_GINDEX),
-                execution_payload_tree_index: get_subtree_index(EXECUTION_PAYLOAD_GINDEX),
+                execution_block_hash_tree_depth: floorlog2(execution_block_hash_gindex),
+                execution_block_hash_tree_index: get_subtree_index(execution_block_hash_gindex),
             }
         }
-    }
-
-    // Fork-aware execution root computation - manual tree hashing per fork
-    pub fn get_lc_execution_root(&self, header: &LightClientHeader) -> H256 {
-        use tree_hash::{MerkleHasher, TreeHash};
-
-        let epoch = compute_epoch_at_slot(header.beacon.slot);
-        let execution = &header.execution;
-
-        let mut leaves: Vec<tree_hash::Hash256> = vec![
-            execution.parent_hash.tree_hash_root(),
-            execution.fee_recipient.tree_hash_root(),
-            execution.state_root.tree_hash_root(),
-            execution.receipts_root.tree_hash_root(),
-            execution.logs_bloom.tree_hash_root(),
-            execution.prev_randao.tree_hash_root(),
-            execution.block_number.tree_hash_root(),
-            execution.gas_limit.tree_hash_root(),
-            execution.gas_used.tree_hash_root(),
-            execution.timestamp.tree_hash_root(),
-            execution.extra_data.tree_hash_root(),
-            execution.base_fee_per_gas.tree_hash_root(),
-            execution.block_hash.tree_hash_root(),
-            execution.transactions_root.tree_hash_root(),
-        ];
-
-        // Add withdrawals for Capella+
-        if epoch >= self.capella_fork_epoch {
-            leaves.push(
-                execution
-                    .withdrawals_root
-                    .unwrap_or_default()
-                    .tree_hash_root(),
-            );
-        }
-
-        // Add blob fields for Deneb+
-        if epoch >= self.deneb_fork_epoch {
-            leaves.push(execution.blob_gas_used.unwrap_or_default().tree_hash_root());
-            leaves.push(
-                execution
-                    .excess_blob_gas
-                    .unwrap_or_default()
-                    .tree_hash_root(),
-            );
-        }
-
-        // Create hasher with correct number of leaves
-        let mut hasher = MerkleHasher::with_leaves(leaves.len());
-
-        // Write all leaves to hasher
-        for leaf in leaves {
-            hasher.write(leaf.as_slice()).unwrap();
-        }
-
-        H256(hasher.finish().unwrap().0.into())
     }
 
     pub fn is_valid_light_client_header(&self, header: &LightClientHeader) -> bool {
         let epoch = compute_epoch_at_slot(header.beacon.slot);
-        if epoch < self.deneb_fork_epoch {
-            if header.execution.blob_gas_used.is_some()
-                || header.execution.excess_blob_gas.is_some()
-            {
-                return false;
-            }
-        }
 
         if epoch < self.capella_fork_epoch {
             panic!("Unsupported fork");
         }
 
-        // Use fork-aware proof parameters
-        let generalized_index = self.get_generalized_index_constants(epoch);
+        // Use fork-aware proof parameters. Pre-Gloas headers normalized to the Gloas depth
+        // (served by the beacon API around the fork) don't match and are rejected: the relayer
+        // waits until the finalized header is in Gloas.
+        let generalized_index = self.get_generalized_index_constants(header.beacon.slot);
 
         verify_merkle_proof(
-            self.get_lc_execution_root(header),
+            header.execution_block_hash,
             &header.execution_branch,
             generalized_index
-                .execution_payload_tree_depth
+                .execution_block_hash_tree_depth
                 .try_into()
                 .unwrap(),
             generalized_index
-                .execution_payload_tree_index
+                .execution_block_hash_tree_index
                 .try_into()
                 .unwrap(),
             header.beacon.body_root,
@@ -381,4 +362,166 @@ pub fn merkle_root_from_branch(leaf: H256, branch: &[H256], depth: usize, index:
     }
 
     H256(ethereum_types::H256::from_slice(&merkle_root))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn load_sepolia_update(period: u64) -> LightClientUpdate {
+        let path = format!(
+            "{}/../eth2-client/src/data/sepolia/light_client_update_period_{}.json",
+            env!("CARGO_MANIFEST_DIR"),
+            period
+        );
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn test_gloas_generalized_indices() {
+        let config = NetworkConfig::new(&Network::Sepolia);
+        let gloas_slot = config.gloas_fork_epoch * SLOTS_PER_EPOCH;
+
+        let gloas = config.get_generalized_index_constants(gloas_slot);
+        assert_eq!(
+            (gloas.finality_tree_depth, gloas.finality_tree_index),
+            (9, 223)
+        );
+        assert_eq!(
+            (
+                gloas.current_sync_committee_tree_depth,
+                gloas.current_sync_committee_tree_index
+            ),
+            (11, 897)
+        );
+        assert_eq!(
+            (
+                gloas.sync_committee_tree_depth,
+                gloas.sync_committee_tree_index
+            ),
+            (11, 898)
+        );
+        assert_eq!(
+            (
+                gloas.execution_block_hash_tree_depth,
+                gloas.execution_block_hash_tree_index
+            ),
+            (11, 808)
+        );
+
+        // The last pre-Gloas slot still uses the Electra indices
+        let electra = config.get_generalized_index_constants(gloas_slot - 1);
+        assert_eq!(
+            (electra.finality_tree_depth, electra.finality_tree_index),
+            (7, 41)
+        );
+        assert_eq!(
+            (
+                electra.execution_block_hash_tree_depth,
+                electra.execution_block_hash_tree_index
+            ),
+            (9, 300)
+        );
+
+        // Capella has no blob fields in the execution payload header
+        let capella =
+            config.get_generalized_index_constants(config.deneb_fork_epoch * SLOTS_PER_EPOCH - 1);
+        assert_eq!(
+            (
+                capella.execution_block_hash_tree_depth,
+                capella.execution_block_hash_tree_index
+            ),
+            (8, 156)
+        );
+    }
+
+    // Real Sepolia update produced after the Gloas fork
+    #[test]
+    fn test_gloas_merkle_proofs() {
+        let config = NetworkConfig::new(&Network::Sepolia);
+        let update = load_sepolia_update(1379);
+        let attested = &update.attested_header;
+        let finalized = &update.finalized_header;
+        let gindex = config.get_generalized_index_constants(attested.beacon.slot);
+
+        assert!(verify_merkle_proof(
+            H256(finalized.beacon.tree_hash_root().0.into()),
+            &update.finality_branch,
+            gindex.finality_tree_depth as usize,
+            gindex.finality_tree_index as usize,
+            attested.beacon.state_root,
+        ));
+
+        assert!(verify_merkle_proof(
+            H256(
+                update
+                    .next_sync_committee
+                    .unwrap()
+                    .tree_hash_root()
+                    .0
+                    .into()
+            ),
+            &update.next_sync_committee_branch.unwrap(),
+            gindex.sync_committee_tree_depth as usize,
+            gindex.sync_committee_tree_index as usize,
+            attested.beacon.state_root,
+        ));
+
+        assert!(config.is_valid_light_client_header(attested));
+        assert!(config.is_valid_light_client_header(finalized));
+
+        let mut tampered = finalized.clone();
+        tampered.execution_block_hash = attested.execution_block_hash;
+        assert!(!config.is_valid_light_client_header(&tampered));
+    }
+
+    // Real pre-Gloas (Electra) header, converted from the `execution` format on deserialization
+    #[test]
+    fn test_pre_gloas_header() {
+        let config = NetworkConfig::new(&Network::Sepolia);
+        let update = load_sepolia_update(925);
+        let finalized = &update.finalized_header;
+        assert_eq!(finalized.execution_branch.len(), 9);
+        assert!(config.is_valid_light_client_header(finalized));
+
+        let mut tampered = finalized.clone();
+        tampered.execution_block_hash = update.attested_header.execution_block_hash;
+        assert!(!config.is_valid_light_client_header(&tampered));
+    }
+
+    #[test]
+    fn test_gloas_branch_at_pre_gloas_slot_is_rejected() {
+        let config = NetworkConfig::new(&Network::Sepolia);
+        let mut header = load_sepolia_update(1379).finalized_header;
+        header.beacon.slot = config.gloas_fork_epoch * SLOTS_PER_EPOCH - 1;
+        assert!(!config.is_valid_light_client_header(&header));
+    }
+
+    #[test]
+    fn test_pre_gloas_branch_at_gloas_slot_is_rejected() {
+        let config = NetworkConfig::new(&Network::Sepolia);
+        let mut header = load_sepolia_update(925).finalized_header;
+        header.beacon.slot = config.gloas_fork_epoch * SLOTS_PER_EPOCH;
+        assert!(!config.is_valid_light_client_header(&header));
+    }
+
+    #[test]
+    fn test_compute_fork_version_gloas() {
+        let sepolia = NetworkConfig::new(&Network::Sepolia);
+        assert_eq!(
+            sepolia.compute_fork_version(353023),
+            Some(sepolia.fulu_fork_version)
+        );
+        assert_eq!(
+            sepolia.compute_fork_version(353024),
+            Some([0x90, 0x00, 0x00, 0x76])
+        );
+
+        // Mainnet Gloas epoch is not announced yet
+        let mainnet = NetworkConfig::new(&Network::Mainnet);
+        assert_eq!(
+            mainnet.compute_fork_version(u64::MAX - 1),
+            Some(mainnet.fulu_fork_version)
+        );
+    }
 }

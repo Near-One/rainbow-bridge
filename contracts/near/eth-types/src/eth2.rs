@@ -160,13 +160,116 @@ pub struct ExecutionPayloadHeader {
     pub excess_blob_gas: Option<u64>,
 }
 
-// New combined header structure
+#[cfg(not(target_arch = "wasm32"))]
+impl ExecutionPayloadHeader {
+    /// Position of `block_hash` among the fields of the execution payload header
+    const BLOCK_HASH_INDEX: usize = 12;
+
+    /// Merkle branch (bottom-up) proving `block_hash` within the execution payload header.
+    fn block_hash_branch(&self) -> Vec<H256> {
+        let mut leaves: Vec<tree_hash::Hash256> = vec![
+            self.parent_hash.tree_hash_root(),
+            self.fee_recipient.tree_hash_root(),
+            self.state_root.tree_hash_root(),
+            self.receipts_root.tree_hash_root(),
+            self.logs_bloom.tree_hash_root(),
+            self.prev_randao.tree_hash_root(),
+            self.block_number.tree_hash_root(),
+            self.gas_limit.tree_hash_root(),
+            self.gas_used.tree_hash_root(),
+            self.timestamp.tree_hash_root(),
+            self.extra_data.tree_hash_root(),
+            self.base_fee_per_gas.tree_hash_root(),
+            self.block_hash.tree_hash_root(),
+            self.transactions_root.tree_hash_root(),
+        ];
+
+        // Capella+
+        if let Some(withdrawals_root) = self.withdrawals_root {
+            leaves.push(withdrawals_root.tree_hash_root());
+        }
+
+        // Deneb+
+        if self.blob_gas_used.is_some() || self.excess_blob_gas.is_some() {
+            leaves.push(self.blob_gas_used.unwrap_or_default().tree_hash_root());
+            leaves.push(self.excess_blob_gas.unwrap_or_default().tree_hash_root());
+        }
+
+        let mut layer = leaves;
+        layer.resize(
+            layer.len().next_power_of_two(),
+            tree_hash::Hash256::default(),
+        );
+
+        let mut index = Self::BLOCK_HASH_INDEX;
+        let mut branch = vec![];
+        while layer.len() > 1 {
+            branch.push(H256(layer[index ^ 1].0.into()));
+            layer = layer
+                .chunks(2)
+                .map(|pair| tree_hash::merkle_root(&[pair[0].0, pair[1].0].concat(), 2))
+                .collect();
+            index /= 2;
+        }
+
+        branch
+    }
+}
+
+// Light client header in the Gloas format, used for all forks. Pre-Gloas headers served by the
+// beacon API (with the full `execution` payload header) are converted on deserialization, the same
+// way as `upgrade_lc_header_to_gloas` does: the branch then proves the block hash through the
+// execution payload header.
+// Spec: https://github.com/ethereum/consensus-specs/blob/dev/specs/gloas/light-client/sync-protocol.md#modified-lightclientheader
 #[derive(Debug, Clone, BorshDeserialize, BorshSchema, BorshSerialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Serialize, Deserialize))]
+#[cfg_attr(not(target_arch = "wasm32"), serde(try_from = "LightClientHeaderJson"))]
 pub struct LightClientHeader {
     pub beacon: BeaconBlockHeader,
-    pub execution: ExecutionPayloadHeader,
+    // Since Gloas (EIP-7732) it's `parent_block_hash` of the payload bid, i.e. the hash of the
+    // latest revealed execution block this beacon block builds on, not the payload of the same slot
+    pub execution_block_hash: H256,
     pub execution_branch: Vec<H256>,
+}
+
+/// Light client header as served by the beacon API, in either the pre-Gloas or the Gloas format
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Deserialize)]
+struct LightClientHeaderJson {
+    beacon: BeaconBlockHeader,
+    #[serde(default)]
+    execution: Option<ExecutionPayloadHeader>,
+    #[serde(default)]
+    execution_block_hash: Option<H256>,
+    execution_branch: Vec<H256>,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl TryFrom<LightClientHeaderJson> for LightClientHeader {
+    type Error = String;
+
+    fn try_from(header: LightClientHeaderJson) -> Result<Self, Self::Error> {
+        match (header.execution, header.execution_block_hash) {
+            (None, Some(execution_block_hash)) => Ok(Self {
+                beacon: header.beacon,
+                execution_block_hash,
+                execution_branch: header.execution_branch,
+            }),
+            (Some(execution), None) => {
+                let mut execution_branch = execution.block_hash_branch();
+                execution_branch.extend(header.execution_branch);
+                Ok(Self {
+                    beacon: header.beacon,
+                    execution_block_hash: execution.block_hash,
+                    execution_branch,
+                })
+            }
+            _ => Err(
+                "Light client header must contain exactly one of `execution` and `execution_block_hash`"
+                    .to_string(),
+            ),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, tree_hash_derive::TreeHash)]
@@ -190,7 +293,7 @@ impl From<LightClientHeader> for ExtendedBeaconBlockHeader {
         Self {
             header: beacon.clone(),
             beacon_block_root: beacon.tree_hash_root().0.into(),
-            execution_block_hash: finalized_header.execution.block_hash,
+            execution_block_hash: finalized_header.execution_block_hash,
         }
     }
 }
@@ -298,5 +401,78 @@ pub mod quoted_u256 {
             .map_err(|e| {
                 serde::de::Error::custom(format!("failed to parse U256 from decimal: {}", e))
             })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn read_update_json(period: u64) -> serde_json::Value {
+        let path = format!(
+            "{}/../eth2-client/src/data/sepolia/light_client_update_period_{}.json",
+            env!("CARGO_MANIFEST_DIR"),
+            period
+        );
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn test_pre_gloas_header_conversion() {
+        let json = read_update_json(925);
+        let expected_hash: H256 =
+            serde_json::from_value(json["finalized_header"]["execution"]["block_hash"].clone())
+                .unwrap();
+
+        let header: LightClientHeader =
+            serde_json::from_value(json["finalized_header"].clone()).unwrap();
+
+        assert_eq!(header.execution_block_hash, expected_hash);
+        // Block hash within the Deneb execution payload header (5) + payload header within
+        // the beacon block body (4)
+        assert_eq!(header.execution_branch.len(), 9);
+        assert_eq!(
+            header.execution_branch[5..],
+            serde_json::from_value::<Vec<H256>>(
+                json["finalized_header"]["execution_branch"].clone()
+            )
+            .unwrap()[..]
+        );
+    }
+
+    #[test]
+    fn test_gloas_header_serde_roundtrip() {
+        let json = read_update_json(1379);
+        let header: LightClientHeader =
+            serde_json::from_value(json["finalized_header"].clone()).unwrap();
+        assert_eq!(header.execution_branch.len(), 11);
+
+        let serialized = serde_json::to_value(&header).unwrap();
+        assert_eq!(serialized, json["finalized_header"]);
+    }
+
+    #[test]
+    fn test_light_client_header_requires_exactly_one_format() {
+        let mut json = read_update_json(925)["finalized_header"].clone();
+        json["execution_block_hash"] = json["execution"]["block_hash"].clone();
+        assert!(serde_json::from_value::<LightClientHeader>(json.clone()).is_err());
+
+        json.as_object_mut().unwrap().remove("execution");
+        json.as_object_mut().unwrap().remove("execution_block_hash");
+        assert!(serde_json::from_value::<LightClientHeader>(json).is_err());
+    }
+
+    #[test]
+    fn test_light_client_update_borsh_roundtrip() {
+        let update: LightClientUpdate = serde_json::from_value(read_update_json(1379)).unwrap();
+        let decoded = LightClientUpdate::try_from_slice(&borsh::to_vec(&update).unwrap()).unwrap();
+        assert_eq!(
+            decoded.finalized_header.execution_block_hash,
+            update.finalized_header.execution_block_hash
+        );
+        assert_eq!(
+            decoded.finalized_header.execution_branch,
+            update.finalized_header.execution_branch
+        );
     }
 }

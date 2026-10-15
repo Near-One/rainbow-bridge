@@ -1,84 +1,110 @@
 use crate::constants::protocol::{EPOCHS_PER_PERIOD, SLOTS_PER_EPOCH};
 use color_eyre::{Result, eyre::Context};
 use eth_types::eth2::LightClientUpdate as BorshLightClientUpdate;
+use eth2::mixin::RequestAccept;
+use eth2::types::Accept;
 use eth2::{BeaconNodeHttpClient, Timeouts};
 use sensitive_url::SensitiveUrl;
+use serde::{Deserialize, de::DeserializeOwned};
 use std::time::Duration;
-use types::{
-    BeaconResponse, ExecPayload, FullPayloadRef, LightClientFinalityUpdate,
-    LightClientUpdate as LighthouseLightClientUpdate, MainnetEthSpec, Slot,
-};
 
-/// Service that uses Lighthouse's HTTP client to interact with beacon node APIs
+/// Versioned beacon API response (`{"version": ..., "data": ...}`)
+#[derive(Deserialize)]
+struct VersionedResponse<T> {
+    data: T,
+}
+
+/// Service that uses Lighthouse's HTTP client to interact with beacon node APIs.
+///
+/// Light client data is requested as raw JSON and deserialized directly into our types:
+/// Lighthouse types don't support Gloas light client data yet.
 pub struct BeaconClient {
     client: BeaconNodeHttpClient,
+    // May contain credentials (userinfo, API key in the path or query): never log it,
+    // use `SensitiveUrl`'s redacted form or the request path instead
+    endpoint: SensitiveUrl,
 }
 
 impl BeaconClient {
     /// Create a new service pointing to a beacon node HTTP API
     pub fn new(beacon_url: &str) -> Result<Self> {
-        let url = SensitiveUrl::parse(beacon_url).map_err(|e| {
-            color_eyre::eyre::eyre!("Failed to parse beacon URL '{}': {:?}", beacon_url, e)
-        })?;
+        let url = SensitiveUrl::parse(beacon_url)
+            .map_err(|e| color_eyre::eyre::eyre!("Failed to parse beacon URL: {:?}", e))?;
 
         // Configure timeouts - adjust as needed
         let timeouts = Timeouts::set_all(Duration::from_secs(30));
 
+        let endpoint = url.clone();
         let client = BeaconNodeHttpClient::new(url, timeouts);
 
-        Ok(Self { client })
+        Ok(Self { client, endpoint })
     }
 
-    /// Fetch light client update for a specific period using Lighthouse's client
-    pub async fn fetch_period_update(&self, period: u64) -> Result<BorshLightClientUpdate> {
-        let updates: Vec<BeaconResponse<LighthouseLightClientUpdate<MainnetEthSpec>>> = self
+    /// Performs a GET request to a beacon API path and deserializes the JSON response
+    async fn get_json<T: DeserializeOwned>(
+        &self,
+        path: &[&str],
+        query: &[(&str, &str)],
+    ) -> Result<T> {
+        let request_path = format!("/{}", path.join("/"));
+
+        let mut url = self.endpoint.full.clone();
+        url.path_segments_mut()
+            .map_err(|()| color_eyre::eyre::eyre!("Invalid beacon URL: {}", self.endpoint))?
+            .pop_if_empty()
+            .extend(path);
+        url.query_pairs_mut().extend_pairs(query);
+
+        let response = self
             .client
-            .get_beacon_light_client_updates(period, 1)
+            .get_response(url, |builder| builder.accept(Accept::Json))
             .await
             .map_err(|e| {
-                color_eyre::eyre::eyre!(
-                    "Failed to fetch light client updates for period {}: {:?}",
-                    period,
-                    e
+                color_eyre::eyre::eyre!("Beacon API request to {} failed: {:?}", request_path, e)
+            })?;
+
+        response
+            .json()
+            .await
+            .map_err(|e| e.without_url())
+            .wrap_err_with(|| {
+                format!(
+                    "Failed to deserialize beacon API response from {}",
+                    request_path
                 )
-            })?
-            .ok_or_else(|| {
-                color_eyre::eyre::eyre!("No light client updates found for period {}", period)
+            })
+    }
+
+    /// Fetch light client update for a specific period
+    pub async fn fetch_period_update(&self, period: u64) -> Result<BorshLightClientUpdate> {
+        let updates: Vec<VersionedResponse<BorshLightClientUpdate>> = self
+            .get_json(
+                &["eth", "v1", "beacon", "light_client", "updates"],
+                &[("start_period", &period.to_string()), ("count", "1")],
+            )
+            .await
+            .wrap_err_with(|| {
+                format!("Failed to fetch light client update for period {}", period)
             })?;
 
         let update = updates.into_iter().next().ok_or_else(|| {
             color_eyre::eyre::eyre!("No light client update found for period {}", period)
         })?;
 
-        let v = serde_json::to_value(update.data())
-            .wrap_err("Failed to serialize light client update to JSON")?;
-        let custom_update: BorshLightClientUpdate = serde_json::from_value(v)
-            .wrap_err("Failed to deserialize light client update from JSON")?;
-
-        Ok(custom_update)
+        Ok(update.data)
     }
 
     /// Fetch latest finality update
     pub async fn fetch_finality_update(&self) -> Result<BorshLightClientUpdate> {
-        let finality_update: Option<BeaconResponse<LightClientFinalityUpdate<MainnetEthSpec>>> =
-            self.client
-                .get_beacon_light_client_finality_update()
-                .await
-                .map_err(|e| {
-                    color_eyre::eyre::eyre!("Failed to fetch light client finality update: {:?}", e)
-                })?;
+        let finality_update: VersionedResponse<BorshLightClientUpdate> = self
+            .get_json(
+                &["eth", "v1", "beacon", "light_client", "finality_update"],
+                &[],
+            )
+            .await
+            .wrap_err("Failed to fetch light client finality update")?;
 
-        let finality_data = finality_update
-            .as_ref()
-            .ok_or_else(|| color_eyre::eyre::eyre!("No finality update available"))?
-            .data();
-
-        let json_str = serde_json::to_string(finality_data)
-            .wrap_err("Failed to serialize finality update to JSON")?;
-        let custom_update: BorshLightClientUpdate = serde_json::from_str(&json_str)
-            .wrap_err("Failed to deserialize finality update from JSON")?;
-
-        Ok(custom_update)
+        Ok(finality_update.data)
     }
 
     /// Get the last finalized slot
@@ -108,35 +134,6 @@ impl BeaconClient {
             })?;
 
         Ok(sync_status.data.is_syncing)
-    }
-
-    /// Get execution block number for a given beacon slot
-    pub async fn get_block_number_for_slot(&self, slot: u64) -> Result<u64> {
-        // Get the beacon block for this slot
-        let block = self
-            .client
-            .get_beacon_blocks(eth2::types::BlockId::Slot(Slot::new(slot)))
-            .await
-            .map_err(|e| {
-                color_eyre::eyre::eyre!("Failed to fetch beacon block for slot {}: {:?}", slot, e)
-            })?
-            .ok_or_else(|| color_eyre::eyre::eyre!("No beacon block found for slot {}", slot))?;
-
-        // Extract execution block number from the execution payload
-        let execution_payload: FullPayloadRef<'_, MainnetEthSpec> = block
-            .data()
-            .message()
-            .body()
-            .execution_payload()
-            .map_err(|e| {
-                color_eyre::eyre::eyre!(
-                    "Failed to get execution payload for slot {}: {:?}",
-                    slot,
-                    e
-                )
-            })?;
-
-        Ok(execution_payload.block_number())
     }
 
     /// Calculate sync committee period for a given slot
