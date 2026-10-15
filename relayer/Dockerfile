@@ -1,5 +1,5 @@
 # Simplified single-stage build that preserves workspace structure
-FROM rust:1.86-slim-bullseye
+FROM rust:1.86-slim-bookworm
 
 # Install runtime and build dependencies
 RUN apt-get update && apt-get install -y \
