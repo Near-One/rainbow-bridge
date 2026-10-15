@@ -1,6 +1,8 @@
 use crate::constants::protocol::{EPOCHS_PER_PERIOD, SLOTS_PER_EPOCH};
 use color_eyre::{Result, eyre::Context};
 use eth_types::eth2::LightClientUpdate as BorshLightClientUpdate;
+use eth2::mixin::RequestAccept;
+use eth2::types::Accept;
 use eth2::{BeaconNodeHttpClient, Timeouts, Url};
 use sensitive_url::SensitiveUrl;
 use serde::{Deserialize, de::DeserializeOwned};
@@ -52,7 +54,7 @@ impl BeaconClient {
 
         let response = self
             .client
-            .get_response(url.clone(), |builder| builder)
+            .get_response(url.clone(), |builder| builder.accept(Accept::Json))
             .await
             .map_err(|e| {
                 color_eyre::eyre::eyre!("Beacon API request to {} failed: {:?}", url, e)
