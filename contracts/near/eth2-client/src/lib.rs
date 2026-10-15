@@ -465,7 +465,7 @@ impl Eth2Client {
         // Verify that the `finality_branch`, confirms `finalized_header`
         // to match the finalized checkpoint root saved in the state of `attested_header`.
         let generalized_index =
-            config.get_generalized_index_constants(update.finalized_header.beacon.slot);
+            config.get_generalized_index_constants(update.attested_header.beacon.slot);
         require!(
             verify_merkle_proof(
                 H256(update.finalized_header.beacon.tree_hash_root().0.into()),
