@@ -3,7 +3,7 @@ use color_eyre::{Result, eyre::Context};
 use eth_types::eth2::LightClientUpdate as BorshLightClientUpdate;
 use eth2::mixin::RequestAccept;
 use eth2::types::Accept;
-use eth2::{BeaconNodeHttpClient, Timeouts, Url};
+use eth2::{BeaconNodeHttpClient, Timeouts};
 use sensitive_url::SensitiveUrl;
 use serde::{Deserialize, de::DeserializeOwned};
 use std::time::Duration;
@@ -20,20 +20,21 @@ struct VersionedResponse<T> {
 /// Lighthouse types don't support Gloas light client data yet.
 pub struct BeaconClient {
     client: BeaconNodeHttpClient,
-    endpoint: Url,
+    // May contain credentials (userinfo, API key in the path or query): never log it,
+    // use `SensitiveUrl`'s redacted form or the request path instead
+    endpoint: SensitiveUrl,
 }
 
 impl BeaconClient {
     /// Create a new service pointing to a beacon node HTTP API
     pub fn new(beacon_url: &str) -> Result<Self> {
-        let url = SensitiveUrl::parse(beacon_url).map_err(|e| {
-            color_eyre::eyre::eyre!("Failed to parse beacon URL '{}': {:?}", beacon_url, e)
-        })?;
+        let url = SensitiveUrl::parse(beacon_url)
+            .map_err(|e| color_eyre::eyre::eyre!("Failed to parse beacon URL: {:?}", e))?;
 
         // Configure timeouts - adjust as needed
         let timeouts = Timeouts::set_all(Duration::from_secs(30));
 
-        let endpoint = url.full.clone();
+        let endpoint = url.clone();
         let client = BeaconNodeHttpClient::new(url, timeouts);
 
         Ok(Self { client, endpoint })
@@ -45,7 +46,9 @@ impl BeaconClient {
         path: &[&str],
         query: &[(&str, &str)],
     ) -> Result<T> {
-        let mut url = self.endpoint.clone();
+        let request_path = format!("/{}", path.join("/"));
+
+        let mut url = self.endpoint.full.clone();
         url.path_segments_mut()
             .map_err(|()| color_eyre::eyre::eyre!("Invalid beacon URL: {}", self.endpoint))?
             .pop_if_empty()
@@ -54,16 +57,22 @@ impl BeaconClient {
 
         let response = self
             .client
-            .get_response(url.clone(), |builder| builder.accept(Accept::Json))
+            .get_response(url, |builder| builder.accept(Accept::Json))
             .await
             .map_err(|e| {
-                color_eyre::eyre::eyre!("Beacon API request to {} failed: {:?}", url, e)
+                color_eyre::eyre::eyre!("Beacon API request to {} failed: {:?}", request_path, e)
             })?;
 
         response
             .json()
             .await
-            .wrap_err_with(|| format!("Failed to deserialize beacon API response from {}", url))
+            .map_err(|e| e.without_url())
+            .wrap_err_with(|| {
+                format!(
+                    "Failed to deserialize beacon API response from {}",
+                    request_path
+                )
+            })
     }
 
     /// Fetch light client update for a specific period
