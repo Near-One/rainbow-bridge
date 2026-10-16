@@ -147,6 +147,11 @@ fn encode_header(header: &BlockHeader) -> Vec<u8> {
         .as_ref()
         .map(|v| stream.append(v));
 
+    header.block_access_list_hash
+        .as_ref()
+        .map(|v| stream.append(v));
+    header.slot_number.map(|v| stream.append(&v));
+
     stream.finalize_unbounded_list();
     stream.out().to_vec()
 }
@@ -192,6 +197,35 @@ pub mod tests {
         let tx_hash = H256::from_str("0x42639810a1238a76ca947b848f5b88a854ac36471d1c4f6a15631393790f89af").unwrap();
         let proof = get_proof_for_event(tx_hash, 360, RPC_URL).unwrap();
         verify_proof(proof, "post_dencun_proof.json");
+    }
+
+    const SEPOLIA_RPC_URL: &str = "https://ethereum-sepolia-rpc.publicnode.com";
+
+    /// Post-Amsterdam blocks carry `blockAccessListHash` (EIP-7928) and `slotNumber`
+    /// (EIP-7843) in the header. Rather than a fixture, this checks the two invariants
+    /// the light client actually enforces: the encoded header hashes to the block hash,
+    /// and the receipt trie root equals `receiptsRoot`.
+    #[test]
+    #[ignore = "requires live Ethereum Sepolia RPC"]
+    fn generate_proof_post_amsterdam() {
+        let tx_hash = H256::from_str("0x602717b8b7ebd2e6b201c7dab3df07252f732f59d641418d96970406dccf29cb").unwrap();
+
+        let client = EthRPCClient::new(SEPOLIA_RPC_URL);
+        let receipt = client.get_transaction_receipt_by_hash(&tx_hash).unwrap();
+        let header = client.get_block_by_number(receipt.block_number).unwrap();
+        assert!(
+            header.block_access_list_hash.is_some() && header.slot_number.is_some(),
+            "block is not post-Amsterdam; pick a newer tx"
+        );
+
+        let receipts = client.get_block_receipts(receipt.block_number).unwrap();
+        let mut trie = build_receipt_trie(&receipts).unwrap();
+        assert_eq!(trie.root().unwrap(), header.receipts_root.as_bytes());
+
+        assert_eq!(
+            HasherKeccak::new().digest(&encode_header(&header)),
+            hex::decode("44b5721009eeee62e1d2c805f51f3df11deba052a6a27cb03a16d47f406d43b9").unwrap()
+        );
     }
 
     fn read_proof_data(file_name: &str) -> (u64, u64, String, String, String, Vec<String>) {
