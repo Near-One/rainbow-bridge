@@ -26,6 +26,9 @@ pub struct BlockHeader {
     pub excess_blob_gas: Option<U64>,
     pub parent_beacon_block_root: Option<H256>,
     pub requests_hash: Option<H256>,
+    // Amsterdam: EIP-7928 (block-level access lists) and EIP-7843 (SLOTNUM)
+    pub block_access_list_hash: Option<H256>,
+    pub slot_number: Option<U64>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
