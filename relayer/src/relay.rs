@@ -13,6 +13,7 @@ use tokio::time::sleep;
 use tracing::{debug, error, info, warn};
 
 use crate::config::Config;
+use crate::legacy;
 
 #[derive(Debug)]
 pub enum RelayResult {
@@ -208,7 +209,15 @@ impl EthRelayer {
             return Ok(RelayResult::Skipped);
         }
 
-        let update = self.fetch_update_for_slots(near_slot, eth_slot).await?;
+        // LEGACY(0.7): contracts before 0.8.0 take the pre-Gloas format, remove with `legacy.rs`
+        if legacy::is_legacy_contract(&self.near_client).await? {
+            let update: legacy::LightClientUpdate =
+                self.fetch_update_for_slots(near_slot, eth_slot).await?;
+            self.near_client.submit_light_client_update(update).await?;
+            return Ok(RelayResult::Submitted);
+        }
+
+        let update: LightClientUpdate = self.fetch_update_for_slots(near_slot, eth_slot).await?;
 
         // Pre-check the finalized header with the same logic as the contract. Around a fork the
         // finalized header may not be supported yet (e.g. pre-Gloas header in Gloas format),
@@ -272,16 +281,24 @@ impl EthRelayer {
 
         info!("Fetched {} headers, submitting to NEAR", headers.len());
         headers.reverse();
+
+        // LEGACY(0.7): contracts before 0.8.0 take the pre-Amsterdam format, remove with `legacy.rs`
+        if legacy::is_legacy_contract(&self.near_client).await? {
+            let headers = legacy::to_legacy_headers(&headers)?;
+            self.near_client.submit_execution_headers(&headers).await?;
+            return Ok(RelayResult::Submitted);
+        }
+
         self.near_client.submit_execution_headers(&headers).await?;
 
         Ok(RelayResult::Submitted)
     }
 
-    async fn fetch_update_for_slots(
+    async fn fetch_update_for_slots<T: serde::de::DeserializeOwned>(
         &self,
         near_slot: u64,
         eth_slot: u64,
-    ) -> Result<eth_types::eth2::LightClientUpdate> {
+    ) -> Result<T> {
         let near_period = BeaconClient::get_period_for_slot(near_slot);
         let eth_period = BeaconClient::get_period_for_slot(eth_slot);
 

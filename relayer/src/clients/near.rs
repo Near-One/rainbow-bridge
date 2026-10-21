@@ -1,8 +1,8 @@
-use borsh::BorshDeserialize;
+use borsh::{BorshDeserialize, BorshSerialize};
 use color_eyre::{Result, eyre, eyre::Context};
 use eth_types::{
-    BlockHeader, H256,
-    eth2::{ExtendedBeaconBlockHeader, LightClientState, LightClientUpdate},
+    H256,
+    eth2::{ExtendedBeaconBlockHeader, LightClientState},
 };
 use eth2_utility::consensus::Network;
 use eth2_utility::types::{ClientMode, ContractConfig, InitInput};
@@ -89,6 +89,14 @@ impl ContractClient {
                 method_name
             ))?;
         Ok(result)
+    }
+
+    /// Get the contract version
+    pub async fn get_version(&self) -> Result<String> {
+        self.view_contract("version")
+            .await?
+            .json()
+            .wrap_err("Failed to deserialize result from 'version'")
     }
 
     /// Get the finalized beacon block hash
@@ -183,7 +191,7 @@ impl ContractClient {
         Ok(result)
     }
 
-    pub async fn submit_light_client_update(&self, update: LightClientUpdate) -> Result<()> {
+    pub async fn submit_light_client_update(&self, update: impl BorshSerialize) -> Result<()> {
         timeout(
             Duration::from_secs(self.timeout_secs),
             self.client
@@ -220,13 +228,16 @@ impl ContractClient {
     }
 
     /// Submit multiple execution headers in a single batch transaction
-    pub async fn submit_execution_headers(&self, headers: &[BlockHeader]) -> Result<()> {
+    pub async fn submit_execution_headers<H: BorshSerialize + Clone>(
+        &self,
+        headers: &[H],
+    ) -> Result<()> {
         if headers.is_empty() {
             info!("No headers to submit");
             return Ok(());
         }
 
-        let batched_headers: Vec<&[BlockHeader]> = headers
+        let batched_headers: Vec<&[H]> = headers
             .chunks(self.relayer_config.headers_batch_size)
             .collect::<Vec<_>>();
 

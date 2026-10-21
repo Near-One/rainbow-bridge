@@ -1,6 +1,5 @@
 use crate::constants::protocol::{EPOCHS_PER_PERIOD, SLOTS_PER_EPOCH};
 use color_eyre::{Result, eyre::Context};
-use eth_types::eth2::LightClientUpdate as BorshLightClientUpdate;
 use eth2::mixin::RequestAccept;
 use eth2::types::Accept;
 use eth2::{BeaconNodeHttpClient, Timeouts};
@@ -76,8 +75,8 @@ impl BeaconClient {
     }
 
     /// Fetch light client update for a specific period
-    pub async fn fetch_period_update(&self, period: u64) -> Result<BorshLightClientUpdate> {
-        let updates: Vec<VersionedResponse<BorshLightClientUpdate>> = self
+    pub async fn fetch_period_update<T: DeserializeOwned>(&self, period: u64) -> Result<T> {
+        let updates: Vec<VersionedResponse<T>> = self
             .get_json(
                 &["eth", "v1", "beacon", "light_client", "updates"],
                 &[("start_period", &period.to_string()), ("count", "1")],
@@ -95,8 +94,8 @@ impl BeaconClient {
     }
 
     /// Fetch latest finality update
-    pub async fn fetch_finality_update(&self) -> Result<BorshLightClientUpdate> {
-        let finality_update: VersionedResponse<BorshLightClientUpdate> = self
+    pub async fn fetch_finality_update<T: DeserializeOwned>(&self) -> Result<T> {
+        let finality_update: VersionedResponse<T> = self
             .get_json(
                 &["eth", "v1", "beacon", "light_client", "finality_update"],
                 &[],
