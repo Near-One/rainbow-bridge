@@ -148,7 +148,7 @@ async fn test_fetch_gloas_finality_update_and_execution_header() -> Result<()> {
     let beacon_client = BeaconClient::new("http://unstable.sepolia.beacon-api.nimbus.team")?;
     let execution_client = ExecutionClient::sepolia()?;
 
-    let update = beacon_client.fetch_finality_update().await?;
+    let update: eth_types::eth2::LightClientUpdate = beacon_client.fetch_finality_update().await?;
     let finalized = &update.finalized_header;
     assert_eq!(
         finalized.execution_branch.len(),
